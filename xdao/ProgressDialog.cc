@@ -93,10 +93,10 @@ ProgressDialog::ProgressDialog(ProgressDialogPool *father)
   contents->pack_start(*table, FALSE);
   table->show();
 
-  label = new Gtk::Label(string("Track:"));
-  align = new Gtk::Alignment(1.0, 0.0, 0.0, 0.0);
-  align->add(*label);
-  label->show();
+  trackLabel_ = new Gtk::Label(string("Track:"));
+  align = new Gtk::Alignment(1.0, 0.5, 0.0, 0.0);
+  align->add(*trackLabel_);
+  trackLabel_->show();
   table->attach(*align, 0, 1, 0, 1, GTK_FILL);
   align->show();
 
@@ -107,7 +107,7 @@ ProgressDialog::ProgressDialog(ProgressDialogPool *father)
   hbox->show();
 
   label = new Gtk::Label(string("Total:"));
-  align = new Gtk::Alignment(1.0, 0.0, 0.0, 0.0);
+  align = new Gtk::Alignment(1.0, 0.5, 0.0, 0.0);
   align->add(*label);
   label->show();
   table->attach(*align, 0, 1, 1, 2, GTK_FILL);
@@ -120,7 +120,7 @@ ProgressDialog::ProgressDialog(ProgressDialogPool *father)
   hbox->show();
 
   bufferFillRateLabel_ = new Gtk::Label(string("Buffer:"));
-  align = new Gtk::Alignment(1.0, 0.0, 0.0, 0.0);
+  align = new Gtk::Alignment(1.0, 0.5, 0.0, 0.0);
   align->add(*bufferFillRateLabel_);
   label->show();
   table->attach(*align, 0, 1, 2, 3, GTK_FILL);
@@ -223,6 +223,7 @@ void ProgressDialog::closeAction()
     poolFather_->stop(this);
   }
   else {
+    cancelButton_->set_sensitive(false);
     switch (device_->action()) {
     case CdDevice::A_RECORD:
         {
@@ -232,6 +233,8 @@ void ProgressDialog::closeAction()
   	  if (msg.run() == 1) {
           if (device_ != NULL) 
             device_->abortDaoRecording();
+          else
+            cancelButton_->set_sensitive(true);
         }
         }
         break;
@@ -244,6 +247,8 @@ void ProgressDialog::closeAction()
         if (msg.run() == 1) {
           if (device_ != NULL) 
 	        device_->abortDaoReading();
+	      else
+            cancelButton_->set_sensitive(true);
         }
         }
 		break;
@@ -255,10 +260,26 @@ void ProgressDialog::closeAction()
         if (msg.run() == 1) {
           if (device_ != NULL) 
 	        device_->abortDaoDuplication();
+          else
+            cancelButton_->set_sensitive(true);
+        }
+        }
+		break;
+    case CdDevice::A_BLANK:
+        {        
+        Ask2Box msg(this, "Abort Process", 0, 2,
+		    "Abort blanking process?", NULL);
+
+        if (msg.run() == 1) {
+          if (device_ != NULL) 
+	        device_->abortBlank();
+          else
+            cancelButton_->set_sensitive(true);
         }
         }
 		break;
 	default:
+        cancelButton_->set_sensitive(true);
 	    break;
     }
   }
@@ -450,7 +471,32 @@ void ProgressDialog::update(unsigned long level)
     }
 
     break;
+
+  case CdDevice::A_BLANK:
+    if (device_->status() != CdDevice::DEV_BLANKING) {
+      switch (device_->exitStatus()) {
+      case 0:
+        statusMsg_->set_text(string("Blanking finished successfully."));
+        break;
+
+      case 255:
+        statusMsg_->set_text(string("Cannot execute cdrdao. Please check your PATH."));
+        break;
+	
+      default:
+        statusMsg_->set_text(string("Blanking aborted with error."));
+        break;
+      }
+      
+      finished_ = 1;
+      
+      setCloseButtonLabel(2);
+    }
+
+    break;
+
   default:
+        statusMsg_->set_text(string("Unknow device action!"));
     break;
   }
 }
@@ -544,6 +590,20 @@ void ProgressDialog::needBufferProgress(bool visible)
   }
 }
 
+void ProgressDialog::needTrackProgress(bool visible)
+{
+  if (visible)
+  {
+    trackProgress_->show();
+    trackLabel_->show();
+  }
+  else
+  {
+    trackProgress_->hide();
+    trackLabel_->hide();
+  }
+}
+
 
 ProgressDialogPool::ProgressDialogPool()
 {
@@ -564,8 +624,8 @@ void ProgressDialogPool::update(unsigned long status)
     run->update(status);
 }
   
-ProgressDialog *ProgressDialogPool::start(CdDevice *device,
-						      TocEdit *tocEdit, bool showBuffer)
+ProgressDialog *ProgressDialogPool::start(CdDevice *device, TocEdit *tocEdit,
+			bool showBuffer = true, bool showTrack = true)
 {
   ProgressDialog *dialog;
 
@@ -581,14 +641,15 @@ ProgressDialog *ProgressDialogPool::start(CdDevice *device,
   activeDialogs_ = dialog;
 
   dialog->needBufferProgress(showBuffer);
+  dialog->needTrackProgress(showTrack);
 
   dialog->start(device, tocEdit->filename());
 
   return dialog;
 }
 
-ProgressDialog *ProgressDialogPool::start(CdDevice *device,
-					  const char *tocFileName, bool showBuffer)
+ProgressDialog *ProgressDialogPool::start(CdDevice *device, const char *tocFileName,
+			bool showBuffer = true, bool showTrack = true)
 {
   ProgressDialog *dialog;
 
@@ -604,6 +665,7 @@ ProgressDialog *ProgressDialogPool::start(CdDevice *device,
   activeDialogs_ = dialog;
 
   dialog->needBufferProgress(showBuffer);
+  dialog->needTrackProgress(showTrack);
 
   dialog->start(device, tocFileName);
 
