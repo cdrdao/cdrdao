@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_REVISION($Revision: 1.40 $)dnl
+AC_REVISION($Revision: 1.41 $)dnl
 
 AC_INIT(cdrdao, 1.1.9pre1)
 
@@ -377,8 +377,7 @@ AC_CONFIG_FILES([
         xdao/stock/Makefile
         paranoia/Makefile
         Makefile
-        specs/cdrdao.rh9.spec
-        specs/cdrdao.fedora1.spec
+        specs/cdrdao.fedora.spec
         ])
 
 AC_OUTPUT
