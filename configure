@@ -1,6 +1,6 @@
 #! /bin/sh
 
-# From configure.in Revision: 1.1.1.1 
+# From configure.in Revision: 1.2 
 cdrdao_version=1.1.4
 
 # Configure paths for GTK--
@@ -2870,6 +2870,10 @@ cross_compiling=$ac_cv_prog_cc_cross
   
   rm -f conf.gtkmmtest
 
+
+if test x$xdao != x; then
+  GTKMM_CFLAGS="`gnome-config --cflags gnome` $GTKMM_CFLAGS"
+fi
 
 if test "$use_scglib" = default; then
   use_scglib=yes
