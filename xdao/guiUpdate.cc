@@ -20,11 +20,7 @@
 #include "guiUpdate.h"
 
 #include "xcdrdao.h"
-#include "MDIWindow.h"
-#include "TrackInfoDialog.h"
-#include "TocInfoDialog.h"
-#include "AddSilenceDialog.h"
-#include "AddFileDialog.h"
+#include "gcdmaster.h"
 #include "DeviceConfDialog.h"
 #include "RecordGenericDialog.h"
 #include "ProgressDialog.h"
@@ -33,39 +29,22 @@
 #include "TocEdit.h"
 
 #include "util.h"
-#include "GenericChild.h"
 
 void guiUpdate(unsigned long level)
 {
-  TocEdit *tocEdit = NULL;
+  if (gcdmaster == 0)
+    return;
 
-//FIXME  if (MDI_WINDOW == 0)
-//FIXME    return;
-
-//FIXME
-/*
-  if (MDI_WINDOW->gtkobj()->children) {
-    GenericChild *child = static_cast <GenericChild *>(MDI_WINDOW->get_active_child());
-
-    tocEdit = child->tocEdit();
-
-    level |= tocEdit->updateLevel();
-    
-    child->update(level);
-  }
-*/
-
-//FIXME  MDI_WINDOW->update(level);
+  gcdmaster->update(level);
 
   if (DEVICE_CONF_DIALOG != NULL)
     DEVICE_CONF_DIALOG->update(level);
 
   if (RECORD_GENERIC_DIALOG != NULL)
-    RECORD_GENERIC_DIALOG->update(level, tocEdit);
+    RECORD_GENERIC_DIALOG->update(level);
 
   if (PROGRESS_POOL != NULL)
     PROGRESS_POOL->update(level);
-//    RECORD_PROGRESS_POOL->update(level, tocEdit);
 }
 
 int guiUpdatePeriodic()

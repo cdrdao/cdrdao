@@ -175,6 +175,15 @@ void GCDMaster::newAudioCDProject2(ProjectChooser *projectChooser)
     closeChooser(projectChooser);
 }
 
+void GCDMaster::update(unsigned long level)
+{
+  for (list<Project *>::iterator i = projects.begin();
+       i != projects.end(); i++)
+  {
+    (*i)->update(level);
+  }
+}
+
 void GCDMaster::recordCD2CD()
 {
   RECORD_GENERIC_DIALOG->cd_to_cd();

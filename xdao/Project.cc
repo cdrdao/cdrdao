@@ -183,6 +183,8 @@ void Project::updateWindowTitle()
   string s(tocEdit_->filename());
   s += " - ";
   s += APP_NAME;
+  if (tocEdit_->tocDirty())
+    s += "(*)";
   set_title(s);
 }
 
@@ -300,3 +302,4 @@ void Project::tocBlockedMsg(const char *op)
 		 "project is in read-only state.", NULL);
   msg.run();
 }
+

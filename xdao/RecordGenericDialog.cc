@@ -298,6 +298,32 @@ void RecordGenericDialog::stop()
   target_ = T_NONE;
 }
 
+void RecordGenericDialog::update(unsigned long level)
+{
+  if (!active_)
+    return;
+
+  switch (source_) 
+  {
+    case S_TOC:
+                TOCSOURCE->update(level);
+                break;
+    case S_CD:
+                CDSOURCE->update(level);
+                break;
+  }
+
+  switch (target_) 
+  {
+    case T_CD:
+                CDTARGET->update(level, source_);
+                break;
+    case T_HD:
+                HDTARGET->update(level);
+                break;
+  }
+}
+
 void RecordGenericDialog::update(unsigned long level, TocEdit *tedit)
 {
   if (!active_)

@@ -191,6 +191,11 @@ void RecordCDTarget::stop()
   }
 }
 
+void RecordCDTarget::update(unsigned long level,
+			    RecordGenericDialog::RecordSourceType source)
+{
+  update(level, tocEdit_, source);
+}
 void RecordCDTarget::update(unsigned long level, TocEdit *tedit,
 			    RecordGenericDialog::RecordSourceType source)
 {

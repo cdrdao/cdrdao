@@ -24,6 +24,7 @@
 #include "TocEditView.h"
 #include "TocInfoDialog.h"
 #include "CdTextDialog.h"
+#include "guiUpdate.h"
 
 AudioCDProject::AudioCDProject(int number, const char *name, TocEdit *tocEdit)
 {
@@ -55,7 +56,7 @@ AudioCDProject::AudioCDProject(int number, const char *name, TocEdit *tocEdit)
   // Menu Stuff
   {
     using namespace Gnome::UI;
-    vector<Info> menus;
+    vector<Info> menus, viewMenuTree;
 
     menus.push_back(Item(Icon(GNOME_STOCK_MENU_PROP),
     				 N_("CD-TEXT..."),
@@ -75,9 +76,16 @@ AudioCDProject::AudioCDProject(int number, const char *name, TocEdit *tocEdit)
   
   get_dock_item_by_name("viewSwitcher")->show();
 
+
+  audioCDChild_ = new AudioCDChild(this);
+
+  newAudioCDView();
+}
+
+void AudioCDProject::newAudioCDView()
+{
   Gnome::StockPixmap *pixmap = new Gnome::StockPixmap(GNOME_STOCK_MENU_CDROM);
   Gtk::Label *label = new Gtk::Label("Track Editor");
-  audioCDChild_ = new AudioCDChild(this);
   AudioCDView *audioCDView = audioCDChild_->newView();
   hbox->pack_start(*audioCDView, TRUE, TRUE);
   audioCDView->tocEditView()->sampleViewFull();
@@ -119,4 +127,24 @@ void AudioCDProject::cdTextDialog()
 
   cdTextDialog_->start(tocEdit_);
 }
+
+void AudioCDProject::update(unsigned long level)
+{
+//FIXME: Here we should update the menus and the icons
+//       this is, enabled/disabled.
+
+  level |= tocEdit_->updateLevel();
+
+  if (level & (UPD_TOC_DIRTY | UPD_TOC_DATA))
+    updateWindowTitle();
+
+  audioCDChild_->update(level);
+
+  if (tocInfoDialog_ != 0)
+    tocInfoDialog_->update(level, tocEdit_);
+
+  if (cdTextDialog_ != 0)
+    cdTextDialog_->update(level, tocEdit_);
+}
+
 

@@ -147,19 +147,6 @@ void MDIWindow::update(unsigned long level)
     //disable record
 */
 
-//FIXME:  if (level & (UPD_TOC_DIRTY | UPD_TOC_DATA)) {
-//FIXME:    string s(tocEdit_->filename());
-
-//FIXME:    if (tocEdit_->tocDirty())
-//FIXME:      s += "(*)";
-
-//NOTE: child_changed still not in gnome-- (for 1.1.13)
-
-//FIXME: Do this on every "child_changed" signal, not here.    
-//FIXME:    get_active_window()->set_title(s);
-//    set_title(s);
-//FIXME:  }
-
 //FIXME: Update to all childs (and views) or just the current one???
   // send update to active child only
 //  audioCdChild_->update(level, tocEdit_);

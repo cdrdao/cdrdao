@@ -35,6 +35,7 @@ public:
   void start(TocEdit *);
   void stop();
 
+  void update(unsigned long level);
   void update(unsigned long level, TocEdit *);
 
 private:

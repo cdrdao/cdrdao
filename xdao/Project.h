@@ -68,6 +68,8 @@ public:
   int projectNumber();
   TocEdit *tocEdit();
   gint getViewNumber();
+
+  virtual void update(unsigned long level) = 0;
 };
 #endif
 

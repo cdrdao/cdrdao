@@ -47,6 +47,7 @@ public:
   void cd_to_cd();
   void cd_to_hd();
 
+  void update(unsigned long level);
   void update(unsigned long level, TocEdit *);
 
   void cancelAction();

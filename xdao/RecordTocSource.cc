@@ -112,6 +112,11 @@ void RecordTocSource::stop()
   }
 }
 
+void RecordTocSource::update(unsigned long level)
+{
+  update(level, tocEdit_);
+}
+
 void RecordTocSource::update(unsigned long level, TocEdit *tedit)
 {
   if (!active_)

@@ -48,7 +48,7 @@ AudioCDView::AudioCDView(AudioCDChild *child, AudioCDProject *project)
   gint viewNumber = project->getViewNumber();
   cdchild = child;
   project_ = project;
-  tocEditView_ = new TocEditView(child->tocEdit());
+  tocEditView_ = new TocEditView(project->tocEdit());
 
   widgetList = new list<Gtk::Widget *>;
   widgetList->push_back(this);
@@ -277,8 +277,6 @@ AudioCDView::AudioCDView(AudioCDChild *child, AudioCDProject *project)
 
 void AudioCDView::update(unsigned long level)
 {
-  //cout << "updating AudioCDView - " << cdchild->get_name() << endl;
-
   if (level & (UPD_TOC_DIRTY | UPD_TOC_DATA)) {
     cursorPos_->set_text("");
   }
@@ -332,6 +330,16 @@ void AudioCDView::update(unsigned long level)
       sampleDisplay_->setRegion(1, 0);
     }
   }
+
+  if (trackInfoDialog_ != 0)
+    trackInfoDialog_->update(level, tocEditView_);
+
+  if (addFileDialog_ != 0)
+    addFileDialog_->update(level, tocEditView_);
+
+  if (addSilenceDialog_ != 0)
+    addSilenceDialog_->update(level, tocEditView_);
+
 }
 
 void AudioCDView::zoomIn()
@@ -369,6 +377,7 @@ void AudioCDView::zoomOut()
 void AudioCDView::fullView()
 {
   tocEditView_->sampleViewFull();
+
   guiUpdate();
 }
 

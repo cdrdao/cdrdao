@@ -52,23 +52,20 @@ AudioCDChild::AudioCDChild(AudioCDProject *project)
   playBuffer_ = new Sample[playBurst_];
   soundInterface_ = NULL;
 
-  vector<Gnome::UI::Info> menus, viewMenuTree;
+  // Menu Stuff
+  {
+    using namespace Gnome::UI;
+    vector<Info> menus, viewMenuTree;
 
-/*
-//FIXME
-  viewMenuTree.
-    push_back(Gnome::UI::Item(Gnome::UI::Icon(GNOME_STOCK_MENU_BLANK),
-			      N_("Add view"),
-			      slot(this,
-				   &AudioCDChild::new_view),
+    viewMenuTree.push_back(Item(Icon(GNOME_STOCK_MENU_BLANK),
+			      N_("Add new track editor view"),
+			      slot(project, &AudioCDProject::newAudioCDView),
 			      N_("Add new view of current project")));
-*/
 
-/*
-//  menus.push_back(Gnome::Menus::View(viewMenuTree));
+    menus.push_back(Gnome::Menus::View(viewMenuTree));
 
-  project->app()->insert_menus("File", menus);
-*/
+    project->insert_menus("Edit", menus);
+  }
 }
 
 void AudioCDChild::play(unsigned long start, unsigned long end)
@@ -114,9 +111,12 @@ void AudioCDChild::play(unsigned long start, unsigned long end)
 // FIXME: Need this one?:
 //  tocEdit_->updateLevel_ |= UPD_CURSOR_POS;
 
-//FIXME: Need a UPD_PLAYING and a UPD_PAUSE
-//  while (views)
-//    view->playLabel_->set_text("Stop");
+//FIXME: use FLAG
+  for (list<AudioCDView *>::iterator i = views.begin();
+       i != views.end(); i++)
+  {
+    (*i)->playLabel_->set_text("Stop");
+  }
 
 //FIXME: Selection / Zooming does not depend
 //       on the Child, but the View.
@@ -138,9 +138,12 @@ int AudioCDChild::playCallback()
     soundInterface_->end();
     tocReader.init(NULL);
     playing_ = 0;
-//FIXME: Need a UPD_PLAYING and a UPD_PAUSE
-//  while (views)
-//    view->playLabel_->set_text("Play");
+//FIXME: use FLAG
+    for (list<AudioCDView *>::iterator i = views.begin();
+         i != views.end(); i++)
+    {
+      (*i)->playLabel_->set_text("Play");
+    }
     tocEdit_->unblockEdit();
     guiUpdate();
     return 0; // remove idle handler
@@ -152,22 +155,26 @@ int AudioCDChild::playCallback()
   unsigned long delay = soundInterface_->getDelay();
 
   if (delay <= playPosition_) {
-//FIXME: is private    tocEdit_->updateLevel_ |= UPD_SAMPLE_MARKER;
-
-//FIXME     tocEdit_->updateLevel_ |= UPD_CURSOR_POS;
-//      view->sampleDisplay_->setCursor(1, playPosition_ - delay);
-//      view->cursorPos_->set_text(string(sample2string(playPosition_ - delay)));
+//FIXME: use FLAG
+    for (list<AudioCDView *>::iterator i = views.begin();
+         i != views.end(); i++)
+    {
+      (*i)->sampleDisplay_->setCursor(1, playPosition_ - delay);
+      (*i)->cursorPos_->set_text(string(sample2string(playPosition_ - delay)));
+    }
   }
 
   if (len == 0 || playAbort_ != 0) {
     soundInterface_->end();
     tocReader.init(NULL);
     playing_ = 0;
-//FIXME: g_list_foreach in C++ ?
-//FIXME: Need a UPD_PLAYING and a UPD_PAUSE
-//  while (views)
-//    view->sampleDisplay_->setCursor(0, 0);
-//    view->playLabel_->set_text("Play");
+//FIXME: use FLAG
+    for (list<AudioCDView *>::iterator i = views.begin();
+         i != views.end(); i++)
+    {
+      (*i)->sampleDisplay_->setCursor(0, 0);
+      (*i)->playLabel_->set_text("Play");
+    }
 
     tocEdit_->unblockEdit();
     guiUpdate();
@@ -211,38 +218,11 @@ bool AudioCDChild::closeProject()
 
 void AudioCDChild::update(unsigned long level)
 {
-  //cout << "updating AudioCDChild - " << get_name() << endl;
-
-  if (level & (UPD_TOC_DIRTY | UPD_TOC_DATA)) {
-    string s(tocEdit_->filename());
-
-    if (tocEdit_->tocDirty())
-      s += "(*)";
-
-//FIXME    set_name(s);
+  for (list<AudioCDView *>::iterator i = views.begin();
+       i != views.end(); i++)
+  {
+    (*i)->update(level);
   }
-
-//FIXME: update all views?!?
-//FIXME  GenericView *view = static_cast <GenericView *>(get_active());
-//FIXME  view->update(level);
-
-  // Update dialogs already created.
-/*
-  if (tocInfoDialog_ != 0)
-    tocInfoDialog_->update(level, view->tocEditView());
-
-  if (trackInfoDialog_ != 0)
-    trackInfoDialog_->update(level, view->tocEditView());
-
-  if (addFileDialog_ != 0)
-    addFileDialog_->update(level, view->tocEditView());
-
-  if (addSilenceDialog_ != 0)
-    addSilenceDialog_->update(level, view->tocEditView());
-
-  if (cdTextDialog_ != 0)
-    cdTextDialog_->update(level, view->tocEditView());
-*/
 }
 
 

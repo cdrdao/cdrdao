@@ -60,6 +60,8 @@ public:
   void newAudioCDProject2(ProjectChooser *);
   void newAudioCDProject(const char *name, TocEdit *tocEdit, ProjectChooser *);
 
+  void update(unsigned long level);
+
   void recordCD2CD();
   void recordCD2HD();
   void configureDevices();

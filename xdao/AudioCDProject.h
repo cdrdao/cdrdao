@@ -40,9 +40,11 @@ private:
   void recordToc2CD();
   void projectInfo();
   void cdTextDialog();
+  void update(unsigned long level);
  
 public:
   AudioCDProject(int number, const char *name, TocEdit *tocEdit);
+  void newAudioCDView(); 
   bool closeProject();
 };
 #endif

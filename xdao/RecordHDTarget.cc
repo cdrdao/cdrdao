@@ -125,6 +125,11 @@ void RecordHDTarget::stop()
   }
 }
 
+void RecordHDTarget::update(unsigned long level)
+{
+  update(level, tocEdit_);
+}
+
 void RecordHDTarget::update(unsigned long level, TocEdit *tedit)
 {
   if (!active_)

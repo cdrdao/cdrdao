@@ -39,6 +39,7 @@ public:
   void start(TocEdit *, RecordGenericDialog::RecordSourceType source);
   void stop();
 
+  void update(unsigned long level, RecordGenericDialog::RecordSourceType source);
   void update(unsigned long level, TocEdit *,
 	      RecordGenericDialog::RecordSourceType source);
 
