@@ -20,6 +20,7 @@
 #include <config.h>
 
 #include <assert.h>
+#include <malloc.h>
 #include <sys/types.h>
 
 #include "lec.h"
@@ -46,8 +47,9 @@ typedef u_int8_t gf8_t;
 static u_int8_t GF8_LOG[256];
 static gf8_t GF8_ILOG[256];
 
-static u_int8_t GF8_P_COEFFS[2][26]; 
 static u_int8_t GF8_Q_COEFFS[2][45];
+static u_int8_t **GF8_Q_COEEFS_RESULTS_0;
+static u_int8_t **GF8_Q_COEEFS_RESULTS_1;
 
 static u_int32_t CRCTABLE[256];
 
@@ -86,8 +88,9 @@ static void gf8_create_log_tables()
 
 
 /* Multiplication in the GF(8) domain: add the logarithms (modulo 255)
- * and return the inverse logarithm.
+ * and return the inverse logarithm. Not used!
  */
+#if 0
 static gf8_t gf8_mult(gf8_t a, gf8_t b)
 {
   int16_t sum;
@@ -102,6 +105,7 @@ static gf8_t gf8_mult(gf8_t a, gf8_t b)
 
   return GF8_ILOG[sum];
 }
+#endif
 
 /* Division in the GF(8) domain: Like multiplication but logarithms a
  * subtracted.
@@ -124,9 +128,10 @@ static gf8_t gf8_div(gf8_t a, gf8_t b)
 }
 
 
-static void calc_pq_parity_coefficients()
+static int calc_pq_parity_coefficients()
 {
   int i, j;
+  u_int16_t c;
   gf8_t GF8_COEFFS_HELP[2][45]; 
 
   /* build matrix H:
@@ -167,20 +172,48 @@ static void calc_pq_parity_coefficients()
     GF8_Q_COEFFS[0][j] = gf8_div(GF8_Q_COEFFS[0][j], GF8_Q_COEFFS[0][44]);
   }
 
-  /* Actually the logarithm of the coefficents is stored in the tables. This
-   * will save an additional table lookup when building the parities for
-   * sectors.
+  /* 
+   * Compute the products of 0..255 with all of the Q coefficients in
+   * advance. When building the scalar product between the data vectors
+   * and the P/Q vectors the individual products can be looked up in
+   * this table
    *
-   * The P parity coefficients are just a subset of the Q coefficients. 
+   * The P parity coefficients are just a subset of the Q coefficients so
+   * that we do not need to create a separate table for them. 
    */
+  
+  GF8_Q_COEEFS_RESULTS_0 = (u_int8_t**)malloc(43 * sizeof(u_int8_t*));
+  if (GF8_Q_COEEFS_RESULTS_0 == NULL)
+    return 1;
 
-  for (i = 0; i < 2; i++) {
-    for (j = 0; j < 45; j++) {
-      GF8_Q_COEFFS[i][j] = GF8_LOG[GF8_Q_COEFFS[i][j]];
-      if (j >= 45 - 26)
-	GF8_P_COEFFS[i][j - (45 - 26)] = GF8_Q_COEFFS[i][j];
+  GF8_Q_COEEFS_RESULTS_1 = (u_int8_t**)malloc(43 * sizeof(u_int8_t*));
+  if (GF8_Q_COEEFS_RESULTS_1 == NULL)
+    return 1;
+
+  for (j = 0; j < 43; j++) {
+    GF8_Q_COEEFS_RESULTS_0[j] = (u_int8_t*)malloc(256 * sizeof(u_int8_t));
+    if (GF8_Q_COEEFS_RESULTS_0[j] == NULL)
+      return 1;
+
+    GF8_Q_COEEFS_RESULTS_1[j] = (u_int8_t*)malloc(256 * sizeof(u_int8_t));
+    if (GF8_Q_COEEFS_RESULTS_1[j] == NULL)
+      return 1;
+
+    GF8_Q_COEEFS_RESULTS_0[j][0] = 0;
+    GF8_Q_COEEFS_RESULTS_1[j][0] = 0;
+
+    for (i = 1; i < 256; i++) {
+      c = GF8_LOG[i] + GF8_LOG[GF8_Q_COEFFS[0][j]];
+      if (c >= 255) c -= 255;
+      GF8_Q_COEEFS_RESULTS_0[j][i] = GF8_ILOG[c];
+
+      c = GF8_LOG[i] + GF8_LOG[GF8_Q_COEFFS[1][j]];
+      if (c >= 255) c -= 255;
+      GF8_Q_COEEFS_RESULTS_1[j][i] = GF8_ILOG[c];
     }
   }
+
+  return 0;
 }
 
 /* Reverses the bits in 'd'. 'bits' defines the bit width of 'd'.
@@ -353,10 +386,10 @@ static void calc_P_parity(u_int8_t *sector)
   u_int8_t p0_lsb, p1_lsb;
   u_int8_t *p_msb_start, *p_lsb_start;
   u_int8_t *p_msb, *p_lsb;
-  u_int8_t *coeffs0, *coeffs1;
+  u_int8_t **coeffs0, **coeffs1;
+  u_int8_t **coeffs0start, **coeffs1start;
   u_int8_t *p0, *p1;
   u_int8_t d;
-  u_int16_t c;
 
   p_lsb_start = sector + LEC_HEADER_OFFSET;
   p_msb_start = sector + LEC_HEADER_OFFSET + 1;
@@ -364,39 +397,28 @@ static void calc_P_parity(u_int8_t *sector)
   p1 = sector + LEC_MODE1_P_PARITY_OFFSET;
   p0 = sector + LEC_MODE1_P_PARITY_OFFSET + 2 * 43;
 
+  coeffs0start = GF8_Q_COEEFS_RESULTS_0 + 19;
+  coeffs1start = GF8_Q_COEEFS_RESULTS_1 + 19;
+
   for (i = 0; i <= 42; i++) {
     p_lsb = p_lsb_start;
     p_msb = p_msb_start;
 
-    coeffs0 = GF8_P_COEFFS[0];
-    coeffs1 = GF8_P_COEFFS[1];
+    coeffs0 = coeffs0start;
+    coeffs1 = coeffs1start;
     
     p0_lsb = p1_lsb = p0_msb = p1_msb = 0;
 
     for (j = 0; j <= 23; j++) {
       d = *p_lsb;
 
-      if (d != 0) {
-	c = GF8_LOG[d] + *coeffs0;
-	if (c >= 255) c -= 255;
-	p0_lsb ^= GF8_ILOG[c];
-
-	c = GF8_LOG[d] + *coeffs1;
-	if (c >= 255) c -= 255;
-	p1_lsb ^= GF8_ILOG[c];
-      }
+      p0_lsb ^= (*coeffs0)[d];
+      p1_lsb ^= (*coeffs1)[d];
 
       d = *p_msb;
 
-      if (d != 0) {
-	c = GF8_LOG[d] + *coeffs0;
-	if (c >= 255) c -= 255;
-	p0_msb ^= GF8_ILOG[c];
-
-	c = GF8_LOG[d] + *coeffs1;
-	if (c >= 255) c -= 255;
-	p1_msb ^= GF8_ILOG[c];
-      }
+      p0_msb ^= (*coeffs0)[d];
+      p1_msb ^= (*coeffs1)[d];
 
       coeffs0++;
       coeffs1++;
@@ -429,10 +451,9 @@ static void calc_Q_parity(u_int8_t *sector)
   u_int8_t q0_lsb, q1_lsb;
   u_int8_t *q_msb_start, *q_lsb_start;
   u_int8_t *q_msb, *q_lsb;
-  u_int8_t *coeffs0, *coeffs1;
+  u_int8_t **coeffs0, **coeffs1;
   u_int8_t *q0, *q1, *q_start;
   u_int8_t d;
-  u_int16_t c;
 
   q_lsb_start = sector + LEC_HEADER_OFFSET;
   q_msb_start = sector + LEC_HEADER_OFFSET + 1;
@@ -445,35 +466,21 @@ static void calc_Q_parity(u_int8_t *sector)
     q_lsb = q_lsb_start;
     q_msb = q_msb_start;
 
-    coeffs0 = GF8_Q_COEFFS[0];
-    coeffs1 = GF8_Q_COEFFS[1];
+    coeffs0 = GF8_Q_COEEFS_RESULTS_0;
+    coeffs1 = GF8_Q_COEEFS_RESULTS_1;
     
     q0_lsb = q1_lsb = q0_msb = q1_msb = 0;
 
     for (j = 0; j <= 42; j++) {
       d = *q_lsb;
 
-      if (d != 0) {
-	c = GF8_LOG[d] + *coeffs0;
-	if (c >= 255) c -= 255;
-	q0_lsb ^= GF8_ILOG[c];
-
-	c = GF8_LOG[d] + *coeffs1;
-	if (c >= 255) c -= 255;
-	q1_lsb ^= GF8_ILOG[c];
-      }
+      q0_lsb ^= (*coeffs0)[d];
+      q1_lsb ^= (*coeffs1)[d];
 
       d = *q_msb;
 
-      if (d != 0) {
-	c = GF8_LOG[d] + *coeffs0;
-	if (c >= 255) c -= 255;
-	q0_msb ^= GF8_ILOG[c];
-
-	c = GF8_LOG[d] + *coeffs1;
-	if (c >= 255) c -= 255;
-	q1_msb ^= GF8_ILOG[c];
-      }
+      q0_msb ^= (*coeffs0)[d];
+      q1_msb ^= (*coeffs1)[d];
 
       coeffs0++;
       coeffs1++;
@@ -502,23 +509,28 @@ static void calc_Q_parity(u_int8_t *sector)
 }
 
 /* Initializes all internal tables.
+ * Return: 0: OK
+ *         1: Memory allocation error
  */
-void lec_init()
+int lec_init()
 {
   static int initialized = 0;
 
   if (initialized) 
-    return;
+    return 0;
 
   initialized = 1;
 
   gf8_create_log_tables();
 
-  calc_pq_parity_coefficients();
+  if (calc_pq_parity_coefficients() != 0)
+    return 1;
 
   build_edc_table();
 
   build_scramble_table();
+
+  return 0;
 }
 
 /* Encodes a MODE 0 sector.
@@ -656,6 +668,23 @@ int main(int argc, char **argv)
   u_int8_t buffer1[2352];
   u_int8_t buffer2[2352];
   u_int32_t lba;
+  int i;
+
+  lec_init();
+
+#if 0
+  for (i = 0; i < 2048; i++)
+    buffer1[i + 16] = 234;
+
+  lba = 150;
+
+  for (i = 0; i < 100000; i++) {
+    lec_encode_mode1_sector(lba, buffer1);
+    lec_scramble(buffer2);
+    lba++;
+  }
+
+#else
 
   if (argc != 3)
     return 1;
@@ -663,7 +692,6 @@ int main(int argc, char **argv)
   infile = argv[1];
   outfile = argv[2];
 
-  lec_init();
 
   if ((fd_in = open(infile, O_RDONLY)) < 0) {
     perror("Cannot open input file");
@@ -714,6 +742,8 @@ int main(int argc, char **argv)
 
   close(fd_in);
   close(fd_out);
+
+#endif
 
   return 0;
 }

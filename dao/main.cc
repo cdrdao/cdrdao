@@ -42,6 +42,8 @@
 #include "dao.h"
 #include "Settings.h"
 #include "Cddb.h"
+#include "lec.h"
+
 
 #ifdef UNIXWARE
 extern "C" {
@@ -1932,6 +1934,13 @@ int main(int argc, char **argv)
     exportSettings(COMMAND);
     SETTINGS->write(settingsPath);
   }
+
+  if (lec_init() != 0) {
+    message(-2, "Initialization of L-EC module failed.");
+    exit(1);
+  }
+
+  message(5, "L-EC module initialized.");
 
   if (COMMAND != READ_TOC && COMMAND != DISK_INFO && COMMAND != READ_CD &&
       COMMAND != BLANK && COMMAND != SCAN_BUS && COMMAND != UNLOCK &&

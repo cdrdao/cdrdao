@@ -1371,8 +1371,6 @@ TrackReader::TrackReader(const Track *t) : reader(NULL)
   open_ = 0;
   
   subChanDelayLineIndex_ = 0;
-
-  lec_init();
 }
 
 TrackReader::~TrackReader()
