@@ -65,7 +65,7 @@ RecordGenericDialog::RecordGenericDialog()
   CDTARGET->parent = this;
   HDTARGET->parent = this;
 
-  set_title(string("Record Project, CD duplication, etc ..."));
+  set_title(string("Record"));
 //  set_usize(0, 400);
   set_border_width(10);
 
@@ -214,6 +214,33 @@ void RecordGenericDialog::start(TocEdit *tocEdit, enum RecordSourceType SourceTy
                   HDTARGET->update(UPD_ALL, tocEdit);
                   break;
     }
+  }
+
+//title
+  switch (source_) 
+  {
+    case S_TOC:
+                switch (target_) 
+                {
+                  case T_CD:
+							 set_title(string("Write project to CD"));
+                             break;
+                  case T_HD:
+							 set_title(string("Write project to Disk"));
+                             break;
+                }
+                break;
+    case S_CD:
+                switch (target_) 
+                {
+                  case T_CD:
+							 set_title(string("Duplicate CD"));
+                             break;
+                  case T_HD:
+							 set_title(string("Dump CD to Disk"));
+                             break;
+                }
+                break;
   }
 
   show();

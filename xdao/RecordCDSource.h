@@ -53,6 +53,9 @@ private:
     const char *name;
   };
 
+  Gtk::SpinButton *speedSpinButton_;
+  Gtk::CheckButton *speedButton_;
+
   Gtk::OptionMenu *correctionMenu_;
 //  Gtk::CheckButton *onTheFlyButton_;
   Gtk::CheckButton *continueOnErrorButton_;
@@ -61,6 +64,9 @@ private:
 //  void setSpeed(int);
   void setCorrection(int);
 
+private:
+  void speedButtonChanged();
+  void speedChanged();
 };
 
 #endif

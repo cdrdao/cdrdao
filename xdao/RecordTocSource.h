@@ -43,6 +43,8 @@ private:
   int active_;
 
   Gtk::Label *projectLabel_;
+  Gtk::Label *tocTypeLabel_;
+  Gtk::Label *nofTracksLabel_;
 
 };
 

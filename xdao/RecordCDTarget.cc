@@ -43,6 +43,7 @@ RecordCDTarget::RecordCDTarget()
   Gtk::HBox *hbox;
   Gtk::VBox *vbox;
   Gtk::Table *table;
+  Gtk::Table *table2;
   Gtk::Label *label;
   Gtk::Adjustment *adjustment;
   Gtk::Tooltips *toolTips;
@@ -60,24 +61,6 @@ RecordCDTarget::RecordCDTarget()
   toolTips = new Gtk::Tooltips;
   toolTips->force_window();
 
-  simulateButton_ = new Gtk::CheckButton(string("Simulation - no real write is done"));
-  simulateButton_->set_active(true);
-  
-  closeSessionButton_ = new Gtk::CheckButton(string("Close disk - no further writing possible!"));
-  closeSessionButton_->set_active(true);
-
-  ontheflyButton_ = new Gtk::CheckButton(string("On the fly - no image file is created"));
-  ontheflyButton_->set_active(false);
-
-  ejectButton_ = new Gtk::CheckButton(string("Eject the CD after writing"));
-  ejectButton_->set_active(false);
-
-  reloadButton_ = new Gtk::CheckButton(string("Reload the CD after writing, if necessary"));
-  reloadButton_->set_active(false);
-
-  speedButton_ = new Gtk::CheckButton(string("Use max."));
-  speedButton_->set_active(true);
-
   DEVICES = new DeviceList(CdDevice::CD_R);
 
   Gtk::VBox *contents = new Gtk::VBox;
@@ -88,9 +71,8 @@ RecordCDTarget::RecordCDTarget()
   // device settings
   Gtk::Frame *recordOptionsFrame = new Gtk::Frame(string("Record Options"));
 
-  table = new Gtk::Table(8, 2, FALSE);
+  table = new Gtk::Table(8, 1, FALSE);
   table->set_row_spacings(2);
-  table->set_col_spacings(30);
   hbox = new Gtk::HBox;
   hbox->pack_start(*table, FALSE, FALSE, 5);
   vbox = new Gtk::VBox;
@@ -102,72 +84,74 @@ RecordCDTarget::RecordCDTarget()
 
   toolTips->set_tip(*table, "Right click to get a menu");
   
-  hbox = new Gtk::HBox;
-  hbox->pack_start(*simulateButton_, FALSE, FALSE);
+  simulateButton_ = new Gtk::CheckButton(string("Simulation - no real write is done"), 0);
+  simulateButton_->set_active(true);
   simulateButton_->show();
-  table->attach(*hbox, 0, 1, 0, 1);
-  hbox->show();
+  table->attach(*simulateButton_, 0, 1, 0, 1);
 
-  toolTips->set_tip(*simulateButton_, "Right click to get a menu");
+//  toolTips->set_tip(*simulateButton_, "Right click to get a menu");
 
-  hbox = new Gtk::HBox;
-  hbox->pack_start(*closeSessionButton_, FALSE, FALSE);
+  closeSessionButton_ = new Gtk::CheckButton(string("Close disk - no further writing possible!"), 0);
+  closeSessionButton_->set_active(true);
   closeSessionButton_->show();
-  table->attach(*hbox, 0, 1, 1, 2);
-  hbox->show();
+  table->attach(*closeSessionButton_, 0, 1, 1, 2);
 
-  hbox = new Gtk::HBox;
-  hbox->pack_start(*ontheflyButton_, FALSE, FALSE);
+  ontheflyButton_ = new Gtk::CheckButton(string("On the fly - no image file is created"), 0);
+  ontheflyButton_->set_active(false);
   ontheflyButton_->show();
-  table->attach(*hbox, 0, 1, 2, 3);
-  hbox->show();
+  table->attach(*ontheflyButton_, 0, 3, 2, 3);
 
-  hbox = new Gtk::HBox;
-  hbox->pack_start(*ejectButton_, FALSE, FALSE);
+  ejectButton_ = new Gtk::CheckButton(string("Eject the CD after writing"), 0);
+  ejectButton_->set_active(false);
   ejectButton_->show();
-  table->attach(*hbox, 0, 1, 3, 4);
-  hbox->show();
+  table->attach(*ejectButton_, 0, 3, 3, 4);
 
-  hbox = new Gtk::HBox;
-  hbox->pack_start(*reloadButton_, FALSE);
+  reloadButton_ = new Gtk::CheckButton(string("Reload the CD after writing, if necessary"), 0);
+  reloadButton_->set_active(false);
   reloadButton_->show();
-  table->attach(*hbox, 0, 1, 4, 5);
-  hbox->show();
+  table->attach(*reloadButton_, 0, 3, 4, 5);
 
-  hbox = new Gtk::HBox;
-  label = new Gtk::Label(string("Speed: "));
-  hbox->pack_start(*label, FALSE);
+  table2 = new Gtk::Table(2, 3, FALSE);
+  table2->set_col_spacings(10);
+  table2->show();
+
+  label = new Gtk::Label(string("Speed: "), 0);
   label->show();
+  table2->attach(*label, 0, 1, 0, 1);
+
   adjustment = new Gtk::Adjustment(1, 1, 20);
   speedSpinButton_ = new Gtk::SpinButton(*adjustment);
   speedSpinButton_->set_digits(0);
-  hbox->pack_start(*speedSpinButton_, FALSE);
   speedSpinButton_->show();
   speedSpinButton_->set_sensitive(false);
   adjustment->value_changed.connect(SigC::slot(this, &RecordCDTarget::speedChanged));
-  hbox->pack_start(*speedButton_, FALSE);
+  table2->attach(*speedSpinButton_, 1, 2, 0, 1);
+
+  speedButton_ = new Gtk::CheckButton(string("Use max."), 0);
+  speedButton_->set_active(true);
   speedButton_->show();
   speedButton_->toggled.connect(SigC::slot(this, &RecordCDTarget::speedButtonChanged));
-  table->attach(*hbox, 0, 1, 5, 6);
-  hbox->show();
+  table2->attach(*speedButton_, 2, 3, 0, 1);
 
-  hbox = new Gtk::HBox;
-  label = new Gtk::Label(string("Buffer: "));
-  hbox->pack_start(*label, FALSE);
+  label = new Gtk::Label(string("Buffer: "), 0);
   label->show();
+  table2->attach(*label, 0, 1, 1, 2);
   adjustment = new Gtk::Adjustment(10, 10, 1000);
   bufferSpinButton_ = new Gtk::SpinButton(*adjustment);
-  hbox->pack_start(*bufferSpinButton_, FALSE);
   bufferSpinButton_->show();
+  table2->attach(*bufferSpinButton_, 1, 2, 1, 2);
+  hbox = new Gtk::HBox;
   label = new Gtk::Label(string("audio seconds "));
   hbox->pack_start(*label, FALSE);
   label->show();
-  bufferRAMLabel_ = new Gtk::Label(string("= 1.72 Mb buffer."));
-  hbox->pack_start(*bufferRAMLabel_, FALSE);
+  bufferRAMLabel_ = new Gtk::Label(string("= 1.72 Mb buffer."), 0);
+  hbox->pack_start(*bufferRAMLabel_, TRUE, TRUE);
   bufferRAMLabel_->show();
   adjustment->value_changed.connect(SigC::slot(this, &RecordCDTarget::updateBufferRAMLabel));
-  table->attach(*hbox, 0, 1, 6, 7);
+  table2->attach(*hbox, 2, 3, 1, 2);
   hbox->show();
+
+  table->attach(*table2, 0, 1, 5, 6);
   
   contents->pack_start(*recordOptionsFrame, FALSE, FALSE);
   recordOptionsFrame->show();

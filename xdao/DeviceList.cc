@@ -262,6 +262,6 @@ void DeviceList::selection_changed_emit(gint p0, gint p1, GdkEvent* p2)
 {
 //Emited when the selection ends.
 
-g_print("row select emited!!\n");
+// g_print("row select emited!!\n");
 
 }

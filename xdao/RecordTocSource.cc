@@ -39,31 +39,46 @@
 
 RecordTocSource::RecordTocSource()
 {
-  Gtk::VBox *vbox;
-  Gtk::Label *label;
-  
+  Gtk::Table *table;
+  Gtk::Label *label;  
+
   active_ = 0;
   tocEdit_ = NULL;
 
   // device settings
-  Gtk::Frame *infoFrame = new Gtk::Frame(string("Toc Information"));
+  Gtk::Frame *infoFrame = new Gtk::Frame(string("Disk Information"));
   infoFrame->show();
   
-  vbox = new Gtk::VBox;
+  table = new Gtk::Table(5, 2, FALSE);
+  table->set_row_spacings(5);
+  table->set_col_spacings(5);
+  table->set_border_width(10);
+  table->show();
 
-  projectLabel_ = new Gtk::Label(string("Project name: "));
+  label = new Gtk::Label(string("Project name: "), 1);
+  label->show();
+  table->attach(*label, 0, 1, 0, 1);
+  projectLabel_ = new Gtk::Label(string(""), 0);
   projectLabel_->show();
+  table->attach(*projectLabel_, 1, 2, 0, 1);
 
-  vbox->pack_start(*projectLabel_, FALSE, FALSE, 5);
+  label = new Gtk::Label(string("Toc Type: "), 1);
+  label->show();
+  table->attach(*label, 0, 1, 1, 2);
+  tocTypeLabel_ = new Gtk::Label(string(""), 0);
+  tocTypeLabel_->show();
+  table->attach(*tocTypeLabel_, 1, 2, 1, 2);
 
-  label = new Gtk::Label(string("More info here..."));
-  label->show();  
-  vbox->pack_start(*label, FALSE, FALSE, 5);
+  label = new Gtk::Label(string("Tracks: "), 1);
+  label->show();
+  table->attach(*label, 0, 1, 2, 3);
+  nofTracksLabel_ = new Gtk::Label(string(""), 0);
+  nofTracksLabel_->show();
+  table->attach(*nofTracksLabel_, 1, 2, 2, 3);
 
-  infoFrame->add(*vbox);
-  vbox->show();
+  infoFrame->add(*table);
 
-  pack_start(*infoFrame);
+  pack_start(*infoFrame, FALSE, FALSE);
 
 //  show();
 }
@@ -76,7 +91,7 @@ void RecordTocSource::start(TocEdit *tocEdit)
 {
   active_ = 1;
 
-//  update(UPD_CD_DEVICES, tocEdit);
+  update(UPD_ALL, tocEdit);
 
   show();
 }
@@ -98,11 +113,25 @@ void RecordTocSource::update(unsigned long level, TocEdit *tocEdit)
 
   tocEdit_ = tocEdit;
 
-  sprintf(label, "Project name: %s", tocEdit_->filename());
-  projectLabel_->set(string(label));
+  projectLabel_->set(string(tocEdit->filename()));
+
+  switch (tocEdit->toc()->tocType()) {
+  case Toc::CD_DA:
+    tocTypeLabel_->set(string("CD-DA"));
+    break;
+  case Toc::CD_ROM:
+    tocTypeLabel_->set(string("CD-ROM"));
+    break;
+  case Toc::CD_ROM_XA:
+    tocTypeLabel_->set(string("CD-ROM-XA"));
+    break;
+  case Toc::CD_I:
+    tocTypeLabel_->set(string("CD-I"));
+    break;
+  }
+
+  sprintf(label, "%i", tocEdit_->toc()->nofTracks());
+  nofTracksLabel_->set(string(label));
+
   
-//  if (level & UPD_CD_DEVICES)
-//    DEVICES->import();
-//  else if (level & UPD_CD_DEVICE_STATUS)
-//    DEVICES->importStatus();
 }

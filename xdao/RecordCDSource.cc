@@ -52,7 +52,9 @@ RecordCDSource::RecordCDSource()
   Gtk::HBox *hbox;
   Gtk::VBox *vbox;
   Gtk::Table *table;
+  Gtk::Table *table2;
   Gtk::Label *label;
+  Gtk::Adjustment *adjustment;
 
   active_ = 0;
   tocEdit_ = NULL;
@@ -86,16 +88,36 @@ RecordCDSource::RecordCDSource()
   // device settings
   Gtk::Frame *extractOptionsFrame = new Gtk::Frame(string("Read Options"));
 
-  vbox = new Gtk::VBox(TRUE, TRUE);
-  extractOptionsFrame->add(*vbox);
-  vbox->show();
+  table = new Gtk::Table(8, 1, FALSE);
+  table->set_row_spacings(2);
+  table->set_border_width(5);
+  table->show();
 
-  hbox = new Gtk::HBox;
-  label = new Gtk::Label(string("Speed: "));
-  hbox->pack_start(*label, FALSE);
+  extractOptionsFrame->add(*table);
+
+  table2 = new Gtk::Table(8, 3, FALSE);
+  table->set_col_spacings(10);
+  table2->show();
+
+  label = new Gtk::Label(string("Speed: "), 0);
   label->show();
-  vbox->pack_start(*hbox, FALSE);
-//  hbox->show();
+  table2->attach(*label, 0, 1, 0, 1, 0);
+
+  adjustment = new Gtk::Adjustment(1, 1, 50);
+  speedSpinButton_ = new Gtk::SpinButton(*adjustment);
+  speedSpinButton_->set_digits(0);
+  speedSpinButton_->show();
+  speedSpinButton_->set_sensitive(false);
+  adjustment->value_changed.connect(SigC::slot(this, &RecordCDSource::speedChanged));
+  table2->attach(*speedSpinButton_, 1, 2, 0, 1, 0);
+
+  speedButton_ = new Gtk::CheckButton(string("Use max."));
+  speedButton_->set_active(true);
+  speedButton_->show();
+  speedButton_->toggled.connect(SigC::slot(this, &RecordCDSource::speedButtonChanged));
+  table2->attach(*speedButton_, 2, 3, 0, 1, 0);
+
+//  table->attach(*table2, 0, 1, 0, 1);
 
   hbox = new Gtk::HBox;
   label = new Gtk::Label(string("Correction Method: "));
@@ -103,29 +125,28 @@ RecordCDSource::RecordCDSource()
   label->show();
   hbox->pack_start(*correctionMenu_, FALSE);
   correctionMenu_->show();
-  vbox->pack_start(*hbox, FALSE);
+  table->attach(*hbox, 0, 1, 1, 2);
   hbox->show();
 
   continueOnErrorButton_ = new Gtk::CheckButton(string("Continue if errors found"), 0);
   continueOnErrorButton_->set_active(false);
-  vbox->pack_start(*continueOnErrorButton_);
 //  continueOnErrorButton_->show();
+//  table->attach(*continueOnErrorButton_, 0, 1, 2, 3);
 
   ignoreIncorrectTOCButton_ = new Gtk::CheckButton(string("Ignore incorrect TOC"), 0);
   ignoreIncorrectTOCButton_->set_active(false);
-  vbox->pack_start(*ignoreIncorrectTOCButton_);
 //  ignoreIncorrectTOCButton_->show();
+//  table->attach(*ignoreIncorrectTOCButton_, 0, 1, 3, 4);
 
   contents->pack_start(*extractOptionsFrame, FALSE, FALSE);
   extractOptionsFrame->show();
-
 
   Gtk::HBox *contentsHBox = new Gtk::HBox;
 
   contentsHBox->pack_start(*contents);
   contents->show();
 
-  pack_start(*contentsHBox);
+  pack_start(*contentsHBox, FALSE, FALSE);
   contentsHBox->show();
 
 //  show();
@@ -180,4 +201,22 @@ void RecordCDSource::setCorrection(int s)
 int RecordCDSource::getCorrection()
 {
 return CORRECTION_TABLE[correction_].correction;
+}
+
+void RecordCDSource::speedButtonChanged()
+{
+  if (speedButton_->get_active())
+  {
+    speedSpinButton_->set_sensitive(false);
+  }
+  else
+  {
+    speedSpinButton_->set_sensitive(true);
+  }
+}
+
+void RecordCDSource::speedChanged()
+{
+  //Do some validating here. speed_ <= MAX read speed of CD.
+  speed_ = speedSpinButton_->get_value_as_int();
 }

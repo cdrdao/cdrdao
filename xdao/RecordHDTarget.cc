@@ -51,8 +51,6 @@ RecordHDTarget::RecordHDTarget()
   active_ = 0;
   tocEdit_ = NULL;
 
-  fileNameEntry_ = new Gtk::Entry;
-
   Gtk::VBox *contents = new Gtk::VBox;
   contents->set_spacing(10);
 
@@ -61,7 +59,9 @@ RecordHDTarget::RecordHDTarget()
 
   table = new Gtk::Table(5, 3, FALSE);
   table->set_row_spacings(2);
-  table->set_col_spacings(30);
+  table->set_col_spacings(10);
+  table->set_border_width(5);
+
   hbox = new Gtk::HBox;
   hbox->pack_start(*table, FALSE, FALSE, 5);
   vbox = new Gtk::VBox;
@@ -74,15 +74,13 @@ RecordHDTarget::RecordHDTarget()
   contents->pack_start(*recordOptionsFrame, FALSE, FALSE);
   recordOptionsFrame->show();
 
-  hbox = new Gtk::HBox;
   label = new Gtk::Label(string("Name: "));
-  hbox->pack_start(*label, FALSE, FALSE);
   label->show();
+  table->attach(*label, 0, 1, 0, 1);
 
-  hbox->pack_start(*fileNameEntry_, FALSE, FALSE);
+  fileNameEntry_ = new Gtk::Entry;
   fileNameEntry_->show();
-  vbox->pack_start(*hbox, FALSE);
-  hbox->show();
+  table->attach(*fileNameEntry_, 1, 3, 0, 1);
 
   Gtk::HBox *contentsHBox = new Gtk::HBox;
 
