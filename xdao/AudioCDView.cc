@@ -145,34 +145,66 @@ AudioCDView::AudioCDView(AudioCDChild *child, AudioCDProject *project)
   selectionInfoBox->show();
 
   Gtk::HButtonBox *buttonBox = new Gtk::HButtonBox(GTK_BUTTONBOX_START, 5);
-  zoomButton_ = new Gtk::RadioButton(string("Zoom"));
-  selectButton_ = new Gtk::RadioButton(string("Select"));
-  selectButton_->set_group(zoomButton_->group());
 
   playButton_ = new Gtk::Button();
   playLabel_ = new Gtk::Label("Play");
   playButton_->add (* playLabel_);
   playLabel_->show();
   
-  buttonBox->pack_start(*zoomButton_);
-  zoomButton_->show();
-  buttonBox->pack_start(*selectButton_);
-  selectButton_->show();
-  zoomButton_->set_active(true);
-  setMode(ZOOM);
   buttonBox->pack_start(*playButton_);
   playButton_->show();
 
-  Gtk::Button *button = manage(new Gtk::Button("Zoom Out"));
-  buttonBox->pack_start(*button);
-  button->show();
-  button->clicked.connect(slot(this, &AudioCDView::zoomOut));
+  setMode(SELECT);
 
-  button = manage(new Gtk::Button("Full View"));
-  buttonBox->pack_start(*button);
-  button->show();
-  button->clicked.connect(slot(this, &AudioCDView::fullView));
-  
+  Gtk::Toolbar *zoomToolbar = child->getZoomToolbar();
+  Gnome::Pixmap *pixmap;
+  Gtk::RadioButton_Helpers::Group toolGroup;
+  Gtk::Widget* tool;
+
+  widgetList->push_back(zoomToolbar);
+
+  pixmap = manage(new Gnome::Pixmap(Gnome::Pixmap::find_file("gcdmaster/pixmap_cursor-tool.xpm")));
+  zoomToolbar->tools().push_back(Gtk::Toolbar_Helpers::RadioElem(toolGroup, "Select", *pixmap,
+  		bind(slot(this, &AudioCDView::setMode), SELECT), "Selection tool", ""));
+  tool = zoomToolbar->tools().back()->get_widget();
+  tool->hide();
+  widgetList->push_back(tool);
+
+  pixmap = manage(new Gnome::Pixmap(Gnome::Pixmap::find_file("gcdmaster/pixmap_zoom-tool.xpm")));
+  zoomToolbar->tools().push_back(Gtk::Toolbar_Helpers::RadioElem(toolGroup, "Zoom", *pixmap,
+  		bind(slot(this, &AudioCDView::setMode), ZOOM), "Zoom tool", ""));
+  tool = zoomToolbar->tools().back()->get_widget();
+  tool->hide();
+  widgetList->push_back(tool);
+
+  pixmap = manage(new Gnome::Pixmap(Gnome::Pixmap::find_file("gcdmaster/pixmap_zoom-in.xpm")));
+  zoomToolbar->tools().push_back(Gtk::Toolbar_Helpers::ButtonElem("Zoom +", *pixmap,
+  		slot(this, &AudioCDView::zoomx2), "Zoom In", ""));
+  tool = zoomToolbar->tools().back()->get_widget();
+  tool->hide();
+  widgetList->push_back(tool);
+
+  pixmap = manage(new Gnome::Pixmap(Gnome::Pixmap::find_file("gcdmaster/pixmap_zoom-out.xpm")));
+  zoomToolbar->tools().push_back(Gtk::Toolbar_Helpers::ButtonElem("Zoom -", *pixmap,
+  		slot(this, &AudioCDView::zoomOut), "Zoom Out", ""));
+  tool = zoomToolbar->tools().back()->get_widget();
+  tool->hide();
+  widgetList->push_back(tool);
+
+  pixmap = manage(new Gnome::Pixmap(Gnome::Pixmap::find_file("gcdmaster/pixmap_zoom-selection.xpm")));
+  zoomToolbar->tools().push_back(Gtk::Toolbar_Helpers::ButtonElem("Fit Sel", *pixmap,
+  		slot(this, &AudioCDView::zoomIn), "Zoom to fit the selection", ""));
+  tool = zoomToolbar->tools().back()->get_widget();
+  tool->hide();
+  widgetList->push_back(tool);
+
+  pixmap = manage(new Gnome::Pixmap(Gnome::Pixmap::find_file("gcdmaster/pixmap_zoom-fit.xpm")));
+  zoomToolbar->tools().push_back(Gtk::Toolbar_Helpers::ButtonElem("Fit", *pixmap,
+  		slot(this, &AudioCDView::fullView), "Full View", ""));
+  tool = zoomToolbar->tools().back()->get_widget();
+  tool->hide();
+  widgetList->push_back(tool);
+
 //  vbox->pack_start(*buttonBox, FALSE, FALSE);
   buttonBox->set_border_width(2);
   sprintf(buf, "zoomBox-%i", viewNumber);
@@ -196,8 +228,6 @@ AudioCDView::AudioCDView(AudioCDChild *child, AudioCDProject *project)
   sampleDisplay_->viewModified.connect(slot(this,
 		        &AudioCDView::viewModifiedCallback));
 
-  zoomButton_->toggled.connect(bind(slot(this, &AudioCDView::setMode), ZOOM));
-  selectButton_->toggled.connect(bind(slot(this, &AudioCDView::setMode), SELECT));
   playButton_->clicked.connect(slot(this, &AudioCDView::play));
 
   tocEditView_->sampleViewFull();
@@ -353,7 +383,23 @@ void AudioCDView::zoomIn()
     guiUpdate();
   }
 }
- 
+
+void AudioCDView::zoomx2()
+{
+  unsigned long start, end, len, center;
+
+  tocEditView_->sampleView(&start, &end);
+
+  len = end - start + 1;
+  center = start + len / 2;
+
+  start = center - len / 4;
+  end = center + len / 4;
+
+  tocEditView_->sampleView(start, end);
+  guiUpdate();
+}
+
 void AudioCDView::zoomOut()
 {
   unsigned long start, end, len, center;
