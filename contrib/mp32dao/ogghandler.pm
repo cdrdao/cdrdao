@@ -119,10 +119,13 @@ sub to_wav	{
 		return 0;
 	}
 	if ($self->decoder_type =~ /ogg123/i)	{
-		$cmdline = $self->decoder." -q -d wav -o file:".quotemeta ($self->Outfile)." ".quotemeta ($self->Filename);
+		$cmdline = $self->decoder." -q -d wav -f ".quotemeta ($self->Outfile)." ".quotemeta ($self->Filename);
 	}
-	system ("".$cmdline);
-	return $? >> 8;
+        #print $cmdline;
+	#my ($ret)=(system ("".$cmdline))/256;
+        #print "$ret";
+	#return $? >> 8;
+        return (system ("".$cmdline))/256;
 }
 
 1;

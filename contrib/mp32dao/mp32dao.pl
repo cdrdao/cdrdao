@@ -16,6 +16,7 @@
 
 #Modified version of the original mp32dao distributed with cdrdao. 
 #Now with cdtext, mp3 and ogg support
+#Support for cdrecord: builds .inf files
 #Giuseppe Corbelli <cowo@lugbs.linux.it>
 #Original code by Joe Steward <mp32dao@httptech.com>
 use FindBin;
@@ -78,6 +79,7 @@ while ($count <= ($list->total-1))	{
     my $time = Audio::Tools::Time->new (44100, 16, 2);
     my $sample = $time->bytes_to_samples($audio_bytes);	
 	tocfile_entry ($fh, $cdtext, $file, $samplestart, $count+1);
+    if ($cdtext) {build_inf ($file, $count)};
     $totalsamples = $sample - $samplestart;
     $divided = $totalsamples / 588; 
     $rounded = int($divided) * 588;
@@ -91,10 +93,35 @@ while ($count <= ($list->total-1))	{
 	}	
 	$count++;
 }
-print "\nFinished writing TOC file. You may now burn the CD using\n\n\tcdrdao write $tocfile\n\n";
+print "\nFinished writing TOC/inf files. You may now burn the CD using\n\
+    \tcdrdao write $tocfile\
+    \tcdrecord dev=X,Y,Z -useinfo -dao -text -audio *.wav\n\n";
 print "You may want to normalize wav files right now.\n";
 close ($fh);
 exit;
+
+#Arguments
+#       $file: Mediahandler instance
+#       $trackno: Track number
+sub build_inf   {
+    my ($file, $trackno) = @_;
+    my ($inffilename) = $file->Filename;
+    $inffilename =~ s/mp3/inf/i;
+    my ($inffilehandle);
+    open ($inffilehandle, ">$inffilename");
+    if (!$inffilehandle)        {last};
+    my (@tl) = localtime (time ());
+    $_ = sprintf ("#Created by mp32dao.pl on %02d/%02d/%d %02d:%02d:%02d\n", 
+        $tl[3], $tl[4]+1, $tl[5]+1900, $tl[2], $tl[1], $tl[0]);
+    print $inffilehandle $_;
+    print $inffilehandle "#Source file is ".$file->Filename."\n";
+    print $inffilehandle "#Report bugs to Giuseppe \"Cowo\" Corbelli <cowo\@lugbs.linux.it>\n\n";
+    print $inffilehandle "Performer=\t'".$file->Artist."'\n";
+    print $inffilehandle "Tracktitle=\t'".$file->Title."'\n";
+    print $inffilehandle "Albumtitle=\t'".$file->Album."'\n";
+    print $inffilehandle "Tracknumber=\t".($trackno+1)."\n";
+    close ($inffilehandle);
+}
 
 sub seconds_to_cd_time {
     my $seconds = shift;

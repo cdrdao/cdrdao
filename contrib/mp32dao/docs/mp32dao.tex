@@ -1,0 +1,421 @@
+\FOT{3}\Node%
+{}\Node%
+{\def\Element%
+{0}}\Node%
+{\def\Element%
+{1}}    \Node%
+{\def\Element%
+{2}}mp32dao documentation\endNode{}
+    \Node%
+{\def\Element%
+{3}}       \Node%
+{\def\Element%
+{4}}	 	\Node%
+{\def\Element%
+{5}}Corbelli\endNode{}
+	 	\Node%
+{\def\Element%
+{6}}Giuseppe\endNode{}
+       \endNode{}
+       \Node%
+{\def\Element%
+{7}}	 	\Node%
+{\def\Element%
+{8}}Steward\endNode{}
+	 	\Node%
+{\def\Element%
+{9}}Joe\endNode{}
+       \endNode{}
+	\endNode{}
+	\Node%
+{\def\Element%
+{10}}\Node%
+{\def\Element%
+{11}}Everything is under GPL.
+	\endNode{}\endNode{}\endNode{}		
+\Node%
+{\def\Element%
+{12}}\endNode{}
+\Node%
+{\def\Element%
+{13}}\Node%
+{\def\Element%
+{14}}What is it?\endNode{}
+\Node%
+{\def\Element%
+{15}}\Node%
+{\def\Element%
+{16}}mp32dao\endNode{} is a simple \Node%
+{\def\Element%
+{17}}perl\endNode{} script designed to help you in
+the task of creating audio CDs from MP3/Ogg files. It will decode compressed audio files to wav and create
+a \Node%
+{\def\Element%
+{18}}TOC\endNode{} file suitable for burning with \Node%
+{\def\Element%
+{19}}cdrdao\endNode{}.\endNode{}\endNode{}
+
+\Node%
+{\def\Element%
+{20}}\Node%
+{\def\Element%
+{21}}Authors\endNode{}
+\Node%
+{\def\Element%
+{22}}\Node%
+{\def\Element%
+{23}}The beginning and nowadays\endNode{}
+\Node%
+{\def\Element%
+{24}}	The creator of mp32dao is \Node%
+{\def\Element%
+{25}}Joe Steward\endNode{}. He had the idea of track padding.
+	It seems he's not maintaining mp32dao anymore, or at least I'm unable to contact him.\endNode{}
+\Node%
+{\def\Element%
+{26}}	My name is \Node%
+{\def\Element%
+{27}}Giuseppe Corbelli\endNode{} but I bet you saw it on the very first page
+	of this document ;-\/). I made some hacking on the original program adding CD-\/Text and Ogg
+	decoding, and reworking all the script. The original track padding code is still here.
+	You should not think of finding a good programming example, though :-\/).
+	You can contact me at \Node%
+{\def\Element%
+{28}}cowo@lugbs.linux.it\endNode{}.\endNode{}\endNode{}\endNode{}
+
+\Node%
+{\def\Element%
+{29}}\Node%
+{\def\Element%
+{30}}Features\endNode{}
+\Node%
+{\def\Element%
+{31}}\Node%
+{\def\Element%
+{32}}Why you'll love mp32dao\endNode{}
+\Node%
+{\def\Element%
+{33}}	Suppose you have downloaded a bunch of mp3/ogg files. Suppose you want to burn them on a
+	CD, without those annoying clicks between the tracks and with CD-\/Text support. This is
+	why you're going to use mp32dao.\endNode{}
+\Node%
+{\def\Element%
+{34}}	Samples from the ending of a track are padded together with the beginning of the next to
+	avoid leaving a CD sector half-\/filled with zeroes. You can avoid clicks between tracks this
+	way.\endNode{}
+\Node%
+{\def\Element%
+{35}}	By using tags in the compressed source files (e.g. ALBUM, AUTHOR, TITLE) mp32dao will generate a toc-\/file with CD-\/Text info
+	ready to use with cdrdao. If all the source files do not have the same AUTHOR and ALBUM tags the resulting toc
+	will show "Compilation" as title, and "Various Artists" as author.
+	Cdtext support requires the ALBUM, TITLE and ARTIST tags in all the source files.\endNode{}\endNode{}\endNode{}
+
+\Node%
+{\def\Element%
+{36}}\Node%
+{\def\Element%
+{37}}Installation\endNode{}
+\Node%
+{\def\Element%
+{38}}\Node%
+{\def\Element%
+{39}}Requirements\endNode{}
+\Node%
+{\def\Element%
+{40}}In order to be able to use \Node%
+{\def\Element%
+{41}}mp32dao\endNode{} you must have,
+installed and working, the following software on your system:
+\Node%
+{\def\Element%
+{42}}\Node%
+{\def\Element%
+{43}}\Node%
+{\def\Element%
+{44}}Perl interpreter\endNode{}
+	\Node%
+{\def\Element%
+{45}}\Node%
+{\def\Element%
+{46}}	I currently use:
+	\Node%
+{\def\Element%
+{47}}Summary of my perl5 (revision 5.0 version 6 subversion 0) configuration:
+  Platform:
+    osname=linux, osvers=2.4.9-\/xfs, archname=i686-\/linux
+    uname='linux braveheart.cowo.net 2.4.9-\/xfs \#5 
+    	\char92{}mar ago 21 23:12:16 edt 2001 i686 unknown '
+    config\char95{}args=''
+    hint=recommended, useposix=true, d\char95{}sigaction=define
+    usethreads=undef use5005threads=undef 
+    	\char92{}useithreads=undef usemultiplicity=undef
+    useperlio=undef d\char95{}sfio=undef uselargefiles=define 
+    use64bitint=undef use64bitall=undef 
+    	\char92{}uselongdouble=undef usesocks=undef\endNode{} 
+		and it works for me. Please note I compiled Perl myself, disabling thread support.
+	\endNode{}\endNode{}\endNode{}
+\Node%
+{\def\Element%
+{48}}\Node%
+{\def\Element%
+{49}}MP3::Info Perl Module\endNode{}
+\Node%
+{\def\Element%
+{50}}\Node%
+{\def\Element%
+{51}}	It is used to access MP3 informations such as playing length, ID3 tags and more.\endNode{}\endNode{}\endNode{}
+\Node%
+{\def\Element%
+{52}}\Node%
+{\def\Element%
+{53}}Ogg::Vorbis Perl Module\endNode{}
+\Node%
+{\def\Element%
+{54}}\Node%
+{\def\Element%
+{55}}	It is used to access Ogg informations such as playing length, comments and more.\endNode{}\endNode{}\endNode{}
+\Node%
+{\def\Element%
+{56}}\Node%
+{\def\Element%
+{57}}Audio::Wav Perl Module\endNode{}
+\Node%
+{\def\Element%
+{58}}\Node%
+{\def\Element%
+{59}}	It is used to access Wav file information such as length.\endNode{}\endNode{}\endNode{}
+\Node%
+{\def\Element%
+{60}}\Node%
+{\def\Element%
+{61}}Audio::Tools::Time Perl Module\endNode{}
+\Node%
+{\def\Element%
+{62}}\Node%
+{\def\Element%
+{63}}	Almost the same as above.\endNode{}\endNode{}\endNode{}
+\Node%
+{\def\Element%
+{64}}\Node%
+{\def\Element%
+{65}}FindBin Perl Module\endNode{}
+\Node%
+{\def\Element%
+{66}}\Node%
+{\def\Element%
+{67}}	It is used to fetch mp32dao.pl location, searching for modules here. You should already have it.\endNode{}\endNode{}\endNode{}
+\Node%
+{\def\Element%
+{68}}\Node%
+{\def\Element%
+{69}}Cwd Perl Module\endNode{}
+\Node%
+{\def\Element%
+{70}}\Node%
+{\def\Element%
+{71}}	It is used to fetch current working directory. You should already have it.\endNode{}\endNode{}\endNode{}
+\Node%
+{\def\Element%
+{72}}\Node%
+{\def\Element%
+{73}}mp3handler.pm, ogghandler.pm, MediaHandler.pm Perl Modules\endNode{}
+\Node%
+{\def\Element%
+{74}}\Node%
+{\def\Element%
+{75}}	They are part of \Node%
+{\def\Element%
+{76}}mp32dao\endNode{} distribution. Leave them in the same directory where mp32dao.pl is or install them
+	in the perl search path.\endNode{}\endNode{}\endNode{}\endNode{}\endNode{}\endNode{}
+\Node%
+{\def\Element%
+{77}}\Node%
+{\def\Element%
+{78}}Installation\endNode{}
+\Node%
+{\def\Element%
+{79}}You can put the main program file, \Node%
+{\def\Element%
+{80}}mp32dao.pl\endNode{} anywhere you like. But it expets to find its components
+in the \Node%
+{\def\Element%
+{81}}perl\endNode{} search path or in its same directory. The needed components are:
+\Node%
+{\def\Element%
+{82}}\Node%
+{\def\Element%
+{83}}\Node%
+{\def\Element%
+{84}}ogghandler.pm\endNode{}\endNode{}
+\Node%
+{\def\Element%
+{85}}\Node%
+{\def\Element%
+{86}}mp3handler.pm\endNode{}\endNode{}
+\Node%
+{\def\Element%
+{87}}\Node%
+{\def\Element%
+{88}}MediaHandler.pm\endNode{}\endNode{}
+\Node%
+{\def\Element%
+{89}}\Node%
+{\def\Element%
+{90}}BaseInfo.pm\endNode{}\endNode{}\endNode{}\endNode{}\endNode{}\endNode{}
+\Node%
+{\def\Element%
+{91}}\Node%
+{\def\Element%
+{92}}Usage\endNode{}
+\Node%
+{\def\Element%
+{93}}\Node%
+{\def\Element%
+{94}}Command line options\endNode{}
+\Node%
+{\def\Element%
+{95}}The usage is fairly straightforward:
+	\Node%
+{\def\Element%
+{96}}		\Node%
+{\def\Element%
+{97}}\Node%
+{\def\Element%
+{98}}put all and only the mp3 and/or ogg files you want on the CD in a single directory.
+		\endNode{}\endNode{}
+		\Node%
+{\def\Element%
+{99}}\Node%
+{\def\Element%
+{100}}change to this directory
+		\endNode{}\endNode{}
+		\Node%
+{\def\Element%
+{101}}\Node%
+{\def\Element%
+{102}}launch mp32dao.pl [tocfile]. If you specify a tocfile it will be used to write the
+			file .toc used by cdrdao. If you don't \Node%
+{\def\Element%
+{103}}cd.toc\endNode{} will be used. Other arguments are ignored.
+		\endNode{}\endNode{}
+	\endNode{}
+	The script should work with all filenames but you'll live happier if you don't name your files like this:
+	\Node%
+{\def\Element%
+{104}}Iced \% Earth -\/ Burning \char94{} Times -\/ [01].mp3\endNode{}
+	Avoid stupid naming schemes.
+	Please note the program will compose the CD using the files in the same order as their name suggests.
+	I \Node%
+{\def\Element%
+{105}}strongly\endNode{} advise you to put the tracknumber at the beginning of the filename.
+	Example:
+	\Node%
+{\def\Element%
+{106}}01-\/The\char95{}Quickening.mp3
+02-\/Heart\char95{}Of\char95{}Storm.mp3
+03-\/Sworn\char95{}In\char95{}The\char95{}Metal\char95{}Wind.mp3
+04-\/The\char95{}Song\char95{}Of\char95{}Air.mp3
+05-\/World\char95{}Through\char95{}My\char95{}Fateless\char95{}Eyes.mp3
+	\endNode{}\endNode{}\endNode{}\endNode{}
+\Node%
+{\def\Element%
+{107}}\Node%
+{\def\Element%
+{108}}Internals\endNode{}
+\Node%
+{\def\Element%
+{109}}\Node%
+{\def\Element%
+{110}}Program structure\endNode{}
+\Node%
+{\def\Element%
+{111}}The Mediahandler constructor takes as input a directory name, scans for all supported
+media files, and returns a list containing handlers for all common operations, such as wav decoding,
+information access etc. This info is collected by the two lower level modules mp3handler and ogghandler
+using MP3::Info and Ogg::Vorbis. The main program builds the TOC. In the distribution you will find
+a simple \Node%
+{\def\Element%
+{112}}UML\endNode{} diagram which should make it somewhat clearer.\endNode{}\endNode{}\endNode{}
+\Node%
+{\def\Element%
+{113}}\Node%
+{\def\Element%
+{114}}The future\endNode{}
+\Node%
+{\def\Element%
+{115}}\Node%
+{\def\Element%
+{116}}Next release plans\endNode{}
+\Node%
+{\def\Element%
+{117}}	\Node%
+{\def\Element%
+{118}}		\Node%
+{\def\Element%
+{119}}\Node%
+{\def\Element%
+{120}}On-\/the-\/fly decoding\endNode{}
+		\Node%
+{\def\Element%
+{121}}\Node%
+{\def\Element%
+{122}}			No more huge wav files. It should be possible to do the decoding
+			on the fly using a FIFO.
+		\endNode{}\endNode{}
+		\endNode{}
+		\Node%
+{\def\Element%
+{123}}\Node%
+{\def\Element%
+{124}}GUI\endNode{}
+		\Node%
+{\def\Element%
+{125}}\Node%
+{\def\Element%
+{126}}			Some GUIs using Perl/Tk and/or Perl/GTK.
+		\endNode{}\endNode{}
+		\endNode{}
+		\Node%
+{\def\Element%
+{127}}\Node%
+{\def\Element%
+{128}}Binary\endNode{}
+		\Node%
+{\def\Element%
+{129}}\Node%
+{\def\Element%
+{130}}			Compile the script to have it available in binary form.
+		\endNode{}\endNode{}
+		\endNode{}
+	\endNode{}\endNode{}\endNode{}\endNode{}
+\Node%
+{\def\Element%
+{131}}\Node%
+{\def\Element%
+{132}}Troubleshooting\endNode{}
+\Node%
+{\def\Element%
+{133}}\Node%
+{\def\Element%
+{134}}segfaults and nasty bugs here\endNode{}
+	\Node%
+{\def\Element%
+{135}}There's no point in writing such a section since I develop high quality software :-\/)).
+	\endNode{}\endNode{}\endNode{}
+\Node%
+{\def\Element%
+{136}}\Node%
+{\def\Element%
+{137}}Developing\endNode{}
+\Node%
+{\def\Element%
+{138}}\Node%
+{\def\Element%
+{139}}Wanna help me?\endNode{}
+	\Node%
+{\def\Element%
+{140}}I'm working on mp32dao alone. I always need help and knowledge. Please drop me a mail at
+		\Node%
+{\def\Element%
+{141}}cowo@lugbs.linux.it\endNode{}
+	\endNode{}\endNode{}\endNode{}\endNode{}\endNode{}\endFOT{}
