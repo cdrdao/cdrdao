@@ -44,7 +44,7 @@ RANLIB = @RANLIB@
 LIB = libtrackdb.a
 
 SRC = util.cc TrackData.cc TrackDataList.cc Msf.cc SubTrack.cc Track.cc \
-      Toc.cc CdTextItem.cc CdTextContainer.cc
+      Toc.cc CdTextItem.cc CdTextContainer.cc Cddb.cc
 
 PARSER_OBJ = TocParser.o TocParserGram.o TocLexerBase.o \
              CueParser.o CueParserGram.o CueLexerBase.o \

@@ -18,8 +18,11 @@
  */
 /*
  * $Log: util.cc,v $
- * Revision 1.1  2000/02/05 01:34:32  llanero
- * Initial revision
+ * Revision 1.2  2000/06/19 20:14:00  andreasm
+ * Implemented CDDB access via cddbp and http.
+ *
+ * Revision 1.1.1.1  2000/02/05 01:34:32  llanero
+ * Uploaded cdrdao 1.1.3 with pre10 patch applied.
  *
  * Revision 1.7  1999/03/27 19:51:04  mueller
  * Added 'strdup3CC()'.
@@ -40,7 +43,7 @@
  *
  */
 
-static char rcsid[] = "$Id: util.cc,v 1.1 2000/02/05 01:34:32 llanero Exp $";
+static char rcsid[] = "$Id: util.cc,v 1.2 2000/06/19 20:14:00 andreasm Exp $";
 
 #include <config.h>
 
@@ -52,6 +55,7 @@ static char rcsid[] = "$Id: util.cc,v 1.1 2000/02/05 01:34:32 llanero Exp $";
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <stdarg.h>
 
 #include "util.h"
 #include "Sample.h"
@@ -103,6 +107,40 @@ char *strdup3CC(const char *s1, const char *s2, const char *s3)
 
   if (s3 != NULL)
     strcat(ret, s3);
+
+  return ret;
+}
+
+char *strdupvCC(const char *s1, ...)
+{
+  const char *p;
+  char *ret;
+  long len;
+  va_list ap;
+
+  if (s1 == NULL)
+    return NULL;
+
+  len = strlen(s1);
+
+  va_start(ap, s1);
+
+  while ((p = va_arg(ap, const char *)) != NULL)
+    len += strlen(p);
+
+  va_end(ap);
+
+  ret = new char[len + 1];
+
+  strcpy(ret, s1);
+
+
+  va_start(ap, s1);
+
+  while ((p = va_arg(ap, const char *)) != NULL)
+    strcat(ret, p);
+
+  va_end(ap);
 
   return ret;
 }
