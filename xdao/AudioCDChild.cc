@@ -66,6 +66,20 @@ AudioCDChild::AudioCDChild(AudioCDProject *project)
 
     project->insert_menus("Edit", menus);
   }
+
+  zoomToolbar = new Gtk::Toolbar;
+  zoomToolbar->set_border_width(2);
+  zoomToolbar->set_button_relief(GTK_RELIEF_NONE);
+  zoomToolbar->show();
+  project->add_docked(*zoomToolbar, "zoomToolbar", GNOME_DOCK_ITEM_BEH_NORMAL,
+  		GNOME_DOCK_TOP, 1, 2, 0);
+  project->get_dock_item_by_name("zoomToolbar")->show();
+
+}
+
+Gtk::Toolbar *AudioCDChild::getZoomToolbar()
+{
+	return zoomToolbar;
 }
 
 void AudioCDChild::play(unsigned long start, unsigned long end)
