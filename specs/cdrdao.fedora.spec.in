@@ -25,6 +25,7 @@ format.
 %package gcdmaster
 Summary:        The Gnome2/GTK2 GUI front-end to cdrdao
 Group:          Applications/Multimedia
+Requires:       %{name} = %{version}
 Requires:	gtkmm2 >= 2.2.0
 Requires:	libgnomeuimm2 >= 2.0
 Requires:	GConf2 >= 2.0.0
