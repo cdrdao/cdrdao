@@ -18,8 +18,8 @@ gcc-2.95 version. You can
        http://www.mcs.net/~tmoog/pccts.html
  - or fix the obvious errors in the PCCTS sources
 
-The GnomeCDMaster GUI needs the Gimp toolkit gtk+-1.2.6, recent Gnome libs
-(e.g. gnome-libs-1.0.55) and the C++ bindings gtkmm-1.2.0 and gnomemm-1.1.9.
+The GnomeCDMaster GUI needs the Gimp toolkit gtk+-1.2.8, recent Gnome libs
+(e.g. gnome-libs-1.0.55) and the C++ bindings gtkmm-1.2.1 and gnomemm-1.1.10.
 The packages are available from www.gtk.org and www.gnome.org.
 
 1. Type './configure'.
