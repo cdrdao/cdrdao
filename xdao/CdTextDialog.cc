@@ -220,6 +220,13 @@ void CdTextDialog::update(unsigned long level, TocEdit *view)
     level = UPD_ALL;
   }
 
+  string s(view->filename());
+  s += " - ";
+  s += APP_NAME;
+  if (view->tocDirty())
+    s += "(*)";
+  set_title(s);
+
   if (level & UPD_TOC_DATA) {
     updateTabLabels();
   }

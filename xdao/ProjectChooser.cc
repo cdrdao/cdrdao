@@ -19,6 +19,7 @@
 
 #include "xcdrdao.h"
 #include "gcdmaster.h"
+#include "guiUpdate.h"
 #include "ProjectChooser.h"
 
 #define ICON_PADDING 10

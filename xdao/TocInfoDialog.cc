@@ -607,6 +607,13 @@ void TocInfoDialog::update(unsigned long level, TocEdit *view)
     return;
   }
 
+  string s(view->filename());
+  s += " - ";
+  s += APP_NAME;
+  if (view->tocDirty())
+    s += "(*)";
+  set_title(s);
+
   if (level & UPD_TOC_DATA) {
     toc = tocEdit_->toc();
     importData(toc);

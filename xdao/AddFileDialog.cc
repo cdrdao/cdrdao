@@ -105,6 +105,13 @@ void AddFileDialog::update(unsigned long level, TocEditView *tocEditView)
     return;
   }
 
+  string s(tocEditView->tocEdit()->filename());
+  s += " - ";
+  s += APP_NAME;
+  if (tocEditView->tocEdit()->tocDirty())
+    s += "(*)";
+  set_title(s);
+
   if ((level & UPD_EDITABLE_STATE) || tocEditView_ == NULL) {
     get_ok_button()->set_sensitive(tocEditView->tocEdit()->editable() ? TRUE : FALSE);
   }

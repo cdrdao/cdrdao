@@ -166,6 +166,13 @@ void AddSilenceDialog::update(unsigned long level, TocEditView *view)
     return;
   }
 
+  string s(view->tocEdit()->filename());
+  s += " - ";
+  s += APP_NAME;
+  if (view->tocEdit()->tocDirty())
+    s += "(*)";
+  set_title(s);
+
   if ((level & UPD_EDITABLE_STATE) || tocEditView_ == NULL) {
     applyButton_->set_sensitive(view->tocEdit()->editable() ? TRUE : FALSE);
   }

@@ -18,8 +18,11 @@
  */
 /*
  * $Log: guiUpdate.h,v $
- * Revision 1.1  2000/02/05 01:38:55  llanero
- * Initial revision
+ * Revision 1.2  2001/04/23 00:15:11  llanero
+ * Dialogs will update title with project name + app name.
+ *
+ * Revision 1.1.1.1  2000/02/05 01:38:55  llanero
+ * Uploaded cdrdao 1.1.3 with pre10 patch applied.
  *
  * Revision 1.1  1999/08/19 20:28:40  mueller
  * Initial revision
@@ -28,6 +31,8 @@
 
 #ifndef __GUIUPDATE_H__
 #define __GUIUPDATE_H__
+
+#define APP_NAME "Gnome CD Master"
 
 #define UPD_ALL              0xffffffff
 #define UPD_TOC_DATA         0x00000001

@@ -466,13 +466,19 @@ void TrackInfoDialog::update(unsigned long level, TocEditView *view)
 
   tocEditView_ = view;
 
-
   if (view == NULL || !view->trackSelection(&selectedTrack_)) {
     selectedTrack_ = 0;
     applyButton_->set_sensitive(FALSE);
     clear();
     return;
   }
+
+  string s(view->tocEdit()->filename());
+  s += " - ";
+  s += APP_NAME;
+  if (view->tocEdit()->tocDirty())
+    s += "(*)";
+  set_title(s);
 
   if (level & (UPD_TRACK_DATA | UPD_TRACK_MARK_SEL)) {
     toc = view->tocEdit()->toc();

@@ -22,6 +22,7 @@
 
 #include "util.h"
 #include "xcdrdao.h"
+#include "guiUpdate.h"
 #include "gcdmaster.h"
 #include "MessageBox.h"
 #include "RecordGenericDialog.h"

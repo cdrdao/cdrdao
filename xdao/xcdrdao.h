@@ -18,6 +18,9 @@
  */
 /*
  * $Log: xcdrdao.h,v $
+ * Revision 1.11  2001/04/23 00:15:11  llanero
+ * Dialogs will update title with project name + app name.
+ *
  * Revision 1.10  2001/04/21 12:53:30  llanero
  * lots of bug fixes and clean up. Works now.
  *
@@ -77,8 +80,6 @@
 
 #ifndef __XCDRDAO_H__
 #define __XCDRDAO_H__
-
-#define APP_NAME "Gnome CD Master"
 
 extern class GCDMaster *gcdmaster;
 extern class DeviceConfDialog *DEVICE_CONF_DIALOG;
