@@ -46,12 +46,13 @@ make %{?_smp_mflags}
 
 %files
 %defattr(-, root, root)
-%doc AUTHORS COPYING CREDITS ChangeLog INSTALL README NEWS README.FreeBSD README.PlexDAE README.Win32
+%doc AUTHORS COPYING CREDITS ChangeLog INSTALL README NEWS README.PlexDAE README.Win32
 %{_bindir}/cdrdao
 %{_bindir}/gcdmaster
 %{_datadir}/applications/gcdmaster.desktop
 %{_datadir}/pixmaps/gcdmaster.png
 %{_datadir}/cdrdao/*
+%{_bindir}/toc2cddb
 %{_bindir}/toc2cue
 %{_bindir}/cue2toc
 %{_bindir}/toc2mp3
