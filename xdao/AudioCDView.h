@@ -64,8 +64,8 @@ private:
 
   Gtk::RadioButton *zoomButton_;
   Gtk::RadioButton *selectButton_;
-  Gtk::Button *playButton_;
-  Gtk::Label *playLabel_;
+  Gtk::RadioButton *playStartButton_;
+  Gtk::RadioButton *playStopButton_;
     
   Gtk::Entry *markerPos_;
   Gtk::Entry *cursorPos_;
@@ -87,7 +87,8 @@ private:
   void zoomx2();
   void zoomOut();
   void fullView();
-  void play();
+  void playStart();
+  void playStop();
 
   void trackInfo();
   void cutTrackData();

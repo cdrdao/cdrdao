@@ -144,22 +144,31 @@ AudioCDView::AudioCDView(AudioCDChild *child, AudioCDProject *project)
   widgetList->push_back(project->get_dock_item_by_name(buf));
   selectionInfoBox->show();
 
-  Gtk::HButtonBox *buttonBox = new Gtk::HButtonBox(GTK_BUTTONBOX_START, 5);
+  Gtk::Toolbar *playToolbar = project->getPlayToolbar();
+  Gnome::Pixmap *pixmap;
+  Gtk::RadioButton_Helpers::Group playGroup;
+  Gtk::Widget* tool;
 
-  playButton_ = new Gtk::Button();
-  playLabel_ = new Gtk::Label("Play");
-  playButton_->add (* playLabel_);
-  playLabel_->show();
-  
-  buttonBox->pack_start(*playButton_);
-  playButton_->show();
+  pixmap = manage(new Gnome::Pixmap(Gnome::Pixmap::find_file("gcdmaster/pixmap_play-start.xpm")));
+  playToolbar->tools().push_back(Gtk::Toolbar_Helpers::RadioElem(playGroup, "Play", *pixmap,
+  		slot(this, &AudioCDView::playStart), "Play", ""));
+  playStartButton_ = static_cast <Gtk::RadioButton *>(playToolbar->tools().back()->get_widget());
+  playStartButton_->hide();
+  // Note: setting stop this way prevents the toggle signal to the emited.
+  playStartButton_->set_active(false);
+  widgetList->push_back(playStartButton_);
+
+  pixmap = manage(new Gnome::Pixmap(Gnome::Pixmap::find_file("gcdmaster/pixmap_play-stop.xpm")));
+  playToolbar->tools().push_back(Gtk::Toolbar_Helpers::RadioElem(playGroup, "Stop", *pixmap,
+  		slot(this, &AudioCDView::playStop), "Stop", ""));
+  playStopButton_ = static_cast <Gtk::RadioButton *>(playToolbar->tools().back()->get_widget());
+  playStopButton_->hide();
+  widgetList->push_back(playStopButton_);
 
   setMode(SELECT);
 
   Gtk::Toolbar *zoomToolbar = child->getZoomToolbar();
-  Gnome::Pixmap *pixmap;
   Gtk::RadioButton_Helpers::Group toolGroup;
-  Gtk::Widget* tool;
 
   widgetList->push_back(zoomToolbar);
 
@@ -205,16 +214,6 @@ AudioCDView::AudioCDView(AudioCDChild *child, AudioCDProject *project)
   tool->hide();
   widgetList->push_back(tool);
 
-//  vbox->pack_start(*buttonBox, FALSE, FALSE);
-  buttonBox->set_border_width(2);
-  sprintf(buf, "zoomBox-%i", viewNumber);
-
-  project->add_docked(*buttonBox, buf, GNOME_DOCK_ITEM_BEH_NEVER_VERTICAL,
-  		GNOME_DOCK_TOP, 2, 3, 0);
-  widgetList->push_back(project->get_dock_item_by_name(buf));
- 
-  buttonBox->show();
-
   sampleDisplay_->markerSet.connect(slot(this,
   			&AudioCDView::markerSetCallback));
   sampleDisplay_->selectionSet.connect(slot(this,
@@ -227,8 +226,6 @@ AudioCDView::AudioCDView(AudioCDChild *child, AudioCDProject *project)
   			&AudioCDView::trackMarkMovedCallback));
   sampleDisplay_->viewModified.connect(slot(this,
 		        &AudioCDView::viewModifiedCallback));
-
-  playButton_->clicked.connect(slot(this, &AudioCDView::play));
 
   tocEditView_->sampleViewFull();
   
@@ -363,6 +360,23 @@ void AudioCDView::update(unsigned long level)
     }
   }
 
+  if (level & UPD_PLAY_STATUS) {
+    switch (project_->getPlayStatus()) {
+      case AudioCDProject::PLAYING:
+        playStartButton_->set_active(true);
+        sampleDisplay_->setCursor(1, project_->playPosition() - project_->getDelay());
+// FIXME: What about using a separate cursor for playing?
+        cursorPos_->set_text(string(cdchild->sample2string(project_->playPosition() - project_->getDelay())));
+        break;
+      case AudioCDProject::STOPPED:
+        playStopButton_->set_active(true);
+        sampleDisplay_->setCursor(0, 0);
+        break;
+      default:
+        cerr << "invalid play status" << endl;
+    }
+  }
+
   if (trackInfoDialog_ != 0)
     trackInfoDialog_->update(level, tocEditView_);
 
@@ -429,14 +443,33 @@ void AudioCDView::fullView()
   guiUpdate();
 }
 
-void AudioCDView::play()
+void AudioCDView::playStart()
 {
   unsigned long start, end;
+
+  if (!playStartButton_->get_active())
+    return;
+
+  if (project_->getPlayStatus() == AudioCDProject::PLAYING)
+    return;
 
   if (!tocEditView_->sampleSelection(&start, &end))
     tocEditView_->sampleView(&start, &end);
 
-  cdchild->play(start, end);
+  project_->playStart(start, end);
+}
+
+void AudioCDView::playStop()
+{
+  unsigned long start, end;
+
+  if (!playStopButton_->get_active())
+    return;
+
+  if (project_->getPlayStatus() == AudioCDProject::STOPPED)
+    return;
+
+  project_->playStop();
 }
 
 int AudioCDView::getMarker(unsigned long *sample)
