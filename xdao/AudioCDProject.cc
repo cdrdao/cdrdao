@@ -93,6 +93,7 @@ AudioCDProject::AudioCDProject(int number, const char *name, TocEdit *tocEdit)
   audioCDChild_ = new AudioCDChild(this);
 
   newAudioCDView();
+  guiUpdate(UPD_ALL);
 }
 
 Gtk::Toolbar *AudioCDProject::getPlayToolbar()
@@ -108,6 +109,7 @@ void AudioCDProject::newAudioCDView()
   hbox->pack_start(*audioCDView, TRUE, TRUE);
   audioCDView->tocEditView()->sampleViewFull();
   viewSwitcher_->addView(audioCDView->widgetList, pixmap, label);
+  guiUpdate(UPD_ALL);
 }
 
 bool AudioCDProject::closeProject()
@@ -115,6 +117,7 @@ bool AudioCDProject::closeProject()
   if (audioCDChild_->closeProject())
   {
     delete audioCDChild_;
+    audioCDChild_ = 0;
 //FIXME: We should close also the Project Info Dialog, ...
 //       Something like:
 //  if (tocInfoDialog_)
@@ -156,7 +159,8 @@ void AudioCDProject::update(unsigned long level)
   if (level & (UPD_TOC_DIRTY | UPD_TOC_DATA))
     updateWindowTitle();
 
-  audioCDChild_->update(level);
+  if (audioCDChild_ != 0)
+    audioCDChild_->update(level);
 
   if (tocInfoDialog_ != 0)
     tocInfoDialog_->update(level, tocEdit_);
@@ -172,6 +176,13 @@ void AudioCDProject::playStart(unsigned long start, unsigned long end)
   if (playStatus_ == PLAYING)
     return;
 
+  if (playStatus_ == PAUSED)
+  {
+    playStatus_ = PLAYING;
+    Gtk::Main::idle.connect(slot(this, &AudioCDProject::playCallback));
+    return;
+  }
+
   if (tocEdit_->lengthSample() == 0)
   {
     guiUpdate(UPD_PLAY_STATUS);
@@ -184,6 +195,7 @@ void AudioCDProject::playStart(unsigned long start, unsigned long end)
       delete soundInterface_;
       soundInterface_ = NULL;
       guiUpdate(UPD_PLAY_STATUS);
+	  statusMessage("WARNING: Cannot open \"/dev/dsp\"");
       return;
     }
   }
@@ -226,9 +238,26 @@ void AudioCDProject::playStart(unsigned long start, unsigned long end)
   Gtk::Main::idle.connect(slot(this, &AudioCDProject::playCallback));
 }
 
+void AudioCDProject::playPause()
+{
+  playStatus_ = PAUSED;
+}
+
 void AudioCDProject::playStop()
 {
-  playAbort_ = 1;
+  if (getPlayStatus() == PAUSED)
+  {
+    soundInterface_->end();
+    tocReader.init(NULL);
+    playStatus_ = STOPPED;
+    tocEdit_->unblockEdit();
+    playStatus_ = STOPPED;
+    guiUpdate(UPD_PLAY_STATUS);
+  }
+  else
+  {
+    playAbort_ = 1;
+  }
 }
 
 int AudioCDProject::playCallback()
@@ -237,14 +266,19 @@ int AudioCDProject::playCallback()
 
   long len = playLength_ > playBurst_ ? playBurst_ : playLength_;
 
+  if (playStatus_ == PAUSED)
+  {
+    level |= UPD_PLAY_STATUS;
+    guiUpdate(level);
+    return 0; // remove idle handler
+  }
+
   if (tocReader.readSamples(playBuffer_, len) != len ||
       soundInterface_->play(playBuffer_, len) != 0) {
     soundInterface_->end();
     tocReader.init(NULL);
-    playing_ = 0;
-
+    playStatus_ = STOPPED;
     level |= UPD_PLAY_STATUS;
-
     tocEdit_->unblockEdit();
     guiUpdate(level);
     return 0; // remove idle handler

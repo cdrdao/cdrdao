@@ -71,6 +71,7 @@ public:
   Gtk::Toolbar *getPlayToolbar();
 
   void playStart(unsigned long start, unsigned long end);
+  void playPause();
   void playStop();
   enum PlayStatus getPlayStatus();
   unsigned long playPosition();
