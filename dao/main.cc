@@ -317,7 +317,7 @@ options:\n\
   --driver <id>           - force usage of specified driver\n\
   --speed <writing-speed> - selects writing speed\n\
   --blank-mode <mode>     - blank mode ('full', 'minimal')
-  --reload                - reload the disk if necessary for writing\n\
+  --eject                 - ejects cd after writing or simulation\n\
   -v #                    - sets verbose level\n",
 	  SCSI_DEVICE);
     break;
@@ -2331,6 +2331,7 @@ int main(int argc, char **argv)
       }
     }
 
+    cdr->remote(REMOTE_MODE, REMOTE_FD);
     cdr->simulate(WRITE_SIMULATE);
 
     message(1, "Blanking disk...");
@@ -2338,6 +2339,9 @@ int main(int argc, char **argv)
       message(-2, "Blanking failed.");
       exitCode = 1; goto fail;
     }
+
+    if (EJECT)
+      cdr->loadUnload(1);
     break;
 
   case UNLOCK:

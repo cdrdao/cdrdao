@@ -289,6 +289,8 @@ public:
 			     int track, int trackProgress, int totalProgress,
 			     int bufferFillRate);
 
+  int sendBlankCdProgressMsg(int totalProgress);
+
 
   // static functions
 

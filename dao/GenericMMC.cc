@@ -1,6 +1,6 @@
 /*  cdrdao - write audio CD-Rs in disc-at-once mode
  *
- *  Copyright (C) 1998-2001  Andreas Mueller <mueller@daneb.ping.de>
+ *  Copyright (C) 1998-2001 Andreas Mueller <andreas@daneb.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -202,7 +202,7 @@ int GenericMMC::loadUnload(int unload) const
 int GenericMMC::blankDisk(BlankingMode mode)
 {
   unsigned char cmd[12];
-  int ret;
+  int ret, progress;
   time_t startTime, endTime;
 
   setSimulationMode(0);
@@ -223,12 +223,15 @@ int GenericMMC::blankDisk(BlankingMode mode)
 
   cmd[1] |= 1 << 4; // immediate return
 
+  sendBlankCdProgressMsg(0);
+
   if (sendCmd(cmd, 12, NULL, 0, NULL, 0, 1) != 0) {
     message(-2, "Cannot erase CD-RW.");
     return 1;
   }
 
   time(&startTime);
+  progress = 0;
 
   do {
     mSleep(2000);
@@ -238,13 +241,23 @@ int GenericMMC::blankDisk(BlankingMode mode)
     if (ret == 1) {
       message(-2, "Test Unit Ready command failed.");
     }
+
+    progress += 10;
+    sendBlankCdProgressMsg(progress);
+
+    if (progress >= 1000)
+      progress = 0;
+
   } while (ret == 2);
+
+  if (ret == 0)
+    sendBlankCdProgressMsg(1000);
 
   time(&endTime);
 
   message(2, "Blanking time: %ld seconds", endTime - startTime);
 
-  return 0;
+  return ret;
 }
 
 // sets read/write speed and simulation mode

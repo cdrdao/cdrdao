@@ -1,6 +1,6 @@
 /*  cdrdao - write audio CD-Rs in disc-at-once mode
  *
- *  Copyright (C) 1998, 1999 Andreas Mueller <mueller@daneb.ping.de>
+ *  Copyright (C) 1998-2001 Andreas Mueller <andreas@daneb.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -15,22 +15,6 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- */
-
-/*
- * $Log: CueParser.g,v $
- * Revision 1.3  2001/09/03 17:37:42  andreasm
- * Added support for sub-channel writing.
- *
- * Revision 1.2  2000/06/19 20:14:00  andreasm
- * Implemented CDDB access via cddbp and http.
- *
- * Revision 1.1.1.1  2000/02/05 01:34:37  llanero
- * Uploaded cdrdao 1.1.3 with pre10 patch applied.
- *
- * Revision 1.1  1999/07/10 18:18:17  mueller
- * Initial revision
- *
  */
 
 #header <<

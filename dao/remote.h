@@ -18,6 +18,9 @@
  */
 /*
  * $Log: remote.h,v $
+ * Revision 1.5  2001/10/01 18:08:41  andreasm
+ * Enabled remote progress messages for blanking.
+ *
  * Revision 1.4  2000/11/05 19:20:59  andreasm
  * Unified progress messages sent from cdrdao to gcdmaster.
  *
@@ -45,7 +48,8 @@
 #define PGSMSG_WCD_LEADIN      3
 #define PGSMSG_WCD_DATA        4
 #define PGSMSG_WCD_LEADOUT     5
-#define PGSMSG_MAX PGSMSG_WCD_LEADOUT
+#define PGSMSG_BLK             6
+#define PGSMSG_MAX PGSMSG_BLK
 
 struct ProgressMsg {
   int status;         // see PGSMSG_* constants

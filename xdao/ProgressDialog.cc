@@ -375,6 +375,11 @@ void ProgressDialog::update(unsigned long level)
       case PGSMSG_WCD_LEADOUT:
 	statusMsg_->set_text(string("Writing lead-out..."));
 	break;
+
+      case PGSMSG_BLK:
+	statusMsg_->set_text(string("Blanking..."));
+	break;
+
       }
     }
 

@@ -3748,6 +3748,30 @@ int CdrDriver::sendWriteCdProgressMsg(WriteCdProgressType type,
   return 0;
 }
 
+// Sends a blank cd progress message without blocking the actual process.
+int CdrDriver::sendBlankCdProgressMsg(int totalProgress)
+{
+  if (remote_) {
+    int fd = remoteFd_;
+    ProgressMsg p;
+
+    p.status = PGSMSG_BLK;
+    p.totalTracks = 0;
+    p.track = 0;
+    p.trackProgress = 0;
+    p.totalProgress = totalProgress;
+    p.bufferFillRate = 0;
+
+    if (write(fd, REMOTE_MSG_SYNC_, sizeof(REMOTE_MSG_SYNC_)) != sizeof(REMOTE_MSG_SYNC_) ||
+	write(fd, (const char*)&p, sizeof(p)) != sizeof(p)) {
+      message(-1, "Failed to send write CD remote progress message.");
+      return 1;
+    }
+  }
+
+  return 0;
+}
+
 
 
 // read cdda paranoia related:
