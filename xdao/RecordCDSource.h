@@ -20,15 +20,14 @@
 #ifndef __RECORD_CD_SOURCE_H
 #define __RECORD_CD_SOURCE_H
 
-#include <gtk--.h>
-#include <gtk/gtk.h>
+#include <gnome--.h>
 
 class CdDevice;
 class DeviceList;
 
 class RecordCDSource : public Gtk::VBox {
 public:
-  RecordCDSource();
+  RecordCDSource(Gtk::Window *);
   ~RecordCDSource();
 
   void start();
@@ -36,34 +35,42 @@ public:
 
   void update(unsigned long level);
 
+  bool getOnTheFly();
+  void setOnTheFly(bool);
+  int getCorrection();
+  DeviceList *getDeviceList() { return DEVICES;}
+  void onTheFlyOption(bool);
+
+private:
   DeviceList *DEVICES;
 
-  int getCorrection();
+  int active_;
+  int correction_;
+  int speed_;
+
+//  bool onTheFly_;
+
+  Gtk::Window *parent_;
+  Gnome::Dialog *moreOptionsDialog_;
 
   struct CorrectionTable {
     int correction;
     const char *name;
   };
 
-private:
-  int active_;
-  int correction_;
-
-  int speed_;
-
-
   Gtk::SpinButton *speedSpinButton_;
   Gtk::CheckButton *speedButton_;
 
   Gtk::OptionMenu *correctionMenu_;
-//  Gtk::CheckButton *onTheFlyButton_;
+  Gtk::CheckButton *onTheFlyButton_;
   Gtk::CheckButton *continueOnErrorButton_;
   Gtk::CheckButton *ignoreIncorrectTOCButton_;
 
-//  void setSpeed(int);
+  void moreOptions();
+
+  void setSpeed(int);
   void setCorrection(int);
 
-private:
   void speedButtonChanged();
   void speedChanged();
 };
