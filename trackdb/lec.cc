@@ -20,7 +20,6 @@
 #include <config.h>
 
 #include <assert.h>
-#include <malloc.h>
 #include <sys/types.h>
 
 #include "lec.h"
@@ -47,14 +46,35 @@ typedef u_int8_t gf8_t;
 static u_int8_t GF8_LOG[256];
 static gf8_t GF8_ILOG[256];
 
-static u_int8_t GF8_Q_COEFFS[2][45];
-static u_int8_t **GF8_Q_COEEFS_RESULTS_0;
-static u_int8_t **GF8_Q_COEEFS_RESULTS_1;
+static const class Gf8_Q_Coeffs_Results_01 {
+private:
+  u_int16_t table[43][256];
+public:
+  Gf8_Q_Coeffs_Results_01();
+  ~Gf8_Q_Coeffs_Results_01() {}
+  const u_int16_t *operator[] (int i) const { return &table[i][0]; }
+  operator const u_int16_t *() const	    { return &table[0][0]; }
+} CF8_Q_COEFFS_RESULTS_01;
 
-static u_int32_t CRCTABLE[256];
+static const class CrcTable {
+private:
+  u_int32_t table[256];
+public:
+  CrcTable();
+  ~CrcTable() {}
+  u_int32_t operator[](int i) const	{ return table[i]; }
+  operator const u_int32_t *() const	{ return table;    }
+} CRCTABLE;
 
-static u_int8_t SCRAMBLE_TABLE[2340];
-
+static const class ScrambleTable {
+private:
+  u_int8_t table[2340];
+public:
+  ScrambleTable();
+  ~ScrambleTable() {}
+  u_int8_t operator[](int i) const	{ return table[i]; }
+  operator const u_int8_t *() const	{ return table;    }
+} SCRAMBLE_TABLE;
 
 /* Creates the logarithm and inverse logarithm table that is required
  * for performing multiplication in the GF(8) domain.
@@ -127,12 +147,15 @@ static gf8_t gf8_div(gf8_t a, gf8_t b)
   return GF8_ILOG[sum];
 }
 
-
-static int calc_pq_parity_coefficients()
+Gf8_Q_Coeffs_Results_01::Gf8_Q_Coeffs_Results_01()
 {
   int i, j;
   u_int16_t c;
   gf8_t GF8_COEFFS_HELP[2][45]; 
+  u_int8_t GF8_Q_COEFFS[2][45];
+
+
+  gf8_create_log_tables();
 
   /* build matrix H:
    *  1    1   ...  1   1
@@ -182,38 +205,20 @@ static int calc_pq_parity_coefficients()
    * that we do not need to create a separate table for them. 
    */
   
-  GF8_Q_COEEFS_RESULTS_0 = (u_int8_t**)malloc(43 * sizeof(u_int8_t*));
-  if (GF8_Q_COEEFS_RESULTS_0 == NULL)
-    return 1;
-
-  GF8_Q_COEEFS_RESULTS_1 = (u_int8_t**)malloc(43 * sizeof(u_int8_t*));
-  if (GF8_Q_COEEFS_RESULTS_1 == NULL)
-    return 1;
-
   for (j = 0; j < 43; j++) {
-    GF8_Q_COEEFS_RESULTS_0[j] = (u_int8_t*)malloc(256 * sizeof(u_int8_t));
-    if (GF8_Q_COEEFS_RESULTS_0[j] == NULL)
-      return 1;
 
-    GF8_Q_COEEFS_RESULTS_1[j] = (u_int8_t*)malloc(256 * sizeof(u_int8_t));
-    if (GF8_Q_COEEFS_RESULTS_1[j] == NULL)
-      return 1;
-
-    GF8_Q_COEEFS_RESULTS_0[j][0] = 0;
-    GF8_Q_COEEFS_RESULTS_1[j][0] = 0;
+    table[j][0] = 0;
 
     for (i = 1; i < 256; i++) {
       c = GF8_LOG[i] + GF8_LOG[GF8_Q_COEFFS[0][j]];
       if (c >= 255) c -= 255;
-      GF8_Q_COEEFS_RESULTS_0[j][i] = GF8_ILOG[c];
+      table[j][i] = GF8_ILOG[c];
 
       c = GF8_LOG[i] + GF8_LOG[GF8_Q_COEFFS[1][j]];
       if (c >= 255) c -= 255;
-      GF8_Q_COEEFS_RESULTS_1[j][i] = GF8_ILOG[c];
+      table[j][i] |= GF8_ILOG[c]<<8;
     }
   }
-
-  return 0;
 }
 
 /* Reverses the bits in 'd'. 'bits' defines the bit width of 'd'.
@@ -239,7 +244,7 @@ static u_int32_t mirror_bits(u_int32_t d, int bits)
  * and reversed (i.e. the bit stream is divided by the EDC_POLY with the
  * LSB first order).
  */
-static void build_edc_table()
+CrcTable::CrcTable ()
 {
   u_int32_t i, j;
   u_int32_t r;
@@ -261,7 +266,7 @@ static void build_edc_table()
 
     r = mirror_bits(r, 32);
 
-    CRCTABLE[i] = r;
+    table[i] = r;
   }
 }
 
@@ -282,7 +287,7 @@ static u_int32_t calc_edc(u_int8_t *data, int len)
 /* Build the scramble table as defined in the yellow book. The bytes
    12 to 2351 of a sector will be XORed with the data of this table.
  */
-static void build_scramble_table()
+ScrambleTable::ScrambleTable()
 {
   u_int16_t i, j;
   u_int16_t reg = 1;
@@ -306,7 +311,7 @@ static void build_scramble_table()
       }
     }
 
-    SCRAMBLE_TABLE[i] = d;
+    table[i] = d;
   }
 }
 
@@ -382,62 +387,42 @@ static void set_sector_header(u_int8_t mode, u_int32_t adr, u_int8_t *sector)
 static void calc_P_parity(u_int8_t *sector)
 {
   int i, j;
-  u_int8_t p0_msb, p1_msb;
-  u_int8_t p0_lsb, p1_lsb;
-  u_int8_t *p_msb_start, *p_lsb_start;
-  u_int8_t *p_msb, *p_lsb;
-  u_int8_t **coeffs0, **coeffs1;
-  u_int8_t **coeffs0start, **coeffs1start;
+  u_int16_t p01_msb, p01_lsb;
+  u_int8_t *p_lsb_start;
+  u_int8_t *p_lsb;
   u_int8_t *p0, *p1;
-  u_int8_t d;
+  u_int8_t d0,d1;
 
   p_lsb_start = sector + LEC_HEADER_OFFSET;
-  p_msb_start = sector + LEC_HEADER_OFFSET + 1;
 
   p1 = sector + LEC_MODE1_P_PARITY_OFFSET;
   p0 = sector + LEC_MODE1_P_PARITY_OFFSET + 2 * 43;
 
-  coeffs0start = GF8_Q_COEEFS_RESULTS_0 + 19;
-  coeffs1start = GF8_Q_COEEFS_RESULTS_1 + 19;
-
   for (i = 0; i <= 42; i++) {
     p_lsb = p_lsb_start;
-    p_msb = p_msb_start;
 
-    coeffs0 = coeffs0start;
-    coeffs1 = coeffs1start;
-    
-    p0_lsb = p1_lsb = p0_msb = p1_msb = 0;
+    p01_lsb = p01_msb = 0;
 
-    for (j = 0; j <= 23; j++) {
-      d = *p_lsb;
+    for (j = 19; j <= 42; j++) {
+      d0 = *p_lsb;
+      d1 = *(p_lsb+1);
 
-      p0_lsb ^= (*coeffs0)[d];
-      p1_lsb ^= (*coeffs1)[d];
-
-      d = *p_msb;
-
-      p0_msb ^= (*coeffs0)[d];
-      p1_msb ^= (*coeffs1)[d];
-
-      coeffs0++;
-      coeffs1++;
+      p01_lsb ^= CF8_Q_COEFFS_RESULTS_01[j][d0];
+      p01_msb ^= CF8_Q_COEFFS_RESULTS_01[j][d1];
 
       p_lsb += 2 * 43;
-      p_msb += 2 * 43;
     }
 
-    *p0 = p0_lsb;
-    *(p0 + 1) = p0_msb;
+    *p0 = p01_lsb;
+    *(p0 + 1) = p01_msb;
     
-    *p1 = p1_lsb;
-    *(p1 + 1) = p1_msb;
+    *p1 = p01_lsb>>8;
+    *(p1 + 1) = p01_msb>>8;
 
     p0 += 2;
     p1 += 2;
 
     p_lsb_start += 2;
-    p_msb_start += 2;
   }
 }
 
@@ -447,16 +432,13 @@ static void calc_P_parity(u_int8_t *sector)
 static void calc_Q_parity(u_int8_t *sector)
 {
   int i, j;
-  u_int8_t q0_msb, q1_msb;
-  u_int8_t q0_lsb, q1_lsb;
-  u_int8_t *q_msb_start, *q_lsb_start;
-  u_int8_t *q_msb, *q_lsb;
-  u_int8_t **coeffs0, **coeffs1;
+  u_int16_t q01_lsb, q01_msb;
+  u_int8_t *q_lsb_start;
+  u_int8_t *q_lsb;
   u_int8_t *q0, *q1, *q_start;
-  u_int8_t d;
+  u_int8_t d0,d1;
 
   q_lsb_start = sector + LEC_HEADER_OFFSET;
-  q_msb_start = sector + LEC_HEADER_OFFSET + 1;
 
   q_start = sector + LEC_MODE1_Q_PARITY_OFFSET;
   q1 = sector + LEC_MODE1_Q_PARITY_OFFSET;
@@ -464,73 +446,34 @@ static void calc_Q_parity(u_int8_t *sector)
 
   for (i = 0; i <= 25; i++) {
     q_lsb = q_lsb_start;
-    q_msb = q_msb_start;
 
-    coeffs0 = GF8_Q_COEEFS_RESULTS_0;
-    coeffs1 = GF8_Q_COEEFS_RESULTS_1;
-    
-    q0_lsb = q1_lsb = q0_msb = q1_msb = 0;
+    q01_lsb = q01_msb = 0;
 
     for (j = 0; j <= 42; j++) {
-      d = *q_lsb;
+      d0 = *q_lsb;
+      d1 = *(q_lsb+1);
 
-      q0_lsb ^= (*coeffs0)[d];
-      q1_lsb ^= (*coeffs1)[d];
-
-      d = *q_msb;
-
-      q0_msb ^= (*coeffs0)[d];
-      q1_msb ^= (*coeffs1)[d];
-
-      coeffs0++;
-      coeffs1++;
+      q01_lsb ^= CF8_Q_COEFFS_RESULTS_01[j][d0];
+      q01_msb ^= CF8_Q_COEFFS_RESULTS_01[j][d1];
 
       q_lsb += 2 * 44;
-      q_msb += 2 * 44;
 
       if (q_lsb >= q_start) {
-	q_msb -= 2 * 1118;
 	q_lsb -= 2 * 1118;
       }
     }
 
-    *q0 = q0_lsb;
-    *(q0 + 1) = q0_msb;
+    *q0 = q01_lsb;
+    *(q0 + 1) = q01_msb;
     
-    *q1 = q1_lsb;
-    *(q1 + 1) = q1_msb;
+    *q1 = q01_lsb>>8;
+    *(q1 + 1) = q01_msb>>8;
 
     q0 += 2;
     q1 += 2;
 
     q_lsb_start += 2 * 43;
-    q_msb_start += 2 * 43;
   }
-}
-
-/* Initializes all internal tables.
- * Return: 0: OK
- *         1: Memory allocation error
- */
-int lec_init()
-{
-  static int initialized = 0;
-
-  if (initialized) 
-    return 0;
-
-  initialized = 1;
-
-  gf8_create_log_tables();
-
-  if (calc_pq_parity_coefficients() != 0)
-    return 1;
-
-  build_edc_table();
-
-  build_scramble_table();
-
-  return 0;
 }
 
 /* Encodes a MODE 0 sector.
@@ -631,27 +574,25 @@ void lec_encode_mode2_form2_sector(u_int32_t adr, u_int8_t *sector)
 void lec_scramble(u_int8_t *sector)
 {
   u_int16_t i;
-  u_int8_t *stable = SCRAMBLE_TABLE;
+  const u_int8_t *stable = SCRAMBLE_TABLE;
   u_int8_t *p = sector;
   u_int8_t tmp;
 
 
-  for (i = 0; i < (2352 / 2); i++) {
-    if (i < 6) {
+  for (i = 0; i < 6; i++) {
       /* just swap bytes of sector sync */
       tmp = *p;
       *p = *(p + 1);
       p++;
       *p++ = tmp;
     }
-    else {
+  for (;i < (2352 / 2); i++) {
       /* scramble and swap bytes */
       tmp = *p ^ *stable++;
       *p = *(p + 1) ^ *stable++;
       p++;
       *p++ = tmp;
     }
-  } 
 }
 
 #if 0
@@ -669,8 +610,6 @@ int main(int argc, char **argv)
   u_int8_t buffer2[2352];
   u_int32_t lba;
   int i;
-
-  lec_init();
 
 #if 0
   for (i = 0; i < 2048; i++)

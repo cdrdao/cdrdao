@@ -22,12 +22,6 @@
 
 #include <sys/types.h>
 
-/* Initializes all internal tables. Must be called before any
- * other function can be called.
- * Return: 0: OK
- *         1: Memory allocation error
- */
-int lec_init();
 
 /* Encodes a MODE 0 sector.
  * 'adr' is the current physical sector address
