@@ -178,6 +178,7 @@ void DuplicateCDProject::start()
   }
 
   int correction = CDSource->getCorrection();
+  int subChanReadMode = CDSource->getSubChanReadMode();
 
   //Record options
   int simulate;
@@ -226,7 +227,8 @@ void DuplicateCDProject::start()
       break;
   
     if (writeDevice->duplicateDao(simulate, multiSession, burnSpeed,
-        eject, reload, buffer, onTheFly, correction, readDevice) != 0)
+				  eject, reload, buffer, onTheFly, correction,
+				  subChanReadMode, readDevice) != 0)
       Gnome::Dialogs::error(*this, "Cannot start disk-at-once duplication");
     else
       guiUpdate(UPD_CD_DEVICE_STATUS);

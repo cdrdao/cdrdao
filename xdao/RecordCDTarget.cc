@@ -64,7 +64,7 @@ RecordCDTarget::RecordCDTarget(Gtk::Window *parent)
   label->show();
   hbox->pack_start(*label, false, false);
   
-  Gtk::Adjustment *adjustment = new Gtk::Adjustment(1, 1, 20);
+  Gtk::Adjustment *adjustment = new Gtk::Adjustment(1, 1, 48);
   speedSpinButton_ = new Gtk::SpinButton(*adjustment);
   speedSpinButton_->set_digits(0);
   speedSpinButton_->show();
@@ -81,7 +81,7 @@ RecordCDTarget::RecordCDTarget(Gtk::Window *parent)
 
   hbox = new Gtk::HBox;
 //  hbox->show();
-  label = new Gtk::Label(string("Copies: "), 0);
+  label = new Gtk::Label("Copies: ", 0);
   label->show();
   hbox->pack_start(*label, false, false);
 
@@ -159,6 +159,11 @@ void RecordCDTarget::moreOptions()
     frame->add(*vbox);
     frame->show();
 
+    overburnButton_ = new Gtk::CheckButton("Allow over-burning", 0);
+    overburnButton_->set_active(false);
+    overburnButton_->show();
+    vbox->pack_start(*overburnButton_);
+
     ejectButton_ = new Gtk::CheckButton("Eject the CD after writing", 0);
     ejectButton_->set_active(false);
     ejectButton_->show();
@@ -192,8 +197,8 @@ void RecordCDTarget::moreOptions()
     hbox->pack_start(*bufferRAMLabel_, true, true);
     bufferRAMLabel_->show();
     adjustment->value_changed.connect(SigC::slot(this, &RecordCDTarget::updateBufferRAMLabel));
-
-	vbox->pack_start(*hbox);
+    
+    vbox->pack_start(*hbox);
   }
 
   moreOptionsDialog_->show();
@@ -250,6 +255,14 @@ bool RecordCDTarget::getEject()
     return ejectButton_->get_active() ? 1 : 0;
   else
     return 0; 
+}
+
+bool RecordCDTarget::getOverburn()
+{
+  if (moreOptionsDialog_)
+    return overburnButton_->get_active() ? 1 : 0;
+  else
+    return 0;
 }
 
 int RecordCDTarget::checkEjectWarning(Gtk::Window *parent)

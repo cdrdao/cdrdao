@@ -114,14 +114,17 @@ DeviceConfDialog::DeviceConfDialog()
   Gtk::Adjustment *adjust = new Gtk::Adjustment(0.0, 0.0, 16.0);
   busEntry_ = new Gtk::SpinButton(*adjust, 1.0, 1);
   busEntry_->set_numeric(true);
+  busEntry_->set_digits(0);
 
   adjust = new Gtk::Adjustment(0.0, 0.0, 15.0);
   idEntry_ = new Gtk::SpinButton(*adjust, 1.0, 1);
   idEntry_->set_numeric(true);
+  idEntry_->set_digits(0);
 
   adjust = new Gtk::Adjustment(0.0, 0.0, 8.0);
   lunEntry_ = new Gtk::SpinButton(*adjust, 1.0, 1);
   lunEntry_->set_numeric(true);
+  lunEntry_->set_digits(0);
 
   vendorEntry_ = new Gtk::Entry(8);
   productEntry_ = new Gtk::Entry(16);

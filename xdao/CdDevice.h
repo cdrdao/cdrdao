@@ -78,14 +78,15 @@ public:
   void manuallyConfigured(int);
 
   int recordDao(TocEdit *, int simulate, int multiSession, int speed,
-		int eject, int reload, int buffer);
+		int eject, int reload, int buffer, int overburn);
   void abortDaoRecording();
 
-  int extractDao(const char *tocFileName, int correction);
+  int extractDao(const char *tocFileName, int correction, int readSubChanMode);
   void abortDaoReading();
 
   int duplicateDao(int simulate, int multiSession, int speed,
-		int eject, int reload, int buffer, int onthefly, int correction, CdDevice *readdev);
+		   int eject, int reload, int buffer, int onthefly,
+		   int correction, int readSubChanMode, CdDevice *readdev);
   void abortDaoDuplication();
 
   int blank(int fast, int speed, int eject, int reload);

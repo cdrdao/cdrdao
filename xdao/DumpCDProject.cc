@@ -113,6 +113,7 @@ void DumpCDProject::start()
 
   //Read options
   int correction = CDSource->getCorrection();
+  int subChanReadMode = CDSource->getSubChanReadMode();
 
   Gtk::string imageName = HDTarget->getFilename();
 
@@ -213,7 +214,8 @@ void DumpCDProject::start()
   if (readDevice == NULL)
     return;
 
-  if (readDevice->extractDao(imagePath.c_str(), correction) != 0)
+  if (readDevice->extractDao(imagePath.c_str(), correction, subChanReadMode)
+      != 0)
     Gnome::Dialogs::error(*this, "Cannot start reading");
   else
     guiUpdate(UPD_CD_DEVICE_STATUS);

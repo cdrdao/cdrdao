@@ -214,6 +214,7 @@ void RecordTocDialog::startAction()
 
   int multiSession = CDTarget->getMultisession();
   int burnSpeed = CDTarget->getSpeed();
+  int overburn = CDTarget->getOverburn();
 
   int eject = CDTarget->checkEjectWarning(this);
   if (eject == -1)
@@ -239,7 +240,7 @@ void RecordTocDialog::startAction()
       break;
 
     if (writeDevice->recordDao(tocEdit_, simulate, multiSession,
-			     burnSpeed, eject, reload, buffer) != 0)
+			     burnSpeed, eject, reload, buffer, overburn) != 0)
       Gnome::Dialogs::error(*this, "Cannot start disk-at-once recording");
     else
       guiUpdate(UPD_CD_DEVICE_STATUS);

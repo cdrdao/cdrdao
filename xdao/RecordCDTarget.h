@@ -42,6 +42,7 @@ public:
   int getCopies();
   int getSpeed();
   bool getEject();
+  bool getOverburn();
   int checkEjectWarning(Gtk::Window *);
   bool getReload();
   int checkReloadWarning(Gtk::Window *);
@@ -61,6 +62,7 @@ private:
   Gtk::CheckButton *closeSessionButton_;
   Gtk::CheckButton *ejectButton_;
   Gtk::CheckButton *reloadButton_;
+  Gtk::CheckButton *overburnButton_;
 
   Gtk::SpinButton *copiesSpinButton_;
   Gtk::SpinButton *speedSpinButton_;

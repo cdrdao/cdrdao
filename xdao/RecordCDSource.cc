@@ -38,10 +38,18 @@
 #define MAX_CORRECTION_ID 3
 
 static RecordCDSource::CorrectionTable CORRECTION_TABLE[MAX_CORRECTION_ID + 1] = {
-  { 3, "Jitter + scratch" },
+  { 3, "Jitter + scratch (slow)" },
   { 2, "Jitter + checks" },
   { 1, "Jitter correction" },
-  { 0, "No checking" }
+  { 0, "No checking (fast)" }
+};
+
+#define MAX_SUBCHAN_READ_MODE_ID 2
+
+static RecordCDSource::SubChanReadModeTable SUBCHAN_READ_MODE_TABLE[MAX_SUBCHAN_READ_MODE_ID + 1] = {
+  { 0, "none" },
+  { 1, "R-W packed" },
+  { 2, "R-W raw" }
 };
 
 
@@ -52,7 +60,9 @@ RecordCDSource::RecordCDSource(Gtk::Window *parent)
 //  onTheFly_ = 0;
   correction_ = 0;
   speed_ = 1;
+  subChanReadMode_ = 0;
   moreOptionsDialog_ = 0;
+
   set_spacing(10);
 
   DEVICES = new DeviceList(CdDevice::CD_ROM);
@@ -158,8 +168,15 @@ void RecordCDSource::moreOptions()
 {
   if (!moreOptionsDialog_)
   {
-    Gtk::HBox *hbox;
+    Gtk::Table *table;
     Gtk::Label *label;
+
+
+    table = new Gtk::Table(2, 4, false);
+    table->set_row_spacings(2);
+    table->set_col_spacings(10);
+    table->set_border_width(5);
+
 
     std::vector <std::string> buttons;
     buttons.push_back(GNOME_STOCK_BUTTON_CLOSE);
@@ -178,39 +195,66 @@ void RecordCDSource::moreOptions()
     frame->add(*vbox);
     frame->show();
 
+    vbox->pack_start(*table);
+    table->show();
+
     continueOnErrorButton_ = new Gtk::CheckButton("Continue if errors found", 0);
     continueOnErrorButton_->set_active(false);
 //    continueOnErrorButton_->show();
-    vbox->pack_start(*continueOnErrorButton_);
+    table->attach(*continueOnErrorButton_, 0, 1, 0, 1);
 
     ignoreIncorrectTOCButton_ = new Gtk::CheckButton("Ignore incorrect TOC", 0);
     ignoreIncorrectTOCButton_->set_active(false);
 //    ignoreIncorrectTOCButton_->show();
-    vbox->pack_start(*ignoreIncorrectTOCButton_);
+    table->attach(*ignoreIncorrectTOCButton_, 0, 1, 1, 2);
 
-    Gtk::Menu *menuCorrection = manage(new Gtk::Menu);
-    Gtk::MenuItem *miCorr;
+    Gtk::Menu *menu = manage(new Gtk::Menu);
+    Gtk::MenuItem *mitem;
 	
     for (int i = 0; i <= MAX_CORRECTION_ID; i++) {
-      miCorr = manage(new Gtk::MenuItem(CORRECTION_TABLE[i].name));
-      miCorr->activate.connect(bind(slot(this, &RecordCDSource::setCorrection), i));
-      miCorr->show();
-      menuCorrection->append(*miCorr);
+      mitem = manage(new Gtk::MenuItem(CORRECTION_TABLE[i].name));
+      mitem->activate.connect(bind(slot(this, &RecordCDSource::setCorrection), i));
+      mitem->show();
+      menu->append(*mitem);
     }
   
     correctionMenu_ = new Gtk::OptionMenu;
-    correctionMenu_->set_menu(menuCorrection);
+    correctionMenu_->set_menu(menu);
   
     correctionMenu_->set_history(correction_);
   
-    hbox = new Gtk::HBox;
-    label = new Gtk::Label("Correction Method: ");
-    hbox->pack_start(*label, FALSE);
+    Gtk::Alignment *align;
+
+    label = new Gtk::Label("Audio Correction Method:");
+    align = new Gtk::Alignment(0, 0.5, 0, 1);
+    align->add(*label);
     label->show();
-    hbox->pack_start(*correctionMenu_, FALSE);
+    table->attach(*align, 0, 1, 2, 3, GTK_FILL);
+    align->show();
+    table->attach(*correctionMenu_, 1, 2, 2, 3);
     correctionMenu_->show();
-    hbox->show();
-    vbox->pack_start(*hbox);
+
+    menu = manage(new Gtk::Menu);
+
+    for (int i = 0; i <= MAX_SUBCHAN_READ_MODE_ID; i++) {
+      mitem = manage(new Gtk::MenuItem(SUBCHAN_READ_MODE_TABLE[i].name));
+      mitem->activate.connect(bind(slot(this, &RecordCDSource::setSubChanReadMode), i));
+      mitem->show();
+      menu->append(*mitem);
+    }
+
+    subChanReadModeMenu_ = new Gtk::OptionMenu;
+    subChanReadModeMenu_->set_menu(menu);
+    subChanReadModeMenu_->set_history(subChanReadMode_);
+
+    label = new Gtk::Label("Sub-Channel Reading Mode:");
+    align = new Gtk::Alignment(0, 0.5, 0, 1);
+    align->add(*label);
+    table->attach(*align, 0, 1, 3, 4, GTK_FILL);
+    label->show();
+    align->show();
+    table->attach(*subChanReadModeMenu_, 1, 2, 3, 4);
+    subChanReadModeMenu_->show();
   }
 
   moreOptionsDialog_->show();
@@ -227,6 +271,7 @@ bool RecordCDSource::getOnTheFly()
   return onTheFlyButton_->get_active() ? 0 : 1;
 }
 
+
 void RecordCDSource::setOnTheFly(bool active)
 {
   onTheFlyButton_->set_active(!active);
@@ -235,6 +280,17 @@ void RecordCDSource::setOnTheFly(bool active)
 int RecordCDSource::getCorrection()
 {
   return CORRECTION_TABLE[correction_].correction;
+}
+
+void RecordCDSource::setSubChanReadMode(int m)
+{
+  if (m >= 0 && m <= MAX_SUBCHAN_READ_MODE_ID)
+    subChanReadMode_ = m;
+}
+
+int RecordCDSource::getSubChanReadMode()
+{
+  return SUBCHAN_READ_MODE_TABLE[subChanReadMode_].mode;
 }
 
 void RecordCDSource::speedButtonChanged()

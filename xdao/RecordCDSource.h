@@ -38,11 +38,17 @@ public:
   bool getOnTheFly();
   void setOnTheFly(bool);
   int getCorrection();
+  int getSubChanReadMode();
   DeviceList *getDeviceList() { return DEVICES;}
   void onTheFlyOption(bool);
 
   struct CorrectionTable {
     int correction;
+    const char *name;
+  };
+
+  struct SubChanReadModeTable {
+    int mode;
     const char *name;
   };
 
@@ -52,6 +58,7 @@ private:
   int active_;
   int correction_;
   int speed_;
+  int subChanReadMode_;
 
 //  bool onTheFly_;
 
@@ -62,6 +69,7 @@ private:
   Gtk::CheckButton *speedButton_;
 
   Gtk::OptionMenu *correctionMenu_;
+  Gtk::OptionMenu *subChanReadModeMenu_;
   Gtk::CheckButton *onTheFlyButton_;
   Gtk::CheckButton *continueOnErrorButton_;
   Gtk::CheckButton *ignoreIncorrectTOCButton_;
@@ -70,7 +78,7 @@ private:
 
   void setSpeed(int);
   void setCorrection(int);
-
+  void setSubChanReadMode(int);
   void speedButtonChanged();
   void speedChanged();
 };

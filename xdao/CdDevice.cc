@@ -448,10 +448,11 @@ void CdDevice::driverOptions(unsigned long o)
 // Return: 0: OK, process succesfully launched
 //         1: error occured
 int CdDevice::recordDao(TocEdit *tocEdit, int simulate, int multiSession,
-			int speed, int eject, int reload, int buffer)
+			int speed, int eject, int reload, int buffer,
+			int overburn)
 {
   char *tocFileName;
-  char *args[20];
+  char *args[30];
   int n = 0;
   char devname[30];
   char drivername[50];
@@ -508,6 +509,9 @@ int CdDevice::recordDao(TocEdit *tocEdit, int simulate, int multiSession,
 
   if (reload)
     args[n++] = "--reload";
+
+  if (overburn)
+    args[n++] = "--overburn";
 
   args[n++] = "--device";
 
@@ -601,9 +605,10 @@ void CdDevice::progress(int *status, int *totalTracks, int *track,
 // Starts a 'cdrdao' for reading whole cd.
 // Return: 0: OK, process succesfully launched
 //         1: error occured
-int CdDevice::extractDao(const char *tocFileName, int correction)
+int CdDevice::extractDao(const char *tocFileName, int correction,
+			 int readSubChanMode)
 {
-  char *args[20];
+  char *args[30];
   int n = 0;
   char devname[30];
   char drivername[50];
@@ -634,6 +639,18 @@ int CdDevice::extractDao(const char *tocFileName, int correction)
   args[n++] = "-v0";
 
   args[n++] = "--read-raw";
+
+  switch (readSubChanMode) {
+  case 1:
+    args[n++] = "--read-subchan";
+    args[n++] = "rw";
+    break;
+
+  case 2:
+    args[n++] = "--read-subchan";
+    args[n++] = "rw_raw";
+    break;
+  }
 
   args[n++] = "--device";
 
@@ -705,9 +722,10 @@ void CdDevice::abortDaoReading()
 //         1: error occured
 int CdDevice::duplicateDao(int simulate, int multiSession, int speed,
 			   int eject, int reload, int buffer, int onthefly,
-			   int correction, CdDevice *readdev)
+			   int correction, int readSubChanMode, 
+			   CdDevice *readdev)
 {
-  char *args[25];
+  char *args[30];
   int n = 0;
   char devname[30];
   char r_devname[30];
@@ -767,6 +785,18 @@ int CdDevice::duplicateDao(int simulate, int multiSession, int speed,
 
   if (onthefly)
     args[n++] = "--on-the-fly";
+
+  switch (readSubChanMode) {
+  case 1:
+    args[n++] = "--read-subchan";
+    args[n++] = "rw";
+    break;
+
+  case 2:
+    args[n++] = "--read-subchan";
+    args[n++] = "rw_raw";
+    break;
+  }
 
   args[n++] = "--device";
 
@@ -866,7 +896,6 @@ int CdDevice::blank(int fast, int speed, int eject, int reload)
   char speedbuf[20];
   char *execName;
   const char *s;
-  char bufferbuf[20];
   int remoteFdArgNum = 0;
 
   if (status_ != DEV_READY || process_ != NULL)
