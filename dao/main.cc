@@ -306,7 +306,7 @@ static void printUsage()
 "  --cddb-timeout #        - timeout in seconds for CDDB server communication\n"
 "  --cddb-directory <path> - path to local CDDB directory where fetched\n"
 "                            CDDB records will be stored\n"
-"  --query                 - prints out CDDB query only\n"
+"  --query-string          - prints out CDDB query only\n"
 "  -v #                    - sets verbose level\n",
         SCSI_DEVICE);
     break;
@@ -788,7 +788,7 @@ static int parseCmdline(int argc, char **argv)
       else if (strcmp((*argv) + 2, "swap") == 0) {
 	SWAP = 1;
       }
-      else if (strcmp((*argv) + 2, "query") == 0) {
+      else if (strcmp((*argv) + 2, "query-string") == 0) {
         PRINT_QUERY = true;
       }
       else if (strcmp((*argv) + 2, "multi") == 0) {
