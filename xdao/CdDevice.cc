@@ -101,6 +101,7 @@ CdDevice::CdDevice(int bus, int id, int lun, const char *vendor,
   scsiIfInitFailed_ = 0;
 
   next_ = NULL;
+  slaveDevice_ = NULL;
 
   autoSelectDriver();
 }
@@ -298,6 +299,11 @@ int CdDevice::updateStatus()
 
       PROCESS_MONITOR->remove(process_);
       process_ = NULL;
+
+      if (slaveDevice_ != NULL) {
+	slaveDevice_->status(DEV_UNKNOWN);
+	slaveDevice_ = NULL;
+      }
     }
   }
 
@@ -385,55 +391,30 @@ void CdDevice::updateProgress(int fd, GdkInputCondition cond)
       }
     }
 
-    if (status_ == DEV_RECORDING) {
-      DaoWritingProgress msg;
+    ProgressMsg msg;
 
-      if (read(fd, (char *)&msg, sizeof(msg)) == sizeof(msg)) {
-	/*
-	  message(0, "progress: %d %d %d %d", msg.status, msg.track,
-	  msg.totalProgress, msg.bufferFillRate);
-	  */
-	if (msg.status >= 1 && msg.status <= 3 &&
-	    msg.track >= 0 && msg.track <= 0xaa &&
-	    msg.totalProgress >= 0 && msg.totalProgress <= 1000 &&
-	    msg.bufferFillRate >= 0 && msg.bufferFillRate <= 100) {
-	  progressStatus_ = msg.status;
-	  progressTotalTracks_ = msg.totalTracks;
-	  progressTrack_ = msg.track;
-	  progressTrackRelative_ = msg.trackProgress;
-	  progressTotal_ = msg.totalProgress;
-	  progressBufferFill_ = msg.bufferFillRate;
-
-	  progressStatusChanged_ = 1;
-	}
-      }
-      else {
-	message(-1, "Reading of record progress msg failed.");
+    if (read(fd, (char *)&msg, sizeof(msg)) == sizeof(msg)) {
+      /*
+	message(0, "progress: %d %d %d %d", msg.status, msg.track,
+	msg.totalProgress, msg.bufferFillRate);
+      */
+      if (msg.status >= PGSMSG_MIN && msg.status <= PGSMSG_MAX &&
+	  msg.track >= 0 && msg.track <= 0xaa &&
+	  msg.trackProgress >= 0 && msg.trackProgress <= 1000 &&
+	  msg.totalProgress >= 0 && msg.totalProgress <= 1000 &&
+	  msg.bufferFillRate >= 0 && msg.bufferFillRate <= 100) {
+	progressStatus_ = msg.status;
+	progressTotalTracks_ = msg.totalTracks;
+	progressTrack_ = msg.track;
+	progressTrackRelative_ = msg.trackProgress;
+	progressTotal_ = msg.totalProgress;
+	progressBufferFill_ = msg.bufferFillRate;
+	
+	progressStatusChanged_ = 1;
       }
     }
-    else if (status_ == DEV_READING) {
-      ReadCdProgress msg;
-
-      if (read(fd, (char *)&msg, sizeof(msg)) == sizeof(msg)) {
-	/*
-	  message(0, "progress: %d %d %d %d", msg.status, msg.track,
-	  msg.totalProgress, msg.bufferFillRate);
-	  */
-	if (msg.status >= 1 && msg.status <= 2 &&
-	    msg.track >= 0 && msg.track <= 99 &&
-	    msg.trackProgress >= 0 && msg.trackProgress <= 1000) {
-	  progressStatus_ = msg.status;
-	  progressTotalTracks_ = msg.totalTracks;
-	  progressTrack_ = msg.track;
-	  progressTotal_ = msg.totalProgress;
-	  progressTrackRelative_ = msg.trackProgress;
-	  
-	  progressStatusChanged_ = 1;
-	}
-      }
-      else {
-	message(-1, "Reading of record progress msg failed.");
-      }
+    else {
+      message(-1, "Reading of progress message failed.");
     }
   }
 
@@ -605,9 +586,9 @@ int CdDevice::progressStatusChanged()
   return 0;
 }
 
-void CdDevice::recordProgress(int *status, int *totalTracks, int *track,
-			      int *trackProgress, int *totalProgress,
-			      int *bufferFill) const
+void CdDevice::progress(int *status, int *totalTracks, int *track,
+			int *trackProgress, int *totalProgress,
+			int *bufferFill) const
 {
   *status = progressStatus_;
   *totalTracks = progressTotalTracks_;
@@ -626,7 +607,7 @@ int CdDevice::extractDao(char *tocFileName, int correction)
   int n = 0;
   char devname[30];
   char drivername[50];
-  char speedbuf[20];
+  //char speedbuf[20];
   char *execName;
   const char *s; 
   char correctionbuf[20];
@@ -719,23 +700,13 @@ void CdDevice::abortDaoReading()
   }
 }
 
-void CdDevice::readProgress(int *status, int *totalTracks, int *track,
-			    int *trackProgress, int *totalProgress) const
-{
-  *status = progressStatus_;
-  *totalTracks = progressTotalTracks_;
-  *track = progressTrack_;
-  *trackProgress = progressTrackRelative_;
-  *totalProgress = progressTotal_;
-}
-
 // Starts a 'cdrdao' for duplicating a CD.
 // Return: 0: OK, process succesfully launched
 //         1: error occured
 int CdDevice::duplicateDao(int simulate, int multiSession, int speed,
-		int eject, int reload, int buffer, int onthefly, int correction, CdDevice *readdev)
+			   int eject, int reload, int buffer, int onthefly,
+			   int correction, CdDevice *readdev)
 {
-  char *tocFileName;
   char *args[25];
   int n = 0;
   char devname[30];
@@ -854,17 +825,14 @@ int CdDevice::duplicateDao(int simulate, int multiSession, int speed,
 
 
   if (process_ != NULL) {
-// don't do it for now!    readdev->status(DEV_READING);
-//    if (onthefly)
-      status_ = DEV_RECORDING;
-//    else
-//      status_ = DEV_WAITING;
+    slaveDevice_ = readdev;
+    slaveDevice_->status(DEV_READING);
+    status_ = DEV_RECORDING;
 
     action_ = A_DUPLICATE;
 
     if (process_->commFd() >= 0) {
-      Gtk::Main::instance()->input.connect(slot(this,
-						&CdDevice::updateProgress),
+      Gtk::Main::instance()->input.connect(slot(this, &CdDevice::updateProgress),
 					   process_->commFd(),
 					   (GdkInputCondition)(GDK_INPUT_READ|GDK_INPUT_EXCEPTION));
     }
@@ -1256,7 +1224,8 @@ void CdDevice::remove(int bus, int id, int lun)
   for (pred = NULL, run = DEVICE_LIST_; run != NULL;
        pred = run, run = run->next_) {
     if (bus == run->bus() && id == run->id() && lun == run->lun()) {
-      if (run->status() == DEV_RECORDING || run->status() == DEV_BLANKING)
+      if (run->status() == DEV_RECORDING || run->status() == DEV_BLANKING ||
+	  run->status() == DEV_READING || run->status() == DEV_WAITING)
 	return;
 	
       if (pred != NULL)

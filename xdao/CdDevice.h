@@ -18,6 +18,9 @@
  */
 /*
  * $Log: CdDevice.h,v $
+ * Revision 1.11  2000/11/05 19:20:59  andreasm
+ * Unified progress messages sent from cdrdao to gcdmaster.
+ *
  * Revision 1.10  2000/10/08 16:39:41  andreasm
  * Remote progress message now always contain the track relative and total
  * progress and the total number of processed tracks.
@@ -135,13 +138,10 @@ public:
   void abortDaoDuplication();
     
   int progressStatusChanged();
-  void recordProgress(int *status, int *totalTracks, int *track,
+  void progress(int *status, int *totalTracks, int *track,
 		      int *trackProgress, int *totalProgress,
 		      int *bufferFill) const;
   
-  void readProgress(int *status, int *totalTracks, int *track,
-		    int *trackProgress, int *totalProgress) const;
-
   static int maxDriverId();
   static const char *driverName(int id);
   static int driverName2Id(const char *);
@@ -213,6 +213,7 @@ private:
   Process *process_;
 
   CdDevice *next_;
+  CdDevice *slaveDevice_; // slave device (used when copying etc.)
 
   void createScsiIf();
 

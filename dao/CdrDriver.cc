@@ -18,6 +18,9 @@
  */
 /*
  * $Log: CdrDriver.cc,v $
+ * Revision 1.11  2000/11/05 19:20:59  andreasm
+ * Unified progress messages sent from cdrdao to gcdmaster.
+ *
  * Revision 1.10  2000/10/29 08:11:11  andreasm
  * Updated CD-R vendor table.
  * Loading defaults now from "/etc/defaults/cdrdao" and then from "$HOME/.cdrdao".
@@ -115,7 +118,7 @@
  *
  */
 
-static char rcsid[] = "$Id: CdrDriver.cc,v 1.10 2000/10/29 08:11:11 andreasm Exp $";
+static char rcsid[] = "$Id: CdrDriver.cc,v 1.11 2000/11/05 19:20:59 andreasm Exp $";
 
 #include <config.h>
 
@@ -135,7 +138,6 @@ static char rcsid[] = "$Id: CdrDriver.cc,v 1.10 2000/10/29 08:11:11 andreasm Exp
 #include "Toc.h"
 #include "util.h"
 #include "CdTextItem.h"
-#include "remote.h"
 
 // all drivers
 #include "CDD2600.h"
@@ -3598,13 +3600,14 @@ void CdrDriver::sendReadCdProgressMsg(ReadCdProgressType type, int totalTracks,
 {
   if (remote_) {
     int fd = remoteFd_;
-    ReadCdProgress p;
+    ProgressMsg p;
 
     p.status = type;
     p.totalTracks = totalTracks;
     p.track = track;
     p.trackProgress = trackProgress;
     p.totalProgress = totalProgress;
+    p.bufferFillRate = 0;
 
     if (write(fd, REMOTE_MSG_SYNC_, sizeof(REMOTE_MSG_SYNC_)) != sizeof(REMOTE_MSG_SYNC_) ||
 	write(fd, (const char*)&p, sizeof(p)) != sizeof(p)) {
@@ -3621,7 +3624,7 @@ int CdrDriver::sendWriteCdProgressMsg(WriteCdProgressType type,
 {
   if (remote_) {
     int fd = remoteFd_;
-    DaoWritingProgress p;
+    ProgressMsg p;
 
     p.status = type;
     p.totalTracks = totalTracks;

@@ -30,6 +30,8 @@
 #include "guiUpdate.h"
 #include "CdDevice.h"
 
+#include "remote.h"
+
 ProgressDialog::ProgressDialog(ProgressDialogPool *father)
 {
   Gtk::Label *label;
@@ -336,103 +338,21 @@ void ProgressDialog::update(unsigned long level)
 
   if (!active_ || device_ == NULL)
     return;
+
   if (finished_)
     return;
 
-  switch (device_->action()) {
-    case CdDevice::A_RECORD:
-    if ((level & UPD_PROGRESS_STATUS) && device_->progressStatusChanged()) {
-      device_->recordProgress(&status, &totalTracks, &track, &trackProgress,
-			      &totalProgress, &bufferFill);
+  
+  if ((level & UPD_PROGRESS_STATUS) && device_->progressStatusChanged()) {
+    device_->progress(&status, &totalTracks, &track, &trackProgress,
+		      &totalProgress, &bufferFill);
 
-      if (status != actStatus_) {
-        actStatus_ = status;
+    if (status != actStatus_ || track != actTrack_) {
+      actStatus_ = status;
+      actTrack_ = track;
 
-        switch (status) {
-          case 1:
-            statusMsg_->set_text(string("Writing lead-in..."));
-  	      break;
-          case 2:
-	        actTrack_ = track;
-
-        	s = "Writing track ";
-        	sprintf(buf, "%d of %d", track, totalTracks);
-	        s += buf;
-
-        	statusMsg_->set_text(s);
-    	    break;
-          case 3:
-    	    statusMsg_->set_text(string("Writing lead-out..."));
-	        break;
-        }
-      }
-
-      if (track != actTrack_ && status == 2) {
-        actTrack_ = track;
-
-        s = "Writing track ";
-        sprintf(buf, "%d of %d", track, totalTracks);
-        s += buf;
-
-        statusMsg_->set_text(s);
-      }
-
-      if (trackProgress != actTrackProgress_) {
-        actTrackProgress_ = trackProgress;
-
-        trackProgress_->set_percentage(gfloat(trackProgress) / 1000.0);
-        sprintf(bufProgress, "%.2f %%%%", gfloat(trackProgress/10.0));
-        trackProgress_->set_format_string(bufProgress);  
-      }
-
-      if (totalProgress != actTotalProgress_) {
-        actTotalProgress_ = totalProgress;
-
-        totalProgress_->set_percentage(gfloat(totalProgress) / 1000.0);
-        sprintf(bufProgress, "%.2f %%%%", gfloat(totalProgress/10.0));
-        totalProgress_->set_format_string(bufProgress);
-      }
-
-      if (bufferFill != actBufferFill_) {
-        actBufferFill_ = bufferFill;
-
-        bufferFillRate_->set_percentage(gfloat(bufferFill) / 100.0);
-        sprintf(bufProgress, "%.2f %%%%", gfloat(bufferFill/1.0));
-        bufferFillRate_->set_format_string(bufProgress);
-      }
-    }
-
-    if (device_->status() != CdDevice::DEV_RECORDING) {
-      switch (device_->exitStatus()) {
-      case 0:
-        statusMsg_->set_text(string("Recording finished successfully."));
-        break;
-
-      case 255:
-        statusMsg_->set_text(string("Cannot execute cdrdao. Please check your PATH."));
-        break;
-
-      default:
-        statusMsg_->set_text(string("Recording aborted with error."));
-        break;
-      }
-
-      finished_ = 1;
-
-      setCloseButtonLabel(2);
-    }
-    break;
-
-  case CdDevice::A_READ:
-    if ((level & UPD_PROGRESS_STATUS) && device_->progressStatusChanged()) {
-      device_->readProgress(&status, &totalTracks, &track, &trackProgress,
-			    &totalProgress);
-
-      if (status != actStatus_ || actTrack_ != track) {
-        actStatus_ = status;
-
-        switch (status) {
-        case 1:
+      switch (status) {
+      case PGSMSG_RCD_ANALYZING:
       	actTrack_ = track;
 
       	s = "Analyzing track ";
@@ -441,35 +361,86 @@ void ProgressDialog::update(unsigned long level)
 
       	statusMsg_->set_text(s);
       	break;
-        case 2:
+
+      case PGSMSG_RCD_EXTRACTING:
       	actTrack_ = track;
 
       	s = "Extracting track ";
-	      sprintf(buf, "%d of %d", track, totalTracks);
-	      s += buf;
+	sprintf(buf, "%d of %d", track, totalTracks);
+	s += buf;
 
       	statusMsg_->set_text(s);
-	      break;
-        }
-      }
+	break;
 
-      if (trackProgress != actTrackProgress_) {
-        actTrackProgress_ = trackProgress;
+      case PGSMSG_WCD_LEADIN:
+	statusMsg_->set_text(string("Writing lead-in..."));
+	break;
 
-        trackProgress_->set_percentage(gfloat(trackProgress) / 1000.0);
-        sprintf(bufProgress, "%.2f %%%%", gfloat(trackProgress/10.0));
-        trackProgress_->set_format_string(bufProgress);  
-      }
+      case PGSMSG_WCD_DATA:
+	actTrack_ = track;
 
-      if (totalProgress != actTotalProgress_) {
-        actTotalProgress_ = totalProgress;
+	s = "Writing track ";
+	sprintf(buf, "%d of %d", track, totalTracks);
+	s += buf;
 
-        totalProgress_->set_percentage(gfloat(totalProgress) / 1000.0);
-        sprintf(bufProgress, "%.2f %%%%", gfloat(totalProgress/10.0));
-        totalProgress_->set_format_string(bufProgress);
+	statusMsg_->set_text(s);
+	break;
+
+      case PGSMSG_WCD_LEADOUT:
+	statusMsg_->set_text(string("Writing lead-out..."));
+	break;
       }
     }
 
+    if (trackProgress != actTrackProgress_) {
+      actTrackProgress_ = trackProgress;
+
+      trackProgress_->set_percentage(gfloat(trackProgress) / 1000.0);
+      sprintf(bufProgress, "%.2f %%%%", gfloat(trackProgress/10.0));
+      trackProgress_->set_format_string(bufProgress);  
+    }
+
+    if (totalProgress != actTotalProgress_) {
+      actTotalProgress_ = totalProgress;
+      
+      totalProgress_->set_percentage(gfloat(totalProgress) / 1000.0);
+      sprintf(bufProgress, "%.2f %%%%", gfloat(totalProgress/10.0));
+      totalProgress_->set_format_string(bufProgress);
+    }
+
+    if (bufferFill != actBufferFill_) {
+      actBufferFill_ = bufferFill;
+      
+      bufferFillRate_->set_percentage(gfloat(bufferFill) / 100.0);
+      sprintf(bufProgress, "%.2f %%%%", gfloat(bufferFill/1.0));
+      bufferFillRate_->set_format_string(bufProgress);
+    }
+  }
+  
+  switch (device_->action()) {
+    case CdDevice::A_RECORD:
+      if (device_->status() != CdDevice::DEV_RECORDING) {
+	switch (device_->exitStatus()) {
+	case 0:
+	  statusMsg_->set_text(string("Recording finished successfully."));
+	  break;
+
+	case 255:
+	  statusMsg_->set_text(string("Cannot execute cdrdao. Please check your PATH."));
+	  break;
+	  
+	default:
+	  statusMsg_->set_text(string("Recording aborted with error."));
+	  break;
+	}
+
+	finished_ = 1;
+
+	setCloseButtonLabel(2);
+      }
+      break;
+
+  case CdDevice::A_READ:
     if (device_->status() != CdDevice::DEV_READING) {
       switch (device_->exitStatus()) {
       case 0:
@@ -479,87 +450,24 @@ void ProgressDialog::update(unsigned long level)
       case 255:
         statusMsg_->set_text(string("Cannot execute cdrdao. Please check your PATH."));
         break;
-
+	
       default:
         statusMsg_->set_text(string("Reading aborted with error."));
         break;
       }
-
+      
       finished_ = 1;
-
+      
       setCloseButtonLabel(2);
     }
 
     break;
   
   case CdDevice::A_DUPLICATE:
-    if ((level & UPD_PROGRESS_STATUS) && device_->progressStatusChanged()) {
-      device_->recordProgress(&status, &totalTracks, &track, &trackProgress,
-			      &totalProgress, &bufferFill);
-
-//g_print("Message received!\n");
-
-      if (status != actStatus_) {
-        actStatus_ = status;
-
-        switch (status) {
-          case 1:
-            statusMsg_->set_text(string("Writing lead-in..."));
-  	      break;
-          case 2:
-	        actTrack_ = track;
-
-        	s = "Writing track ";
-        	sprintf(buf, "%d of %d", track, totalTracks);
-	        s += buf;
-
-        	statusMsg_->set_text(s);
-    	    break;
-          case 3:
-    	    statusMsg_->set_text(string("Writing lead-out..."));
-	        break;
-        }
-      }
-
-      if (track != actTrack_ && status == 2) {
-        actTrack_ = track;
-
-        s = "Writing track ";
-        sprintf(buf, "%d of %d", track, totalTracks);
-        s += buf;
-
-        statusMsg_->set_text(s);
-      }
-
-      if (trackProgress != actTrackProgress_) {
-        actTrackProgress_ = trackProgress;
-
-        trackProgress_->set_percentage(gfloat(trackProgress) / 1000.0);
-        sprintf(bufProgress, "%.2f %%%%", gfloat(trackProgress/10.0));
-        trackProgress_->set_format_string(bufProgress);  
-      }
-
-      if (totalProgress != actTotalProgress_) {
-        actTotalProgress_ = totalProgress;
-
-        totalProgress_->set_percentage(gfloat(totalProgress) / 1000.0);
-        sprintf(bufProgress, "%.2f %%%%", gfloat(totalProgress/10.0));
-        totalProgress_->set_format_string(bufProgress);
-      }
-
-      if (bufferFill != actBufferFill_) {
-        actBufferFill_ = bufferFill;
-
-        bufferFillRate_->set_percentage(gfloat(bufferFill) / 100.0);
-        sprintf(bufProgress, "%.2f %%%%", gfloat(bufferFill/1.0));
-        bufferFillRate_->set_format_string(bufProgress);
-      }
-    }
-
     if (device_->status() != CdDevice::DEV_RECORDING) {
       switch (device_->exitStatus()) {
       case 0:
-        statusMsg_->set_text(string("Recording finished successfully."));
+        statusMsg_->set_text(string("CD copying finished successfully."));
         break;
 
       case 255:
@@ -567,7 +475,7 @@ void ProgressDialog::update(unsigned long level)
         break;
 
       default:
-        statusMsg_->set_text(string("Recording aborted with error."));
+        statusMsg_->set_text(string("CD copying aborted with error."));
         break;
       }
 

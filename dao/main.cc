@@ -19,6 +19,9 @@
 
 /*
  * $Log: main.cc,v $
+ * Revision 1.14  2000/11/05 19:20:59  andreasm
+ * Unified progress messages sent from cdrdao to gcdmaster.
+ *
  * Revision 1.13  2000/11/05 12:29:47  andreasm
  * Added BURN Proof support to 'generic-mmc-raw' driver.
  * Added command 'msinfo' that displays multi session information suitable for
@@ -154,7 +157,7 @@
  *
  */
 
-static char rcsid[] = "$Id: main.cc,v 1.13 2000/11/05 12:29:47 andreasm Exp $";
+static char rcsid[] = "$Id: main.cc,v 1.14 2000/11/05 19:20:59 andreasm Exp $";
 
 #include <config.h>
 
@@ -1723,12 +1726,21 @@ int main(int argc, char **argv)
 
   SETTINGS = new Settings;
 
-  SETTINGS->read("/etc/defaults/cdrdao");
+  settingsPath = "/etc/cdrdao.conf";
+  if (SETTINGS->read(settingsPath) == 0)
+    message(2, "Read settings from \"%s\".", settingsPath);
+
+  settingsPath = "/etc/defaults/cdrdao";
+  if (SETTINGS->read(settingsPath) == 0)
+    message(2, "Read settings from \"%s\".", settingsPath);
+
+  settingsPath = NULL;
 
   if ((homeDir = getenv("HOME")) != NULL) {
     settingsPath = strdup3CC(homeDir, "/.cdrdao", NULL);
 
-    SETTINGS->read(settingsPath);
+    if (SETTINGS->read(settingsPath) == 0)
+      message(2, "Read settings from \"%s\".", settingsPath);
   }
   else {
     message(-1,
@@ -2148,6 +2160,9 @@ int main(int argc, char **argv)
 #endif
     }
     else {
+      if (srcCdr != cdr)
+	srcCdr->remote(REMOTE_MODE, REMOTE_FD);
+
       if (copyCd(srcCdr, cdr, SESSION, DATA_FILENAME, FIFO_BUFFERS, SWAP,
 		 EJECT, FORCE, KEEPIMAGE) == 0) {
 	message(1, "CD copying finished successfully.");
