@@ -1,7 +1,7 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_REVISION($Revision: 1.6 $)dnl
+AC_REVISION($Revision: 1.7 $)dnl
 
-cdrdao_version=1.1.4-pre2
+cdrdao_version=1.1.4-pre3
 
 AC_INIT(cdrdao.lsm)
 AC_CONFIG_HEADER(config.h)
@@ -50,11 +50,7 @@ if test -z "$SIZE16"; then
 	AC_MSG_ERROR(No 16 bit type found on this platform!)
 fi
 
-dnl Checks for library functions.
-AC_CHECK_FUNCS(strerror)
-AC_CHECK_FUNCS(mlockall munlockall)
-AC_CHECK_FUNCS(seteuid setegid getpagesize)
-AC_CHECK_FUNCS(usleep)
+dnl Check for additionally required libraries
 
 AC_CHECK_FUNC(sched_getparam,AC_DEFINE(HAVE_SCHED_GETPARAM),
   AC_CHECK_LIB(posix4,sched_getparam,[use_libposix4=yes;AC_DEFINE(HAVE_SCHED_GETPARAM)]))
@@ -65,11 +61,36 @@ AC_CHECK_FUNC(sched_get_priority_max,AC_DEFINE(HAVE_SCHED_GET_PRIORITY_MAX),
 AC_CHECK_FUNC(sched_setscheduler,AC_DEFINE(HAVE_SCHED_SETSCHEDULER),
   AC_CHECK_LIB(posix4,sched_setscheduler,[use_libposix4=yes;AC_DEFINE(HAVE_SCHED_SETSCHEDULER)]))
 
+AC_CHECK_LIB(socket,socket,[use_libsocket=yes])
+AC_CHECK_LIB(socket,connect,[use_libsocket=yes])
+
+AC_CHECK_LIB(nsl,gethostbyname,[use_libnsl=yes])
+AC_CHECK_LIB(nsl,inet_addr,[use_libnsl=yes])
+AC_CHECK_LIB(nsl,inet_ntoa,[use_libnsl=yes])
+
+dnl Add 'libsocket' if required
+if test "$use_libsocket" = yes; then
+  LIBS="$LIBS -lsocket"
+fi
+
+dnl Add 'libnsl' if required
+if test "$use_libnsl" = yes; then
+  LIBS="$LIBS -lnsl"
+fi
 
 dnl Check if libposix4 must be linked
 if test "$use_libposix4" = yes; then
-  extra_libs="$extra_libs -lposix4"
+  LIBS="$LIBS -lposix4"
 fi
+
+dnl Checks for library functions.
+AC_CHECK_FUNCS(strerror)
+AC_CHECK_FUNCS(mlockall munlockall)
+AC_CHECK_FUNCS(seteuid setegid getpagesize)
+AC_CHECK_FUNCS(usleep)
+
+AC_CHECK_FUNCS(inet_aton)
+
 
 dnl check if Posix threads should be used
 if test "$use_pthreads" = default; then
@@ -127,10 +148,12 @@ if test $HAVE_ANTLR != "yes" -o $HAVE_DLG != "yes" ; then
   AC_MSG_ERROR([No PCCTS installation detected.])
 fi
 
-AC_PATH_GTKMM(1.2.0, xdao=xdao, [echo Disabled building of xcdrdao.])
+xdao=xdao
+AC_PATH_GTKMM(1.2.0,,[xdao=no; echo Disabled building of xcdrdao.])
+AC_PATH_GNOMEMM(1.0.55,, [xdao=no; echo Disabled building of xcdrdao.])
 
-if test x$xdao != x; then
-  GTKMM_CFLAGS="`gnome-config --cflags gnomemm` $GTKMM_CFLAGS"
+if test $xdao != xdao; then
+  xdao=
 fi
 
 dnl Determine source for scsi interface class
@@ -227,7 +250,6 @@ AC_SUBST(xdao)
 AC_SUBST(scsilib_dir)
 AC_SUBST(scsilib_incl)
 AC_SUBST(scsilib_libs)
-AC_SUBST(extra_libs)
 AC_SUBST(pcctsbin)
 AC_SUBST(pcctsinc)
 AC_SUBST(dao_src)

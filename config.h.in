@@ -50,5 +50,9 @@
 #undef HAVE_PTHREAD_GETSCHEDPARAM
 #undef HAVE_PTHREAD_SETSCHEDPARAM
 
+/* networking */
+#undef HAVE_INET_ATON
+
 /* SCSI interface selection */
 #undef USE_SCGLIB
+
