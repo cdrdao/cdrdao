@@ -18,6 +18,9 @@
  */
 /*
  * $Log: PQSubChannel16.h,v $
+ * Revision 1.3  2002/06/29 17:23:09  andreasm
+ * Some cosmetic fixes.
+ *
  * Revision 1.2  2000/12/17 10:51:22  andreasm
  * Default verbose level is now 2. Adaopted message levels to have finer
  * grained control about the amount of messages printed by cdrdao.
@@ -62,6 +65,7 @@ public:
   void init(unsigned char *);
 
   void type(unsigned char); // set Q type
+  Type type() const;        // returns Q mode type
 
   long dataLength() const; // returns number of sub channel bytes
 
