@@ -18,6 +18,9 @@
  */
 /*
  * $Log: xcdrdao.cc,v $
+ * Revision 1.11  2000/06/10 14:49:49  andreasm
+ * Changed Warning to WARNING in 'message()'.
+ *
  * Revision 1.10  2000/05/25 20:12:55  llanero
  * added BUGS and TASKS, changed name to GnomeCDMaster
  *
@@ -125,7 +128,7 @@ void message(int level, const char *fmt, ...)
   if (level < 0) {
     switch (level) {
     case -1:
-      fprintf(stderr, "Warning: ");
+      fprintf(stderr, "WARNING: ");
       break;
     case -2:
       fprintf(stderr, "ERROR: ");
