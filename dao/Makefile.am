@@ -22,7 +22,6 @@ libdao_a_SOURCES = \
 	GenericMMCraw.cc	\
 	PlextorReaderScan.cc	\
 	RicohMP6200.cc		\
-	ScsiIf-lib.cc		\
 	TaiyoYuden.cc		\
 	YamahaCDR10x.cc		\
 	TeacCdr55.cc		\
@@ -64,6 +63,7 @@ EXTRA_libdao_a_SOURCES = 	\
 	dao-win32.cc		\
 	decodeSense.cc		\
 	sg_err.cc		\
+	ScsiIf-lib.cc		\
 	ScsiIf-common.cc	\
 	ScsiIf-linux.cc		\
 	ScsiIf-freebsd-cam.cc	\
@@ -80,6 +80,7 @@ cdrdao_LDADD =						\
 cdrdao_DEPENDENCIES = \
 	$(top_builddir)/paranoia/libcdda_paranoia.a	\
 	$(top_builddir)/trackdb/libtrackdb.a		\
+	@scsilib_deps@					\
 	libdao.a
 
 drivertabledir = $(datadir)/cdrdao

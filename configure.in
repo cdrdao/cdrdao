@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_REVISION($Revision: 1.36 $)dnl
+AC_REVISION($Revision: 1.37 $)dnl
 
 AC_INIT(cdrdao, 1.1.9pre1)
 
@@ -8,15 +8,14 @@ AM_INIT_AUTOMAKE
 AM_CONFIG_HEADER(config.h)
 AC_CANONICAL_HOST
 
-AC_ARG_WITH(pcctsbin,[  --with-pcctsbin=dir     set directory of PCCTS parser generator executables],pcctsbin=$withval,pcctsbin=default)
-AC_ARG_WITH(pcctsinc,[  --with-pcctsinc=dir     set directory of PCCTS parser generator includes],pcctsinc=$withval,pcctsinc=default)
-AC_ARG_WITH(linux-qnx-sched,[  --with-linux-qnx-sched  enable QNX real time scheduling for Linux],AC_DEFINE(LINUX_QNX_SCHEDULING,1,"Use real time scheduling for Linux"))
-AC_ARG_WITH(posix-threads,[  --with-posix-threads    use Posix threads for ring buffer (default: on)],use_pthreads=$withval,use_pthreads=default)
-AC_ARG_WITH(scglib,[  --with-scglib           use Joerg Schillings SCSI library (default: on)],use_scglib=$withval,use_scglib=default)
-AC_ARG_WITH(scglib-inc,[  --with-scglib-inc=dir   set directory for SCSI library include files],scglib_inc=$withval,scglib_inc=default)
-AC_ARG_WITH(scglib-lib,[  --with-scglib-lib=dir   set directory that contains the SCSI library],scglib_lib=$withval,scglib_lib=default)
-AC_ARG_WITH(xdao,[  --without-xdao          disable building of gcdmaster],xdao=$withval,xdao=default)
-
+AC_ARG_WITH(pcctsbin,[  --with-pcctsbin=dir     set directory of PCCTS parser generator executables],[pcctsbin=$withval],[pcctsbin=default])
+AC_ARG_WITH(pcctsinc,[  --with-pcctsinc=dir     set directory of PCCTS parser generator includes],[pcctsinc=$withval],[pcctsinc=default])
+AC_ARG_WITH(linux-qnx-sched,[  --with-linux-qnx-sched  enable QNX real time scheduling for Linux],[AC_DEFINE(LINUX_QNX_SCHEDULING,1,"Use real time scheduling for Linux")])
+AC_ARG_WITH(posix-threads,[  --with-posix-threads    use Posix threads for ring buffer (default: on)],[use_pthreads=$withval],[use_pthreads=default])
+AC_ARG_WITH(scglib,[  --with-scglib           use Joerg Schillings SCSI library (default: on)],[scglib=$withval],[scglib=default])
+AC_ARG_WITH(scglib-inc,[  --with-scglib-inc=dir   set directory for SCSI library include files],[scglib_inc=$withval],[scglib_inc=default])
+AC_ARG_WITH(scglib-lib,[  --with-scglib-lib=dir   set directory that contains the SCSI library],[scglib_lib=$withval],[scglib_lib=default])
+AC_ARG_WITH(xdao,[  --with-xdao             enable building of gcdmaster (default: on)],[xdao=$withval],[xdao=default])
 
 dnl Checks for programs.
 AC_PROG_CC
@@ -209,20 +208,24 @@ en_toc2mp3=no
 
 AC_PATH_LAME(3.92, [utiltools="$utiltools toc2mp3" en_toc2mp3=yes])
 
+dnl Determine whether we're building the gcdaster GUI front-end
 en_xdao=no
 if test "$xdao" = default; then
+  xdao=yes
+fi
+if test "$xdao" = yes; then
   en_xdao=yes
   PKG_CHECK_MODULES(GTKMM2, gtkmm-2.0 >= 2.2,[],[en_xdao=no])
   PKG_CHECK_MODULES(LIBGUIMM2, libgnomeuimm-2.0 >= 2.0,[],[en_xdao=no])
 fi
 
 dnl Determine source for scsi interface class
-en_scsilib=yes
-if test "$use_scglib" = default; then
-  use_scglib=yes
+if test "$scglib" = default; then
+  scglib=yes
 fi
+en_scsilib="$scglib"
 
-if test "$use_scglib" = yes; then
+if test "$scglib" = yes; then
   AC_DEFINE(USE_SCGLIB,1,"")
   AC_DEFINE(SCSI_ATAPI, 1, "Allow ATAPI support device")
 
@@ -232,13 +235,13 @@ if test "$use_scglib" = yes; then
     scsilib_libs="-L../scsilib/export"
   else
     scsilib_dir=""
-    en_scsilib="no (bypassed by configuration)"
+    en_scsilib="no (using installed libscg)"
     scsilib_incl="-I$scglib_inc"
     scsilib_libs="-L$scglib_lib"
   fi
   
-  scsilib_libs="$scsilib_libs -lscg -lschily"
-  scsi_if_src=ScsiIf-lib.cc
+  scsilib_libs="ScsiIf-lib.o $scsilib_libs -lscg -lschily"
+  scsilib_deps="ScsiIf-lib.o"
   
   case "$host" in
     *-freebsd2*)
@@ -251,23 +254,26 @@ if test "$use_scglib" = yes; then
 
 else
 
+  en_scsilib="no (using generic sg layer)"
   scsilib_dir=""
   scsilib_incl=""
   scsilib_libs=""
 
   case "$host" in
     *-linux-*)
-	       scsi_if_src="ScsiIf-linux.cc sg_err.cc"
+	       scsilib_libs="ScsiIf-linux.o sg_err.o"
+	       scsilib_deps="ScsiIf-linux.o sg_err.o"
 	       ;;
     
     *-freebsd[[3456]]*)
-			       scsi_if_src="ScsiIf-freebsd-cam.cc"
-			       scsilib_libs="-lcam"
-			       ;;
+	       scsilib_libs="ScsiIf-freebsd-cam.o -lcam"
+	       scsilib_deps="ScsiIf-freebsd-cam.o"
+	       ;;
 
     *-pc-cygwin32)
-		   scsi_if_src="ScsiIf-win.cc"
-		   ;;
+                scsilib_libs="ScsiIf-win.o"
+                scsilib_deps="ScsiIf-win.o"
+                ;;
 
     *)
        AC_MSG_ERROR([Unsupported operating system: $host_os]) 
@@ -333,6 +339,7 @@ AC_SUBST(en_cdrdao)
 AC_SUBST(scsilib_dir)
 AC_SUBST(scsilib_incl)
 AC_SUBST(scsilib_libs)
+AC_SUBST(scsilib_deps)
 AC_SUBST(pcctsinc)
 AC_SUBST(dao_src)
 AC_SUBST(sound_if_obj)
