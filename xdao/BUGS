@@ -13,3 +13,14 @@ Status	Who	Description
 
 -	-	Using a big number with buffers when recording won't work!
 		'new' throwing an exception? (try ... else ... ???)
+
+-	-	I can press the eject button on my cdrom and the CD will
+		eject, the problem is that I'm extracting! xcdrdao/cdrdao
+		should block the CD! until the operation is done.
+
+-	-	When writing (simulated!) I was not able to eject the CD,
+		good :), but if I try (in gmc) right click->eject device,
+		this command will block, and make cdrdao "hang" without
+		any error messages until you abort the recording, then
+		the CD will eject ;). The device should not receive any
+		other command when writing!!!

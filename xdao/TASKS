@@ -54,3 +54,11 @@ Started Manuel  Make RecordGenericDialog.
 
 -	-	Write extensive documentation: what's the right way
 		to do this? sgml? how?
+
+-	-	Put a message in the record progress dialog telling:
+		"Don't panic if the progressbar doesn't update,
+		the lead in data/track (?) is being written".
+
+-	-	"Generate log" option in the record dialog, so we can
+		dump lots of messages to a file like "log.txt" for later
+		reviewing.
