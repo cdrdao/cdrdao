@@ -18,6 +18,9 @@
  */
 /*
  * $Log: CdTextTable.cc,v $
+ * Revision 1.2  2000/04/23 16:31:54  andreasm
+ * Removed commented out statements.
+ *
  * Revision 1.1  2000/04/23 09:02:04  andreasm
  * Table entry dialog for CD-TEXT title and performer data.
  *
@@ -26,7 +29,7 @@
  *
  */
 
-static char rcsid[] = "$Id: CdTextTable.cc,v 1.1 2000/04/23 09:02:04 andreasm Exp $";
+static char rcsid[] = "$Id: CdTextTable.cc,v 1.2 2000/04/23 16:31:54 andreasm Exp $";
 
 #include "CdTextTable.h"
 
@@ -86,7 +89,7 @@ CdTextTable::CdTextTable(TocEdit *tocEdit, int language)
   {
     performerButton_ = new Gtk::CheckButton("Enable Perfomer Entries");
     performerButton_->set_active(TRUE);
-    //performerButton_->toggled.connect(slot(this, &CdTextTable::activatePerformerAction));
+    performerButton_->toggled.connect(slot(this, &CdTextTable::activatePerformerAction));
 
     Gtk::HBox *hbox = manage(new Gtk::HBox);
 
@@ -157,19 +160,19 @@ CdTextTable::CdTextTable(TocEdit *tocEdit, int language)
   Gtk::HButtonBox *bbox = manage(new Gtk::HButtonBox(GTK_BUTTONBOX_SPREAD));
 
   Gtk::Button *okButton = manage(new Gtk::Button(string(" Ok ")));
-  //okButton->clicked.connect(slot(this, &CdTextTable::okAction));
+  okButton->clicked.connect(slot(this, &CdTextTable::okAction));
 
   bbox->pack_start(*okButton);
   okButton->show();
 
   Gtk::Button *fillButton = manage(new Gtk::Button(string(" Fill Performer ")));
-  //fillButton->clicked.connect(slot(this, &CdTextTable::fillPerformerAction));
+  fillButton->clicked.connect(slot(this, &CdTextTable::fillPerformerAction));
 
   bbox->pack_start(*fillButton);
   fillButton->show();
 
   Gtk::Button *cancelButton = manage(new Gtk::Button(string(" Cancel ")));
-  //cancelButton->clicked.connect(slot(this, &CdTextTable::cancelAction));
+  cancelButton->clicked.connect(slot(this, &CdTextTable::cancelAction));
 
   bbox->pack_start(*cancelButton);
   cancelButton->show();
