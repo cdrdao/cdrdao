@@ -1,0 +1,12 @@
+Track progress (%) when recording
+Total progress (%) when reading
+
+Pool messages for "copy" ?
+
+reading pool messages only go to 99.90 % ????
+
+should print speed in stdout.
+
+accept --read-speed 24, to set the max. read speed
+
+stablish what --force does and what not.
