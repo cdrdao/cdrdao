@@ -34,6 +34,7 @@
 #include "TocEdit.h"
 #include "MessageBox.h"
 #include "AudioCDChild.h"
+#include "AudioCDView.h"
 #include "DeviceConfDialog.h"
 #include "RecordGenericDialog.h"
 #include "TocInfoDialog.h"
@@ -47,305 +48,245 @@ MDIWindow::nothing_cb()
   cout << "nothing here" << endl;
 }
 
-void
-MDIWindow::install_menus_and_toolbar()
+MDIWindow::MDIWindow()
+  : Gnome::MDI("GnomeCDMaster", "Gnome CD Master")
 {
-  vector<Gnome::UI::Info> menus, newMenuTree, fileMenuTree, audioEditMenuTree;
-  vector<Gnome::UI::Info> actionsMenuTree, settingsMenuTree, helpMenuTree;
+  vector<Gnome::UI::Info> menus, newMenuTree, fileMenuTree, actionsMenuTree;
+  vector<Gnome::UI::Info> settingsMenuTree, helpMenuTree, windowsMenuTree;
 
-  // File->New menu
-  //
+  {
+    using namespace Gnome::UI;
+    // File->New menu
+    newMenuTree.push_back(Item(Icon(GNOME_STOCK_MENU_NEW),
+								N_("Audio CD"),
+								slot(this, &MDIWindow::newAudioCDProject),
+								N_("New Audio CD")));
 
-  newMenuTree.push_back(Gnome::UI::Item(Gnome::UI::Icon(GNOME_STOCK_MENU_NEW),
-					 N_("Audio CD"),
-					 slot(this, &MDIWindow::newProject),
-					 N_("New Audio CD")));
+    // File menu
+    fileMenuTree.push_back(SubTree(Icon(GNOME_STOCK_MENU_NEW),
+							    N_("New"),
+							    newMenuTree,
+							    "Create a new project"));
+  }
+
+  {
+    using namespace Gnome::MenuItems;
+    fileMenuTree.push_back(Open(slot(this, &MDIWindow::readProject)));
+    fileMenuTree.push_back(Save(slot(this, &MDIWindow::saveProject)));
+    fileMenuTree.push_back(SaveAs(slot(this, &MDIWindow::saveAsProject)));
+
+    fileMenuTree.push_back(Gnome::UI::Separator());
 /*
-  newMenuTree.push_back(Gnome::UI::Item(Gnome::UI::Icon(GNOME_STOCK_MENU_NEW),
-					 N_("Data CD"),
-					 slot(this, &MDIWindow::newProject),
-					 N_("New Data CD")));
-  newMenuTree.push_back(Gnome::UI::Item(Gnome::UI::Icon(GNOME_STOCK_MENU_NEW),
-					 N_("Mixed CD"),
-					 slot(this, &MDIWindow::newProject),
-					 N_("New Mixed CD")));
+    fileMenuTree.push_back(PrintSetup(slot(this, &MDIWindow::nothing_cb)));
+
+    fileMenuTree.push_back(Gnome::UI::Item(Gnome::UI::Icon(GNOME_STOCK_MENU_PRINT),
+								 N_("Print Cover..."),
+								 slot(this, &MDIWindow::nothing_cb),
+								 N_("Print Cover")));
+
+    fileMenuTree.push_back(Gnome::UI::Separator());
 */
+    // Close the current child (project);
+    fileMenuTree.push_back(Close(slot(this, &MDIWindow::closeProject)));
+    fileMenuTree.push_back(Exit(slot(this, &MDIWindow::app_close)));
+  }
 
-  // File menu
-  //
-  
-  fileMenuTree.push_back(Gnome::UI::SubTree(Gnome::UI::Icon(GNOME_STOCK_MENU_NEW),
-					     N_("New"),
-					     newMenuTree,
-					    "Create a new compilation"));
-
-  fileMenuTree.push_back(Gnome::MenuItems::Open
-			 (slot(this, &MDIWindow::readProject)));
-
-  fileMenuTree.push_back(Gnome::MenuItems::Save
-  				(slot(this, &MDIWindow::saveProject)));
-
-  fileMenuTree.push_back(Gnome::MenuItems::SaveAs
-  				(slot(this, &MDIWindow::saveAsProject)));
-
-  fileMenuTree.push_back(Gnome::UI::Separator());
+  {
+    using namespace Gnome::UI;
+    // Actions menu
+    actionsMenuTree.push_back(Item(Icon(GNOME_STOCK_MENU_CDROM),
+								N_("Record"),
+								slot(this, &MDIWindow::recordToc2CD),
+								N_("Record")));
+    actionsMenuTree.push_back(Item(Icon(GNOME_STOCK_MENU_CDROM),
+								N_("CD to CD copy"),
+								slot(this, &MDIWindow::recordCD2CD),
+								N_("CD to CD copy")));
+    actionsMenuTree.push_back(Item(Icon(GNOME_STOCK_MENU_CDROM),
+								N_("Dump CD to disk"),
+								slot(this, &MDIWindow::recordCD2HD),
+								N_("Dump CD to disk")));
 /*
-
-  fileMenuTree.push_back(Gnome::MenuItems::PrintSetup
-  				(slot(this, &MDIWindow::nothing_cb)));
-
-  fileMenuTree.push_back(Gnome::UI::Item(Gnome::UI::Icon(GNOME_STOCK_MENU_PRINT),
-					 N_("Print Cover..."),
-					 slot(this, &MDIWindow::nothing_cb),
-					 N_("Print Cover")));
-
-  fileMenuTree.push_back(Gnome::UI::Separator());
-
-//This Close refers to close the current (selected) child
-  fileMenuTree.push_back(Gnome::MenuItems::Close
-  				(slot(this, &MDIWindow::nothing_cb)));
-*/
-  fileMenuTree.push_back(Gnome::MenuItems::Exit
-  				(slot(this, &MDIWindow::app_close)));
-
-  menus.push_back(Gnome::Menus::File(fileMenuTree));
-
-// The Edit Menu should be a per child menu, so every child knows how
-// to do the copy, cut and paste operations. And also more operations,
-// like in the Audio editing (Insert file, Insert Silence, ...)
-// It is here for fast copy and paste ;)
-  // Edit menu
-  //
-  audioEditMenuTree.
-    push_back(Gnome::UI::Item(N_("Project Info..."),
-			      slot(this, &MDIWindow::projectInfo),
-			      N_("Edit global project data")));
-
-  audioEditMenuTree.
-    push_back(Gnome::UI::Item(N_("Track Info..."),
-			      slot(this, &MDIWindow::trackInfo),
-			      N_("Edit track data")));
-
-  audioEditMenuTree.push_back(Gnome::UI::Separator());
-
-  audioEditMenuTree.
-    push_back(Gnome::UI::Item(Gnome::UI::Icon(GNOME_STOCK_MENU_CUT),
-			      N_("Cut"),
-			      slot(audioCdChild_, &AudioCDChild::cutTrackData),
-			      N_("Cut out selected samples")));
-
-  audioEditMenuTree.
-    push_back(Gnome::UI::Item(Gnome::UI::Icon(GNOME_STOCK_MENU_PASTE),
-			      N_("Paste"),
-			      slot(audioCdChild_,
-				   &AudioCDChild::pasteTrackData),
-			      N_("Paste previously cut samples")));
-
-  audioEditMenuTree.push_back(Gnome::UI::Separator());
-
-  audioEditMenuTree.
-    push_back(Gnome::UI::Item(N_("Add Track Mark"),
-			      slot(audioCdChild_, &AudioCDChild::addTrackMark),
-			      N_("Add track marker at current marker position")));
-
-  audioEditMenuTree.
-    push_back(Gnome::UI::Item(N_("Add Index Mark"),
-			      slot(audioCdChild_, &AudioCDChild::addIndexMark),
-			      N_("Add index marker at current marker position")));
-
-  audioEditMenuTree.
-    push_back(Gnome::UI::Item(N_("Add Pre-Gap"),
-			      slot(audioCdChild_, &AudioCDChild::addPregap),
-			      N_("Add pre-gap at current marker position")));
-
-  audioEditMenuTree.
-    push_back(Gnome::UI::Item(N_("Remove Track Mark"),
-			      slot(audioCdChild_, &AudioCDChild::removeTrackMark),
-			      N_("Remove selected track/index marker or pre-gap")));
-
-  audioEditMenuTree.push_back(Gnome::UI::Separator());
-
-  audioEditMenuTree.
-    push_back(Gnome::UI::Item(N_("Append Track"),
-			      slot(audioCdChild_, &AudioCDChild::appendTrack),
-			      N_("Append track with data from audio file")));
-
-  audioEditMenuTree.
-    push_back(Gnome::UI::Item(N_("Append File"),
-			      slot(audioCdChild_, &AudioCDChild::appendFile),
-			      N_("Append data from audio file to last track")));
-  
-  audioEditMenuTree.
-    push_back(Gnome::UI::Item(N_("Insert File"),
-			      slot(audioCdChild_, &AudioCDChild::insertFile),
-			      N_("Insert data from audio file at current marker position")));
-
-  audioEditMenuTree.push_back(Gnome::UI::Separator());
-
-  audioEditMenuTree.
-    push_back(Gnome::UI::Item(N_("Append Silence"),
-			      slot(audioCdChild_, &AudioCDChild::appendSilence),
-			      N_("Append silence to last track")));
-
-  audioEditMenuTree.
-    push_back(Gnome::UI::Item(N_("Insert Silence"),
-			      slot(audioCdChild_, &AudioCDChild::insertSilence),
-			      N_("Insert silence at current marker position")));
-
-  menus.push_back(Gnome::Menus::Edit(audioEditMenuTree));
-
-  // Actions menu
-  //
-  actionsMenuTree.push_back(Gnome::UI::Item(N_("Record"),
-					    slot(this, &MDIWindow::recordToc2CD)));
-  actionsMenuTree.push_back(Gnome::UI::Item(N_("CD to CD copy"),
-					    slot(this, &MDIWindow::recordCD2CD)));
-  actionsMenuTree.push_back(Gnome::UI::Item(N_("Dump CD to disk"),
-					    slot(this, &MDIWindow::recordCD2HD)));
-/*  actionsMenuTree.push_back(Gnome::UI::Item(N_("Fixate CD"),
+    actionsMenuTree.push_back(Gnome::UI::Item(N_("Fixate CD"),
 					    slot(this, &MDIWindow::nothing_cb)));
-  actionsMenuTree.push_back(Gnome::UI::Item(N_("Blank CD-RW"),
+    actionsMenuTree.push_back(Gnome::UI::Item(N_("Blank CD-RW"),
 					    slot(this, &MDIWindow::nothing_cb)));
-  actionsMenuTree.push_back(Gnome::UI::Item(N_("Get Info"),
+    actionsMenuTree.push_back(Gnome::UI::Item(N_("Get Info"),
 					    slot(this, &MDIWindow::nothing_cb)));
 */
-  menus.push_back(Gnome::UI::Menu(N_("_Actions"), actionsMenuTree));
-
-  // Settings menu
-  //
-  settingsMenuTree.
-    push_back(Gnome::UI::Item(Gnome::UI::Icon(GNOME_STOCK_MENU_PREF),
-			      N_("Configure Devices..."),
-			      slot(this, &MDIWindow::configureDevices)));
+    // Settings menu
+    settingsMenuTree.push_back(Item(Icon(GNOME_STOCK_MENU_PREF),
+								N_("Configure Devices..."),
+								slot(this, &MDIWindow::configureDevices)));
+  }
 /*
-  settingsMenuTree.push_back(Gnome::MenuItems::Preferences
+    settingsMenuTree.push_back(Gnome::MenuItems::Preferences
   				(slot(this, &MDIWindow::nothing_cb)));
 */
-  menus.push_back(Gnome::Menus::Settings(settingsMenuTree));
-
 
   // Help menu
-  //
   //helpMenuTree.push_back(Gnome::UI::Help("Quick Start"));
 
   helpMenuTree.push_back(Gnome::MenuItems::About
   				(slot(this, &MDIWindow::about_cb)));
 
-  menus.push_back(Gnome::Menus::Help(helpMenuTree));
+  {
+    using namespace Gnome::Menus;
+    menus.push_back(File(fileMenuTree));
+    menus.push_back(Gnome::UI::Menu(N_("_Actions"), actionsMenuTree));
+    menus.push_back(Settings(settingsMenuTree));
+    menus.push_back(Windows(windowsMenuTree));
+    menus.push_back(Help(helpMenuTree));
+  }
 
+  set_menubar_template(menus);
 
-//  set_menubar_template(menus);
-  create_menus(menus);
-  
   // Toolbar
-  //
   vector<Gnome::UI::Info> toolbarTree;
 
-  toolbarTree.push_back(Gnome::UI::Item(Gnome::UI::Icon(GNOME_STOCK_PIXMAP_NEW),
-					N_("New"),
-					slot(this, &MDIWindow::newProject),
-					N_("Create a new project")));
+  {
+    using namespace Gnome::UI;
+    toolbarTree.push_back(Item(Icon(GNOME_STOCK_PIXMAP_NEW),
+								N_("New"),
+								slot(this, &MDIWindow::newAudioCDProject),
+								N_("New Audio CD Project")));
+    toolbarTree.push_back(Item(Icon(GNOME_STOCK_PIXMAP_OPEN),
+								N_("Open"),
+								slot(this, &MDIWindow::readProject),
+								N_("Open a project")));
+    toolbarTree.push_back(Item(Icon(GNOME_STOCK_PIXMAP_SAVE),
+								N_("Save"),
+								slot(this, &MDIWindow::saveProject),
+								N_("Save current project")));
+    toolbarTree.push_back(Separator());
 
-  toolbarTree.push_back(Gnome::UI::Item(Gnome::UI::Icon(GNOME_STOCK_PIXMAP_OPEN),
-					N_("Open"),
-					slot(this, &MDIWindow::readProject),
-					N_("Open a project")));
+    toolbarTree.push_back(Item(Icon(GNOME_STOCK_PIXMAP_CDROM),
+								N_("Record"),
+								slot(this, &MDIWindow::recordToc2CD),
+								N_("Record to CD")));
+    toolbarTree.push_back(Item(Icon(GNOME_STOCK_PIXMAP_CDROM),
+								N_("CD to CD"),
+								slot(this, &MDIWindow::recordCD2CD),
+								N_("CD duplication")));
+    toolbarTree.push_back(Item(Icon(GNOME_STOCK_PIXMAP_CDROM),
+								N_("Dump CD"),
+								slot(this, &MDIWindow::recordCD2HD),
+								N_("Dump CD to disk")));
+    toolbarTree.push_back(Separator());
 
-  toolbarTree.push_back(Gnome::UI::Item(Gnome::UI::Icon(GNOME_STOCK_PIXMAP_SAVE),
-					N_("Save"),
-					slot(this, &MDIWindow::saveProject),
-					N_("Save current project")));
-
-  toolbarTree.push_back(Gnome::UI::Separator());
-
-  toolbarTree.push_back(Gnome::UI::Item(Gnome::UI::Icon(GNOME_STOCK_PIXMAP_CDROM),
-  					N_("Record"),
-					  slot(this, &MDIWindow::recordToc2CD),
-					  N_("Record to CD")));
-
-  toolbarTree.push_back(Gnome::UI::Item(Gnome::UI::Icon(GNOME_STOCK_PIXMAP_CDROM),
-  					N_("CD to CD"),
-  					slot(this, &MDIWindow::recordCD2CD),
-  					N_("CD duplication")));
-
-  toolbarTree.push_back(Gnome::UI::Item(Gnome::UI::Icon(GNOME_STOCK_PIXMAP_CDROM),
-  					N_("Dump CD"),
-  					slot(this, &MDIWindow::recordCD2HD),
-  					N_("Dump CD to disk")));
-
-  toolbarTree.push_back(Gnome::UI::Separator());
-
-  toolbarTree.push_back(Gnome::UI::Item(Gnome::UI::Icon(GNOME_STOCK_PIXMAP_PREFERENCES),
-					N_("Devices"),
-					slot(this, &MDIWindow::configureDevices),
-					N_("Configure devices")));
+    toolbarTree.push_back(Item(Icon(GNOME_STOCK_PIXMAP_PREFERENCES),
+								N_("Devices"),
+								slot(this, &MDIWindow::configureDevices),
+								N_("Configure devices")));
 /*
-  toolbarTree.push_back(Gnome::UI::Item(Gnome::UI::Icon(GNOME_STOCK_PIXMAP_PREFERENCES),
-				      N_("Prefs"),
-				      slot(this, &MDIWindow::nothing_cb),
-				      N_("Preferences")));
+    toolbarTree.push_back(Item(Icon(GNOME_STOCK_PIXMAP_PREFERENCES),
+								N_("Prefs"),
+								slot(this, &MDIWindow::nothing_cb),
+								N_("Preferences")));
 */
-  toolbarTree.push_back(Gnome::UI::Separator());
+    toolbarTree.push_back(Separator());
 
-  toolbarTree.push_back(Gnome::UI::Item(Gnome::UI::Icon(GNOME_STOCK_PIXMAP_QUIT),
-					N_("Quit"),
-					slot(this, &MDIWindow::app_close),
-					N_("Quit application")));
+    toolbarTree.push_back(Item(Icon(GNOME_STOCK_PIXMAP_QUIT),
+								N_("Quit"),
+								slot(this, &MDIWindow::app_close),
+								N_("Quit application")));
+  }
 
-//  set_toolbar_template(toolbarTree);
-  create_toolbar(toolbarTree);
+  set_toolbar_template(toolbarTree);
 
-  install_menu_hints();
+  readFileSelector_ = 0;
+
+//  delete_event.connect(slot(this, &MDIWindow::delete_event_cb));
+
+//FIXME  child_changed.connect(slot(this, &MDIWindow::child_changed_cb));
+
+  set_child_menu_path("_File");
+  set_child_list_path("_Windows/");
+
+  childs = g_list_alloc();
+
+  child_number = 0;
+  about_ = 0;
+
 }
 
-MDIWindow::MDIWindow(TocEdit *tedit)
-//  : Gnome::MDI("GnomeCDMaster", "Gnome CD Master"),
-  : Gnome::App("GnomeCDMaster", "Gnome CD Master"),
-    readSaveFileSelector_("")
+void 
+MDIWindow:: app_created_impl(Gnome::App& app)
 {
-  tocEdit_ = tedit;
+  Gnome::AppBar *appBar = new Gnome::AppBar(false, true, GNOME_PREFERENCES_NEVER);
 
-  readSaveOperation_ = 0;
-
-//  set_policy(false, true, false);
-  set_default_size(600, 400);
-  set_usize(600, 400);
-
-//  set_wmclass("StillNoClass", "StillNoClass");
-
-  readSaveFileSelector_.get_ok_button()->clicked.connect(slot(this, &MDIWindow::readWriteFileSelectorOKCB));
-  readSaveFileSelector_.get_cancel_button()->clicked.connect(slot(this, &MDIWindow::readWriteFileSelectorCancelCB));
-
-  audioCdChild_ = new AudioCDChild();
-
-  statusBar_ = new Gtk::Statusbar;
-  set_statusbar(*statusBar_);
-  
-  install_menus_and_toolbar();
-
-
-  set_contents(*audioCdChild_->vbox_);
-
-  //delete_event.connect(slot(this, &MDIWindow::delete_event_cb));
-
+  app.set_statusbar(*appBar);
+  app.install_menu_hints();
+  app.set_policy(false, true, false);
+  app.set_default_size(600, 400);
+//  app.set_usize(600, 400);
+  app.set_wmclass("GCDMaster", "GCDMaster");
 }
 
 void MDIWindow::app_close()
 {
-  if (tocEdit_->tocDirty()) {
-//    Ask2Box msg(this->get_active_window(), "Quit", 0, 2, "Current work not saved.", "",
-    Ask2Box msg(this, "Quit", 0, 2, "Current work not saved.", "",
-		"Really Quit?", NULL);
-    if (msg.run() != 1)
+  childs = g_list_first(childs);
+//FIXME: g_list_foreach in C++ ?
+  while (childs->data)
+  {
+    GenericChild *child = static_cast <GenericChild *>(childs->data);
+
+    if (child->closeProject())
+    {
+//FIXME: test type of child, and remove all childs that refer to the same
+//       project.
+      childs = g_list_remove(childs, child);
+      remove(*child);
+//      guiUpdate();
+    }
+    else
       return;
   }
 
-//  destroy();
-  
-//  hide();
-//  MDIWindow::remove_all(0);
-  Gnome::Main::quit();
-//  Gtk::Main::quit();
+/*
+// Broken
+
+  GList *children = gtkobj()->children;
+
+  while (children)
+  {
+cout<< "called" <<endl;
+    GenericChild *child = static_cast <GenericChild *>(children->data);
+    if (child)
+//    if (child->closeProject())
+    {
+      remove(*child);
+//      guiUpdate();
+    }
+    children = children->next;
+  }  
+*/
+/*
+// Broken too :(
+
+  for (MDIList::iterator i=children().begin();
+       i!=children().end();
+       ++i)
+  {
+    GenericChild *child = dynamic_cast <GenericChild *>(*i);
+cout<< "called = " << *i <<endl;
+    if (child)
+//    if (child->closeProject())
+    {
+//      remove(*child);
+//      guiUpdate();
+    }
+  }
+*/
+
+//  GenericChild *child = static_cast <GenericChild *>(this->get_active_child());
+
+//  if (!child)
+//    Gnome::Main::quit();
+
+  childs = g_list_first(childs);
+  if (!childs->data)
+    Gnome::Main::quit();
 
 }
 
@@ -357,24 +298,37 @@ MDIWindow::delete_event_impl(GdkEventAny* e)
   /* Prevent the window's destruction, since we destroyed it 
    * ourselves with app_close()
    */
-  return true;
+  return false;
 }
-
 
 void MDIWindow::update(unsigned long level)
 {
-  if (level & (UPD_TOC_DIRTY | UPD_TOC_DATA)) {
-    string s(tocEdit_->filename());
+//FIXME: Here we should update the menus and the icons
+//       this is, enabled/disabled. How to get menus in gnome--?
+/*
+  childs = g_list_first(childs);
+  if (childs->data)
+    //enable record
+  else
+    //disable record
+*/
 
-    if (tocEdit_->tocDirty())
-      s += "(*)";
-    
-//    get_active_window()->set_title(s);
-    set_title(s);
-  }
+//FIXME:  if (level & (UPD_TOC_DIRTY | UPD_TOC_DATA)) {
+//FIXME:    string s(tocEdit_->filename());
 
+//FIXME:    if (tocEdit_->tocDirty())
+//FIXME:      s += "(*)";
+
+//NOTE: child_changed still not in gnome-- (for 1.1.13)
+
+//FIXME: Do this on every "child_changed" signal, not here.    
+//FIXME:    get_active_window()->set_title(s);
+//    set_title(s);
+//FIXME:  }
+
+//FIXME: Update to all childs (and views) or just the current one???
   // send update to active child only
-  audioCdChild_->update(level, tocEdit_);
+//  audioCdChild_->update(level, tocEdit_);
 }
 
 void MDIWindow::statusMessage(const char *fmt, ...)
@@ -387,9 +341,11 @@ void MDIWindow::statusMessage(const char *fmt, ...)
   str.vform(fmt, args);
   str << ends;
 
-  statusBar_->messages().clear();
-
-  statusBar_->push(1, string(str.str()));
+//FIXME  statusBar_->messages().clear();
+//FIXME  statusBar_->push(1, string(str.str()));
+//FIXME: Does this the trick?:
+  Gnome::App *app = get_active_window();
+  app->flash(str.str());
 
   str.freeze(0);
 
@@ -399,8 +355,8 @@ void MDIWindow::statusMessage(const char *fmt, ...)
 
 void MDIWindow::tocBlockedMsg(const char *op)
 {
-//  MessageBox msg(this->get_active_window(), op, 0,
-  MessageBox msg(this, op, 0,
+  MessageBox msg(this->get_active_window(), op, 0,
+//  MessageBox msg(this, op, 0,
 		 "Cannot perform requested operation because", 
 		 "project is in read-only state.", NULL);
   msg.run();
@@ -408,176 +364,139 @@ void MDIWindow::tocBlockedMsg(const char *op)
 }
 
 
-/*
-GtkWidget *
-example_creator(GnomeMDIChild *child, gpointer data)
-{
-  GladeXML *xml;
-  GtkWidget *new_view;       
-//  GtkWidget *new_view = gtk_vbox_new(TRUE, TRUE);
-
-  xml = glade_xml_new ("./glade/record.glade", "hbox1");
-  new_view = glade_xml_get_widget (xml, "hbox1");
-  glade_xml_signal_autoconnect(xml);
-
-Gtk::Widget *view2 = Gtk::wrap(new_view);
-
-        return new_view;
-}
-
-
-void
-MDIWindow::example_child()
-{
-Gnome::MDIGenericChild *example = new Gnome::MDIGenericChild("example");
-example->set_view_creator(example_creator, NULL);
-
-MDIWindow::add_child(*example);
-MDIWindow::add_view(*example);
-}
-*/
-
-
 void MDIWindow::configureDevices()
 {
-  DEVICE_CONF_DIALOG->start(tocEdit_);
+  DEVICE_CONF_DIALOG->start();
 }
 
 void MDIWindow::recordToc2CD()
 {
-  RECORD_GENERIC_DIALOG->start(tocEdit_,
-		RecordGenericDialog::S_TOC, RecordGenericDialog::T_CD);
-}
+  GenericChild *child = static_cast <GenericChild *>(this->get_active_child());
 
-void MDIWindow::recordCD2HD()
-{
-  RECORD_GENERIC_DIALOG->start(NULL,
-		RecordGenericDialog::S_CD, RecordGenericDialog::T_HD);
+  if (child)
+    child->record_to_cd();
 }
 
 void MDIWindow::recordCD2CD()
 {
-  RECORD_GENERIC_DIALOG->start(NULL,
-		RecordGenericDialog::S_CD, RecordGenericDialog::T_CD);
+  RECORD_GENERIC_DIALOG->cd_to_cd();
 }
 
-void MDIWindow::trackInfo()
+void MDIWindow::recordCD2HD()
 {
-  TRACK_INFO_DIALOG->start(tocEdit_);
+  RECORD_GENERIC_DIALOG->cd_to_hd();
 }
 
-void MDIWindow::projectInfo()
+void MDIWindow::newAudioCDProject()
 {
-  TOC_INFO_DIALOG->start(tocEdit_);
-}
-
-void MDIWindow::newProject()
-{
-  if (!tocEdit_->editable()) {
-    tocBlockedMsg("New Project");
-    return;
-  }
-
-  if (tocEdit_->tocDirty()) {
-//    Ask2Box msg(this->get_active_window(), "New", 0, 2, "Current project not saved.", "",
-    Ask2Box msg(this, "New", 0, 2, "Current project not saved.", "",
-		"Continue?", NULL);
-    if (msg.run() != 1)
-      return;
-  }
-
-  Toc *toc = new Toc;
+  AudioCDChild *child;
   
-  tocEdit_->toc(toc, "unnamed.toc");
+  child = manage(new AudioCDChild(++child_number));
+  
+  add(*child);
 
-	  guiUpdate();
+  childs = g_list_prepend(childs, child);
+
+  child->create_view();
+
+  guiUpdate();
+}
+
+void MDIWindow::openAudioCDProject(char *name)
+{
+  AudioCDChild *child;
+  child = manage(new AudioCDChild(++child_number));
+  
+  add(*child);
+
+  childs = g_list_prepend(childs, child);
+
+  child->create_view();
+
+  if (child->tocEdit()->readToc(stripCwd(name)) == 0)
+  {
+    AudioCDView *view;
+    view = static_cast <AudioCDView *>(child->get_active());
+    view->sampleViewFull();
+  }
+  else
+  {
+    gchar *message;
+	message = g_strdup_printf("Error loading %s", name);
+    Gnome::Dialogs::error(message); 
+    MDI_WINDOW->remove(*child);
+    g_free(message);
+  }
+//FIXME  guiUpdate();
+}
+
+void MDIWindow::closeProject()
+{
+  GenericChild *child = static_cast <GenericChild *>(this->get_active_child());
+
+  if (child)
+    if (child->closeProject())
+    {
+      remove(*child);
+      guiUpdate();
+    }
 }
 
 void MDIWindow::readProject()
 {
-  readSaveFileSelector_.set_title("Read Project");
-  readSaveOperation_ = 1;
+  if (readFileSelector_)
+  {
+    Gdk_Window selector_win = readFileSelector_->get_window();
+    selector_win.show();
+    selector_win.raise();
+  }
+  else
+  {
+    readFileSelector_ = new Gtk::FileSelection("Read Project");
+    readFileSelector_->get_ok_button()->clicked.connect(
+				slot(this, &MDIWindow::readFileSelectorOKCB));
+    readFileSelector_->get_cancel_button()->clicked.connect(
+				slot(this, &MDIWindow::readFileSelectorCancelCB));
+  }
 
-  readSaveFileSelector_.show();
-  
+  readFileSelector_->show();
 }
 
 void MDIWindow::saveProject()
 {
-  if (tocEdit_->saveToc() == 0) {
-    statusMessage("Project saved to \"%s\".", tocEdit_->filename());
-    guiUpdate();
-  }
-  else {
-    string s("Cannot save toc to \"");
-    s += tocEdit_->filename();
-    s+= "\":";
-    
-//    MessageBox msg(this->get_active_window(), "Save Project", 0, s.c_str(), strerror(errno), NULL);
-    MessageBox msg(this, "Save Project", 0, s.c_str(), strerror(errno), NULL);
-    msg.run();
-  }
+  GenericChild *child = static_cast <GenericChild *>(this->get_active_child());
+
+  if (child)
+    child->saveProject();
 }
 
 void MDIWindow::saveAsProject()
 {
-  readSaveFileSelector_.set_title("Save Project");
-  readSaveOperation_ = 2;
+  GenericChild *child = static_cast <GenericChild *>(this->get_active_child());
 
-  readSaveFileSelector_.show();
+  if (child)
+    child->saveAsProject();
 }
 
-void MDIWindow::readWriteFileSelectorCancelCB()
+void MDIWindow::readFileSelectorCancelCB()
 {
-  readSaveFileSelector_.hide();
+  readFileSelector_->hide();
+  readFileSelector_->destroy();
+  readFileSelector_ = 0;
 }
 
-void MDIWindow::readWriteFileSelectorOKCB()
+void MDIWindow::readFileSelectorOKCB()
 {
-  if (readSaveOperation_ == 1) {
-    if (!tocEdit_->editable()) {
-      tocBlockedMsg("Read Project");
-      return;
-    }
+  char *s = g_strdup(readFileSelector_->get_filename().c_str());
 
-    if (tocEdit_->tocDirty()) {
-//      Ask2Box msg(this->get_active_window(), "Read Project", 0, 2, "Current work not saved.", "",
-      Ask2Box msg(this, "Read Project", 0, 2, "Current work not saved.", "",
-		  "Continue?", NULL);
-      if (msg.run() != 1)
-	return;
-    }
-
-    const char *s = readSaveFileSelector_.get_filename().c_str();
-
-    if (s != NULL && *s != 0 && s[strlen(s) - 1] != '/') {
-      if (tocEdit_->readToc(stripCwd(s)) == 0) {
-	tocEdit_->sampleViewFull();
-	guiUpdate();
-      }
-    }
+  if (s != NULL && *s != 0 && s[strlen(s) - 1] != '/') {
+//FIXME: We should test what type of project it is
+//       AudioCD, ISO. No problem now.
+    MDI_WINDOW->openAudioCDProject(s);
   }
-  else if (readSaveOperation_ == 2) {
-    const char *s = readSaveFileSelector_.get_filename().c_str();
+  g_free(s);
 
-    if (s != NULL && *s != 0 && s[strlen(s) - 1] != '/') {
-      if (tocEdit_->saveAsToc(stripCwd(s)) == 0) {
-	statusMessage("Project saved to \"%s\".", tocEdit_->filename());
-	guiUpdate();
-      }
-      else {
-	string m("Cannot save toc to \"");
-	m += tocEdit_->filename();
-	m += "\":";
-    
-//	MessageBox msg(this->get_active_window(), "Save Project", 0, m.c_str(), strerror(errno), NULL);
-	MessageBox msg(this, "Save Project", 0, m.c_str(), strerror(errno), NULL);
-	msg.run();
-      }
-    }
-  }
-
-  readSaveFileSelector_.hide();
+  readFileSelectorCancelCB();
 }
 
 void
@@ -586,7 +505,7 @@ MDIWindow::about_cb()
 
   if(about_) // "About" box hasn't been closed, so just raise it
     {
-      Gdk_Window about_win(about_->get_window());
+      Gdk_Window about_win = about_->get_window();
       about_win.show();
       about_win.raise();
     }
@@ -598,8 +517,7 @@ MDIWindow::about_cb()
       authors.push_back("Andreas Mueller <mueller@daneb.ping.de>");
       authors.push_back("Manuel Clos <llanero@jazzfree.com>");
 
-      // not yet wrapped - sorry
-//      string logo(gnome_pixmap_file("gcdmaster.png"));
+//FIXME: not yet wrapped - sorry
       logo_char = gnome_pixmap_file("gcdmaster.png");
 
       if (logo_char != NULL)
@@ -611,7 +529,7 @@ MDIWindow::about_cb()
                                _("A CD Mastering app for Gnome."),
                                logo);
 
-      about_->set_parent(*this);
+      about_->set_parent(*this->get_active_window());
       about_->destroy.connect(slot(this, &MDIWindow::about_destroy_cb));
       about_->show();
     }
@@ -621,4 +539,3 @@ void MDIWindow::about_destroy_cb()
 {
   about_ = 0;
 }
-

@@ -102,7 +102,7 @@ void RecordHDTarget::start(TocEdit *tocEdit)
 {
   active_ = 1;
 
-  update(UPD_CD_DEVICES, tocEdit);
+  update(UPD_CD_DEVICES);
 
   show();
 }
@@ -115,12 +115,10 @@ void RecordHDTarget::stop()
   }
 }
 
-void RecordHDTarget::update(unsigned long level, TocEdit *tocEdit)
+void RecordHDTarget::update(unsigned long level)
 {
   if (!active_)
     return;
-
-  tocEdit_ = tocEdit;
 
 //  if (level & UPD_CD_DEVICES)
 //    DEVICES->import();

@@ -98,7 +98,9 @@ void RecordTocSource::start(TocEdit *tocEdit)
 {
   active_ = 1;
 
-  update(UPD_ALL, tocEdit);
+  tocEdit_ = tocEdit;
+
+  update(UPD_ALL);
 
   show();
 }
@@ -111,7 +113,7 @@ void RecordTocSource::stop()
   }
 }
 
-void RecordTocSource::update(unsigned long level, TocEdit *tocEdit)
+void RecordTocSource::update(unsigned long level)
 {
   char label[256];
   char buf[50];
@@ -119,12 +121,10 @@ void RecordTocSource::update(unsigned long level, TocEdit *tocEdit)
   if (!active_)
     return;
 
-  tocEdit_ = tocEdit;
-
-  projectLabel_->set(string(tocEdit->filename()));
+  projectLabel_->set(string(tocEdit_->filename()));
 
 //  can also use:
-  tocTypeLabel_->set(string(tocEdit->toc()->tocType2String(tocEdit->toc()->tocType())));
+  tocTypeLabel_->set(string(tocEdit_->toc()->tocType2String(tocEdit_->toc()->tocType())));
 /*
   switch (tocEdit->toc()->tocType()) {
   case Toc::CD_DA:
@@ -144,8 +144,8 @@ void RecordTocSource::update(unsigned long level, TocEdit *tocEdit)
   sprintf(label, "%d", tocEdit_->toc()->nofTracks());
   nofTracksLabel_->set(string(label));
 
-  sprintf(buf, "%d:%02d:%02d", tocEdit->toc()->length().min(),
-	  tocEdit->toc()->length().sec(), tocEdit->toc()->length().frac());
+  sprintf(buf, "%d:%02d:%02d", tocEdit_->toc()->length().min(),
+	  tocEdit_->toc()->length().sec(), tocEdit_->toc()->length().frac());
   tocLengthLabel_->set(string(buf));
 
 }

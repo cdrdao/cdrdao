@@ -18,6 +18,17 @@
  */
 /*
  * $Log: MessageBox.cc,v $
+ * Revision 1.7  2000/09/21 02:07:06  llanero
+ * MDI support:
+ * Splitted AudioCDChild into same and AudioCDView
+ * Move Selections from TocEdit to AudioCDView to allow
+ *   multiple selections.
+ * Cursor animation in all the views.
+ * Can load more than one from from command line
+ * Track info, Toc info, Append/Insert Silence, Append/Insert Track,
+ *   they all are built for every child when needed.
+ * ...
+ *
  * Revision 1.6  2000/07/17 22:08:33  llanero
  * DeviceList is now a class
  * RecordGenericDialog and RecordCDTarget first implemented.
@@ -48,7 +59,7 @@
  *
  */
 
-static char rcsid[] = "$Id: MessageBox.cc,v 1.6 2000/07/17 22:08:33 llanero Exp $";
+static char rcsid[] = "$Id: MessageBox.cc,v 1.7 2000/09/21 02:07:06 llanero Exp $";
 
 #include <stddef.h>
 #include <stdarg.h>
@@ -104,7 +115,8 @@ Gtk::Button *MessageBoxBase::createButton(const char *name)
 
   if (pixmap != NULL)
 //    return Gnome::StockPixmap::pixmap_button(*pixmap, text);
-    return new Gnome::Stock::Buttons::Button(name);
+//    return new Gnome::Stock::Buttons::Button(name);
+    return new Gnome::StockButton(name);
   else 
     return new Gtk::Button(name);
 }

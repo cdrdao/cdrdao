@@ -49,7 +49,7 @@ SRC = xcdrdao.cc SampleDisplay.cc SampleManager.cc \
       CdTextTable.cc MDIWindow.cc \
       AudioCDChild.cc RecordGenericDialog.cc RecordCDTarget.cc \
       DeviceList.cc RecordTocSource.cc RecordCDSource.cc \
-      RecordHDTarget.cc @sound_if_src@
+      RecordHDTarget.cc AudioCDView.cc @sound_if_src@
 
 OBJ = $(SRC:%.cc=%.o)
 

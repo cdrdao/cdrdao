@@ -26,7 +26,6 @@
 #include <gnome--.h>
 
 class TocEdit;
-//class CdDevice;
 class RecordTocSource;
 class RecordCDSource;
 class RecordCDTarget;
@@ -43,7 +42,11 @@ public:
   void start(TocEdit *, enum RecordSourceType SourceType, enum RecordTargetType TargetType);
   void stop();
 
-  void update(unsigned long level, TocEdit *);
+  void toc_to_cd(TocEdit *);
+  void cd_to_cd();
+  void cd_to_hd();
+
+  void update(unsigned long level);
 
   void cancelAction();
   void startAction();
@@ -52,6 +55,7 @@ public:
   gint delete_event_impl(GdkEventAny*);
 
 private:
+  TocEdit *tocEdit_;
   int active_;
 
   RecordTocSource *TOCSOURCE;

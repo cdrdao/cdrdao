@@ -18,9 +18,16 @@
  */
 /*
  * $Log: RecordProgressDialog.h,v $
- * Revision 1.4  2000/08/17 21:26:46  llanero
- * added time counter to ProgressDialog.
- * included <sys/time.h> !
+ * Revision 1.5  2000/09/21 02:07:06  llanero
+ * MDI support:
+ * Splitted AudioCDChild into same and AudioCDView
+ * Move Selections from TocEdit to AudioCDView to allow
+ *   multiple selections.
+ * Cursor animation in all the views.
+ * Can load more than one from from command line
+ * Track info, Toc info, Append/Insert Silence, Append/Insert Track,
+ *   they all are built for every child when needed.
+ * ...
  *
  * Revision 1.3  2000/07/31 01:55:49  llanero
  * got rid of old Extract dialog and Record dialog.
@@ -72,6 +79,10 @@ private:
   int actCloseButtonLabel_;
 
   Gtk::Label *currentTime_;
+  Gtk::Label *remainingTime_;
+
+  long leadTime_;
+  bool leadTimeFilled_;
 
   struct timeval time_;
   gint RecordProgressDialog::time(gint timer_nr);
@@ -87,7 +98,7 @@ private:
 
   RecordProgressDialog *poolNext_;
 
-  void update(unsigned long, TocEdit *);
+  void update(unsigned long);
   void start(CdDevice *, TocEdit *);
   void start(CdDevice *, char *tocFileName);
   void stop();
@@ -102,7 +113,7 @@ public:
   RecordProgressDialogPool();
   ~RecordProgressDialogPool();
 
-  void update(unsigned long, TocEdit *);
+  void update(unsigned long);
   
   RecordProgressDialog *start(CdDevice *, TocEdit *);
   RecordProgressDialog *start(CdDevice *, char *tocFileName);

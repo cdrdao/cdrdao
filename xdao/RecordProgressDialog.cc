@@ -18,9 +18,16 @@
  */
 /*
  * $Log: RecordProgressDialog.cc,v $
- * Revision 1.8  2000/08/17 21:26:46  llanero
- * added time counter to ProgressDialog.
- * included <sys/time.h> !
+ * Revision 1.9  2000/09/21 02:07:06  llanero
+ * MDI support:
+ * Splitted AudioCDChild into same and AudioCDView
+ * Move Selections from TocEdit to AudioCDView to allow
+ *   multiple selections.
+ * Cursor animation in all the views.
+ * Can load more than one from from command line
+ * Track info, Toc info, Append/Insert Silence, Append/Insert Track,
+ *   they all are built for every child when needed.
+ * ...
  *
  * Revision 1.7  2000/08/01 01:27:50  llanero
  * CD to CD copy works now.
@@ -53,7 +60,7 @@
  *
  */
 
-static char rcsid[] = "$Id: RecordProgressDialog.cc,v 1.8 2000/08/17 21:26:46 llanero Exp $";
+static char rcsid[] = "$Id: RecordProgressDialog.cc,v 1.9 2000/09/21 02:07:06 llanero Exp $";
 
 #include <stdio.h>
 #include <stddef.h>
@@ -107,13 +114,19 @@ RecordProgressDialog::RecordProgressDialog(RecordProgressDialogPool *father)
   contents->pack_start(*hbox, FALSE);
   hbox->show();
 
-  hbox = new Gtk::HBox;
+  hbox = new Gtk::HBox(TRUE, TRUE);
   label = new Gtk::Label(string("Current Time: "), 1);
   hbox->pack_start(*label, FALSE);
   label->show();
   currentTime_ = new Gtk::Label(string(""), 0);
   hbox->pack_start(*currentTime_, FALSE);
   currentTime_->show();
+  label = new Gtk::Label(string("Remaining Time: "), 1);
+  hbox->pack_start(*label, FALSE);
+//  label->show();
+  remainingTime_ = new Gtk::Label(string(""), 0);
+  hbox->pack_start(*remainingTime_, FALSE);
+//  remainingTime_->show();
   contents->pack_start(*hbox, FALSE);
   hbox->show();
 
@@ -172,10 +185,10 @@ RecordProgressDialog::RecordProgressDialog(RecordProgressDialogPool *father)
 
   Gtk::HButtonBox *bbox = new Gtk::HButtonBox(GTK_BUTTONBOX_SPREAD);
 
-  cancelButton_ = new Gnome::Stock::Buttons::Button(GNOME_STOCK_BUTTON_CANCEL);
+  cancelButton_ = new Gnome::StockButton(GNOME_STOCK_BUTTON_CANCEL);
   bbox->pack_start(*cancelButton_);
 
-  closeButton_ = new Gnome::Stock::Buttons::Button(GNOME_STOCK_BUTTON_CLOSE);
+  closeButton_ = new Gnome::StockButton(GNOME_STOCK_BUTTON_CLOSE);
   bbox->pack_start(*closeButton_);
 
   cancelButton_->show();
@@ -341,7 +354,8 @@ void RecordProgressDialog::clear()
 
   gettimeofday(&time_, NULL);
   currentTime_->set(string("0:00:00"));
-
+  remainingTime_->set(string(""));
+  leadTimeFilled_ = FALSE;
   statusMsg_->set_text(string(""));
   trackProgress_->set_percentage(0.0);
   trackProgress_->set_format_string("");
@@ -353,7 +367,7 @@ void RecordProgressDialog::clear()
   set_title(string(""));
 }
 
-void RecordProgressDialog::update(unsigned long level, TocEdit *tocEdit)
+void RecordProgressDialog::update(unsigned long level)
 {
   int status;
   int track;
@@ -611,7 +625,7 @@ gint RecordProgressDialog::time(gint timer_nr)
 {
   char buf[50];
   struct timeval timenow;
-  long time, hours, mins, secs;
+  long time, time_remain, hours, mins, secs;
 
   gettimeofday(&timenow, NULL);
 
@@ -623,6 +637,32 @@ gint RecordProgressDialog::time(gint timer_nr)
 
   sprintf(buf, "%d:%02d:%02d", hours, mins, secs);
   currentTime_->set(string(buf));
+
+
+  if (actTotalProgress_ > 10)
+  {
+//Hack!
+    gfloat aux1, aux2, aux3;
+
+    if (!leadTimeFilled_)
+    {
+      leadTime_ = time;
+      leadTimeFilled_ = TRUE;
+    }
+//    time_remain = (long)((float)((float)(time + 5 - leadTime_) / actTotalProgress_) * (1000 - actTotalProgress_));
+//    time_remain = (time + 5 - leadTime_) * ((1000 - actTotalProgress_) / actTotalProgress_);
+    aux1 = (gfloat)actTotalProgress_;
+    aux2 = (1000 - aux1);
+    aux3 = (aux2 * (time + 20 - leadTime_)) / aux1;
+	time_remain = (long)aux3;
+
+    hours = time_remain / 3600;
+    mins = (time_remain - (hours * 3600)) / 60;
+    secs = time_remain - ((hours * 3600) + (mins * 60));
+
+    sprintf(buf, "%d:%02d:%02d", hours, mins, secs);
+    remainingTime_->set(string(buf));
+  }
 
   if (finished_) 
   {
@@ -647,12 +687,12 @@ RecordProgressDialogPool::~RecordProgressDialogPool()
 
 }
 
-void RecordProgressDialogPool::update(unsigned long status, TocEdit *tocEdit)
+void RecordProgressDialogPool::update(unsigned long status)
 {
   RecordProgressDialog *run;
 
   for (run = activeDialogs_; run != NULL; run = run->poolNext_)
-    run->update(status, tocEdit);
+    run->update(status);
 }
   
 RecordProgressDialog *RecordProgressDialogPool::start(CdDevice *device,

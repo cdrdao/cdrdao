@@ -18,6 +18,17 @@
  */
 /*
  * $Log: xcdrdao.cc,v $
+ * Revision 1.15  2000/09/21 02:07:07  llanero
+ * MDI support:
+ * Splitted AudioCDChild into same and AudioCDView
+ * Move Selections from TocEdit to AudioCDView to allow
+ *   multiple selections.
+ * Cursor animation in all the views.
+ * Can load more than one from from command line
+ * Track info, Toc info, Append/Insert Silence, Append/Insert Track,
+ *   they all are built for every child when needed.
+ * ...
+ *
  * Revision 1.14  2000/07/31 01:55:49  llanero
  * got rid of old Extract dialog and Record dialog.
  * both are using RecordProgressDialog now.
@@ -110,10 +121,6 @@
 #include "port.h"
 
 MDIWindow *MDI_WINDOW = NULL;
-TrackInfoDialog *TRACK_INFO_DIALOG = NULL;
-TocInfoDialog *TOC_INFO_DIALOG = NULL;
-AddSilenceDialog *ADD_SILENCE_DIALOG = NULL;
-AddFileDialog *ADD_FILE_DIALOG = NULL;
 DeviceConfDialog *DEVICE_CONF_DIALOG = NULL;
 ProcessMonitor *PROCESS_MONITOR = NULL;
 RecordProgressDialogPool *RECORD_PROGRESS_POOL = NULL;
@@ -189,15 +196,11 @@ static RETSIGTYPE signalHandler(int sig)
 }
 
 
-//llanero int main (int argc, char **argv)
 int main (int argc, char* argv[])
 {
-  Gnome::Main application("GnomeCDMaster", "0.0", argc, argv);
+  Gnome::Main application("GnomeCDMaster", "1.1.4a", argc, argv);
    
   Gtk::ButtonBox::set_child_size_default(50, 10);
-
-//not needed by now...
-  //glade_gnome_init ();
 
   // settings
   CdDevice::importSettings();
@@ -209,35 +212,29 @@ int main (int argc, char* argv[])
   // setup periodic GUI updates
   application.timeout.connect(SigC::slot(&guiUpdatePeriodic), 2000);
 
-
   installSignalHandler(SIGPIPE, SIG_IGN);
 
   // scan for SCSI devices
   CdDevice::scan();
 
-  TRACK_INFO_DIALOG = new TrackInfoDialog;
-  TOC_INFO_DIALOG = new TocInfoDialog;
-  ADD_SILENCE_DIALOG = new AddSilenceDialog;
-  ADD_FILE_DIALOG = new AddFileDialog;
   DEVICE_CONF_DIALOG = new DeviceConfDialog;
   RECORD_PROGRESS_POOL = new RecordProgressDialogPool;
   RECORD_GENERIC_DIALOG = new RecordGenericDialog;
 
-  // create TocEdit object
-  TocEdit *tocEdit = new TocEdit(NULL, NULL);
+  MDI_WINDOW = new MDIWindow();
+  MDI_WINDOW->open_toplevel();
 
-  if (argc > 1) {
-    if (tocEdit->readToc(argv[1]) != 0)
-      exit(1);
-  }
-  
-  MDI_WINDOW = new MDIWindow(tocEdit);
-//  MDI_WINDOW->add_child(*AUDIOCD_CHILD);
-//  MDI_WINDOW->add_view(*AUDIOCD_CHILD);
-//  MDI_WINDOW->open_toplevel();
-  MDI_WINDOW->show();
-
+//FIXME: perhaps update only the MDI_WINDOW
   guiUpdate();
+
+//  if (argc > 1) {
+  while (argc > 1) {
+    MDI_WINDOW->openAudioCDProject(argv[1]);
+    argv++;
+    argc--;
+//    if (tocEdit->readToc(argv[1]) != 0)
+//      exit(1);
+  }
 
   application.run();
 

@@ -26,9 +26,7 @@
 #include <gnome--.h>
 
 #include "Toc.h"
-
-class SampleDisplay;
-class AddSilenceDialog;
+#include "GenericChild.h"
 
 class Toc;
 class Track;
@@ -36,22 +34,41 @@ class SoundIF;
 class Sample;
 class TrackData;
 class TocEdit;
+class TocInfoDialog;
+class TrackInfoDialog;
+class AddFileDialog;
+class AddSilenceDialog;
+class AudioCDView;
+class AudioCDChildLabel;
 
-class AudioCDChild : public Gnome::MDIGenericChild
-//FIXME: MDI STUFF class AudioCDChild : public Gtk::Widget
+class AudioCDChild : public GenericChild
 {
-public: //HACK
-  Gtk::VBox *vbox_;
+public:
+  AudioCDChild(gint number);
+
+  void create_view() { Gnome::MDIChild::create_view(); }
+  TocEdit *tocEdit();
+
+protected:
+  virtual Gtk::Widget *create_view_impl();
+  virtual Gtk::Widget* create_title_impl();
+  virtual Gtk::Widget* update_title_impl(Gtk::Widget *old_label);
+
+private: //related windows
+  TocInfoDialog *tocInfoDialog_;
+  TrackInfoDialog *trackInfoDialog_;
+  AddFileDialog *addFileDialog_;
+  AddSilenceDialog *addSilenceDialog_;
+  Gtk::FileSelection *saveFileSelector_;
+  void saveFileSelectorOKCB();
+  void saveFileSelectorCancelCB();
+
+  void new_view() { Gnome::MDIChild::create_view(); }
 
 private:
-  enum Mode { ZOOM, SELECT };
+  friend class AudioCDView;
 
   TocEdit *tocEdit_;
-
-  Mode mode_;
-
-//it is easier with pointers ?( !
-  GtkWidget *vbox_aux_;
 
   TocReader tocReader;
 
@@ -63,27 +80,14 @@ private:
   int playing_;
   int playAbort_;
 
+  void play(unsigned long start, unsigned long end);
+  int playCallback();
 
-  SampleDisplay *sampleDisplay_;
+  GList *views;
 
-  Gtk::RadioButton *zoomButton_;
-  Gtk::RadioButton *selectButton_;
-  Gtk::Button *playButton_;
-  Gtk::Label *playLabel_;
-    
-  Gtk::Entry *markerPos_;
-  Gtk::Entry *cursorPos_;
-  Gtk::Entry *selectionStartPos_;
-  Gtk::Entry *selectionEndPos_;
+  void addTrackMark();
+  void addIndexMark();
 
-
-  void setMode(Mode);
-
-  void markerSetCallback(unsigned long);
-  void cursorMovedCallback(unsigned long);
-  void selectionSetCallback(unsigned long, unsigned long);
-
-  void trackMarkSelectedCallback(const Track *, int trackNr, int indexNr);
   void trackMarkMovedCallback(const Track *, int trackNr, int indexNr,
 			      unsigned long sample);
 
@@ -91,33 +95,26 @@ private:
   unsigned long string2sample(const char *s);
 
   int snapSampleToBlock(unsigned long sample, long *block);
-  int getMarker(unsigned long *sample);
   void readTocCallback(int);
   void saveAsTocCallback(int);
-  int playCallback();
 
   void tocBlockedMsg(const char *);
 
-  void zoomIn();
-  void zoomOut();
-  void fullView();
-  void play();
-
-  void markerSet();
-  void selectionSet();
+  void projectInfo();
+  void trackInfo();
 
 
 public:
-  AudioCDChild();
-  void BuildChild();
 
-  void update(unsigned long level, TocEdit *);
+  void update(unsigned long level);
+  void saveProject();
+  void saveAsProject();
+  bool closeProject();
+  void record_to_cd();
 
   void cutTrackData();
   void pasteTrackData();
 
-  void addTrackMark();
-  void addIndexMark();
   void addPregap();
   void removeTrackMark();
 
@@ -130,7 +127,14 @@ public:
 
 };
 
-GtkWidget * AudioCDChild_Creator(GnomeMDIChild *child, gpointer data);
-
+class AudioCDChildLabel : public Gtk::HBox
+{
+public:
+  AudioCDChildLabel(const string &name);
+  void set_name(const string &name) { label.set_text(name); }
+protected:
+  Gnome::Pixmap *pixmap;
+  Gtk::Label label;
+};
 
 #endif

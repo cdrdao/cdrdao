@@ -118,7 +118,7 @@ RecordCDTarget::RecordCDTarget()
   label = new Gtk::Label(string("Speed: "), 0);
   label->show();
   table2->attach(*label, 0, 1, 0, 1);
-
+  
   adjustment = new Gtk::Adjustment(1, 1, 20);
   speedSpinButton_ = new Gtk::SpinButton(*adjustment);
   speedSpinButton_->set_digits(0);
@@ -175,8 +175,10 @@ RecordCDTarget::~RecordCDTarget()
 void RecordCDTarget::start(TocEdit *tocEdit, RecordGenericDialog::RecordSourceType source)
 {
   active_ = 1;
+  
+  tocEdit_ = tocEdit;
 
-  update(UPD_CD_DEVICES, tocEdit, source);
+  update(UPD_CD_DEVICES, source);
 
   show();
 }
@@ -189,13 +191,11 @@ void RecordCDTarget::stop()
   }
 }
 
-void RecordCDTarget::update(unsigned long level, TocEdit *tocEdit,
+void RecordCDTarget::update(unsigned long level,
 		RecordGenericDialog::RecordSourceType source)
 {
   if (!active_)
     return;
-
-  tocEdit_ = tocEdit;
 
   if (level & UPD_CD_DEVICES)
     DEVICES->import();

@@ -18,6 +18,17 @@
  */
 /*
  * $Log: AddFileDialog.cc,v $
+ * Revision 1.3  2000/09/21 02:07:06  llanero
+ * MDI support:
+ * Splitted AudioCDChild into same and AudioCDView
+ * Move Selections from TocEdit to AudioCDView to allow
+ *   multiple selections.
+ * Cursor animation in all the views.
+ * Can load more than one from from command line
+ * Track info, Toc info, Append/Insert Silence, Append/Insert Track,
+ *   they all are built for every child when needed.
+ * ...
+ *
  * Revision 1.2  2000/02/20 23:34:53  llanero
  * fixed scsilib directory (files mising ?-()
  * ported xdao to 1.1.8 / gnome (MDI) app
@@ -30,7 +41,7 @@
  *
  */
 
-static char rcsid[] = "$Id: AddFileDialog.cc,v 1.2 2000/02/20 23:34:53 llanero Exp $";
+static char rcsid[] = "$Id: AddFileDialog.cc,v 1.3 2000/09/21 02:07:06 llanero Exp $";
 
 #include <stdio.h>
 #include <limits.h>
@@ -44,14 +55,18 @@ static char rcsid[] = "$Id: AddFileDialog.cc,v 1.2 2000/02/20 23:34:53 llanero E
 
 #include "Sample.h"
 #include "util.h"
+#include "AudioCDChild.h"
+#include "AudioCDView.h"
 
 
-AddFileDialog::AddFileDialog() : Gtk::FileSelection(string(""))
+AddFileDialog::AddFileDialog(AudioCDChild *child) : Gtk::FileSelection(string(""))
 {
   tocEdit_ = NULL;
   active_ = 0;
 
   mode(M_APPEND_TRACK);
+
+  cdchild = child;
 
   hide_fileop_buttons();
 
@@ -172,11 +187,14 @@ void AddFileDialog::applyAction()
 	break;
       }
       break;
-
     case M_INSERT_FILE:
-      if (tocEdit_->sampleMarker(&pos)) {
-	switch (tocEdit_->insertFile(s, pos)) {
+      AudioCDView *view = static_cast <AudioCDView *>(cdchild->get_active());
+
+      if (view->sampleMarker(&pos)) {
+    unsigned long len;
+	switch (tocEdit_->insertFile(s, pos, &len)) {
 	case 0:
+      view->sampleSelection(pos, pos + len - 1);
 	  guiUpdate();
 	  //statusMessage("Inserted audio data from \"%s\".", s);
 	  break;

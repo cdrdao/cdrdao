@@ -18,6 +18,17 @@
  */
 /*
  * $Log: TrackInfoDialog.cc,v $
+ * Revision 1.4  2000/09/21 02:07:07  llanero
+ * MDI support:
+ * Splitted AudioCDChild into same and AudioCDView
+ * Move Selections from TocEdit to AudioCDView to allow
+ *   multiple selections.
+ * Cursor animation in all the views.
+ * Can load more than one from from command line
+ * Track info, Toc info, Append/Insert Silence, Append/Insert Track,
+ *   they all are built for every child when needed.
+ * ...
+ *
  * Revision 1.3  2000/04/16 20:31:20  andreasm
  * Added missing stdio.h includes.
  *
@@ -33,7 +44,7 @@
  *
  */
 
-static char rcsid[] = "$Id: TrackInfoDialog.cc,v 1.3 2000/04/16 20:31:20 andreasm Exp $";
+static char rcsid[] = "$Id: TrackInfoDialog.cc,v 1.4 2000/09/21 02:07:07 llanero Exp $";
 
 #include "TrackInfoDialog.h"
 
@@ -48,8 +59,10 @@ static char rcsid[] = "$Id: TrackInfoDialog.cc,v 1.3 2000/04/16 20:31:20 andreas
 #include "Track.h"
 #include "CdTextItem.h"
 #include "TextEdit.h"
+#include "AudioCDChild.h"
+#include "AudioCDView.h"
 
-TrackInfoDialog::TrackInfoDialog()
+TrackInfoDialog::TrackInfoDialog(AudioCDChild *child)
 {
   int i;
   Gtk::Label *label, *label1;
@@ -64,6 +77,8 @@ TrackInfoDialog::TrackInfoDialog()
   tocEdit_ = NULL;
   active_ = 0;
   trackNr_ = 0;
+
+  cdchild = child;
 
   trackNr_ = new Gtk::Label(string("99"));
   pregapLen_ = new Gtk::Label(string("100:00:00"));
@@ -475,13 +490,15 @@ void TrackInfoDialog::clear()
 void TrackInfoDialog::update(unsigned long level, TocEdit *tocEdit)
 {
   const Toc *toc;
+  AudioCDView *view = static_cast <AudioCDView *>(cdchild->get_active());
 
   if (!active_)
     return;
 
   tocEdit_ = tocEdit;
 
-  if (tocEdit == NULL || !tocEdit->trackSelection(&selectedTrack_)) {
+
+  if (tocEdit == NULL || !view->trackSelection(&selectedTrack_)) {
     selectedTrack_ = 0;
     applyButton_->set_sensitive(FALSE);
     clear();

@@ -18,6 +18,17 @@
  */
 /*
  * $Log: AddSilenceDialog.h,v $
+ * Revision 1.3  2000/09/21 02:07:06  llanero
+ * MDI support:
+ * Splitted AudioCDChild into same and AudioCDView
+ * Move Selections from TocEdit to AudioCDView to allow
+ *   multiple selections.
+ * Cursor animation in all the views.
+ * Can load more than one from from command line
+ * Track info, Toc info, Append/Insert Silence, Append/Insert Track,
+ *   they all are built for every child when needed.
+ * ...
+ *
  * Revision 1.2  2000/02/20 23:34:53  llanero
  * fixed scsilib directory (files mising ?-()
  * ported xdao to 1.1.8 / gnome (MDI) app
@@ -37,12 +48,13 @@
 #include <gtk/gtk.h>
 
 class TocEdit;
+class AudioCDChild;
 
 class AddSilenceDialog : public Gtk::Dialog {
 public:
   enum Mode { M_APPEND, M_INSERT };
 
-  AddSilenceDialog();
+  AddSilenceDialog(AudioCDChild *child);
   ~AddSilenceDialog();
 
   void start(TocEdit *);
@@ -57,6 +69,8 @@ private:
   TocEdit *tocEdit_;
   int active_;
   Mode mode_;
+
+  AudioCDChild *cdchild;
 
   Gtk::Button *applyButton_;
 

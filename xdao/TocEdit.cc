@@ -18,6 +18,17 @@
  */
 /*
  * $Log: TocEdit.cc,v $
+ * Revision 1.3  2000/09/21 02:07:07  llanero
+ * MDI support:
+ * Splitted AudioCDChild into same and AudioCDView
+ * Move Selections from TocEdit to AudioCDView to allow
+ *   multiple selections.
+ * Cursor animation in all the views.
+ * Can load more than one from from command line
+ * Track info, Toc info, Append/Insert Silence, Append/Insert Track,
+ *   they all are built for every child when needed.
+ * ...
+ *
  * Revision 1.2  2000/04/23 09:07:08  andreasm
  * * Fixed most problems marked with '//llanero'.
  * * Added audio CD edit menus to MDIWindow.
@@ -35,7 +46,7 @@
  *
  */
 
-static char rcsid[] = "$Id: TocEdit.cc,v 1.2 2000/04/23 09:07:08 andreasm Exp $";
+static char rcsid[] = "$Id: TocEdit.cc,v 1.3 2000/09/21 02:07:07 llanero Exp $";
 
 #include "TocEdit.h"
 
@@ -107,14 +118,6 @@ void TocEdit::toc(Toc *t, const char *filename)
     unsigned long maxSample = toc_->length().samples() - 1;
     sampleManager_->scanToc(0, maxSample);
   }
-
-
-  sampleMarkerValid_ = 0;
-  sampleSelectionValid_ = 0;
-  trackSelectionValid_ = 0;
-  indexSelectionValid_ = 0;
-
-  sampleViewFull();
 
   updateLevel_ = UPD_ALL;
 }
@@ -202,140 +205,6 @@ const char *TocEdit::filename() const
   return filename_;
 }
 
-void TocEdit::sampleMarker(unsigned long sample)
-{
-  if (sample < toc_->length().samples()) {
-    sampleMarker_ = sample;
-    sampleMarkerValid_ = 1;
-  }
-  else {
-    sampleMarkerValid_ = 0;
-  }
-
-  updateLevel_ |= UPD_SAMPLE_MARKER;
-}
-
-int TocEdit::sampleMarker(unsigned long *sample) const
-{
-  if (sampleMarkerValid_)
-    *sample = sampleMarker_;
-
-  return sampleMarkerValid_;
-}
-
-void TocEdit::sampleSelection(unsigned long smin, unsigned long smax)
-{
-  unsigned long tmp;
-
-  if (smin > smax) {
-    tmp = smin;
-    smin = smax;
-    smax = tmp;
-  }
-
-  if (smax < toc_->length().samples()) {
-    sampleSelectionMin_ = smin;
-    sampleSelectionMax_ = smax;
-
-    sampleSelectionValid_ = 1;
-  }
-  else {
-    sampleSelectionValid_ = 0;
-  }
-  
-  updateLevel_ |= UPD_SAMPLE_SEL;
-}
-
-int TocEdit::sampleSelection(unsigned long *smin, unsigned long *smax) const
-{
-  if (sampleSelectionValid_) {
-    *smin = sampleSelectionMin_;
-    *smax = sampleSelectionMax_;
-  }
-
-  return sampleSelectionValid_;
-}
-
-void TocEdit::sampleView(unsigned long smin, unsigned long smax)
-{
-  if (smin <= smax && smax < lengthSample()) {
-    sampleViewMin_ = smin;
-    sampleViewMax_ = smax;
-    updateLevel_ |= UPD_SAMPLES;
-  }
-}
-
-void TocEdit::sampleView(unsigned long *smin, unsigned long *smax) const
-{
-  *smin = sampleViewMin_;
-  *smax = sampleViewMax_;
-}
-
-void TocEdit::sampleViewFull()
-{
-  sampleViewMin_ = 0;
-
-  if ((sampleViewMax_ = lengthSample()) > 0)
-    sampleViewMax_ -= 1;
-
-  updateLevel_ |= UPD_SAMPLES;
-}
-
-void TocEdit::sampleViewInclude(unsigned long smin, unsigned long smax)
-{
-  if (smin < sampleViewMin_) {
-    sampleViewMin_ = smin;
-    updateLevel_ |= UPD_SAMPLES;
-  }
-
-  if (smax < lengthSample() && smax > sampleViewMax_) {
-    sampleViewMax_ = smax;
-    updateLevel_ |= UPD_SAMPLES;
-  }
-}
-  
-void TocEdit::trackSelection(int tnum)
-{
-  if (tnum > 0) {
-    trackSelection_ = tnum;
-    trackSelectionValid_ = 1;
-  }
-  else {
-    trackSelectionValid_ = 0;
-  }
-
-  updateLevel_ |= UPD_TRACK_MARK_SEL;
-
-}
-
-int TocEdit::trackSelection(int *tnum) const
-{
-  if (trackSelectionValid_)
-    *tnum = trackSelection_;
-
-  return trackSelectionValid_;
-}
-
-void TocEdit::indexSelection(int inum)
-{
-  if (inum >= 0) {
-    indexSelection_ = inum;
-    indexSelectionValid_ = 1;
-  }
-  else {
-    indexSelectionValid_ = 0;
-  }
-
-  updateLevel_ |= UPD_TRACK_MARK_SEL;
-}
-
-int TocEdit::indexSelection(int *inum) const
-{
-  if (indexSelectionValid_)
-    *inum = indexSelection_;
-
-  return indexSelectionValid_;
-}
 
 int TocEdit::readToc(const char *fname)
 {
@@ -537,7 +406,7 @@ int TocEdit::appendFile(const char *fname)
 // Return: 0: OK
 //         1: cannot open file
 //         2: file has invalid format
-int TocEdit::insertFile(const char *fname, unsigned long pos)
+int TocEdit::insertFile(const char *fname, unsigned long pos, unsigned long *len)
 {
   int ret;
   TrackData *data;
@@ -550,12 +419,11 @@ int TocEdit::insertFile(const char *fname, unsigned long pos)
     list.append(data);
 
     if (toc_->insertTrackData(pos, &list) == 0) {
-      unsigned long len = list.length();
+//      unsigned long len = list.length();
+      *len = list.length();
 
-      sampleManager_->insertSamples(pos, len, NULL);
-      sampleManager_->scanToc(pos, pos + len);
-
-      sampleSelection(pos, pos + len - 1);
+      sampleManager_->insertSamples(pos, *len, NULL);
+      sampleManager_->scanToc(pos, pos + *len);
       
       tocDirty(1);
       updateLevel_ |= UPD_TOC_DATA | UPD_TRACK_DATA | UPD_SAMPLE_SEL;
@@ -589,10 +457,13 @@ int TocEdit::appendSilence(unsigned long length)
   return 0;
 }
 
+// Return: 0: OK
+//         1: No modify allowed
+//         2: error?
 int TocEdit::insertSilence(unsigned long length, unsigned long pos)
 {
   if (!modifyAllowed())
-    return 0;
+    return 1;
 
   if (length > 0) {
     TrackData *data = new TrackData(TrackData::AUDIO, length);
@@ -603,15 +474,14 @@ int TocEdit::insertSilence(unsigned long length, unsigned long pos)
     if (toc_->insertTrackData(pos, &list) == 0) {
       sampleManager_->insertSamples(pos, length, NULL);
       sampleManager_->scanToc(pos, pos + length);
-      
-      sampleSelection(pos, pos + length - 1);
-      
+
       tocDirty(1);
       updateLevel_ |= UPD_TOC_DATA | UPD_TRACK_DATA | UPD_SAMPLE_SEL;
+      return 0;
     }
   }
 
-  return 0;
+  return 2;
 }
 
 
@@ -759,7 +629,8 @@ void TocEdit::setTocType(Toc::TocType type)
 //         1: no selection
 //         2: selection crosses track boundaries
 //         3: cannot modify data track
-int TocEdit::removeTrackData()
+int TocEdit::removeTrackData(int *sampleSelectionValid_,
+		unsigned long sampleSelectionMin_, unsigned long sampleSelectionMax_)
 {
   TrackDataList *list;
 
@@ -784,10 +655,8 @@ int TocEdit::removeTrackData()
       sampleManager_->removeSamples(sampleSelectionMin_, sampleSelectionMax_,
 				    trackDataScrap_);
 
-      sampleSelectionValid_ = 0;
+      *sampleSelectionValid_ = 0;
 
-      sampleMarker(sampleSelectionMin_);
-    
       tocDirty(1);
       updateLevel_ |= UPD_TOC_DATA | UPD_TRACK_DATA | UPD_SAMPLE_SEL | UPD_SAMPLES;
     }
@@ -801,14 +670,14 @@ int TocEdit::removeTrackData()
     return 3;
     break;
   }
-
   return 0;
 }
 
 // Inserts track data from scrap
 // Return: 0: OK
 //         1: no scrap data to paste
-int TocEdit::insertTrackData()
+int TocEdit::insertTrackData(int sampleMarkerValid_,
+  unsigned long sampleMarker_, unsigned long *selStart, unsigned long *selEnd)
 {
   if (!modifyAllowed())
     return 0;
@@ -827,7 +696,9 @@ int TocEdit::insertTrackData()
       sampleManager_->scanToc(sampleMarker_ + len - 1,
 			      sampleMarker_ + len - 1);
       
-      sampleSelection(sampleMarker_, sampleMarker_ + len - 1);
+      *selStart = sampleMarker_;
+      *selEnd = sampleMarker_ + len - 1;
+//      sampleSelection(sampleMarker_, sampleMarker_ + len - 1);
     
       tocDirty(1);
       updateLevel_ |= UPD_TOC_DATA | UPD_TRACK_DATA | UPD_SAMPLE_SEL;
@@ -846,12 +717,13 @@ int TocEdit::insertTrackData()
       if (end > 0) 
 	sampleManager_->scanToc(Msf(start).samples() + len, Msf(end).samples() - 1);
 
-      sampleSelection(Msf(start).samples(), Msf(end).samples() - 1);
+    *selStart = Msf(start).samples();
+    *selEnd = Msf(end).samples() - 1;
+//      sampleSelection(Msf(start).samples(), Msf(end).samples() - 1);
       
       tocDirty(1);
       updateLevel_ |= UPD_TOC_DATA | UPD_TRACK_DATA | UPD_SAMPLE_SEL;
     }
   }
-
   return 0;
 }

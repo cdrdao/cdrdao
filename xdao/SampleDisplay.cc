@@ -18,6 +18,17 @@
  */
 /*
  * $Log: SampleDisplay.cc,v $
+ * Revision 1.8  2000/09/21 02:07:06  llanero
+ * MDI support:
+ * Splitted AudioCDChild into same and AudioCDView
+ * Move Selections from TocEdit to AudioCDView to allow
+ *   multiple selections.
+ * Cursor animation in all the views.
+ * Can load more than one from from command line
+ * Track info, Toc info, Append/Insert Silence, Append/Insert Track,
+ *   they all are built for every child when needed.
+ * ...
+ *
  * Revision 1.7  2000/04/23 09:07:08  andreasm
  * * Fixed most problems marked with '//llanero'.
  * * Added audio CD edit menus to MDIWindow.
@@ -64,7 +75,7 @@
  *
  */
 
-static char rcsid[] = "$Id: SampleDisplay.cc,v 1.7 2000/04/23 09:07:08 andreasm Exp $";
+static char rcsid[] = "$Id: SampleDisplay.cc,v 1.8 2000/09/21 02:07:06 llanero Exp $";
 
 #include <stdio.h>
 #include <limits.h>
@@ -1019,7 +1030,6 @@ void SampleDisplay::updateSamples()
       gint pos1;
       gint lastPosLeft, lastPosRight;
 
-
       //printf("Drawing exact, res=%ld pres=%g %ld-%ld\n", res, pres, minSample_, maxSample_);
 
       if (reader.seekSample(minSample_) == 0 &&
@@ -1060,7 +1070,11 @@ void SampleDisplay::updateSamples()
 	  if (pos != 0 || pos1 != 0)
 	    pixmap_.draw_line(drawGc_, long(di - pres), rcenter_ - (gint)pos,
 			       long(di), rcenter_ - pos1);
+
 	}
+
+if (&pixmap_ == 0)
+  cout << "null !!" << endl;
 
 	if (0 && (gint)di < sampleEndX_) {
 	  pos = sampleBuf[len -1].left() * halfHeight;
@@ -1076,7 +1090,6 @@ void SampleDisplay::updateSamples()
 			       sampleEndX_, rcenter_ - (gint)pos);
 	}
       }
-
       delete[] sampleBuf;
     }
 

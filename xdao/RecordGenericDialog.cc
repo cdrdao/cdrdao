@@ -25,6 +25,7 @@
 #include "RecordCDTarget.h"
 #include "RecordHDTarget.h"
 #include "guiUpdate.h"
+#include "TocEdit.h"
 
 RecordGenericDialog::RecordGenericDialog()
 {
@@ -102,17 +103,20 @@ RecordGenericDialog::RecordGenericDialog()
 
 
 //  startButton = manage( new Gtk::Button ("Accept"));
-  startButton = new Gnome::Stock::Buttons::Button(GNOME_STOCK_BUTTON_OK);
+//  startButton = new Gnome::Stock::Buttons::Button(GNOME_STOCK_BUTTON_OK);
+  startButton = new Gnome::StockButton(GNOME_STOCK_BUTTON_OK);
   buttonbox->pack_start(*startButton);
   startButton->show();
 
 //  closeButton = manage( new Gtk::Button ("Cancel"));
-  closeButton = new Gnome::Stock::Buttons::Button(GNOME_STOCK_BUTTON_CLOSE);
+//  closeButton = new Gnome::Stock::Buttons::Button(GNOME_STOCK_BUTTON_CLOSE);
+  closeButton = new Gnome::StockButton(GNOME_STOCK_BUTTON_CLOSE);
   buttonbox->add (*closeButton);
   closeButton->show();
 
 //  helpButton = manage( new Gtk::Button ("Help"));
-  helpButton = new Gnome::Stock::Buttons::Button(GNOME_STOCK_BUTTON_HELP);
+//  helpButton = new Gnome::Stock::Buttons::Button(GNOME_STOCK_BUTTON_HELP);
+  helpButton = new Gnome::StockButton(GNOME_STOCK_BUTTON_HELP);
   buttonbox->add (*helpButton);
   helpButton->show();
 
@@ -136,9 +140,11 @@ RecordGenericDialog::~RecordGenericDialog()
 {
 }
 
-
 void RecordGenericDialog::start(TocEdit *tocEdit, enum RecordSourceType SourceType, enum RecordTargetType TargetType)
 {
+  gchar *title;
+  tocEdit_ = tocEdit;
+
   if (active_) {
     get_window().raise();
 //    return;
@@ -173,10 +179,10 @@ void RecordGenericDialog::start(TocEdit *tocEdit, enum RecordSourceType SourceTy
     switch (source_) 
     {
 	  case S_TOC:
-                  TOCSOURCE->update(UPD_ALL, tocEdit);
+                  TOCSOURCE->update(UPD_ALL);
                   break;
       case S_CD:
-                  CDSOURCE->update(UPD_ALL, tocEdit);
+                  CDSOURCE->update(UPD_ALL);
                   break;
     }
   }
@@ -208,10 +214,10 @@ void RecordGenericDialog::start(TocEdit *tocEdit, enum RecordSourceType SourceTy
     switch (target_) 
     {
 	  case T_CD:
-                  CDTARGET->update(UPD_ALL, tocEdit, SourceType);
+                  CDTARGET->update(UPD_ALL, SourceType);
                   break;
       case T_HD:
-                  HDTARGET->update(UPD_ALL, tocEdit);
+                  HDTARGET->update(UPD_ALL);
                   break;
     }
   }
@@ -220,11 +226,13 @@ void RecordGenericDialog::start(TocEdit *tocEdit, enum RecordSourceType SourceTy
   switch (source_) 
   {
     case S_TOC:
-                switch (target_) 
-                {
-                  case T_CD:
-							 set_title(string("Write project to CD"));
-                             break;
+      switch (target_) 
+      {
+        case T_CD:
+          title = g_strdup_printf("Write project %s to CD", tocEdit_->filename());
+          set_title(string(title));
+          g_free(title);
+          break;
                   case T_HD:
 							 set_title(string("Write project to Disk"));
                              break;
@@ -244,6 +252,21 @@ void RecordGenericDialog::start(TocEdit *tocEdit, enum RecordSourceType SourceTy
   }
 
   show();
+}
+
+void RecordGenericDialog::toc_to_cd(TocEdit *tocEdit)
+{
+  start(tocEdit, S_TOC, T_CD);
+}
+
+void RecordGenericDialog::cd_to_cd()
+{
+  start(NULL, S_CD, T_CD);
+}
+
+void RecordGenericDialog::cd_to_hd()
+{
+  start(NULL, S_CD, T_HD);
 }
 
 void RecordGenericDialog::stop()
@@ -276,7 +299,7 @@ void RecordGenericDialog::stop()
   target_ = T_NONE;
 }
 
-void RecordGenericDialog::update(unsigned long level, TocEdit *tocEdit)
+void RecordGenericDialog::update(unsigned long level)
 {
   if (!active_)
     return;
@@ -284,20 +307,20 @@ void RecordGenericDialog::update(unsigned long level, TocEdit *tocEdit)
   switch (source_) 
   {
 	case S_TOC:
-                TOCSOURCE->update(level, tocEdit);
+                TOCSOURCE->update(level);
                 break;
     case S_CD:
-                CDSOURCE->update(level, tocEdit);
+                CDSOURCE->update(level);
                 break;
   }
 
   switch (target_) 
   {
     case T_CD:
-                CDTARGET->update(level, tocEdit, source_);
+                CDTARGET->update(level, source_);
                 break;
     case T_HD:
-                HDTARGET->update(level, tocEdit);
+                HDTARGET->update(level);
                 break;
   }
 }

@@ -26,19 +26,16 @@
 #include <gnome--.h>
 
 class TocEdit;
-GtkWidget* example_creator(GnomeMDIChild *child, gpointer data);
 
-//FIXME: Until we get gnome-- MDI support!
-//class MDIWindow : public Gnome::MDI
-class MDIWindow : public Gnome::App
+class MDIWindow : public Gnome::MDI
 {
 public:
-  MDIWindow(TocEdit *);
-  void example_child();
-//  GtkWidget* example_creator(GnomeMDIChild *child, gpointer data);
+  MDIWindow();
+  void openAudioCDProject(char *name);
 
 protected:
-  void install_menus_and_toolbar();
+  void app_created_impl(Gnome::App& app);
+  gint child_number;
   void app_close();
   virtual int delete_event_impl(GdkEventAny *event);
   void nothing_cb();  
@@ -46,22 +43,19 @@ protected:
   void about_destroy_cb();
 
 private:
-  TocEdit *tocEdit_; // this should be a list of TocEdit objects
+  Gtk::FileSelection *readFileSelector_;
 
-  Gtk::Statusbar *statusBar_;
-  class AudioCDChild *audioCdChild_;
-
-  Gtk::FileSelection readSaveFileSelector_;
-  int readSaveOperation_; // 1 for read, 2 for save
+  GList *childs;
 
   void tocBlockedMsg(const char *);
 
-  void readWriteFileSelectorOKCB();
-  void readWriteFileSelectorCancelCB();
-  void newProject();
+  void readFileSelectorOKCB();
+  void readFileSelectorCancelCB();
+  void newAudioCDProject();
   void readProject();
   void saveProject();
   void saveAsProject();
+  void closeProject();
 
 //llanero  void quit();
   void configureDevices();
@@ -69,16 +63,12 @@ private:
   void recordToc2CD();
   void recordCD2HD();
   void recordCD2CD();
-  void projectInfo();
-  void trackInfo();
 
 protected:
   Gnome::About *about_;
 
 public:
-  TocEdit *tocEdit() const { return tocEdit_; }
-
- void statusMessage(const char *fmt, ...);
+  void statusMessage(const char *fmt, ...);
 
   void update(unsigned long level);
 //  gint delete_event_impl(GdkEventAny*);

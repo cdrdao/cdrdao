@@ -18,6 +18,17 @@
  */
 /*
  * $Log: AddSilenceDialog.cc,v $
+ * Revision 1.4  2000/09/21 02:07:06  llanero
+ * MDI support:
+ * Splitted AudioCDChild into same and AudioCDView
+ * Move Selections from TocEdit to AudioCDView to allow
+ *   multiple selections.
+ * Cursor animation in all the views.
+ * Can load more than one from from command line
+ * Track info, Toc info, Append/Insert Silence, Append/Insert Track,
+ *   they all are built for every child when needed.
+ * ...
+ *
  * Revision 1.3  2000/04/23 09:07:08  andreasm
  * * Fixed most problems marked with '//llanero'.
  * * Added audio CD edit menus to MDIWindow.
@@ -47,7 +58,7 @@
  *
  */
 
-static char rcsid[] = "$Id: AddSilenceDialog.cc,v 1.3 2000/04/23 09:07:08 andreasm Exp $";
+static char rcsid[] = "$Id: AddSilenceDialog.cc,v 1.4 2000/09/21 02:07:06 llanero Exp $";
 
 #include <stdio.h>
 #include <limits.h>
@@ -60,10 +71,11 @@ static char rcsid[] = "$Id: AddSilenceDialog.cc,v 1.3 2000/04/23 09:07:08 andrea
 #include "guiUpdate.h"
 
 #include "Sample.h"
+#include "AudioCDChild.h"
+#include "AudioCDView.h"
 
 
-
-AddSilenceDialog::AddSilenceDialog()
+AddSilenceDialog::AddSilenceDialog(AudioCDChild *child)
 {
   Gtk::Button *button;
   Gtk::VBox *vbox;
@@ -72,6 +84,8 @@ AddSilenceDialog::AddSilenceDialog()
   tocEdit_ = NULL;
   active_ = 0;
   mode_ = M_APPEND;
+
+  cdchild = child;
 
   minutes_ = new Gtk::Entry;
   seconds_ = new Gtk::Entry;
@@ -230,7 +244,8 @@ void AddSilenceDialog::applyAction()
   unsigned long length = 0;
   char buf[20];
   long val;
-
+  AudioCDView *view = static_cast <AudioCDView *>(cdchild->get_active());
+  
   if (tocEdit_ == NULL || !tocEdit_->editable())
     return;
 
@@ -274,8 +289,11 @@ void AddSilenceDialog::applyAction()
       tocEdit_->appendSilence(length);
       break;
     case M_INSERT:
-      if (tocEdit_->sampleMarker(&pos)) {
-	tocEdit_->insertSilence(length, pos);
+//      if (tocEdit_->sampleMarker(&pos)) {
+      if (view->sampleMarker(&pos)) {
+        if (tocEdit_->insertSilence(length, pos) == 0) {
+          view->sampleSelection(pos, pos + length - 1);
+        }
       }
       break;
     }

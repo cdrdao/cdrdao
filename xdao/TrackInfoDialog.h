@@ -18,6 +18,17 @@
  */
 /*
  * $Log: TrackInfoDialog.h,v $
+ * Revision 1.3  2000/09/21 02:07:07  llanero
+ * MDI support:
+ * Splitted AudioCDChild into same and AudioCDView
+ * Move Selections from TocEdit to AudioCDView to allow
+ *   multiple selections.
+ * Cursor animation in all the views.
+ * Can load more than one from from command line
+ * Track info, Toc info, Append/Insert Silence, Append/Insert Track,
+ *   they all are built for every child when needed.
+ * ...
+ *
  * Revision 1.2  2000/02/20 23:34:54  llanero
  * fixed scsilib directory (files mising ?-()
  * ported xdao to 1.1.8 / gnome (MDI) app
@@ -39,10 +50,11 @@
 class Toc;
 class TocEdit;
 class TextEdit;
+class AudioCDChild;
 
 class TrackInfoDialog : public Gtk::Dialog {
 public:
-  TrackInfoDialog();
+  TrackInfoDialog(AudioCDChild *child);
   ~TrackInfoDialog();
 
   gint delete_event_impl(GdkEventAny*);
@@ -57,6 +69,8 @@ private:
   int active_;
 
   int selectedTrack_;
+
+  AudioCDChild *cdchild;
 
   Gtk::Button *applyButton_;
 
