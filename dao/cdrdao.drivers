@@ -1,0 +1,120 @@
+# Driver table for cdrdao-1.1.4
+# Generated Fri Jun  9 21:03:21 2000 by mueller
+
+# Drivers for read operations
+R|ASUS|CD-S340|generic-mmc
+R|ASUS|CD-S400|generic-mmc
+R|E-IDE|CD-ROM 36X/AKU|generic-mmc
+R|HITACHI|CDR-8435|generic-mmc|OPT_MMC_NO_SUBCHAN
+R|KENWOOD|CD-ROM UCR-415|generic-mmc|OPT_DRV_GET_TOC_GENERIC
+R|LG|CD-ROM CRD-8480C|generic-mmc|OPT_MMC_NO_SUBCHAN
+R|LITEON|CD-ROM|generic-mmc|OPT_DRV_GET_TOC_GENERIC
+R|MATSHITA|CD-ROM CR-588|generic-mmc
+R|MEMOREX|CD-233E|generic-mmc
+R|PHILIPS|CD-ROM PCCD052|generic-mmc
+R|PHILIPS|E-IDE CD-ROM 36X|generic-mmc
+R|PIONEER|DVD-103|generic-mmc|OPT_MMC_USE_PQ|OPT_MMC_PQ_BCD
+R|SONY|CD-ROM CDU31A-02|generic-mmc
+R|TEAC|CD-524E|generic-mmc|OPT_DRV_GET_TOC_GENERIC
+R|TEAC|CD-532E|generic-mmc|OPT_MMC_USE_PQ|OPT_MMC_PQ_BCD
+R|TOSHIBA|CD-ROM XM-3206B|generic-mmc
+R|TOSHIBA|CD-ROM XM-6302B|generic-mmc
+R|HITACHI|DVD-ROM GD-2500|plextor
+R|MATSHITA|CD-ROM CR-506|plextor|OPT_PLEX_DAE_D4_12
+R|NAKAMICH|MJ-5.16S|plextor
+R|PIONEER|CD-ROM DR-U03|plextor|OPT_DRV_GET_TOC_GENERIC
+R|PIONEER|CD-ROM DR-U06|plextor|OPT_DRV_GET_TOC_GENERIC
+R|PIONEER|CD-ROM DR-U10|plextor|OPT_DRV_GET_TOC_GENERIC
+R|PIONEER|CD-ROM DR-U12|plextor|OPT_DRV_GET_TOC_GENERIC
+R|PIONEER|CD-ROM DR-U16|plextor|OPT_DRV_GET_TOC_GENERIC
+R|PIONEER|DVD-303|plextor
+R|SAF|CD-R2006PLUS|plextor
+R|SONY|CD-ROM|plextor
+R|SONY|CD-ROM CDU-76|plextor
+R|PLEXTOR|CD-ROM|plextor-scan
+R|TEAC|CD-ROM CD-532S|plextor-scan|OPT_PLEX_USE_PQ|OPT_PLEX_PQ_BCD
+R|TOSHIBA|CD-ROM XM-5701TA|toshiba
+R|TOSHIBA|CD-ROM XM-6201TA|toshiba
+R|TOSHIBA|CD-ROM XM-6401TA|toshiba
+
+# Drivers for write operations
+W|HP|CD-Writer 4020|cdd2600
+W|HP|CD-Writer 6020|cdd2600
+W|IMS|CDD2000|cdd2600
+W|KODAK|PCD-225|cdd2600
+W|PHILIPS|CDD2000|cdd2600
+W|PHILIPS|CDD2600|cdd2600
+W|PHILIPS|CDD522|cdd2600
+W|AOPEN|CRW9624|generic-mmc
+W|GENERIC|CRD-RW2|generic-mmc
+W|HP|CD-Writer+ 7570|generic-mmc|OPT_MMC_CD_TEXT
+W|HP|CD-Writer+ 8100|generic-mmc|OPT_MMC_CD_TEXT
+W|HP|CD-Writer+ 8200|generic-mmc|OPT_MMC_CD_TEXT
+W|HP|CD-Writer+ 9100|generic-mmc|OPT_MMC_CD_TEXT
+W|HP|CD-Writer+ 9200|generic-mmc|OPT_MMC_CD_TEXT
+W|MATSHITA|CD-R   CW-7502|generic-mmc
+W|MATSHITA|CD-R   CW-7503|generic-mmc
+W|MATSHITA|CD-R   CW-7582|generic-mmc
+W|MATSHITA|CDRRW01|generic-mmc
+W|MEMOREX|CD-RW4224|generic-mmc
+W|MITSUMI|CR-4801|generic-mmc
+W|PANASONIC|CD-R   CW-7582|generic-mmc
+W|PHILIPS|PCA460RW|generic-mmc
+W|PLEXTOR|CD-R   PX-R412|generic-mmc|OPT_MMC_USE_PQ|OPT_MMC_READ_ISRC
+W|PLEXTOR|CD-R   PX-R820|generic-mmc
+W|PLEXTOR|CD-R   PX-W124|generic-mmc
+W|PLEXTOR|CD-R   PX-W4220|generic-mmc|OPT_MMC_CD_TEXT
+W|PLEXTOR|CD-R   PX-W8220|generic-mmc|OPT_MMC_CD_TEXT
+W|PLEXTOR|CD-R   PX-W8432|generic-mmc|OPT_MMC_CD_TEXT
+W|RICOH|CD-R/RW MP7060|generic-mmc|OPT_MMC_CD_TEXT
+W|SAF|CD-R 8020|generic-mmc
+W|SAF|CD-RW6424|generic-mmc
+W|SONY|CRX100|generic-mmc|OPT_MMC_CD_TEXT
+W|SONY|CRX120|generic-mmc|OPT_MMC_CD_TEXT
+W|SONY|CRX140|generic-mmc|OPT_MMC_CD_TEXT
+W|TEAC|CD-R56|generic-mmc|OPT_MMC_USE_PQ|OPT_MMC_CD_TEXT
+W|TEAC|CD-R58|generic-mmc|OPT_MMC_USE_PQ|OPT_MMC_CD_TEXT
+W|TEAC|CD-W54E|generic-mmc
+W|TRAXDATA|CDRW4260|generic-mmc
+W|WAITEC|WT624|generic-mmc
+W|YAMAHA|CDR200|generic-mmc
+W|YAMAHA|CDR400|generic-mmc
+W|YAMAHA|CRW2260|generic-mmc
+W|YAMAHA|CRW4001|generic-mmc
+W|YAMAHA|CRW4260|generic-mmc
+W|YAMAHA|CRW4416|generic-mmc
+W|YAMAHA|CRW6416|generic-mmc
+W|YAMAHA|CRW8424|generic-mmc
+W|ATAPI|CD-R/RW 4X4X32|generic-mmc-raw
+W|ATAPI|CD-R/RW CRW6206A|generic-mmc-raw
+W|BTC|BCE621E|generic-mmc-raw
+W|HP|CD-Writer+ 7100|generic-mmc-raw
+W|HP|CD-Writer+ 7200|generic-mmc-raw
+W|IDE-CD|R/RW 2x2x24|generic-mmc-raw
+W|IOMEGA|ZIPCD 4x650|generic-mmc-raw
+W|MEMOREX|CDRW-2216|generic-mmc-raw
+W|MEMOREX|CR-622|generic-mmc-raw
+W|MEMOREX|CRW-1662|generic-mmc-raw
+W|MITSUMI|CR-4802|generic-mmc-raw
+W|PHILIPS|CDD3600|generic-mmc-raw
+W|PHILIPS|CDD3610|generic-mmc-raw
+W|PHILIPS|PCRW404|generic-mmc-raw
+W|TRAXDATA|CDRW2260+|generic-mmc-raw
+W|TRAXDATA|CRW2260 PRO|generic-mmc-raw
+W|WAITEC|WT4424|generic-mmc-raw
+W|PHILIPS|OMNIWRITER26|ricoh-mp6200
+W|RICOH|MP6200|ricoh-mp6200
+W|RICOH|MP6201|ricoh-mp6200
+W|SONY|CD-R   CDU920|sony-cdu920
+W|SONY|CD-R   CDU924|sony-cdu920
+W|SONY|CD-R   CDU948|sony-cdu948
+W|T.YUDEN|CD-WO EW-50|taiyo-yuden
+W|JVC|R2626|teac-cdr55
+W|SAF|CD-R2006PLUS|teac-cdr55
+W|SAF|CD-R4012|teac-cdr55
+W|SAF|CD-RW 226|teac-cdr55
+W|TEAC|CD-R50|teac-cdr55
+W|TEAC|CD-R55|teac-cdr55
+W|TRAXDATA|CDR4120|teac-cdr55
+W|YAMAHA|CDR100|yamaha-cdr10x
+W|YAMAHA|CDR102|yamaha-cdr10x

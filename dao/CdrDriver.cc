@@ -18,6 +18,13 @@
  */
 /*
  * $Log: CdrDriver.cc,v $
+ * Revision 1.4  2000/06/10 14:48:05  andreasm
+ * Tracks that are shorter than 4 seconds can be recorded now if the user confirms
+ * it.
+ * The driver table is now read from an external file (.../share/cdrdao/drivers
+ * and $HOME/.cdrdao-drivers).
+ * Fixed bug the might prevented writing pure data CDs with some recorders.
+ *
  * Revision 1.3  2000/06/06 22:26:13  andreasm
  * Updated list of supported drives.
  * Added saving of some command line settings to $HOME/.cdrdao.
@@ -82,7 +89,7 @@
  *
  */
 
-static char rcsid[] = "$Id: CdrDriver.cc,v 1.3 2000/06/06 22:26:13 andreasm Exp $";
+static char rcsid[] = "$Id: CdrDriver.cc,v 1.4 2000/06/10 14:48:05 andreasm Exp $";
 
 #include <config.h>
 
@@ -129,6 +136,7 @@ struct DriverSelectTable {
   char *vendor;
   char *model;
   unsigned long options;
+  struct DriverSelectTable *next;
 };
 
 struct DriverTable {
@@ -136,125 +144,129 @@ struct DriverTable {
   CdrDriverConstructor constructor;
 };
 
-static DriverSelectTable READ_DRIVER_TABLE[] = {
-{ "generic-mmc", "ASUS", "CD-S340", 0 },
-{ "generic-mmc", "ASUS", "CD-S400", 0 },
-{ "generic-mmc", "E-IDE", "CD-ROM 36X/AKU", 0 },
-{ "generic-mmc", "HITACHI", "CDR-8435", OPT_MMC_NO_SUBCHAN },
-{ "generic-mmc", "KENWOOD", "CD-ROM UCR-415", OPT_DRV_GET_TOC_GENERIC },
-{ "generic-mmc", "LG", "CD-ROM CRD-8480C", OPT_MMC_NO_SUBCHAN },
-{ "generic-mmc", "LITEON", "CD-ROM", OPT_DRV_GET_TOC_GENERIC },
-{ "generic-mmc", "MATSHITA", "CD-ROM CR-588", 0 },
-{ "generic-mmc", "MEMOREX", "CD-233E", 0 },
-{ "generic-mmc", "PHILIPS", "CD-ROM PCCD052", 0 },
-{ "generic-mmc", "PHILIPS", "E-IDE CD-ROM 36X", 0 },
-{ "generic-mmc", "PIONEER", "DVD-103", OPT_MMC_USE_PQ|OPT_MMC_PQ_BCD },
-{ "generic-mmc", "SONY", "CD-ROM CDU31A-02", 0 },
-{ "generic-mmc", "TEAC", "CD-524E", OPT_DRV_GET_TOC_GENERIC },
-{ "generic-mmc", "TEAC", "CD-532E", OPT_MMC_USE_PQ|OPT_MMC_PQ_BCD },
-{ "generic-mmc", "TOSHIBA", "CD-ROM XM-3206B", 0 },
-{ "generic-mmc", "TOSHIBA", "CD-ROM XM-6302B", 0 },
-{ "plextor", "HITACHI", "DVD-ROM GD-2500", 0 },
-{ "plextor", "MATSHITA", "CD-ROM CR-506", OPT_PLEX_DAE_D4_12 },
-{ "plextor", "NAKAMICH", "MJ-5.16S", 0 },
-{ "plextor", "PIONEER", "CD-ROM DR-U03", OPT_DRV_GET_TOC_GENERIC },
-{ "plextor", "PIONEER", "CD-ROM DR-U06", OPT_DRV_GET_TOC_GENERIC },
-{ "plextor", "PIONEER", "CD-ROM DR-U10", OPT_DRV_GET_TOC_GENERIC },
-{ "plextor", "PIONEER", "CD-ROM DR-U12", OPT_DRV_GET_TOC_GENERIC },
-{ "plextor", "PIONEER", "CD-ROM DR-U16", OPT_DRV_GET_TOC_GENERIC },
-{ "plextor", "PIONEER", "DVD-303", 0 },
-{ "plextor", "SAF", "CD-R2006PLUS", 0 },
-{ "plextor", "SONY", "CD-ROM", 0 },
-{ "plextor", "SONY", "CD-ROM CDU-76", 0 },
-{ "plextor-scan", "PLEXTOR", "CD-ROM", 0 },
-{ "plextor-scan", "TEAC", "CD-ROM CD-532S", OPT_PLEX_USE_PQ|OPT_PLEX_PQ_BCD },
-{ "toshiba", "TOSHIBA", "CD-ROM XM-5701TA", 0 },
-{ "toshiba", "TOSHIBA", "CD-ROM XM-6201TA", 0 },
-{ "toshiba", "TOSHIBA", "CD-ROM XM-6401TA", 0 },
-{ NULL, NULL, NULL, 0 }};
+static DriverSelectTable *READ_DRIVER_TABLE = NULL;
+static DriverSelectTable *WRITE_DRIVER_TABLE = NULL;
 
-static DriverSelectTable WRITE_DRIVER_TABLE[] = {
-{ "cdd2600", "HP", "CD-Writer 4020", 0 },
-{ "cdd2600", "HP", "CD-Writer 6020", 0 },
-{ "cdd2600", "IMS", "CDD2000", 0 },
-{ "cdd2600", "KODAK", "PCD-225", 0 },
-{ "cdd2600", "PHILIPS", "CDD2000", 0 },
-{ "cdd2600", "PHILIPS", "CDD2600", 0 },
-{ "cdd2600", "PHILIPS", "CDD522", 0 },
-{ "generic-mmc", "AOPEN", "CRW9624", 0 },
-{ "generic-mmc", "GENERIC", "CRD-RW2", 0 },
-{ "generic-mmc", "HP", "CD-Writer+ 7570", OPT_MMC_CD_TEXT },
-{ "generic-mmc", "HP", "CD-Writer+ 8100", OPT_MMC_CD_TEXT },
-{ "generic-mmc", "HP", "CD-Writer+ 8200", OPT_MMC_CD_TEXT },
-{ "generic-mmc", "HP", "CD-Writer+ 9100", OPT_MMC_CD_TEXT },
-{ "generic-mmc", "HP", "CD-Writer+ 9200", OPT_MMC_CD_TEXT },
-{ "generic-mmc", "MATSHITA", "CD-R   CW-7502", 0 },
-{ "generic-mmc", "MATSHITA", "CD-R   CW-7503", 0 },
-{ "generic-mmc", "MATSHITA", "CD-R   CW-7582", 0 },
-{ "generic-mmc", "MATSHITA", "CDRRW01", 0 },
-{ "generic-mmc", "MEMOREX", "CD-RW4224", 0 },
-{ "generic-mmc", "MITSUMI", "CR-4801", 0 },
-{ "generic-mmc", "PANASONIC", "CD-R   CW-7582", 0 },
-{ "generic-mmc", "PHILIPS", "PCA460RW", 0 },
-{ "generic-mmc", "PLEXTOR", "CD-R   PX-R412", OPT_MMC_USE_PQ|OPT_MMC_READ_ISRC },
-{ "generic-mmc", "PLEXTOR", "CD-R   PX-R820", 0 },
-{ "generic-mmc", "PLEXTOR", "CD-R   PX-W124", 0 },
-{ "generic-mmc", "PLEXTOR", "CD-R   PX-W4220", OPT_MMC_CD_TEXT },
-{ "generic-mmc", "PLEXTOR", "CD-R   PX-W8220", OPT_MMC_CD_TEXT },
-{ "generic-mmc", "PLEXTOR", "CD-R   PX-W8432", OPT_MMC_CD_TEXT },
-{ "generic-mmc", "RICOH", "CD-R/RW MP7060", OPT_MMC_CD_TEXT },
-{ "generic-mmc", "SAF", "CD-R 8020", 0 },
-{ "generic-mmc", "SAF", "CD-RW6424", 0 },
-{ "generic-mmc", "SONY", "CRX100", OPT_MMC_CD_TEXT },
-{ "generic-mmc", "SONY", "CRX120", OPT_MMC_CD_TEXT },
-{ "generic-mmc", "SONY", "CRX140", OPT_MMC_CD_TEXT },
-{ "generic-mmc", "TEAC", "CD-R56", OPT_MMC_USE_PQ|OPT_MMC_CD_TEXT },
-{ "generic-mmc", "TEAC", "CD-R58", OPT_MMC_USE_PQ|OPT_MMC_CD_TEXT },
-{ "generic-mmc", "TEAC", "CD-W54E", 0 },
-{ "generic-mmc", "TRAXDATA", "CDRW4260", 0 },
-{ "generic-mmc", "WAITEC", "WT624", 0 },
-{ "generic-mmc", "YAMAHA", "CDR200", 0 },
-{ "generic-mmc", "YAMAHA", "CDR400", 0 },
-{ "generic-mmc", "YAMAHA", "CRW2260", 0 },
-{ "generic-mmc", "YAMAHA", "CRW4001", 0 },
-{ "generic-mmc", "YAMAHA", "CRW4260", 0 },
-{ "generic-mmc", "YAMAHA", "CRW4416", 0 },
-{ "generic-mmc", "YAMAHA", "CRW6416", 0 },
-{ "generic-mmc", "YAMAHA", "CRW8424", 0 },
-{ "generic-mmc-raw", "ATAPI", "CD-R/RW 4X4X32", 0 },
-{ "generic-mmc-raw", "ATAPI", "CD-R/RW CRW6206A", 0 },
-{ "generic-mmc-raw", "BTC", "BCE621E", 0 },
-{ "generic-mmc-raw", "HP", "CD-Writer+ 7100", 0 },
-{ "generic-mmc-raw", "HP", "CD-Writer+ 7200", 0 },
-{ "generic-mmc-raw", "IDE-CD", "R/RW 2x2x24", 0 },
-{ "generic-mmc-raw", "IOMEGA", "ZIPCD 4x650", 0 },
-{ "generic-mmc-raw", "MEMOREX", "CDRW-2216", 0 },
-{ "generic-mmc-raw", "MEMOREX", "CR-622", 0 },
-{ "generic-mmc-raw", "MEMOREX", "CRW-1662", 0 },
-{ "generic-mmc-raw", "MITSUMI", "CR-4802", 0 },
-{ "generic-mmc-raw", "PHILIPS", "CDD3600", 0 },
-{ "generic-mmc-raw", "PHILIPS", "CDD3610", 0 },
-{ "generic-mmc-raw", "PHILIPS", "PCRW404", 0 },
-{ "generic-mmc-raw", "TRAXDATA", "CDRW2260+", 0 },
-{ "generic-mmc-raw", "TRAXDATA", "CRW2260 PRO", 0 },
-{ "generic-mmc-raw", "WAITEC", "WT4424", 0 },
-{ "ricoh-mp6200", "PHILIPS", "OMNIWRITER26", 0 },
-{ "ricoh-mp6200", "RICOH", "MP6200", 0 },
-{ "ricoh-mp6200", "RICOH", "MP6201", 0 },
-{ "sony-cdu920", "SONY", "CD-R   CDU920", 0 },
-{ "sony-cdu920", "SONY", "CD-R   CDU924", 0 },
-{ "sony-cdu948", "SONY", "CD-R   CDU948", 0 },
-{ "taiyo-yuden", "T.YUDEN", "CD-WO EW-50", 0 },
-{ "teac-cdr55", "JVC", "R2626", 0 },
-{ "teac-cdr55", "SAF", "CD-R2006PLUS", 0 },
-{ "teac-cdr55", "SAF", "CD-R4012", 0 },
-{ "teac-cdr55", "SAF", "CD-RW 226", 0 },
-{ "teac-cdr55", "TEAC", "CD-R50", 0 },
-{ "teac-cdr55", "TEAC", "CD-R55", 0 },
-{ "teac-cdr55", "TRAXDATA", "CDR4120", 0 },
-{ "yamaha-cdr10x", "YAMAHA", "CDR100", 0 },
-{ "yamaha-cdr10x", "YAMAHA", "CDR102", 0 },
-{ NULL, NULL, NULL, 0 }};
+
+static DriverSelectTable BUILTIN_READ_DRIVER_TABLE[] = {
+{ "generic-mmc", "ASUS", "CD-S340", 0, NULL },
+{ "generic-mmc", "ASUS", "CD-S400", 0, NULL },
+{ "generic-mmc", "E-IDE", "CD-ROM 36X/AKU", 0, NULL },
+{ "generic-mmc", "HITACHI", "CDR-8435", OPT_MMC_NO_SUBCHAN, NULL },
+{ "generic-mmc", "KENWOOD", "CD-ROM UCR-415", OPT_DRV_GET_TOC_GENERIC, NULL },
+{ "generic-mmc", "LG", "CD-ROM CRD-8480C", OPT_MMC_NO_SUBCHAN, NULL },
+{ "generic-mmc", "LITEON", "CD-ROM", OPT_DRV_GET_TOC_GENERIC, NULL },
+{ "generic-mmc", "MATSHITA", "CD-ROM CR-588", 0, NULL },
+{ "generic-mmc", "MEMOREX", "CD-233E", 0, NULL },
+{ "generic-mmc", "PHILIPS", "CD-ROM PCCD052", 0, NULL },
+{ "generic-mmc", "PHILIPS", "E-IDE CD-ROM 36X", 0, NULL },
+{ "generic-mmc", "PIONEER", "DVD-103", OPT_MMC_USE_PQ|OPT_MMC_PQ_BCD, NULL },
+{ "generic-mmc", "SONY", "CD-ROM CDU31A-02", 0, NULL },
+{ "generic-mmc", "TEAC", "CD-524E", OPT_DRV_GET_TOC_GENERIC, NULL },
+{ "generic-mmc", "TEAC", "CD-532E", OPT_MMC_USE_PQ|OPT_MMC_PQ_BCD, NULL },
+{ "generic-mmc", "TOSHIBA", "CD-ROM XM-3206B", 0, NULL },
+{ "generic-mmc", "TOSHIBA", "CD-ROM XM-6302B", 0, NULL },
+{ "plextor", "HITACHI", "DVD-ROM GD-2500", 0, NULL },
+{ "plextor", "MATSHITA", "CD-ROM CR-506", OPT_PLEX_DAE_D4_12, NULL },
+{ "plextor", "NAKAMICH", "MJ-5.16S", 0, NULL },
+{ "plextor", "PIONEER", "CD-ROM DR-U03", OPT_DRV_GET_TOC_GENERIC, NULL },
+{ "plextor", "PIONEER", "CD-ROM DR-U06", OPT_DRV_GET_TOC_GENERIC, NULL },
+{ "plextor", "PIONEER", "CD-ROM DR-U10", OPT_DRV_GET_TOC_GENERIC, NULL },
+{ "plextor", "PIONEER", "CD-ROM DR-U12", OPT_DRV_GET_TOC_GENERIC, NULL },
+{ "plextor", "PIONEER", "CD-ROM DR-U16", OPT_DRV_GET_TOC_GENERIC, NULL },
+{ "plextor", "PIONEER", "DVD-303", 0, NULL },
+{ "plextor", "SAF", "CD-R2006PLUS", 0, NULL },
+{ "plextor", "SONY", "CD-ROM", 0, NULL },
+{ "plextor", "SONY", "CD-ROM CDU-76", 0, NULL },
+{ "plextor-scan", "PLEXTOR", "CD-ROM", 0, NULL },
+{ "plextor-scan", "TEAC", "CD-ROM CD-532S", OPT_PLEX_USE_PQ|OPT_PLEX_PQ_BCD, NULL },
+{ "toshiba", "TOSHIBA", "CD-ROM XM-5701TA", 0, NULL },
+{ "toshiba", "TOSHIBA", "CD-ROM XM-6201TA", 0, NULL },
+{ "toshiba", "TOSHIBA", "CD-ROM XM-6401TA", 0, NULL },
+{ NULL, NULL, NULL, 0, NULL }};
+
+static DriverSelectTable BUILTIN_WRITE_DRIVER_TABLE[] = {
+{ "cdd2600", "HP", "CD-Writer 4020", 0, NULL },
+{ "cdd2600", "HP", "CD-Writer 6020", 0, NULL },
+{ "cdd2600", "IMS", "CDD2000", 0, NULL },
+{ "cdd2600", "KODAK", "PCD-225", 0, NULL },
+{ "cdd2600", "PHILIPS", "CDD2000", 0, NULL },
+{ "cdd2600", "PHILIPS", "CDD2600", 0, NULL },
+{ "cdd2600", "PHILIPS", "CDD522", 0, NULL },
+{ "generic-mmc", "AOPEN", "CRW9624", 0, NULL },
+{ "generic-mmc", "GENERIC", "CRD-RW2", 0, NULL },
+{ "generic-mmc", "HP", "CD-Writer+ 7570", OPT_MMC_CD_TEXT, NULL },
+{ "generic-mmc", "HP", "CD-Writer+ 8100", OPT_MMC_CD_TEXT, NULL },
+{ "generic-mmc", "HP", "CD-Writer+ 8200", OPT_MMC_CD_TEXT, NULL },
+{ "generic-mmc", "HP", "CD-Writer+ 9100", OPT_MMC_CD_TEXT, NULL },
+{ "generic-mmc", "HP", "CD-Writer+ 9200", OPT_MMC_CD_TEXT, NULL },
+{ "generic-mmc", "MATSHITA", "CD-R   CW-7502", 0, NULL },
+{ "generic-mmc", "MATSHITA", "CD-R   CW-7503", 0, NULL },
+{ "generic-mmc", "MATSHITA", "CD-R   CW-7582", 0, NULL },
+{ "generic-mmc", "MATSHITA", "CDRRW01", 0, NULL },
+{ "generic-mmc", "MEMOREX", "CD-RW4224", 0, NULL },
+{ "generic-mmc", "MITSUMI", "CR-4801", 0, NULL },
+{ "generic-mmc", "PANASONIC", "CD-R   CW-7582", 0, NULL },
+{ "generic-mmc", "PHILIPS", "PCA460RW", 0, NULL },
+{ "generic-mmc", "PLEXTOR", "CD-R   PX-R412", OPT_MMC_USE_PQ|OPT_MMC_READ_ISRC, NULL },
+{ "generic-mmc", "PLEXTOR", "CD-R   PX-R820", 0, NULL },
+{ "generic-mmc", "PLEXTOR", "CD-R   PX-W124", 0, NULL },
+{ "generic-mmc", "PLEXTOR", "CD-R   PX-W4220", OPT_MMC_CD_TEXT, NULL },
+{ "generic-mmc", "PLEXTOR", "CD-R   PX-W8220", OPT_MMC_CD_TEXT, NULL },
+{ "generic-mmc", "PLEXTOR", "CD-R   PX-W8432", OPT_MMC_CD_TEXT, NULL },
+{ "generic-mmc", "RICOH", "CD-R/RW MP7060", OPT_MMC_CD_TEXT, NULL },
+{ "generic-mmc", "SAF", "CD-R 8020", 0, NULL },
+{ "generic-mmc", "SAF", "CD-RW6424", 0, NULL },
+{ "generic-mmc", "SONY", "CRX100", OPT_MMC_CD_TEXT, NULL },
+{ "generic-mmc", "SONY", "CRX120", OPT_MMC_CD_TEXT, NULL },
+{ "generic-mmc", "SONY", "CRX140", OPT_MMC_CD_TEXT, NULL },
+{ "generic-mmc", "TEAC", "CD-R56", OPT_MMC_USE_PQ|OPT_MMC_CD_TEXT, NULL },
+{ "generic-mmc", "TEAC", "CD-R58", OPT_MMC_USE_PQ|OPT_MMC_CD_TEXT, NULL },
+{ "generic-mmc", "TEAC", "CD-W54E", 0, NULL },
+{ "generic-mmc", "TRAXDATA", "CDRW4260", 0, NULL },
+{ "generic-mmc", "WAITEC", "WT624", 0, NULL },
+{ "generic-mmc", "YAMAHA", "CDR200", 0, NULL },
+{ "generic-mmc", "YAMAHA", "CDR400", 0, NULL },
+{ "generic-mmc", "YAMAHA", "CRW2260", 0, NULL },
+{ "generic-mmc", "YAMAHA", "CRW4001", 0, NULL },
+{ "generic-mmc", "YAMAHA", "CRW4260", 0, NULL },
+{ "generic-mmc", "YAMAHA", "CRW4416", 0, NULL },
+{ "generic-mmc", "YAMAHA", "CRW6416", 0, NULL },
+{ "generic-mmc", "YAMAHA", "CRW8424", 0, NULL },
+{ "generic-mmc-raw", "ATAPI", "CD-R/RW 4X4X32", 0, NULL },
+{ "generic-mmc-raw", "ATAPI", "CD-R/RW CRW6206A", 0, NULL },
+{ "generic-mmc-raw", "BTC", "BCE621E", 0, NULL },
+{ "generic-mmc-raw", "HP", "CD-Writer+ 7100", 0, NULL },
+{ "generic-mmc-raw", "HP", "CD-Writer+ 7200", 0, NULL },
+{ "generic-mmc-raw", "IDE-CD", "R/RW 2x2x24", 0, NULL },
+{ "generic-mmc-raw", "IOMEGA", "ZIPCD 4x650", 0, NULL },
+{ "generic-mmc-raw", "MEMOREX", "CDRW-2216", 0, NULL },
+{ "generic-mmc-raw", "MEMOREX", "CR-622", 0, NULL },
+{ "generic-mmc-raw", "MEMOREX", "CRW-1662", 0, NULL },
+{ "generic-mmc-raw", "MITSUMI", "CR-4802", 0, NULL },
+{ "generic-mmc-raw", "PHILIPS", "CDD3600", 0, NULL },
+{ "generic-mmc-raw", "PHILIPS", "CDD3610", 0, NULL },
+{ "generic-mmc-raw", "PHILIPS", "PCRW404", 0, NULL },
+{ "generic-mmc-raw", "TRAXDATA", "CDRW2260+", 0, NULL },
+{ "generic-mmc-raw", "TRAXDATA", "CRW2260 PRO", 0, NULL },
+{ "generic-mmc-raw", "WAITEC", "WT4424", 0, NULL },
+{ "ricoh-mp6200", "PHILIPS", "OMNIWRITER26", 0, NULL },
+{ "ricoh-mp6200", "RICOH", "MP6200", 0, NULL },
+{ "ricoh-mp6200", "RICOH", "MP6201", 0, NULL },
+{ "sony-cdu920", "SONY", "CD-R   CDU920", 0, NULL },
+{ "sony-cdu920", "SONY", "CD-R   CDU924", 0, NULL },
+{ "sony-cdu948", "SONY", "CD-R   CDU948", 0, NULL },
+{ "taiyo-yuden", "T.YUDEN", "CD-WO EW-50", 0, NULL },
+{ "teac-cdr55", "JVC", "R2626", 0, NULL },
+{ "teac-cdr55", "SAF", "CD-R2006PLUS", 0, NULL },
+{ "teac-cdr55", "SAF", "CD-R4012", 0, NULL },
+{ "teac-cdr55", "SAF", "CD-RW 226", 0, NULL },
+{ "teac-cdr55", "TEAC", "CD-R50", 0, NULL },
+{ "teac-cdr55", "TEAC", "CD-R55", 0, NULL },
+{ "teac-cdr55", "TRAXDATA", "CDR4120", 0, NULL },
+{ "yamaha-cdr10x", "YAMAHA", "CDR100", 0, NULL },
+{ "yamaha-cdr10x", "YAMAHA", "CDR102", 0, NULL },
+{ NULL, NULL, NULL, 0, NULL }};
 
 static DriverTable DRIVERS[] = {
 { "cdd2600", &CDD2600::instance },
@@ -343,24 +355,289 @@ unsigned char CdrDriver::syncPattern[12] = {
 
 char CdrDriver::REMOTE_MSG_SYNC_[4] = { 0xff, 0x00, 0xff, 0x00 };
 
+
+/* Maps a string to the corresponding driver option value 
+ * Return: 0: string is not a valid driver option sting
+ *         else: option value for string
+ */
+static unsigned long string2DriverOption(const char *s)
+{
+  if (strcmp(s, "OPT_DRV_GET_TOC_GENERIC") == 0)
+    return OPT_DRV_GET_TOC_GENERIC;
+  else if (strcmp(s, "OPT_DRV_SWAP_READ_SAMPLES") == 0)
+    return OPT_DRV_SWAP_READ_SAMPLES;
+  else if (strcmp(s, "OPT_DRV_NO_PREGAP_READ") == 0)
+    return OPT_DRV_NO_PREGAP_READ;
+  else if (strcmp(s, "OPT_MMC_USE_PQ") == 0)
+    return OPT_MMC_USE_PQ;
+  else if (strcmp(s, "OPT_MMC_PQ_BCD") == 0)
+    return OPT_MMC_PQ_BCD;
+  else if (strcmp(s, "OPT_MMC_READ_ISRC") == 0)
+    return OPT_MMC_READ_ISRC;
+  else if (strcmp(s, "OPT_MMC_SCAN_MCN") == 0)
+    return OPT_MMC_SCAN_MCN;
+  else if (strcmp(s, "OPT_MMC_CD_TEXT") == 0)
+    return OPT_MMC_CD_TEXT;
+  else if (strcmp(s, "OPT_MMC_NO_SUBCHAN") == 0)
+    return OPT_MMC_NO_SUBCHAN;
+  else if (strcmp(s, "OPT_PLEX_USE_PARANOIA") == 0)
+    return OPT_PLEX_USE_PARANOIA;
+  else if (strcmp(s, "OPT_PLEX_DAE_READ10") == 0)
+    return OPT_PLEX_DAE_READ10;
+  else if (strcmp(s, "OPT_PLEX_DAE_D4_12") == 0)
+    return OPT_PLEX_DAE_D4_12;
+  else if (strcmp(s, "OPT_PLEX_USE_PQ") == 0)
+    return OPT_PLEX_USE_PQ;
+  else if (strcmp(s, "OPT_PLEX_PQ_BCD") == 0)
+    return OPT_PLEX_PQ_BCD;
+  else if (strcmp(s, "OPT_PLEX_READ_ISRC") == 0)
+    return OPT_PLEX_READ_ISRC;
+  else
+    return 0;
+}
+
+
+/* Checks if 'n' is a valid driver name and returns the driver id string
+ * from the 'DRIVERS' on success.
+ * Return: driver id string
+ *         NULL: if 'n' is not a valid driver id
+ */
+static const char *checkDriverName(const char *n)
+{
+  DriverTable *run = DRIVERS;
+
+  while (run->driverId != NULL) {
+    if (strcmp(run->driverId, n) == 0)
+      return run->driverId;
+
+    run++;
+  }
+
+  return NULL;
+}
+
+/* Reads driver table from specified file.
+   Return: 0: OK, driver table file could be opened
+           1: could not open driver table file
+ */
+
+#define MAX_DRIVER_TABLE_LINE_LEN 1024
+
+static int readDriverTable(const char *filename)
+{
+  FILE *fp;
+  DriverSelectTable *ent;
+  int lineNr = 0;
+  int count = 0;
+  int rw;
+  int err;
+  char buf[MAX_DRIVER_TABLE_LINE_LEN];
+  char *p;
+  char *sep = "|\n";
+  char *vendor;
+  char *model;
+  char *driver;
+  const char *lastDriverName = NULL;
+  const char *driverName;
+  unsigned long opt, options;
+
+  if ((fp = fopen(filename, "r")) == NULL)
+    return 1;
+
+  message(3, "Reading driver table from file \"%s\".", filename);
+
+  while (fgets(buf, MAX_DRIVER_TABLE_LINE_LEN, fp) != NULL) {
+    lineNr++;
+
+    vendor = model = driver = NULL;
+    rw = 0;
+    options = 0;
+    err = 0;
+
+    // remove comment
+    if ((p = strchr(buf, '#')) != NULL)
+      *p = 0;
+
+    if ((p = strtok(buf, sep)) != NULL) {
+      if (strcmp(p, "R") == 0) {
+	rw = 1;
+      }
+      else if (strcmp(p, "W") == 0) {
+	rw = 2;
+      }
+      else {
+	message(-1,
+		"%s:%d: Expecting 'R' or 'W' as first token - line ignored.",
+		filename, lineNr);
+      }
+
+      if (rw > 0) {
+	if ((p = strtok(NULL, sep)) != NULL) {
+	  vendor = strdupCC(p);
+	  
+	  if ((p = strtok(NULL, sep)) != NULL) {
+	    model = strdupCC(p);
+	    
+	    if ((p = strtok(NULL, sep)) != NULL) {
+	      driver = strdupCC(p);
+
+	      if (lastDriverName == NULL ||
+		  strcmp(lastDriverName, driver) != 0) {
+		if ((driverName = checkDriverName(driver)) == NULL) {
+		  message(-1, "%s:%d: Driver '%s' not defined - line ignored.",
+			  filename, lineNr, driver);
+		  err = 1;
+		}
+		else {
+		  lastDriverName = driverName;
+		}
+	      }
+
+	      while (!err && (p = strtok(NULL, sep)) != NULL) {
+		if ((opt = string2DriverOption(p)) == 0) {
+		  message(-1, "%s:%d: Driver option string '%s' not defined - line ignored.",
+			  filename, lineNr, p);
+		  err = 1;
+		}
+
+		options |= opt;
+	      }
+
+	      if (!err) {
+		ent = new DriverSelectTable;
+	      
+		ent->vendor = vendor;
+		vendor = NULL;
+		ent->model = model;
+		model = NULL;
+		ent->driverId = driver;
+		driver = NULL;
+		ent->options = options;
+		
+		if (rw == 1) {
+		  ent->next = READ_DRIVER_TABLE;
+		  READ_DRIVER_TABLE = ent;
+		}
+		else {
+		  ent->next = WRITE_DRIVER_TABLE;
+		  WRITE_DRIVER_TABLE = ent;
+		}
+		
+		count++;
+	      }
+	    }
+	    else {
+	      message(-1, "%s:%d: Missing driver name - line ignored.",
+		      filename, lineNr);
+	    }
+	  }
+	  else {
+	    message(-1, "%s:%d: Missing model name - line ignored.",
+		      filename, lineNr);
+	  }
+	}
+	else {
+	  message(-1, "%s:%d: Missing vendor name - line ignored.",
+		      filename, lineNr);
+	}
+
+	delete[] vendor;
+	delete[] model;
+	delete[] driver;
+      }
+    }
+  }
+
+  fclose(fp);
+
+  message(3, "Found %d valid driver table entries.", count);
+
+  return 0;
+}
+
+/* Create driver tables from built-in driver table data.
+ */
+static void createDriverTable()
+{
+  DriverSelectTable *run;
+  DriverSelectTable *ent;
+
+  for (run = BUILTIN_READ_DRIVER_TABLE; run->driverId != NULL; run++) {
+    ent = new DriverSelectTable;
+
+    ent->driverId = strdupCC(run->driverId);
+    ent->vendor = strdupCC(run->vendor);
+    ent->model = strdupCC(run->model);
+    ent->options = run->options;
+
+    ent->next = READ_DRIVER_TABLE;
+    READ_DRIVER_TABLE = ent;
+  }
+
+  for (run = BUILTIN_WRITE_DRIVER_TABLE; run->driverId != NULL; run++) {
+    ent = new DriverSelectTable;
+
+    ent->driverId = strdupCC(run->driverId);
+    ent->vendor = strdupCC(run->vendor);
+    ent->model = strdupCC(run->model);
+    ent->options = run->options;
+
+    ent->next = WRITE_DRIVER_TABLE;
+    WRITE_DRIVER_TABLE = ent;
+  }
+}
+
+/* Initialize driver table. First try to read the driver table from file
+ * 'DRIVER_TABLE_FILE'. If it does not exist the built-in driver table data
+ * will be used. After that an user specific driver table file is loaded if
+ * available.
+ */
+static void initDriverTable()
+{
+  static int initialized = 0;
+  const char *home;
+  char *path;
+
+  if (initialized) 
+    return;
+
+  if (readDriverTable(DRIVER_TABLE_FILE) != 0) {
+    message(-1, "Cannot read driver table from file \"%s\" - using built-in table.", DRIVER_TABLE_FILE);
+    createDriverTable();
+  }
+
+  /* read driver table from $HOME/.cdrdao-drivers */
+  if ((home = getenv("HOME")) != NULL) {
+    path = strdup3CC(home, "/.cdrdao-drivers", NULL);
+    readDriverTable(path);
+    delete[] path;
+  }
+
+  initialized = 1;
+}
+
 const char *CdrDriver::selectDriver(int readWrite, const char *vendor,
 				    const char *model, unsigned long *options)
 {
   DriverSelectTable *run;
   DriverSelectTable *match = NULL;
   unsigned int matchLen = 0;
+  unsigned int len;
+
+  initDriverTable();
 
   run = (readWrite == 0) ? READ_DRIVER_TABLE : WRITE_DRIVER_TABLE;
 
-  while (run->driverId != NULL) {
+  while (run != NULL) {
     if (strcmp(run->vendor, vendor) == 0 && 
 	strstr(model, run->model) != NULL) {
-      if (match == NULL || strlen(run->model) > matchLen) {
+      if (match == NULL || (len = strlen(run->model)) > matchLen) {
+	matchLen = (match == NULL) ? strlen(run->model) : len;
 	match = run;
-	matchLen = strlen(run->model);
       }
     }
-    run++;
+
+    run = run->next;
   }
 
   if (match != NULL) {

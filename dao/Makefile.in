@@ -15,9 +15,10 @@ VPATH =        @srcdir@
 #
 # Installation directories for binaries and manual pages
 #
-bindir  =      @bindir@
-mandir  =      @mandir@
-man1dir =      $(mandir)/man1
+bindir   =     @bindir@
+sharedir =     @datadir@
+mandir   =     @mandir@
+man1dir  =     $(mandir)/man1
 #
 # install program
 #
@@ -29,11 +30,16 @@ INSTALL_DATA =          ${INSTALL} -m 644
 #
 VERSION = @cdrdao_version@
 #
+# Data files
+#
+CDRDAO_DATA_DIR = $(sharedir)/cdrdao
+DRIVER_TABLE_FILE = $(CDRDAO_DATA_DIR)/drivers
+#
 # compiler and library stuff
 #
 CXX = @CXX@
 CXXFLAGS = @CXXFLAGS@ 
-ALL_CXXFLAGS = @DEFS@ @mydefs@ -DVERSION=\"$(VERSION)\" -I$(srcdir)/.. -I$(srcdir) -I$(srcdir)/../trackdb @scsilib_incl@ $(CXXFLAGS)
+ALL_CXXFLAGS = @DEFS@ @mydefs@ -DVERSION=\"$(VERSION)\" -DDRIVER_TABLE_FILE=\"$(DRIVER_TABLE_FILE)\" -I$(srcdir)/.. -I$(srcdir) -I$(srcdir)/../trackdb @scsilib_incl@ $(CXXFLAGS)
 LDFLAGS = 
 ALL_LDFLAGS = @LDFLAGS@ $(LDFLAGS)
 LIBS = @scsilib_libs@ @thread_libs@ @extra_libs@ @LIBS@
@@ -63,10 +69,12 @@ all: $(PRG)
 install: all installdirs
 	$(INSTALL_PROGRAM) $(PRG) $(bindir)
 	$(INSTALL_DATA) cdrdao.man $(man1dir)/cdrdao.1
+	$(INSTALL_DATA)	cdrdao.drivers $(DRIVER_TABLE_FILE)
 
 installdirs:
 	$(srcdir)/../mkinstalldirs $(bindir)
 	$(srcdir)/../mkinstalldirs $(man1dir)
+	$(srcdir)/../mkinstalldirs $(CDRDAO_DATA_DIR)
 
 clean:
 	rm -f *.o $(PRG)

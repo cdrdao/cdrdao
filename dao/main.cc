@@ -19,6 +19,13 @@
 
 /*
  * $Log: main.cc,v $
+ * Revision 1.5  2000/06/10 14:48:05  andreasm
+ * Tracks that are shorter than 4 seconds can be recorded now if the user confirms
+ * it.
+ * The driver table is now read from an external file (.../share/cdrdao/drivers
+ * and $HOME/.cdrdao-drivers).
+ * Fixed bug the might prevented writing pure data CDs with some recorders.
+ *
  * Revision 1.4  2000/06/06 22:26:13  andreasm
  * Updated list of supported drives.
  * Added saving of some command line settings to $HOME/.cdrdao.
@@ -112,7 +119,7 @@
  *
  */
 
-static char rcsid[] = "$Id: main.cc,v 1.4 2000/06/06 22:26:13 andreasm Exp $";
+static char rcsid[] = "$Id: main.cc,v 1.5 2000/06/10 14:48:05 andreasm Exp $";
 
 #include <config.h>
 
@@ -198,7 +205,7 @@ void message(int level, const char *fmt, ...)
   if (level < 0) {
     switch (level) {
     case -1:
-      fprintf(stderr, "Warning: ");
+      fprintf(stderr, "WARNING: ");
       break;
     case -2:
       fprintf(stderr, "ERROR: ");
@@ -313,7 +320,7 @@ static void importSettings(Command cmd)
     }
   }
 
-  if (cmd == READ_CD) {
+  if (cmd == READ_CD || cmd == READ_TOC) {
     if ((sval = SETTINGS->getString(SET_READ_DRIVER)) != NULL) {
       DRIVER_ID = strdupCC(sval);
     }
@@ -1092,6 +1099,27 @@ static void scanBus()
   delete[] sdata;
 }
 
+static int checkToc(const Toc *toc)
+{
+  int ret = toc->check();
+
+  if (ret != 0) {
+    if (ret == 1) { // only a warning message occured
+      if (FORCE) {
+	ret = 0;
+      }
+      else {
+	message(-2, "The toc check function detected at least one warning.");
+	message(-2, "If you record this toc the resulting CD might be unusable");
+	message(-2, "or the recording process might abort with error.");
+	message(-2, "Use option --force to ignore the warnings.");
+      }
+    }
+  }
+
+  return ret;
+}
+
 static int copyCd(CdrDriver *src, CdrDriver *dst, int session,
 		  const char *dataFilename, int fifoBuffers, int swap,
 		  int remoteMode, int eject, int force)
@@ -1116,8 +1144,8 @@ static int copyCd(CdrDriver *src, CdrDriver *dst, int session,
     return 1;
   }
 
-  if (toc->check() != 0) {
-    message(-3, "Toc created from source CD image is inconsistent - please report.");
+  if (checkToc(toc)) {
+    message(-3, "Toc created from source CD image is inconsistent.");
     toc->print(cout);
     delete toc;
     return 1;
@@ -1243,7 +1271,7 @@ static int copyCdOnTheFly(CdrDriver *src, CdrDriver *dst, int session,
     goto fail;
   }
 
-  if (toc->check() != 0) {
+  if (checkToc(toc) != 0) {
     message(-3, "Toc created from source CD image is inconsistent - please report.");
     toc->print(cout);
     ret = 1;
@@ -1374,6 +1402,7 @@ int main(int argc, char **argv)
   ScsiIf *srcCdrScsi = NULL;
   CdrDriver *cdr = NULL;
   CdrDriver *srcCdr = NULL;
+  int delSrcDevice = 0;
   DiskInfo *di = NULL;
   DiskInfo *srcDi = NULL;
   const char *homeDir;
@@ -1423,8 +1452,8 @@ int main(int argc, char **argv)
     }
 
     if (COMMAND != SHOW_TOC && COMMAND != CDDB_ID) {
-      if (toc->check() != 0) {
-	message(-2, "Toc file '%s' is inconsistent.", TOC_FILE);
+      if (checkToc(toc) != 0) {
+	message(-2, "Toc file \"%s\" is inconsistent.", TOC_FILE);
 	exitCode = 1; goto fail;
       }
     }
@@ -1458,6 +1487,7 @@ int main(int argc, char **argv)
 
   if (COMMAND == COPY_CD) {
     if (SOURCE_SCSI_DEVICE != NULL) {
+      delSrcDevice = 1;
       srcCdr = setupDevice(READ_CD, SOURCE_SCSI_DEVICE, SOURCE_DRIVER_ID,
 			 1, 1, 0, 0, 0);
 
@@ -1485,8 +1515,8 @@ int main(int argc, char **argv)
   switch (COMMAND) {
   case CDDB_ID:
     showCDDBid(toc);
-    if (toc->check() != 0) {
-      message(-1, "Toc file '%s' is inconsistent.", TOC_FILE);
+    if (toc->check() > 1) {
+      message(-2, "Toc file \"%s\" is inconsistent.", TOC_FILE);
     }
     break;
 
@@ -1496,22 +1526,22 @@ int main(int argc, char **argv)
 
   case SHOW_TOC:
     showToc(toc);
-    if (toc->check() != 0) {
-      message(-1, "Toc file '%s' is inconsistent.", TOC_FILE);
+    if (toc->check() > 1) {
+      message(-2, "Toc file \"%s\" is inconsistent.", TOC_FILE);
     }
     break;
 
   case TOC_INFO:
     showTocInfo(toc, TOC_FILE);
-    if (toc->check() != 0) {
-      message(-1, "Toc file '%s' is inconsistent.", TOC_FILE);
+    if (toc->check() > 1) {
+      message(-2, "Toc file \"%s\" is inconsistent.", TOC_FILE);
     }
     break;
 
   case TOC_SIZE:
     showTocSize(toc, TOC_FILE);
-    if (toc->check() != 0) {
-      message(-1, "Toc file '%s' is inconsistent.", TOC_FILE);
+    if (toc->check() > 1) {
+      message(-2, "Toc file \"%s\" is inconsistent.", TOC_FILE);
     }
     break;
 
@@ -1816,9 +1846,13 @@ int main(int argc, char **argv)
 
 fail:
   delete cdr;
-  delete srcCdr;
   delete cdrScsi;
-  delete srcCdrScsi;
+
+  if (delSrcDevice) {
+    delete srcCdr;
+    delete srcCdrScsi;
+  }
+
   delete toc;
 
   exit(exitCode);

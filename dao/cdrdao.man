@@ -3,7 +3,7 @@
 cdrdao \- writes audio CD-Rs in disc-at-once mode
 .SH SYNOPSIS
 .B cdrdao
-.RB [ show-toc | read-toc | read-cd | show-data | read-test | disk-info | simulate | write | copy]
+.RB [ show-toc | read-toc | read-cd | show-data | read-test | disk-info | unlock | simulate | write | copy]
 .RB [ --device
 .IR device ]
 .RB [ --source-device
@@ -30,6 +30,7 @@ cdrdao \- writes audio CD-Rs in disc-at-once mode
 .RB [ --on-the-fly ]
 .RB [ --paranoia-mode
 .IR mode ]
+.RB [ --save ]
 .RB [ -n ]
 .RB [ -v 
 .IR verbose-level ]
@@ -95,6 +96,10 @@ Shows information about the inserted CD-R. If the CD-R has an open session
 it will also print the start of the last and current session which is
 used by mkisofs to create an image for a second or higher session.
 .TP
+.BI unlock
+Tries to unlock the recorder device after a failed write or simulation
+run. If you cannot eject the CD after a cdrdao run try this command.
+.TP
 .BI simulate
 Like
 .BI write
@@ -147,7 +152,7 @@ determined driver. Available driver IDs:
 .br
 cdd2600, plextor, plextor-scan, generic-mmc, generic-mmc-raw,
 ricoh-mp6200, yamaha-cdr10x, teac-cdr55, sony-cdu920, sony-cdu948,
-taiyo-yuden
+taiyo-yuden, toshiba.
 .br
 Specifying an illegal driver ID will give a list of available drivers.
 Option flags may be used to modify the behavior of some drivers. See
@@ -245,6 +250,10 @@ Default is the full paranoia mode (3).
 .TP
 .BI \--on-the-fly
 Perform CD copy on the fly without creating an image file.
+.TP
+.BI \--save
+Saves some of the current options to the settings file
+"$HOME/.cdrdao". See section 'SETTINGS' for more details.
 .TP
 .BI \-n
 Suppresses the 10 second pause before writing or simulating.
@@ -598,10 +607,55 @@ Currently, following track modes are supported: MODE1/2048, MODE1/2352,
 MODE2/2336, MODE2/2352. The CATALOG, ISRC and POSTGAP statements are
 parsed but not evaluated, yet. 
 
+.SH SETTINGS
+
+The file "$HOME/.cdrdao" may contain settings that are read if
+.I cdrdao
+is executed. Command line options will overwrite the loaded settings.
+The settings file contains name - value pairs separated by a
+colon. String values should be enclosed by ". The file is
+automatically written if the command line option 
+.I \--save
+is used but it is also possible to modify it manually. Following
+values are defined:
+.IP write_device
+Device used for operations 
+.I simulate, write, copy, blank, disk-info and unlock.
+Corresponding option:
+.I --device
+.IP write_driver
+Driver (including driver options) that is used for operations
+.I simulate, write, copy, blank, disk-info and unlock.
+Corresponding option:
+.I --driver
+.IP write_speed
+Specifies writing speed. Ccorresponding option: --speed
+.IP read_device
+Device used for operations
+.I read-toc, read-cd and copy.
+Corresponding option: 
+.I --device
+or
+.I --source-device
+.IP read_driver
+Driver (including driver options) used for operations
+.I read-toc, read-cd and copy.
+Ccorresponding option:
+.I --driver
+or
+.I --source-driver
+.IP read_paranoia_mode
+Paranoia mode used for operations
+.I read-cd and copy.
+Corresponding option:
+.I --paranoia-mode
+.LP
+
+
 .SH BUGS
 If the program is terminated during the write/simulation process used IPC
 resources may not be released. Use ipcs(8) and ipcrm(8) to delete them.
 .SH AUTHOR
 Andreas Mueller mueller@daneb.ping.de
 .SH SEE ALSO
-.BR cdda2wav "(1), "cdparanoia "(1), " sox "(1), " ipcs "(8), " ipcrm (8)
+.BR cdrecord "(1), "cdda2wav "(1), "cdparanoia "(1), " sox "(1), "ipcs "(8), " ipcrm (8) 
