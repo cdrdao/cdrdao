@@ -79,6 +79,19 @@ RecordCDTarget::RecordCDTarget(Gtk::Window *parent)
   hbox->pack_start(*speedButton_, true, true);
   vbox->pack_start(*hbox);
 
+  hbox = new Gtk::HBox;
+//  hbox->show();
+  label = new Gtk::Label(string("Copies: "), 0);
+  label->show();
+  hbox->pack_start(*label, false, false);
+
+  adjustment = new Gtk::Adjustment(1, 1, 999);
+  copiesSpinButton_ = new Gtk::SpinButton(*adjustment);
+  copiesSpinButton_->set_digits(0);
+  copiesSpinButton_->show();
+  hbox->pack_start(*copiesSpinButton_, false, false, 10);
+  vbox->pack_start(*hbox);
+
   Gnome::StockPixmap *moreOptionsPixmap =
   	manage(new Gnome::StockPixmap(GNOME_STOCK_MENU_PROP));
   Gtk::Label *moreOptionsLabel = manage(new Gtk::Label("More Options"));
@@ -208,6 +221,11 @@ int RecordCDTarget::getMultisession()
     return closeSessionButton_->get_active() ? 0 : 1;
   else
     return 0; 
+}
+
+int RecordCDTarget::getCopies()
+{
+  return copiesSpinButton_->get_value_as_int();
 }
 
 int RecordCDTarget::getSpeed()
