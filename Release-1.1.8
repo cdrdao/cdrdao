@@ -5,6 +5,20 @@ cdrdao-1.1.8 is available from:
   http://sf.net/projects/cdrdao
 
 
+-------------------------- PLEASE READ ----------------------------
+
+We have not heard from project founder and maintainer Andreas Mueller
+for a long time and do not know what his intentions are regarding
+cdrdao. Due to recent contributions to the project, we have decided to
+nonetheless continue development and to keep working towards future
+releases. Manuel Clos is now acting as project maintainer. We hope to
+hear from Andreas soon.
+
+The latest state of the CVS tree before the merge with the Gnome2/Gtk2
+branch has been tagged as 'Andreas_1_1_7'.
+
+-------------------------------------------------------------------
+
 Cdrdao changes:
 
 - Improved performance of the new L-EC code by up to a factor 2 depending
@@ -16,7 +30,9 @@ Cdrdao changes:
 - Fix for building on Mac OS X with gcc-3.1 (SF patch 611423).
 
 - Support for ATAPI drives: device is now specified as [path:]<x,y,z>, such as
-  '--device 0,0,0' or '--device ATAPI:0,1,0'. (Denis Leroy)
+  '--device 0,0,0' or '--device ATAPI:0,1,0'. If you run Linux 2.6, you
+  can also use the latest /dev/hd* interface with '--device ATA:0,0,0'
+  (Denis Leroy)
 
 GCDMaster changes (Denis Leroy)
 
@@ -42,6 +58,9 @@ mp32dao changes:
 
 new:
 - toc2cddb: translates a TOC file into a cddb file. (Giuseppe Corbelli)
+
+new:
+- cue2toc: convert CUE to TOC format for audio CDs. (Matthias Czapla)
 
 
 Andreas Mueller
