@@ -96,6 +96,19 @@ by logical 'or' and appended to the '--driver' option, e.g.
            0x00000002: Use the READ10 command to read audio data instead of
                        the vendor specific READ CDDA command.
                        Only used if the paranoia DAE method is selected.
+
+		   0x00000010: Don't slow down after a read error. Available
+		   			   only on Plextor devices. Manufacturer default is to 
+					   slow down.
+
+		   0x00000020: Start data transfer before maximum speed is reached.
+		   			   Available only on Plextor PX-20 and later. Manufacturer
+					   default is to wait for maximum speed.
+
+		   0x00000040: Don't slow down when drive pauses to avoid vibrations.
+		   			   Available only on Plextor PX-20 and later. Manufacturer
+					   default is to slow down.
+ 
   plextor-scan
      This is an alternate driver for CD structure analysis with Plextor
      drives. It scans the Q sub-channels of a track linearly like the 

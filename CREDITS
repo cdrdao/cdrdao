@@ -37,3 +37,6 @@ For: BURN Proof support
 
 To:  Michael Reinelt
 For: Help screen rework and multi session improvements
+
+To: Giuseppe "Cowo" Corbelli <cowo@lugbs.linux.it>
+For: Support for Plextor specific options in plextor driver.
