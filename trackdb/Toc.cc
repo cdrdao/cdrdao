@@ -49,6 +49,26 @@ Toc::Toc() : length_(0)
   catalogValid_ = 0;
 }
 
+// copy constructor
+Toc::Toc(const Toc &obj) : length_(0), cdtext_(obj.cdtext_)
+{
+  tocType_ = obj.tocType_;
+
+  if ((catalogValid_ = obj.catalogValid_))
+    memcpy(catalog_, obj.catalog_, 13);
+
+  nofTracks_ = 0;
+  tracks_ = lastTrack_ = NULL;
+
+  // copy all tracks
+  TrackIterator itr(&obj);
+  const Track *trun;
+
+  for (trun = itr.first(); trun != NULL; trun = itr.next())
+    append(trun);
+}
+
+
 Toc::~Toc()
 {
   TrackEntry *run = tracks_;

@@ -28,6 +28,7 @@
 class Toc {
 public:
   Toc();
+  Toc(const Toc &);
   ~Toc();
 
   enum TocType { CD_DA, CD_ROM, CD_I, CD_ROM_XA };
@@ -94,6 +95,8 @@ public:
 private:
   friend class TocImpl;
   friend class TocParserGram;
+  friend class TocReader;
+  friend class TrackIterator;
 
   struct TrackEntry {
     TrackEntry() : absStart(0), start(0), end(0) {
@@ -110,6 +113,17 @@ private:
     struct TrackEntry *pred;
   };
 
+  void update();
+
+  TrackEntry *findTrack(unsigned long sample) const;
+
+  TrackEntry *findTrackByNumber(int trackNr) const;
+
+  void remove(TrackEntry *);
+
+  void checkConsistency();
+
+
   TocType tocType_; // type of TOC
 
   int nofTracks_;
@@ -122,19 +136,6 @@ private:
   int catalogValid_;
 
   CdTextContainer cdtext_;
-
-  void update();
-
-  TrackEntry *findTrack(unsigned long sample) const;
-
-  TrackEntry *findTrackByNumber(int trackNr) const;
-
-  void remove(TrackEntry *);
-
-  void checkConsistency();
-
-  friend class TocReader;
-  friend class TrackIterator;
 };
 
 
