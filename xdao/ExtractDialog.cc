@@ -34,15 +34,27 @@
 
 #include "util.h"
 
-#define MAX_SPEED_ID 5
+#define MAX_SPEED_ID 8
+
+#define MAX_CORRECTION_ID 3
 
 static ExtractDialog::SpeedTable SPEED_TABLE[MAX_SPEED_ID + 1] = {
   { 0, "Max" },
-  { 1, "1x" },
-  { 2, "2x" },
-  { 4, "4x" },
+  { 20, "20x" },
+  { 15, "15x" },
+  { 10, "10x" },
+  { 8, "8x" },
   { 6, "6x" },
-  { 8, "8x" }
+  { 4, "4x" },
+  { 2, "2x" },
+  { 1, "1x" }
+};
+
+static ExtractDialog::CorrectionTable CORRECTION_TABLE[MAX_CORRECTION_ID + 1] = {
+  { 3, "Jitter + scratch" },
+  { 2, "Jitter + checks" },
+  { 1, "Jitter correction" },
+  { 0, "No checking" }
 };
 
 
@@ -58,7 +70,7 @@ ExtractDialog::ExtractDialog()
   tocEdit_ = NULL;
 
   set_title(string("Extract"));
-  set_usize(0, 300);
+  set_usize(0, 400);
 
   Gtk::Menu *menu = manage(new Gtk::Menu);
   Gtk::MenuItem *mi;
@@ -75,6 +87,22 @@ ExtractDialog::ExtractDialog()
 
   speed_ = 0;
   speedMenu_->set_history(speed_);
+
+  Gtk::Menu *menuCorrection = manage(new Gtk::Menu);
+  Gtk::MenuItem *miCorr;
+
+  for (i = 0; i <= MAX_CORRECTION_ID; i++) {
+    miCorr = manage(new Gtk::MenuItem(CORRECTION_TABLE[i].name));
+    miCorr->activate.connect(bind(slot(this, &ExtractDialog::setCorrection), i));
+    miCorr->show();
+    menuCorrection->append(*miCorr);
+  }
+
+  correctionMenu_ = new Gtk::OptionMenu;
+  correctionMenu_->set_menu(menuCorrection);
+
+  correction_ = 0;
+  correctionMenu_->set_history(correction_);
 
 
   fileNameEntry_ = new Gtk::Entry;
@@ -142,37 +170,56 @@ ExtractDialog::ExtractDialog()
   // device settings
   Gtk::Frame *extractOptionsFrame = new Gtk::Frame(string("Read Options"));
 
-  table = new Gtk::Table(3, 2, FALSE);
-  table->set_row_spacings(2);
-  table->set_col_spacings(30);
-  hbox = new Gtk::HBox;
-  hbox->pack_start(*table, FALSE, FALSE, 5);
-  vbox = new Gtk::VBox;
-  vbox->pack_start(*hbox, FALSE, FALSE, 5);
+  vbox = new Gtk::VBox(TRUE, TRUE);
   extractOptionsFrame->add(*vbox);
   vbox->show();
-  hbox->show();
-  table->show();
 
   hbox = new Gtk::HBox;
-  label = new Gtk::Label(string("Reading Speed: "));
+  label = new Gtk::Label(string("Read Speed: "));
   hbox->pack_start(*label, FALSE);
   label->show();
   hbox->pack_start(*speedMenu_, FALSE);
   speedMenu_->show();
-  table->attach(*hbox, 2, 3, 0, 1);
+  vbox->pack_start(*hbox, FALSE);
   hbox->show();
 
-  label = new Gtk::Label(string("Name:"));
   hbox = new Gtk::HBox;
-  hbox->pack_end(*label, FALSE, FALSE);
-  table->attach(*hbox, 0, 1, 0, 1);
+  label = new Gtk::Label(string("Correction Method: "));
+  hbox->pack_start(*label, FALSE);
   label->show();
+  hbox->pack_start(*correctionMenu_, FALSE);
+  correctionMenu_->show();
+  vbox->pack_start(*hbox, FALSE);
   hbox->show();
+
+  onTheFlyButton_ = new Gtk::CheckButton(string("On the Fly"), 0);
+  onTheFlyButton_->set_active(false);
+  vbox->pack_start(*onTheFlyButton_);
+  onTheFlyButton_->show();
+
+  continueOnErrorButton_ = new Gtk::CheckButton(string("Continue if errors found"), 0);
+  continueOnErrorButton_->set_active(false);
+  vbox->pack_start(*continueOnErrorButton_);
+  continueOnErrorButton_->show();
+
+  ignoreIncorrectTOCButton_ = new Gtk::CheckButton(string("Ignore incorrect TOC"), 0);
+  ignoreIncorrectTOCButton_->set_active(false);
+  vbox->pack_start(*ignoreIncorrectTOCButton_);
+  ignoreIncorrectTOCButton_->show();
+
+  readCDTEXTButton_ = new Gtk::CheckButton(string("Try to read CD TEXT data"), 0);
+  readCDTEXTButton_->set_active(true);
+  vbox->pack_start(*readCDTEXTButton_);
+  readCDTEXTButton_->show();
+
+//FIXME: This should go in RECORD!
   hbox = new Gtk::HBox;
+  label = new Gtk::Label(string("Name: "));
+  hbox->pack_start(*label, FALSE, FALSE);
+  label->show();
   hbox->pack_start(*fileNameEntry_, FALSE, FALSE);
   fileNameEntry_->show();
-  table->attach(*hbox, 1, 2, 0, 1);
+  vbox->pack_start(*hbox, FALSE);
   hbox->show();
 
   contents->pack_start(*extractOptionsFrame, FALSE, FALSE);
@@ -279,6 +326,7 @@ void ExtractDialog::startAction()
   string temp;
   char *fileName;
   char *buffer;
+  int correction;
   
   if (tocEdit_ == NULL)
     return;
@@ -334,6 +382,7 @@ void ExtractDialog::startAction()
 
 
   speed = SPEED_TABLE[speed_].speed;
+  correction = CORRECTION_TABLE[correction_].correction;
 
   Gtk::CList::seliterator itr;
 
@@ -344,7 +393,7 @@ void ExtractDialog::startAction()
       CdDevice *dev = CdDevice::find(data->bus, data->id, data->lun);
 
       if (dev != NULL) {
-	if (dev->extractDao(fileName) != 0) {
+	if (dev->extractDao(fileName, correction) != 0) {
 	  message(-2, "Cannot start reading.");
 	}
 	else {
@@ -466,4 +515,10 @@ void ExtractDialog::setSpeed(int s)
 {
   if (s >= 0 && s <= MAX_SPEED_ID)
     speed_ = s;
+}
+
+void ExtractDialog::setCorrection(int s)
+{
+  if (s >= 0 && s <= MAX_CORRECTION_ID)
+    correction_ = s;
 }

@@ -227,7 +227,7 @@ MDIWindow::install_menus_and_toolbar()
   //
   Gnome::UIInfoTree *settingsMenuTree = new Gnome::UIInfoTree();
   settingsMenuTree->push_item(Gnome::UIItem(N_("Configure Devices..."), N_(""),
-  				GNOME_STOCK_MENU_PROP,
+  				GNOME_STOCK_MENU_PREF,
   				slot(this, &MDIWindow::configureDevices)));
   settingsMenuTree->push_item(StockMenuItems::Preferences
   				(slot(this, &MDIWindow::nothing_cb)));
@@ -266,8 +266,8 @@ MDIWindow::install_menus_and_toolbar()
                                        GNOME_STOCK_PIXMAP_NEW,
 			    				slot(this, &MDIWindow::newProject)));
 
-  toolbarTree->push_item(Gnome::UIItem(N_("Load"),
-							    N_("Load a project"),
+  toolbarTree->push_item(Gnome::UIItem(N_("Open"),
+							    N_("Open a project"),
 							    GNOME_STOCK_PIXMAP_OPEN,
 							    slot(this, &MDIWindow::readProject)));
 
@@ -280,6 +280,18 @@ MDIWindow::install_menus_and_toolbar()
 //							    N_("Save project with a different name"),
 //							    GNOME_STOCK_PIXMAP_SAVEAS,
 //							    slot(this, &MDIWindow::saveAsProject)));
+
+  toolbarTree->push_item(Gnome::UISeparator());
+
+  toolbarTree->push_item(Gnome::UIItem(N_("Devices"),
+							    N_("Configure devices"),
+							    GNOME_STOCK_PIXMAP_PREFERENCES,
+							    slot(this, &MDIWindow::configureDevices)));
+
+  toolbarTree->push_item(Gnome::UIItem(N_("Prefs"),
+							    N_("Preferences"),
+							    GNOME_STOCK_PIXMAP_PREFERENCES,
+							    slot(this, &MDIWindow::nothing_cb)));
 
   toolbarTree->push_item(Gnome::UISeparator());
 

@@ -49,6 +49,13 @@ private:
     const char *name;
   };
 
+  int correction_;
+
+  struct CorrectionTable {
+    int correction;
+    const char *name;
+  };
+
   struct DeviceData {
     int bus, id, lun;
   };
@@ -57,6 +64,12 @@ private:
   Gtk::Button *startButton_;
 
   Gtk::OptionMenu *speedMenu_;
+  Gtk::OptionMenu *correctionMenu_;
+  Gtk::CheckButton *onTheFlyButton_;
+  Gtk::CheckButton *continueOnErrorButton_;
+  Gtk::CheckButton *ignoreIncorrectTOCButton_;
+  Gtk::CheckButton *readCDTEXTButton_;
+
 
   Gtk::Entry *fileNameEntry_;
 
@@ -64,6 +77,7 @@ private:
   void startAction();
 
   void setSpeed(int);
+  void setCorrection(int);
 
   void appendTableEntry(CdDevice *);
   void import();
