@@ -64,7 +64,7 @@ private: //related windows
   void saveFileSelectorOKCB();
   void saveFileSelectorCancelCB();
 
-  void new_view() { Gnome::MDIChild::create_view(); }
+  void new_view() { Gnome::MDIChild::create_toplevel_view(); }
 
 private:
   friend class AudioCDView;

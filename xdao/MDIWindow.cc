@@ -391,14 +391,20 @@ void MDIWindow::recordCD2HD()
 void MDIWindow::newAudioCDProject()
 {
   AudioCDChild *child;
+  bool new_window;
   
   child = manage(new AudioCDChild(++child_number));
-  
+    
   add(*child);
-
+  
+  new_window = !(childs->data == NULL);
+  
   childs = g_list_prepend(childs, child);
 
-  child->create_view();
+  if (new_window)
+    child->create_toplevel_view();
+  else
+    child->create_view();
 
   guiUpdate();
 }
@@ -406,13 +412,20 @@ void MDIWindow::newAudioCDProject()
 void MDIWindow::openAudioCDProject(char *name)
 {
   AudioCDChild *child;
+  bool new_window;
+
   child = manage(new AudioCDChild(++child_number));
   
   add(*child);
 
+  new_window = !(childs->data == NULL);
+
   childs = g_list_prepend(childs, child);
 
-  child->create_view();
+  if (new_window)
+    child->create_toplevel_view();
+  else
+    child->create_view();
 
   if (child->tocEdit()->readToc(stripCwd(name)) == 0)
   {
