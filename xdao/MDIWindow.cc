@@ -24,6 +24,8 @@
 #include <stdarg.h>
 #include <strstream.h>
 
+#include <glade/glade.h>
+
 #include "xcdrdao.h"
 #include "MDIWindow.h"
 
@@ -41,13 +43,25 @@ MDIWindow::install_menus_and_toolbar()
   using namespace Gnome::Menu_Helpers;
   
   // File->New menu
+  //
   Gnome::UIInfoTree *newMenuTree = new Gnome::UIInfoTree();
+  newMenuTree->push_item(Gnome::UIItem(N_("Audio CD"), N_("New Audio CD"),
+  				GNOME_STOCK_MENU_NEW,
+  				slot(this, &MDIWindow::nothing_cb)));
+  newMenuTree->push_item(Gnome::UIItem(N_("Data CD"), N_("New Data CD"),
+  				GNOME_STOCK_MENU_NEW,
+  				slot(this, &MDIWindow::nothing_cb)));
+  newMenuTree->push_item(Gnome::UIItem(N_("Mixed CD"), N_("New Mixed CD"),
+  				GNOME_STOCK_MENU_NEW,
+  				slot(this, &MDIWindow::nothing_cb)));
   newMenuTree->push_item(Gnome::UIItem(N_("Example"), N_("New example"),
   				GNOME_STOCK_MENU_NEW,
   				slot(this, &MDIWindow::example_child)));
 
-  Gnome::UIItem *newMenu = new Gnome::UISubtree(N_("New"),
-  				*newMenuTree, GNOME_STOCK_MENU_NEW);
+  StockMenuItems::NewSubtree *newMenu = new 
+  				StockMenuItems::NewSubtree(*newMenuTree);
+//  Gnome::UIItem *newMenu = new Gnome::UISubtree(N_("New"),
+//  				*newMenuTree, GNOME_STOCK_MENU_NEW);
 
   // File menu
   //
@@ -70,6 +84,15 @@ MDIWindow::install_menus_and_toolbar()
 
   fileMenuTree->push_item(Gnome::UISeparator());
 
+  fileMenuTree->push_item(StockMenuItems::PrintSetup
+  				(slot(this, &MDIWindow::nothing_cb)));
+
+  fileMenuTree->push_item(Gnome::UIItem(N_("Print Cover..."), N_("Print Cover"),
+  				GNOME_STOCK_MENU_PRINT,
+  				slot(this, &MDIWindow::nothing_cb)));
+
+  fileMenuTree->push_item(Gnome::UISeparator());
+
 //This Close refers to close the current (selected) child
   fileMenuTree->push_item(StockMenuItems::Close
   				(slot(this, &MDIWindow::nothing_cb)));
@@ -88,11 +111,45 @@ MDIWindow::install_menus_and_toolbar()
   Gnome::UIInfoTree *editMenuTree = new Gnome::UIInfoTree();
   StockMenus::Edit *editMenu = new StockMenus::Edit(*editMenuTree);
 
+  // Actions menu
+  //
+  Gnome::UIInfoTree *actionsMenuTree = new Gnome::UIInfoTree();
+  actionsMenuTree->push_item(Gnome::UIItem(N_("Duplicate CD"), N_(""),
+  				GNOME_STOCK_MENU_BLANK,
+  				slot(this, &MDIWindow::nothing_cb)));
+  actionsMenuTree->push_item(Gnome::UIItem(N_("Record"), N_(""),
+  				GNOME_STOCK_MENU_BLANK,
+  				slot(this, &MDIWindow::nothing_cb)));
+  actionsMenuTree->push_item(Gnome::UIItem(N_("Fixate CD"), N_(""),
+  				GNOME_STOCK_MENU_BLANK,
+  				slot(this, &MDIWindow::nothing_cb)));
+  actionsMenuTree->push_item(Gnome::UIItem(N_("Blank CD-RW"), N_(""),
+  				GNOME_STOCK_MENU_BLANK,
+  				slot(this, &MDIWindow::nothing_cb)));
+  actionsMenuTree->push_item(Gnome::UIItem(N_("Get Info"), N_(""),
+  				GNOME_STOCK_MENU_BLANK,
+  				slot(this, &MDIWindow::nothing_cb)));
+
+  Gnome::UIItem *actionsMenu = new Gnome::UISubtree(N_("_Actions"),
+  				*actionsMenuTree);
+
+  // Settings menu
+  //
+  Gnome::UIInfoTree *settingsMenuTree = new Gnome::UIInfoTree();
+  settingsMenuTree->push_item(Gnome::UIItem(N_("Configure Devices..."), N_(""),
+  				GNOME_STOCK_MENU_PROP,
+  				slot(this, &MDIWindow::nothing_cb)));
+  settingsMenuTree->push_item(StockMenuItems::Preferences
+  				(slot(this, &MDIWindow::nothing_cb)));
+
+  StockMenus::Settings *settingsMenu = new StockMenus::Settings(*settingsMenuTree);
+
+
   // Help menu
   //
   Gnome::UIInfoTree *helpMenuTree = new Gnome::UIInfoTree();
 
-  helpMenuTree->push_item(Gnome::UIHelp("StillNoName"));
+  helpMenuTree->push_item(Gnome::UIHelp("Quick Start"));
 
   helpMenuTree->push_item(StockMenuItems::About
   				(slot(this, &MDIWindow::nothing_cb)));
@@ -103,6 +160,8 @@ MDIWindow::install_menus_and_toolbar()
 
   menus->push_item(*fileMenu);
   menus->push_item(*editMenu);
+  menus->push_item(*actionsMenu);
+  menus->push_item(*settingsMenu);
   menus->push_item(*helpMenu);
 
   set_menubar_template(*menus);
@@ -235,9 +294,34 @@ void MDIWindow::update(unsigned long level)
 */
 
 void
+nada_cb(GtkWidget *widget, gpointer data)
+{
+  g_print("%s", "asdfsfdasadf");
+  cout << "nothing here" << endl;
+}
+
+GtkWidget *
+example_creator(GnomeMDIChild *child, gpointer data)
+{
+  GladeXML *xml;
+  GtkWidget *new_view;       
+//  GtkWidget *new_view = gtk_vbox_new(TRUE, TRUE);
+
+  xml = glade_xml_new ("./glade/record.glade", "hbox1");
+  new_view = glade_xml_get_widget (xml, "hbox1");
+  glade_xml_signal_autoconnect(xml);
+
+Gtk::Widget *view2 = Gtk::wrap(new_view);
+
+        return new_view;
+}
+
+void
 MDIWindow::example_child()
 {
 Gnome::MDIGenericChild *example = new Gnome::MDIGenericChild("example");
+example->set_view_creator(example_creator, NULL);
 
 MDIWindow::add_child(*example);
+MDIWindow::add_view(*example);
 }

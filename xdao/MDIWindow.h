@@ -25,11 +25,14 @@
 
 #include <gnome--.h>
 
+GtkWidget* example_creator(GnomeMDIChild *child, gpointer data);
+
 class MDIWindow : public Gnome::MDI
 {
 public:
   MDIWindow();
   void example_child();
+//  GtkWidget* example_creator(GnomeMDIChild *child, gpointer data);
 
 protected:
   void install_menus_and_toolbar();

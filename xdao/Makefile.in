@@ -34,7 +34,7 @@ VERSION = @cdrdao_version@
 CXX = @CXX@
 CXXFLAGS = @CXXFLAGS@ 
 ALL_CXXFLAGS = @DEFS@ @mydefs@ -DVERSION=\"$(VERSION)\" -I.. -I$(srcdir) -I$(srcdir)/../dao -I$(srcdir)/../trackdb $(CXXFLAGS) @GTKMM_CFLAGS@
-LDFLAGS = @LDFLAGS@ -lgnomemm
+LDFLAGS = @LDFLAGS@ -lgnomemm -lglade-gnome -lglade
 LIBS = @scsilib_libs@ @thread_libs@ @extra_libs@ @LIBS@
 RANLIB = @RANLIB@
 AR = ar

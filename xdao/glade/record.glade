@@ -56,6 +56,7 @@
 	<widget>
 	  <class>GtkVBox</class>
 	  <name>vbox1</name>
+	  <width>270</width>
 	  <homogeneous>False</homogeneous>
 	  <spacing>0</spacing>
 
@@ -76,21 +77,9 @@ In a ISO CD you could see the total MB. used the options of the image (Joliet, .
 	    <ypad>0</ypad>
 	    <child>
 	      <padding>0</padding>
-	      <expand>True</expand>
-	      <fill>True</fill>
+	      <expand>False</expand>
+	      <fill>False</fill>
 	    </child>
-	  </widget>
-
-	  <widget>
-	    <class>Placeholder</class>
-	  </widget>
-
-	  <widget>
-	    <class>Placeholder</class>
-	  </widget>
-
-	  <widget>
-	    <class>Placeholder</class>
 	  </widget>
 	</widget>
       </widget>
@@ -347,6 +336,13 @@ In a ISO CD you could see the total MB. used the options of the image (Joliet, .
 		  <class>GtkCheckButton</class>
 		  <name>checkbutton6</name>
 		  <can_focus>True</can_focus>
+		  <signal>
+		    <name>toggled</name>
+		    <handler>gtk_widget_set_sensitive</handler>
+		    <object>buffer_entry</object>
+		    <data>!buffer_entry-&gt;active</data>
+		    <last_modification_time>Mon, 28 Feb 2000 22:37:06 GMT</last_modification_time>
+		  </signal>
 		  <label>Buffer</label>
 		  <active>False</active>
 		  <draw_indicator>True</draw_indicator>
@@ -359,7 +355,7 @@ In a ISO CD you could see the total MB. used the options of the image (Joliet, .
 
 		<widget>
 		  <class>GtkEntry</class>
-		  <name>entry1</name>
+		  <name>buffer_entry</name>
 		  <can_focus>True</can_focus>
 		  <editable>True</editable>
 		  <text_visible>True</text_visible>

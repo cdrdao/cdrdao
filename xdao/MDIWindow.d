@@ -8,31 +8,32 @@ MDIWindow.o: MDIWindow.cc /usr/include/stdio.h /usr/include/features.h \
  /usr/include/g++-2/iostream.h /usr/include/g++-2/streambuf.h \
  /usr/include/string.h /usr/include/errno.h /usr/include/bits/errno.h \
  /usr/include/linux/errno.h /usr/include/asm/errno.h \
- /usr/include/g++-2/strstream.h /usr/include/g++-2/strfile.h xcdrdao.h \
- MDIWindow.h /usr/include/gtk--.h /usr/include/gtk/gtk.h \
- /usr/include/gdk/gdk.h /usr/include/gdk/gdktypes.h \
+ /usr/include/g++-2/strstream.h /usr/include/g++-2/strfile.h \
+ /usr/include/glade/glade.h /usr/include/glade/glade-xml.h \
  /usr/include/glib.h /usr/lib/glib/include/glibconfig.h \
  /usr/include/limits.h /usr/include/bits/posix1_lim.h \
  /usr/include/bits/local_lim.h /usr/include/linux/limits.h \
  /usr/include/bits/posix2_lim.h \
  /usr/lib/gcc-lib/i386-redhat-linux/egcs-2.91.66/include/limits.h \
  /usr/lib/gcc-lib/i386-redhat-linux/egcs-2.91.66/include/float.h \
- /usr/include/gdk/gdkcursors.h /usr/include/gdk/gdkrgb.h \
- /usr/include/gtk/gtkaccelgroup.h /usr/include/gtk/gtkobject.h \
+ /usr/include/gtk/gtkdata.h /usr/include/gdk/gdk.h \
+ /usr/include/gdk/gdktypes.h /usr/include/gdk/gdkcursors.h \
+ /usr/include/gdk/gdkrgb.h /usr/include/gtk/gtkobject.h \
  /usr/include/gtk/gtkarg.h /usr/include/gtk/gtktypeutils.h \
  /usr/include/gtk/gtktypebuiltins.h /usr/include/gtk/gtkenums.h \
- /usr/include/gtk/gtkdebug.h /usr/include/gtk/gtkaccellabel.h \
- /usr/include/gtk/gtklabel.h /usr/include/gtk/gtkmisc.h \
- /usr/include/gtk/gtkwidget.h /usr/include/gtk/gtkadjustment.h \
- /usr/include/gtk/gtkdata.h /usr/include/gtk/gtkstyle.h \
- /usr/include/gtk/gtkalignment.h /usr/include/gtk/gtkbin.h \
- /usr/include/gtk/gtkcontainer.h /usr/include/gtk/gtkaspectframe.h \
- /usr/include/gtk/gtkframe.h /usr/include/gtk/gtkarrow.h \
- /usr/include/gtk/gtkbindings.h /usr/include/gtk/gtkbox.h \
- /usr/include/gtk/gtkbbox.h /usr/include/gtk/gtkbutton.h \
- /usr/include/gtk/gtkcalendar.h /usr/include/gtk/gtksignal.h \
- /usr/include/gtk/gtkmarshal.h /usr/include/gtk/gtkcheckbutton.h \
- /usr/include/gtk/gtktogglebutton.h \
+ /usr/include/gtk/gtkdebug.h /usr/include/gtk/gtkwidget.h \
+ /usr/include/gtk/gtkaccelgroup.h /usr/include/gtk/gtkadjustment.h \
+ /usr/include/gtk/gtkstyle.h /usr/include/gtk/gtktooltips.h xcdrdao.h \
+ MDIWindow.h /usr/include/gtk--.h /usr/include/gtk/gtk.h \
+ /usr/include/gtk/gtkaccellabel.h /usr/include/gtk/gtklabel.h \
+ /usr/include/gtk/gtkmisc.h /usr/include/gtk/gtkalignment.h \
+ /usr/include/gtk/gtkbin.h /usr/include/gtk/gtkcontainer.h \
+ /usr/include/gtk/gtkaspectframe.h /usr/include/gtk/gtkframe.h \
+ /usr/include/gtk/gtkarrow.h /usr/include/gtk/gtkbindings.h \
+ /usr/include/gtk/gtkbox.h /usr/include/gtk/gtkbbox.h \
+ /usr/include/gtk/gtkbutton.h /usr/include/gtk/gtkcalendar.h \
+ /usr/include/gtk/gtksignal.h /usr/include/gtk/gtkmarshal.h \
+ /usr/include/gtk/gtkcheckbutton.h /usr/include/gtk/gtktogglebutton.h \
  /usr/include/gtk/gtkcheckmenuitem.h /usr/include/gtk/gtkmenuitem.h \
  /usr/include/gtk/gtkitem.h /usr/include/gtk/gtkclist.h \
  /usr/include/gtk/gtkhscrollbar.h /usr/include/gtk/gtkscrollbar.h \
@@ -69,18 +70,17 @@ MDIWindow.o: MDIWindow.cc /usr/include/stdio.h /usr/include/features.h \
  /usr/include/gtk/gtkstatusbar.h /usr/include/gtk/gtktearoffmenuitem.h \
  /usr/include/gtk/gtktext.h /usr/include/gtk/gtkthemes.h \
  /usr/include/gtk/gtktipsquery.h /usr/include/gtk/gtktoolbar.h \
- /usr/include/gtk/gtktooltips.h /usr/include/gtk/gtktree.h \
- /usr/include/gtk/gtktreeitem.h /usr/include/gtk/gtkvbbox.h \
- /usr/include/gtk/gtkvpaned.h /usr/include/gtk/gtkvruler.h \
- /usr/include/gtk/gtkvscale.h /usr/include/gtk/gtkvseparator.h \
- /usr/include/assert.h /usr/include/gtk--/base.h \
- /usr/include/g++-2/string /usr/include/g++-2/std/bastring.h \
- /usr/include/g++-2/cstddef /usr/include/g++-2/std/straits.h \
- /usr/include/g++-2/cctype /usr/include/ctype.h /usr/include/endian.h \
- /usr/include/bits/endian.h /usr/include/g++-2/cstring \
- /usr/include/g++-2/alloc.h /usr/include/g++-2/stl_config.h \
- /usr/include/g++-2/stl_alloc.h /usr/include/stdlib.h \
- /usr/include/sys/types.h /usr/include/time.h \
+ /usr/include/gtk/gtktree.h /usr/include/gtk/gtktreeitem.h \
+ /usr/include/gtk/gtkvbbox.h /usr/include/gtk/gtkvpaned.h \
+ /usr/include/gtk/gtkvruler.h /usr/include/gtk/gtkvscale.h \
+ /usr/include/gtk/gtkvseparator.h /usr/include/assert.h \
+ /usr/include/gtk--/base.h /usr/include/g++-2/string \
+ /usr/include/g++-2/std/bastring.h /usr/include/g++-2/cstddef \
+ /usr/include/g++-2/std/straits.h /usr/include/g++-2/cctype \
+ /usr/include/ctype.h /usr/include/endian.h /usr/include/bits/endian.h \
+ /usr/include/g++-2/cstring /usr/include/g++-2/alloc.h \
+ /usr/include/g++-2/stl_config.h /usr/include/g++-2/stl_alloc.h \
+ /usr/include/stdlib.h /usr/include/sys/types.h /usr/include/time.h \
  /usr/include/sys/select.h /usr/include/bits/select.h \
  /usr/include/bits/sigset.h /usr/include/sys/sysmacros.h \
  /usr/include/alloca.h /usr/include/pthread.h /usr/include/sched.h \
