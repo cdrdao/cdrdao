@@ -13,7 +13,6 @@ Requires:	libgnomeuimm2 >= 2.0
 Requires:	GConf2 >= 2.0.0
 
 BuildRequires:	lame-devel >= 3
-BuildRequires:	cdrecord-devel
 BuildRequires:	gtkmm2-devel >= 2.2.0
 BuildRequires:	libgnomeuimm2-devel >= 2.0
 
@@ -33,7 +32,7 @@ edition and silence insertion.
 
 %build
 
-%configure --with-scglib-inc=/usr/include/schily --with-scglib-lib=/usr/lib
+%configure
 
 make %{?_smp_mflags}
 
