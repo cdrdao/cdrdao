@@ -1622,15 +1622,6 @@ static void scanBus()
   }
 
 #ifdef SCSI_ATAPI
-  sdata = ScsiIf::scan(&len, "ATAPI");
-  if (sdata) {
-    for (i = 0; i < len; i++) {
-      message(0, "%-20s %s, %s, %s", sdata[i].dev.c_str(), sdata[i].vendor,
-              sdata[i].product, sdata[i].revision);
-    }
-    delete[] sdata;
-  }
-
   sdata = ScsiIf::scan(&len, "ATA");
   if (sdata) {
     for (i = 0; i < len; i++) {
@@ -1638,6 +1629,15 @@ static void scanBus()
               sdata[i].product, sdata[i].revision);
     }
     delete[] sdata;
+  } else {
+    sdata = ScsiIf::scan(&len, "ATAPI");
+    if (sdata) {
+      for (i = 0; i < len; i++) {
+        message(0, "%-20s %s, %s, %s", sdata[i].dev.c_str(), sdata[i].vendor,
+                sdata[i].product, sdata[i].revision);
+      }
+      delete[] sdata;
+    }
   }
 #endif
 }
