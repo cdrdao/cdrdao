@@ -41,10 +41,11 @@ class AudioCDChild : public GenericChild
 {
 public:
   AudioCDChild(AudioCDProject *project);
+  ~AudioCDChild();
+
   AudioCDView *newView();
   bool closeProject();
   void update(unsigned long level);
-  void record_to_cd();
 
   Gtk::Toolbar *getZoomToolbar();
 

@@ -36,8 +36,6 @@
 #include "TocEditView.h"
 #include "util.h"
 #include "AudioCDProject.h"
-#include "MDIWindow.h"
-#include "RecordGenericDialog.h"
 
 #include "SampleDisplay.h"
 
@@ -71,17 +69,24 @@ AudioCDChild::AudioCDChild(AudioCDProject *project)
 
 }
 
+AudioCDChild::~AudioCDChild()
+{
+  AudioCDView *view = 0;
+
+  for (list<AudioCDView *>::iterator i = views.begin();
+       i != views.end(); i++)
+  {
+    if (view != 0)
+      delete view;
+    view = *i;   
+  }
+  delete view;
+}
+
 Gtk::Toolbar *AudioCDChild::getZoomToolbar()
 {
 	return zoomToolbar;
 }
-
-
-void AudioCDChild::record_to_cd()
-{
-  RECORD_GENERIC_DIALOG->toc_to_cd(tocEdit_);
-}
-
 
 bool AudioCDChild::closeProject()
 {
