@@ -32,7 +32,6 @@
 #ifdef linux
 #include <linux/unistd.h>
 #include <linux/types.h>
-#include <linux/sysctl.h>
 #endif
 
 #ifdef HAVE_SYS_MMAN_H
