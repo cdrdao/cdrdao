@@ -86,7 +86,7 @@ static int TAO_SOURCE = 0;
 static int TAO_SOURCE_ADJUST = -1;
 static int KEEPIMAGE = 0;
 static int OVERBURN = 0;
-static CdrDriver::BlankingMode BLANKING_MODE = CdrDriver::BLANK_FULL;
+static CdrDriver::BlankingMode BLANKING_MODE = CdrDriver::BLANK_MINIMAL;
 static TrackData::SubChannelMode READ_SUBCHAN_MODE = TrackData::SUBCHAN_NONE;
 
 static Settings *SETTINGS = NULL; // settings read from $HOME/.cdrdao
