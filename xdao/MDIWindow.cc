@@ -36,6 +36,7 @@
 #include "DeviceConfDialog.h"
 #include "RecordDialog.h"
 #include "ExtractDialog.h"
+#include "RecordGenericDialog.h"
 #include "TocInfoDialog.h"
 #include "TrackInfoDialog.h"
 
@@ -190,6 +191,8 @@ MDIWindow::install_menus_and_toolbar()
 
   // Actions menu
   //
+  actionsMenuTree.push_back(Gnome::UI::Item(N_("Test Generic"),
+					    slot(this, &MDIWindow::recordgeneric)));
   actionsMenuTree.push_back(Gnome::UI::Item(N_("Duplicate CD"),
 					    slot(this, &MDIWindow::extract)));
   actionsMenuTree.push_back(Gnome::UI::Item(N_("Record"),
@@ -424,6 +427,11 @@ void MDIWindow::extract()
 void MDIWindow::record()
 {
   RECORD_DIALOG->start(tocEdit_);
+}
+
+void MDIWindow::recordgeneric()
+{
+  RECORD_GENERIC_DIALOG->start();
 }
 
 void MDIWindow::trackInfo()

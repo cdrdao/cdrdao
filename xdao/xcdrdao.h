@@ -18,6 +18,9 @@
  */
 /*
  * $Log: xcdrdao.h,v $
+ * Revision 1.4  2000/05/17 21:15:55  llanero
+ * Beginings of Record Generic Dialog
+ *
  * Revision 1.3  2000/05/01 18:15:00  andreasm
  * Switch to gnome-config settings.
  * Adapted Message Box to Gnome look, unfortunately the Gnome::MessageBox is
@@ -54,6 +57,7 @@ extern class ExtractProgressDialogPool *EXTRACT_PROGRESS_POOL;
 extern class RecordDialog *RECORD_DIALOG;
 extern class ProcessMonitor *PROCESS_MONITOR;
 extern class RecordProgressDialogPool *RECORD_PROGRESS_POOL;
+extern class RecordGenericDialog *RECORD_GENERIC_DIALOG;
 
 void blockProcessMonitorSignals();
 void unblockProcessMonitorSignals();

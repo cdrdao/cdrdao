@@ -66,6 +66,7 @@ private:
 
   void extract();
   void record();
+  void recordgeneric();
   void projectInfo();
   void trackInfo();
 
