@@ -19,6 +19,9 @@
 
 /*
  * $Log: GenericMMC.cc,v $
+ * Revision 1.9  2000/10/25 20:33:28  andreasm
+ * Added BURN Proof support (submitted by ITOH Yasufumi and Martin Buck).
+ *
  * Revision 1.8  2000/10/08 16:39:40  andreasm
  * Remote progress message now always contain the track relative and total
  * progress and the total number of processed tracks.
@@ -101,7 +104,7 @@
  *
  */
 
-static char rcsid[] = "$Id: GenericMMC.cc,v 1.8 2000/10/08 16:39:40 andreasm Exp $";
+static char rcsid[] = "$Id: GenericMMC.cc,v 1.9 2000/10/25 20:33:28 andreasm Exp $";
 
 #include <config.h>
 
@@ -392,6 +395,19 @@ int GenericMMC::setWriteParameters()
   mp[2] |= 0x02; // write type: Session-at-once
   if (simulate_) {
     mp[2] |= 1 << 4; // test write
+  }
+
+  DriveInfo di;
+  if (driveInfo(&di, 1) == 0 && di.burnProof) {
+    // This drive has BURN-Proof function.
+    // Enable it unless explicitly disabled.
+    if (options_ & OPT_MMC_NO_BURNPROOF) {
+      message(1, "Turning BURN-Proof off");
+      mp[2] &= ~0x40;
+    } else {
+      message(1, "Turning BURN-Proof on");
+      mp[2] |= 0x40;
+    }
   }
 
   mp[3] &= 0x3f; // Multi-session: No B0 pointer, next session not allowed
@@ -1590,6 +1606,7 @@ int GenericMMC::driveInfo(DriveInfo *info, int showErrorMsg)
     return 1;
   }
 
+  info->burnProof = mp[4] & 0x80 ? 1 : 0;
   info->accurateAudioStream = mp[5] & 0x02 ? 1 : 0;
 
   info->maxReadSpeed = (mp[8] << 8) | mp[9];

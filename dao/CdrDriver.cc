@@ -18,6 +18,9 @@
  */
 /*
  * $Log: CdrDriver.cc,v $
+ * Revision 1.9  2000/10/25 20:33:28  andreasm
+ * Added BURN Proof support (submitted by ITOH Yasufumi and Martin Buck).
+ *
  * Revision 1.8  2000/10/08 16:39:40  andreasm
  * Remote progress message now always contain the track relative and total
  * progress and the total number of processed tracks.
@@ -106,7 +109,7 @@
  *
  */
 
-static char rcsid[] = "$Id: CdrDriver.cc,v 1.8 2000/10/08 16:39:40 andreasm Exp $";
+static char rcsid[] = "$Id: CdrDriver.cc,v 1.9 2000/10/25 20:33:28 andreasm Exp $";
 
 #include <config.h>
 
@@ -398,6 +401,8 @@ static unsigned long string2DriverOption(const char *s)
     return OPT_MMC_CD_TEXT;
   else if (strcmp(s, "OPT_MMC_NO_SUBCHAN") == 0)
     return OPT_MMC_NO_SUBCHAN;
+  else if (strcmp(s, "OPT_MMC_NO_BURNPROOF") == 0)
+    return OPT_MMC_NO_BURNPROOF;
   else if (strcmp(s, "OPT_PLEX_USE_PARANOIA") == 0)
     return OPT_PLEX_USE_PARANOIA;
   else if (strcmp(s, "OPT_PLEX_DAE_READ10") == 0)

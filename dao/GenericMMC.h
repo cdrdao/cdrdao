@@ -19,6 +19,9 @@
 
 /*
  * $Log: GenericMMC.h,v $
+ * Revision 1.4  2000/10/25 20:33:28  andreasm
+ * Added BURN Proof support (submitted by ITOH Yasufumi and Martin Buck).
+ *
  * Revision 1.3  2000/10/08 16:39:40  andreasm
  * Remote progress message now always contain the track relative and total
  * progress and the total number of processed tracks.
@@ -82,6 +85,7 @@ class CdTextEncoder;
 #define OPT_MMC_CD_TEXT      0x0010 // drive supports CD-TEXT writing
 #define OPT_MMC_NO_SUBCHAN   0x0020 // drive does not support to read 
                                     // sub-channel data
+#define OPT_MMC_NO_BURNPROOF 0x0040 // disable BURN-Proof
 
 class GenericMMC : public CdrDriver {
 public:

@@ -18,6 +18,9 @@
  */
 /*
  * $Log: CdrDriver.h,v $
+ * Revision 1.5  2000/10/25 20:33:28  andreasm
+ * Added BURN Proof support (submitted by ITOH Yasufumi and Martin Buck).
+ *
  * Revision 1.4  2000/10/08 16:39:40  andreasm
  * Remote progress message now always contain the track relative and total
  * progress and the total number of processed tracks.
@@ -131,6 +134,7 @@ struct DriveInfo {
   int currentWriteSpeed;
 
   unsigned int accurateAudioStream : 1;
+  unsigned int burnProof : 1;
 };
 
 struct CdTextPack {
