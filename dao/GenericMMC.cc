@@ -1686,8 +1686,8 @@ CdRawToc *GenericMMC::getRawToc(int sessionNr, int *len)
   rawToc = new CdRawToc[entries];
 
   for (i = 0, p = data + 4; i < entries; i++, p += 11 ) {
-#if 1
-    message(0, "%d %02x %02d %2x %02d:%02d:%02d %02d %02d:%02d:%02d",
+#if 0
+    message(5, "%d %02x %02d %2x %02d:%02d:%02d %02d %02d:%02d:%02d",
 	    p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7], p[8], p[9], p[10]);
 #endif
     rawToc[i].sessionNr = p[0];

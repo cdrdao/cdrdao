@@ -1,6 +1,6 @@
 /*  cdrdao - write audio CD-Rs in disc-at-once mode
  *
- *  Copyright (C) 1998-2000 Andreas Mueller <mueller@daneb.ping.de>
+ *  Copyright (C) 1998-2001 Andreas Mueller <mueller@daneb.ping.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -16,174 +16,6 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
-
-/*
- * $Log: main.cc,v $
- * Revision 1.19  2001/01/28 10:37:15  andreasm
- * generic-mmc-raw: Fixed Q sub-channel encoding for lead-in regarding toc type
- * and flags of data tracks.
- * Fixed encoding of CD-TEXT packs into sub-channel. The last sub-channel is
- * now always completely filled with valid CD-TEXT packs.
- * Added driver options to define if the raw toc data contains BCD or HEX
- * values so that the auto detection can be skipped.
- * The 'blank' command now waits for completion. Added possibility to specify
- * blanking mode (full, minimal).
- * Updated man page, README and INSTALL.
- *
- * Revision 1.18  2001/01/07 18:59:40  andreasm
- * Added option '--overburn' and disabled overburning by default.
- *
- * Revision 1.17  2000/12/17 10:51:23  andreasm
- * Default verbose level is now 2. Adaopted message levels to have finer
- * grained control about the amount of messages printed by cdrdao.
- * Added CD-TEXT writing support to the GenericMMCraw driver.
- * Fixed CD-TEXT cue sheet creating for the GenericMMC driver.
- *
- * Revision 1.16  2000/11/19 17:49:33  andreasm
- * Updated 'msinfo' command.
- *
- * Revision 1.15  2000/11/12 18:47:59  andreasm
- * Updated 'msinfo' command.
- *
- * Revision 1.14  2000/11/05 19:20:59  andreasm
- * Unified progress messages sent from cdrdao to gcdmaster.
- *
- * Revision 1.13  2000/11/05 12:29:47  andreasm
- * Added BURN Proof support to 'generic-mmc-raw' driver.
- * Added command 'msinfo' that displays multi session information suitable for
- * 'mkisofs'.
- *
- * Revision 1.12  2000/10/29 08:11:11  andreasm
- * Updated CD-R vendor table.
- * Loading defaults now from "/etc/defaults/cdrdao" and then from "$HOME/.cdrdao".
- * Handle if the power calibration command is not supported by a SCSI-3/mmc drive.
- * Updated to libscg from cdrtools-1.10.
- *
- * Revision 1.11  2000/10/08 16:39:41  andreasm
- * Remote progress message now always contain the track relative and total
- * progress and the total number of processed tracks.
- *
- * Revision 1.10  2000/08/20 19:12:41  andreasm
- * Added info about driver table download.
- *
- * Revision 1.9  2000/08/20 17:16:26  andreasm
- * Added option '--keepimage' to not remove the image create with command
- * 'copy'.
- *
- * Revision 1.8  2000/08/06 13:13:09  andreasm
- * Added option --cddb-directory and corresponding setting to specify where
- * fetched CDDB record should be stored.
- *
- * Revision 1.7  2000/06/22 12:19:28  andreasm
- * Added switch for reading CDs written in TAO mode.
- * The fifo buffer size is now also saved to $HOME/.cdrdao.
- *
- * Revision 1.6  2000/06/19 20:17:37  andreasm
- * Added CDDB reading to add CD-TEXT information to toc-files.
- * Fixed bug in reading ATIP data in 'GenericMMC::diskInfo()'.
- * Attention: CdrDriver.cc is currently configured to read TAO disks.
- *
- * Revision 1.5  2000/06/10 14:48:05  andreasm
- * Tracks that are shorter than 4 seconds can be recorded now if the user confirms
- * it.
- * The driver table is now read from an external file (.../share/cdrdao/drivers
- * and $HOME/.cdrdao-drivers).
- * Fixed bug the might prevented writing pure data CDs with some recorders.
- *
- * Revision 1.4  2000/06/06 22:26:13  andreasm
- * Updated list of supported drives.
- * Added saving of some command line settings to $HOME/.cdrdao.
- * Added test for multi session support in raw writing mode to GenericMMC.cc.
- * Updated manual page.
- *
- * Revision 1.3  2000/04/24 12:47:57  andreasm
- * Fixed unit attention problem after writing is finished.
- * Added cddb disk id calculation.
- *
- * Revision 1.2  2000/04/23 16:29:50  andreasm
- * Updated to state of my private development environment.
- *
- * Revision 1.22  1999/12/15 20:31:46  mueller
- * Added remote messages for 'read-cd' progress used by a GUI.
- *
- * Revision 1.21  1999/12/12 13:41:08  mueller
- * Fixed endless loop in 'setupDevice'.
- *
- * Revision 1.20  1999/11/07 09:15:15  mueller
- * Release 1.1.3
- *
- * Revision 1.19  1999/04/05 18:50:01  mueller
- * Added driver options.
- *
- * Revision 1.18  1999/02/06 20:41:58  mueller
- * Added evaluation of 'CdrDriver::checkToc()' before writing or simulating.
- *
- * Revision 1.17  1999/02/04 21:09:20  mueller
- * Added driver for Taiyo-Yudon CD-recorder.
- *
- * Revision 1.16  1999/01/30 19:44:38  mueller
- * Corrected driver selection for Panasonic/Matshita CW-7582 and CR-588.
- * Added driver selection for Sony CDU414 CD-ROM reader.
- *
- * Revision 1.15  1999/01/24 16:06:31  mueller
- * Added more driver table entries.
- * Added option '--buffers' to adjust the number of ring buffers.
- * Renamed option '--fname' to '--datafile'.
- *
- * Revision 1.14  1998/10/24 14:31:01  mueller
- * Added command 'read-cd'.
- * Added option '--fname' to specify the audio file name that is placed into
- * created toc-files.
- * Made 'rezeroUnit()' failure non fatal. Some ATAPI drives do not support
- * this SCSI command.
- * Added driver detection for Memorex drives and for HP CD-Writer+ 8100.
- * Added warning if toc exceeds capacity of CD-R.
- *
- * Revision 1.13  1998/10/03 14:34:29  mueller
- * Added inquiry string for YAMAHA CRW4260.
- * Added pausing before starting write or simulation.
- * Applied patch from Bjoern Fischer <bfischer@Techfak.Uni-Bielefeld.DE>:
- * Retries for test if drive is ready.
- *
- * Revision 1.12  1998/09/27 19:20:14  mueller
- * Added multi session mode.
- *
- * Revision 1.11  1998/09/21 19:29:08  mueller
- * Added inquiry string for YAMAHA CDR200.
- *
- * Revision 1.10  1998/09/19 19:15:43  mueller
- * Added inquiry string for PIONEER CD-ROM DR-U12X reader.
- *
- * Revision 1.9  1998/09/08 11:54:22  mueller
- * Extended disk info structure because CDD2000 does not support the
- * 'READ DISK INFO' command.
- *
- * Revision 1.8  1998/09/07 15:20:20  mueller
- * Reorganized read-toc related code.
- *
- * Revision 1.7  1998/09/06 13:34:22  mueller
- * Use 'message()' for printing messages.
- * Added inquiry string for Plextor writer.
- *
- * Revision 1.6  1998/09/02 18:49:13  mueller
- * Write the toc-file with real user and group id.
- *
- * Revision 1.5  1998/08/30 19:22:34  mueller
- * Added driver selection for Ricoh, Philips and Yamaha writers.
- * Now the disk state is checked before performing commands.
- *
- * Revision 1.4  1998/08/25 19:26:53  mueller
- * Added inquiry strings.
- * Added command disk-info.
- * Added drivers 'generic-mmc' and 'generic-mmc-raw'.
- *
- * Revision 1.3  1998/07/28 13:49:35  mueller
- * Command SHOW_TOC: Check consistency of toc-file after call to
- * 'showToc()'.
- *
- */
-
-static char rcsid[] = "$Id: main.cc,v 1.19 2001/01/28 10:37:15 andreasm Exp $";
 
 #include <config.h>
 
@@ -210,9 +42,9 @@ static char rcsid[] = "$Id: main.cc,v 1.19 2001/01/28 10:37:15 andreasm Exp $";
 #include "Settings.h"
 #include "Cddb.h"
 
-enum Command { SHOW_TOC, SHOW_DATA, READ_TEST, SIMULATE, WRITE, READ_TOC,
-               DISK_INFO, READ_CD, TOC_INFO, TOC_SIZE, BLANK, SCAN_BUS,
-               UNLOCK, COPY_CD, READ_CDDB, MSINFO };
+enum Command { UNKNOWN, SHOW_TOC, SHOW_DATA, READ_TEST, SIMULATE, WRITE,
+	       READ_TOC, DISK_INFO, READ_CD, TOC_INFO, TOC_SIZE, BLANK,
+	       SCAN_BUS, UNLOCK, COPY_CD, READ_CDDB, MSINFO };
 
 static const char *PRGNAME = NULL;
 static const char *TOC_FILE = NULL;
@@ -329,10 +161,12 @@ static void printVersion()
 
 static void printUsage()
 {
-  message(0, "\nUsage: %s command [options] toc-file", PRGNAME);
+  switch (COMMAND) {
 
-  message(0, 
-"\ncommand:\n\
+  case UNKNOWN:
+    message(0, "\nUsage: %s <command> [options] [toc-file]", PRGNAME);
+    message(0, "
+command:\n\
   show-toc  - prints out toc and exits\n\
   toc-info  - prints out short toc-file summary\n\
   toc-size  - prints total number of blocks for toc\n\
@@ -345,48 +179,210 @@ static void printUsage()
   msinfo    - shows multi session info, output is suited for scripts\n\
   unlock    - unlock drive after failed writing\n\
   blank     - blank a CD-RW\n\
+  scanbus   - scan for devices\n\
   simulate  - shortcut for 'write --simulate'\n\
   write     - writes CD\n\
   copy      - copies CD\n");
-
-  message(0,
-"options:\n\
+    
+    message (0, "\n Try '%s <command> -h' to get a list of available options\n");
+    break;
+    
+  case SHOW_TOC:
+    message(0, "\nUsage: %s show-toc [-v #] toc-file\n", PRGNAME);
+    break;
+    
+  case SHOW_DATA:
+    message(0, "\nUsage: %s show-data [--swap] [-v #] toc-file\n", PRGNAME);
+    break;
+    
+  case READ_TEST:
+    message(0, "\nUsage: %s read-test [-v #] toc-file\n", PRGNAME);
+    break;
+  
+  case SIMULATE:
+    message(0, "\nUsage: %s simulate [options] toc-file", PRGNAME);
+    message(0, "
+options:\n\
   --device <x,y,z>        - sets SCSI device of CD-writer\n\
                             (default: %s)\n\
-  --source-device <x,y,z> - sets SCSI device of CD-ROM reader\n\
-                            (used by 'copy')\n\
   --driver <id>           - force usage of specified driver\n\
-  --source-driver <id>    - force usage of specified driver for source device\n\
-                            (used by 'copy')\n\
+  --speed <writing-speed> - selects writing speed\n\
+  --multi                 - session will not be not closed\n\
+  --overburn              - allow to overburn a medium\n\
+  --eject                 - ejects cd after simulation\n\
+  --swap                  - swap byte order of audio files\n\
+  --buffers #             - sets fifo buffer size (min. 10)\n\
+  --reload                - reload the disk if necessary for writing\n\
+  --force                 - force execution of operation\n\
+  -v #                    - sets verbose level\n\
+  -n                      - no pause before writing\n",
+	    SCSI_DEVICE);
+    break;
+    
+  case WRITE:
+    message(0, "\nUsage: %s write [options] toc-file", PRGNAME);
+    message(0, "
+options:\n\
+  --device <x,y,z>        - sets SCSI device of CD-writer\n\
+                            (default: %s)\n\
+  --driver <id>           - force usage of specified driver\n\
   --simulate              - just perform a write simulation\n\
   --speed <writing-speed> - selects writing speed\n\
   --multi                 - session will not be not closed\n\
   --overburn              - allow to overburn a medium\n\
-  --blank-mode <mode>     - blank mode ('full', 'minimal')
   --eject                 - ejects cd after writing or simulation\n\
   --swap                  - swap byte order of audio files\n\
   --on-the-fly            - perform on-the-fly copy, no image file is created\n\
   --datafile <filename>   - name of data file placed in toc-file\n\
-                            (used by 'read-toc', 'read-cd' and 'copy')\n\
   --buffers #             - sets fifo buffer size (min. 10)\n\
-  --session #             - selects session for read-toc/read-cd\n\
+  --reload                - reload the disk if necessary for writing\n\
+  --force                 - force execution of operation\n\
+  -v #                    - sets verbose level\n\
+  -n                      - no pause before writing\n",
+	    SCSI_DEVICE);
+    break;
+    
+  case READ_TOC:
+    message(0, "\nUsage: %s read-toc [options] toc-file", PRGNAME);
+    message(0, "
+options:\n\
+  --source-device <x,y,z> - sets SCSI device of CD-ROM reader\n\
+  --source-driver <id>    - force usage of specified driver for source device\n\
+  --datafile <filename>   - name of data file placed in toc-file\n\
+  --session #             - select session\n\
+  --fast-toc              - do not extract pre-gaps and index marks\n\
+  --tao-source            - indicate that source CD was written in TAO mode\n\
+  --tao-source-adjust #   - # of link blocks for TAO source CDs (def. 2)\n\
+  --force                 - force execution of operation\n\
+  -v #                    - sets verbose level\n");
+    break;
+    
+  case DISK_INFO:
+    message(0, "\nUsage: %s disk-info [options]", PRGNAME);
+    message(0, "
+options:\n\
+  --device <x,y,z>        - sets SCSI device of CD-writer\n\
+                            (default: %s)\n\
+  --driver <id>           - force usage of specified driver\n\
+  -v #                    - sets verbose level\n",
+	    SCSI_DEVICE);
+    break;
+    
+  case READ_CD:
+    message(0, "\nUsage: %s read-cd [options] toc-file", PRGNAME);
+    message(0, "
+options:\n\
+  --source-device <x,y,z> - sets SCSI device of CD-ROM reader\n\
+  --source-driver <id>    - force usage of specified driver for source device\n\
+  --swap                  - swap byte order of audio files\n\
+  --datafile <filename>   - name of data file placed in toc-file\n\
+  --session #             - select session\n\
   --fast-toc              - do not extract pre-gaps and index marks\n\
   --read-raw              - read raw sectors for read-cd\n\
-  --keepimage             - the image created by 'copy' will not be deleted\n\
+  --tao-source            - indicate that source CD was written in TAO mode\n\
+  --tao-source-adjust #   - # of link blocks for TAO source CDs (def. 2)\n\
+  --paranoia-mode #       - DAE paranoia mode (0..3)\n\
+  --force                 - force execution of operation\n\
+  -v #                    - sets verbose level\n\
+  -n                      - no pause before writing\n");
+    break;
+    
+  case TOC_INFO:
+    message(0, "\nUsage: %s toc-info [-v #] toc-file\n", PRGNAME);
+    break;
+    
+  case TOC_SIZE:
+    message(0, "\nUsage: %s toc-size [-v #] toc-file\n", PRGNAME);
+
+  case BLANK:
+    message(0, "\nUsage: %s blank [options]", PRGNAME);
+    message(0, "
+options:\n\
+  --device <x,y,z>        - sets SCSI device of CD-writer\n\
+                            (default: %s)\n\
+  --driver <id>           - force usage of specified driver\n\
+  --speed <writing-speed> - selects writing speed\n\
+  --blank-mode <mode>     - blank mode ('full', 'minimal')
+  --reload                - reload the disk if necessary for writing\n\
+  -v #                    - sets verbose level\n",
+	  SCSI_DEVICE);
+    break;
+    
+  case SCAN_BUS:
+    message(0, "\nUsage: %s scan-bus [-v #]\n", PRGNAME);
+    break;
+    
+  case UNLOCK:
+    message(0, "\nUsage: %s unlock [options]", PRGNAME);
+    message(0, "
+options:\n\
+  --device <x,y,z>        - sets SCSI device of CD-writer\n\
+                            (default: %s)\n\
+  --driver <id>           - force usage of specified driver\n\
+  --reload                - reload the disk if necessary for writing\n\
+  -v #                    - sets verbose level\n",
+	    SCSI_DEVICE);
+    break;
+    
+  case COPY_CD:
+    message(0, "\nUsage: %s copy [options]", PRGNAME);
+    message(0, "
+options:\n\
+  --device <x,y,z>        - sets SCSI device of CD-writer\n\
+                            (default: %s)\n\
+  --source-device <x,y,z> - sets SCSI device of CD-ROM reader\n\
+  --driver <id>           - force usage of specified driver\n\
+  --source-driver <id>    - force usage of specified driver for source device\n\
+  --simulate              - just perform a copy simulation\n\
+  --speed <writing-speed> - selects writing speed\n\
+  --multi                 - session will not be not closed\n\
+  --overburn              - allow to overburn a medium\n\
+  --eject                 - ejects cd after writing or simulation\n\
+  --swap                  - swap byte order of audio files\n\
+  --on-the-fly            - perform on-the-fly copy, no image file is created\n\
+  --datafile <filename>   - name of temporary data file\n\
+  --buffers #             - sets fifo buffer size (min. 10)\n\
+  --session #             - select session\n\
+  --fast-toc              - do not extract pre-gaps and index marks\n\
+  --keepimage             - the image will not be deleted after copy\n\
   --tao-source            - indicate that source CD was written in TAO mode\n\
   --tao-source-adjust #   - # of link blocks for TAO source CDs (def. 2)\n\
   --paranoia-mode #       - DAE paranoia mode (0..3)\n\
   --reload                - reload the disk if necessary for writing\n\
   --force                 - force execution of operation\n\
-  --save                  - save settings in $HOME/.cdrdao\n\
+  -v #                    - sets verbose level\n\
+  -n                      - no pause before writing\n",
+	  SCSI_DEVICE);
+  break;
+  
+  case READ_CDDB:
+    message(0, "\nUsage: %s read-cddb [options] toc-file", PRGNAME);
+    message(0, "
+options:\n\
   --cddb-servers <list>   - sets space separated list of CDDB servers\n\
   --cddb-timeout #        - timeout in seconds for CDDB server communication\n\
   --cddb-directory <path> - path to local CDDB directory where fetched\n\
                             CDDB records will be stored\n\
-  -v #                    - sets verbose level\n\
-  -n                      - no pause before writing",
-	  SCSI_DEVICE);
-
+  -v #                    - sets verbose level\n");
+    break;
+    
+  case MSINFO:
+    message(0, "\nUsage: %s msinfo [options]", PRGNAME);
+    message(0, "
+options:\n\
+  --device <x,y,z>        - sets SCSI device of CD-writer\n\
+                            (default: %s)\n\
+  --driver <id>           - force usage of specified driver\n\
+  --reload                - reload the disk if necessary for writing\n\
+  -v #                    - sets verbose level\n",
+	    SCSI_DEVICE);
+    break;
+    
+  default:
+    message (0, "Sorry, no help available for command %d :-(\n", COMMAND);
+    break;
+  }
+  
 }
 
 static void importSettings(Command cmd)
@@ -586,6 +582,7 @@ static int parseCmdline(int argc, char **argv)
     COMMAND = MSINFO;
   }
   else {
+    COMMAND=UNKNOWN;
     message(-2, "Illegal command: %s", *argv);
     return 1;
   }
@@ -598,6 +595,9 @@ static int parseCmdline(int argc, char **argv)
   while (argc > 0 && (*argv)[0] == '-') {
     if ((*argv)[1] != '-') {
       switch ((*argv)[1]) {
+      case 'h':
+	return 1;
+	
       case 'v':
 	if ((*argv)[2] != 0) {
 	  VERBOSE = atoi((*argv) + 2);
@@ -625,7 +625,10 @@ static int parseCmdline(int argc, char **argv)
       }
     }
     else {
-      if (strcmp((*argv) + 2, "device") == 0) {
+      if (strcmp((*argv) + 2, "help") == 0) {
+	return 1;
+      }
+      else if (strcmp((*argv) + 2, "device") == 0) {
 	if (argc < 2) {
 	  message(-2, "Missing argument after: %s", *argv);
 	  return 1;
@@ -1178,9 +1181,9 @@ void showDiskInfo(DiskInfo *di)
 {
   const char *s1, *s2;
 
-  message(1, "That disk info data may not reflect the real status of the inserted medium");
-  message(1, "if a simulation run was performed before. Reload the medium in this case.");
-  message(1, "");
+  message(2, "That data below may not reflect the real status of the inserted medium");
+  message(2, "if a simulation run was performed before. Reload the medium in this case.");
+  message(2, "");
 
   printf("CD-RW                : ");
   if (di->valid.cdrw)
@@ -1505,8 +1508,8 @@ static int copyCd(CdrDriver *src, CdrDriver *dst, int session,
 
     sprintf(tocFilename, "cd%ld.toc", pid);
     
-    message(1, "Keeping created image file \"%s\".", dataFilenameBuf);
-    message(1, "Corresponding toc-file is written to \"%s\".", tocFilename);
+    message(2, "Keeping created image file \"%s\".", dataFilenameBuf);
+    message(2, "Corresponding toc-file is written to \"%s\".", tocFilename);
 
     toc->write(tocFilename);
   }
@@ -2283,6 +2286,10 @@ int main(int argc, char **argv)
     if (cdr->preventMediumRemoval(0) != 0) {
       exitCode = 1; goto fail;
     }
+    break;
+
+  case UNKNOWN:
+    // should not happen
     break;
   }
 
