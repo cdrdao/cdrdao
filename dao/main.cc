@@ -19,6 +19,11 @@
 
 /*
  * $Log: main.cc,v $
+ * Revision 1.6  2000/06/19 20:17:37  andreasm
+ * Added CDDB reading to add CD-TEXT information to toc-files.
+ * Fixed bug in reading ATIP data in 'GenericMMC::diskInfo()'.
+ * Attention: CdrDriver.cc is currently configured to read TAO disks.
+ *
  * Revision 1.5  2000/06/10 14:48:05  andreasm
  * Tracks that are shorter than 4 seconds can be recorded now if the user confirms
  * it.
@@ -119,12 +124,13 @@
  *
  */
 
-static char rcsid[] = "$Id: main.cc,v 1.5 2000/06/10 14:48:05 andreasm Exp $";
+static char rcsid[] = "$Id: main.cc,v 1.6 2000/06/19 20:17:37 andreasm Exp $";
 
 #include <config.h>
 
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <sys/utsname.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -134,6 +140,8 @@ static char rcsid[] = "$Id: main.cc,v 1.5 2000/06/10 14:48:05 andreasm Exp $";
 #include <fstream.h>
 #include <stdarg.h>
 #include <signal.h>
+#include <pwd.h>
+#include <ctype.h>
 
 #include "util.h"
 #include "Toc.h"
@@ -141,11 +149,11 @@ static char rcsid[] = "$Id: main.cc,v 1.5 2000/06/10 14:48:05 andreasm Exp $";
 #include "CdrDriver.h"
 #include "dao.h"
 #include "Settings.h"
-
+#include "Cddb.h"
 
 enum Command { SHOW_TOC, SHOW_DATA, READ_TEST, SIMULATE, WRITE, READ_TOC,
                DISK_INFO, READ_CD, TOC_INFO, TOC_SIZE, BLANK, SCAN_BUS,
-               UNLOCK, COPY_CD, CDDB_ID };
+               UNLOCK, COPY_CD, READ_CDDB };
 
 static const char *PRGNAME = NULL;
 static const char *TOC_FILE = NULL;
@@ -153,6 +161,7 @@ static const char *DRIVER_ID = NULL;
 static const char *SOURCE_DRIVER_ID = NULL;
 static const char *SOURCE_SCSI_DEVICE = NULL;
 static const char *DATA_FILENAME = NULL;
+static const char *CDDB_SERVER_LIST = "freedb.freedb.org freedb.freedb.org:/~cddb/cddb.cgi uk.freedb.org uk.freedb.org:/~cddb/cddb.cgi cz.freedb.org cz.freedb.org:/~cddb/cddb.cgi";
 static int WRITING_SPEED = -1;
 static int EJECT = 0;
 static int SWAP = 0;
@@ -170,6 +179,7 @@ static int PARANOIA_MODE = 3;
 static int ON_THE_FLY = 0;
 static int WRITE_SIMULATE = 0;
 static int SAVE_SETTINGS = 0;
+static int CDDB_TIMEOUT = 60;
 
 static Settings *SETTINGS = NULL; // settings read from $HOME/.cdrdao
 
@@ -260,10 +270,10 @@ static void printUsage()
   toc-size  - prints total number of blocks for toc\n\
   read-toc  - create toc file from audio CD\n\
   read-cd   - create toc and rip audio data from CD\n\
+  read-cddb - contact CDDB server and add data as CD-TEXT to toc-file\n\
   show-data - prints out audio data and exits\n\
   read-test - reads all audio files and exits\n\
   disk-info - shows information about inserted medium\n\
-  cddb-id   - calculates the cddb disk id\n\
   unlock    - unlock drive after failed writing\n\
   simulate  - shortcut for 'write --simulate'\n\
   write     - writes CD\n\
@@ -294,6 +304,8 @@ static void printUsage()
   --reload                - reload the disk if necessary for writing\n\
   --force                 - force execution of operation\n\
   --save                  - save settings in $HOME/.cdrdao\n\
+  --cddb-servers <list>   - sets space separated list of CDDB servers\n\
+  --cddb-timeout #        - timeout in seconds for CDDB server communication\n\
   -v #                    - sets verbose level\n\
   -n                      - no pause before writing",
 	  SCSI_DEVICE);
@@ -360,6 +372,16 @@ static void importSettings(Command cmd)
     }
   }
 
+  if (cmd == READ_CDDB) {
+    if ((sval = SETTINGS->getString(SET_CDDB_SERVER_LIST)) != NULL) {
+      CDDB_SERVER_LIST = strdupCC(sval);
+    }
+
+    if ((ival = SETTINGS->getInteger(SET_CDDB_TIMEOUT)) != NULL &&
+	*ival > 0) {
+      CDDB_TIMEOUT = *ival;
+    }
+  }
 }
 
 static void exportSettings(Command cmd)
@@ -402,6 +424,16 @@ static void exportSettings(Command cmd)
     
     if (SCSI_DEVICE != NULL)
       SETTINGS->set(SET_WRITE_DEVICE, SCSI_DEVICE);
+  }
+
+  if (cmd == READ_CDDB) {
+    if (CDDB_SERVER_LIST != NULL) {
+      SETTINGS->set(SET_CDDB_SERVER_LIST, CDDB_SERVER_LIST);
+    }
+
+    if (CDDB_TIMEOUT > 0) {
+      SETTINGS->set(SET_CDDB_TIMEOUT, CDDB_TIMEOUT);
+    }
   }
 }
 
@@ -453,8 +485,8 @@ static int parseCmdline(int argc, char **argv)
   else if (strcmp(*argv, "copy") == 0) {
     COMMAND = COPY_CD;
   }
-  else if (strcmp(*argv, "cddb-id") == 0) {
-    COMMAND = CDDB_ID;
+  else if (strcmp(*argv, "read-cddb") == 0) {
+    COMMAND = READ_CDDB;
   }
   else {
     message(-2, "Illegal command: %s", *argv);
@@ -627,6 +659,30 @@ static int parseCmdline(int argc, char **argv)
 	  argc--, argv++;
 	  if (SESSION < 1) {
 	    message(-2, "Illegal session number: %d", SESSION);
+	    return 1;
+	  }
+	}
+      }
+      else if (strcmp((*argv) + 2, "cddb-servers") == 0) {
+	if (argc < 2) {
+	  message(-2, "Missing argument after: %s", *argv);
+	  return 1;
+	}
+	else {
+	  CDDB_SERVER_LIST = argv[1];
+	  argc--, argv++;
+	}
+      }
+      else if (strcmp((*argv) + 2, "cddb-timeout") == 0) {
+	if (argc < 2) {
+	  message(-2, "Missing argument after: %s", *argv);
+	  return 1;
+	}
+	else {
+	  CDDB_TIMEOUT = atoi(argv[1]);
+	  argc--, argv++;
+	  if (CDDB_TIMEOUT < 1) {
+	    message(-2, "Illegal CDDB timeout: %d", CDDB_TIMEOUT);
 	    return 1;
 	  }
 	}
@@ -1046,41 +1102,135 @@ void showDiskInfo(DiskInfo *di)
   }
 }
 
-static unsigned int cddbSum(unsigned int n)
-{
-  unsigned int ret;
 
-  ret = 0;
-  while (n > 0) {
-    ret += (n % 10);
-    n /= 10;
+static int readCddb(Toc *toc)
+{
+  int err = 0;
+  char *servers = strdupCC(CDDB_SERVER_LIST);
+  char *p;
+  char *sep = " ,";
+  char *user = NULL;
+  char *host = NULL;
+  struct passwd *pwent;
+  struct utsname sinfo;
+  Cddb::QueryResults *qres, *qrun, *qsel;
+  Cddb::CddbEntry *dbEntry;
+
+  Cddb cddb(toc);
+
+  cddb.timeout(CDDB_TIMEOUT);
+
+  for (p = strtok(servers, sep); p != NULL; p = strtok(NULL, sep))
+    cddb.appendServer(p);
+
+  delete[] servers;
+  servers = NULL;
+
+  if ((pwent = getpwuid(getuid())) != NULL &&
+      pwent->pw_name != NULL) {
+    user = strdupCC(pwent->pw_name);
+  }
+  else {
+    user = strdupCC("unknown");
   }
 
-  return ret;
-}
+  if (uname(&sinfo) == 0) {
+    host = strdupCC(sinfo.nodename);
+  }
+  else {
+    host = strdupCC("unknown");
+  }
+  
 
-static void showCDDBid(const Toc *toc)
-{
-  const Track *t;
-  Msf start, end;
-  unsigned int n = 0;
-  unsigned int o = 0;
-  int tcount = 0;
+  if (cddb.connectDb(user, host, "cdrdao", VERSION) != 0) {
+    message(-2, "Cannot connect to any CDDB server.");
+    err = 2; goto fail;
+  }
 
-  TrackIterator itr(toc);
+	
+  if (cddb.queryDb(&qres) != 0) {
+    message(-2, "Querying of CDDB server failed.");
+    err = 2; goto fail;
+  }
+  
+  if (qres == NULL) {
+    message(1, "No CDDB record found for this toc-file.");
+    err = 1; goto fail;
+  }
 
-  for (t = itr.first(start, end); t != NULL; t = itr.next(start, end)) {
-    if (t->type() == TrackData::AUDIO) {
-//    message(0, "  %d:%d %d ", start.min(), start.sec(), start.lba());
-//    message(0, "  %d:%d %d", end.min(), end.sec(), end.lba());
-      n += cddbSum(start.min() * 60 + start.sec() + 2/* gap offset */);
-      o  = end.min() * 60 + end.sec();
-      tcount++;
+  if (qres->next != NULL || !(qres->exactMatch)) {
+    int qcount;
+
+    if (qres->next == NULL)
+      message(0, "Found following inexact match:");
+    else
+      message(0, "Found following inexact matches:");
+    
+    message(0, "\n    DISKID   CATEGORY     TITLE\n");
+    
+    for (qrun = qres, qcount = 0; qrun != NULL; qrun = qrun->next, qcount++) {
+      message(0, "%2d. %-8s %-12s %s", qcount + 1, qrun->diskId,
+	      qrun->category,  qrun->title);
+    }
+
+    message(0, "\n");
+
+    qsel = NULL;
+
+    while (1) {
+      char buf[20];
+      int sel;
+
+      message(0, "Select match, 0 for none [0-%d]?", qcount);
+
+      if (fgets(buf, 20, stdin) == NULL)
+	break;
+
+      for (p = buf; *p != 0 && isspace(*p); p++) ;
+
+      if (*p != 0 && isdigit(*p)) {
+	sel = atoi(p);
+
+	if (sel == 0) {
+	  break;
+	}
+	else if (sel > 0 && sel <= qcount) {
+	  sel--;
+	  for (qsel = qres, qcount = 0; qsel != NULL && qcount != sel;
+	       qsel = qsel->next, qcount++) ;
+
+	  break;
+	}
+      }
+    }
+
+    if (qsel == NULL) {
+      message(0, "No match selected.");
+      err = 1; goto fail;
     }
   }
-  message(0, "CDDBID=%lx", (n % 0xff) << 24 | o << 8 | tcount);
-} 
+  else {
+    qsel = qres;
+  }
 
+
+  message(1, "Reading CDDB record for: %s-%s-%s", qsel->diskId, qsel->category,
+	  qsel->title);
+
+  if (cddb.readDb(qsel->category, qsel->diskId, &dbEntry) != 0) {
+    message(-2, "Reading of CDDB record failed.");
+    err = 2; goto fail;
+  }
+
+  if (!cddb.addAsCdText(toc))
+    err = 1;
+
+ fail:
+  delete[] user;
+  delete[] host;
+
+  return err;
+}
 
 static void scanBus()
 {
@@ -1199,7 +1349,7 @@ static int copyCd(CdrDriver *src, CdrDriver *dst, int session,
   } while (!isAppendable);
 
 
-  if (dst->startStopUnit(1) != 0 || dst->preventMediumRemoval(1) != 0) {
+  if (dst->preventMediumRemoval(1) != 0) {
     if (unlink(dataFilename) != 0)
       message(-2, "Cannot remove CD image file \"%s\": %s", dataFilename,
 	      strerror(errno));
@@ -1342,7 +1492,7 @@ static int copyCdOnTheFly(CdrDriver *src, CdrDriver *dst, int session,
 
   dst->onTheFly(fileno(stdin));
 
-  if (dst->startStopUnit(1) != 0 || dst->preventMediumRemoval(1) != 0) {
+  if (dst->preventMediumRemoval(1) != 0) {
     ret = 1;
     goto fail;
   }
@@ -1451,7 +1601,7 @@ int main(int argc, char **argv)
       exitCode = 1; goto fail;
     }
 
-    if (COMMAND != SHOW_TOC && COMMAND != CDDB_ID) {
+    if (COMMAND != SHOW_TOC && COMMAND != READ_CDDB) {
       if (checkToc(toc) != 0) {
 	message(-2, "Toc file \"%s\" is inconsistent.", TOC_FILE);
 	exitCode = 1; goto fail;
@@ -1513,10 +1663,11 @@ int main(int argc, char **argv)
     PAUSE = 0;
 
   switch (COMMAND) {
-  case CDDB_ID:
-    showCDDBid(toc);
-    if (toc->check() > 1) {
-      message(-2, "Toc file \"%s\" is inconsistent.", TOC_FILE);
+  case READ_CDDB:
+    if ((exitCode = readCddb(toc)) == 0) {
+      message(1, "Writing CD-TEXT populated toc-file \"%s\".", TOC_FILE);
+      if (toc->write(TOC_FILE) != 0)
+	exitCode = 2;
     }
     break;
 
@@ -1710,8 +1861,7 @@ int main(int argc, char **argv)
     }
 
     message(1, "Process can be aborted with QUIT signal (usually CTRL-\\).");
-    if (cdr->startStopUnit(1) != 0 || 
-	cdr->preventMediumRemoval(1) != 0) {
+    if (cdr->preventMediumRemoval(1) != 0) {
       exitCode = 1; goto fail;
     }
 

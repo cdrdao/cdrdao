@@ -18,6 +18,11 @@
  */
 /*
  * $Log: CdrDriver.cc,v $
+ * Revision 1.5  2000/06/19 20:17:37  andreasm
+ * Added CDDB reading to add CD-TEXT information to toc-files.
+ * Fixed bug in reading ATIP data in 'GenericMMC::diskInfo()'.
+ * Attention: CdrDriver.cc is currently configured to read TAO disks.
+ *
  * Revision 1.4  2000/06/10 14:48:05  andreasm
  * Tracks that are shorter than 4 seconds can be recorded now if the user confirms
  * it.
@@ -89,7 +94,7 @@
  *
  */
 
-static char rcsid[] = "$Id: CdrDriver.cc,v 1.4 2000/06/10 14:48:05 andreasm Exp $";
+static char rcsid[] = "$Id: CdrDriver.cc,v 1.5 2000/06/19 20:17:37 andreasm Exp $";
 
 #include <config.h>
 
@@ -102,6 +107,7 @@ static char rcsid[] = "$Id: CdrDriver.cc,v 1.4 2000/06/10 14:48:05 andreasm Exp 
 #include <assert.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <ctype.h>
 
 #include "CdrDriver.h"
 #include "PWSubChannel96.h"
@@ -427,13 +433,14 @@ static int readDriverTable(const char *filename)
 {
   FILE *fp;
   DriverSelectTable *ent;
+  long i;
   int lineNr = 0;
   int count = 0;
   int rw;
   int err;
   char buf[MAX_DRIVER_TABLE_LINE_LEN];
-  char *p;
-  char *sep = "|\n";
+  char *p, *l;
+  char *sep = "|";
   char *vendor;
   char *model;
   char *driver;
@@ -458,7 +465,15 @@ static int readDriverTable(const char *filename)
     if ((p = strchr(buf, '#')) != NULL)
       *p = 0;
 
-    if ((p = strtok(buf, sep)) != NULL) {
+    // remove leading white space
+    for (l = buf; *l != 0 && isspace(*l); l++) ;
+
+    // remove trailing white space
+    for (i = strlen(l) - 1; i >= 0 && isspace(l[i]); i--)
+      l[i] = 0;
+
+
+    if ((p = strtok(l, sep)) != NULL) {
       if (strcmp(p, "R") == 0) {
 	rw = 1;
       }
@@ -1535,10 +1550,15 @@ CdToc *CdrDriver::getToc(int sessionNr, int *cdTocLen)
       }
 
       if (i < 0) {
-	message(-3, "Found bogus toc data (no lead-out entry in raw data). Please report!");
+	message(-1, "Found bogus toc data (no lead-out entry in raw data).");
+	message(-1, "Your drive probably does not support raw toc reading.");
+	message(-1, "Using TOC data retrieved with generic method (no multi session support).");
+	message(-1, "Use driver option 0x%lx to suppress this message.",
+		OPT_DRV_GET_TOC_GENERIC);
+	
 	delete[] rawToc;
-	delete[] completeToc;
-	return NULL;
+	*cdTocLen = completeTocLen;
+	return completeToc;
       }
 	
       for (j = 0; j < completeTocLen; j++) {
@@ -1554,10 +1574,10 @@ CdToc *CdrDriver::getToc(int sessionNr, int *cdTocLen)
 	}
       }
       else {
-	message(-3,
-		"Found bogus toc data (no lead-out entry). Please report!");
-	delete[] rawToc;
+	message(-2, "Found bogus toc data (no lead-out entry).");
+
 	delete[] completeToc;
+	delete[] rawToc;
 	return NULL;
       }
     }
@@ -1618,10 +1638,15 @@ CdToc *CdrDriver::getToc(int sessionNr, int *cdTocLen)
     }
 
     if (i < 0) {
-      message(-3, "Found bogus toc data (no lead-out entry in raw data). Please report!");
-      delete[] rawToc;
-      delete[] completeToc;
-      return NULL;
+	message(-1, "Found bogus toc data (no lead-out entry in raw data).");
+	message(-1, "Your drive probably does not support raw toc reading.");
+	message(-1, "Using TOC data retrieved with generic method (no multi session support).");
+	message(-1, "Use driver option 0x%lx to suppress this message.",
+		OPT_DRV_GET_TOC_GENERIC);
+	
+	delete[] rawToc;
+	*cdTocLen = completeTocLen;
+	return completeToc;
     }
     
     for (j = 0; j < completeTocLen; j++) {
@@ -1637,19 +1662,21 @@ CdToc *CdrDriver::getToc(int sessionNr, int *cdTocLen)
       }
     }
     else {
-      message(-3,
-	      "Found bogus toc data (no lead-out entry). Please report!");
-      delete[] rawToc;
-      delete[] completeToc;
-      return NULL;
+	message(-1, "Found bogus toc data (no lead-out entry).");
+	
+	delete[] rawToc;
+	delete[] completeToc;
+	return NULL;
     }
   }
   
   if (isBcd == -1) {
     message(-1, "Could not determine if raw toc data is BCD or HEX. Please report!");
     message(-1, "Using TOC data retrieved with generic method (no multi session support).");
-    delete[] rawToc;
+    message(-1, "Use driver option 0x%lx to suppress this message.",
+	    OPT_DRV_GET_TOC_GENERIC);
 
+    delete[] rawToc;
     *cdTocLen = completeTocLen;
     return completeToc;
   }
@@ -1665,10 +1692,15 @@ CdToc *CdrDriver::getToc(int sessionNr, int *cdTocLen)
   }
 
   if (nTracks == 0 || nTracks > 99) {
-    message(-3, "Found bogus toc data (0 or > 99 tracks). Please report!");
+    message(-1, "Found bogus toc data (0 or > 99 tracks). Please report!");
+    message(-1, "Your drive probably does not support raw toc reading.");
+    message(-1, "Using TOC data retrieved with generic method (no multi session support).");
+    message(-1, "Use driver option 0x%lx to suppress this message.",
+	    OPT_DRV_GET_TOC_GENERIC);
+	
     delete[] rawToc;
-    delete[] completeToc;
-    return NULL;
+    *cdTocLen = completeTocLen;
+    return completeToc;
   }
 
   cdToc = new CdToc[nTracks + 1];
@@ -1693,11 +1725,16 @@ CdToc *CdrDriver::getToc(int sessionNr, int *cdTocLen)
       }
 
       if (lastTrack != -1 && trackNr != lastTrack + 1) {
-	message(-3, "Found bogus toc data (track number sequence). Please report!");
-	delete[] rawToc;
-	delete[] completeToc;
+	message(-1, "Found bogus toc data (track number sequence). Please report!");
+	message(-1, "Your drive probably does not support raw toc reading.");
+	message(-1, "Using TOC data retrieved with generic method (no multi session support).");
+	message(-1, "Use driver option 0x%lx to suppress this message.",
+		OPT_DRV_GET_TOC_GENERIC);
+	
 	delete[] cdToc;
-	return NULL;
+	delete[] rawToc;
+	*cdTocLen = completeTocLen;
+	return completeToc;
       }
 
       lastTrack = trackNr;
@@ -1735,11 +1772,16 @@ CdToc *CdrDriver::getToc(int sessionNr, int *cdTocLen)
   }
   
   if (tocEnt != nTracks + 1) {
-    message(-3, "Found bogus toc data (no lead-out pointer for session). Please report!");
-    delete[] rawToc;
-    delete[] completeToc;
+    message(-1, "Found bogus toc data (no lead-out pointer for session). Please report!");
+    message(-1, "Your drive probably does not support raw toc reading.");
+    message(-1, "Using TOC data retrieved with generic method (no multi session support).");
+    message(-1, "Use driver option 0x%lx to suppress this message.",
+	    OPT_DRV_GET_TOC_GENERIC);
+	
     delete[] cdToc;
-    return NULL;
+    delete[] rawToc;
+    *cdTocLen = completeTocLen;
+    return completeToc;
   }
   
 
@@ -2676,7 +2718,7 @@ int CdrDriver::readCdTextData(Toc *toc)
 	// pack contains text -> read all string from it
 	j = 0;
 
-	while (j < 12) {
+	while (j < 12 && actTrack <= toc->nofTracks()) {
 	  for (; j < 12 && p.data[j] != 0; j++)
 	    buf[pos++] = p.data[j];
 
@@ -2694,9 +2736,12 @@ int CdrDriver::readCdTextData(Toc *toc)
 	    actTrack++;
 	    pos = 0;
 
-	    // skip zero data
-	    while (j < 12 && p.data[j] == 0)
-	      j++;
+	    if (CdTextItem::isTrackPack(packType)) {
+	      j++; // skip zero
+	    }
+	    else {
+	      j = 12; // don't use remaining zeros to build track packs
+	    }
 	  }
 	}
       }
@@ -2802,7 +2847,13 @@ int CdrDriver::analyzeDataTrack(TrackData::Mode mode, int trackNr,
   return 0;
 }
 
-// Reads toc and audio data from CD. Must be overloaded by derived class.
+/* Reads toc and audio data from CD for specified 'session' number.
+ * The data is written to file 'dataFilename' unless on-the-fly writing
+ * is active in which case the data is written to the file descriptor
+ * 'onTheFlyFd'.
+ * Return: newly created 'Toc' object or 'NULL' if an error occured
+ */
+
 Toc *CdrDriver::readDisk(int session, const char *dataFilename)
 {
   int padFirstPregap = 1;
@@ -2919,16 +2970,27 @@ Toc *CdrDriver::readDisk(int session, const char *dataFilename)
 	  trackInfos[trs].pregap = trackInfos[trs].start;
       }
       else {
+	/*
 	if (trackInfos[trs].mode != trackInfos[trs - 1].mode)
 	  trackInfos[trs].pregap = 150;
+	*/
+
+	  trackInfos[trs].pregap = 152;
       }
 
       slba = trackInfos[trs].start;
       elba = trackInfos[trs + 1].start;
 
+      /*
       if (trackInfos[trs].mode != trackInfos[trs + 1].mode) {
 	elba -= 150;
       }
+      */
+
+      if (trs < nofTracks - 1)
+	elba -= 152;
+      else
+	elba -= 2;
 
       message(1, "Copying data track %d (%s): start %s, ", trs + 1, 
 	      TrackData::mode2String(trackInfos[trs].mode),

@@ -18,6 +18,11 @@
  */
 /*
  * $Log: Settings.cc,v $
+ * Revision 1.2  2000/06/19 20:17:37  andreasm
+ * Added CDDB reading to add CD-TEXT information to toc-files.
+ * Fixed bug in reading ATIP data in 'GenericMMC::diskInfo()'.
+ * Attention: CdrDriver.cc is currently configured to read TAO disks.
+ *
  * Revision 1.1  2000/06/06 22:26:13  andreasm
  * Updated list of supported drives.
  * Added saving of some command line settings to $HOME/.cdrdao.
@@ -26,7 +31,7 @@
  *
  */
 
-static char rcsid[] = "$Id: Settings.cc,v 1.1 2000/06/06 22:26:13 andreasm Exp $";
+static char rcsid[] = "$Id: Settings.cc,v 1.2 2000/06/19 20:17:37 andreasm Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -50,6 +55,8 @@ const char *SET_READ_DRIVER = "read_driver";
 const char *SET_READ_DEVICE = "read_device";
 const char *SET_READ_PARANOIA_MODE = "read_paranoia_mode";
 
+const char *SET_CDDB_SERVER_LIST = "cddb_server_list";
+const char *SET_CDDB_TIMEOUT     = "cddb_timeout";
 
 class SettingEntry {
 public:
