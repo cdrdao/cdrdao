@@ -137,3 +137,14 @@ diff -ru --unidirectional-new-file /home/denis/packages/cdrtools-2.01a25/TARGETS
 +++ scsilib/TARGETS/99export	2003-03-01 10:53:25.000000000 -0800
 @@ -0,0 +1 @@
 +Export
+--- scsilib.orig/RULES/mk-gmake.id	2004-06-03 19:17:08.000000000 -0700
++++ scsilib/RULES/mk-gmake.id	2004-06-28 01:14:51.224063000 -0700
+@@ -37,7 +37,7 @@
+ 
+ ifndef		ARCH_DONE
+ 
+-_MACHCMD=	(mach || uname -p || true)	2> /dev/null
++_MACHCMD=	(uname -p || true)	2> /dev/null
+ _ARCHCMD=	(arch || /usr/ucb/arch || true)	2> /dev/null
+ 
+ XP_ARCH:=	$(shell $(_MACHCMD) | tr '[A-Z]' '[a-z]' | tr ', /\\()"' ',//////' | tr ',/' ',-')
