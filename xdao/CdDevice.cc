@@ -172,9 +172,24 @@ int CdDevice::autoSelectDriver()
   if (driverName) {
     driverId_ = driverName2Id(driverName);
     options_ = options;
+
   } else {
-    driverId_ = DRIVER_ID_DEFAULT;
-    options_ = 0;
+    bool r_cdr, w_cdr, r_cdrw, w_cdrw;
+
+    ScsiIf* sif = new ScsiIf(dev_.c_str());
+
+    if (sif && sif->init() == 0 &&
+        sif->checkMmc(&r_cdr, &w_cdr, &r_cdrw, &w_cdrw)) {
+
+      driverId_ = driverName2Id("generic-mmc");
+      if (r_cdr)  deviceType_ = CD_ROM;
+      if (w_cdr)  deviceType_ = CD_R;
+      if (w_cdrw) deviceType_ = CD_RW;
+    } else {
+      driverId_ = DRIVER_ID_DEFAULT;
+      options_ = 0;
+    }
+    if (sif) delete sif;
   }
 
   return 1;
