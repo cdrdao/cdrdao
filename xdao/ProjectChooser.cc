@@ -130,7 +130,7 @@ mixedCDButton->set_sensitive(false);
   hbox->show();
   copyCDButton->add(*hbox);
   copyCDButton->show();
-  copyCDButton->clicked.connect(slot(gcdmaster, &GCDMaster::recordCD2CD));
+  copyCDButton->clicked.connect(bind(slot(gcdmaster, &GCDMaster::newDuplicateCDProject), this));
   table->attach(*copyCDButton, 1, 2, 4, 5, GTK_FILL);
 //  pack_start(*copyCDButton, TRUE, TRUE);
 
@@ -147,7 +147,7 @@ mixedCDButton->set_sensitive(false);
   hbox->show();
   dumpCDButton->add(*hbox);
   dumpCDButton->show();
-  dumpCDButton->clicked.connect(slot(gcdmaster, &GCDMaster::recordCD2HD));
+  dumpCDButton->clicked.connect(bind(slot(gcdmaster, &GCDMaster::newDumpCDProject), this));
   table->attach(*dumpCDButton, 1, 2, 5, 6, GTK_FILL);
 //  pack_start(*dumpCDButton, TRUE, TRUE);
 
@@ -171,6 +171,8 @@ helpButton->set_sensitive(false);
   table->show();
 //  pack_start(*table, TRUE, TRUE);
   add(*table);
+
+  set_wmclass("GCDMasterProjectChooser", "GCDMasterProjectChooser");
 
   set_title(APP_NAME);
 }
