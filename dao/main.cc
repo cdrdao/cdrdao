@@ -978,9 +978,14 @@ static CdrDriver *selectDriver(Command cmd, ScsiIf *scsiIf,
       ret = CdrDriver::createDriver(id, options, scsiIf);
     }
     else {
-      message(-2, "No driver found for '%s %s', available drivers:",
+      message(0, "");
+      message(-2, "No driver found for '%s %s', available drivers:\n",
 	      scsiIf->vendor(), scsiIf->product());
       CdrDriver::printDriverIds();
+
+      message(0, "\nFor all recent recorder models either the 'generic-mmc' or");
+      message(0, "the 'generic-mmc-raw' driver should work.");
+      message(0, "Use option '--driver' to force usage of a driver, e.g.: --driver generic-mmc");
     }
   }
 
@@ -2102,6 +2107,8 @@ int main(int argc, char **argv)
 	exitCode = 1; goto fail;
       }
       toc->print(out);
+
+      message(1, "Reading of toc data finished successfully.");
     }
     break;
     
@@ -2156,6 +2163,8 @@ int main(int argc, char **argv)
 	exitCode = 1; goto fail;
       }
       toc->print(out);
+
+      message(1, "Reading of toc and track data finished successfully.");
     }
     break;
 
@@ -2340,7 +2349,7 @@ int main(int argc, char **argv)
 	message(1, "On-the-fly CD copying finished successfully.");
       }
       else {
-	message(1, "On-the-fly CD copying failed.");
+	message(-2, "On-the-fly CD copying failed.");
 	exitCode = 1; goto fail;
       }
 #endif
@@ -2354,7 +2363,7 @@ int main(int argc, char **argv)
 	message(1, "CD copying finished successfully.");
       }
       else {
-	message(1, "CD copying failed.");
+	message(-2, "CD copying failed.");
 	exitCode = 1; goto fail;
       }
     }
