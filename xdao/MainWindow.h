@@ -18,6 +18,9 @@
  */
 /*
  * $Log: MainWindow.h,v $
+ * Revision 1.3  2000/03/04 01:28:52  llanero
+ * SampleDisplay.{cc,h} are fixed now = gtk 1.1.8 compliant.
+ *
  * Revision 1.2  2000/02/20 23:34:54  llanero
  * fixed scsilib directory (files mising ?-()
  * ported xdao to 1.1.8 / gnome (MDI) app
@@ -63,7 +66,6 @@ class TrackData;
 class TocEdit;
 
 class MainWindow : public Gtk::Window
-//llanero class AudioChild : public Gnome::MDIGenericChild
 {
 private:
   enum Mode { ZOOM, SELECT };

@@ -54,9 +54,6 @@ MDIWindow::install_menus_and_toolbar()
   newMenuTree->push_item(Gnome::UIItem(N_("Mixed CD"), N_("New Mixed CD"),
   				GNOME_STOCK_MENU_NEW,
   				slot(this, &MDIWindow::nothing_cb)));
-  newMenuTree->push_item(Gnome::UIItem(N_("Example"), N_("New example"),
-  				GNOME_STOCK_MENU_NEW,
-  				slot(this, &MDIWindow::example_child)));
 
   StockMenuItems::NewSubtree *newMenu = new 
   				StockMenuItems::NewSubtree(*newMenuTree);
@@ -300,6 +297,7 @@ nada_cb(GtkWidget *widget, gpointer data)
   cout << "nothing here" << endl;
 }
 
+/*
 GtkWidget *
 example_creator(GnomeMDIChild *child, gpointer data)
 {
@@ -316,6 +314,7 @@ Gtk::Widget *view2 = Gtk::wrap(new_view);
         return new_view;
 }
 
+
 void
 MDIWindow::example_child()
 {
@@ -325,3 +324,4 @@ example->set_view_creator(example_creator, NULL);
 MDIWindow::add_child(*example);
 MDIWindow::add_view(*example);
 }
+*/

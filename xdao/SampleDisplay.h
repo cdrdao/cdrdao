@@ -18,6 +18,9 @@
  */
 /*
  * $Log: SampleDisplay.h,v $
+ * Revision 1.3  2000/03/04 01:28:52  llanero
+ * SampleDisplay.{cc,h} are fixed now = gtk 1.1.8 compliant.
+ *
  * Revision 1.2  2000/02/20 23:34:54  llanero
  * fixed scsilib directory (files mising ?-()
  * ported xdao to 1.1.8 / gnome (MDI) app
@@ -51,22 +54,22 @@ private:
 
   Gtk::Adjustment *adjustment_;
 
-  Gdk_Pixmap *pixmap_;
-  Gdk_Pixmap *trackMarkerPixmap_;
-  Gdk_Pixmap *indexMarkerPixmap_;
-  Gdk_Pixmap *trackMarkerSelectedPixmap_;
-  Gdk_Pixmap *indexMarkerSelectedPixmap_;
-  Gdk_Pixmap *trackExtendPixmap_;
-  Gdk_Pixmap *indexExtendPixmap_;
+  Gdk_Pixmap pixmap_;
+  Gdk_Pixmap trackMarkerPixmap_;
+  Gdk_Pixmap indexMarkerPixmap_;
+  Gdk_Pixmap trackMarkerSelectedPixmap_;
+  Gdk_Pixmap indexMarkerSelectedPixmap_;
+  Gdk_Pixmap trackExtendPixmap_;
+  Gdk_Pixmap indexExtendPixmap_;
 
-  Gdk_GC *drawGc_;
+  Gdk_GC drawGc_;
   Gdk_Color sampleColor_;
   Gdk_Color middleLineColor_;
   Gdk_Color cursorColor_;
   Gdk_Color markerColor_;
   Gdk_Color selectionBackgroundColor_;
 
-  Gdk_Font *timeTickFont_;
+  Gdk_Font timeTickFont_;
 
   gint width_;
   gint height_;
@@ -81,7 +84,7 @@ private:
   gint trackLineHeight_;
   gint trackLineY_;
   gint trackMarkerWidth_;
-  Gdk_Font *trackMarkerFont_;
+  Gdk_Font trackMarkerFont_;
   const TrackManager::Entry *pickedTrackMarker_;
 
   gint chanSep_;
