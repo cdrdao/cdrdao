@@ -24,12 +24,14 @@
 #include <gtk/gtk.h>
 #include <gnome--.h>
 
+#include <list>
+
 #include "Project.h"
 
 class GCDMaster : public Gtk::Widget
 {
 private:
-  vector<Project *> projects;
+  list<Project *> projects;
 
   gint project_number;
 
@@ -41,8 +43,9 @@ public:
   GCDMaster();
 
   void appClose();
+  void closeProject(Project *);
   void newChooserWindow();
-  void newAudioCDProject();
+  void newAudioCDProject(char *name);
 
   void recordCD2CD();
   void recordCD2HD();

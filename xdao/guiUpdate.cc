@@ -39,9 +39,11 @@ void guiUpdate(unsigned long level)
 {
   TocEdit *tocEdit = NULL;
 
-  if (MDI_WINDOW == 0)
-    return;
+//FIXME  if (MDI_WINDOW == 0)
+//FIXME    return;
 
+//FIXME
+/*
   if (MDI_WINDOW->gtkobj()->children) {
     GenericChild *child = static_cast <GenericChild *>(MDI_WINDOW->get_active_child());
 
@@ -51,9 +53,9 @@ void guiUpdate(unsigned long level)
     
     child->update(level);
   }
+*/
 
-
-  MDI_WINDOW->update(level);
+//FIXME  MDI_WINDOW->update(level);
 
   if (DEVICE_CONF_DIALOG != NULL)
     DEVICE_CONF_DIALOG->update(level);

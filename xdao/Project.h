@@ -24,7 +24,10 @@
 #include <gtk/gtk.h>
 #include <gnome--.h>
 
-#include "AudioCDChild.h"
+class AudioCDChild;
+class AudioCDView;
+class TocEdit;
+#include "ViewSwitcher.h"
 #include "ProjectChooser.h"
 
 class Project : public Gnome::App
@@ -32,28 +35,40 @@ class Project : public Gnome::App
 private:
   ProjectChooser *projectChooser_;
   AudioCDChild *audioCDChild_;
-  GList *childs;
-
+  Gtk::HBox *hbox;
+  Gtk::Statusbar *statusbar_;  
+  Gtk::ProgressBar *progressbar_;  
+  Gtk::Button *progressButton_;  
+  ViewSwitcher *viewSwitcher_;
+  
   int project_number;
+  gint viewNumber;
 
   enum ProjectType { P_NONE, P_CHOOSER, P_AUDIOCD };
   ProjectType projectType;
 
   Gtk::FileSelection *readFileSelector_;
 
+  void createMenus();
+  void createStatusbar();
+
+  TocEdit *tocEdit_;
+
 public:
   Project(int);
 
   void newChooserWindow();
-  void newAudioCDProject();
+  void newAudioCDProject(char *name = 0);
   void openProject();
   void readFileSelectorOKCB();
   void readFileSelectorCancelCB();
   void saveProject();
   void saveAsProject();
-  void closeProject();
+  bool closeProject();
   void recordToc2CD();
   void configureDevices();
+
+  gint getViewNumber();
 };
 #endif
 

@@ -45,15 +45,15 @@
 
 #include "SampleDisplay.h"
 
-
-AudioCDChild::AudioCDChild(gint number) : GenericChild()
+AudioCDChild::AudioCDChild(TocEdit *tocEdit, gint number)
 {
   char buf[20];
 
-  tocEdit_ = new TocEdit(NULL, NULL);
+//  tocEdit_ = new TocEdit(NULL, NULL);
+  tocEdit_ = tocEdit;
   Toc *toc = new Toc;
   sprintf(buf, "unnamed-%i.toc", number);
-  tocEdit_->toc(toc, buf);
+//FIXME  tocEdit_->toc(toc, buf);
 
   playing_ = 0;
   playBurst_ = 588 * 10;
@@ -73,7 +73,7 @@ AudioCDChild::AudioCDChild(gint number) : GenericChild()
 
   views = g_list_alloc();
 
-  set_name(tocEdit_->filename());
+//FIXME  set_name(tocEdit_->filename());
 
   vector<Gnome::UI::Info> menus, audioEditMenuTree, viewMenuTree;
 
@@ -160,18 +160,20 @@ AudioCDChild::AudioCDChild(gint number) : GenericChild()
 			      slot(this, &AudioCDChild::insertSilence),
 			      N_("Insert silence at current marker position")));
 
-
+/*
+//FIXME
   viewMenuTree.
     push_back(Gnome::UI::Item(Gnome::UI::Icon(GNOME_STOCK_MENU_BLANK),
 			      N_("Add view"),
 			      slot(this,
 				   &AudioCDChild::new_view),
 			      N_("Add new view of current project")));
+*/
 
   menus.push_back(Gnome::Menus::Edit(audioEditMenuTree));
   menus.push_back(Gnome::Menus::View(viewMenuTree));
 
-  create_menus(menus);
+//FIXME  create_menus(menus);
 }
 
 
@@ -187,24 +189,24 @@ AudioCDChildLabel::AudioCDChildLabel(const string &name) :
 
 Gtk::Widget* AudioCDChild::create_title_impl()
 {
-  return manage(new AudioCDChildLabel(get_name()));
+//FIXME  return manage(new AudioCDChildLabel(get_name()));
 }
 
 Gtk::Widget *AudioCDChild::update_title_impl(Gtk::Widget *old_label)
 {
   cout << "Inside label update" << endl;
-  static_cast <AudioCDChildLabel *>(old_label)->set_name(get_name());
+//FIXME  static_cast <AudioCDChildLabel *>(old_label)->set_name(get_name());
   return old_label;
 }
 
 Gtk::Widget *
 AudioCDChild::create_view_impl()
 {
-  AudioCDView * view = manage(new AudioCDView(this));
-  view->add_view.connect(slot(this, &AudioCDChild::create_view));
+//FIXME  AudioCDView * view = manage(new AudioCDView(this));
+//FIXME  view->add_view.connect(slot(this, &AudioCDChild::create_view));
 //FIXME: gnome-- || C++ way
-  g_list_prepend(views, view);
-  return view;
+//FIXME  g_list_prepend(views, view);
+//FIXME  return view;
 }
 
 
@@ -345,9 +347,9 @@ void AudioCDChild::trackInfo()
   if (trackInfoDialog_ == 0)
     trackInfoDialog_ = new TrackInfoDialog();
 
-  GenericView *view = static_cast <GenericView *>(get_active());
+//FIXME  GenericView *view = static_cast <GenericView *>(get_active());
 
-  trackInfoDialog_->start(view->tocEditView());
+//FIXME  trackInfoDialog_->start(view->tocEditView());
 }
 
 void AudioCDChild::projectInfo()
@@ -355,9 +357,9 @@ void AudioCDChild::projectInfo()
   if (tocInfoDialog_ == 0)
     tocInfoDialog_ = new TocInfoDialog();
 
-  GenericView *view = static_cast <GenericView *>(get_active());
+//FIXME  GenericView *view = static_cast <GenericView *>(get_active());
 
-  tocInfoDialog_->start(view->tocEditView());
+//FIXME  tocInfoDialog_->start(view->tocEditView());
 }
 
 void AudioCDChild::cdTextDialog()
@@ -365,9 +367,9 @@ void AudioCDChild::cdTextDialog()
   if (cdTextDialog_ == 0)
     cdTextDialog_ = new CdTextDialog();
 
-  GenericView *view = static_cast <GenericView *>(get_active());
+//FIXME  GenericView *view = static_cast <GenericView *>(get_active());
 
-  cdTextDialog_->start(view->tocEditView());
+//FIXME  cdTextDialog_->start(view->tocEditView());
 }
 
 void AudioCDChild::record_to_cd()
@@ -378,7 +380,7 @@ void AudioCDChild::record_to_cd()
 void AudioCDChild::saveProject()
 {
   if (tocEdit_->saveToc() == 0) {
-    MDI_WINDOW->statusMessage("Project saved to \"%s\".", tocEdit_->filename());
+//FIXME    MDI_WINDOW->statusMessage("Project saved to \"%s\".", tocEdit_->filename());
     guiUpdate();
   }
   else {
@@ -386,9 +388,9 @@ void AudioCDChild::saveProject()
     s += tocEdit_->filename();
     s+= "\":";
     
-    MessageBox msg(MDI_WINDOW->get_active_window(), "Save Project", 0, s.c_str(), strerror(errno), NULL);
+//FIXME    MessageBox msg(MDI_WINDOW->get_active_window(), "Save Project", 0, s.c_str(), strerror(errno), NULL);
 //    MessageBox msg(this, "Save Project", 0, s.c_str(), strerror(errno), NULL);
-    msg.run();
+//FIXME    msg.run();
   }
 }
 
@@ -425,7 +427,7 @@ void AudioCDChild::saveFileSelectorOKCB()
 
   if (s != NULL && *s != 0 && s[strlen(s) - 1] != '/') {
     if (tocEdit_->saveAsToc(stripCwd(s)) == 0) {
-  	MDI_WINDOW->statusMessage("Project saved to \"%s\".", tocEdit_->filename());
+//FIXME  	MDI_WINDOW->statusMessage("Project saved to \"%s\".", tocEdit_->filename());
   	guiUpdate();
     }
     else {
@@ -433,9 +435,9 @@ void AudioCDChild::saveFileSelectorOKCB()
   	m += tocEdit_->filename();
   	m += "\":";
     
-  	MessageBox msg(MDI_WINDOW->get_active_window(), "Save Project", 0, m.c_str(), strerror(errno), NULL);
+//FIXME  	MessageBox msg(MDI_WINDOW->get_active_window(), "Save Project", 0, m.c_str(), strerror(errno), NULL);
 //  	MessageBox msg(this, "Save Project", 0, m.c_str(), strerror(errno), NULL);
-  	msg.run();
+//FIXME  	msg.run();
     }
     g_free(s);
   }
@@ -444,7 +446,6 @@ void AudioCDChild::saveFileSelectorOKCB()
 
 bool AudioCDChild::closeProject()
 {
-  cout<< "in &AudioCDChild::closeProject() - " << get_name() << endl;
 
   if (!tocEdit_->editable()) {
     tocBlockedMsg("Close Project");
@@ -458,13 +459,13 @@ bool AudioCDChild::closeProject()
     message = g_strdup_printf("Project %s not saved.", tocEdit_->filename());
     
     // Ask2Box msg(this, "New", 0, 2, "Current project not saved.", "",
-    Ask2Box msg(MDI_WINDOW->get_active_window(), "Close", 0, 2, message, "",
-		"Continue?", NULL);
+//FIXME    Ask2Box msg(MDI_WINDOW->get_active_window(), "Close", 0, 2, message, "",
+//FIXME		"Continue?", NULL);
 
     g_free(message);
 
-    if (msg.run() != 1)
-      return false;
+//FIXME    if (msg.run() != 1)
+//FIXME      return false;
   }
 
   return true;
@@ -480,13 +481,15 @@ void AudioCDChild::update(unsigned long level)
     if (tocEdit_->tocDirty())
       s += "(*)";
 
-    set_name(s);
+//FIXME    set_name(s);
   }
 
-  GenericView *view = static_cast <GenericView *>(get_active());
-  view->update(level);
+//FIXME: update all views?!?
+//FIXME  GenericView *view = static_cast <GenericView *>(get_active());
+//FIXME  view->update(level);
 
   // Update dialogs already created.
+/*
   if (tocInfoDialog_ != 0)
     tocInfoDialog_->update(level, view->tocEditView());
 
@@ -501,6 +504,7 @@ void AudioCDChild::update(unsigned long level)
 
   if (cdTextDialog_ != 0)
     cdTextDialog_->update(level, view->tocEditView());
+*/
 }
 
 
@@ -564,7 +568,7 @@ int AudioCDChild::snapSampleToBlock(unsigned long sample, long *block)
 void AudioCDChild::trackMarkMovedCallback(const Track *, int trackNr,
 					int indexNr, unsigned long sample)
 {
-  AudioCDView *view = static_cast <AudioCDView *>(get_active());
+//FIXME  AudioCDView *view = static_cast <AudioCDView *>(get_active());
 
   if (!tocEdit_->editable()) {
     tocBlockedMsg("Move Track Marker");
@@ -576,20 +580,20 @@ void AudioCDChild::trackMarkMovedCallback(const Track *, int trackNr,
 
   switch (tocEdit_->moveTrackMarker(trackNr, indexNr, lba)) {
   case 0:
-    MDI_WINDOW->statusMessage("Moved track marker to %s%s.", Msf(lba).str(),
-			      snapped ? " (snapped to next block)" : "");
+//FIXME    MDI_WINDOW->statusMessage("Moved track marker to %s%s.", Msf(lba).str(),
+//FIXME			      snapped ? " (snapped to next block)" : "");
     break;
 
   case 6:
-    MDI_WINDOW->statusMessage("Cannot modify a data track.");
+//FIXME    MDI_WINDOW->statusMessage("Cannot modify a data track.");
     break;
   default:
-    MDI_WINDOW->statusMessage("Illegal track marker position.");
+//FIXME    MDI_WINDOW->statusMessage("Illegal track marker position.");
     break;
   }
 
-  view->tocEditView()->trackSelection(trackNr);
-  view->tocEditView()->indexSelection(indexNr);
+//FIXME  view->tocEditView()->trackSelection(trackNr);
+//FIXME  view->tocEditView()->indexSelection(indexNr);
 
   guiUpdate();
 }
@@ -597,7 +601,8 @@ void AudioCDChild::trackMarkMovedCallback(const Track *, int trackNr,
 
 void AudioCDChild::addTrackMark()
 {
-  unsigned long sample;
+//FIXME
+/*  unsigned long sample;
   AudioCDView *view = static_cast <AudioCDView *>(get_active());
 
   if (!tocEdit_->editable()) {
@@ -634,10 +639,13 @@ void AudioCDChild::addTrackMark()
       break;
     }
   }
+*/
 }
 
 void AudioCDChild::addIndexMark()
 {
+//FIXME
+/*
   unsigned long sample;
   AudioCDView *view = static_cast <AudioCDView *>(get_active());
 
@@ -670,10 +678,13 @@ void AudioCDChild::addIndexMark()
       break;
     }
   }
+*/
 }
 
 void AudioCDChild::addPregap()
 {
+//FIXME
+/*
   unsigned long sample;
   AudioCDView *view = static_cast <AudioCDView *>(get_active());
 
@@ -710,10 +721,13 @@ void AudioCDChild::addPregap()
       break;
     }
   }
+*/
 }
 
 void AudioCDChild::removeTrackMark()
 {
+//FIXME
+/*
   AudioCDView *view = static_cast <AudioCDView *>(get_active());
 
   int trackNr;
@@ -745,11 +759,13 @@ void AudioCDChild::removeTrackMark()
   else {
     MDI_WINDOW->statusMessage("Please select a track/index mark.");
   }
-
+*/
 }
 
 void AudioCDChild::appendTrack()
 {
+//FIXME
+/*
   if (addFileDialog_ == 0)
     addFileDialog_ = new AddFileDialog();
 
@@ -758,10 +774,13 @@ void AudioCDChild::appendTrack()
 
   addFileDialog_->mode(AddFileDialog::M_APPEND_TRACK);
   addFileDialog_->start(view->tocEditView());
+*/
 }
 
 void AudioCDChild::appendFile()
 {
+//FIXME
+/*
   if (addFileDialog_ == 0)
     addFileDialog_ = new AddFileDialog();
 
@@ -769,10 +788,13 @@ void AudioCDChild::appendFile()
 
   addFileDialog_->mode(AddFileDialog::M_APPEND_FILE);
   addFileDialog_->start(view->tocEditView());
+*/
 }
 
 void AudioCDChild::insertFile()
 {
+//FIXME
+/*
   if (addFileDialog_ == 0)
     addFileDialog_ = new AddFileDialog();
 
@@ -780,10 +802,13 @@ void AudioCDChild::insertFile()
 
   addFileDialog_->mode(AddFileDialog::M_INSERT_FILE);
   addFileDialog_->start(view->tocEditView());
+*/
 }
 
 void AudioCDChild::appendSilence()
 {
+//FIXME
+/*
   if (addSilenceDialog_ == 0)
     addSilenceDialog_ = new AddSilenceDialog();
 
@@ -791,10 +816,13 @@ void AudioCDChild::appendSilence()
 
   addSilenceDialog_->mode(AddSilenceDialog::M_APPEND);
   addSilenceDialog_->start(view->tocEditView());
+*/
 }
 
 void AudioCDChild::insertSilence()
 {
+//FIXME
+/*
   if (addSilenceDialog_ == 0)
     addSilenceDialog_ = new AddSilenceDialog();
 
@@ -802,10 +830,13 @@ void AudioCDChild::insertSilence()
 
   addSilenceDialog_->mode(AddSilenceDialog::M_INSERT);
   addSilenceDialog_->start(view->tocEditView());
+*/
 }
 
 void AudioCDChild::cutTrackData()
 {
+//FIXME
+/*
   if (!tocEdit_->editable()) {
     tocBlockedMsg("Cut");
     return;
@@ -825,10 +856,13 @@ void AudioCDChild::cutTrackData()
     MDI_WINDOW->statusMessage("Selected sample range crosses track boundaries.");
     break;
   }
+*/
 }
 
 void AudioCDChild::pasteTrackData()
 {
+//FIXME
+/*
   if (!tocEdit_->editable()) {
     tocBlockedMsg("Paste");
     return;
@@ -845,5 +879,6 @@ void AudioCDChild::pasteTrackData()
     MDI_WINDOW->statusMessage("No samples in scrap.");
     break;
   }
+*/
 }
 

@@ -21,12 +21,13 @@
 
 #include "xcdrdao.h"
 #include "gcdmaster.h"
+#include "Project.h"
 #include "ProjectChooser.h"
 
 #define ICON_PADDING 10
 #define LABEL_PADDING 10
 
-ProjectChooser::ProjectChooser() 
+ProjectChooser::ProjectChooser(Project *project) 
 {
 //  static const GtkTargetEntry drop_types [] =
 //  {
@@ -41,11 +42,14 @@ ProjectChooser::ProjectChooser()
   
 //  drag_data_received.connect(slot(this, &AudioCDView::drag_data_received_cb));
 
+//  Gtk::Table *table = manage(new Gtk::Table(7, 3, FALSE));
   Gtk::Table *table = new Gtk::Table(7, 3, FALSE);
   Gtk::HBox *hbox;
   Gnome::Pixmap *pixmap;
   Gtk::Label *label;
   Gdk_Font font;
+
+  project_ = project;
   
 //  table->set_col_spacings(20);
   table->set_border_width(40);
@@ -62,6 +66,7 @@ ProjectChooser::ProjectChooser()
   hbox->show();
   openButton->add(*hbox);
   openButton->show();
+  openButton->clicked.connect(slot(project_, &Project::openProject));
   table->attach(*openButton, 1, 2, 0, 1);
 //  pack_start(*openButton, FALSE, TRUE);
 
@@ -76,6 +81,7 @@ ProjectChooser::ProjectChooser()
   hbox->show();
   audioCDButton->add(*hbox);
   audioCDButton->show();
+  audioCDButton->clicked.connect(bind(slot(project_, &Project::newAudioCDProject), ""));
   table->attach(*audioCDButton, 1, 2, 1, 2, GTK_FILL);
 //  pack_start(*audioCDButton, FALSE, TRUE);
 
@@ -90,6 +96,7 @@ ProjectChooser::ProjectChooser()
   hbox->show();
   dataCDButton->add(*hbox);
   dataCDButton->show();
+dataCDButton->set_sensitive(false);
   table->attach(*dataCDButton, 1, 2, 2, 3, GTK_FILL);
 //  pack_start(*dataCDButton, FALSE, TRUE);
 
@@ -104,6 +111,7 @@ ProjectChooser::ProjectChooser()
   hbox->show();
   mixedCDButton->add(*hbox);
   mixedCDButton->show();
+mixedCDButton->set_sensitive(false);
   table->attach(*mixedCDButton, 1, 2, 3, 4, GTK_FILL);
 //  pack_start(*mixedCDButton, TRUE, TRUE);
 
@@ -149,6 +157,7 @@ ProjectChooser::ProjectChooser()
   hbox->show();
   helpButton->add(*hbox);
   helpButton->show();
+helpButton->set_sensitive(false);
   table->attach(*helpButton, 1, 2, 6, 7, GTK_FILL);
 //  pack_start(*helpButton, TRUE, TRUE);
 
@@ -195,5 +204,4 @@ void AudioCDView::drag_data_received_cb(GdkDragContext *context,
 
 ProjectChooser::~ProjectChooser() 
 {
-  //FIXME: free memory (?)
 }

@@ -18,6 +18,11 @@
  */
 /*
  * $Log: xcdrdao.h,v $
+ * Revision 1.8  2001/03/02 01:46:32  llanero
+ * more work on the new mdi.
+ * killed MDIWINDOW
+ * per *view* toolbars, ...
+ *
  * Revision 1.7  2001/02/27 03:13:22  llanero
  * some work in the new MDI mode
  *
@@ -67,7 +72,7 @@
 #define __XCDRDAO_H__
 
 extern class GCDMaster *gcdmaster;
-extern class MDIWindow *MDI_WINDOW;
+//FIXME extern class MDIWindow *MDI_WINDOW;
 extern class DeviceConfDialog *DEVICE_CONF_DIALOG;
 extern class ProcessMonitor *PROCESS_MONITOR;
 extern class ProgressDialogPool *PROGRESS_POOL;

@@ -45,9 +45,9 @@ class AudioCDChildLabel;
 class AudioCDChild : public GenericChild
 {
 public:
-  AudioCDChild(gint number);
+  AudioCDChild(TocEdit *tocEdit, gint number);
 
-  void create_view() { Gnome::MDIChild::create_view(); }
+//FIXME  void create_view() { Gnome::MDIChild::create_view(); }
 
 protected:
   virtual Gtk::Widget *create_view_impl();
@@ -64,7 +64,7 @@ private: //related windows
   void saveFileSelectorOKCB();
   void saveFileSelectorCancelCB();
 
-  void new_view() { Gnome::MDIChild::create_toplevel_view(); }
+//FIXME  void new_view() { Gnome::MDIChild::create_toplevel_view(); }
 
 private:
   friend class AudioCDView;

@@ -24,14 +24,17 @@
 #include <gtk/gtk.h>
 #include <gnome--.h>
 
+class Project;
+
 class ProjectChooser : public Gtk::VBox
 {
 public:
-  ProjectChooser();
+  ProjectChooser(Project *);
   ~ProjectChooser();
   
 private:
 
+  Project *project_;
 // FIXME: When we receive a file:
 //		if it is wav, mp3, ... open an AudioCD project
 //		else open a DataCD.

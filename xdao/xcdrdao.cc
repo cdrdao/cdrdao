@@ -52,7 +52,6 @@
 #include "port.h"
 
 GCDMaster *gcdmaster = NULL;
-MDIWindow *MDI_WINDOW = NULL;
 DeviceConfDialog *DEVICE_CONF_DIALOG = NULL;
 ProcessMonitor *PROCESS_MONITOR = NULL;
 ProgressDialogPool *PROGRESS_POOL = NULL;
@@ -153,24 +152,19 @@ int main (int argc, char* argv[])
   PROGRESS_POOL = new ProgressDialogPool;
   RECORD_GENERIC_DIALOG = new RecordGenericDialog;
 
-  MDI_WINDOW = new MDIWindow();
-  MDI_WINDOW->open_toplevel();
+  gcdmaster = new GCDMaster;
 
-//FIXME: perhaps update only the MDI_WINDOW
-  guiUpdate();
-
-  while (argc > 1) {
-    MDI_WINDOW->openAudioCDProject(argv[1]);
+  if (argc == 1)
+    gcdmaster->newChooserWindow();
+  else while (argc > 1)
+  {
+    gcdmaster->newAudioCDProject(argv[1]);
     argv++;
     argc--;
   }
 
-//NOTE: Testing:
-//FIXME: open only if no command line projects.
-  gcdmaster = new GCDMaster;
-//  gcdmaster->newChooserWindow();
-
-//End Testing:
+//FIXME: need to update here?
+  guiUpdate();
 
   application.run();
 
@@ -180,4 +174,3 @@ int main (int argc, char* argv[])
 
   return 0;
 }
-

@@ -25,8 +25,10 @@
 #include <gnome--.h>
 
 #include "GenericView.h"
+#include <list>
 
 class SampleDisplay;
+class Project;
 
 enum {
   TARGET_URI_LIST,
@@ -35,10 +37,11 @@ enum {
 class AudioCDView : public GenericView
 {
 public:
-  AudioCDView(AudioCDChild *child);
+  AudioCDView(AudioCDChild *child, Project *project);
   SigC::Signal0<void> add_view;
 
   void update(unsigned long level);
+  list<Gtk::Widget *> *widgetList;
 
 private:
   friend class AudioCDChild;

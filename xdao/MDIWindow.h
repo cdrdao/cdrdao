@@ -31,12 +31,10 @@ class MDIWindow : public Gnome::MDI
 {
 public:
   MDIWindow();
-  void openAudioCDProject(char *name);
 
 protected:
   void app_created_impl(Gnome::App& app);
   gint child_number;
-  void app_close();
   virtual int delete_event_impl(GdkEventAny *event);
   void nothing_cb();  
   void about_cb();
@@ -51,7 +49,6 @@ private:
 
   void readFileSelectorOKCB();
   void readFileSelectorCancelCB();
-  void newAudioCDProject();
   void readProject();
   void saveProject();
   void saveAsProject();
@@ -61,8 +58,6 @@ private:
   void configureDevices();
 
   void recordToc2CD();
-  void recordCD2HD();
-  void recordCD2CD();
 
 protected:
   Gnome::About *about_;

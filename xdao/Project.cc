@@ -17,15 +17,35 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+#include "util.h"
 #include "xcdrdao.h"
 #include "gcdmaster.h"
 #include "DeviceConfDialog.h"
 #include "RecordGenericDialog.h"
+#include "AudioCDChild.h"
+#include "AudioCDView.h"
 #include "Project.h"
+#include "TocEdit.h"
+#include "TocEditView.h"
 
 #include <gnome.h>
 
 Project::Project(int number) : Gnome::App("gcdmaster", "Gnome CD Master")
+{
+  tocEdit_ = new TocEdit(NULL, NULL);
+  hbox = new Gtk::HBox;
+  hbox->show();
+  set_contents(*hbox);
+
+  projectType = P_NONE;
+  project_number = number;
+  viewNumber = 0;
+  viewSwitcher_ = new ViewSwitcher(hbox);
+  viewSwitcher_->show();
+  set_usize(450, 350);
+}
+
+void Project::createMenus()
 {
   vector<Gnome::UI::Info> menus, newMenuTree, fileMenuTree, actionsMenuTree;
   vector<Gnome::UI::Info> settingsMenuTree, helpMenuTree, windowsMenuTree;
@@ -35,7 +55,7 @@ Project::Project(int number) : Gnome::App("gcdmaster", "Gnome CD Master")
     // File->New menu
     newMenuTree.push_back(Item(Icon(GNOME_STOCK_MENU_NEW),
 								N_("Audio CD"),
-								slot(this, &Project::newAudioCDProject),
+								bind(slot(this, &Project::newAudioCDProject), ""),
 								N_("New Audio CD")));
 
     // File menu
@@ -63,7 +83,7 @@ Project::Project(int number) : Gnome::App("gcdmaster", "Gnome CD Master")
     fileMenuTree.push_back(Gnome::UI::Separator());
 */
     // Close the current child (project);
-    fileMenuTree.push_back(Close(slot(this, &Project::closeProject)));
+    fileMenuTree.push_back(Close(bind(slot(gcdmaster, &GCDMaster::closeProject), this)));
     fileMenuTree.push_back(Exit(slot(gcdmaster, &GCDMaster::appClose)));
   }
 
@@ -115,14 +135,25 @@ Project::Project(int number) : Gnome::App("gcdmaster", "Gnome CD Master")
     menus.push_back(Help(helpMenuTree));
   }
 
-//FIXME  create_menus(menus);
-  
-  projectType = P_NONE;
-  project_number = number;
-
-  set_usize(350, 450);
+  create_menus(menus);
 }
 
+void Project::createStatusbar()
+{
+  Gtk::HBox *container = new Gtk::HBox;
+  statusbar_ = new Gtk::Statusbar;
+  progressbar_ = new Gtk::ProgressBar;
+  progressButton_ = new Gtk::Button("Cancel");
+
+  progressbar_->set_usize(150, 0);
+  container->pack_start(*statusbar_, TRUE, TRUE); 
+  container->pack_start(*progressbar_, FALSE, FALSE); 
+  container->pack_start(*progressButton_, FALSE, FALSE); 
+  set_statusbar_custom(*container, *statusbar_);
+  container->set_spacing(2);
+  container->set_border_width(2);
+  container->show_all();
+}
 
 void Project::newChooserWindow()
 {
@@ -135,26 +166,85 @@ void Project::newChooserWindow()
   }
   
   projectType = P_CHOOSER;
-  projectChooser_ = new ProjectChooser;
-  set_contents(*projectChooser_);
+  projectChooser_ = new ProjectChooser(this);
+  hbox->pack_start(*projectChooser_, TRUE, TRUE);
   projectChooser_->show();
 
   show();
 }
 
-void Project::newAudioCDProject()
+void Project::newAudioCDProject(char *name)
 {
   if (projectType == P_CHOOSER)
     delete (projectChooser_);
   else if (projectType != P_NONE)
   {
-    gcdmaster->newAudioCDProject();
+    gcdmaster->newAudioCDProject(name);
     return;
   }
+
+  if (strlen(name))
+  {
+    if (tocEdit_->readToc(stripCwd(name)) == 0)
+    {
+  cout << "Read ok?" << endl;
+//      AudioCDView *view;
+//      view = static_cast <AudioCDView *>(child->get_active());
+//      view->tocEditView()->sampleViewFull();
+    }
+    else
+    {
+      gchar *message;
+      
+      message = g_strdup_printf("Error loading %s", name);
+      Gnome::Dialogs::error(message); 
+//      MDI_WINDOW->remove(*child);
   
-  audioCDChild_ = new AudioCDChild(++project_number);
-    
-//FIXME  set_contents(*audioCDChild_);
+      g_free(message);
+    }
+  }
+
+  show();
+  
+  createMenus();
+  createStatusbar();
+  add_docked(*viewSwitcher_, "viewSwitcher", GNOME_DOCK_ITEM_BEH_NORMAL,
+  		GNOME_DOCK_TOP, 1, 1, 0);
+  
+  get_dock_item_by_name("viewSwitcher")->show();
+//FIXME  get_dock()->show_all();
+
+  Gnome::StockPixmap *pixmap = new Gnome::StockPixmap(GNOME_STOCK_MENU_CDROM);
+//FIXME: Name from the filename in the TocEdit object!
+  Gtk::Label *label = new Gtk::Label("untitled-xx");
+  audioCDChild_ = new AudioCDChild(tocEdit_, ++project_number);
+  AudioCDView *audioCDView = new AudioCDView(audioCDChild_, this);
+  hbox->pack_start(*audioCDView, TRUE, TRUE);
+  audioCDView->tocEditView()->sampleViewFull();
+  viewSwitcher_->addView(audioCDView->widgetList, pixmap, label);
+//FIXME  get_dock()->show_all();
+
+  pixmap = new Gnome::StockPixmap(GNOME_STOCK_MENU_CDROM);
+//FIXME: Name from the filename in the TocEdit object!
+  label = new Gtk::Label("untitled-xx");
+//  audioCDChild_ = new AudioCDChild(++project_number);
+  audioCDView = new AudioCDView(audioCDChild_, this);
+  hbox->pack_start(*audioCDView, TRUE, TRUE);
+  audioCDView->tocEditView()->sampleViewFull();
+  viewSwitcher_->addView(audioCDView->widgetList, pixmap, label);
+
+  pixmap = new Gnome::StockPixmap(GNOME_STOCK_MENU_CDROM);
+//FIXME: Name from the filename in the TocEdit object!
+  label = new Gtk::Label("untitled-xx");
+//  audioCDChild_ = new AudioCDChild(++project_number);
+  audioCDView = new AudioCDView(audioCDChild_, this);
+  hbox->pack_start(*audioCDView, TRUE, TRUE);
+  audioCDView->tocEditView()->sampleViewFull();
+  viewSwitcher_->addView(audioCDView->widgetList, pixmap, label);
+
+  projectType = P_AUDIOCD;
+
+//  cout << dockItem->is_visible() << " dockItem visible." << endl;
   
 //FIXME  guiUpdate();
 }
@@ -193,7 +283,7 @@ void Project::readFileSelectorOKCB()
   if (s != NULL && *s != 0 && s[strlen(s) - 1] != '/') {
 //FIXME: We should test what type of project it is
 //       AudioCD, ISO. No problem now.
-//FIXME    MDI_WINDOW->openAudioCDProject(s);
+  newAudioCDProject(s);
   }
   g_free(s);
 
@@ -216,8 +306,9 @@ void Project::saveAsProject()
     audioCDChild_->saveAsProject();
 }
 
-void Project::closeProject()
+bool Project::closeProject()
 {
+//FIXME: switch on project type.
 //  GenericChild *child = static_cast <GenericChild *>(this->get_active_child());
 
 //  if (child)
@@ -226,7 +317,9 @@ void Project::closeProject()
 //      remove(*child);
 //      childs = g_list_remove(childs, child);
 //      guiUpdate();
+      return true;
     }
+  return false;
 }
 
 void Project::recordToc2CD()
@@ -240,5 +333,10 @@ void Project::recordToc2CD()
 void Project::configureDevices()
 {
   DEVICE_CONF_DIALOG->start();
+}
+
+gint Project::getViewNumber()
+{
+  return(viewNumber++);
 }
 

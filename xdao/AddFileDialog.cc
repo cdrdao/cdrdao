@@ -139,13 +139,13 @@ void AddFileDialog::applyAction()
       switch (tocEditView_->tocEdit()->appendTrack(s)) {
       case 0:
 	guiUpdate();
-	MDI_WINDOW->statusMessage("Appended track with audio data from \"%s\".", s);
+//FIXME	MDI_WINDOW->statusMessage("Appended track with audio data from \"%s\".", s);
 	break;
       case 1:
-	MDI_WINDOW->statusMessage("Cannot open audio file \"%s\".", s);
+//FIXME	MDI_WINDOW->statusMessage("Cannot open audio file \"%s\".", s);
 	break;
       case 2:
-	MDI_WINDOW->statusMessage("Audio file \"%s\" has wrong format.", s);
+//FIXME	MDI_WINDOW->statusMessage("Audio file \"%s\" has wrong format.", s);
 	break;
       }
       break;
@@ -154,13 +154,13 @@ void AddFileDialog::applyAction()
       switch (tocEditView_->tocEdit()->appendFile(s)) {
       case 0:
 	guiUpdate();
-	MDI_WINDOW->statusMessage("Appended audio data from \"%s\".", s);
+//FIXME	MDI_WINDOW->statusMessage("Appended audio data from \"%s\".", s);
       break;
       case 1:
-	MDI_WINDOW->statusMessage("Cannot open audio file \"%s\".", s);
+//FIXME	MDI_WINDOW->statusMessage("Cannot open audio file \"%s\".", s);
 	break;
       case 2:
-	MDI_WINDOW->statusMessage("Audio file \"%s\" has wrong format.", s);
+//FIXME	MDI_WINDOW->statusMessage("Audio file \"%s\" has wrong format.", s);
 	break;
       }
       break;
@@ -171,13 +171,13 @@ void AddFileDialog::applyAction()
 	case 0:
 	  tocEditView_->sampleSelection(pos, pos + len - 1);
 	  guiUpdate();
-	  MDI_WINDOW->statusMessage("Inserted audio data from \"%s\".", s);
+//FIXME	  MDI_WINDOW->statusMessage("Inserted audio data from \"%s\".", s);
 	  break;
 	case 1:
-	  MDI_WINDOW->statusMessage("Cannot open audio file \"%s\".", s);
+//FIXME	  MDI_WINDOW->statusMessage("Cannot open audio file \"%s\".", s);
 	  break;
 	case 2:
-	  MDI_WINDOW->statusMessage("Audio file \"%s\" has wrong format.", s);
+//FIXME	  MDI_WINDOW->statusMessage("Audio file \"%s\" has wrong format.", s);
 	  break;
 	}
       }

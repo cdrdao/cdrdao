@@ -35,15 +35,23 @@
 
 #include "AudioCDChild.h"
 #include "AudioCDView.h"
+#include "Project.h"
 #include <gnome.h>
 
-AudioCDView::AudioCDView(AudioCDChild *child) 
+
+
+AudioCDView::AudioCDView(AudioCDChild *child, Project *project) 
 {
+  char buf[20];
+  gint viewNumber = project->getViewNumber();
   cdchild = child;
   tocEditView_ = new TocEditView(child->tocEdit());
 
-  Gtk::VBox *vbox = this;
+  widgetList = new list<Gtk::Widget *>;
+  widgetList->push_back(this);
 
+  Gtk::VBox *vbox = this;
+  
   static const GtkTargetEntry drop_types [] =
   {
     { "text/uri-list", 0, TARGET_URI_LIST }
@@ -73,19 +81,26 @@ AudioCDView::AudioCDView(AudioCDChild *child)
   Gtk::Label *label;
   Gtk::HBox *selectionInfoBox = new Gtk::HBox;
 
+//FIXME: Calculate entry width for the current font.
+  gint entry_width = 90;
+
   markerPos_ = new Gtk::Entry;
   markerPos_->set_editable(true);
+  markerPos_->set_usize(entry_width, 0);
   markerPos_->activate.connect(slot(this, &AudioCDView::markerSet));
 
   cursorPos_ = new Gtk::Entry;
+  cursorPos_->set_usize(entry_width, 0);
   cursorPos_->set_editable(false);
 
   selectionStartPos_ = new Gtk::Entry;
   selectionStartPos_->set_editable(true);
+  selectionStartPos_->set_usize(entry_width, 0);
   selectionStartPos_->activate.connect(slot(this, &AudioCDView::selectionSet));
 
   selectionEndPos_ = new Gtk::Entry;
   selectionEndPos_->set_editable(true);
+  selectionEndPos_->set_usize(entry_width, 0);
   selectionEndPos_->activate.connect(slot(this, &AudioCDView::selectionSet));
 
   label = new Gtk::Label(string("Cursor: "));
@@ -112,7 +127,14 @@ AudioCDView::AudioCDView(AudioCDChild *child)
   label->show();
   selectionEndPos_->show();
   
-  vbox->pack_start(*selectionInfoBox, FALSE, FALSE);
+//  vbox->pack_start(*selectionInfoBox, FALSE, FALSE);
+  selectionInfoBox->set_border_width(2);
+  sprintf(buf, "selectionBox-%i", viewNumber);
+  project->add_docked(*selectionInfoBox, buf, GNOME_DOCK_ITEM_BEH_NEVER_VERTICAL,
+  		GNOME_DOCK_BOTTOM, 1, 1, 0);
+  Gnome::DockItem *dockItem = project->get_dock_item_by_name(buf);
+  dockItem->hide();
+  widgetList->push_back(dockItem);
   selectionInfoBox->show();
 
   Gtk::HButtonBox *buttonBox = new Gtk::HButtonBox(GTK_BUTTONBOX_START, 5);
@@ -144,7 +166,14 @@ AudioCDView::AudioCDView(AudioCDChild *child)
   button->show();
   button->clicked.connect(slot(this, &AudioCDView::fullView));
   
-  vbox->pack_start(*buttonBox, FALSE, FALSE);
+//  vbox->pack_start(*buttonBox, FALSE, FALSE);
+  buttonBox->set_border_width(2);
+  sprintf(buf, "zoomBox-%i", viewNumber);
+  project->add_docked(*buttonBox, buf, GNOME_DOCK_ITEM_BEH_NEVER_VERTICAL,
+  		GNOME_DOCK_TOP, 1, 1, 0);
+  dockItem = project->get_dock_item_by_name(buf);
+  dockItem->hide();
+  widgetList->push_back(dockItem);
   buttonBox->show();
 
   sampleDisplay_->markerSet.connect(slot(this,
@@ -280,7 +309,7 @@ int AudioCDView::getMarker(unsigned long *sample)
     return 0;
 
   if (sampleDisplay_->getMarker(sample) == 0) {
-    MDI_WINDOW->statusMessage("Please set marker.");
+//FIXME    MDI_WINDOW->statusMessage("Please set marker.");
     return 0;
   }
 
@@ -350,11 +379,11 @@ void AudioCDView::selectionSet()
 
 void AudioCDChild::tocBlockedMsg(const char *op)
 {
-  MessageBox msg(MDI_WINDOW->get_active_window(), op, 0,
+//FIXME  MessageBox msg(MDI_WINDOW->get_active_window(), op, 0,
 //  MessageBox msg(MDI_WINDOW, op, 0,
-		 "Cannot perform requested operation because", 
-		 "project is in read-only state.", NULL);
-  msg.run();
+//FIXME		 "Cannot perform requested operation because", 
+//FIXME		 "project is in read-only state.", NULL);
+//FIXME  msg.run();
 }
 
 void AudioCDView::drag_data_received_cb(GdkDragContext *context,
@@ -376,13 +405,13 @@ void AudioCDView::drag_data_received_cb(GdkDragContext *context,
         switch (tocEditView_->tocEdit()->appendTrack(file)) {
         case 0:
 	      guiUpdate();
-	      MDI_WINDOW->statusMessage("Appended track with audio data from \"%s\".", file);
+//FIXME	      MDI_WINDOW->statusMessage("Appended track with audio data from \"%s\".", file);
 	      break;
         case 1:
-	      MDI_WINDOW->statusMessage("Cannot open audio file \"%s\".", file);
+//FIXME	      MDI_WINDOW->statusMessage("Cannot open audio file \"%s\".", file);
 	      break;
         case 2:
-	      MDI_WINDOW->statusMessage("Audio file \"%s\" has wrong format.", file);
+//FIXME	      MDI_WINDOW->statusMessage("Audio file \"%s\" has wrong format.", file);
 	      break;
 	    }
 	    names = g_list_remove(names, names->data);

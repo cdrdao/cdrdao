@@ -34,19 +34,23 @@ void GCDMaster::add(Project *project)
   projects.push_back(project);
 }
 
+void GCDMaster::closeProject(Project *project)
+{
+  if (project->closeProject())
+    projects.remove(project);
+  if (projects.size() == 0)
+    appClose();
+}
+
 void GCDMaster::appClose()
 {
-  bool close = false;
-
-  for (vector<Project *>::iterator i = projects.begin();
+  for (list<Project *>::iterator i = projects.begin();
        i != projects.end(); i++)
   {
-  	(*i)->closeProject();
-//  	 GenericChild *child = dynamic_cast <GenericChild *>(*i);
-cout<< "called = " << *i <<endl;
+    if (!((*i)->closeProject()))
+      return;
   }
-
-//  Gnome::Main::quit();
+  Gnome::Main::quit();
 }
 
 void GCDMaster::newChooserWindow()
@@ -56,10 +60,10 @@ void GCDMaster::newChooserWindow()
   add(project);
 }
 
-void GCDMaster::newAudioCDProject()
+void GCDMaster::newAudioCDProject(char *name)
 {
   Project *project = new Project(project_number);
-  project->newAudioCDProject();
+  project->newAudioCDProject(name);
   add(project);
 }
 
@@ -90,7 +94,7 @@ void GCDMaster::aboutDialog()
       authors.push_back("Andreas Mueller <mueller@daneb.ping.de>");
       authors.push_back("Manuel Clos <llanero@jazzfree.com>");
 
-//FIXME: not yet wrapped - sorry
+//FIXME: not yet wrapped
       logo_char = gnome_pixmap_file("gcdmaster.png");
 
       if (logo_char != NULL)
