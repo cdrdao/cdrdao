@@ -21,7 +21,7 @@
 #ifndef __TRACKDATA_H__
 #define __TRACKDATA_H__
 
-#include <ostream.h>
+#include <iostream>
 #include "Sample.h"
 
 #define AUDIO_BLOCK_LEN 2352

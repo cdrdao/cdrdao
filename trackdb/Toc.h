@@ -20,7 +20,7 @@
 #ifndef __TOC_H__
 #define __TOC_H__
 
-#include <ostream.h>
+#include <iostream>
 #include "Track.h"
 #include "CdTextContainer.h"
 #include "CdTextItem.h"

@@ -20,7 +20,7 @@
 #ifndef __CDTEXTITEM_H__
 #define __CDTEXTITEM_H__
 
-#include <ostream.h>
+#include <iostream>
 
 class CdTextItem {
 public:

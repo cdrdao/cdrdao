@@ -20,7 +20,7 @@
 #ifndef __CDTEXTCONTAINER_H__
 #define __CDTEXTCONTAINER_H__
 
-#include <ostream.h>
+#include <iostream>
 
 #include "CdTextItem.h"
 

@@ -20,7 +20,7 @@
 #ifndef __TRACK_H__
 #define __TRACK_H__
 
-#include <ostream.h>
+#include <iostream>
 
 #include "SubTrack.h"
 #include "Msf.h"

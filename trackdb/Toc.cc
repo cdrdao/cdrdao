@@ -24,7 +24,7 @@
 #include <errno.h>
 #include <string.h>
 #include <ctype.h>
-#include <fstream.h>
+#include <fstream>
 
 #include "Toc.h"
 #include "util.h"
@@ -163,7 +163,7 @@ int Toc::write(const char *filename) const
   assert(filename != NULL);
   assert(*filename != 0);
 
-  ofstream out(filename);
+  std::ofstream out(filename);
 
   if (!out) {
     message(-2, "Cannot open file \"%s\" for writing: %s", filename,
