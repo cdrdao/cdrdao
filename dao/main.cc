@@ -19,6 +19,10 @@
 
 /*
  * $Log: main.cc,v $
+ * Revision 1.3  2000/04/24 12:47:57  andreasm
+ * Fixed unit attention problem after writing is finished.
+ * Added cddb disk id calculation.
+ *
  * Revision 1.2  2000/04/23 16:29:50  andreasm
  * Updated to state of my private development environment.
  *
@@ -102,7 +106,7 @@
  *
  */
 
-static char rcsid[] = "$Id: main.cc,v 1.2 2000/04/23 16:29:50 andreasm Exp $";
+static char rcsid[] = "$Id: main.cc,v 1.3 2000/04/24 12:47:57 andreasm Exp $";
 
 #include <config.h>
 
@@ -127,7 +131,7 @@ static char rcsid[] = "$Id: main.cc,v 1.2 2000/04/23 16:29:50 andreasm Exp $";
 
 enum Command { SHOW_TOC, SHOW_DATA, READ_TEST, SIMULATE, WRITE, READ_TOC,
                DISK_INFO, READ_CD, TOC_INFO, TOC_SIZE, BLANK, SCAN_BUS,
-               UNLOCK, COPY_CD };
+               UNLOCK, COPY_CD, CDDB_ID };
 
 static const char *PRGNAME = NULL;
 static const char *TOC_FILE = NULL;
@@ -242,6 +246,7 @@ static void printUsage()
   show-data - prints out audio data and exits\n\
   read-test - reads all audio files and exits\n\
   disk-info - shows information about inserted medium\n\
+  cddb-id   - calculates the cddb disk id\n\
   unlock    - unlock drive after failed writing\n\
   simulate  - shortcut for 'write --simulate'\n\
   write     - writes CD\n\
@@ -324,6 +329,9 @@ int parseCmdline(int argc, char **argv)
   }
   else if (strcmp(*argv, "copy") == 0) {
     COMMAND = COPY_CD;
+  }
+  else if (strcmp(*argv, "cddb-id") == 0) {
+    COMMAND = CDDB_ID;
   }
   else {
     message(-2, "Illegal command: %s", *argv);
@@ -909,6 +917,42 @@ void showDiskInfo(DiskInfo *di)
   }
 }
 
+static unsigned int cddbSum(unsigned int n)
+{
+  unsigned int ret;
+
+  ret = 0;
+  while (n > 0) {
+    ret += (n % 10);
+    n /= 10;
+  }
+
+  return ret;
+}
+
+static void showCDDBid(const Toc *toc)
+{
+  const Track *t;
+  Msf start, end;
+  unsigned int n = 0;
+  unsigned int o = 0;
+  int tcount = 0;
+
+  TrackIterator itr(toc);
+
+  for (t = itr.first(start, end); t != NULL; t = itr.next(start, end)) {
+    if (t->type() == TrackData::AUDIO) {
+//    message(0, "  %d:%d %d ", start.min(), start.sec(), start.lba());
+//    message(0, "  %d:%d %d", end.min(), end.sec(), end.lba());
+      n += cddbSum(start.min() * 60 + start.sec() + 2/* gap offset */);
+      o  = end.min() * 60 + end.sec();
+      tcount++;
+    }
+  }
+  message(0, "CDDBID=%lx", (n % 0xff) << 24 | o << 8 | tcount);
+} 
+
+
 static void scanBus()
 {
   int i, len;
@@ -1168,10 +1212,10 @@ static int copyCdOnTheFly(CdrDriver *src, CdrDriver *dst, int session,
       message(1, "Writing finished successfully.");
   }
 
+  dst->rezeroUnit(0);
+
   if (dst->preventMediumRemoval(0) != 0)
     ret = 1;
-
-  dst->rezeroUnit(0);
 
   if (ret == 0 && eject) {
     dst->loadUnload(1);
@@ -1236,7 +1280,7 @@ int main(int argc, char **argv)
       exitCode = 1; goto fail;
     }
 
-    if (COMMAND != SHOW_TOC) {
+    if (COMMAND != SHOW_TOC && COMMAND != CDDB_ID) {
       if (toc->check() != 0) {
 	message(-2, "Toc file '%s' is inconsistent.", TOC_FILE);
 	exitCode = 1; goto fail;
@@ -1297,6 +1341,13 @@ int main(int argc, char **argv)
     PAUSE = 0;
 
   switch (COMMAND) {
+  case CDDB_ID:
+    showCDDBid(toc);
+    if (toc->check() != 0) {
+      message(-1, "Toc file '%s' is inconsistent.", TOC_FILE);
+    }
+    break;
+
   case SCAN_BUS:
     scanBus();
     break;
@@ -1511,11 +1562,11 @@ int main(int argc, char **argv)
       message(1, "Writing finished successfully.");
     }
 
+    cdr->rezeroUnit(0);
+
     if (cdr->preventMediumRemoval(0) != 0) {
       exitCode = 1; goto fail;
     }
-
-    cdr->rezeroUnit(0);
 
     if (EJECT) {
       cdr->loadUnload(1);
