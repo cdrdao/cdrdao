@@ -45,7 +45,7 @@ struct CueTrackData;
  * 'ANTLRAbstractToken' defined in PCCTSDIR/h/AToken.h'.
  */
 
-#define USE_ANTLRCommonToken 1
+#define USE_ANTLRCommonToken 0
 
 #if USE_ANTLRCommonToken
 
@@ -75,21 +75,22 @@ public:
   }
   virtual ~ANTLRToken() { delete[] text_; }
 
-#if 1
+#if 0
   // use this for basic PCCTS-1.33 release
   ANTLRTokenType getType()	 { return type_; }
   virtual int getLine()		 { return line_; }
   ANTLRChar *getText()		 { return text_; }
+  void setText(ANTLRChar *s)     { text_ = strdupCC(s); }
 #else
   // use this for PCCTS-1.33 bug fix releases
   ANTLRTokenType getType() const { return type_; }
   virtual int getLine()    const { return line_; }
   ANTLRChar *getText()	   const { return text_; }
+  void setText(const ANTLRChar *s)     { text_ = strdupCC(s); }
 #endif
 
   void setType(ANTLRTokenType t) { type_ = t; }
   void setLine(int line)	 { line_ = line; }
-  void setText(ANTLRChar *s)     { text_ = strdupCC(s); }
 
   virtual ANTLRAbstractToken *makeToken(ANTLRTokenType tt, ANTLRChar *txt,
 					int line)
