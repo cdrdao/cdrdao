@@ -1,9 +1,9 @@
-.TH CDRDAO 1 "Apr 29, 2001"
+.TH CDRDAO 1 "Sep 16, 2002"
 .SH NAME
 cdrdao \- writes audio CD-Rs in disc-at-once mode
 .SH SYNOPSIS
 .B cdrdao
-.RB { show-toc|read-toc|read-cd|read-cddb|show-data|read-test|disk-info|msinfo|unlock|simulate|write|copy }
+.RB { show-toc|read-toc|read-cd|read-cddb|show-data|read-test|disk-info|msinfo|unlock|simulate|write|copy|blank }
 .RB [ --device
 .IR device ]
 .RB [ --source-device
@@ -15,9 +15,13 @@ cdrdao \- writes audio CD-Rs in disc-at-once mode
 .RB [ --simulate ]
 .RB [ --speed
 .IR writing-speed ]
+.RB [ --blank-mode
+.IR mode]
 .RB [ --datafile
 .IR file ]
 .RB [ --read-raw ]
+.RB [ --read-subchan
+.IR mode ]
 .RB [ --tao-source ]
 .RB [ --tao-source-adjust
 .IR link-blocks ]
@@ -122,6 +126,15 @@ mkisofs. The output is meant for processing by scripts.
 Tries to unlock the recorder device after a failed write or simulation
 run. If you cannot eject the CD after a cdrdao run try this command.
 .TP
+.BI blank
+Blanks a CD-RW. The CD-RW is minimally blanked by default. Use option
+.BI --blank-mode
+to select another blanking mode.
+Sometimes the blanking speed must be manually reduced for a successful
+blanking operation. Use option
+.BI --speed
+to select another blanking speed.
+.TP
 .BI simulate
 Like
 .BI write
@@ -190,6 +203,18 @@ Set the writing speed to
 .I value.
 Default is the highest possible speed.
 .TP
+.BI \--blank-mode " mode"
+Sets the blanking mode. Available modes are
+.BI full
+and
+.BI minimal.
+Please consider that the data of minimally blanked disks may be easily
+recovered. Use the
+.BI full
+blanking mode for completely erasing all data. The default blanking mode
+is
+.BI minimal.
+.TP
 .BI \--datafile " file"
 Used for
 .BI read-toc, read-cd
@@ -204,12 +229,32 @@ and
 it specifies the name of the created image file.
 .TP
 .BI \--read-raw
-Only used for command
-.BI read-cd.
+Only used for commands
+.BI read-cd
+and
+.BI read-toc.
 All data sectors will be written as 2352 byte blocks including the sector
 header and L-EC data to the image file. The track mode will be set to
 MODE1_RAW or MODE2_RAW in the created
 .I toc-file.
+.TP
+.BI \--read-subchan " mode"
+Used by commands
+.BI read-cd,
+.BI read-toc
+and
+.BI copy.
+Specifies the type of sub-channel data that is extracted from the source CD
+and written to the track image or copied to the destination CD.
+Mode may be
+.BI rw
+for reading packed R-W sub-channel data (de-interleaved and error
+corrected)
+and
+.BI rw_raw
+for reading raw R-W sub-channel data (not de-interleaved, not error
+corrected, L-EC data included in the track image).
+If this option is not specified no sub-channel data will be extracted.
 .TP
 .BI \--tao-source
 This option indicates to the commands
@@ -402,13 +447,19 @@ created (option --multi).
 Defines global CD-TEXT data like the album title and the used languages.
 See the CD-TEXT section below for the syntax of the CD-TEXT block contents.
 .SS Track\ Specification
-.IP TRACK\ <track-mode>
+.IP TRACK\ <track-mode>\ [<sub-channel-mode>]
 Starts a new track, the track number is incremented by 1. The length
 of a track must be at least 4 seconds. The block length of the input
 data depends on the <track-mode>: AUDIO: 2352 bytes (588 samples),
 MODE1: 2048 bytes, MODE1_RAW: 2352 bytes, MODE2: 2336 bytes,
 MODE2_FORM1: 2048 bytes, MODE2_FORM2: 2324 bytes, MODE2_FORM_MIX: 2336 bytes
-including the sub-header, MODE2_RAW: 2352 bytes. 
+including the sub-header, MODE2_RAW: 2352 bytes.
+The <sub-channel-mode> is optional. If given it specifies the type of
+sub-channel data for each sector. RW: packed R-W sub-channel data (96
+bytes, L-EC data will be generated if required), RW_RAW: raw R-W
+sub-channel data (interleaved and L-EC data already calculated, 96
+bytes). The block length is increased by the sub-channel data length
+if a <sub-channel-mode> is specified.
 If the input data length is not a multiple of the block length  it
 will be padded with zeros. 
 .LP
