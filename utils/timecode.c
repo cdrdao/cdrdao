@@ -133,7 +133,7 @@ fr2tc(char *tc, long fr)
 	int s;
 	int f;
 
-	if (fr > 452999 || fr < 0) {	/* 99:99:74 */
+	if (fr > 449999 || fr < 0) {	/* 99:59:74 */
 		strcpy(tc, "00:00:00");
 		return -1;
 	}

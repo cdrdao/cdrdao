@@ -18,6 +18,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  */
 
+#include <config.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -27,34 +28,44 @@
 
 const char *progname = NULL;
 int verbose;
-void usage(char *progname);
+void usage(void);
 
 int
 main(int argc, char *argv[])
 {
-	FILE *infile = stdin;
-	FILE *outfile = stdout;
 	char *wavefile = NULL;
-	char *outfile_name = NULL;
+	char *outfile = NULL;
+	char *infile = NULL;
 	int nocdtext = 0;
 	int c;
 
+	struct cuesheet *cs;
+
 	progname = argv[0];
-	verbose = 0;
+	verbose = 1;
 	opterr = 0;	/* we do error msgs ourselves */
-	while ((c = getopt(argc, argv, ":hno:vw:")) != -1)
+	while ((c = getopt(argc, argv, ":hno:qvw:")) != -1)
 		switch (c) {
 		case 'h':
-			usage(argv[0]);
+			usage();
 			exit(EXIT_SUCCESS);
+			break;
 		case 'n':
 			nocdtext = 1;
 			break;
 		case 'o':
-			outfile_name = optarg;
+			if (strcmp(optarg, "-") == 0)
+				outfile = NULL;		/* use stdout */
+			else
+				outfile = optarg;
+			break;
+		case 'q':
+			verbose = 0;
 			break;
 		case 'v':
-			verbose = 1;
+			printf("cue2toc 0.2\n");
+			printf("Report bugs to <dermatsch@gmx.de>\n");
+			exit(EXIT_SUCCESS);
 			break;
 		case 'w':
 			wavefile = optarg;
@@ -71,46 +82,35 @@ main(int argc, char *argv[])
 
 	switch(argc - optind) {
 	case 0:
-		infile = stdin;
+		infile = NULL;	/* use stdin */
 		break;
 	case 1:
 		if (strcmp(argv[optind], "-") == 0)
-			infile = stdin;
+			infile = NULL;	/* use stdin */
 		else
-			if ((infile = fopen(argv[optind], "r")) == NULL) {
-				fprintf(stderr, "%s: could not open file "
-					"\"%s\" for read: %s\n", argv[0],
-					argv[optind], strerror(errno));
-				exit(EXIT_FAILURE);
-			}
+			infile = argv[optind];
 		break;
 	default:
 		fprintf(stderr, "%s: bad number of arguments\n",
-			argv[0]);
+			progname);
 		exit(EXIT_FAILURE);
 	}
 
-	if (outfile_name == NULL || strcmp(outfile_name, "-") == 0)
-		outfile = stdout;
-	else if ((outfile = fopen(outfile_name, "w")) == NULL) {
-		fprintf(stderr, "%s: could not open "
-			"file \"%s\" for write: %s\n", argv[0], optarg,
-			strerror(errno));
-		exit(EXIT_FAILURE);
-	}
-
-	cue2toc(infile, outfile, wavefile, nocdtext);
+	cs = read_cue(infile, wavefile);
+	write_toc(outfile, cs, nocdtext ? 0 : 1);
 
 	return EXIT_SUCCESS;
 }
 
 void
-usage(char *prog)
+usage(void)
 {
-	printf("Usage: %s [-hnv] [-o tocfile] [-w wavefile] [cuefile]\n", prog);
+	printf("Usage: %s [-hnqv] [-o tocfile] [-w wavefile] [cuefile]\n",
+	       progname);
 	printf(" -h\t\tdisplay this help message\n");
 	printf(" -n\t\tdo not write CD-Text information\n");
 	printf(" -o tocfile\twrite output to tocfile\n");
-	printf(" -v\t\tbe verbose\n");
+	printf(" -q\t\tquiet mode\n");
+	printf(" -v\t\tdisplay version information\n");
 	printf(" -w wavefile\tname of WAVE file to be used in tocfile\n");
 }

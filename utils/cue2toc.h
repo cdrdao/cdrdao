@@ -18,17 +18,56 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  */
 
-#define TEXTSIZE 160
+/* Maximum length of the FILEname */
+#define FILENAMELEN 1024
+/* Number of characters allowed per CD-Text entry (w/o termin. Null) */
+#define CDTEXTLEN 80
 
-struct track {
-	char title[TEXTSIZE];
-	char performer[TEXTSIZE];
-	char songwriter[TEXTSIZE];
-	char composer[TEXTSIZE];
-	char arranger[TEXTSIZE];
-	char message[TEXTSIZE];
-	long index;
-	struct track *next;
+/* Index can be 0 to 99, but 0 and 1 are pre-gap and track start
+   respectively, so 98 are left */
+#define NUM_OF_INDEXES 98
+
+enum session_type {
+	CD_DA = 1,	/* only audio tracks */
+	CD_ROM,		/* mode1 [and audio] */
+	CD_ROM_XA,	/* mode2 form1 or mode2 form2 [and audio] */
+	INVALID		/* invalid mixture of track modes */
 };
 
-int cue2toc(FILE *in, FILE *out, char *wavefile, int cdtext);
+enum track_mode {	/* corresponding TRACK types in CUE format: */
+	AUDIO = 1,	/* AUDIO (2352)	*/
+	MODE1,		/* MODE1/2048	*/
+	MODE1_RAW,	/* MODE1/2352	*/
+	MODE2,		/* MODE2/2336	*/
+	MODE2_RAW	/* MODE2/2352 	*/
+};
+
+struct trackspec {
+	enum track_mode mode;
+	int copy;			/* boolean */
+	int pre_emphasis;		/* boolean */
+	int four_channel_audio;		/* boolean */
+	char isrc[13];
+	char title[CDTEXTLEN + 1];
+	char performer[CDTEXTLEN + 1];
+	char songwriter[CDTEXTLEN + 1];
+	char filename[FILENAMELEN + 1];;
+	long pregap;			/* Pre-gap in frames */
+	int pregap_data_from_file;	/* boolean */
+	long start;			/* track start in frames */
+	long postgap;			/* Post-gap in frames */
+	long indexes[NUM_OF_INDEXES];	/* indexes in frames */
+	struct trackspec *next;
+};
+
+struct cuesheet {
+	char catalog[14];
+	enum session_type type;
+	char title[CDTEXTLEN + 1];
+	char performer[CDTEXTLEN + 1];
+	char songwriter[CDTEXTLEN + 1];
+	struct trackspec *tracklist;
+};
+
+struct cuesheet *read_cue(const char*, const char*);
+void write_toc(const char *, struct cuesheet*, int);

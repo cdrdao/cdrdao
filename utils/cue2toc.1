@@ -20,10 +20,10 @@
 .TH CUE2TOC 1
 
 .SH NAME
-cue2toc \- convert CUE to TOC format for audio CDs
+cue2toc \- convert CUE to TOC format
 
 .SH SYNOPSIS
-.BR "cue2toc" " [" "-hnv" "] [" "-o"
+.BR "cue2toc" " [" "-hnqv" "] [" "-o"
 .IR "tocfile" "]"
 .RB "[" "-w"
 .IR "wavefile" "] [" "cuefile" "]"
@@ -32,34 +32,46 @@ cue2toc \- convert CUE to TOC format for audio CDs
 .B Cue2toc
 converts
 .I cuefile
-from CUE to TOC format and writes the result to standard output or
-the file given to the "-o" option. If
-.I cuefile
-is unspecified or "-" it is taken to be standard input. Similarly
-if the "-o" option was given an argument of "-" it is taken to
-be standard output.
+from CUE to TOC format and writes the result to
+.IR "tocfile" "."
+If either
+.IR "cuefile" " or " "tocfile"
+is omitted or a single dash "-"
+.B cue2toc
+reads from standard input and writes to standard ouput
+respectively.
 
-CUE files are created by popular Windows programs for CD mastering
-and backup and typically
-carry the extension ".cue". They accompany binary disc images
-and audio files describing the layout of the disc in a plain text
-format. For audio CDs they may contain CD-Text information which
-describes the title, performer and so on of the disc and each track.
+CUE files are text files describing the layout of a CD-Rom and
+typically carry the extension ".cue".
+
 Cdrdao is a CD-burning application which has its own native TOC
-format for disc layout. Although cdrdao directly supports the CUE
-format it is currently limited to data tracks only.
+format to describe the disc layout. Although cdrdao has direct
+support for reading CUE files, it is currently limited to data
+tracks only. So
+.BR "cue2toc" "'s"
+main usefulness lies in converting
+CUE files containing audio tracks.
+
+Output of CD-Text data can be disabled with the
+.B -n
+option.
+
+CUE files often come with MP3 files but since cdrdao doesnt
+support decoding them on the fly they probably must be decoded by
+other means prior to writing the CD (e.g. using
+.BR "lame" ")."
+For this reason you can specify a filename with the
+.B -w
+option to be used for all audio tracks instead of the one
+in the CUE file. Of course this is only really useful if all
+the tracks are based on the same file. This seems to be the case
+quite often however.
 
 .B Cue2toc
-converts CUE files as they are in widespread use for audio CDs
-to cdrdao's TOC format. CD-Text data if present in the input file
-is preserved during conversion
-but this can be disabled to get a TOC file without CD-Text.
-CUE files often come with MP3 files so we probably have to
-decode it into a WAVE file because cdrdao currently doesnt support
-MP3 directly. Since this MP3 file is referenced by the FILE statement
-in the CUE file
-there is an option to specify a WAVE file to be referenced in
-the TOC file instead.
+normally displays warning messages for unsupported commands and
+constructs. The
+.B -q
+option disables these warnings.
 
 .SH OPTIONS
 .TP
@@ -77,137 +89,395 @@ write result to
 instead of standard ouput
 
 .TP
+.B -q
+quiet mode; do not print warnings
+
+.TP
 .B -v
-verbose mode; print warnings about unrecognized
-commands in the input
+print version number
 
 .TP
 .BI "-w " "wavefile"
 use
 .I wavefile
-instead of the one given in the FILE statement of the
-CUE file
+for all audio tracks
+
+
+.SH CUE FORMAT
+What follows is a description of the CUE format expected by
+.BR "cue2toc" "."
+For information about the TOC format please consult the
+.BR "cdrdao" "(1)"
+manual page.
+
+CUE files consist of commands and their arguments which must be
+separated from each other by any number of whitespace characters.
+Space, horizontal tabulator, newline and carriage return are
+recognized as whitespace characters except inside strings surrounded
+by double quotes, where they are part of the string. Commands are
+not case sensitive. CD-Text data can be at most 80 characters per
+item.
+
+Timecode values are accepted in the forms "X:X:X", "X:X" and
+"X" where each "X" must consist of at most two digits and may be
+zero padded to the left. They are interpreted as "M:S:F", "S:F" and
+"F" respectively where "M" means "minutes" and must be in the range
+0 <= M <= 99, "S" means "seconds" and must be in the range
+0 <= S <= 59, and "F" means "frames" and must be in the range
+0 <= F <= 74.
+
+CUE files are logically divided into a global section and
+one to 99 track sections. Inside these sections the following
+commands are allowed:
+
+.SS Global Section
+
+.B REM
+.I anything_to_newline
+.br
+.B CATALOG
+.I string
+.br
+.B CDTEXTFILE
+.I string
+.br
+.B TITLE
+.I string
+.br
+.B PERFORMER
+.I string
+.br
+.B SONGWRITER
+.I string
+.br
+.B FILE
+.I string
+.BR "BINARY" "|" "MOTOROLA" "|" "AIFF" "|" "WAVE" "|" "MP3"
+
+
+.TP
+.B REM
+Optional.
+Introduces a comment. Anything from there on up to and including the
+next newline character is ignored. Comments can appear anywhere in
+the file but not between a command and its arguments.
+
+.TP
+.B CATALOG
+Optional.
+The Media Catalog Number of the disc. Must be exactly 13 characters.
+
+.TP
+.B CDTEXTFILE
+Optional.
+Specifies an external file containing CD-Text data. Ignored.
+
+.TP
+.B TITLE
+Optional.
+The CD-Text title of the disc.
+
+.TP
+.B PERFORMER
+Optional.
+The CD-Text performer of the disc.
+
+.TP
+.B SONGWRITER
+Optional.
+The CD-Text songwriter of the disc.
+
+.TP
+.B FILE
+Required.
+The name and type of the file to be used for all following tracks.
+The
+.I string
+contains the name of the file followed by one of
+.BR "BINARY" ", " "MOTOROLA" ", " "AIFF" ", " "WAVE" " or " "MP3" "."
+As far as
+.B cue2toc
+is concerned the type of the file is effectively ignored.
+Nonetheless
+.BR "MOTOROLA" ", " "AIFF" " and " "MP3"
+cause printing of a warning message since these file types can
+not be used directly with cdrdao.
+
+.LP
+The first appearance of a
+.B TRACK
+command causes leaving of the global section and entering the
+track section.
+
+.SS Track Section
+
+.B TRACK
+.I number
+.I mode
+.br
+.B REM
+.I anything_to_newline
+.br
+.B FLAGS
+.RB "[" "DCP" "]"
+.RB "[" "4CH" "]"
+.RB "[" "PRE" "]"
+.RB "[" "SCMS" "]"
+.br
+.B ISRC
+.I string
+.br
+.B TITLE
+.I string
+.br
+.B PERFORMER
+.I string
+.br
+.B SONGWRITER
+.I string
+.br
+.B PREGAP
+.I timecode
+.br
+.B INDEX
+.I number
+.I timecode
+.br
+.B POSTGAP
+.I timecode
+.br
+.B FILE
+.I string
+.BR "BINARY" "|" "MOTOROLA" "|" "AIFF" "|" "WAVE" "|" "MP3"
+
+
+.TP
+.B TRACK
+Required.
+Starts a new track definition. The
+.I number
+is ignored. The
+.I mode
+must be one of
+.BR "AUDIO" ", " "MODE1/2048" ", " "MODE1/2352" ","
+.BR "MODE2/2336" " or " "MODE2/2352" "."
+
+.TP
+.B FLAGS
+Optional.
+Defines the flags for this track. Must be followed by one
+or more of the following commands:
+.B DCP
+(digital copy permitted),
+.B 4CH
+(four channel audio),
+.B PRE
+(pre-emphasis enabled) and
+.B SCMS
+(serial copy management system).
+.B SCMS
+is ignored because there is no corresponding option in
+the TOC format.
+
+.TP
+.B ISRC
+Optional.
+The International Standard Recording Code for this track. Must
+be exactly 12 characters long.
+
+.TP
+.B TITLE
+Optional.
+The CD-Text title of this track.
+
+.TP
+.B PERFORMER
+Optional.
+The CD-Text performer of this track.
+
+.TP
+.B SONWRITER
+Optional.
+The CD-Text songwriter of this track.
+
+.TP
+.B PREGAP
+Optional.
+The length of the track pregap to be filled with zero data.
+Mutually exclusive with
+.BR "INDEX 0" "."
+
+.TP
+.B POSTGAP
+Optional.
+The length of the track postgap to be filled with zero data.
+
+.TP
+.B INDEX
+Optional.
+The
+.I number
+must be in the range 0 <=
+.I number
+<= 99. Index number 1 specifies the start of the track. Index
+number 0 is the start of the track pregap filled with data
+from the file, i.e. the difference between index 0 and index 1
+is the length of the pregap. Index 0 is mutually exclusive with
+.BR "PREGAP" "."
+Index numbers greater than 1 specify subindexes for this track
+and must be sequential.
+
+.TP
+.B FILE
+Optional in track section. The syntax is the same as described
+above and if it appears inside a track specification it takes
+effect on the next
+.B TRACK
+command.
+
+.SH LIMITATIONS
+
+The command
+.B CDTEXTFILE
+and the flag
+.B SCMS
+have no equivalent in the TOC format and are ignored.
+
+CUE files containing data tracks which specify a starting time
+greater than zero cannot be converted by
+.B cue2toc
+because the TOC format does not provide a way to specify a
+starting time at all for data tracks. However if the CUE file
+does not contain any audio tracks you can try to use the CUE file
+directly with cdrdao.
+
 
 .SH EXAMPLE
-Lets say we have the two files elektro.mp3 and elektro.cue.
-The file elektro.cue contains the following text:
+
+Suppose we have the following CUE file "uwe.froehn.cue" describing
+an audio CD with CD-Text data:
 
 .nf
 .in +4m
-PERFORMER "Elektrochemie LK"
-TITLE "Gold"
-FILE "elektro.mp3" WAVE
-  TRACK 01 AUDIO
-    TITLE "Schall - Album Version"
-    PERFORMER "Elektrochemie LK"
-    INDEX 01 00:00:00
-  TRACK 02 AUDIO
-    TITLE "Chichi"
-    PERFORMER "Elektrochemie LK"
-    INDEX 01 04:24:17
-  TRACK 03 AUDIO
-    TITLE "Girl"
-    PERFORMER "Elektrochemie LK"
-    INDEX 01 09:44:02
-.fi
+REM Example CUE file with audio tracks
+CATALOG 1234567890123
+TITLE "Der Berg ruft"
+PERFORMER "Uwe Froehn"
+FILE "uwe.froehn.mp3" MP3
+
+TRACK 01 AUDIO
+  TITLE "Meine Mama ist die Beste"
+  PERFORMER "Uwe Froehn"
+  SONGWRITER "Hansi Klabuster"
+  REM two seconds pregap filled with audio data
+  INDEX 00 00:00:00
+  INDEX 01 00:02:00
+  REM subindexes
+  INDEX 02 00:35:17
+  INDEX 03 01:12:44
+
+TRACK 02 AUDIO
+  TITLE "Hoch oben im Tal"
+  SONGWRITER "Gabi Geil"
+  REM no pregap
+  INDEX 01 02:45:38
+
+TRACK 03 AUDIO
+  REM pregap with zero data
+  PREGAP 00:4:47
+  INDEX 01 07:58:74
+  REM postgap with zero data
+  POSTGAP 00:35:00
 .in -4m
-
-Since cdrdao doesnt decode MP3s on the fly we have to decode
-the MP3 file first (e.g. lame --decode elektro.mp3 elektro.wav).
-Now the command
-
-.nf
-.in +4m
-cue2toc -w elektro.wav -o elektro.toc elektro.cue
 .fi
-.in -4m
 
-produces the file elektro.toc containing the following:
+Since cdrdao cannot decode the MP3 file on the fly this step must
+be carried out by hand, e.g. using lame:
 
 .nf
 .in +4m
+lame --decode uwe.froehn.mp3 uwe.froehn.wav
+.in -4m
+.fi
+
+Although the filename appears only once in the example CUE
+file it gets written for every track in the TOC file so you
+would need to edit lots of occurences of the filename in the
+TOC file by hand. For this reason you can specify a string
+with the
+.B -w
+option to be used by
+.B cue2toc
+as the filename for all audio tracks. The command
+
+.nf
+.in +4m
+cue2toc -w uwe.froehn.wav -o uwe.froehn.toc uwe.froehn.cue
+.in -4m
+.fi
+
+should produce the file uwe.froehn.toc with the following content:
+
+.nf
+.in +4m
+CATALOG "1234567890123"
 CD_DA
 CD_TEXT {
     LANGUAGE_MAP {
         0 : EN
     }
     LANGUAGE 0 {
-        TITLE "Gold"
-        PERFORMER "Elektrochemie LK"
+        TITLE "Der Berg ruft"
+        PERFORMER "Uwe Froehn"
     }
 }
 
 TRACK AUDIO
-CD_TEXT {
-    LANGUAGE 0 {
-        TITLE "Schall - Album Version"
-        PERFORMER "Elektrochemie LK"
+    CD_TEXT {
+        LANGUAGE 0 {
+            TITLE "Meine Mama ist die Beste"
+            PERFORMER "Uwe Froehn"
+            SONGWRITER "Hansi Klabuster"
+        }
     }
-}
-PREGAP 0:2:0
-FILE "elektro.wav" 00:00:00 04:24:17
+    AUDIOFILE "uwe.froehn.wav" 00:00:00 02:45:38
+    START 00:02:00
+    INDEX 00:35:17
+    INDEX 01:12:44
 
 TRACK AUDIO
-CD_TEXT {
-    LANGUAGE 0 {
-        TITLE "Chichi"
-        PERFORMER "Elektrochemie LK"
+    CD_TEXT {
+        LANGUAGE 0 {
+            TITLE "Hoch oben im Tal"
+            SONGWRITER "Gabi Geil"
+        }
     }
-}
-FILE "elektro.wav" 04:24:17 05:19:60
+    AUDIOFILE "uwe.froehn.wav" 02:45:38 05:13:36
 
 TRACK AUDIO
-CD_TEXT {
-    LANGUAGE 0 {
-        TITLE "Girl"
-        PERFORMER "Elektrochemie LK"
-    }
-}
-FILE "elektro.wav" 09:44:02
-
-.fi
+    PREGAP 00:04:47
+    AUDIOFILE "uwe.froehn.wav" 07:58:74
+    SILENCE 00:35:00
 .in -4m
-
-which can now be used with cdrdao to burn the audio CD.
-If you dont want CD-Text use the "-n" option:
-
-.nf
-.in +4m
-cue2toc -n -w elektro.wav -o elektro.toc elektro.cue
 .fi
-.in -4m
-
-which produces elektro.toc containing the following:
-
-.nf
-.in +4m
-CD_DA
-TRACK AUDIO
-PREGAP 0:2:0
-FILE "elektro.wav" 00:00:00 04:24:17
-TRACK AUDIO
-FILE "elektro.wav" 04:24:17 05:19:60
-TRACK AUDIO
-FILE "elektro.wav" 09:44:02
-.fi
-.in -4m
 
 .SH SEE ALSO
 .BR cdrdao (1),
 .BR lame (1)
 
 .SH BUGS
-The name
-.B Cue2toc
-is misleading because it cannot convert every type of
-CUE file, only audio CDs.
 
-I have no definitive reference for the CUE format, just
-a number of different files I came across. So its very likely
-that
-.B Cue2toc
-may fail on other CUE files. In this case I would
-be glad if you could send me the file(s) so that I can fix it.
+Since
+.BR "cue2toc" "'s"
+definition of the CUE format is entirely based on a number
+of different CUE files the author came across there is a very
+high probability that it will not work correctly with all the
+other CUE files you might encounter. If this is the case for
+you please send the problematic CUE file along with the version
+number of
+.B cue2toc
+to <dermatsch@gmx.de>.
+
 
 .SH AUTHOR
 Matthias Czapla <dermatsch@gmx.de>
