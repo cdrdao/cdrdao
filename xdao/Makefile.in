@@ -80,6 +80,15 @@ install: all installdirs
 	$(INSTALL_DATA) pixmap_help.png $(PIXMAPS_DIR)/pixmap_help.png
 	$(INSTALL_DATA) pixmap_mixedcd.png $(PIXMAPS_DIR)/pixmap_mixedcd.png
 	$(INSTALL_DATA) pixmap_open.png $(PIXMAPS_DIR)/pixmap_open.png
+	$(INSTALL_DATA) pixmap_play-start.xpm $(PIXMAPS_DIR)/pixmap_play-start.xpm
+	$(INSTALL_DATA) pixmap_play-pause.xpm $(PIXMAPS_DIR)/pixmap_play-pause.xpm
+	$(INSTALL_DATA) pixmap_play-stop.xpm $(PIXMAPS_DIR)/pixmap_play-stop.xpm
+	$(INSTALL_DATA) pixmap_cursor-tool.xpm $(PIXMAPS_DIR)/pixmap_cursor-tool.xpm
+	$(INSTALL_DATA) pixmap_zoom-tool.xpm $(PIXMAPS_DIR)/pixmap_zoom-tool.xpm
+	$(INSTALL_DATA) pixmap_zoom-in.xpm $(PIXMAPS_DIR)/pixmap_zoom-in.xpm
+	$(INSTALL_DATA) pixmap_zoom-out.xpm $(PIXMAPS_DIR)/pixmap_zoom-out.xpm
+	$(INSTALL_DATA) pixmap_zoom-selection.xpm $(PIXMAPS_DIR)/pixmap_zoom-selection.xpm
+	$(INSTALL_DATA) pixmap_zoom-fit.xpm $(PIXMAPS_DIR)/pixmap_zoom-fit.xpm
 	$(INSTALL_DATA) gcdmaster.desktop $(datadir)/gnome/apps/Applications/gcdmaster.desktop
 
 installdirs:
