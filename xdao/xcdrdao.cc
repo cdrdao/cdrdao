@@ -47,8 +47,11 @@
 #include "CdDevice.h"
 #include "ProcessMonitor.h"
 
+#include "gcdmaster.h"
+
 #include "port.h"
 
+GCDMaster *gcdmaster = NULL;
 MDIWindow *MDI_WINDOW = NULL;
 DeviceConfDialog *DEVICE_CONF_DIALOG = NULL;
 ProcessMonitor *PROCESS_MONITOR = NULL;
@@ -161,6 +164,13 @@ int main (int argc, char* argv[])
     argv++;
     argc--;
   }
+
+//NOTE: Testing:
+//FIXME: open only if no command line projects.
+  gcdmaster = new GCDMaster;
+//  gcdmaster->newChooserWindow();
+
+//End Testing:
 
   application.run();
 

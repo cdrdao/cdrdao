@@ -50,7 +50,9 @@ SRC = xcdrdao.cc SampleDisplay.cc SampleManager.cc \
       AudioCDChild.cc RecordGenericDialog.cc RecordCDTarget.cc \
       DeviceList.cc RecordTocSource.cc RecordCDSource.cc \
       RecordHDTarget.cc AudioCDView.cc TocEditView.cc GenericChild.cc \
-      GenericView.cc CdTextDialog.cc @sound_if_src@
+      GenericView.cc CdTextDialog.cc \
+      gcdmaster.cc Project.cc ProjectChooser.cc \
+      @sound_if_src@
 
 OBJ = $(SRC:%.cc=%.o)
 
