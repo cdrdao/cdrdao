@@ -73,6 +73,9 @@ EXTRA_libdao_a_SOURCES = 	\
 libdao_a_LIBADD =		\
 	@scsilib_objs@
 
+libdao_a_DEPENDENCIES =		\
+	@scsilib_objs@
+
 cdrdao_LDADD =						\
 	-L. -ldao					\
 	-L$(top_builddir)/paranoia -lcdda_paranoia	\
