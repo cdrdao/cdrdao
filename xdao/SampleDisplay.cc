@@ -18,6 +18,9 @@
  */
 /*
  * $Log: SampleDisplay.cc,v $
+ * Revision 1.10  2001/04/29 12:10:27  andreasm
+ * Removed debug messages.
+ *
  * Revision 1.9  2001/01/21 13:46:11  andreasm
  * 'update()' functions of all dialogs require a 'TocEditView' object now.
  * CD TEXT table entry is now a non modal dialog on its own.
@@ -79,7 +82,7 @@
  *
  */
 
-static char rcsid[] = "$Id: SampleDisplay.cc,v 1.9 2001/01/21 13:46:11 andreasm Exp $";
+static char rcsid[] = "$Id: SampleDisplay.cc,v 1.10 2001/04/29 12:10:27 andreasm Exp $";
 
 #include <stdio.h>
 #include <limits.h>
@@ -1078,8 +1081,8 @@ void SampleDisplay::updateSamples()
 
 	}
 
-if (&pixmap_ == 0)
-  cout << "null !!" << endl;
+	if (&pixmap_ == 0)
+	  cout << "null !!" << endl;
 
 	if (0 && (gint)di < sampleEndX_) {
 	  pos = sampleBuf[len -1].left() * halfHeight;

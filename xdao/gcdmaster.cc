@@ -39,15 +39,17 @@ GCDMaster::GCDMaster()
 void GCDMaster::add(Project *project)
 {
   projects.push_back(project);
-cout << "Number of projects = " << projects.size() << endl;
-cout << "Number of choosers = " << choosers.size() << endl;
+
+  //cout << "Number of projects = " << projects.size() << endl;
+  //cout << "Number of choosers = " << choosers.size() << endl;
 }
 
 void GCDMaster::add(ProjectChooser *projectChooser)
 {
   choosers.push_back(projectChooser);
-cout << "Number of projects = " << projects.size() << endl;
-cout << "Number of choosers = " << choosers.size() << endl;
+
+  //cout << "Number of projects = " << projects.size() << endl;
+  //cout << "Number of choosers = " << choosers.size() << endl;
 }
 
 void GCDMaster::openNewProject(const char* s)
@@ -58,10 +60,12 @@ void GCDMaster::openNewProject(const char* s)
   {
     if (tocEdit->readToc(stripCwd(s)) == 0)
     {
-//FIXME: We should test what type of project it is
-//       AudioCD, ISO. No problem now.
-      cout << "Read ok" << endl;
-	 newAudioCDProject(stripCwd(s), tocEdit, NULL);
+      //FIXME: We should test what type of project it is
+      //       AudioCD, ISO. No problem now.
+
+      //cout << "Read ok" << endl;
+
+      newAudioCDProject(stripCwd(s), tocEdit, NULL);
     }
     else
     {
@@ -108,12 +112,14 @@ void GCDMaster::readFileSelectorOKCB(ProjectChooser *projectChooser)
   {
     if (tocEdit->readToc(stripCwd(s)) == 0)
     {
-//FIXME: We should test what type of project it is
-//       AudioCD, ISO. No problem now.
-      cout << "Read ok" << endl;
-	 newAudioCDProject(stripCwd(s), tocEdit, NULL);
-	 if (projectChooser)
-	   closeChooser(projectChooser);
+      //FIXME: We should test what type of project it is
+      //       AudioCD, ISO. No problem now.
+
+      // cout << "Read ok" << endl;
+
+      newAudioCDProject(stripCwd(s), tocEdit, NULL);
+      if (projectChooser)
+	closeChooser(projectChooser);
     }
     else
     {
@@ -134,8 +140,10 @@ void GCDMaster::closeProject(Project *project)
     delete project;
     projects.remove(project);
   }
-cout << "Number of projects = " << projects.size() << endl;
-cout << "Number of choosers = " << choosers.size() << endl;
+
+  //cout << "Number of projects = " << projects.size() << endl;
+  //cout << "Number of choosers = " << choosers.size() << endl;
+
   if ((projects.size() == 0) && (choosers.size() == 0))
     Gnome::Main::quit(); // Quit if there are not remaining windows
 }
@@ -144,8 +152,10 @@ void GCDMaster::closeChooser(ProjectChooser *projectChooser)
 {
   delete projectChooser;
   choosers.remove(projectChooser);
-cout << "Number of projects = " << projects.size() << endl;
-cout << "Number of choosers = " << choosers.size() << endl;
+
+  //cout << "Number of projects = " << projects.size() << endl;
+  //cout << "Number of choosers = " << choosers.size() << endl;
+
   if ((projects.size() == 0) && (choosers.size() == 0))
     Gnome::Main::quit(); // Quit if there are not remaining windows
 }
@@ -261,7 +271,8 @@ void GCDMaster::aboutDialog()
 
 int GCDMaster::aboutDestroy()
 {
-  cout << "about closed" << endl;
+  //cout << "about closed" << endl;
+
   delete about_;
   about_ = 0;
   return true; // Do not close, as we have already deleted it.

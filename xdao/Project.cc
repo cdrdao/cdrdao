@@ -248,7 +248,7 @@ void Project::saveFileSelectorOKCB()
 //FIXME  	guiUpdate();
 
       new_ = false; // The project is now saved
-cout << tocEdit_->filename() << endl;
+      //cout << tocEdit_->filename() << endl;
       updateWindowTitle();
       saveFileSelectorCancelCB();
     }

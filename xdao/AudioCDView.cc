@@ -427,7 +427,8 @@ void AudioCDView::selectionSetCallback(unsigned long start,
   else {
     tocEditView_->sampleSelection(start, end);
   }
-cout << "selectionSetCallback called" << endl;
+
+  //cout << "selectionSetCallback called" << endl;
 
   guiUpdate();
 }
