@@ -176,9 +176,11 @@ AudioCDView::AudioCDView(AudioCDChild *child, AudioCDProject *project)
 //  vbox->pack_start(*buttonBox, FALSE, FALSE);
   buttonBox->set_border_width(2);
   sprintf(buf, "zoomBox-%i", viewNumber);
+
   project->add_docked(*buttonBox, buf, GNOME_DOCK_ITEM_BEH_NEVER_VERTICAL,
-  		GNOME_DOCK_TOP, 1, 1, 0);
+  		GNOME_DOCK_TOP, 2, 3, 0);
   widgetList->push_back(project->get_dock_item_by_name(buf));
+ 
   buttonBox->show();
 
   sampleDisplay_->markerSet.connect(slot(this,
