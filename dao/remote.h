@@ -1,6 +1,6 @@
 /*  cdrdao - write audio CD-Rs in disc-at-once mode
  *
- *  Copyright (C) 1998, 1999  Andreas Mueller <mueller@daneb.ping.de>
+ *  Copyright (C) 1998-2000  Andreas Mueller <mueller@daneb.ping.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -18,7 +18,13 @@
  */
 /*
  * $Log: remote.h,v $
- * Revision 1.1  2000/02/05 01:35:20  llanero
+ * Revision 1.2  2000/04/23 16:29:50  andreasm
+ * Updated to state of my private development environment.
+ *
+ * Revision 1.2  1999/12/15 20:31:46  mueller
+ * Added remote messages for 'read-cd' progress used by a GUI.
+ *
+ * Revision 1.1  1999/11/07 09:17:08  mueller
  * Initial revision
  *
  */
@@ -31,6 +37,13 @@ struct DaoWritingProgress {
   int track; // actually written track
   int totalProgress; // total writing progress 0..1000
   int bufferFillRate; // buffer fill rate 0..100
+};
+
+struct ReadCdProgress {
+  int status; // 1: analyzing, 2: extracting
+  int track; // actually processed track
+  // int totalTracks; // total number of tracks
+  int trackProgress; // extraction progress for track 0..1000
 };
 
 #endif

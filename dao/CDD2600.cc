@@ -1,6 +1,6 @@
 /*  cdrdao - write audio CD-Rs in disc-at-once mode
  *
- *  Copyright (C) 1998  Andreas Mueller <mueller@daneb.ping.de>
+ *  Copyright (C) 1998-2000  Andreas Mueller <mueller@daneb.ping.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -18,8 +18,14 @@
  */
 /*
  * $Log: CDD2600.cc,v $
- * Revision 1.1  2000/02/05 01:35:37  llanero
- * Initial revision
+ * Revision 1.2  2000/04/23 16:29:49  andreasm
+ * Updated to state of my private development environment.
+ *
+ * Revision 1.16  1999/12/15 20:31:46  mueller
+ * Added remote messages for 'read-cd' progress used by a GUI.
+ *
+ * Revision 1.15  1999/11/07 09:14:59  mueller
+ * Release 1.1.3
  *
  * Revision 1.14  1999/04/05 11:04:10  mueller
  * Added driver option flags.
@@ -60,7 +66,7 @@
  *
  */
 
-static char rcsid[] = "$Id: CDD2600.cc,v 1.1 2000/02/05 01:35:37 llanero Exp $";
+static char rcsid[] = "$Id: CDD2600.cc,v 1.2 2000/04/23 16:29:49 andreasm Exp $";
 
 #include <config.h>
 
@@ -184,6 +190,18 @@ int CDD2600::initDao(const Toc *toc)
 
   toc_ = toc;
 
+  diskInfo();
+
+  if (!diskInfo_.valid.empty || !diskInfo_.valid.append) {
+    message(-2, "Cannot determine status of inserted medium.");
+    return 1;
+  }
+
+  if (!diskInfo_.append) {
+    message(-2, "Inserted medium is not appendable.");
+    return 1;
+  }
+
   if (modeSelectBlockSize(blockLength_, 1) != 0 ||
       modeSelectSpeed(-1, speed_, simulate_, 1) != 0 ||
       modeSelectCatalog(toc_) != 0 ||
@@ -202,27 +220,29 @@ int CDD2600::initDao(const Toc *toc)
 
 int CDD2600::startDao()
 {
-  long lba = -leadInLength_ - 150; // Value is not really important since the
-                                   // LBA is not used by 'writeData'.
+  long lba;
 
-  if (writeSession(toc_, multiSession_) != 0) {
+  if (writeSession(toc_, multiSession_, diskInfo_.thisSessionLba) != 0) {
     return 1;
   }
 
   message(1, "Writing lead-in and gap...");
 
+  lba = diskInfo_.thisSessionLba - 150 - leadInLength_;
+
   // write lead-in
-  if (writeZeros(toc_->leadInMode(), lba, 0, leadInLength_) != 0) {
+  if (writeZeros(toc_->leadInMode(), lba, lba + 150, leadInLength_) != 0) {
     flushCache();
     return 1;
   }
+
+  message(0, "Lba after lead-in: %ld", lba);
 
   // write gap (2 seconds)
-  if (writeZeros(toc_->leadInMode(), lba, 0, 150) != 0) {
+  if (writeZeros(toc_->leadInMode(), lba, lba + 150, 150) != 0) {
     flushCache();
     return 1;
   }
-
 
   message(1, "");
 
@@ -231,7 +251,7 @@ int CDD2600::startDao()
 
 int CDD2600::finishDao()
 {
-  long lba = toc_->length().lba();
+  long lba = diskInfo_.thisSessionLba + toc_->length().lba();
 
   message(1, "Writing lead-out...");
 
@@ -249,6 +269,9 @@ int CDD2600::finishDao()
 
   message(1, "");
 
+  blockLength_ = MODE1_BLOCK_LEN;
+  modeSelectBlockSize(blockLength_, 1);
+
   delete[] zeroBuffer_, zeroBuffer_ = NULL;
 
   return 0;
@@ -257,6 +280,9 @@ int CDD2600::finishDao()
 void CDD2600::abortDao()
 {
   flushCache();
+
+  blockLength_ = MODE1_BLOCK_LEN;
+  modeSelectBlockSize(blockLength_, 1);
 }
 
 // Writes data to target, the block length depends on the actual writing mode
@@ -488,6 +514,30 @@ void CDD2600::readBlock(unsigned long sector)
   delete[] data;
 }
 
+int CDD2600::nextWritableAddress(long *lba, int showError)
+{
+  unsigned char cmd[10];
+  unsigned char data[6];
+
+  memset(data, 0, 6);
+  memset(cmd, 0, 10);
+
+  cmd[0] = 0xe2; // FIRST WRITABLE ADDRESS
+  cmd[3] = 1 /*<< 2*/; // AUDIO
+  // cmd[7] = 1; // NPA
+  cmd[8] = 6; // allocation length
+
+  if (sendCmd(cmd, 10, NULL, 0, data, 6, showError) != 0) {
+    if (showError)
+      message(-2, "Cannot retrieve next writable address.");
+    return 1;
+  }
+
+  *lba = (data[1] << 24) | (data[2] << 16) | (data[3] << 8) | data[4];
+
+  return 0;
+}
+
 // Retrieve disk information.
 // return: DiskInfo structure or 'NULL' on error
 DiskInfo *CDD2600::diskInfo()
@@ -495,6 +545,8 @@ DiskInfo *CDD2600::diskInfo()
   unsigned char cmd[10];
   unsigned long dataLen = 34;
   unsigned char data[34];
+  long nwa;
+  int i;
 
   memset(&diskInfo_, 0, sizeof(DiskInfo));
 
@@ -507,27 +559,129 @@ DiskInfo *CDD2600::diskInfo()
     
     // start time of lead-in
     diskInfo_.manufacturerId = Msf(450150 - leadInLength_ - 150 );
-    diskInfo_.empty = 1; // this is for the CDD2000 which does not support
+    diskInfo_.append = 1; // this is for the CDD2000 which does not support
                          // READ DISK INFORMATION
   }
   else {
-    diskInfo_.empty = 0; // this is for the CDD2000 which does not support
+    diskInfo_.append = 0; // this is for the CDD2000 which does not support
                          // READ DISK INFORMATION
   }
   diskInfo_.valid.empty = 1;
+  diskInfo_.valid.append = 1;
 
   memset(cmd, 0, 10);
-  memset(data, 0, dataLen);
+  memset(data, 0, 4);
 
-  cmd[0] = 0x51; // READ DISK INFORMATION
-  cmd[7] = dataLen >> 8;
-  cmd[8] = dataLen;
+  cmd[0] = 0x43; // READ TOC
+  cmd[6] = 0;
+  cmd[8] = 4;
 
-  if (sendCmd(cmd, 10, NULL, 0, data, dataLen, 0) == 0) {
-    diskInfo_.empty = (data[2] & 0x03) == 0 ? 1 : 0;
-    diskInfo_.cdrw = (data[2] & 0x10) != 0 ? 1 : 0;
-    diskInfo_.valid.cdrw = 1;
+  if (sendCmd(cmd, 10, NULL, 0, data, 4, 0) == 0) {
+    message(3, "First track %u, last track %u", data[2], data[3]);
+    diskInfo_.lastTrackNr = data[3];
   }
+  else {
+    message(3, "READ TOC (format 0) failed.");
+  }
+
+  if (diskInfo_.lastTrackNr > 0) {
+    // the lead-in length does not specify the manufacturer ID anymore
+    diskInfo_.valid.manufacturerId = 0;
+
+    diskInfo_.empty = 0; // CD-R is not empty
+    diskInfo_.diskTocType = 0xff; // undefined
+
+    if (diskInfo_.lastTrackNr < 99 && nextWritableAddress(&nwa, 0) == 0) {
+      message(0, "NWA: %ld", nwa);
+      diskInfo_.thisSessionLba = nwa;
+      diskInfo_.append = 1;
+    }
+    else {
+      diskInfo_.append = 0;
+    }  
+
+    
+    memset(cmd, 0, 10);
+    memset(data, 0, 12);
+
+    cmd[0] = 0x43; // READ TOC
+    cmd[6] = 0;
+    cmd[8] = 12;
+    cmd[9] = 1 << 6;
+
+    if (sendCmd(cmd, 10, NULL, 0, data, 12) == 0) {
+      diskInfo_.sessionCnt = data[3];
+      diskInfo_.lastSessionLba = (data[8] << 24) | (data[9] << 16) |
+                                 (data[10] << 8) | data[11];
+
+      message(3, "First session %u, last session %u, last session start %ld",
+	      data[2], data[3], diskInfo_.lastSessionLba);
+    }
+    else {
+      message(3, "READ TOC (format 1) failed.");
+    }
+
+    if (diskInfo_.sessionCnt > 0) {
+      int len;
+      CdRawToc *toc = getRawToc(diskInfo_.sessionCnt, &len);
+
+      if (toc != NULL) {
+	for (i = 0; i < len; i++) {
+	  if (toc[i].sessionNr == diskInfo_.sessionCnt) {
+#if 0
+	    if (toc[i].point == 0xb0 && toc[i].min != 0xff &&
+		toc[i].sec != 0xff && toc[i].frame != 0xff) {
+	      int m = toc[i].min;
+	      int s = toc[i].sec;
+	      int f = toc[i].frame;
+	      
+	      if (m < 90 && s < 60 && f < 75) {
+		diskInfo_.thisSessionLba = Msf(m, s, f).lba(); // + 150 - 150
+		diskInfo_.thisSessionLba += leadInLength_;
+	      }
+	    }
+#endif
+	    if (toc[i].point == 0xa0) {
+	      diskInfo_.diskTocType = toc[i].psec;
+	    }
+	  }
+
+	  // The point C0 entry may be only stored in the first session's
+	  // lead-in
+	  if (toc[i].point == 0xc0 && toc[i].pmin <= 99 &&
+	      toc[i].psec < 60 && toc[i].pframe < 75) {
+	    diskInfo_.manufacturerId =
+	      Msf(toc[i].pmin, toc[i].psec, toc[i].pframe);
+	    diskInfo_.valid.manufacturerId = 1;
+	  }
+	}
+
+#if 0
+	if (diskInfo_.thisSessionLba > 0) {
+	  if (diskInfo_.lastTrackNr < 99)
+	    diskInfo_.append = 1;
+	}
+	else {
+	  message(3, "Did not find BO pointer in session %d.",
+		  diskInfo_.sessionCnt);
+	  
+	}
+#endif
+
+	delete[] toc;
+      }
+      else {
+	message(3, "getRawToc failed.");
+      }
+    }
+  }
+  else {
+    // disk is empty and appendable
+    diskInfo_.empty = 1;
+  }
+
+  if (diskInfo_.append == 0)
+    diskInfo_.empty = 0;
 
   return &diskInfo_;
 }
@@ -579,13 +733,16 @@ CdRawToc *CDD2600::getRawToc(int sessionNr, int *len)
   rawToc = new CdRawToc[entries];
 
   for (i = 0, p = data + 4; i < entries; i++, p += 11 ) {
-#if 0
-    message(0, "%d %02x %02d %2x %02x:%02x:%02x %02x %02x:%02x:%02x",
+#if 1
+    message(0, "%d %02x %02d %2x %02d:%02d:%02d %02x %02d:%02d:%02d",
 	    p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7], p[8], p[9], p[10]);
 #endif
     rawToc[i].sessionNr = p[0];
     rawToc[i].adrCtl = p[1];
     rawToc[i].point = p[3];
+    rawToc[i].min = p[4];
+    rawToc[i].sec = p[5];
+    rawToc[i].frame = p[6];
     rawToc[i].pmin = p[8];
     rawToc[i].psec = p[9];
     rawToc[i].pframe = p[10];
@@ -779,11 +936,17 @@ int CDD2600::readAudioRange(int fd, long start, long end,
     message(1, "Analyzing...");
 
     for (t = startTrack; t <= endTrack; t++) {
+
+      sendReadCdProgressMsg(RCD_ANALYZING, t + 1, 0);
+
       message(1, "Track %d...", t + 1);
       info[t].isrcCode[0] = 0;
       readIsrc(t + 1, info[t].isrcCode);
-    if (info[t].isrcCode[0] != 0)
-      message(1, "Found ISRC code.");
+
+      if (info[t].isrcCode[0] != 0)
+	message(1, "Found ISRC code.");
+
+      sendReadCdProgressMsg(RCD_ANALYZING, t + 1, 1000);
     }
 
     message(1, "Reading...");

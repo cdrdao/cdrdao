@@ -1,6 +1,6 @@
 /*  cdrdao - write audio CD-Rs in disc-at-once mode
  *
- *  Copyright (C) 1998  Andreas Mueller <mueller@daneb.ping.de>
+ *  Copyright (C) 1998-2000  Andreas Mueller <mueller@daneb.ping.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -18,8 +18,8 @@
  */
 /*
  * $Log: CDD2600Base.h,v $
- * Revision 1.1  2000/02/05 01:34:48  llanero
- * Initial revision
+ * Revision 1.2  2000/04/23 16:29:49  andreasm
+ * Updated to state of my private development environment.
  *
  * Revision 1.2  1999/03/27 20:52:02  mueller
  * Adapted to changed writing interface.
@@ -51,7 +51,7 @@ protected:
   int modeSelectCatalog(const Toc *);
 
   int readSessionInfo(long *, long *, int showMessage);
-  int writeSession(const Toc *, int multiSession);
+  int writeSession(const Toc *, int multiSession, long lbaOffset);
 
 private:
   CdrDriver *driver_; // driver for sending SCSI commands

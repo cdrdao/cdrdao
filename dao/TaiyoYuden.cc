@@ -1,6 +1,6 @@
 /*  cdrdao - write audio CD-Rs in disc-at-once mode
  *
- *  Copyright (C) 1998, 1999 Andreas Mueller <mueller@daneb.ping.de>
+ *  Copyright (C) 1998-2000 Andreas Mueller <mueller@daneb.ping.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -18,8 +18,11 @@
  */
 /*
  * $Log: TaiyoYuden.cc,v $
- * Revision 1.1  2000/02/05 01:37:33  llanero
- * Initial revision
+ * Revision 1.2  2000/04/23 16:29:50  andreasm
+ * Updated to state of my private development environment.
+ *
+ * Revision 1.5  1999/11/07 09:15:15  mueller
+ * Release 1.1.3
  *
  * Revision 1.4  1999/04/05 11:04:10  mueller
  * Added driver option flags.
@@ -39,7 +42,7 @@
  * Very similar to the Philips CDD2x00 drives.
  */
 
-static char rcsid[] = "$Id: TaiyoYuden.cc,v 1.1 2000/02/05 01:37:33 llanero Exp $";
+static char rcsid[] = "$Id: TaiyoYuden.cc,v 1.2 2000/04/23 16:29:50 andreasm Exp $";
 
 #include <config.h>
 
@@ -150,7 +153,7 @@ int TaiyoYuden::startDao()
   long lba = -leadInLength_ - 150; // Value is not really important since the
                                    // LBA is not used by 'writeData'.
  
-  if (writeSession(toc_, multiSession_) != 0) {
+  if (writeSession(toc_, multiSession_, 0) != 0) {
     return 1;
   }
 

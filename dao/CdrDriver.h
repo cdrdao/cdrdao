@@ -1,6 +1,6 @@
 /*  cdrdao - write audio CD-Rs in disc-at-once mode
  *
- *  Copyright (C) 1998, 1999  Andreas Mueller <mueller@daneb.ping.de>
+ *  Copyright (C) 1998-2000  Andreas Mueller <mueller@daneb.ping.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -18,8 +18,17 @@
  */
 /*
  * $Log: CdrDriver.h,v $
- * Revision 1.1  2000/02/05 01:35:03  llanero
- * Initial revision
+ * Revision 1.2  2000/04/23 16:29:49  andreasm
+ * Updated to state of my private development environment.
+ *
+ * Revision 1.17  1999/12/15 20:31:46  mueller
+ * Added remote messages for 'read-cd' progress used by a GUI.
+ *
+ * Revision 1.16  1999/12/12 16:22:58  mueller
+ * Added density code argument to 'setBlockSize'.
+ *
+ * Revision 1.15  1999/11/07 09:17:08  mueller
+ * Release 1.1.3
  *
  * Revision 1.14  1999/04/05 18:47:11  mueller
  * Added CD-TEXT support.
@@ -215,6 +224,9 @@ public:
   // if 'fd' is >= 0 and clears it otherwise
   virtual void onTheFly(int fd);
 
+  // Sets remote mode
+  virtual void remote(int);
+  
   // Sets cdda paranoia mode
   void paranoiaMode(int);
 
@@ -336,6 +348,8 @@ protected:
   int onTheFly_; // 1 if operating in on-the-fly mode
   int onTheFlyFd_; // file descriptor for on the fly data
 
+  int remote_; // 1 for remote mode, else 0
+
   const Toc *toc_;
 
   SubChannel **scannedSubChannels_;
@@ -348,6 +362,7 @@ protected:
   int audioDataByteOrder_; 
 
   static unsigned char syncPattern[12];
+  static char REMOTE_MSG_SYNC_[4];
 
   static int speed2Mult(int);
   static int mult2Speed(int);
@@ -515,10 +530,13 @@ protected:
   Toc *buildToc(TrackInfo *trackInfos, long nofTrackInfos, int padFirstPregap);
 
   // sets block size for read/write operations
-  virtual int setBlockSize(long blocksize);
+  virtual int setBlockSize(long blocksize, unsigned char density = 0);
 
   void printCdToc(CdToc *toc, int tocLen);
 
+  enum ReadCdProgressType { RCD_ANALYZING = 1, RCD_EXTRACTING = 2 };
+  void sendReadCdProgressMsg(ReadCdProgressType, int track,
+			     int trackProgress);
 
   // Interface for Monty's paranoia library:
 public:

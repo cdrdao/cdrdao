@@ -1,6 +1,6 @@
 /*  cdrdao - write audio CD-Rs in disc-at-once mode
  *
- *  Copyright (C) 1998  Andreas Mueller <mueller@daneb.ping.de>
+ *  Copyright (C) 1998-2000  Andreas Mueller <mueller@daneb.ping.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -18,8 +18,17 @@
  */
 /*
  * $Log: PlextorReader.cc,v $
- * Revision 1.1  2000/02/05 01:36:52  llanero
- * Initial revision
+ * Revision 1.2  2000/04/23 16:29:50  andreasm
+ * Updated to state of my private development environment.
+ *
+ * Revision 1.12  1999/12/15 20:31:46  mueller
+ * Added remote messages for 'read-cd' progress used by a GUI.
+ *
+ * Revision 1.11  1999/12/12 13:37:33  mueller
+ * Added DAE command for Matshita CD-ROM drives.
+ *
+ * Revision 1.10  1999/11/07 09:14:59  mueller
+ * Release 1.1.3
  *
  * Revision 1.9  1999/04/05 18:48:37  mueller
  * Added driver options.
@@ -52,7 +61,7 @@
  *
  */
 
-static char rcsid[] = "$Id: PlextorReader.cc,v 1.1 2000/02/05 01:36:52 llanero Exp $";
+static char rcsid[] = "$Id: PlextorReader.cc,v 1.2 2000/04/23 16:29:50 andreasm Exp $";
 
 #include <config.h>
 
@@ -573,6 +582,7 @@ int PlextorReader::readAudioRangePlextor(int fd,  long startLba, long endLba,
  
   int blockLength = AUDIO_BLOCK_LEN + 1 + 294 + 96;
   long  blocksPerRead = scsiIf_->maxDataLen() / blockLength;
+  long stampLba;
 
   // first, last, current and number of recorded tracks
   int fat=-1,lat=-1,cat,nat=0;
@@ -632,8 +642,11 @@ int PlextorReader::readAudioRangePlextor(int fd,  long startLba, long endLba,
   // set remaining audio blocks
   rab=nab;
 
+  stampLba = cab;
+
   // start optimistic
   speed(overspeed=20);
+
 
   // while still audio blocks left to read
   while (rab != 0)
@@ -653,6 +666,25 @@ int PlextorReader::readAudioRangePlextor(int fd,  long startLba, long endLba,
     cmd[9] = n;
 
     message(1, "block %6ld\r",cab);
+
+    if (remote_) {
+      if (cab > stampLba + 75) {
+	long totalLen = info[cat + 1].start - info[cat].start;
+	long progress = cab - info[cat].start;
+
+	if (progress > 0) {
+	  progress *= 1000;
+	  progress /= totalLen;
+	}
+	else {
+	  progress = 0;
+	}
+
+	sendReadCdProgressMsg(RCD_EXTRACTING, cat + 1, progress);
+
+	stampLba = cab;
+      }
+    }
 
     // SCSI command failed?
     while (sendCmd(cmd,12,NULL,0,data,n*blockLength))
@@ -979,6 +1011,17 @@ int PlextorReader::readSubChannels(long lba, long len, SubChannel ***chans,
 
     cmdLen = 10;
   }
+  else if (options_ & OPT_PLEX_DAE_D4_12) {
+    cmd[0] = 0xd4;
+    cmd[2] = lba >> 24;
+    cmd[3] = lba >> 16;
+    cmd[4] = lba >> 8;
+    cmd[5] = lba;
+    cmd[8] = len >> 8;
+    cmd[9] = len;
+
+    cmdLen = 12;
+  }
   else {
     cmd[0]=0xd8; // READ CDDA
     cmd[2] = lba >> 24;
@@ -1033,6 +1076,8 @@ int PlextorReader::readAudioRange(int fd, long start, long end,
     for (t = startTrack; t <= endTrack; t++) {
       message(1, "Track %d...", t + 1);
 
+      sendReadCdProgressMsg(RCD_ANALYZING, t + 1, 0);
+
 
       if (!fastTocReading_) {
 	if (pregap != 0)
@@ -1067,6 +1112,8 @@ int PlextorReader::readAudioRange(int fd, long start, long end,
       readIsrc(t + 1, info[t].isrcCode);
       if (info[t].isrcCode[0] != 0)
 	message(1, "Found ISRC code.");
+
+      sendReadCdProgressMsg(RCD_ANALYZING, t + 1, 1000);
     }
 
     message(1, "Reading...");

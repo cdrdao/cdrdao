@@ -1,6 +1,6 @@
 /*  cdrdao - write audio CD-Rs in disc-at-once mode
  *
- *  Copyright (C) 1998, 1999 Andreas Mueller <mueller@daneb.ping.de>
+ *  Copyright (C) 1998-2000 Andreas Mueller <mueller@daneb.ping.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -19,8 +19,17 @@
 
 /*
  * $Log: main.cc,v $
- * Revision 1.1  2000/02/05 01:38:21  llanero
- * Initial revision
+ * Revision 1.2  2000/04/23 16:29:50  andreasm
+ * Updated to state of my private development environment.
+ *
+ * Revision 1.22  1999/12/15 20:31:46  mueller
+ * Added remote messages for 'read-cd' progress used by a GUI.
+ *
+ * Revision 1.21  1999/12/12 13:41:08  mueller
+ * Fixed endless loop in 'setupDevice'.
+ *
+ * Revision 1.20  1999/11/07 09:15:15  mueller
+ * Release 1.1.3
  *
  * Revision 1.19  1999/04/05 18:50:01  mueller
  * Added driver options.
@@ -93,7 +102,7 @@
  *
  */
 
-static char rcsid[] = "$Id: main.cc,v 1.1 2000/02/05 01:38:21 llanero Exp $";
+static char rcsid[] = "$Id: main.cc,v 1.2 2000/04/23 16:29:50 andreasm Exp $";
 
 #include <config.h>
 
@@ -684,6 +693,9 @@ static CdrDriver *setupDevice(Command cmd, const char *scsiDevice,
       else {
 	initTries = 0;
       }
+    }
+    else {
+      initTries = 0;
     }
   }
 
@@ -1381,6 +1393,7 @@ int main(int argc, char **argv)
     cdr->rawDataReading(READ_RAW);
     cdr->paranoiaMode(PARANOIA_MODE);
     cdr->fastTocReading(FAST_TOC);
+    cdr->remote(REMOTE_MODE);
 
     toc = cdr->readDisk(SESSION,
 			(DATA_FILENAME == NULL) ? "data.bin" : DATA_FILENAME);

@@ -1,6 +1,6 @@
 /*  cdrdao - write audio CD-Rs in disc-at-once mode
  *
- *  Copyright (C) 1998  Andreas Mueller <mueller@daneb.ping.de>
+ *  Copyright (C) 1998-2000  Andreas Mueller <mueller@daneb.ping.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -18,8 +18,11 @@
  */
 /*
  * $Log: CDD2600Base.cc,v $
- * Revision 1.1  2000/02/05 01:35:37  llanero
- * Initial revision
+ * Revision 1.2  2000/04/23 16:29:49  andreasm
+ * Updated to state of my private development environment.
+ *
+ * Revision 1.3  1999/11/07 09:14:59  mueller
+ * Release 1.1.3
  *
  * Revision 1.2  1999/03/27 20:52:02  mueller
  * Adapted to changed writing interface.
@@ -29,7 +32,7 @@
  *
  */
 
-static char rcsid[] = "$Id: CDD2600Base.cc,v 1.1 2000/02/05 01:35:37 llanero Exp $";
+static char rcsid[] = "$Id: CDD2600Base.cc,v 1.2 2000/04/23 16:29:49 andreasm Exp $";
 
 #include <config.h>
 
@@ -176,7 +179,7 @@ int CDD2600Base::readSessionInfo(long *leadInLen, long *leadOutLen,
 // includes the complete table of contents with all related data.
 // return: 0: OK
 //         1: scsi command failed
-int CDD2600Base::writeSession(const Toc *toc, int multiSession)
+int CDD2600Base::writeSession(const Toc *toc, int multiSession, long lbaOffset)
 {
   unsigned char cmd[10];
   unsigned char *data = NULL;
@@ -225,7 +228,7 @@ int CDD2600Base::writeSession(const Toc *toc, int multiSession)
     cmd[6] = 0;
     break;
   case Toc::CD_ROM_XA:
-    cmd[6] = 2;
+    cmd[6] = 3;
     break;
   case Toc::CD_I:
     cmd[6] = 4;
@@ -263,6 +266,9 @@ int CDD2600Base::writeSession(const Toc *toc, int multiSession)
     tp[0] = tdl >> 8;
     tp[1] = tdl;
 
+    start = Msf(start.lba() + lbaOffset);
+    end = Msf(end.lba() + lbaOffset);
+
     tp[2] = 0;
     if (t->copyPermitted()) {
       tp[2] |= 0x02;
@@ -295,7 +301,7 @@ int CDD2600Base::writeSession(const Toc *toc, int multiSession)
       tp[2] |= 0x04;
     }
 
-    //message(0, "Track start: %s(0x%06lx)", start.str(), start.lba());
+    message(3, "Track start: %s(0x%06lx)", start.str(), start.lba());
     tp[12] = start.lba() >> 24;
     tp[13] = start.lba() >> 16;
     tp[14] = start.lba() >> 8;
@@ -303,7 +309,7 @@ int CDD2600Base::writeSession(const Toc *toc, int multiSession)
 
     for (i = 0; i < n; i++) {
       index = start + t->getIndex(i);
-      //message(0, "      index: %s(0x%06lx)", index.str(), index.lba());
+      message(3, "      index: %s(0x%06lx)", index.str(), index.lba());
       
       tp[16 + i * 4] = index.lba() >> 24;
       tp[17 + i * 4] = index.lba() >> 16;
@@ -311,7 +317,7 @@ int CDD2600Base::writeSession(const Toc *toc, int multiSession)
       tp[19 + i * 4] = index.lba();
     }
 
-    //message(0, "      end  : %s(0x%06lx)", end.str(), end.lba());
+    message(3, "      end  : %s(0x%06lx)", end.str(), end.lba());
     
     tp[16 + n * 4] = end.lba() >> 24;
     tp[17 + n * 4] = end.lba() >> 16;

@@ -1,6 +1,6 @@
 /*  cdrdao - write audio CD-Rs in disc-at-once mode
  *
- *  Copyright (C) 1998, 1999 Andreas Mueller <mueller@daneb.ping.de>
+ *  Copyright (C) 1998-2000 Andreas Mueller <mueller@daneb.ping.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -18,8 +18,21 @@
  */
 /*
  * $Log: CdrDriver.cc,v $
- * Revision 1.1  2000/02/05 01:36:08  llanero
- * Initial revision
+ * Revision 1.2  2000/04/23 16:29:49  andreasm
+ * Updated to state of my private development environment.
+ *
+ * Revision 1.17  1999/12/15 20:31:46  mueller
+ * Added remote messages for 'read-cd' progress used by a GUI.
+ *
+ * Revision 1.16  1999/12/12 16:23:37  mueller
+ * Added density code argument to 'setBlockSize'.
+ * Updated driver selection table.
+ *
+ * Revision 1.15  1999/12/12 14:15:37  mueller
+ * Updated driver selection table.
+ *
+ * Revision 1.14  1999/11/07 09:14:59  mueller
+ * Release 1.1.3
  *
  * Revision 1.13  1999/04/05 18:47:11  mueller
  * Added CD-TEXT support.
@@ -63,7 +76,7 @@
  *
  */
 
-static char rcsid[] = "$Id: CdrDriver.cc,v 1.1 2000/02/05 01:36:08 llanero Exp $";
+static char rcsid[] = "$Id: CdrDriver.cc,v 1.2 2000/04/23 16:29:49 andreasm Exp $";
 
 #include <config.h>
 
@@ -82,6 +95,7 @@ static char rcsid[] = "$Id: CdrDriver.cc,v 1.1 2000/02/05 01:36:08 llanero Exp $
 #include "Toc.h"
 #include "util.h"
 #include "CdTextItem.h"
+#include "remote.h"
 
 // all drivers
 #include "CDD2600.h"
@@ -95,6 +109,7 @@ static char rcsid[] = "$Id: CdrDriver.cc,v 1.1 2000/02/05 01:36:08 llanero Exp $
 #include "TeacCdr55.h"
 #include "SonyCDU920.h"
 #include "SonyCDU948.h"
+#include "ToshibaReader.h"
 
 // Paranoia DAE related
 #include "cdda_interface.h"
@@ -116,28 +131,35 @@ struct DriverTable {
 };
 
 static DriverSelectTable READ_DRIVER_TABLE[] = {
+{ "generic-mmc", "ASUS", "CD-S340", 0 },
 { "generic-mmc", "ASUS", "CD-S400", 0 },
 { "generic-mmc", "E-IDE", "CD-ROM 36X/AKU", 0 },
+{ "generic-mmc", "HITACHI", "CDR-8435", OPT_MMC_NO_SUBCHAN },
+{ "generic-mmc", "LG", "CD-ROM CRD-8480C", OPT_MMC_NO_SUBCHAN },
 { "generic-mmc", "LITEON", "CD-ROM", OPT_DRV_GET_TOC_GENERIC },
 { "generic-mmc", "MATSHITA", "CD-ROM CR-588", 0 },
 { "generic-mmc", "MEMOREX", "CD-233E", 0 },
 { "generic-mmc", "PIONEER", "DVD-103", OPT_MMC_USE_PQ|OPT_MMC_PQ_BCD },
 { "generic-mmc", "SONY", "CD-ROM CDU31A-02", 0 },
 { "generic-mmc", "TEAC", "CD-532E", OPT_MMC_USE_PQ|OPT_MMC_PQ_BCD },
+{ "generic-mmc", "TOSHIBA", "CD-ROM XM-3206B", 0 },
 { "generic-mmc", "TOSHIBA", "CD-ROM XM-6302B", 0 },
 { "plextor", "HITACHI", "DVD-ROM GD-2500", 0 },
+{ "plextor", "MATSHITA", "CD-ROM CR-506", OPT_PLEX_DAE_D4_12 },
 { "plextor", "NAKAMICH", "MJ-5.16S", 0 },
 { "plextor", "PIONEER", "CD-ROM DR-U06", OPT_DRV_GET_TOC_GENERIC },
+{ "plextor", "PIONEER", "CD-ROM DR-U10", OPT_DRV_GET_TOC_GENERIC },
 { "plextor", "PIONEER", "CD-ROM DR-U12", OPT_DRV_GET_TOC_GENERIC },
 { "plextor", "PIONEER", "CD-ROM DR-U16", OPT_DRV_GET_TOC_GENERIC },
 { "plextor", "PIONEER", "DVD-303", 0 },
 { "plextor", "SAF", "CD-R2006PLUS", 0 },
 { "plextor", "SONY", "CD-ROM", 0 },
 { "plextor", "SONY", "CD-ROM CDU-76", 0 },
-{ "plextor", "TOSHIBA", "CD-ROM XM-5701TA", 0 },
-{ "plextor", "TOSHIBA", "CD-ROM XM-6201TA", 0 },
 { "plextor-scan", "PLEXTOR", "CD-ROM", 0 },
 { "plextor-scan", "TEAC", "CD-ROM CD-532S", OPT_PLEX_USE_PQ|OPT_PLEX_PQ_BCD },
+{ "toshiba", "TOSHIBA", "CD-ROM XM-5701TA", 0 },
+{ "toshiba", "TOSHIBA", "CD-ROM XM-6201TA", 0 },
+{ "toshiba", "TOSHIBA", "CD-ROM XM-6401TA", 0 },
 { NULL, NULL, NULL, 0 }};
 
 static DriverSelectTable WRITE_DRIVER_TABLE[] = {
@@ -146,6 +168,7 @@ static DriverSelectTable WRITE_DRIVER_TABLE[] = {
 { "cdd2600", "IMS", "CDD2000", 0 },
 { "cdd2600", "PHILIPS", "CDD2000", 0 },
 { "cdd2600", "PHILIPS", "CDD2600", 0 },
+{ "cdd2600", "PHILIPS", "CDD522", 0 },
 { "generic-mmc", "HP", "CD-Writer+ 7570", OPT_MMC_CD_TEXT },
 { "generic-mmc", "HP", "CD-Writer+ 8100", OPT_MMC_CD_TEXT },
 { "generic-mmc", "HP", "CD-Writer+ 8200", OPT_MMC_CD_TEXT },
@@ -159,16 +182,22 @@ static DriverSelectTable WRITE_DRIVER_TABLE[] = {
 { "generic-mmc", "PLEXTOR", "CD-R   PX-R412", OPT_MMC_USE_PQ|OPT_MMC_READ_ISRC },
 { "generic-mmc", "PLEXTOR", "CD-R   PX-R820", 0 },
 { "generic-mmc", "PLEXTOR", "CD-R   PX-W4220", OPT_MMC_CD_TEXT },
+{ "generic-mmc", "PLEXTOR", "CD-R   PX-W8220", OPT_MMC_CD_TEXT },
+{ "generic-mmc", "PLEXTOR", "CD-R   PX-W8432", OPT_MMC_CD_TEXT },
+{ "generic-mmc", "RICOH", "CD-R/RW MP7060", OPT_MMC_CD_TEXT },
 { "generic-mmc", "SONY", "CRX100", OPT_MMC_CD_TEXT },
 { "generic-mmc", "TEAC", "CD-R56", OPT_MMC_USE_PQ|OPT_MMC_CD_TEXT },
+{ "generic-mmc", "TEAC", "CD-R58", OPT_MMC_USE_PQ|OPT_MMC_CD_TEXT },
 { "generic-mmc", "TRAXDATA", "CDRW4260", 0 },
 { "generic-mmc", "WAITEC", "WT624", 0 },
 { "generic-mmc", "YAMAHA", "CDR200", 0 },
 { "generic-mmc", "YAMAHA", "CDR400", 0 },
 { "generic-mmc", "YAMAHA", "CRW2260", 0 },
+{ "generic-mmc", "YAMAHA", "CRW4001", 0 },
 { "generic-mmc", "YAMAHA", "CRW4260", 0 },
 { "generic-mmc", "YAMAHA", "CRW4416", 0 },
 { "generic-mmc", "YAMAHA", "CRW6416", 0 },
+{ "generic-mmc-raw", "ATAPI", "CD-R/RW 4X4X32", 0 },
 { "generic-mmc-raw", "ATAPI", "CD-R/RW CRW6206A", 0 },
 { "generic-mmc-raw", "BTC", "BCE621E", 0 },
 { "generic-mmc-raw", "HP", "CD-Writer+ 7100", 0 },
@@ -211,9 +240,9 @@ static DriverTable DRIVERS[] = {
 { "sony-cdu948", &SonyCDU948::instance },
 { "taiyo-yuden", &TaiyoYuden::instance },
 { "teac-cdr55", &TeacCdr55::instance },
+{ "toshiba", &ToshibaReader::instance },
 { "yamaha-cdr10x", &YamahaCDR10x::instance },
 { NULL, NULL }};
-
 
 
 struct CDRVendorTable {
@@ -285,6 +314,7 @@ unsigned char CdrDriver::syncPattern[12] = {
   0, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0
 };
 
+char CdrDriver::REMOTE_MSG_SYNC_[4] = { 0xff, 0x00, 0xff, 0x00 };
 
 const char *CdrDriver::selectDriver(int readWrite, const char *vendor,
 				    const char *model, unsigned long *options)
@@ -363,6 +393,7 @@ CdrDriver::CdrDriver(ScsiIf *scsiIf, unsigned long options)
   onTheFlyFd_ = -1;
   multiSession_ = 0;
   encodingMode_ = 0;
+  remote_ = 0;
 
   blockLength_ = 0;
   blocksPerWrite_ = 0;
@@ -415,6 +446,27 @@ void CdrDriver::onTheFly(int fd)
   }
 }
 
+void CdrDriver::remote(int f)
+{
+  remote_ = (f != 0 ? 1 : 0);
+
+  if (remote_) {
+    int flags;
+    int fd = 3;
+
+    // switch FD 3 to non blocking IO mode
+    if ((flags = fcntl(fd, F_GETFL)) == -1) {
+      message(-1, "Cannot get flags of remote stream: %s", strerror(errno));
+      return;
+    }
+
+    flags |= O_NONBLOCK;
+
+    if (fcntl(fd, F_SETFL, flags) < 0) {
+      message(-1, "Cannot set flags of remote stream: %s", strerror(errno));
+    }
+  }
+}
 
 int CdrDriver::cdrVendor(Msf &code, const char **vendorId, 
 			 const char **mediumType)
@@ -2100,9 +2152,11 @@ TrackData::Mode CdrDriver::analyzeSubHeader(unsigned char *sh)
 
 
 // Sets block size for read/write operation to given value.
+// blocksize: block size in bytes
+// density: (optional, default: 0) density code
 // Return: 0: OK
 //         1: SCSI command failed
-int CdrDriver::setBlockSize(long blocksize)
+int CdrDriver::setBlockSize(long blocksize, unsigned char density)
 {
   unsigned char cmd[10];
   unsigned char ms[16];
@@ -2113,6 +2167,7 @@ int CdrDriver::setBlockSize(long blocksize)
   memset(ms, 0, 16);
 
   ms[3] = 8;
+  ms[4] = density;
   ms[10] = blocksize >> 8;
   ms[11] = blocksize;
 
@@ -2810,6 +2865,7 @@ int CdrDriver::readDataTrack(int fd, long start, long end,
 			     TrackInfo *trackInfo)
 {
   long len = end - start;
+  long totalLen = len;
   long lba;
   long lastLba;
   long blockLen;
@@ -2958,6 +3014,13 @@ int CdrDriver::readDataTrack(int fd, long start, long end,
 	Msf lbatime(lba);
 	message(1, "%02d:%02d:00\r", lbatime.min(), lbatime.sec());
 	lastLba = lba;
+
+	if (remote_) {
+	  long progress = (totalLen - len) * 1000;
+	  progress /= totalLen;
+
+	  sendReadCdProgressMsg(RCD_EXTRACTING, trackInfo->trackNr, progress);
+	}
       }
 
       lba += act;
@@ -3090,6 +3153,27 @@ int CdrDriver::readCatalogScan(char *mcnCode, long startLba, long endLba)
 #undef MAX_MCN_SCAN_LENGTH
 
 
+// Sends a read cd progress message without blocking the actual process.
+void CdrDriver::sendReadCdProgressMsg(ReadCdProgressType type,
+				      int track, int trackProgress)
+{
+  if (remote_) {
+    int fd = 3;
+    ReadCdProgress p;
+
+    p.status = type;
+    p.track = track;
+    //p.totalTracks = totalTracks;
+    p.trackProgress = trackProgress;
+
+    if (write(fd, REMOTE_MSG_SYNC_, sizeof(REMOTE_MSG_SYNC_)) != sizeof(REMOTE_MSG_SYNC_) ||
+	write(fd, (const char*)&p, sizeof(p)) != sizeof(p)) {
+      message(-1, "Failed to send read CD remote progress message.");
+    }
+  }
+}
+
+
 // read cdda paranoia related:
 
 void CdrDriver::paranoiaMode(int mode)
@@ -3196,6 +3280,22 @@ long CdrDriver::paranoiaRead(Sample *buffer, long startLba, long len)
 
   if (swap)
     swapSamples(buffer, len * SAMPLES_PER_BLOCK);
+
+  if (remote_) {
+    long totalTrackLen = paranoiaTrackInfo_[paranoiaActTrack_ + 1].start -
+                         paranoiaTrackInfo_[paranoiaActTrack_ ].start;
+    long progress = startLba - paranoiaTrackInfo_[paranoiaActTrack_ ].start;
+
+    if (progress > 0) {
+      progress *= 1000;
+      progress /= totalTrackLen;
+    }
+    else {
+      progress = 0;
+    }
+
+    sendReadCdProgressMsg(RCD_EXTRACTING, paranoiaActTrack_ + 1, progress);
+  }
 
   if (chans == NULL) {
     // drive does not provide sub channel data so that's all we could do here:

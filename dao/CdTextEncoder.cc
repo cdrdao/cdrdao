@@ -1,6 +1,6 @@
 /*  cdrdao - write audio CD-Rs in disc-at-once mode
  *
- *  Copyright (C) 1998, 1999 Andreas Mueller <mueller@daneb.ping.de>
+ *  Copyright (C) 1998-2000 Andreas Mueller <mueller@daneb.ping.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -19,8 +19,14 @@
 
 /*
  * $Log: CdTextEncoder.cc,v $
- * Revision 1.1  2000/02/05 01:35:41  llanero
- * Initial revision
+ * Revision 1.2  2000/04/23 16:29:49  andreasm
+ * Updated to state of my private development environment.
+ *
+ * Revision 1.3  1999/12/19 15:27:15  mueller
+ * Removed copy protection flags in 'buildSizeInfoPacks'.
+ *
+ * Revision 1.2  1999/11/07 09:14:59  mueller
+ * Release 1.1.3
  *
  * Revision 1.1  1999/06/13 19:31:15  mueller
  * Initial revision
@@ -38,7 +44,7 @@
 #include "CdTextItem.h"
 #include "PWSubChannel96.h"
 
-static char rcsid[] = "$Id: CdTextEncoder.cc,v 1.1 2000/02/05 01:35:41 llanero Exp $";
+static char rcsid[] = "$Id: CdTextEncoder.cc,v 1.2 2000/04/23 16:29:49 andreasm Exp $";
 
 unsigned short CdTextEncoder::CRCTAB_[256] = {
   0x0000, 0x1021, 0x2042, 0x3063, 0x4084, 0x50A5, 0x60C6, 0x70E7, 0x8108,
@@ -370,7 +376,7 @@ void CdTextEncoder::buildSizeInfoPacks()
     sizeInfo_[b].firstTrack = 1; // we always start with track 1
     sizeInfo_[b].lastTrack = toc_->nofTracks();
 
-    sizeInfo_[b].copyright = 3; // to look like all other CD-TEXT CDs
+    sizeInfo_[b].copyright = 0; // no copy protection
 
     for (i = 0; i < 8; i++) {
       if (sizeInfo_[b].lastSequenceNumber[i] > 0) {
