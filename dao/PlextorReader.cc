@@ -34,7 +34,7 @@
 PlextorReader::PlextorReader(ScsiIf *scsiIf, unsigned long options)
   : CdrDriver(scsiIf, options)
 {
-  driverName_ = "Plextor CD-ROM Reader - Version 1.2";
+  driverName_ = "Plextor CD-ROM Reader - Version 1.3";
   
   speed_ = 0;
   simulate_ = 0;
@@ -75,38 +75,78 @@ PlextorReader::PlextorReader(ScsiIf *scsiIf, unsigned long options)
         m++;
     }
     model_ = models[m].number; // zero if not found
-    
-    /* These are available only for PX-20 and later */
-    if (model_ >= 7) {
+   
+	if (model_ > 0)	{
+    /* Plextor special features initialization */
         unsigned char buf[32];
         unsigned char header[8];
         unsigned char blockdesc[8];
-        
-            /*
-            Mode page 0x31
-            byte 3 [ x x x x x sl td re ]
-            
-            re=read errors , if 0 slow down on read errors
-            td=transfer data, if 0 wait for max speed before transfer data
-            sl=if 0 slowdown to avoid vibrations
-            */
+        struct plex_msg {
+            int value;
+            char *msg;
+        };
+        struct plex_msg slowdown_msg[] = {
+            { -1, "Unsupported"},
+            { 0, "Enabled, unit will slow down"},
+            { 1, "Disabled, unit won't slow down"}
+        };
+        struct plex_msg trbefmax_msg[] = {
+            { -1, "Unsupported"},
+            { 0, "Disabled, unit will wait for max speed"},
+            { 1, "Enabled, unit will transfer as soon as possible"}
+        };
+        /* Read error slowdown seems available for all drives, while
+        vibration and transfer control only for PX-20 and later
+        Data is taken from
+        Mode page 0x31 byte 3 [ x x x x x sl td re ]
+        re=read errors , if 0 slow down on read errors, 0 default
+        td=transfer data, if 0 wait for max speed before transfer data, 0 default
+        sl=if 0 slowdown to avoid vibrations, 0 default
+        */
+        slow_down_on_read_errors = -1;
+        transfer_data_before_max_speed = -1;
+        slow_down_on_vibrations = -1;
+        orig_byte3 = 0;
         if (getModePage6 (0x31, buf, 32, header, blockdesc, 1) == 0)    {
+            orig_byte3 = buf[3];
             slow_down_on_read_errors = buf[3] & 0x01;
-            transfer_data_before_max_speed = (buf[3] & 0x02) >> 1;
-            slow_down_on_vibrations = (buf[3] & 0x04) >> 2;
-            /*message (0, "Sl_re %d, Tr_bm %d, Sl_vib %d\n",
-                slow_down_on_read_errors,
-                transfer_data_before_max_speed,
-                slow_down_on_vibrations);*/
+            if (model_ >= 7)    {
+                transfer_data_before_max_speed = (buf[3] & 0x02) >> 1;
+                slow_down_on_vibrations = (buf[3] & 0x04) >> 2;
+            }
         }
+        if (options & OPT_PLEX_NOSLOW_ON_ERR)
+            ReadErrorsSlowDown (0);
+        if (options & OPT_PLEX_TRANSF_BEF_MAX)
+            WaitMaxSpeed (0);
+        if (options & OPT_PLEX_NOSLOW_ON_VIB)
+            VibrationsSlowDown (0);
+        message (4, "Plextor features status:");
+        message (4, "  Slowdown on read errors: %s",
+            slowdown_msg[slow_down_on_read_errors+1].msg);
+        message (4, "  Slowdown to avoid vibrations: %s",
+            slowdown_msg[slow_down_on_vibrations+1].msg);
+        message (4, "  Transfer data before max speed: %s",
+            trbefmax_msg[transfer_data_before_max_speed+1].msg);
     }
-    
     message(4, "model number %d\n",model_);
     message(4, "PRODUCT ID: '%s'\n", scsiIf_->product());
   }
 }
 
-// 1 on success, -1 on error
+PlextorReader::~PlextorReader ()        {
+	/* Only for Plextor units */
+	if (model_ > 0)	{
+    	unsigned char buf[32];
+    	unsigned char header[8];
+    	unsigned char blockdesc[8];
+    	if (getModePage6 (0x31, buf, 32, header, blockdesc, 1) != 0) 
+        	return;
+    	buf[3] = orig_byte3;
+    	setModePage6 (buf, header, blockdesc, 1);
+	}
+}
+
 int PlextorReader::ReadErrorsSlowDown (int slowdown)    {
     /* Not supported */
     if (slow_down_on_read_errors == -1 ) return -1;
@@ -121,6 +161,7 @@ int PlextorReader::ReadErrorsSlowDown (int slowdown)    {
         buf[3] |= 0x01;
     if (setModePage6 (buf, header, blockdesc, 1) != 0) 
         return -1;
+    slow_down_on_read_errors = slowdown;
     return 1;
 }
 
@@ -137,6 +178,7 @@ int PlextorReader::VibrationsSlowDown (int slowdown)    {
         buf[3] |= 0x04;
     if (setModePage6 (buf, header, blockdesc, 1) != 0) 
         return -1;
+    slow_down_on_vibrations = slowdown;
     return 1;
 }
 
@@ -153,6 +195,7 @@ int PlextorReader::WaitMaxSpeed (int wait)      {
         buf[3] |= 0x02;
     if (setModePage6 (buf, header, blockdesc, 1) != 0) 
         return -1;
+    transfer_data_before_max_speed = wait;
     return 1;
 }
 
