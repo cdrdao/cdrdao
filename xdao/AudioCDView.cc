@@ -30,10 +30,11 @@
 #include "SampleDisplay.h"
 #include "TocEdit.h"
 #include "MDIWindow.h"
+#include "util.h"
 
 #include "AudioCDChild.h"
 #include "AudioCDView.h"
-
+#include <gnome.h>
 
 AudioCDView::AudioCDView(AudioCDChild *child) 
 {
@@ -41,6 +42,19 @@ AudioCDView::AudioCDView(AudioCDChild *child)
   tocEdit_ = child->tocEdit_;
 
   Gtk::VBox *vbox = this;
+
+  static const GtkTargetEntry drop_types [] =
+  {
+    { "text/uri-list", 0, TARGET_URI_LIST }
+  };
+
+  static gint n_drop_types = sizeof (drop_types) / sizeof(drop_types[0]);
+
+  drag_dest_set(static_cast <GtkDestDefaults> (GTK_DEST_DEFAULT_MOTION
+    | GTK_DEST_DEFAULT_HIGHLIGHT | GTK_DEST_DEFAULT_DROP),
+    &drop_types[0], n_drop_types, GDK_ACTION_COPY);
+  
+  drag_data_received.connect(slot(this, &AudioCDView::drag_data_received_cb));
 
   sampleDisplay_ = new SampleDisplay;
   sampleDisplay_->setTocEdit(tocEdit_);
@@ -497,3 +511,38 @@ int AudioCDView::indexSelection(int *inum) const
   return indexSelectionValid_;
 }
 
+void AudioCDView::drag_data_received_cb(GdkDragContext *context,
+  gint x, gint y, GtkSelectionData *selection_data, guint info, guint time)
+{
+  GList *names;
+  char *file;
+  
+  switch (info) {
+    case TARGET_URI_LIST:
+      names = (GList *)gnome_uri_list_extract_filenames \
+			((char *)selection_data->data);  
+
+//  	tocEdit_->blockEdit();
+//FIXME      while (names->data) {
+      if (names->data) {
+          string str = g_strdup(static_cast <char *>(names->data));
+          const char *file = stripCwd(str.c_str());
+
+        switch (tocEdit_->appendTrack(file)) {
+        case 0:
+	      guiUpdate();
+	      MDI_WINDOW->statusMessage("Appended track with audio data from \"%s\".", file);
+	      break;
+        case 1:
+	      MDI_WINDOW->statusMessage("Cannot open audio file \"%s\".", file);
+	      break;
+        case 2:
+	      MDI_WINDOW->statusMessage("Audio file \"%s\" has wrong format.", file);
+	      break;
+	    }
+	    names = g_list_remove(names, names->data);
+      }
+//	tocEdit_->unblockEdit();
+    break;
+  }
+}

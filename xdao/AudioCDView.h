@@ -29,6 +29,9 @@
 
 class SampleDisplay;
 
+enum {
+  TARGET_URI_LIST,
+};
 
 class AudioCDView : public GenericView
 {
@@ -81,6 +84,9 @@ private:
   void markerSet();
 
   void selectionSet();
+
+  void drag_data_received_cb(GdkDragContext *context, gint x, gint y,
+         GtkSelectionData *selection_data, guint info, guint time);
 
 
 // Allow a different selection on every view.

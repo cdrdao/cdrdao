@@ -18,6 +18,10 @@
  */
 /*
  * $Log: AddFileDialog.cc,v $
+ * Revision 1.4  2000/09/22 00:21:13  llanero
+ * Added Drag and Drop ability to the AudioCDView, but just
+ * one file at a time, and when not playin, not reading, ...
+ *
  * Revision 1.3  2000/09/21 02:07:06  llanero
  * MDI support:
  * Splitted AudioCDChild into same and AudioCDView
@@ -41,7 +45,7 @@
  *
  */
 
-static char rcsid[] = "$Id: AddFileDialog.cc,v 1.3 2000/09/21 02:07:06 llanero Exp $";
+static char rcsid[] = "$Id: AddFileDialog.cc,v 1.4 2000/09/22 00:21:13 llanero Exp $";
 
 #include <stdio.h>
 #include <limits.h>
@@ -57,7 +61,8 @@ static char rcsid[] = "$Id: AddFileDialog.cc,v 1.3 2000/09/21 02:07:06 llanero E
 #include "util.h"
 #include "AudioCDChild.h"
 #include "AudioCDView.h"
-
+#include "MDIWindow.h"
+#include "xcdrdao.h"
 
 AddFileDialog::AddFileDialog(AudioCDChild *child) : Gtk::FileSelection(string(""))
 {
@@ -162,13 +167,13 @@ void AddFileDialog::applyAction()
       switch (tocEdit_->appendTrack(s)) {
       case 0:
 	guiUpdate();
-	//statusMessage("Appended track with audio data from \"%s\".", s);
+	MDI_WINDOW->statusMessage("Appended track with audio data from \"%s\".", s);
 	break;
       case 1:
-	//statusMessage("Cannot open audio file \"%s\".", s);
+	MDI_WINDOW->statusMessage("Cannot open audio file \"%s\".", s);
 	break;
       case 2:
-	//statusMessage("Audio file \"%s\" has wrong format.", s);
+	MDI_WINDOW->statusMessage("Audio file \"%s\" has wrong format.", s);
 	break;
       }
       break;
@@ -177,13 +182,13 @@ void AddFileDialog::applyAction()
       switch (tocEdit_->appendFile(s)) {
       case 0:
 	guiUpdate();
-	//statusMessage("Appended audio data from \"%s\".", s);
+	MDI_WINDOW->statusMessage("Appended audio data from \"%s\".", s);
       break;
       case 1:
-	//statusMessage("Cannot open audio file \"%s\".", s);
+	MDI_WINDOW->statusMessage("Cannot open audio file \"%s\".", s);
 	break;
       case 2:
-	//statusMessage("Audio file \"%s\" has wrong format.", s);
+	MDI_WINDOW->statusMessage("Audio file \"%s\" has wrong format.", s);
 	break;
       }
       break;
@@ -196,13 +201,13 @@ void AddFileDialog::applyAction()
 	case 0:
       view->sampleSelection(pos, pos + len - 1);
 	  guiUpdate();
-	  //statusMessage("Inserted audio data from \"%s\".", s);
+	  MDI_WINDOW->statusMessage("Inserted audio data from \"%s\".", s);
 	  break;
 	case 1:
-	  //statusMessage("Cannot open audio file \"%s\".", s);
+	  MDI_WINDOW->statusMessage("Cannot open audio file \"%s\".", s);
 	  break;
 	case 2:
-	  //statusMessage("Audio file \"%s\" has wrong format.", s);
+	  MDI_WINDOW->statusMessage("Audio file \"%s\" has wrong format.", s);
 	  break;
 	}
       }
