@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_REVISION($Revision: 1.22 $)dnl
+AC_REVISION($Revision: 1.23 $)dnl
 AC_INIT(cdrdao.lsm)
 
 cdrdao_version=1.1.6-pre2
@@ -162,6 +162,8 @@ if test "$pcctsbin" = default; then
   AC_SUBST(antlr_path)
   AC_SUBST(dlg_path)
 
+  pccts_target="pccts"
+
 else
   AC_PATH_PROG(antlr_path,antlr,no,$pcctsbin)
   AC_PATH_PROG(dlg_path,dlg,no,$pcctsbin)
@@ -173,6 +175,9 @@ else
   if test $dlg_path = "no" ; then
     AC_MSG_ERROR([PCCTS: dlg not found in path.])
   fi
+
+  pccts_target=""
+
 fi
 
 
@@ -271,6 +276,10 @@ dnl -lc_r is automatically done by the linker
 		thread_libs=""
 	      fi
 	      ;;
+  *darwin*)
+            AC_DEFINE(_P1003_1B_VISIBLE)
+            ;;
+
 esac
 
 dnl Sound device selection for xcdrdao
@@ -305,6 +314,7 @@ AC_SUBST(xdao)
 AC_SUBST(scsilib_dir)
 AC_SUBST(scsilib_incl)
 AC_SUBST(scsilib_libs)
+AC_SUBST(pccts_target)
 AC_SUBST(pcctsinc)
 AC_SUBST(dao_src)
 AC_SUBST(sound_if_src)

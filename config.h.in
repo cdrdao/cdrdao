@@ -60,3 +60,5 @@
 /* SCSI interface selection */
 #undef USE_SCGLIB
 
+/* Unhide some OS X defs */
+#undef _P1003_1B_VISIBLE
