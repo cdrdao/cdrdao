@@ -2234,7 +2234,7 @@ int main(int argc, char **argv)
     }
 
     if (ON_THE_FLY) {
-#ifdef _WIN32
+#ifdef __CYGWIN__
       message(-2,
 	      "Sorry, on the fly copying is not supported for Win32, yet.");
       exitCode = 1; goto fail;

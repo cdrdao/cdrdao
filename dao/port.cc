@@ -1,6 +1,6 @@
 /*  cdrdao - write audio CD-Rs in disc-at-once mode
  *
- *  Copyright (C) 1998, 1999  Andreas Mueller <mueller@daneb.ping.de>
+ *  Copyright (C) 1998-2001  Andreas Mueller <andreas@daneb.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -16,30 +16,6 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
-/*
- * $Log: port.cc,v $
- * Revision 1.4  2001/03/25 07:36:14  andreasm
- * Updated SCSI lib to version from cdrtools-1.10a17.
- * Added patches from compilation under UnixWare.
- *
- * Revision 1.3  2000/12/17 10:51:23  andreasm
- * Default verbose level is now 2. Adaopted message levels to have finer
- * grained control about the amount of messages printed by cdrdao.
- * Added CD-TEXT writing support to the GenericMMCraw driver.
- * Fixed CD-TEXT cue sheet creating for the GenericMMC driver.
- *
- * Revision 1.2  2000/11/12 16:50:44  andreasm
- * Fixes for compilation under Win32.
- *
- * Revision 1.1.1.1  2000/02/05 01:38:22  llanero
- * Uploaded cdrdao 1.1.3 with pre10 patch applied.
- *
- * Revision 1.1  1999/05/11 20:03:29  mueller
- * Initial revision
- *
- */
-
-static char rcsid[] = "$Id: port.cc,v 1.4 2001/03/25 07:36:14 andreasm Exp $";
 
 #include <config.h>
 
@@ -61,7 +37,7 @@ static char rcsid[] = "$Id: port.cc,v 1.4 2001/03/25 07:36:14 andreasm Exp $";
 
 #endif
 
-#ifdef _WIN32
+#ifdef __CYGWIN__
 #include <vadefs.h>
 #include <windows.h>
 #endif
@@ -208,7 +184,7 @@ void unblockSignal(int sig)
  */
 int setRealTimeScheduling(int priority)
 {
-#if defined(_WIN32)
+#if defined(__CYGWIN__)
   if (!SetPriorityClass(GetCurrentProcess(), REALTIME_PRIORITY_CLASS)) {
     message(-1, "Cannot set real time priority class.");
     return 3;

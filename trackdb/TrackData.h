@@ -1,6 +1,6 @@
 /*  cdrdao - write audio CD-Rs in disc-at-once mode
  *
- *  Copyright (C) 1998, 1999  Andreas Mueller <mueller@daneb.ping.de>
+ *  Copyright (C) 1998-2001  Andreas Mueller <andreas@daneb.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -15,45 +15,6 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- */
-
-/*
- * $Log: TrackData.h,v $
- * Revision 1.2  2000/06/10 14:44:47  andreasm
- * Tracks that are shorter than 4 seconds do not lead to a fatal error anymore.
- * The user has the opportunity to record such tracks now.
- *
- * Revision 1.1.1.1  2000/02/05 01:32:33  llanero
- * Uploaded cdrdao 1.1.3 with pre10 patch applied.
- *
- * Revision 1.9  1999/04/02 20:36:21  mueller
- * Created implementation class that contains all mutual member data.
- *
- * Revision 1.8  1999/03/27 19:49:29  mueller
- * Added data file support.
- *
- * Revision 1.7  1999/01/24 15:59:52  mueller
- * Added static member functions 'waveLength()', 'audioDataLength()' and
- * 'audioFileType()'.
- * Fixed handling of WAVE files as indicated by Eberhard Mattes. The length
- * of audio data is now taken from the WAVE header instead assuming that
- * the audio data reaches until the end of the file.
- *
- * Revision 1.6  1999/01/10 15:13:02  mueller
- * Added function 'checkAudioFile()'.
- *
- * Revision 1.5  1998/11/21 18:07:55  mueller
- * Added on-the-fly writing patch from Michael Weber <Michael.Weber@Post.RWTH-AAchen.DE>
- *
- * Revision 1.4  1998/11/15 12:15:18  mueller
- * Added member functions 'split()' and 'merge()'.
- *
- * Revision 1.3  1998/09/22 19:17:19  mueller
- * Added seeking to and reading of samples for GUI.
- *
- * Revision 1.2  1998/07/28 13:46:39  mueller
- * Automatic length determination of audio files is now done in 'AudioData'.
- *
  */
 
 

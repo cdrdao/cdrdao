@@ -1,6 +1,6 @@
 /*  cdrdao - write audio CD-Rs in disc-at-once mode
  *
- *  Copyright (C) 1998, 1999 Andreas Mueller <mueller@daneb.ping.de>
+ *  Copyright (C) 1998-2001 Andreas Mueller <andreas@daneb.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -15,34 +15,6 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- */
-/*
- * $Log: Track.h,v $
- * Revision 1.3  2001/03/04 19:34:13  andreasm
- * Added class 'SubTrackIterator'.
- *
- * Revision 1.2  2000/06/10 14:44:47  andreasm
- * Tracks that are shorter than 4 seconds do not lead to a fatal error anymore.
- * The user has the opportunity to record such tracks now.
- *
- * Revision 1.1.1.1  2000/02/05 01:32:33  llanero
- * Uploaded cdrdao 1.1.3 with pre10 patch applied.
- *
- * Revision 1.6  1999/04/05 11:03:01  mueller
- * Added CD-TEXT support.
- *
- * Revision 1.5  1999/04/02 20:36:21  mueller
- * Created implementation class that contains all mutual member data.
- *
- * Revision 1.4  1999/03/27 19:52:26  mueller
- * Added data track support.
- *
- * Revision 1.3  1998/11/15 12:19:13  mueller
- * Added several functions for manipulating track/index marks.
- *
- * Revision 1.2  1998/09/22 19:17:19  mueller
- * Added seeking to and reading of samples for GUI.
- *
  */
 
 #ifndef __TRACK_H__

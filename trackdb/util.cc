@@ -1,6 +1,6 @@
 /*  cdrdao - write audio CD-Rs in disc-at-once mode
  *
- *  Copyright (C) 1998  Andreas Mueller <mueller@daneb.ping.de>
+ *  Copyright (C) 1998-2001  Andreas Mueller <andreas@daneb.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -16,34 +16,6 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
-/*
- * $Log: util.cc,v $
- * Revision 1.2  2000/06/19 20:14:00  andreasm
- * Implemented CDDB access via cddbp and http.
- *
- * Revision 1.1.1.1  2000/02/05 01:34:32  llanero
- * Uploaded cdrdao 1.1.3 with pre10 patch applied.
- *
- * Revision 1.7  1999/03/27 19:51:04  mueller
- * Added 'strdup3CC()'.
- *
- * Revision 1.6  1999/01/24 15:59:02  mueller
- * Moved 'audioDataLength()', 'audioFileType()' and 'waveHeaderLength()'
- * to class 'AudioData'.
- *
- * Revision 1.5  1998/10/03 14:32:31  mueller
- * Applied patch from Bjoern Fischer <bfischer@Techfak.Uni-Bielefeld.DE>.
- *
- * Revision 1.4  1998/09/06 12:00:26  mueller
- * Used 'message' function for messages.
- *
- * Revision 1.3  1998/08/15 12:41:32  mueller
- * Ignore case when checking for '.wav' extension.
- * Suggested by Paul Martin <pm@nowster.zetnet.co.uk>.
- *
- */
-
-static char rcsid[] = "$Id: util.cc,v 1.2 2000/06/19 20:14:00 andreasm Exp $";
 
 #include <config.h>
 

@@ -1,6 +1,6 @@
 /*  cdrdao - write audio CD-Rs in disc-at-once mode
  *
- *  Copyright (C) 1998, 1999 Andreas Mueller <mueller@daneb.ping.de>
+ *  Copyright (C) 1998-2001 Andreas Mueller <andreas@daneb.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -17,20 +17,6 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
- * $Log: TrackDataList.cc,v $
- * Revision 1.1  2000/02/05 01:34:31  llanero
- * Initial revision
- *
- * Revision 1.2  1999/03/27 19:50:44  mueller
- * Renamed class 'AudioData' to 'TrackData'.
- *
- * Revision 1.1  1998/11/15 12:17:06  mueller
- * Initial revision
- *
- */
-
-static char rcsid[] = "$Id: TrackDataList.cc,v 1.1 2000/02/05 01:34:31 llanero Exp $";
 
 #include <config.h>
 

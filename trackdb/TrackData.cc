@@ -1,6 +1,6 @@
 /*  cdrdao - write audio CD-Rs in disc-at-once mode
  *
- *  Copyright (C) 1998, 1999  Andreas Mueller <mueller@daneb.ping.de>
+ *  Copyright (C) 1998-2001  Andreas Mueller <andreas@daneb.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -16,57 +16,6 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
-
-/*
- * $Log: TrackData.cc,v $
- * Revision 1.3  2001/03/25 07:36:14  andreasm
- * Updated SCSI lib to version from cdrtools-1.10a17.
- * Added patches from compilation under UnixWare.
- *
- * Revision 1.2  2000/06/10 14:44:47  andreasm
- * Tracks that are shorter than 4 seconds do not lead to a fatal error anymore.
- * The user has the opportunity to record such tracks now.
- *
- * Revision 1.1.1.1  2000/02/05 01:34:30  llanero
- * Uploaded cdrdao 1.1.3 with pre10 patch applied.
- *
- * Revision 1.12  1999/04/02 20:36:21  mueller
- * Created implementation class that contains all mutual member data.
- *
- * Revision 1.11  1999/03/27 19:49:29  mueller
- * Added data file support.
- *
- * Revision 1.10  1999/01/24 15:59:52  mueller
- * Added static member functions 'waveLength()', 'audioDataLength()' and
- * 'audioFileType()'.
- * Fixed handling of WAVE files as indicated by Eberhard Mattes. The length
- * of audio data is now taken from the WAVE header instead assuming that
- * the audio data reaches until the end of the file.
- *
- * Revision 1.9  1999/01/10 15:13:02  mueller
- * Added function 'checkAudioFile()'.
- *
- * Revision 1.8  1998/11/21 18:07:55  mueller
- * Added on-the-fly writing patch from Michael Weber <Michael.Weber@Post.RWTH-AAchen.DE>
- *
- * Revision 1.7  1998/11/15 12:15:18  mueller
- * Added member functions 'split()' and 'merge()'.
- *
- * Revision 1.6  1998/09/23 17:55:59  mueller
- * Improved error message about short audio file.
- *
- * Revision 1.5  1998/09/22 19:17:19  mueller
- * Added seeking to and reading of samples for GUI.
- *
- * Revision 1.4  1998/09/06 12:00:26  mueller
- * Used 'message' function for messages.
- *
- * Revision 1.3  1998/07/28 13:47:48  mueller
- * Automatic length determination of audio files is now done in 'AudioData'.
- *
- */
-
-static char rcsid[] = "$Id: TrackData.cc,v 1.3 2001/03/25 07:36:14 andreasm Exp $";
 
 #include <config.h>
 
@@ -565,7 +514,7 @@ int TrackData::waveLength(const char *filename, long offset,
   short waveBits;
   struct stat sbuf;
 
-#ifdef _WIN32
+#ifdef __CYGWIN__
   if ((fp = fopen(filename, "rb")) == NULL)
 #else
   if ((fp = fopen(filename, "r")) == NULL)
@@ -952,7 +901,7 @@ int TrackDataReader::openData()
     if (trackData_->mode_ == TrackData::AUDIO) {
       long headerLength = 0;
 
-#ifdef _WIN32
+#ifdef __CYGWIN__
       if ((fd_ = open(trackData_->filename_, O_RDONLY | O_BINARY)) < 0)
 #else
       if ((fd_ = open(trackData_->filename_, O_RDONLY)) < 0)
@@ -983,7 +932,7 @@ int TrackDataReader::openData()
       // data mode
       headerLength_ = 0;
 
-#ifdef _WIN32
+#ifdef __CYGWIN__
       if ((fd_ = open(trackData_->filename_, O_RDONLY | O_BINARY)) < 0)
 #else
       if ((fd_ = open(trackData_->filename_, O_RDONLY)) < 0)

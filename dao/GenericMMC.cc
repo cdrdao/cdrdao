@@ -1779,10 +1779,18 @@ long GenericMMC::readTrackData(TrackData::Mode mode, long lba, long len,
 	    break;
 	  }
 	}
+	else if ((sense[2] & 0x0f) == 4) { // Hardware Error
+          switch (sense[12]) {
+          case 0x9: // focus servo failure
+            return -2;
+            break;
+          }
+        }    
 	else if ((sense[2] & 0x0f) == 3) { // Medium error
 	  switch (sense[12]) {
 	  case 0x02: // No seek complete, sector not found
 	  case 0x11: // L-EC error
+	  case 0x15: // random positioning error
 	    return -2;
 	    break;
 	  }
@@ -1809,7 +1817,6 @@ long GenericMMC::readTrackData(TrackData::Mode mode, long lba, long len,
   unsigned char *sector = transferBuffer_;
   for (i = 0; i < len; i++) {
      
-
     if (memcmp(CdrDriver::syncPattern, sector, 12) != 0) {
       // can't be a data block
       message(4, "Stopped because no sync pattern found.");
@@ -1819,7 +1826,6 @@ long GenericMMC::readTrackData(TrackData::Mode mode, long lba, long len,
 	      sector[11]);
       return i;
     }
-
     actMode = determineSectorMode(sector + 12);
 
     if (!(actMode == mode ||

@@ -1,6 +1,6 @@
 /*  cdrdao - write audio CD-Rs in disc-at-once mode
  *
- *  Copyright (C) 1998-2001 Andreas Mueller <mueller@daneb.ping.de>
+ *  Copyright (C) 1998-2001 Andreas Mueller <andreas@daneb.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -2570,7 +2570,9 @@ unsigned char CdrDriver::trackCtl(const Track *track)
 unsigned char CdrDriver::sessionFormat()
 {
   unsigned char ret = 0;
-
+  int nofMode1Tracks;
+  int nofMode2Tracks;
+  
   switch (toc_->tocType()) {
   case Toc::CD_DA:
   case Toc::CD_ROM:
@@ -2582,7 +2584,15 @@ unsigned char CdrDriver::sessionFormat()
     break;
 
   case Toc::CD_ROM_XA:
-    ret = 0x20;
+    /* The toc type can only be set to CD_ROM_XA if the session contains
+       at least one data track. Otherwise the toc type must be CD_DA even
+       in multi session mode.
+    */
+    toc_->trackSummary(NULL, &nofMode1Tracks, &nofMode2Tracks);
+    if (nofMode1Tracks + nofMode2Tracks > 0)
+      ret = 0x20;
+    else
+      ret = 0x0;
     break;
   }
 
@@ -2950,7 +2960,7 @@ Toc *CdrDriver::readDisk(int session, const char *dataFilename)
     fp = onTheFlyFd_;
   }
   else {
-#ifdef _WIN32
+#ifdef __CYGWIN__
     if ((fp = open(dataFilename, O_WRONLY|O_CREAT|O_TRUNC|O_BINARY,
 		   0666)) < 0)
 #else
@@ -3149,6 +3159,8 @@ Toc *CdrDriver::readDisk(int session, const char *dataFilename)
       message(2, "Found disk catalogue number.");
     }
   }
+
+  sendReadCdProgressMsg(RCD_EXTRACTING, nofTracks, nofTracks, 1000, 1000);
 
 fail:
   delete[] cdToc;
