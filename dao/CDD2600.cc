@@ -446,7 +446,7 @@ void CDD2600::readBlock(unsigned long sector)
 {
   unsigned char cmd[10];
   unsigned long dataLen = 2 * blockLength_;
-  unsigned char *data = new (unsigned char)[dataLen];
+  unsigned char *data = new unsigned char[dataLen];
 
 
   // read sub channel information
@@ -666,7 +666,7 @@ CdRawToc *CDD2600::getRawToc(int sessionNr, int *len)
 
   message(5, "Raw toc data len: %d", dataLen);
 
-  data = new (unsigned char)[dataLen];
+  data = new unsigned char[dataLen];
   
   // read disk toc
   cmd[7] = dataLen >> 8;

@@ -291,7 +291,7 @@ unsigned char *YamahaCDR10x::createCueSheet(long *cueSheetLen)
     len += t->nofIndices(); // entry for each index increment
   }
 
-  cueSheet = new (unsigned char)[len * 8];
+  cueSheet = new unsigned char[len * 8];
   n = 0;
 
   if (toc_->leadInMode() == TrackData::AUDIO)

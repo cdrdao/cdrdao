@@ -36,7 +36,7 @@ CdTextItem::CdTextItem(PackType packType, int blockNr, const char *data)
 
   dataLen_ = strlen(data) + 1;
 
-  data_ = new (unsigned char)[dataLen_];
+  data_ = new unsigned char[dataLen_];
 
   strcpy((char *)data_, data);
 }
@@ -56,7 +56,7 @@ CdTextItem::CdTextItem(PackType packType, int blockNr,
   dataLen_ = len;
 
   if (len > 0) {
-    data_ = new (unsigned char)[len];
+    data_ = new unsigned char[len];
     memcpy(data_, data, len);
   }
   else {
@@ -80,7 +80,7 @@ CdTextItem::CdTextItem(int blockNr, unsigned char genreCode1,
   if (description != NULL)
     dataLen_ += strlen(description) + 1;
 
-  data_ = new (unsigned char)[dataLen_];
+  data_ = new unsigned char[dataLen_];
   data_[0] = genreCode1;
   data_[1] = genreCode2;
 
@@ -99,7 +99,7 @@ CdTextItem::CdTextItem(const CdTextItem &obj)
   dataLen_ = obj.dataLen_;
 
   if (dataLen_ > 0) {
-    data_ = new (unsigned char)[dataLen_];
+    data_ = new unsigned char[dataLen_];
     memcpy(data_, obj.data_, dataLen_);
   }
   else {

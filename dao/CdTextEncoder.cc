@@ -439,7 +439,7 @@ void CdTextEncoder::buildSubChannels()
     return;
   }
 
-  subChannels_ = new (PWSubChannel96*)[subChannelCount_];
+  subChannels_ = new PWSubChannel96*[subChannelCount_];
   
   prun = packs_;
 

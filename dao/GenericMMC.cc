@@ -747,7 +747,7 @@ unsigned char *GenericMMC::createCueSheet(unsigned long variant,
     len += t->nofIndices(); // entry for each index increment
   }
 
-  cueSheet = new (unsigned char)[len * 8];
+  cueSheet = new unsigned char[len * 8];
   n = 0;
 
   if (toc_->leadInMode() == TrackData::AUDIO) {
@@ -1872,7 +1872,7 @@ int GenericMMC::getFeature(unsigned int feature, unsigned char *buf,
   if (len > bufLen)
     len = bufLen;
 
-  data = new (unsigned char)[len + 8];
+  data = new unsigned char[len + 8];
 
   cmd[7] = (len + 8) >> 8;
   cmd[8] = (len + 8);
@@ -2014,7 +2014,7 @@ CdRawToc *GenericMMC::getRawToc(int sessionNr, int *len)
   
   message(4, "Raw toc data len: %d", dataLen);
 
-  data = new (unsigned char)[dataLen];
+  data = new unsigned char[dataLen];
   
   // read disk toc
   cmd[7] = dataLen >> 8;

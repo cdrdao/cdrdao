@@ -1291,7 +1291,7 @@ CdRawToc *TeacCdr55::getRawToc(int sessionNr, int *len)
   if (dataLen == 4)
     return NULL;
 
-  data = new (unsigned char)[dataLen];
+  data = new unsigned char[dataLen];
   
   // read disk toc
   cmd[7] = dataLen >> 8;

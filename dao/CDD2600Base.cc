@@ -190,7 +190,7 @@ int CDD2600Base::writeSession(const Toc *toc, int multiSession, long lbaOffset)
 	  indexCount, dataLen);
   */
 
-  data = new (unsigned char)[dataLen];
+  data = new unsigned char[dataLen];
   memset(data, 0, dataLen);
   tp = data;
 

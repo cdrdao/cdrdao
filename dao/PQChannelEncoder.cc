@@ -106,7 +106,7 @@ int PQChannelEncoder::setCueSheet(SubChannel *chan, unsigned char discType,
 
   // create PQ sub channels for toc in lead-in
   tocLen_ = lastTrackNr_ - firstTrackNr_ + 1 + 3/*A0, A1, A2*/;
-  toc_ = new (SubChannel*)[tocLen_];
+  toc_ = new SubChannel*[tocLen_];
 
   for (i = 0; i < tocLen_; i++) {
     toc_[i] = subChannel_->makeSubChannel(SubChannel::QMODE1TOC);

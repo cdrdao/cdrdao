@@ -642,7 +642,7 @@ int Cddb::queryDb(QueryResults **results)
 
   nargs = ntracks + 5;
 
-  args = new (const char*)[nargs];
+  args = new const char*[nargs];
   arg = 0;
 
   args[arg++] = "cddb";
@@ -1296,8 +1296,8 @@ int Cddb::readDbEntry(int localRecordFd)
   cddbEntry_->diskArtist = NULL;
   cddbEntry_->diskExt = NULL;
   cddbEntry_->ntracks = ntracks;
-  cddbEntry_->trackTitles = new (char*)[ntracks];
-  cddbEntry_->trackExt = new (char*)[ntracks];
+  cddbEntry_->trackTitles = new char*[ntracks];
+  cddbEntry_->trackExt = new char*[ntracks];
 
   for (i = 0; i < ntracks; i++) {
     cddbEntry_->trackTitles[i] = NULL;

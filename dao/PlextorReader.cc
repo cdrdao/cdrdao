@@ -453,7 +453,7 @@ CdRawToc *PlextorReader::getRawToc(int sessionNr, int *len)
 
   message(4, "Raw toc data len: %d", dataLen);
 
-  data = new (unsigned char)[dataLen];
+  data = new unsigned char[dataLen];
   
   // read disk toc
   cmd[7] = dataLen >> 8;
@@ -685,7 +685,7 @@ int PlextorReader::readAudioRangePlextor(ReadDiskInfo *rinfo, int fd,
 
   int overspeed,cai=-1;
 
-  data = new (unsigned char)[blocksPerRead * blockLength];  
+  data = new unsigned char[blocksPerRead * blockLength];  
 
   fat = startTrack;
   lat = endTrack;

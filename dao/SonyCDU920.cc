@@ -250,7 +250,7 @@ unsigned char *SonyCDU920::createCueSheet(unsigned char leadInDataForm,
     len += t->nofIndices(); // entry for each index increment
   }
 
-  cueSheet = new (unsigned char)[len * 8];
+  cueSheet = new unsigned char[len * 8];
   n = 0;
 
   // entry for lead-in
@@ -803,7 +803,7 @@ CdRawToc *SonyCDU920::getRawToc(int sessionNr, int *len)
   
   message(4, "Raw toc data len: %d", dataLen);
 
-  data = new (unsigned char)[dataLen];
+  data = new unsigned char[dataLen];
   
   // read disk toc
   cmd[7] = dataLen >> 8;

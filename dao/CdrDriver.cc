@@ -888,10 +888,10 @@ CdrDriver::CdrDriver(ScsiIf *scsiIf, unsigned long options)
 
   scsiMaxDataLen_ = scsiIf_->maxDataLen();
 
-  transferBuffer_ = new (unsigned char)[scsiMaxDataLen_];
+  transferBuffer_ = new unsigned char[scsiMaxDataLen_];
 
   maxScannedSubChannels_ = scsiMaxDataLen_ / (AUDIO_BLOCK_LEN + PW_SUBCHANNEL_LEN);
-  scannedSubChannels_ = new (SubChannel*)[maxScannedSubChannels_];
+  scannedSubChannels_ = new SubChannel*[maxScannedSubChannels_];
 
   paranoia_ = NULL;
   paranoiaDrive_ = NULL;
@@ -1353,7 +1353,7 @@ int CdrDriver::getModePage(int pageCode, unsigned char *buf, long bufLen,
   unsigned char cmd[10];
   long dataLen = bufLen + 8/*mode parameter header*/ + 
                           100/*spare for block descriptors*/;
-  unsigned char *data = new (unsigned char)[dataLen];
+  unsigned char *data = new unsigned char[dataLen];
 
   memset(cmd, 0, 10);
   memset(data, 0, dataLen);
@@ -1417,7 +1417,7 @@ int CdrDriver::setModePage(const unsigned char *modePage,
   if (blockDesc != NULL)
     dataLen += 8;
 
-  unsigned char *data = new (unsigned char)[dataLen];
+  unsigned char *data = new unsigned char[dataLen];
 
   memset(cmd, 0, 10);
   memset(data, 0, dataLen);
@@ -1476,7 +1476,7 @@ int CdrDriver::getModePage6(int pageCode, unsigned char *buf, long bufLen,
   unsigned char cmd[6];
   long dataLen = bufLen + 4/*mode parameter header*/ + 
                           100/*spare for block descriptors*/;
-  unsigned char *data = new (unsigned char)[dataLen];
+  unsigned char *data = new unsigned char[dataLen];
 
   memset(cmd, 0, 6);
   memset(data, 0, dataLen);
@@ -1539,7 +1539,7 @@ int CdrDriver::setModePage6(const unsigned char *modePage,
   if (blockDesc != NULL)
     dataLen += 8;
 
-  unsigned char *data = new (unsigned char)[dataLen];
+  unsigned char *data = new unsigned char[dataLen];
 
   memset(cmd, 0, 6);
   memset(data, 0, dataLen);
@@ -1612,7 +1612,7 @@ CdToc *CdrDriver::getTocGeneric(int *cdTocLen)
     dataLen = (100 * 8) + 4;
   }
 
-  data = new (unsigned char)[dataLen];
+  data = new unsigned char[dataLen];
   memset(data, 0, dataLen);
 
   // read disk toc
@@ -2950,7 +2950,7 @@ CdTextPack *CdrDriver::readCdTextPacks(long *nofPacks)
     return NULL;
   }
 
-  data = new (unsigned char)[len];
+  data = new unsigned char[len];
 
   cmd[7] = len >> 8;
   cmd[8] = len;
@@ -3687,7 +3687,7 @@ int CdrDriver::readDataTrack(ReadDiskInfo *info, int fd, long start, long end,
   blocking = scsiMaxDataLen_ / (AUDIO_BLOCK_LEN + PW_SUBCHANNEL_LEN);
   assert(blocking > 0);
 
-  buf = new (unsigned char)[blocking * blockLen];
+  buf = new unsigned char[blocking * blockLen];
 
   lba = lastLba = start;
   burst = blocking;

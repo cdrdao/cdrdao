@@ -498,10 +498,10 @@ int GenericMMCraw::initDao(const Toc *toc)
   // allocate buffer for sub-channel encoding
   n = blocksPerWrite_ * blockLength_;
   delete[] encodeBuffer_;
-  encodeBuffer_ = new (unsigned char)[n];
+  encodeBuffer_ = new unsigned char[n];
 
   delete[] encSubChannel_;
-  encSubChannel_ = new (unsigned char)[blocksPerWrite_ * subChannel_->dataLength()];
+  encSubChannel_ = new unsigned char[blocksPerWrite_ * subChannel_->dataLength()];
 
   /*
   SessionInfo sessInfo;
