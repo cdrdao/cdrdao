@@ -21,10 +21,22 @@ EXTRA_DIST =		\
 	CREDITS		\
 	INSTALL		\
 	NEWS		\
+	Release-*	\
 	README		\
 	README.FreeBSD	\
 	README.PlexDAE	\
 	README.Win32	\
 	scsilib		\
 	pccts		\
-	specs/*.in
+	specs/*.in	\
+	aspi.reg	\
+	cdrdao.lsm	\
+	testtocs/*.toc	\
+	contrib
+
+dist-hook:
+	rm -rf `find $(distdir)/contrib -name CVS`
+
+
+
+
