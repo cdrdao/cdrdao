@@ -1,4 +1,0 @@
-#!/bin/sh
-#
-ln -s	Defaults.dgux	Defaults.dgux3
-ln -s	Defaults.dgux	Defaults.dgux4
