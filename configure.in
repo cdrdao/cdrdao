@@ -1,7 +1,7 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_REVISION($Revision: 1.9 $)dnl
+AC_REVISION($Revision: 1.10 $)dnl
 
-cdrdao_version=1.1.4
+cdrdao_version=1.1.5-pre1
 
 AC_INIT(cdrdao.lsm)
 AC_CONFIG_HEADER(config.h)

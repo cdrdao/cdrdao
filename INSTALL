@@ -11,16 +11,23 @@ While compiling the PCCTS packages you may get errors on the target 'genmk'.
 These errors can be safely ignored since cdrdao does not use 'genmk'. All
 required tools are already built at that time.
 
-Some parts of the standard PCCTS package won't compile with the actual
-gcc-2.95 version. You can
+Some parts of the standard PCCTS package won't compile with current gcc
+versions. You can
  - compile with  make CXXFLAGS="-fpermissive -O2"
  - use the PCCTS bug fix release 1.33mr20a from 
        http://www.mcs.net/~tmoog/pccts.html
  - or fix the obvious errors in the PCCTS sources
 
+
+If you fetched the source tree directly from CVS, you will have to unpack
+"scsilib.tar.gz" in the directory where "scsilib.tar.gz" resides.
+
+
 The GnomeCDMaster GUI needs the Gimp toolkit gtk+-1.2.8, recent Gnome libs
-(e.g. gnome-libs-1.0.55) and the C++ bindings gtkmm-1.2.1 and gnomemm-1.1.10.
-The packages are available from www.gtk.org and www.gnome.org.
+(e.g. gnome-libs-1.2.3) and the C++ bindings gtkmm-1.2.1 and gnomemm-1.1.10.
+The packages are available from www.gtk.org, www.gnome.org and
+www.sourceforge.net (project 'gtkmm').
+
 
 1. Type './configure'.
    Configure options for PCCTS:
@@ -64,4 +71,4 @@ The packages are available from www.gtk.org and www.gnome.org.
 2. Type 'make' to compile the package.
 
 3. Type 'make install' as root to install the binary and the manual page under
-   '/usr/local'.
+   '/usr/local' or whatever was specified as installation prefix.

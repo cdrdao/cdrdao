@@ -19,6 +19,12 @@
 
 /*
  * $Log: main.cc,v $
+ * Revision 1.12  2000/10/29 08:11:11  andreasm
+ * Updated CD-R vendor table.
+ * Loading defaults now from "/etc/defaults/cdrdao" and then from "$HOME/.cdrdao".
+ * Handle if the power calibration command is not supported by a SCSI-3/mmc drive.
+ * Updated to libscg from cdrtools-1.10.
+ *
  * Revision 1.11  2000/10/08 16:39:41  andreasm
  * Remote progress message now always contain the track relative and total
  * progress and the total number of processed tracks.
@@ -143,7 +149,7 @@
  *
  */
 
-static char rcsid[] = "$Id: main.cc,v 1.11 2000/10/08 16:39:41 andreasm Exp $";
+static char rcsid[] = "$Id: main.cc,v 1.12 2000/10/29 08:11:11 andreasm Exp $";
 
 #include <config.h>
 
@@ -1680,6 +1686,8 @@ int main(int argc, char **argv)
   PRGNAME = *argv;
 
   SETTINGS = new Settings;
+
+  SETTINGS->read("/etc/defaults/cdrdao");
 
   if ((homeDir = getenv("HOME")) != NULL) {
     settingsPath = strdup3CC(homeDir, "/.cdrdao", NULL);

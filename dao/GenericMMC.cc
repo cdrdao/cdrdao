@@ -19,6 +19,12 @@
 
 /*
  * $Log: GenericMMC.cc,v $
+ * Revision 1.10  2000/10/29 08:11:11  andreasm
+ * Updated CD-R vendor table.
+ * Loading defaults now from "/etc/defaults/cdrdao" and then from "$HOME/.cdrdao".
+ * Handle if the power calibration command is not supported by a SCSI-3/mmc drive.
+ * Updated to libscg from cdrtools-1.10.
+ *
  * Revision 1.9  2000/10/25 20:33:28  andreasm
  * Added BURN Proof support (submitted by ITOH Yasufumi and Martin Buck).
  *
@@ -104,7 +110,7 @@
  *
  */
 
-static char rcsid[] = "$Id: GenericMMC.cc,v 1.9 2000/10/25 20:33:28 andreasm Exp $";
+static char rcsid[] = "$Id: GenericMMC.cc,v 1.10 2000/10/29 08:11:11 andreasm Exp $";
 
 #include <config.h>
 
@@ -356,6 +362,7 @@ int GenericMMC::readBufferCapacity(long *capacity)
 int GenericMMC::performPowerCalibration()
 {
   unsigned char cmd[10];
+  int ret;
 
   memset(cmd, 0, 10);
 
@@ -364,8 +371,26 @@ int GenericMMC::performPowerCalibration()
 
   message(1, "Executing power calibration...");
 
-  if (sendCmd(cmd, 10, NULL, 0, NULL, 0) != 0) {
-    message(-2, "Power calibration failed.");
+  if ((ret = sendCmd(cmd, 10, NULL, 0, NULL, 0)) != 0) {
+    if (ret == 2) {
+      const unsigned char *sense;
+      int senseLen;
+
+      sense = scsiIf_->getSense(senseLen);
+
+      if(senseLen >= 14 && (sense[2] & 0x0f) == 0x5 && sense[7] >= 6 &&
+	   sense[12] == 0x20 && sense[13] == 0x0) {
+	message(1, "Power calibration not supported.");
+	return 0;
+      }
+      else {
+	message(-2, "Power calibration failed.");
+      }
+    }
+    else {
+      message(-2, "Power calibration failed.");
+    }
+
     return 1;
   }
   
@@ -1601,7 +1626,7 @@ int GenericMMC::driveInfo(DriveInfo *info, int showErrorMsg)
 
   if (getModePage(0x2a, mp, 32, NULL, NULL, showErrorMsg) != 0) {
     if (showErrorMsg) {
-      message(-2, "Cannot retrieve CD capabilities mode page.");
+      message(-2, "Cannot retrieve drive capabilities mode page.");
     }
     return 1;
   }

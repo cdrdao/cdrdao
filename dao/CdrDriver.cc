@@ -18,6 +18,12 @@
  */
 /*
  * $Log: CdrDriver.cc,v $
+ * Revision 1.10  2000/10/29 08:11:11  andreasm
+ * Updated CD-R vendor table.
+ * Loading defaults now from "/etc/defaults/cdrdao" and then from "$HOME/.cdrdao".
+ * Handle if the power calibration command is not supported by a SCSI-3/mmc drive.
+ * Updated to libscg from cdrtools-1.10.
+ *
  * Revision 1.9  2000/10/25 20:33:28  andreasm
  * Added BURN Proof support (submitted by ITOH Yasufumi and Martin Buck).
  *
@@ -109,7 +115,7 @@
  *
  */
 
-static char rcsid[] = "$Id: CdrDriver.cc,v 1.9 2000/10/25 20:33:28 andreasm Exp $";
+static char rcsid[] = "$Id: CdrDriver.cc,v 1.10 2000/10/29 08:11:11 andreasm Exp $";
 
 #include <config.h>
 
@@ -344,27 +350,45 @@ static CDRVendorTable VENDOR_TABLE[] = {
   { 97,22,60,  97,45,20, "Acer Media Technology, Inc" },
   { 97,25,50,  0,0,0,    "AMS Technology Inc." },
   { 97,23,30,  0,0,0,    "AUDIO DISTRIBUTORS CO., LTD." },
+  { 97,21,30,  0,0,0,    "Bestdisc Technology Corporation" },
   { 97,30,10,  97,50,30, "CDA Datentraeger Albrechts GmbH" },
   { 97,22,40,  97,45,40, "CIS Technology Inc." },
   { 97,24,20,  97,46,30, "Computer Support Italy s.r.l." },
   { 97,23,60,  0,0,0,    "Customer Pressing Oosterhout" },
+  { 97,28,50,  0,0,0,    "DELPHI TECHNOLOGY INC." },
   { 97,27,00,  97,48,40, "DIGITAL STORAGE TECHNOLOGY CO.,LTD" },
+  { 97,22,30,  0,0,0,    "EXIMPO" }, 
+  { 97,28,60,  0,0,0,    "Friendly CD-Tek Co." },
   { 97,31,30,  97,51,10, "Grand Advance Technology Ltd." },
+  { 97,29,50,  0,0,0,    "General Magnetics Ld" },
   { 97,24,50,  97,45,50, "Guann Yinn Co.,Ltd." },
+  { 97,29,00,  0,0,0,    "Harmonic Hall Optical Disc Ltd." },
+  { 97,29,30,  97,51,50, "Hile Optical Disc Technology Corp." },
+  { 97,46,10,  97,22,50, "Hong Kong Digital Technology Co., Ltd." },
   { 97,25,30,  97,51,20, "INFODISC Technology Co., Ltd." },
+  { 97,24,40,  0,0,0,    "kdg mediatech AG" },
   { 97,28,40,  97,49,20, "King Pro Mediatek Inc." },
   { 97,23,00,  97,49,60, "Matsushita Electric Industrial Co., Ltd." },
   { 97,15,20,  0,0,0,    "Mitsubishi Chemical Corporation" },
+  { 97,25,00,  0,0,0,    "MPO" },
   { 97,23,20,  0,0,0,    "Nacar Media sr" },
   { 97,26,30,  0,0,0,    "OPTICAL DISC CORPRATION" },
   { 97,28,00,  97,49,30, "Opti.Me.S. S.p.A." },
   { 97,23,50,  0,0,0,    "OPTROM.INC." },
   { 97,47,60,  0,0,0,    "Prodisc Technology Inc." },
   { 97,15,10,  0,0,0,    "Ritek Co." },
+  { 97,22,10,  0,0,0,    "Seantram Technology Inc." },
+  { 97,21,50,  0,0,0,    "Sound Sound Multi-Media Development Limited" },
   { 97,29,00,  0,0,0,    "Taeil Media Co.,Ltd." },
+  { 97,18,60,  0,0,0,    "TAROKO INTERNATIONAL CO.,LTD." },
   { 97,15,00,  0,0,0,    "TDK Corporation." },
+  { 97,29,20,  0,0,0,    "UNIDISC TECHNOLOGY CO.,LTD" }, 
   { 97,24,30,  97,45,10, "UNITECH JAPAN INC." },
   { 97,29,10,  97,50,10, "Vanguard Disc Inc." },
+  { 97,49,40,  97,23,40, "VICTOR COMPANY OF JAPAN, LIMITED" }, 
+  { 97,29,40,  0,0,0,    "VIVA MAGNETICS LIMITED" },
+  { 97,25,40,  0,0,0,    "VIVASTAR AG" },
+  { 97,18,10,  0,0,0,    "WEALTH FAIR INVESTMENT LIMITED" },
   { 97,22,00,  0,0,0,    "Woongjin Media corp." },
 
   { 0, 0, 0,  0, 0, 0,  NULL}

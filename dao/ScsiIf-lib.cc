@@ -18,8 +18,14 @@
  */
 /*
  * $Log: ScsiIf-lib.cc,v $
- * Revision 1.1  2000/02/05 01:37:05  llanero
- * Initial revision
+ * Revision 1.2  2000/10/29 08:11:11  andreasm
+ * Updated CD-R vendor table.
+ * Loading defaults now from "/etc/defaults/cdrdao" and then from "$HOME/.cdrdao".
+ * Handle if the power calibration command is not supported by a SCSI-3/mmc drive.
+ * Updated to libscg from cdrtools-1.10.
+ *
+ * Revision 1.1.1.1  2000/02/05 01:37:05  llanero
+ * Uploaded cdrdao 1.1.3 with pre10 patch applied.
  *
  * Revision 1.2  1999/04/02 16:44:30  mueller
  * Removed 'revisionDate' because it is not available in general.
@@ -29,7 +35,7 @@
  *
  */
 
-static char rcsid[] = "$Id: ScsiIf-lib.cc,v 1.1 2000/02/05 01:37:05 llanero Exp $";
+static char rcsid[] = "$Id: ScsiIf-lib.cc,v 1.2 2000/10/29 08:11:11 andreasm Exp $";
 
 #include <config.h>
 
@@ -53,9 +59,12 @@ static char rcsid[] = "$Id: ScsiIf-lib.cc,v 1.1 2000/02/05 01:37:05 llanero Exp 
 #include "scg/scgcmd.h"
 #include "scg/scsitransp.h"
 
+static void printVersionInfo(SCSI *scgp);
 
 #define MAX_DATALEN_LIMIT (63 * 1024)
 #define MAX_SCAN_DATA_LEN 30
+
+static int VERSION_INFO_PRINTED = 0;
 
 class ScsiIfImpl {
 public:
@@ -87,7 +96,7 @@ ScsiIf::ScsiIf(const char *dev)
   product_[0] = 0;
   revision_[0] = 0;
 
-  set_progname("cdrdao");
+  //set_progname("cdrdao");
 
 
 #if defined(HAVE_GETPAGESIZE)
@@ -104,12 +113,13 @@ ScsiIf::ScsiIf(const char *dev)
     message(-3, "Cannot determine page size.");
     impl_->pageSize_ = 1;
   }
+
 }
 
 ScsiIf::~ScsiIf()
 {
   if (impl_->scgp_ != NULL) {
-    close_scsi(impl_->scgp_);
+    scg_close(impl_->scgp_);
     impl_->scgp_ = NULL;
   }
 
@@ -130,6 +140,8 @@ int ScsiIf::init()
 {
   char errstr[80];
 
+  scg_remote();
+
 #ifdef linux
   if (impl_->dev_[0] == '/' && strchr(impl_->dev_, ':') == NULL) {
     // we have a device name, check if it is a generic SCSI device or
@@ -144,7 +156,7 @@ int ScsiIf::init()
   }
 #endif
 
-  if ((impl_->scgp_ = open_scsi(impl_->dev_, errstr, sizeof(errstr), 0, 0))
+  if ((impl_->scgp_ = scg_open(impl_->dev_, errstr, sizeof(errstr), 0, 0))
 	 == NULL) {
     message(-2, "Cannot open SCSI device '%s': %s", impl_->dev_, errstr);
     return 1;
@@ -152,17 +164,21 @@ int ScsiIf::init()
 
   impl_->timeout_ = impl_->scgp_->deftimeout;
 
-  maxDataLen_ = scsi_bufsize(impl_->scgp_, 0);
-  
+  maxDataLen_ = scg_bufsize(impl_->scgp_, MAX_DATALEN_LIMIT);
+
+  message(4, "SCSI: max DMA: %ld", maxDataLen_);
+
   if (maxDataLen_ > MAX_DATALEN_LIMIT)
     maxDataLen_ = MAX_DATALEN_LIMIT;
 
-  impl_->pageAlignedBuffer_ = (char *)scsi_getbuf(impl_->scgp_, maxDataLen_);
+  impl_->pageAlignedBuffer_ = (char *)scg_getbuf(impl_->scgp_, maxDataLen_);
 
   if (impl_->pageAlignedBuffer_ == NULL) {
     message(-2, "Cannot get SCSI buffer.");
     return 1;
   }
+
+  printVersionInfo(impl_->scgp_);
 
   if (inquiry() != 0)
     return 2;
@@ -239,13 +255,13 @@ int ScsiIf::sendCmd(const unsigned char *cmd, int cmdLen,
   scmd->timeout = impl_->timeout_;
 
   scmd->sense_len = CCS_SENSE_LEN;
-  scmd->target = impl_->scgp_->target;
+  //scmd->target = impl_->scgp_->target;
 	
   impl_->scgp_->cmdname = "";
   impl_->scgp_->verbose = 0;
   impl_->scgp_->silent = showMessage ? 0 : 1;
   
-  if (scsicmd(impl_->scgp_) < 0) {
+  if (scg_cmd(impl_->scgp_) < 0) {
     return scmd->sense_count > 0 ?  2 : 1;
   }
 
@@ -264,7 +280,7 @@ const unsigned char *ScsiIf::getSense(int &len) const
 
 void ScsiIf::printError()
 {
-  scsiprinterr(impl_->scgp_);
+  scg_printerr(impl_->scgp_);
 }
 
 int ScsiIf::inquiry()
@@ -310,11 +326,11 @@ int ScsiIf::inquiry()
 
 static int scanInquiry(SCSI *scgp, unsigned char *buf, ScsiIf::ScanData *sdata)
 {
-  scg_cmd *cmd = scgp->scmd;
+  struct scg_cmd *cmd = scgp->scmd;
   int i;
 
   memset(buf, 0, 36);
-  memset(cmd, 0, sizeof(scg_cmd));
+  memset(cmd, 0, sizeof(struct scg_cmd));
 
   cmd->cdb.g0_cdb.cmd = 0x12; // INQUIRY
   cmd->cdb.g0_cdb.count = 36;
@@ -327,11 +343,11 @@ static int scanInquiry(SCSI *scgp, unsigned char *buf, ScsiIf::ScanData *sdata)
   scgp->silent = 1;
   scgp->cmdname = "inquiry";
 
-  if (scsicmd(scgp) == 0) {
+  if (scg_cmd(scgp) == 0) {
     if ((buf[0] & 0x1f) == 0x04 || (buf[0] & 0x1f) == 0x05) {
-      sdata->bus = scgp->scsibus;
-      sdata->id = scgp->target;
-      sdata->lun = scgp->lun;
+      sdata->bus = scg_scsibus(scgp);
+      sdata->id = scg_target(scgp);
+      sdata->lun = scg_lun(scgp);
 
       strncpy(sdata->vendor, (char *)(buf + 0x08), 8);
       sdata->vendor[8] = 0;
@@ -370,27 +386,29 @@ ScsiIf::ScanData *ScsiIf::scan(int *len)
 
   *len = 0;
 
-  set_progname("cdrdao");
+  //set_progname("cdrdao");
+  scg_remote();
 
-  if ((scgp = open_scsi(NULL, errstr, sizeof(errstr), 0, 0)) == NULL)
+  if ((scgp = scg_open(NULL, errstr, sizeof(errstr), 0, 0)) == NULL)
     return NULL;
 
+  printVersionInfo(scgp);
+
   // allocate buffer for inquiry data
-  if ((buf = (unsigned char *)scsi_getbuf(scgp, 100)) == NULL) {
-    close_scsi(scgp);
+  if ((buf = (unsigned char *)scg_getbuf(scgp, 100)) == NULL) {
+    scg_close(scgp);
     return NULL;
   }
 
   sdata = new ScanData[MAX_SCAN_DATA_LEN];
   
-  for (scgp->scsibus = 0; scgp->scsibus < 16 && *len < MAX_SCAN_DATA_LEN;
-       scgp->scsibus++) {
+  for (int bus = 0; bus < 16 && *len < MAX_SCAN_DATA_LEN; bus++) {
 
-    if (scsi_havebus(scgp, scgp->scsibus)) {
-      scgp->lun = 0;
+    if (scg_havebus(scgp, bus)) {
+      int lun = 0;
 
-      for (scgp->target=0; scgp->target < 16 && *len < MAX_SCAN_DATA_LEN;
-	   scgp->target++) {
+      for (int target=0; target < 16 && *len < MAX_SCAN_DATA_LEN; target++) {
+	scg_settarget(scgp, bus, target, lun);
 	if (scanInquiry(scgp, buf, &(sdata[*len])))
 	  *len += 1;
       }
@@ -398,9 +416,34 @@ ScsiIf::ScanData *ScsiIf::scan(int *len)
   }
   
   
-  close_scsi(scgp);
+  scg_close(scgp);
 
   return sdata;
+}
+
+static void printVersionInfo(SCSI *scgp)
+{
+  if (!VERSION_INFO_PRINTED) {
+    VERSION_INFO_PRINTED = 1;
+
+    const char *vers = scg_version(0, SCG_VERSION);
+    const char *auth = scg_version(0, SCG_AUTHOR);
+    message(1, "Using libscg version '%s-%s'", auth, vers);
+  
+    vers = scg_version(scgp, SCG_VERSION);
+    auth = scg_version(scgp, SCG_AUTHOR);
+  
+    message(2, "Using libscg transport code version '%s-%s'", auth, vers);
+
+    vers = scg_version(scgp, SCG_RVERSION);
+    auth = scg_version(scgp, SCG_RAUTHOR);
+
+    if (vers != NULL && auth != NULL) {
+      message(2, "Using remote transport code version '%s-%s'", auth, vers);
+    }
+
+    message(1, "");
+  }
 }
 
 #include "ScsiIf-common.cc"
