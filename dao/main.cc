@@ -19,6 +19,9 @@
 
 /*
  * $Log: main.cc,v $
+ * Revision 1.10  2000/08/20 19:12:41  andreasm
+ * Added info about driver table download.
+ *
  * Revision 1.9  2000/08/20 17:16:26  andreasm
  * Added option '--keepimage' to not remove the image create with command
  * 'copy'.
@@ -136,7 +139,7 @@
  *
  */
 
-static char rcsid[] = "$Id: main.cc,v 1.9 2000/08/20 17:16:26 andreasm Exp $";
+static char rcsid[] = "$Id: main.cc,v 1.10 2000/08/20 19:12:41 andreasm Exp $";
 
 #include <config.h>
 
@@ -273,6 +276,7 @@ static void printVersion()
   message(1, "  L-EC encoding library - (C) Heiko Eissfeldt");
   message(1, "  Paranoia DAE library - (C) Monty");
   message(1, "");
+  message(1, "Check http://cdrdao.sourceforge.net/drives.html#dt for actual driver tables.");
 }
 
 static void printUsage()
