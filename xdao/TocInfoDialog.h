@@ -16,42 +16,6 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
-/*
- * $Log: TocInfoDialog.h,v $
- * Revision 1.5  2000/10/01 16:39:10  llanero
- * applied Jason Lunz patch: "Close" instead of "Cancel" where appropiate.
- *
- * Revision 1.4  2000/09/21 02:07:07  llanero
- * MDI support:
- * Splitted AudioCDChild into same and AudioCDView
- * Move Selections from TocEdit to AudioCDView to allow
- *   multiple selections.
- * Cursor animation in all the views.
- * Can load more than one from from command line
- * Track info, Toc info, Append/Insert Silence, Append/Insert Track,
- *   they all are built for every child when needed.
- * ...
- *
- * Revision 1.3  2000/04/23 09:07:08  andreasm
- * * Fixed most problems marked with '//llanero'.
- * * Added audio CD edit menus to MDIWindow.
- * * Moved central storage of TocEdit object to MDIWindow.
- * * AudioCdChild is now handled like an ordinary non modal dialog, i.e.
- *   it has a normal 'update' member function now.
- * * Added CdTextTable modal dialog.
- * * Old functionality of xcdrdao is now available again.
- *
- * Revision 1.2  2000/02/20 23:34:54  llanero
- * fixed scsilib directory (files mising ?-()
- * ported xdao to 1.1.8 / gnome (MDI) app
- *
- * Revision 1.1.1.1  2000/02/05 01:38:52  llanero
- * Uploaded cdrdao 1.1.3 with pre10 patch applied.
- *
- * Revision 1.1  1999/08/21 14:17:39  mueller
- * Initial revision
- *
- */
 
 #ifndef __TOC_INFO_DIALOG_H__
 #define __TOC_INFO_DIALOG_H__
@@ -62,26 +26,24 @@
 #include "Toc.h"
 
 class TocEdit;
+class TocEditView;
 class TextEdit;
-class AudioCDChild;
 
 class TocInfoDialog : public Gtk::Dialog {
 public:
-  TocInfoDialog(AudioCDChild *child);
+  TocInfoDialog();
   ~TocInfoDialog();
 
   gint delete_event_impl(GdkEventAny*);
 
-  void update(unsigned long, TocEdit *);
+  void update(unsigned long, TocEditView *);
 
-  void start(TocEdit *);
+  void start(TocEditView *);
   void stop();
 
 private:
-  TocEdit *tocEdit_;
+  TocEditView *tocEditView_;
   int active_;
-
-  AudioCDChild *cdchild;
 
   Gtk::Button *applyButton_;
   Gtk::Label *tocLength_;

@@ -1,6 +1,6 @@
 /*  cdrdao - write audio CD-Rs in disc-at-once mode
  *
- *  Copyright (C) 1998  Andreas Mueller <mueller@daneb.ping.de>
+ *  Copyright (C) 1998-2000  Andreas Mueller <mueller@daneb.ping.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -16,52 +16,6 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
-/*
- * $Log: AddSilenceDialog.cc,v $
- * Revision 1.5  2000/10/01 16:39:10  llanero
- * applied Jason Lunz patch: "Close" instead of "Cancel" where appropiate.
- *
- * Revision 1.4  2000/09/21 02:07:06  llanero
- * MDI support:
- * Splitted AudioCDChild into same and AudioCDView
- * Move Selections from TocEdit to AudioCDView to allow
- *   multiple selections.
- * Cursor animation in all the views.
- * Can load more than one from from command line
- * Track info, Toc info, Append/Insert Silence, Append/Insert Track,
- *   they all are built for every child when needed.
- * ...
- *
- * Revision 1.3  2000/04/23 09:07:08  andreasm
- * * Fixed most problems marked with '//llanero'.
- * * Added audio CD edit menus to MDIWindow.
- * * Moved central storage of TocEdit object to MDIWindow.
- * * AudioCdChild is now handled like an ordinary non modal dialog, i.e.
- *   it has a normal 'update' member function now.
- * * Added CdTextTable modal dialog.
- * * Old functionality of xcdrdao is now available again.
- *
- * Revision 1.2  2000/02/20 23:34:53  llanero
- * fixed scsilib directory (files mising ?-()
- * ported xdao to 1.1.8 / gnome (MDI) app
- *
- * Revision 1.1.1.1  2000/02/05 01:39:00  llanero
- * Uploaded cdrdao 1.1.3 with pre10 patch applied.
- *
- * Revision 1.4  1999/08/07 16:27:28  mueller
- * Applied patch from Yves Bastide:
- * * prefixing member function names with their class name in connect_to_method
- * * explicitly `const_cast'ing a cast to const
- *
- * Revision 1.3  1999/03/06 13:55:18  mueller
- * Adapted to Gtk-- version 0.99.1
- *
- * Revision 1.2  1999/01/30 19:45:43  mueller
- * Fixes for compilation with Gtk-- 0.11.1.
- *
- */
-
-static char rcsid[] = "$Id: AddSilenceDialog.cc,v 1.5 2000/10/01 16:39:10 llanero Exp $";
 
 #include <stdio.h>
 #include <limits.h>
@@ -71,24 +25,21 @@ static char rcsid[] = "$Id: AddSilenceDialog.cc,v 1.5 2000/10/01 16:39:10 llaner
 #include "AddSilenceDialog.h"
 
 #include "TocEdit.h"
+#include "TocEditView.h"
 #include "guiUpdate.h"
 
 #include "Sample.h"
-#include "AudioCDChild.h"
-#include "AudioCDView.h"
 
 
-AddSilenceDialog::AddSilenceDialog(AudioCDChild *child)
+AddSilenceDialog::AddSilenceDialog()
 {
   Gtk::Button *button;
   Gtk::VBox *vbox;
   Gtk::HBox *hbox;
 
-  tocEdit_ = NULL;
+  tocEditView_ = NULL;
   active_ = 0;
   mode_ = M_APPEND;
-
-  cdchild = child;
 
   minutes_ = new Gtk::Entry;
   seconds_ = new Gtk::Entry;
@@ -183,7 +134,7 @@ void AddSilenceDialog::mode(Mode m)
   }
 }
 
-void AddSilenceDialog::start(TocEdit *tocEdit)
+void AddSilenceDialog::start(TocEditView *view)
 {
   if (active_) {
     get_window().raise();
@@ -192,7 +143,7 @@ void AddSilenceDialog::start(TocEdit *tocEdit)
 
   active_ = 1;
 
-  update(UPD_ALL, tocEdit);
+  update(UPD_ALL, view);
   show();
 }
 
@@ -204,22 +155,22 @@ void AddSilenceDialog::stop()
   }
 }
 
-void AddSilenceDialog::update(unsigned long level, TocEdit *tocEdit)
+void AddSilenceDialog::update(unsigned long level, TocEditView *view)
 {
   if (!active_)
     return;
 
-  if (tocEdit == NULL) {
+  if (view == NULL) {
     applyButton_->set_sensitive(FALSE);
-    tocEdit_ = NULL;
+    tocEditView_ = NULL;
     return;
   }
 
-  if ((level & UPD_EDITABLE_STATE) || tocEdit_ == NULL) {
-    applyButton_->set_sensitive(tocEdit->editable() ? TRUE : FALSE);
+  if ((level & UPD_EDITABLE_STATE) || tocEditView_ == NULL) {
+    applyButton_->set_sensitive(view->tocEdit()->editable() ? TRUE : FALSE);
   }
 
-  tocEdit_ = tocEdit;
+  tocEditView_ = view;
 }
 
 
@@ -247,9 +198,14 @@ void AddSilenceDialog::applyAction()
   unsigned long length = 0;
   char buf[20];
   long val;
-  AudioCDView *view = static_cast <AudioCDView *>(cdchild->get_active());
+  TocEdit *tocEdit;
   
-  if (tocEdit_ == NULL || !tocEdit_->editable())
+  if (tocEditView_ == NULL)
+    return;
+
+  tocEdit = tocEditView_->tocEdit();
+
+  if (!tocEdit->editable())
     return;
 
   const char *s = minutes_->get_text().c_str();
@@ -289,13 +245,12 @@ void AddSilenceDialog::applyAction()
 
     switch (mode_) {
     case M_APPEND:
-      tocEdit_->appendSilence(length);
+      tocEdit->appendSilence(length);
       break;
     case M_INSERT:
-//      if (tocEdit_->sampleMarker(&pos)) {
-      if (view->sampleMarker(&pos)) {
-        if (tocEdit_->insertSilence(length, pos) == 0) {
-          view->sampleSelection(pos, pos + length - 1);
+      if (tocEditView_->sampleMarker(&pos)) {
+        if (tocEdit->insertSilence(length, pos) == 0) {
+          tocEditView_->sampleSelection(pos, pos + length - 1);
         }
       }
       break;

@@ -47,7 +47,6 @@ public:
   AudioCDChild(gint number);
 
   void create_view() { Gnome::MDIChild::create_view(); }
-  TocEdit *tocEdit();
 
 protected:
   virtual Gtk::Widget *create_view_impl();
@@ -67,8 +66,6 @@ private: //related windows
 
 private:
   friend class AudioCDView;
-
-  TocEdit *tocEdit_;
 
   TocReader tocReader;
 

@@ -16,77 +16,6 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
-/*
- * $Log: xcdrdao.cc,v $
- * Revision 1.15  2000/09/21 02:07:07  llanero
- * MDI support:
- * Splitted AudioCDChild into same and AudioCDView
- * Move Selections from TocEdit to AudioCDView to allow
- *   multiple selections.
- * Cursor animation in all the views.
- * Can load more than one from from command line
- * Track info, Toc info, Append/Insert Silence, Append/Insert Track,
- *   they all are built for every child when needed.
- * ...
- *
- * Revision 1.14  2000/07/31 01:55:49  llanero
- * got rid of old Extract dialog and Record dialog.
- * both are using RecordProgressDialog now.
- *
- * Revision 1.13  2000/07/30 02:41:03  llanero
- * started CD to CD copy. Still not functional.
- *
- * Revision 1.12  2000/07/17 22:08:33  llanero
- * DeviceList is now a class
- * RecordGenericDialog and RecordCDTarget first implemented.
- *
- * Revision 1.11  2000/06/10 14:49:49  andreasm
- * Changed Warning to WARNING in 'message()'.
- *
- * Revision 1.10  2000/05/25 20:12:55  llanero
- * added BUGS and TASKS, changed name to GnomeCDMaster
- *
- * Revision 1.9  2000/05/17 21:15:55  llanero
- * Beginings of Record Generic Dialog
- *
- * Revision 1.8  2000/05/01 18:15:00  andreasm
- * Switch to gnome-config settings.
- * Adapted Message Box to Gnome look, unfortunately the Gnome::MessageBox is
- * not implemented in gnome--, yet.
- *
- * Revision 1.7  2000/04/23 09:07:08  andreasm
- * * Fixed most problems marked with '//llanero'.
- * * Added audio CD edit menus to MDIWindow.
- * * Moved central storage of TocEdit object to MDIWindow.
- * * AudioCdChild is now handled like an ordinary non modal dialog, i.e.
- *   it has a normal 'update' member function now.
- * * Added CdTextTable modal dialog.
- * * Old functionality of xcdrdao is now available again.
- *
- * Revision 1.6  2000/04/14 13:22:02  llanero
- * changed the MDI object to GnomeApp until gnome-- MDI is done.
- * Also catched a bug in SampleDisplay.cc:1000.
- *
- * Revision 1.5  2000/03/05 22:25:52  llanero
- * more code translated to gtk-- 1.1.8
- *
- * Revision 1.4  2000/03/04 01:28:52  llanero
- * SampleDisplay.{cc,h} are fixed now = gtk 1.1.8 compliant.
- *
- * Revision 1.3  2000/02/28 23:29:55  llanero
- * fixed Makefile.in to include glade-gnome
- *
- * Revision 1.2  2000/02/20 23:34:54  llanero
- * fixed scsilib directory (files mising ?-()
- * ported xdao to 1.1.8 / gnome (MDI) app
- *
- * Revision 1.1.1.1  2000/02/05 01:40:33  llanero
- * Uploaded cdrdao 1.1.3 with pre10 patch applied.
- *
- * Revision 1.1  1998/11/20 18:53:45  mueller
- * Initial revision
- *
- */
 
 #include <stdio.h>
 #include <stdarg.h>
@@ -112,7 +41,7 @@
 #include "AddSilenceDialog.h"
 #include "AddFileDialog.h"
 #include "DeviceConfDialog.h"
-#include "RecordProgressDialog.h"
+#include "ProgressDialog.h"
 #include "RecordGenericDialog.h"
 #include "guiUpdate.h"
 #include "CdDevice.h"
@@ -123,7 +52,7 @@
 MDIWindow *MDI_WINDOW = NULL;
 DeviceConfDialog *DEVICE_CONF_DIALOG = NULL;
 ProcessMonitor *PROCESS_MONITOR = NULL;
-RecordProgressDialogPool *RECORD_PROGRESS_POOL = NULL;
+ProgressDialogPool *PROGRESS_POOL = NULL;
 RecordGenericDialog *RECORD_GENERIC_DIALOG = NULL;
 
 static int VERBOSE = 0;
@@ -218,7 +147,7 @@ int main (int argc, char* argv[])
   CdDevice::scan();
 
   DEVICE_CONF_DIALOG = new DeviceConfDialog;
-  RECORD_PROGRESS_POOL = new RecordProgressDialogPool;
+  PROGRESS_POOL = new ProgressDialogPool;
   RECORD_GENERIC_DIALOG = new RecordGenericDialog;
 
   MDI_WINDOW = new MDIWindow();

@@ -1,6 +1,6 @@
 /*  cdrdao - write audio CD-Rs in disc-at-once mode
  *
- *  Copyright (C) 1998  Andreas Mueller <mueller@daneb.ping.de>
+ *  Copyright (C) 1998-2000  Andreas Mueller <mueller@daneb.ping.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -16,55 +16,6 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
-/*
- * $Log: RecordProgressDialog.cc,v $
- * Revision 1.10  2000/10/08 16:39:41  andreasm
- * Remote progress message now always contain the track relative and total
- * progress and the total number of processed tracks.
- *
- * Revision 1.9  2000/09/21 02:07:06  llanero
- * MDI support:
- * Splitted AudioCDChild into same and AudioCDView
- * Move Selections from TocEdit to AudioCDView to allow
- *   multiple selections.
- * Cursor animation in all the views.
- * Can load more than one from from command line
- * Track info, Toc info, Append/Insert Silence, Append/Insert Track,
- *   they all are built for every child when needed.
- * ...
- *
- * Revision 1.7  2000/08/01 01:27:50  llanero
- * CD to CD copy works now.
- *
- * Revision 1.6  2000/07/31 01:55:49  llanero
- * got rid of old Extract dialog and Record dialog.
- * both are using RecordProgressDialog now.
- *
- * Revision 1.5  2000/05/24 18:42:44  llanero
- * added % to progressbars
- *
- * Revision 1.4  2000/04/23 09:07:08  andreasm
- * * Fixed most problems marked with '//llanero'.
- * * Added audio CD edit menus to MDIWindow.
- * * Moved central storage of TocEdit object to MDIWindow.
- * * AudioCdChild is now handled like an ordinary non modal dialog, i.e.
- *   it has a normal 'update' member function now.
- * * Added CdTextTable modal dialog.
- * * Old functionality of xcdrdao is now available again.
- *
- * Revision 1.3  2000/04/16 20:31:20  andreasm
- * Added missing stdio.h includes.
- *
- * Revision 1.2  2000/02/20 23:34:54  llanero
- * fixed scsilib directory (files mising ?-()
- * ported xdao to 1.1.8 / gnome (MDI) app
- *
- * Revision 1.1.1.1  2000/02/05 01:39:36  llanero
- * Uploaded cdrdao 1.1.3 with pre10 patch applied.
- *
- */
-
-static char rcsid[] = "$Id: RecordProgressDialog.cc,v 1.10 2000/10/08 16:39:41 andreasm Exp $";
 
 #include <stdio.h>
 #include <stddef.h>
@@ -73,13 +24,13 @@ static char rcsid[] = "$Id: RecordProgressDialog.cc,v 1.10 2000/10/08 16:39:41 a
 
 #include <gnome--.h>
 
-#include "RecordProgressDialog.h"
+#include "ProgressDialog.h"
 #include "MessageBox.h"
 #include "TocEdit.h"
 #include "guiUpdate.h"
 #include "CdDevice.h"
 
-RecordProgressDialog::RecordProgressDialog(RecordProgressDialogPool *father)
+ProgressDialog::ProgressDialog(ProgressDialogPool *father)
 {
   Gtk::Label *label;
   Gtk::HBox *hbox;
@@ -198,8 +149,8 @@ RecordProgressDialog::RecordProgressDialog(RecordProgressDialogPool *father)
   cancelButton_->show();
   actCloseButtonLabel_ = 2;
 
-  cancelButton_->clicked.connect(SigC::slot(this,&RecordProgressDialog::closeAction));
-  closeButton_->clicked.connect(SigC::slot(this,&RecordProgressDialog::closeAction));
+  cancelButton_->clicked.connect(SigC::slot(this,&ProgressDialog::closeAction));
+  closeButton_->clicked.connect(SigC::slot(this,&ProgressDialog::closeAction));
 
   get_action_area()->pack_start(*bbox);
   bbox->show();
@@ -208,11 +159,11 @@ RecordProgressDialog::RecordProgressDialog(RecordProgressDialogPool *father)
   set_usize(400, 0);
 }
 
-RecordProgressDialog::~RecordProgressDialog()
+ProgressDialog::~ProgressDialog()
 {
 }
 
-void RecordProgressDialog::start(CdDevice *device, TocEdit *tocEdit)
+void ProgressDialog::start(CdDevice *device, TocEdit *tocEdit)
 {
   string s;
   gint m_t_nr;
@@ -230,7 +181,7 @@ void RecordProgressDialog::start(CdDevice *device, TocEdit *tocEdit)
 
   clear();
 
-  SigC::Slot0<gint> my_slot = bind(slot(this,&RecordProgressDialog::time),m_t_nr);
+  SigC::Slot0<gint> my_slot = bind(slot(this,&ProgressDialog::time),m_t_nr);
   Gtk::Connection conn = Gtk::Main::timeout.connect(my_slot, 1000);
 
   statusMsg_->set_text(string("Initializing..."));
@@ -247,7 +198,7 @@ void RecordProgressDialog::start(CdDevice *device, TocEdit *tocEdit)
   show();
 }
 
-void RecordProgressDialog::start(CdDevice *device, char *tocFileName)
+void ProgressDialog::start(CdDevice *device, char *tocFileName)
 {
   string s;
   gint m_t_nr;
@@ -265,7 +216,7 @@ void RecordProgressDialog::start(CdDevice *device, char *tocFileName)
 
   clear();
 
-  SigC::Slot0<gint> my_slot = bind(slot(this,&RecordProgressDialog::time),m_t_nr);
+  SigC::Slot0<gint> my_slot = bind(slot(this,&ProgressDialog::time),m_t_nr);
   Gtk::Connection conn = Gtk::Main::timeout.connect(my_slot, 1000);
 
   statusMsg_->set_text(string("Initializing..."));
@@ -282,7 +233,7 @@ void RecordProgressDialog::start(CdDevice *device, char *tocFileName)
   show();
 }
 
-void RecordProgressDialog::stop()
+void ProgressDialog::stop()
 {
   if (active_) {
     hide();
@@ -291,7 +242,7 @@ void RecordProgressDialog::stop()
   }
 }
 
-gint RecordProgressDialog::delete_event_impl(GdkEventAny*)
+gint ProgressDialog::delete_event_impl(GdkEventAny*)
 {
   if (finished_) {
     poolFather_->stop(this);
@@ -299,7 +250,7 @@ gint RecordProgressDialog::delete_event_impl(GdkEventAny*)
   return 1;
 }
 
-void RecordProgressDialog::closeAction()
+void ProgressDialog::closeAction()
 {
   if (finished_) {
     poolFather_->stop(this);
@@ -347,7 +298,7 @@ void RecordProgressDialog::closeAction()
 }
 
 
-void RecordProgressDialog::clear()
+void ProgressDialog::clear()
 {
   finished_ = 0;
   actStatus_ = 0;
@@ -371,7 +322,7 @@ void RecordProgressDialog::clear()
   set_title(string(""));
 }
 
-void RecordProgressDialog::update(unsigned long level)
+void ProgressDialog::update(unsigned long level)
 {
   int status;
   int totalTracks;
@@ -634,7 +585,7 @@ void RecordProgressDialog::update(unsigned long level)
 // Sets label of close button.
 // l: 1: 'abort'	--> CANCEL gnome stock button (i18n)
 //    2: 'dismiss'  --> CLOSE  gnome stock button (i18n)
-void RecordProgressDialog::setCloseButtonLabel(int l)
+void ProgressDialog::setCloseButtonLabel(int l)
 {
   if (actCloseButtonLabel_ == l)
     return;
@@ -653,7 +604,7 @@ void RecordProgressDialog::setCloseButtonLabel(int l)
   actCloseButtonLabel_ = l;
 }
 
-gint RecordProgressDialog::time(gint timer_nr)
+gint ProgressDialog::time(gint timer_nr)
 {
   char buf[50];
   struct timeval timenow;
@@ -708,32 +659,32 @@ gint RecordProgressDialog::time(gint timer_nr)
 
 
 
-RecordProgressDialogPool::RecordProgressDialogPool()
+ProgressDialogPool::ProgressDialogPool()
 {
   activeDialogs_ = NULL;
   pool_ = NULL;
 }
 
-RecordProgressDialogPool::~RecordProgressDialogPool()
+ProgressDialogPool::~ProgressDialogPool()
 {
 
 }
 
-void RecordProgressDialogPool::update(unsigned long status)
+void ProgressDialogPool::update(unsigned long status)
 {
-  RecordProgressDialog *run;
+  ProgressDialog *run;
 
   for (run = activeDialogs_; run != NULL; run = run->poolNext_)
     run->update(status);
 }
   
-RecordProgressDialog *RecordProgressDialogPool::start(CdDevice *device,
+ProgressDialog *ProgressDialogPool::start(CdDevice *device,
 						      TocEdit *tocEdit)
 {
-  RecordProgressDialog *dialog;
+  ProgressDialog *dialog;
 
   if (pool_ == NULL) {
-    dialog = new RecordProgressDialog(this);
+    dialog = new ProgressDialog(this);
   }
   else {
     dialog = pool_;
@@ -748,12 +699,12 @@ RecordProgressDialog *RecordProgressDialogPool::start(CdDevice *device,
   return dialog;
 }
 
-RecordProgressDialog *RecordProgressDialogPool::start(CdDevice *device, char *tocFileName)
+ProgressDialog *ProgressDialogPool::start(CdDevice *device, char *tocFileName)
 {
-  RecordProgressDialog *dialog;
+  ProgressDialog *dialog;
 
   if (pool_ == NULL) {
-    dialog = new RecordProgressDialog(this);
+    dialog = new ProgressDialog(this);
   }
   else {
     dialog = pool_;
@@ -769,9 +720,9 @@ RecordProgressDialog *RecordProgressDialogPool::start(CdDevice *device, char *to
 }
 
 
-void RecordProgressDialogPool::stop(RecordProgressDialog *dialog)
+void ProgressDialogPool::stop(ProgressDialog *dialog)
 {
-  RecordProgressDialog *run, *pred;
+  ProgressDialog *run, *pred;
 
   for (pred = NULL, run = activeDialogs_; run != NULL;
        pred = run, run = run->poolNext_) {

@@ -45,11 +45,12 @@ SRC = xcdrdao.cc SampleDisplay.cc SampleManager.cc \
       TrackManager.cc AddSilenceDialog.cc TrackInfoDialog.cc TocEdit.cc \
       TextEdit.cc TocInfoDialog.cc guiUpdate.cc TrackDataScrap.cc \
       AddFileDialog.cc CdDevice.cc DeviceConfDialog.cc \
-      ProcessMonitor.cc RecordProgressDialog.cc Settings.cc MessageBox.cc \
+      ProcessMonitor.cc ProgressDialog.cc Settings.cc MessageBox.cc \
       CdTextTable.cc MDIWindow.cc \
       AudioCDChild.cc RecordGenericDialog.cc RecordCDTarget.cc \
       DeviceList.cc RecordTocSource.cc RecordCDSource.cc \
-      RecordHDTarget.cc AudioCDView.cc @sound_if_src@
+      RecordHDTarget.cc AudioCDView.cc TocEditView.cc GenericChild.cc \
+      GenericView.cc @sound_if_src@
 
 OBJ = $(SRC:%.cc=%.o)
 

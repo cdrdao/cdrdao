@@ -32,6 +32,7 @@
 #include "xcdrdao.h"
 #include "guiUpdate.h"
 #include "TocEdit.h"
+#include "TocEditView.h"
 #include "MessageBox.h"
 #include "AudioCDChild.h"
 #include "AudioCDView.h"
@@ -417,7 +418,7 @@ void MDIWindow::openAudioCDProject(char *name)
   {
     AudioCDView *view;
     view = static_cast <AudioCDView *>(child->get_active());
-    view->sampleViewFull();
+    view->tocEditView()->sampleViewFull();
   }
   else
   {

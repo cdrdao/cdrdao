@@ -16,47 +16,6 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
-/*
- * $Log: TocInfoDialog.cc,v $
- * Revision 1.6  2000/10/01 16:39:10  llanero
- * applied Jason Lunz patch: "Close" instead of "Cancel" where appropiate.
- *
- * Revision 1.5  2000/09/21 02:07:07  llanero
- * MDI support:
- * Splitted AudioCDChild into same and AudioCDView
- * Move Selections from TocEdit to AudioCDView to allow
- *   multiple selections.
- * Cursor animation in all the views.
- * Can load more than one from from command line
- * Track info, Toc info, Append/Insert Silence, Append/Insert Track,
- *   they all are built for every child when needed.
- * ...
- *
- * Revision 1.4  2000/04/23 09:07:08  andreasm
- * * Fixed most problems marked with '//llanero'.
- * * Added audio CD edit menus to MDIWindow.
- * * Moved central storage of TocEdit object to MDIWindow.
- * * AudioCdChild is now handled like an ordinary non modal dialog, i.e.
- *   it has a normal 'update' member function now.
- * * Added CdTextTable modal dialog.
- * * Old functionality of xcdrdao is now available again.
- *
- * Revision 1.3  2000/04/16 20:31:20  andreasm
- * Added missing stdio.h includes.
- *
- * Revision 1.2  2000/02/20 23:34:54  llanero
- * fixed scsilib directory (files mising ?-()
- * ported xdao to 1.1.8 / gnome (MDI) app
- *
- * Revision 1.1.1.1  2000/02/05 01:40:15  llanero
- * Uploaded cdrdao 1.1.3 with pre10 patch applied.
- *
- * Revision 1.1  1999/08/21 14:17:39  mueller
- * Initial revision
- *
- */
-
-static char rcsid[] = "$Id: TocInfoDialog.cc,v 1.6 2000/10/01 16:39:10 llanero Exp $";
 
 #include "TocInfoDialog.h"
 
@@ -66,12 +25,12 @@ static char rcsid[] = "$Id: TocInfoDialog.cc,v 1.6 2000/10/01 16:39:10 llanero E
 #include <ctype.h>
 
 #include "TocEdit.h"
+#include "TocEditView.h"
 #include "guiUpdate.h"
 #include "Toc.h"
 #include "CdTextItem.h"
 #include "TextEdit.h"
 #include "CdTextTable.h"
-#include "AudioCDChild.h"
 
 #define MAX_CD_TEXT_LANGUAGE_CODES 22
 
@@ -144,7 +103,7 @@ static GenreCode CD_TEXT_GENRE_CODES[MAX_CD_TEXT_GENRE_CODES] = {
   { 0x00, 0x1c, "World Music" }
 };
 
-TocInfoDialog::TocInfoDialog(AudioCDChild *child)
+TocInfoDialog::TocInfoDialog()
 {
   int i;
   Gtk::Label *label;
@@ -155,11 +114,9 @@ TocInfoDialog::TocInfoDialog(AudioCDChild *child)
   Gtk::Button *button;
   Gtk::VBox *contents = new Gtk::VBox;
 
-  tocEdit_ = NULL;
+  tocEditView_ = NULL;
   active_ = 0;
   selectedTocType_ = Toc::CD_DA;
-
-  cdchild = child;
 
   nofTracks_ = new Gtk::Label(string("99"));
   tocLength_ = new Gtk::Label(string("100:00:00"));
@@ -339,7 +296,7 @@ TocInfoDialog::~TocInfoDialog()
 {
 }
 
-void TocInfoDialog::start(TocEdit *tocEdit)
+void TocInfoDialog::start(TocEditView *view)
 {
   if (active_) {
     get_window().raise();
@@ -348,7 +305,7 @@ void TocInfoDialog::start(TocEdit *tocEdit)
 
   active_ = 1;
 
-  update(UPD_ALL, tocEdit);
+  update(UPD_ALL, view);
   show();
 }
 
@@ -625,8 +582,8 @@ Gtk::VBox *TocInfoDialog::createCdTextPage(int n)
 
 void TocInfoDialog::cdTextTableAction(int language)
 {
-  if (tocEdit_ != NULL && tocEdit_->editable()) {
-    CdTextTable table(tocEdit_, language);
+  if (tocEditView_ != NULL && tocEditView_->tocEdit()->editable()) {
+    CdTextTable table(tocEditView_->tocEdit(), language);
 
     if (table.run()) {
       guiUpdate();
@@ -660,27 +617,27 @@ void TocInfoDialog::clear()
   clearCdText();
 }
 
-void TocInfoDialog::update(unsigned long level, TocEdit *tocEdit)
+void TocInfoDialog::update(unsigned long level, TocEditView *view)
 {
   const Toc *toc;
 
   if (!active_)
     return;
 
-  tocEdit_ = tocEdit;
+  tocEditView_ = view;
 
-  if (tocEdit == NULL) {
+  if (view == NULL) {
     clear();
     return;
   }
 
   if (level & UPD_TOC_DATA) {
-    toc = tocEdit->toc();
+    toc = view->tocEdit()->toc();
     importData(toc);
   }
 
   if (level & UPD_EDITABLE_STATE) {
-    applyButton_->set_sensitive(tocEdit->editable() ? TRUE : FALSE);
+    applyButton_->set_sensitive(view->tocEdit()->editable() ? TRUE : FALSE);
   }
 }
 
@@ -725,10 +682,10 @@ void TocInfoDialog::clearCdText()
 
 void TocInfoDialog::applyAction()
 {
-  if (tocEdit_ == NULL || !tocEdit_->editable())
+  if (tocEditView_ == NULL || !tocEditView_->tocEdit()->editable())
     return;
 
-  exportData(tocEdit_);
+  exportData(tocEditView_->tocEdit());
 
   guiUpdate(UPD_TOC_DATA);
 }

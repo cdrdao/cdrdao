@@ -18,6 +18,12 @@
  */
 /*
  * $Log: TocEdit.h,v $
+ * Revision 1.4  2000/11/05 12:24:41  andreasm
+ * Improved handling of TocEdit views. Introduced a new class TocEditView that
+ * holds all view data (displayed sample range, selected sample range,
+ * selected tracks/index marks, sample marker). This class is passed now to
+ * most of the update functions of the dialogs.
+ *
  * Revision 1.3  2000/09/21 02:07:07  llanero
  * MDI support:
  * Splitted AudioCDChild into same and AudioCDView
@@ -56,6 +62,7 @@ class Toc;
 class TrackData;
 class TrackDataScrap;
 class SampleManager;
+class TocEditView;
 
 class TocEdit {
 public:
@@ -100,10 +107,8 @@ public:
   int appendSilence(unsigned long);
   int insertSilence(unsigned long length, unsigned long pos);
 
-  int removeTrackData(int *sampleSelectionValid_,
-		unsigned long sampleSelectionMin_, unsigned long sampleSelectionMax_);
-  int insertTrackData(int sampleMarkerValid_, unsigned long sampleMarker_,
-  	  unsigned long *selStart, unsigned long *selEnd);
+  int removeTrackData(TocEditView *);
+  int insertTrackData(TocEditView *);
   
   void setTrackCopyFlag(int trackNr, int flag);
   void setTrackPreEmphasisFlag(int trackNr, int flag);
@@ -134,6 +139,8 @@ private:
 
   int createAudioData(const char *filename, TrackData **);
   int modifyAllowed() const;
+
+  friend class TocEditView;
 };
 
 #endif

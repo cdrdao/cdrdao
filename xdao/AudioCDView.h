@@ -22,7 +22,6 @@
 
 #include <gtk--.h>
 #include <gtk/gtk.h>
-
 #include <gnome--.h>
 
 #include "GenericView.h"
@@ -47,8 +46,6 @@ private:
   enum Mode { ZOOM, SELECT };
 
   AudioCDChild *cdchild;
-
-  TocEdit *tocEdit_;
 
   Mode mode_;
 
@@ -87,46 +84,6 @@ private:
 
   void drag_data_received_cb(GdkDragContext *context, gint x, gint y,
          GtkSelectionData *selection_data, guint info, guint time);
-
-
-// Allow a different selection on every view.
-public:
-  void sampleMarker(unsigned long);
-  int sampleMarker(unsigned long *) const;
-
-  void sampleSelection(unsigned long, unsigned long);
-  int sampleSelection(unsigned long *, unsigned long *) const;
-
-  void sampleViewFull();
-  void sampleViewInclude(unsigned long, unsigned long);
-  void sampleView(unsigned long *, unsigned long *) const;
-  void sampleView(unsigned long smin, unsigned long smax);
-
-  void trackSelection(int);
-  int trackSelection(int *) const;
-
-  void indexSelection(int);
-  int indexSelection(int *) const;
-
-private:
-  int sampleMarkerValid_;
-  unsigned long sampleMarker_;
-
-  int sampleSelectionValid_;
-  unsigned long sampleSelectionMin_;
-  unsigned long sampleSelectionMax_;
-
-  unsigned long sampleViewMin_;
-  unsigned long sampleViewMax_;
-  
-  int trackSelectionValid_;
-  int trackSelection_;
-
-  int indexSelectionValid_;
-  int indexSelection_;
-
-//FIXME: This should be used!!
-  unsigned long updateLevel_;
 
 };
 

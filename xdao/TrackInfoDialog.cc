@@ -1,6 +1,6 @@
 /*  cdrdao - write audio CD-Rs in disc-at-once mode
  *
- *  Copyright (C) 1998  Andreas Mueller <mueller@daneb.ping.de>
+ *  Copyright (C) 1998-2000  Andreas Mueller <mueller@daneb.ping.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -16,38 +16,6 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
-/*
- * $Log: TrackInfoDialog.cc,v $
- * Revision 1.5  2000/10/01 16:39:10  llanero
- * applied Jason Lunz patch: "Close" instead of "Cancel" where appropiate.
- *
- * Revision 1.4  2000/09/21 02:07:07  llanero
- * MDI support:
- * Splitted AudioCDChild into same and AudioCDView
- * Move Selections from TocEdit to AudioCDView to allow
- *   multiple selections.
- * Cursor animation in all the views.
- * Can load more than one from from command line
- * Track info, Toc info, Append/Insert Silence, Append/Insert Track,
- *   they all are built for every child when needed.
- * ...
- *
- * Revision 1.3  2000/04/16 20:31:20  andreasm
- * Added missing stdio.h includes.
- *
- * Revision 1.2  2000/02/20 23:34:54  llanero
- * fixed scsilib directory (files mising ?-()
- * ported xdao to 1.1.8 / gnome (MDI) app
- *
- * Revision 1.1.1.1  2000/02/05 01:40:28  llanero
- * Uploaded cdrdao 1.1.3 with pre10 patch applied.
- *
- * Revision 1.1  1999/08/19 20:27:16  mueller
- * Initial revision
- *
- */
-
-static char rcsid[] = "$Id: TrackInfoDialog.cc,v 1.5 2000/10/01 16:39:10 llanero Exp $";
 
 #include "TrackInfoDialog.h"
 
@@ -57,15 +25,14 @@ static char rcsid[] = "$Id: TrackInfoDialog.cc,v 1.5 2000/10/01 16:39:10 llanero
 #include <ctype.h>
 
 #include "TocEdit.h"
+#include "TocEditView.h"
 #include "guiUpdate.h"
 #include "Toc.h"
 #include "Track.h"
 #include "CdTextItem.h"
 #include "TextEdit.h"
-#include "AudioCDChild.h"
-#include "AudioCDView.h"
 
-TrackInfoDialog::TrackInfoDialog(AudioCDChild *child)
+TrackInfoDialog::TrackInfoDialog()
 {
   int i;
   Gtk::Label *label, *label1;
@@ -77,11 +44,9 @@ TrackInfoDialog::TrackInfoDialog(AudioCDChild *child)
   Gtk::VBox *contents = new Gtk::VBox;
   Gtk::HBox *topBox = new Gtk::HBox;
 
-  tocEdit_ = NULL;
+  tocEditView_ = NULL;
   active_ = 0;
   trackNr_ = 0;
-
-  cdchild = child;
 
   trackNr_ = new Gtk::Label(string("99"));
   pregapLen_ = new Gtk::Label(string("100:00:00"));
@@ -335,7 +300,7 @@ TrackInfoDialog::~TrackInfoDialog()
 {
 }
 
-void TrackInfoDialog::start(TocEdit *tocEdit)
+void TrackInfoDialog::start(TocEditView *view)
 {
   if (active_) {
     get_window().raise();
@@ -344,7 +309,7 @@ void TrackInfoDialog::start(TocEdit *tocEdit)
 
   active_ = 1;
 
-  update(UPD_ALL, tocEdit);
+  update(UPD_ALL, view);
   show();
 }
 
@@ -490,18 +455,17 @@ void TrackInfoDialog::clear()
   clearCdText();
 }
 
-void TrackInfoDialog::update(unsigned long level, TocEdit *tocEdit)
+void TrackInfoDialog::update(unsigned long level, TocEditView *view)
 {
   const Toc *toc;
-  AudioCDView *view = static_cast <AudioCDView *>(cdchild->get_active());
 
   if (!active_)
     return;
 
-  tocEdit_ = tocEdit;
+  tocEditView_ = view;
 
 
-  if (tocEdit == NULL || !view->trackSelection(&selectedTrack_)) {
+  if (view == NULL || !view->trackSelection(&selectedTrack_)) {
     selectedTrack_ = 0;
     applyButton_->set_sensitive(FALSE);
     clear();
@@ -509,12 +473,12 @@ void TrackInfoDialog::update(unsigned long level, TocEdit *tocEdit)
   }
 
   if (level & (UPD_TRACK_DATA | UPD_TRACK_MARK_SEL)) {
-    toc = tocEdit->toc();
+    toc = view->tocEdit()->toc();
     importData(toc, selectedTrack_);
-    applyButton_->set_sensitive(tocEdit->editable() ? TRUE : FALSE);
+    applyButton_->set_sensitive(view->tocEdit()->editable() ? TRUE : FALSE);
   }
   else if (level & UPD_EDITABLE_STATE) {
-    applyButton_->set_sensitive(tocEdit->editable() ? TRUE : FALSE);
+    applyButton_->set_sensitive(view->tocEdit()->editable() ? TRUE : FALSE);
   }
 }
 
@@ -550,10 +514,11 @@ void TrackInfoDialog::clearCdText()
 
 void TrackInfoDialog::applyAction()
 {
-  if (tocEdit_ == NULL || !tocEdit_->editable() || selectedTrack_ == 0)
+  if (tocEditView_ == NULL || !tocEditView_->tocEdit()->editable() ||
+      selectedTrack_ == 0)
     return;
 
-  exportData(tocEdit_, selectedTrack_);
+  exportData(tocEditView_->tocEdit(), selectedTrack_);
 
   guiUpdate(UPD_TRACK_DATA);
 }

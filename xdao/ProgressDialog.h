@@ -1,6 +1,6 @@
 /*  cdrdao - write audio CD-Rs in disc-at-once mode
  *
- *  Copyright (C) 1998, 1999  Andreas Mueller <mueller@daneb.ping.de>
+ *  Copyright (C) 1998-2000  Andreas Mueller <mueller@daneb.ping.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -16,34 +16,9 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
-/*
- * $Log: RecordProgressDialog.h,v $
- * Revision 1.5  2000/09/21 02:07:06  llanero
- * MDI support:
- * Splitted AudioCDChild into same and AudioCDView
- * Move Selections from TocEdit to AudioCDView to allow
- *   multiple selections.
- * Cursor animation in all the views.
- * Can load more than one from from command line
- * Track info, Toc info, Append/Insert Silence, Append/Insert Track,
- *   they all are built for every child when needed.
- * ...
- *
- * Revision 1.3  2000/07/31 01:55:49  llanero
- * got rid of old Extract dialog and Record dialog.
- * both are using RecordProgressDialog now.
- *
- * Revision 1.2  2000/02/20 23:34:54  llanero
- * fixed scsilib directory (files mising ?-()
- * ported xdao to 1.1.8 / gnome (MDI) app
- *
- * Revision 1.1.1.1  2000/02/05 01:38:46  llanero
- * Uploaded cdrdao 1.1.3 with pre10 patch applied.
- *
- */
 
-#ifndef __RECORD_PROGRESS_DIALOG_H__
-#define __RECORD_PROGRESS_DIALOG_H__
+#ifndef __PROGRESS_DIALOG_H__
+#define __PROGRESS_DIALOG_H__
 
 #include <sys/time.h>
 #include <gtk--.h>
@@ -52,19 +27,19 @@
 class TocEdit;
 class CdDevice;
 
-class RecordProgressDialogPool;
+class ProgressDialogPool;
 
-class RecordProgressDialog : public Gtk::Dialog {
+class ProgressDialog : public Gtk::Dialog {
 public:
-  RecordProgressDialog(RecordProgressDialogPool *father);
-  ~RecordProgressDialog();
+  ProgressDialog(ProgressDialogPool *father);
+  ~ProgressDialog();
 
   gint delete_event_impl(GdkEventAny*);
 
 private:
-  friend class RecordProgressDialogPool;
+  friend class ProgressDialogPool;
 
-  RecordProgressDialogPool *poolFather_;
+  ProgressDialogPool *poolFather_;
 
   int active_;
   CdDevice *device_;
@@ -85,7 +60,7 @@ private:
   bool leadTimeFilled_;
 
   struct timeval time_;
-  gint RecordProgressDialog::time(gint timer_nr);
+  gint ProgressDialog::time(gint timer_nr);
 
   Gtk::Button *cancelButton_;
   Gtk::Button *closeButton_;
@@ -96,7 +71,7 @@ private:
   Gtk::ProgressBar *totalProgress_;
   Gtk::ProgressBar *bufferFillRate_;
 
-  RecordProgressDialog *poolNext_;
+  ProgressDialog *poolNext_;
 
   void update(unsigned long);
   void start(CdDevice *, TocEdit *);
@@ -108,20 +83,20 @@ private:
 
 };
 
-class RecordProgressDialogPool {
+class ProgressDialogPool {
 public:
-  RecordProgressDialogPool();
-  ~RecordProgressDialogPool();
+  ProgressDialogPool();
+  ~ProgressDialogPool();
 
   void update(unsigned long);
   
-  RecordProgressDialog *start(CdDevice *, TocEdit *);
-  RecordProgressDialog *start(CdDevice *, char *tocFileName);
-  void stop(RecordProgressDialog *);
+  ProgressDialog *start(CdDevice *, TocEdit *);
+  ProgressDialog *start(CdDevice *, char *tocFileName);
+  void stop(ProgressDialog *);
 
 private:
-  RecordProgressDialog *activeDialogs_;
-  RecordProgressDialog *pool_;
+  ProgressDialog *activeDialogs_;
+  ProgressDialog *pool_;
 };
 
 

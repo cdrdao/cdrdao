@@ -29,6 +29,7 @@
 #include "MessageBox.h"
 #include "SampleDisplay.h"
 #include "TocEdit.h"
+#include "TocEditView.h"
 #include "MDIWindow.h"
 #include "util.h"
 
@@ -39,7 +40,7 @@
 AudioCDView::AudioCDView(AudioCDChild *child) 
 {
   cdchild = child;
-  tocEdit_ = child->tocEdit_;
+  tocEditView_ = new TocEditView(child->tocEdit());
 
   Gtk::VBox *vbox = this;
 
@@ -57,7 +58,7 @@ AudioCDView::AudioCDView(AudioCDChild *child)
   drag_data_received.connect(slot(this, &AudioCDView::drag_data_received_cb));
 
   sampleDisplay_ = new SampleDisplay;
-  sampleDisplay_->setTocEdit(tocEdit_);
+  sampleDisplay_->setTocEdit(child->tocEdit());
 
   sampleDisplay_->set_usize(200,200);
   
@@ -161,38 +162,12 @@ AudioCDView::AudioCDView(AudioCDChild *child)
   selectButton_->toggled.connect(bind(slot(this, &AudioCDView::setMode), SELECT));
   playButton_->clicked.connect(slot(this, &AudioCDView::play));
 
-  sampleMarkerValid_ = 0;
-  sampleSelectionValid_ = 0;
-  trackSelectionValid_ = 0;
-  indexSelectionValid_ = 0;
-
-  sampleSelectionMin_ = 0;
-  sampleSelectionMax_ = 0;
-  sampleViewMin_ = 0;
-  sampleViewMax_ = 0;
-
-  updateLevel_ = 0;
-
-  sampleViewFull();
+  tocEditView_->sampleViewFull();
 }
 
 void AudioCDView::update(unsigned long level)
 {
 cout << "updating AudioCDView - " << cdchild->get_name() << endl;
-//FIXME: we don't pass tedit now... 
-// If some operation changes the tocEdit_ in the way this should catch
-// it should do a guiUpdate(UPD_ALL)!
-// Was this used when loading a new project??? remove it then.
-/*
-  if (tocEdit_ != tedit) {
-    tocEdit_ = tedit;
-//FIXME    sampleDisplay_->setTocEdit(tedit);
-    level = UPD_ALL;
-  }
-*/
-
-  level |= updateLevel_;
-  updateLevel_ = 0;
 
   if (level & (UPD_TOC_DIRTY | UPD_TOC_DATA)) {
     cursorPos_->set_text("");
@@ -201,8 +176,8 @@ cout << "updating AudioCDView - " << cdchild->get_name() << endl;
   if (level & UPD_TRACK_MARK_SEL) {
     int trackNr, indexNr;
 
-    if (trackSelection(&trackNr) && 
-	indexSelection(&indexNr)) {
+    if (tocEditView_->trackSelection(&trackNr) && 
+	tocEditView_->indexSelection(&indexNr)) {
       sampleDisplay_->setSelectedTrackMarker(trackNr, indexNr);
     }
     else {
@@ -212,7 +187,8 @@ cout << "updating AudioCDView - " << cdchild->get_name() << endl;
 
   if (level & UPD_SAMPLES) {
     unsigned long smin, smax;
-    sampleView(&smin, &smax);
+
+    tocEditView_->sampleView(&smin, &smax);
     sampleDisplay_->updateToc(smin, smax);
   }
   else if (level & (UPD_TRACK_DATA | UPD_TRACK_MARK_SEL)) {
@@ -222,7 +198,7 @@ cout << "updating AudioCDView - " << cdchild->get_name() << endl;
   if (level & UPD_SAMPLE_MARKER) {
     unsigned long marker;
 
-    if (sampleMarker(&marker)) {
+    if (tocEditView_->sampleMarker(&marker)) {
       markerPos_->set_text(string(cdchild->sample2string(marker)));
       sampleDisplay_->setMarker(marker);
     }
@@ -235,7 +211,7 @@ cout << "updating AudioCDView - " << cdchild->get_name() << endl;
   if (level & UPD_SAMPLE_SEL) {
     unsigned long start, end;
 
-    if (sampleSelection(&start, &end)) {
+    if (tocEditView_->sampleSelection(&start, &end)) {
       selectionStartPos_->set_text(string(cdchild->sample2string(start)));
       selectionEndPos_->set_text(string(cdchild->sample2string(end)));
       sampleDisplay_->setRegion(start, end);
@@ -252,8 +228,8 @@ void AudioCDView::zoomIn()
 {
   unsigned long start, end;
 
-  if (sampleSelection(&start, &end)) {
-    sampleView(start, end);
+  if (tocEditView_->sampleSelection(&start, &end)) {
+    tocEditView_->sampleView(start, end);
     guiUpdate();
   }
 }
@@ -262,7 +238,7 @@ void AudioCDView::zoomOut()
 {
   unsigned long start, end, len, center;
 
-  sampleView(&start, &end);
+  tocEditView_->sampleView(&start, &end);
 
   len = end - start + 1;
   center = start + len / 2;
@@ -273,16 +249,16 @@ void AudioCDView::zoomOut()
     start = 0;
 
   end = center + len;
-  if (end >= tocEdit_->toc()->length().samples())
-    end = tocEdit_->toc()->length().samples() - 1;
+  if (end >= tocEditView_->tocEdit()->toc()->length().samples())
+    end = tocEditView_->tocEdit()->toc()->length().samples() - 1;
 
-  sampleView(start, end);
+  tocEditView_->sampleView(start, end);
   guiUpdate();
 }
 
 void AudioCDView::fullView()
 {
-  sampleViewFull();
+  tocEditView_->sampleViewFull();
   guiUpdate();
 }
 
@@ -290,15 +266,15 @@ void AudioCDView::play()
 {
   unsigned long start, end;
 
-  if (!sampleDisplay_->getRegion(&start, &end))
-    sampleDisplay_->getView(&start, &end);
+  if (!tocEditView_->sampleSelection(&start, &end))
+    tocEditView_->sampleView(&start, &end);
 
   cdchild->play(start, end);
 }
 
 int AudioCDView::getMarker(unsigned long *sample)
 {
-  if (tocEdit_->lengthSample() == 0)
+  if (tocEditView_->tocEdit()->lengthSample() == 0)
     return 0;
 
   if (sampleDisplay_->getMarker(sample) == 0) {
@@ -312,14 +288,14 @@ int AudioCDView::getMarker(unsigned long *sample)
 void AudioCDView::trackMarkSelectedCallback(const Track *, int trackNr,
 					   int indexNr)
 {
-  trackSelection(trackNr);
-  indexSelection(indexNr);
+  tocEditView_->trackSelection(trackNr);
+  tocEditView_->indexSelection(indexNr);
   guiUpdate();
 }
 
 void AudioCDView::markerSetCallback(unsigned long sample)
 {
-  sampleMarker(sample);
+  tocEditView_->sampleMarker(sample);
   guiUpdate();
 }
 
@@ -327,10 +303,10 @@ void AudioCDView::selectionSetCallback(unsigned long start,
 				      unsigned long end)
 {
   if (mode_ == ZOOM) {
-    sampleView(start, end);
+    tocEditView_->sampleView(start, end);
   }
   else {
-    sampleSelection(start, end);
+    tocEditView_->sampleSelection(start, end);
   }
 cout << "selectionSetCallback called" << endl;
 
@@ -351,7 +327,7 @@ void AudioCDView::markerSet()
 {
   unsigned long s = cdchild->string2sample(markerPos_->get_text().c_str());
 
-  sampleMarker(s);
+  tocEditView_->sampleMarker(s);
   guiUpdate();
 }
 
@@ -360,7 +336,7 @@ void AudioCDView::selectionSet()
   unsigned long s1 = cdchild->string2sample(selectionStartPos_->get_text().c_str());
   unsigned long s2 = cdchild->string2sample(selectionEndPos_->get_text().c_str());
 
-  sampleSelection(s1, s2);
+  tocEditView_->sampleSelection(s1, s2);
   guiUpdate();
 }
 
@@ -373,149 +349,10 @@ void AudioCDChild::tocBlockedMsg(const char *op)
   msg.run();
 }
 
-
-
-
-void AudioCDView::sampleMarker(unsigned long sample)
-{
-  if (sample < tocEdit_->toc()->length().samples()) {
-    sampleMarker_ = sample;
-    sampleMarkerValid_ = 1;
-  }
-  else {
-    sampleMarkerValid_ = 0;
-  }
-
-  updateLevel_ |= UPD_SAMPLE_MARKER;
-}
-
-int AudioCDView::sampleMarker(unsigned long *sample) const
-{
-  if (sampleMarkerValid_)
-    *sample = sampleMarker_;
-
-  return sampleMarkerValid_;
-}
-
-void AudioCDView::sampleSelection(unsigned long smin, unsigned long smax)
-{
-  unsigned long tmp;
-
-  if (smin > smax) {
-    tmp = smin;
-    smin = smax;
-    smax = tmp;
-  }
-
-  if (smax < tocEdit_->toc()->length().samples()) {
-    sampleSelectionMin_ = smin;
-    sampleSelectionMax_ = smax;
-
-    sampleSelectionValid_ = 1;
-  }
-  else {
-    sampleSelectionValid_ = 0;
-  }
-  
-  updateLevel_ |= UPD_SAMPLE_SEL;
-}
-
-int AudioCDView::sampleSelection(unsigned long *smin, unsigned long *smax) const
-{
-  if (sampleSelectionValid_) {
-    *smin = sampleSelectionMin_;
-    *smax = sampleSelectionMax_;
-  }
-
-  return sampleSelectionValid_;
-}
-
-void AudioCDView::sampleView(unsigned long smin, unsigned long smax)
-{
-  if (smin <= smax && smax < tocEdit_->lengthSample()) {
-    sampleViewMin_ = smin;
-    sampleViewMax_ = smax;
-    updateLevel_ |= UPD_SAMPLES;
-  }
-}
-
-void AudioCDView::sampleView(unsigned long *smin, unsigned long *smax) const
-{
-  *smin = sampleViewMin_;
-  *smax = sampleViewMax_;
-}
-
-void AudioCDView::sampleViewFull()
-{
-  sampleViewMin_ = 0;
-
-  if ((sampleViewMax_ = tocEdit_->lengthSample()) > 0)
-    sampleViewMax_ -= 1;
-
-  updateLevel_ |= UPD_SAMPLES;
-}
-
-void AudioCDView::sampleViewInclude(unsigned long smin, unsigned long smax)
-{
-  if (smin < sampleViewMin_) {
-    sampleViewMin_ = smin;
-    updateLevel_ |= UPD_SAMPLES;
-  }
-
-  if (smax < tocEdit_->lengthSample() && smax > sampleViewMax_) {
-    sampleViewMax_ = smax;
-    updateLevel_ |= UPD_SAMPLES;
-  }
-}
-
-void AudioCDView::trackSelection(int tnum)
-{
-  if (tnum > 0) {
-    trackSelection_ = tnum;
-    trackSelectionValid_ = 1;
-  }
-  else {
-    trackSelectionValid_ = 0;
-  }
-
-  updateLevel_ |= UPD_TRACK_MARK_SEL;
-
-}
-
-int AudioCDView::trackSelection(int *tnum) const
-{
-  if (trackSelectionValid_)
-    *tnum = trackSelection_;
-
-  return trackSelectionValid_;
-}
-
-void AudioCDView::indexSelection(int inum)
-{
-  if (inum >= 0) {
-    indexSelection_ = inum;
-    indexSelectionValid_ = 1;
-  }
-  else {
-    indexSelectionValid_ = 0;
-  }
-
-  updateLevel_ |= UPD_TRACK_MARK_SEL;
-}
-
-int AudioCDView::indexSelection(int *inum) const
-{
-  if (indexSelectionValid_)
-    *inum = indexSelection_;
-
-  return indexSelectionValid_;
-}
-
 void AudioCDView::drag_data_received_cb(GdkDragContext *context,
   gint x, gint y, GtkSelectionData *selection_data, guint info, guint time)
 {
   GList *names;
-  char *file;
   
   switch (info) {
     case TARGET_URI_LIST:
@@ -528,7 +365,7 @@ void AudioCDView::drag_data_received_cb(GdkDragContext *context,
           string str = g_strdup(static_cast <char *>(names->data));
           const char *file = stripCwd(str.c_str());
 
-        switch (tocEdit_->appendTrack(file)) {
+        switch (tocEditView_->tocEdit()->appendTrack(file)) {
         case 0:
 	      guiUpdate();
 	      MDI_WINDOW->statusMessage("Appended track with audio data from \"%s\".", file);

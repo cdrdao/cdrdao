@@ -17,26 +17,20 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#ifndef __GENERIC_VIEW_H__
-#define __GENERIC_VIEW_H__
+#include "GenericView.h"
 
-#include <gtk--.h>
 
-class TocEditView;
-
-class GenericView : public Gtk::VBox
+GenericView::GenericView()
 {
-public:
-  GenericView();
-  ~GenericView();
+  tocEditView_ = (TocEditView*)0;
+}
 
-  virtual TocEditView *tocEditView() const;
+GenericView::~GenericView()
+{
+  tocEditView_ = (TocEditView*)0;
+}
 
-  virtual void update(unsigned long level) = 0;
-
-protected:
-  TocEditView *tocEditView_;
-
-};
-
-#endif
+TocEditView *GenericView::tocEditView() const
+{
+  return tocEditView_;
+}

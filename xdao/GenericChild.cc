@@ -1,6 +1,6 @@
 /*  cdrdao - write audio CD-Rs in disc-at-once mode
  *
- *  Copyright (C) 2000  Andreas Mueller <mueller@daneb.ping.de>
+ *  Copyright (C) 1998-2000 Andreas Mueller <mueller@daneb.ping.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -17,26 +17,22 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#ifndef __GENERIC_VIEW_H__
-#define __GENERIC_VIEW_H__
+#include "GenericChild.h"
 
-#include <gtk--.h>
 
-class TocEditView;
-
-class GenericView : public Gtk::VBox
+GenericChild::GenericChild()
 {
-public:
-  GenericView();
-  ~GenericView();
+  tocEdit_ = (TocEdit*)0;
+}
 
-  virtual TocEditView *tocEditView() const;
+GenericChild::~GenericChild()
+{
+  tocEdit_ = (TocEdit*)0;
+}
 
-  virtual void update(unsigned long level) = 0;
+TocEdit *GenericChild::tocEdit() const
+{
+  return tocEdit_;
+}
 
-protected:
-  TocEditView *tocEditView_;
 
-};
-
-#endif

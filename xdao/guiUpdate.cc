@@ -18,6 +18,12 @@
  */
 /*
  * $Log: guiUpdate.cc,v $
+ * Revision 1.7  2000/11/05 12:24:41  andreasm
+ * Improved handling of TocEdit views. Introduced a new class TocEditView that
+ * holds all view data (displayed sample range, selected sample range,
+ * selected tracks/index marks, sample marker). This class is passed now to
+ * most of the update functions of the dialogs.
+ *
  * Revision 1.6  2000/09/21 02:07:07  llanero
  * MDI support:
  * Splitted AudioCDChild into same and AudioCDView
@@ -58,7 +64,7 @@
  *
  */
 
-static char rcsid[] = "$Id: guiUpdate.cc,v 1.6 2000/09/21 02:07:07 llanero Exp $";
+static char rcsid[] = "$Id: guiUpdate.cc,v 1.7 2000/11/05 12:24:41 andreasm Exp $";
 
 #include "guiUpdate.h"
 
@@ -71,7 +77,7 @@ static char rcsid[] = "$Id: guiUpdate.cc,v 1.6 2000/09/21 02:07:07 llanero Exp $
 #include "AddFileDialog.h"
 #include "DeviceConfDialog.h"
 #include "RecordGenericDialog.h"
-#include "RecordProgressDialog.h"
+#include "ProgressDialog.h"
 #include "ProcessMonitor.h"
 #include "CdDevice.h"
 
@@ -85,20 +91,15 @@ void guiUpdate(unsigned long level)
 
   if (MDI_WINDOW->gtkobj()->children)
   {
-    Gnome::MDIChild *child = MDI_WINDOW->get_active_child();
+    GenericChild *child = static_cast <GenericChild *>(MDI_WINDOW->get_active_child());
 
-    static_cast <GenericChild *>(child)->update(level);
+    level |= child->tocEdit()->updateLevel();
+    
+    child->update(level);
   }
 
-//  level |= tocEdit->updateLevel();
 
   MDI_WINDOW->update(level);
-
-//  if (ADD_SILENCE_DIALOG != NULL)
-//    ADD_SILENCE_DIALOG->update(level, tocEdit);
-
-//  if (ADD_FILE_DIALOG != NULL)
-//    ADD_FILE_DIALOG->update(level, tocEdit);
 
   if (DEVICE_CONF_DIALOG != NULL)
     DEVICE_CONF_DIALOG->update(level);
@@ -107,8 +108,8 @@ void guiUpdate(unsigned long level)
     RECORD_GENERIC_DIALOG->update(level);
 //    RECORD_GENERIC_DIALOG->update(level, tocEdit);
 
-  if (RECORD_PROGRESS_POOL != NULL)
-    RECORD_PROGRESS_POOL->update(level);
+  if (PROGRESS_POOL != NULL)
+    PROGRESS_POOL->update(level);
 //    RECORD_PROGRESS_POOL->update(level, tocEdit);
 }
 
@@ -116,14 +117,6 @@ int guiUpdatePeriodic()
 {
   if (CdDevice::updateDeviceStatus())
     guiUpdate(UPD_CD_DEVICE_STATUS);
-
-  /*
-   * not used anymore since Gtk::Main::input signal will call
-   * CdDevice::updateProgress directly.
-
-     if (CdDevice::updateDeviceProgress())
-       guiUpdate(UPD_PROGRESS_STATUS);
-   */
 
   return 1;
 }

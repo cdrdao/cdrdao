@@ -18,6 +18,12 @@
  */
 /*
  * $Log: AddFileDialog.h,v $
+ * Revision 1.5  2000/11/05 12:24:41  andreasm
+ * Improved handling of TocEdit views. Introduced a new class TocEditView that
+ * holds all view data (displayed sample range, selected sample range,
+ * selected tracks/index marks, sample marker). This class is passed now to
+ * most of the update functions of the dialogs.
+ *
  * Revision 1.4  2000/10/01 16:39:10  llanero
  * applied Jason Lunz patch: "Close" instead of "Cancel" where appropiate.
  *
@@ -50,28 +56,25 @@
 #include <gtk--.h>
 #include <gtk/gtk.h>
 
-class TocEdit;
-class AudioCDChild;
+class TocEditView;
 
 class AddFileDialog : public Gtk::FileSelection {
 public:
   enum Mode { M_APPEND_TRACK, M_APPEND_FILE, M_INSERT_FILE };
 
-  AddFileDialog(AudioCDChild *child);
+  AddFileDialog();
   ~AddFileDialog();
 
-  AudioCDChild *cdchild;
-  
-  void start(TocEdit *);
+  void start(TocEditView *);
   void stop();
 
   void mode(Mode);
-  void update(unsigned long level, TocEdit *);
+  void update(unsigned long level, TocEditView *);
 
   gint delete_event_impl(GdkEventAny*);
 
 private:
-  TocEdit *tocEdit_;
+  TocEditView *tocEditView_;
   int active_;
   Mode mode_;
 

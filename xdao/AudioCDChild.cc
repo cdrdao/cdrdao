@@ -33,6 +33,7 @@
 #include "TrackData.h"
 #include "Toc.h"
 #include "TocEdit.h"
+#include "TocEditView.h"
 #include "util.h"
 #include "MDIWindow.h"
 #include "AddFileDialog.h"
@@ -44,9 +45,10 @@
 #include "SampleDisplay.h"
 
 
-AudioCDChild::AudioCDChild(gint number)
+AudioCDChild::AudioCDChild(gint number) : GenericChild()
 {
   char buf[20];
+
   tocEdit_ = new TocEdit(NULL, NULL);
   Toc *toc = new Toc;
   sprintf(buf, "unnamed-%i.toc", number);
@@ -199,11 +201,6 @@ AudioCDChild::create_view_impl()
 }
 
 
-TocEdit * AudioCDChild::tocEdit()
-{
-  return tocEdit_;
-}
-
 void AudioCDChild::play(unsigned long start, unsigned long end)
 {
   if (playing_) {
@@ -339,15 +336,21 @@ int AudioCDChild::playCallback()
 void AudioCDChild::trackInfo()
 {
   if (trackInfoDialog_ == 0)
-    trackInfoDialog_ = new TrackInfoDialog(this);
-  trackInfoDialog_->start(tocEdit_);
+    trackInfoDialog_ = new TrackInfoDialog();
+
+  GenericView *view = static_cast <GenericView *>(get_active());
+
+  trackInfoDialog_->start(view->tocEditView());
 }
 
 void AudioCDChild::projectInfo()
 {
   if (tocInfoDialog_ == 0)
-    tocInfoDialog_ = new TocInfoDialog(this);
-  tocInfoDialog_->start(tocEdit_);
+    tocInfoDialog_ = new TocInfoDialog();
+
+  GenericView *view = static_cast <GenericView *>(get_active());
+
+  tocInfoDialog_->start(view->tocEditView());
 }
 
 void AudioCDChild::record_to_cd()
@@ -447,20 +450,32 @@ cout<< "in &AudioCDChild::closeProject() - " << get_name() << endl;
 
 void AudioCDChild::update(unsigned long level)
 {
-cout << "updating AudioCDChild - " << get_name() << endl;
-  Gtk::Widget *view = get_active();
+  cout << "updating AudioCDChild - " << get_name() << endl;
 
-  set_name(tocEdit_->filename());
+  if (level & (UPD_TOC_DIRTY | UPD_TOC_DATA)) {
+    string s(tocEdit_->filename());
 
-  level |= tocEdit_->updateLevel();
+    if (tocEdit_->tocDirty())
+      s += "(*)";
 
-  static_cast <GenericView *>(view)->update(level);
+    set_name(s);
+  }
+
+  GenericView *view = static_cast <GenericView *>(get_active());
+  view->update(level);
 
   // Update dialogs already created.
   if (tocInfoDialog_ != 0)
-    tocInfoDialog_->update(level, tocEdit_);
+    tocInfoDialog_->update(level, view->tocEditView());
+
   if (trackInfoDialog_ != 0)
-    trackInfoDialog_->update(level, tocEdit_);
+    trackInfoDialog_->update(level, view->tocEditView());
+
+  if (addFileDialog_ != 0)
+    addFileDialog_->update(level, view->tocEditView());
+
+  if (addSilenceDialog_ != 0)
+    addSilenceDialog_->update(level, view->tocEditView());
 }
 
 
@@ -548,8 +563,9 @@ void AudioCDChild::trackMarkMovedCallback(const Track *, int trackNr,
     break;
   }
 
-  view->trackSelection(trackNr);
-  view->indexSelection(indexNr);
+  view->tocEditView()->trackSelection(trackNr);
+  view->tocEditView()->indexSelection(indexNr);
+
   guiUpdate();
 }
 
@@ -683,8 +699,8 @@ void AudioCDChild::removeTrackMark()
     return;
   }
 
-  if (view->trackSelection(&trackNr) &&
-      view->indexSelection(&indexNr)) {
+  if (view->tocEditView()->trackSelection(&trackNr) &&
+      view->tocEditView()->indexSelection(&indexNr)) {
     switch (tocEdit_->removeTrackMarker(trackNr, indexNr)) {
     case 0:
       MDI_WINDOW->statusMessage("Removed track/index marker.");
@@ -710,46 +726,57 @@ void AudioCDChild::removeTrackMark()
 void AudioCDChild::appendTrack()
 {
   if (addFileDialog_ == 0)
-    addFileDialog_ = new AddFileDialog(this);
+    addFileDialog_ = new AddFileDialog();
+
+  GenericView *view = static_cast <GenericView *>(get_active());
+
 
   addFileDialog_->mode(AddFileDialog::M_APPEND_TRACK);
-  addFileDialog_->start(tocEdit_);
+  addFileDialog_->start(view->tocEditView());
 }
 
 void AudioCDChild::appendFile()
 {
   if (addFileDialog_ == 0)
-    addFileDialog_ = new AddFileDialog(this);
+    addFileDialog_ = new AddFileDialog();
+
+  GenericView *view = static_cast <GenericView *>(get_active());
 
   addFileDialog_->mode(AddFileDialog::M_APPEND_FILE);
-  addFileDialog_->start(tocEdit_);
+  addFileDialog_->start(view->tocEditView());
 }
 
 void AudioCDChild::insertFile()
 {
   if (addFileDialog_ == 0)
-    addFileDialog_ = new AddFileDialog(this);
+    addFileDialog_ = new AddFileDialog();
+
+  GenericView *view = static_cast <GenericView *>(get_active());
 
   addFileDialog_->mode(AddFileDialog::M_INSERT_FILE);
-  addFileDialog_->start(tocEdit_);
+  addFileDialog_->start(view->tocEditView());
 }
 
 void AudioCDChild::appendSilence()
 {
   if (addSilenceDialog_ == 0)
-    addSilenceDialog_ = new AddSilenceDialog(this);
+    addSilenceDialog_ = new AddSilenceDialog();
+
+  GenericView *view = static_cast <GenericView *>(get_active());
 
   addSilenceDialog_->mode(AddSilenceDialog::M_APPEND);
-  addSilenceDialog_->start(tocEdit_);
+  addSilenceDialog_->start(view->tocEditView());
 }
 
 void AudioCDChild::insertSilence()
 {
   if (addSilenceDialog_ == 0)
-    addSilenceDialog_ = new AddSilenceDialog(this);
+    addSilenceDialog_ = new AddSilenceDialog();
+
+  GenericView *view = static_cast <GenericView *>(get_active());
 
   addSilenceDialog_->mode(AddSilenceDialog::M_INSERT);
-  addSilenceDialog_->start(tocEdit_);
+  addSilenceDialog_->start(view->tocEditView());
 }
 
 void AudioCDChild::cutTrackData()
@@ -761,11 +788,9 @@ void AudioCDChild::cutTrackData()
 
   AudioCDView *view = static_cast <AudioCDView *>(get_active());
 
-  switch (tocEdit_->removeTrackData(&view->sampleSelectionValid_,
-		view->sampleSelectionMin_, view->sampleSelectionMax_)) {
+  switch (tocEdit_->removeTrackData(view->tocEditView())) {
   case 0:
     MDI_WINDOW->statusMessage("Removed selected samples.");
-    view->sampleMarker(view->sampleSelectionMin_);
     guiUpdate();
     break;
   case 1:
@@ -785,13 +810,10 @@ void AudioCDChild::pasteTrackData()
   }
 
   AudioCDView *view = static_cast <AudioCDView *>(get_active());
-  unsigned long selStart, selEnd;
 
-  switch (tocEdit_->insertTrackData(view->sampleMarkerValid_,
-		view->sampleMarker_, &selStart, &selEnd)) {
+  switch (tocEdit_->insertTrackData(view->tocEditView())) {
   case 0:
     MDI_WINDOW->statusMessage("Pasted samples.");
-    view->sampleSelection(selStart, selEnd);
     guiUpdate();
     break;
   case 1:
