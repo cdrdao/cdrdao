@@ -19,7 +19,7 @@
 <preface><title>What is it?</title>
 <para>
 <productname>mp32dao</> is a simple <productname>perl</> script designed to help you in
-the task of creating audio CDs from MP3/Ogg files. It will decode compressed audio files to wav and create
+the task of creating audio CDs from MP3/Ogg/Flac files. It will decode compressed audio files to wav and create
 a <emphasis>TOC</> file suitable for burning with <productname>cdrdao</>.
 </para>
 </preface>
@@ -43,7 +43,7 @@ a <emphasis>TOC</> file suitable for burning with <productname>cdrdao</>.
 <chapter id="features"><title>Features</title>
 <sect1><title>Why you'll love mp32dao</>
 <para>
-	Suppose you have downloaded a bunch of mp3/ogg files. Suppose you want to burn them on a
+	Suppose you have downloaded a bunch of mp3/ogg/flac files. Suppose you want to burn them on a
 	CD, without those annoying clicks between the tracks and with CD-Text support. This is
 	why you're going to use mp32dao.
 </para>
@@ -117,7 +117,7 @@ Summary of my perl5 (revision 5.0 version 6 subversion 0) configuration:
 	It is used to fetch current working directory. You should already have it.
 </para></listitem>
 </varlistentry>
-<varlistentry><term>mp3handler.pm, ogghandler.pm, MediaHandler.pm Perl Modules</>
+<varlistentry><term>mp3handler.pm, ogghandler.pm, flachandler.pm, MediaHandler.pm, Baseinfo.pm Perl Modules</>
 <listitem><para>
 	They are part of <productname>mp32dao</> distribution. Leave them in the same directory where mp32dao.pl is or install them
 	in the perl search path.
@@ -132,6 +132,7 @@ in the <productname>perl</> search path or in its same directory. The needed com
 <itemizedlist>
 <listitem><screen>ogghandler.pm</></listitem>
 <listitem><screen>mp3handler.pm</></listitem>
+<listitem><screen>flachandler.pm</></listitem>
 <listitem><screen>MediaHandler.pm</></listitem>
 <listitem><screen>BaseInfo.pm</></listitem>
 </itemizedlist>
@@ -142,7 +143,7 @@ in the <productname>perl</> search path or in its same directory. The needed com
 <sect1><title>Command line options</>
 <para>The usage is fairly straightforward:
 	<orderedlist>
-		<listitem><para>put all and only the mp3 and/or ogg files you want on the CD in a single directory.
+		<listitem><para>put all and only the mp3 and/or ogg and/or flac files you want on the CD in a single directory.
 		</para></listitem>
 		<listitem><para>change to this directory
 		</para></listitem>
@@ -170,8 +171,8 @@ in the <productname>perl</> search path or in its same directory. The needed com
 <sect1><title>Program structure</title>
 <para>The Mediahandler constructor takes as input a directory name, scans for all supported
 media files, and returns a list containing handlers for all common operations, such as wav decoding,
-information access etc. This info is collected by the two lower level modules mp3handler and ogghandler
-using MP3::Info and Ogg::Vorbis. The main program builds the TOC. In the distribution you will find
+information access etc. This info is collected by the three lower level modules mp3handler, ogghandler and flachandler
+using MP3::Info, Ogg::Vorbis and system program metaflac. The main program builds the TOC. In the distribution you will find
 a simple <productname>UML</> diagram which should make it somewhat clearer.
 </para>
 </sect1>
