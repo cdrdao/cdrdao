@@ -148,7 +148,8 @@ void RecordTocDialog::update(unsigned long level)
   TocSource->update(level);
   CDTarget->update(level);
 
-  CDTarget->getDeviceList()->selectOne();
+  if (level & UPD_CD_DEVICE_STATUS)
+    CDTarget->getDeviceList()->selectOne();
 }
 
 gint RecordTocDialog::delete_event_impl(GdkEventAny*)

@@ -243,15 +243,18 @@ void DuplicateCDProject::update(unsigned long level)
   CDSource->update(level);
   CDTarget->update(level);
 
-  DeviceList *sourceList = CDSource->getDeviceList();
-  DeviceList *targetList = CDTarget->getDeviceList();
-
-  targetList->selectOne();
-
-  Gtk::CList_Helpers::SelectionList targetSelection = targetList->selection();
-
-  if (targetSelection.empty())
-    sourceList->selectOne();
-  else
-    sourceList->selectOneBut(targetSelection);
+  if (level & UPD_CD_DEVICE_STATUS)
+  {
+    DeviceList *sourceList = CDSource->getDeviceList();
+    DeviceList *targetList = CDTarget->getDeviceList();
+  
+    targetList->selectOne();
+  
+    Gtk::CList_Helpers::SelectionList targetSelection = targetList->selection();
+  
+    if (targetSelection.empty())
+      sourceList->selectOne();
+    else
+      sourceList->selectOneBut(targetSelection);
+  }
 }
