@@ -97,7 +97,7 @@ DeviceConfDialog::DeviceConfDialog()
   devtypeMenu_ = manage(new Gtk::OptionMenu);
   devtypeMenu_->set_menu(*tmenu);
 
-  devEntry_.set_max_length(8);
+  devEntry_.set_max_length(32);
   vendorEntry_.set_max_length(8);
   productEntry_.set_max_length(16);
 
