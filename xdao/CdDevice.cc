@@ -1207,17 +1207,21 @@ void CdDevice::scan()
   }
 
 #ifdef SCSI_ATAPI
-  sdata = ScsiIf::scan(&len, "ATAPI");
-  if (sdata) {
-    for (i = 0; i < len; i++)
-      CdDevice::add(sdata[i].dev.c_str(), sdata[i].vendor, sdata[i].product);
-    delete[] sdata;
-  }
   sdata = ScsiIf::scan(&len, "ATA");
   if (sdata) {
     for (i = 0; i < len; i++)
       CdDevice::add(sdata[i].dev.c_str(), sdata[i].vendor, sdata[i].product);
     delete[] sdata;
+  } else {
+    // Only scan for ATAPI devices if we got nothing on the ATA
+    // interface, otherwise every device would show up twice on the
+    // list.
+    sdata = ScsiIf::scan(&len, "ATAPI");
+    if (sdata) {
+      for (i = 0; i < len; i++)
+        CdDevice::add(sdata[i].dev.c_str(), sdata[i].vendor, sdata[i].product);
+      delete[] sdata;
+    }
   }
 #endif
 }
