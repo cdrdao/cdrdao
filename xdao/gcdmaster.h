@@ -54,9 +54,10 @@ public:
   void appClose(Project *);
   void closeProject(Project *);
   void closeChooser(ProjectChooser *);
-  void openNewProject(const char*);
+  bool openNewProject(const char*);
   void openProject(ProjectChooser *);
   void newChooserWindow();
+  ProjectChooser* newChooserWindow2();
 //FIXME: join this two: ?
   void newAudioCDProject2(ProjectChooser *);
   void newAudioCDProject(const char *name, TocEdit *tocEdit, ProjectChooser *);

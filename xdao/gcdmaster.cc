@@ -52,7 +52,7 @@ void GCDMaster::add(ProjectChooser *projectChooser)
   //cout << "Number of choosers = " << choosers.size() << endl;
 }
 
-void GCDMaster::openNewProject(const char* s)
+bool GCDMaster::openNewProject(const char* s)
 {
   TocEdit *tocEdit = new TocEdit(NULL, NULL);
 
@@ -68,12 +68,9 @@ void GCDMaster::openNewProject(const char* s)
       newAudioCDProject(stripCwd(s), tocEdit, NULL);
     }
     else
-    {
-      string message("Error loading ");
-      message += s;
-      Gnome::Dialogs::error(message); 
-    }
+      return false;
   }
+  return true;
 }
 
 void GCDMaster::openProject(ProjectChooser *projectChooser)
@@ -137,8 +134,8 @@ void GCDMaster::closeProject(Project *project)
 {
   if (project->closeProject())
   {
-    delete project;
     projects.remove(project);
+    delete project;
   }
 
   //cout << "Number of projects = " << projects.size() << endl;
@@ -150,8 +147,8 @@ void GCDMaster::closeProject(Project *project)
 
 void GCDMaster::closeChooser(ProjectChooser *projectChooser)
 {
-  delete projectChooser;
   choosers.remove(projectChooser);
+  delete projectChooser;
 
   //cout << "Number of projects = " << projects.size() << endl;
   //cout << "Number of choosers = " << choosers.size() << endl;
@@ -164,14 +161,22 @@ void GCDMaster::appClose(Project *project)
 {
   if (project->closeProject())
   {
-    delete project;
+    Project *previous = 0;
+
     projects.remove(project);
+    delete project;
 
     for (list<Project *>::iterator i = projects.begin();
          i != projects.end(); i++)
     {
+	  if (previous != 0)
+      {
+        projects.remove(previous);
+        delete (previous);
+      }
       if (!((*i)->closeProject()))
         return;
+      previous = *i;
     }
     Gnome::Main::quit();
   }
@@ -181,10 +186,17 @@ void GCDMaster::newChooserWindow()
 {
   ProjectChooser *projectChooser = new ProjectChooser();
   projectChooser->show();
-//  Project *project = new Project(project_number);
-//  project->newChooserWindow();
 //  As it always can be closed, we don't add it.
   add(projectChooser);
+}
+
+ProjectChooser* GCDMaster::newChooserWindow2()
+{
+  ProjectChooser *projectChooser = new ProjectChooser();
+  projectChooser->show();
+//  As it always can be closed, we don't add it.
+  add(projectChooser);
+  return projectChooser;
 }
 
 void GCDMaster::newAudioCDProject(const char *name, TocEdit *tocEdit, ProjectChooser *projectChooser)
