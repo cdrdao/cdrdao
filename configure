@@ -1,7 +1,7 @@
 #! /bin/sh
 
-# From configure.in Revision: 1.10 
-cdrdao_version=1.1.5-pre1
+# From configure.in Revision: 1.11 
+cdrdao_version=1.1.5-pre2
 
 # Configure paths for GTK--
 # Erik Andersen	30 May 1998
@@ -3271,7 +3271,7 @@ else
   echo "$ac_t""no" 1>&6
 fi
 
-  min_gtkmm_version=1.2.0
+  min_gtkmm_version=1.2.1
 
   echo $ac_n "checking for GTK-- - version >= $min_gtkmm_version""... $ac_c" 1>&6
 echo "configure:3278: checking for GTK-- - version >= $min_gtkmm_version" >&5
@@ -3529,7 +3529,7 @@ else
   echo "$ac_t""no" 1>&6
 fi
 
-  min_gnome_version=1.0.55;
+  min_gnome_version=1.2.3;
 
   echo $ac_n "checking for Gnome - version >= $min_gnome_version""... $ac_c" 1>&6
 echo "configure:3536: checking for Gnome - version >= $min_gnome_version" >&5

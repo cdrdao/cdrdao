@@ -1,7 +1,7 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_REVISION($Revision: 1.11 $)dnl
+AC_REVISION($Revision: 1.12 $)dnl
 
-cdrdao_version=1.1.5-pre1
+cdrdao_version=1.1.5-pre2
 
 AC_INIT(cdrdao.lsm)
 AC_CONFIG_HEADER(config.h)
@@ -183,10 +183,10 @@ if test "$pcctsinc" = default; then
 fi
 
 xdao=xdao
-AC_PATH_GTKMM(1.2.0,,[xdao=no; echo Disabled building of xcdrdao.])
+AC_PATH_GTKMM(1.2.1,,[xdao=no; echo Disabled building of xcdrdao.])
 
 if test $xdao = xdao; then
-  AC_PATH_GNOMEMM(1.0.55,, [xdao=no; echo Disabled building of xcdrdao.])
+  AC_PATH_GNOMEMM(1.2.3,, [xdao=no; echo Disabled building of xcdrdao.])
 fi
 
 if test $xdao != xdao; then

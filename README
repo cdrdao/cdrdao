@@ -7,7 +7,35 @@ of the tool.
 Please use the write simulation mode (command 'simulate') when trying this
 program the first time on your system. This will detect problems or
 incompatibilities without wasting a CD-recordable. Note that you may have to
-eject and reinsert the CD-R after simulation before a real write can start.
+eject and reinsert the CD-R after a simulation run before a real write can
+start.
+
+
+Sources of Information
+---------------------
+Cdrdao Homepage: http://cdrdao.sourceforge.net
+                 
+Download:        http://sourceforge.net/projects/cdrdao/
+
+Mailing Lists:
+
+  cdrdao-info@lists.sourceforge.net
+    Moderated list for informing about new releases or serious bugs.
+    For subscribing information send an email with 'help' in the body
+    to <cdrdao-info-request@lists.sourceforge.net> or visit the info page
+    http://lists.sourceforge.net/mailman/listinfo/cdrdao-info.
+
+  cdrdao-devel@lists.sourceforge.net
+    Open lists for discussion about problems, implementation of new
+    features etc. 
+    For subscribing information send an email with 'help' in the body
+    to <cdrdao-devel-request@lists.sourceforge.net> or visit the info page
+    http://lists.sourceforge.net/mailman/listinfo/cdrdao-devel.
+    
+
+Please report bugs and suggestions to 
+Andreas Mueller <mueller@daneb.ping.de>
+
 
 
 Drivers
@@ -156,6 +184,10 @@ by logical 'or' and appended to the '--driver' option, e.g.
   teac-cdr55
      Driver for the Teac CD-R55 recorder. Audio and data tracks are supported.
       'read-toc' uses the Q sub-channel scanning method.
+
+  toshiba
+     Read only driver for Toshiba SCSI CD-ROM drives. The Q sub-channel
+     scanning method is used to detect pre-gaps and index marks.
 
   yamaha-cdr10x
      Driver for the Yamaha CDR10X recorder series that supports audio and
@@ -359,9 +391,9 @@ Notes:
 
 Pre-compiled Binaries
 ---------------------
-The pre-compiled binaries should work with 2.0.x, 2.1.x and 2.2.x kernels
-(tested with kernel 2.0.33 and 2.2.13). Older kernels may require recompilation
-because of a different maximum message size of the generic SCSI device.
+The pre-compiled binaries should work with 2.4.x kernels.
+Other kernel versions may require recompilation because the API of the
+generic SCSI device has changed.
 
 
 Example for CD Copying
@@ -388,7 +420,7 @@ consider to reduce the audio extraction quality with option '--paranoia-mode 0'
 or reduce the writing speed to 2x. For '--paranoia-mode 0' you will need a
 perfect CD-ROM drive that can provide an accurate audio stream. 
 
-The standard generic SCSI interface of the Linux kernel cannot handle
+The standard generic SCSI interface of Linux kernels < 2.2.6 cannot handle
 multiple commands in parallel. Since the reading and the writing part of
 cdrdao use the generic SCSI interface mutual blocking will occur. This
 results in low fill rates of cdrdao's ring buffer and very likely
@@ -441,18 +473,6 @@ without error (optional).
 Type 'cdrdao simulate example.toc' to perform a write simulation (optional).
 
 Type 'cdrdao write example.toc' to create the audio CD.
-
-
-Contact
--------
-Please report bugs and suggestions to 
-Andreas Mueller <mueller@daneb.ping.de>
-
-Cdrdao Homepage: http://www.ping.de/sites/daneb/cdrdao.html
-                 http://www.cdrdao.purespace.de/
-
-Download:        http://www.ping.de/sites/daneb/download.html
-                 http://www.cdrdao.purespace.de/download.html
 
 
 

@@ -26,7 +26,9 @@ If you fetched the source tree directly from CVS, you will have to unpack
 The GnomeCDMaster GUI needs the Gimp toolkit gtk+-1.2.8, recent Gnome libs
 (e.g. gnome-libs-1.2.3) and the C++ bindings gtkmm-1.2.1 and gnomemm-1.1.10.
 The packages are available from www.gtk.org, www.gnome.org and
-www.sourceforge.net (project 'gtkmm').
+www.sourceforge.net (project 'gtkmm'). You will need exactly the mentioned
+library version. With older or newer versions the GnomeCDMaster sources 
+usually fail to compile.
 
 
 1. Type './configure'.
