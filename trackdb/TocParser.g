@@ -180,6 +180,7 @@ public:
 #token EndString        "\""         << mode(START); >>
 #token StringQuote      "\\\""
 #token StringOctal      "\\[0-9][0-9][0-9]"
+#token String           "\\"
 #token String           "[ ]+"
 #token String           "~[\\\n\"\t ]*"
 
