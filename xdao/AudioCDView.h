@@ -41,6 +41,7 @@ class AudioCDView : public GenericView
 {
 public:
   AudioCDView(AudioCDChild *child, AudioCDProject *project);
+  ~AudioCDView();
   SigC::Signal0<void> add_view;
 
   void update(unsigned long level);

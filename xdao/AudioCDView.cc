@@ -30,7 +30,6 @@
 #include "SampleDisplay.h"
 #include "TocEdit.h"
 #include "TocEditView.h"
-#include "MDIWindow.h"
 #include "util.h"
 
 #include "AudioCDProject.h"
@@ -311,6 +310,18 @@ AudioCDView::AudioCDView(AudioCDChild *child, AudioCDProject *project)
       widgetList->push_back(menuitem);
     }
   }
+}
+
+AudioCDView::~AudioCDView()
+{
+  if (trackInfoDialog_)
+    delete trackInfoDialog_;
+
+  if (addFileDialog_)
+    delete addFileDialog_;
+
+  if (addSilenceDialog_)
+    delete addSilenceDialog_;
 }
 
 void AudioCDView::update(unsigned long level)
