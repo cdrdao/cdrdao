@@ -1,43 +1,27 @@
 Installation:
 
-You will need the parser generator PCCTS Version 1.33 to compile this
-package. It is available from:
-
-        http://www.polhode.com/pccts.html
-or
-	http://www.antlr.org/1.33/pccts.tar.gz
-
-While compiling the PCCTS packages you may get errors on the target 'genmk'.
-These errors can be safely ignored since cdrdao does not use 'genmk'. All
-required tools are already built at that time.
-
-Some parts of the standard PCCTS package won't compile with current gcc
-versions. You can
- - compile with  make CXXFLAGS="-fpermissive -O2"
- - use the PCCTS bug fix release 1.33mr32 from 
-       http://www.polhode.com/pccts.html
- - or fix the obvious errors in the PCCTS sources
-
 
 The GnomeCDMaster GUI additionally requires the Gimp toolkit gtk+-1.2.8,
-recent Gnome libraries (e.g. gnome-libs-1.2.3) and the C++ bindings
-gtkmm-1.2.4 and gnomemm-1.1.14.  The packages are available from
+recent Gnome libraries (e.g. gnome-libs-1.4.1.6) and the C++ bindings
+gtkmm-1.2.9 and gnomemm-1.2.2.  The packages are available from
 www.gtk.org, www.gnome.org and www.sourceforge.net (project 'gtkmm').
 You will need exactly the mentioned library version. With older or
 newer versions the GnomeCDMaster sources usually fail to compile.
 
 
 If you fetched the source tree directly from CVS, you will first have to
-unpack "scsilib.tar.gz" in the same directory where "scsilib.tar.gz" resides.
+unpack "scsilib.tar.gz" and "pccts.tar.gz" in the same directory where
+the tar files reside.
 
 1. Type './configure'.
-   Configure options for PCCTS:
+   Configure options for PCCTS (only required if you do not want to use
+   the PCCTS version which is included in this cdrdao source distribution):
      --with-pcctsbin=dir     Specifies directory that contains the PCCTS 
-                             executables (default: /usr/local/bin)
+                             executables (default: pccts/bin)
 
      --with-pcctsinc=dir     Specifies directory that contains the PCCTS
                              header and source files
-                             (default: /usr/local/include/pccts)
+                             (default: pccts/h)
 
    Configure options for SCSI interface:
      --without-scglib        Use a direct SCSI implementation instead of

@@ -41,7 +41,7 @@ DISTDIR = cdrdao-$(VERSION)
 #
 #
 #
-SUBDIRS = @scsilib_dir@ edc_ecc trackdb paranoia dao utils @xdao@
+SUBDIRS = pccts @scsilib_dir@ edc_ecc trackdb paranoia dao utils @xdao@
 SUBDIRSINST = trackdb dao utils @xdao@
 
 all:
@@ -93,6 +93,7 @@ dist:
 	cp testtocs/*.toc $(DISTDIR)/testtocs
 	tar cf - contrib | ( cd $(DISTDIR) ; tar xf - )
 	tar cf - scsilib | ( cd $(DISTDIR) ; tar xf - )
+	tar cf - pccts | ( cd $(DISTDIR) ; tar xf - )
 	find $(DISTDIR) -depth -name "CVS" -type d -exec rm -r {} \;
 	chmod -R ugo+r $(DISTDIR)
 	chmod -R u+w $(DISTDIR)
