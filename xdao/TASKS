@@ -1,14 +1,9 @@
 Status  Who	Description
 ======  ======  ==============================================================
 
-DONE	Manuel	put xx.xx % in progressbars
-DONE	Manuel	make a nice icon while we get a better one.
-
-DONE	Manuel	change executable name to gcdmaster
 -	-	install gcdmaster.png icon in $gnome-data-dir/share/pixmaps
 -	-	install gcdmaster.desktop file in ??? category
 
-DONE	Manuel	Device Listing should be a class
 -	-	Device Listing class needs "Load" and "Eject" buttons
 
 WORKING	Manuel	Finish MDI stuff if MDI support is available in
@@ -27,11 +22,6 @@ WORKING	Manuel	Finish MDI stuff if MDI support is available in
 		IsoCDChild, ... as needed.
 
 DONE?	Manuel  Make RecordGenericDialog.
-
-WORKING	Andreas	Is total progress support for "Extract" in cdrdao finished?
-		Both Extract and Record ProgressDialog should merge in
-		GenericProgressDialog. That in turn should be also used
-		by "Blank CDRW" and "Fix CD".
 
 -	-	CD player class that will be able to play from a .toc or
 		from a CD, including diferent wav files and mixed mode tocs.

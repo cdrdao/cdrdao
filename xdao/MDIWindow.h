@@ -72,6 +72,7 @@ private:
   void projectInfo();
   void trackInfo();
 
+protected:
   Gnome::About *about_;
 
 public:

@@ -46,6 +46,8 @@ private:
 
   Gtk::CList *list_;
 
+  void selection_changed_emit(gint p0, gint p1, GdkEvent* p2);
+
 public:
 
   void appendTableEntry(CdDevice *);

@@ -32,13 +32,14 @@
 #include "xcdrdao.h"
 #include "guiUpdate.h"
 #include "TocEdit.h"
-#include "MDIWindow.h"
 #include "MessageBox.h"
 #include "AudioCDChild.h"
 #include "DeviceConfDialog.h"
 #include "RecordGenericDialog.h"
 #include "TocInfoDialog.h"
 #include "TrackInfoDialog.h"
+
+#include "MDIWindow.h"
 
 void
 MDIWindow::nothing_cb()
@@ -609,7 +610,6 @@ MDIWindow::about_cb()
                                authors,
                                _("A CD Mastering app for Gnome."),
                                logo);
-
 
       about_->set_parent(*this);
       about_->destroy.connect(slot(this, &MDIWindow::about_destroy_cb));

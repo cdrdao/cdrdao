@@ -64,10 +64,12 @@ all: $(PRG)
 install: all installdirs
 	$(INSTALL_PROGRAM) $(PRG) $(bindir)
 	$(INSTALL_DATA) xcdrdao.man $(man1dir)/xcdrdao.1
+	$(INSTALL_DATA) gcdmaster.png $(prefix)/share/pixmaps/gcdmaster.png
 
 installdirs:
 	$(srcdir)/../mkinstalldirs $(bindir)
 	$(srcdir)/../mkinstalldirs $(man1dir)
+	$(srcdir)/../mkinstalldirs $(prefix)/share/pixmaps
 
 clean:
 	rm -f *.o $(PRG)

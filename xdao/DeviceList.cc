@@ -66,6 +66,9 @@ DeviceList::DeviceList(CdDevice::DeviceType filterType)
 
   list_->set_usize(0, 80);
 
+  list_->select_row.connect(slot(this, &DeviceList::selection_changed_emit));
+
+
   Gtk::VBox *contents = new Gtk::VBox;
   contents->set_spacing(10);
 
@@ -252,5 +255,13 @@ void DeviceList::importStatus()
   }
 
   list_->columns_autosize();
+
+}
+
+void DeviceList::selection_changed_emit(gint p0, gint p1, GdkEvent* p2)
+{
+//Emited when the selection ends.
+
+g_print("row select emited!!\n");
 
 }

@@ -45,6 +45,7 @@ RecordCDTarget::RecordCDTarget()
   Gtk::Table *table;
   Gtk::Label *label;
   Gtk::Adjustment *adjustment;
+  Gtk::Tooltips *toolTips;
 
   active_ = 0;
   tocEdit_ = NULL;
@@ -55,6 +56,9 @@ RecordCDTarget::RecordCDTarget()
   speed_ = 1;
 
 //  startButton_ = new Gtk::Button(string(" Start "));
+
+  toolTips = new Gtk::Tooltips;
+  toolTips->force_window();
 
   simulateButton_ = new Gtk::CheckButton(string("Simulation - no real write is done"));
   simulateButton_->set_active(true);
@@ -95,12 +99,16 @@ RecordCDTarget::RecordCDTarget()
   vbox->show();
   hbox->show();
   table->show();
+
+  toolTips->set_tip(*table, "Right click to get a menu", "private_tip!!!");
   
   hbox = new Gtk::HBox;
   hbox->pack_start(*simulateButton_, FALSE, FALSE);
   simulateButton_->show();
   table->attach(*hbox, 0, 1, 0, 1);
   hbox->show();
+
+  toolTips->set_tip(*simulateButton_, "Right click to get a menu", "private_tip!!!");
 
   hbox = new Gtk::HBox;
   hbox->pack_start(*closeSessionButton_, FALSE, FALSE);
