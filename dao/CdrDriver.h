@@ -49,6 +49,7 @@ class Track;
 #define CDR_READ_CAP_DATA_PQ_BCD     0x100
 #define CDR_READ_CAP_DATA_PQ_HEX     0x200
 
+#define CDR_AUDIO_SCAN_CAP (CDR_READ_CAP_AUDIO_PW_RAW|CDR_READ_CAP_AUDIO_PQ_BCD|CDR_READ_CAP_AUDIO_PQ_HEX)
 
 struct DiskInfo {
   long capacity;          // recordable capacity of medium

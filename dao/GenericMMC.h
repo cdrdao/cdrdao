@@ -39,6 +39,7 @@ class CdTextEncoder;
 #define OPT_MMC_NO_BURNPROOF 0x0040 // disable BURN-Proof
 #define OPT_MMC_NO_RW_PACKED 0x0080 // drive does not support the packed R-W
                                     // sub-channel writing mode
+#define OPT_MMC_USE_RAW_RW   0x0100 // use RW sub-channel data for scanning
 
 
 class GenericMMC : public CdrDriver {
