@@ -18,6 +18,9 @@
  */
 /*
  * $Log: guiUpdate.h,v $
+ * Revision 1.3  2001/08/04 00:25:59  llanero
+ * add UPD_PLAY_STATUS
+ *
  * Revision 1.2  2001/04/23 00:15:11  llanero
  * Dialogs will update title with project name + app name.
  *
@@ -46,6 +49,7 @@
 #define UPD_CD_DEVICES       0x00000100
 #define UPD_CD_DEVICE_STATUS 0x00000200
 #define UPD_PROGRESS_STATUS  0x00000400
+#define UPD_PLAY_STATUS      0x00000800
 
 extern void guiUpdate(unsigned long level = 0);
 extern int guiUpdatePeriodic();
