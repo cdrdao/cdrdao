@@ -17,6 +17,8 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+#include <strstream.h>
+
 #include "util.h"
 #include "xcdrdao.h"
 #include "gcdmaster.h"
@@ -30,15 +32,18 @@
 
 #include <gnome.h>
 
-Project::Project(int number) : Gnome::App("gcdmaster", "Gnome CD Master")
+#define APP_NAME "Gnome CD Master"
+
+Project::Project(int number) : Gnome::App("gcdmaster", APP_NAME)
 {
   tocEdit_ = new TocEdit(NULL, NULL);
   hbox = new Gtk::HBox;
   hbox->show();
   set_contents(*hbox);
-
+  new_ = true;
   projectType = P_NONE;
   project_number = number;
+  saveFileSelector_ = 0;  
   viewNumber = 0;
   viewSwitcher_ = new ViewSwitcher(hbox);
   viewSwitcher_->show();
@@ -52,6 +57,11 @@ void Project::createMenus()
 
   {
     using namespace Gnome::UI;
+    fileMenuTree.push_back(Item(Icon(GNOME_STOCK_MENU_NEW),
+								N_("New..."),
+								slot(gcdmaster, &GCDMaster::newChooserWindow),
+								N_("New Project")));
+
     // File->New menu
     newMenuTree.push_back(Item(Icon(GNOME_STOCK_MENU_NEW),
 								N_("Audio CD"),
@@ -67,7 +77,7 @@ void Project::createMenus()
 
   {
     using namespace Gnome::MenuItems;
-    fileMenuTree.push_back(Open(slot(this, &Project::openProject)));
+    fileMenuTree.push_back(Open(bind(slot(gcdmaster, &GCDMaster::openProject), this)));
     fileMenuTree.push_back(Save(slot(this, &Project::saveProject)));
     fileMenuTree.push_back(SaveAs(slot(this, &Project::saveAsProject)));
 
@@ -141,7 +151,8 @@ void Project::createMenus()
 void Project::createStatusbar()
 {
   Gtk::HBox *container = new Gtk::HBox;
-  statusbar_ = new Gtk::Statusbar;
+//  statusbar_ = new Gtk::Statusbar;
+  statusbar_ = new Gnome::AppBar(FALSE, TRUE, GNOME_PREFERENCES_NEVER);
   progressbar_ = new Gtk::ProgressBar;
   progressButton_ = new Gtk::Button("Cancel");
 
@@ -153,6 +164,50 @@ void Project::createStatusbar()
   container->set_spacing(2);
   container->set_border_width(2);
   container->show_all();
+}
+
+gint Project::delete_event_impl(GdkEventAny* e)
+{
+  gcdmaster->closeProject(this);
+  return true;  // Do not close window, we will delete it if necessary
+}
+
+bool Project::busy()
+{
+  if ((projectType == P_NONE) || (projectType == P_CHOOSER))
+    return false;
+  return true;
+}
+void Project::readToc(char *name)
+{
+  if (strlen(name))
+  {
+    if (tocEdit_->readToc(stripCwd(name)) == 0)
+    {
+//FIXME: We should test what type of project it is
+//       AudioCD, ISO. No problem now.
+      cout << "Read ok?" << endl;
+      new_ = false; // The project file already exists
+	  newAudioCDProject(name);      
+    }
+    else
+    {
+      gchar *message;
+      message = g_strdup_printf("Error loading %s", name);
+      Gnome::Dialogs::error(message); 
+      g_free(message);
+    }
+  }
+}
+
+void Project::updateWindowTitle()
+{
+  string s(tocEdit_->filename());
+//  char buf[strlen(tocEdit_->filename()) + strlen(APP_NAME) + 4];
+  s += " - ";
+  s += APP_NAME;
+//  sprintf(buf, "%s - %s", tocEdit_->filename(), APP_NAME);
+  set_title(s);
 }
 
 void Project::newChooserWindow()
@@ -183,60 +238,42 @@ void Project::newAudioCDProject(const char *name)
     return;
   }
 
-  if (strlen(name))
+  if (strlen(name) == 0)
   {
-    if (tocEdit_->readToc(stripCwd(name)) == 0)
-    {
-  cout << "Read ok?" << endl;
-//      AudioCDView *view;
-//      view = static_cast <AudioCDView *>(child->get_active());
-//      view->tocEditView()->sampleViewFull();
-    }
-    else
-    {
-      gchar *message;
-      
-      message = g_strdup_printf("Error loading %s", name);
-      Gnome::Dialogs::error(message); 
-//      MDI_WINDOW->remove(*child);
-  
-      g_free(message);
-    }
+    char buf[20];
+    sprintf(buf, "unnamed-%i.toc", project_number);
+    tocEdit_->filename(buf);
   }
 
+  updateWindowTitle();
+  
   show();
   
   createMenus();
   createStatusbar();
+  install_menu_hints();
   add_docked(*viewSwitcher_, "viewSwitcher", GNOME_DOCK_ITEM_BEH_NORMAL,
   		GNOME_DOCK_TOP, 1, 1, 0);
   
   get_dock_item_by_name("viewSwitcher")->show();
-//FIXME  get_dock()->show_all();
 
   Gnome::StockPixmap *pixmap = new Gnome::StockPixmap(GNOME_STOCK_MENU_CDROM);
-//FIXME: Name from the filename in the TocEdit object!
-  Gtk::Label *label = new Gtk::Label("untitled-xx");
+  Gtk::Label *label = new Gtk::Label("Track Editor");
   audioCDChild_ = new AudioCDChild(tocEdit_, ++project_number);
   AudioCDView *audioCDView = new AudioCDView(audioCDChild_, this);
   hbox->pack_start(*audioCDView, TRUE, TRUE);
   audioCDView->tocEditView()->sampleViewFull();
   viewSwitcher_->addView(audioCDView->widgetList, pixmap, label);
-//FIXME  get_dock()->show_all();
 
   pixmap = new Gnome::StockPixmap(GNOME_STOCK_MENU_CDROM);
-//FIXME: Name from the filename in the TocEdit object!
-  label = new Gtk::Label("untitled-xx");
-//  audioCDChild_ = new AudioCDChild(++project_number);
+  label = new Gtk::Label("Track Editor");
   audioCDView = new AudioCDView(audioCDChild_, this);
   hbox->pack_start(*audioCDView, TRUE, TRUE);
   audioCDView->tocEditView()->sampleViewFull();
   viewSwitcher_->addView(audioCDView->widgetList, pixmap, label);
 
   pixmap = new Gnome::StockPixmap(GNOME_STOCK_MENU_CDROM);
-//FIXME: Name from the filename in the TocEdit object!
-  label = new Gtk::Label("untitled-xx");
-//  audioCDChild_ = new AudioCDChild(++project_number);
+  label = new Gtk::Label("Track Editor");
   audioCDView = new AudioCDView(audioCDChild_, this);
   hbox->pack_start(*audioCDView, TRUE, TRUE);
   audioCDView->tocEditView()->sampleViewFull();
@@ -244,82 +281,102 @@ void Project::newAudioCDProject(const char *name)
 
   projectType = P_AUDIOCD;
 
-//  cout << dockItem->is_visible() << " dockItem visible." << endl;
-  
 //FIXME  guiUpdate();
 }
 
-void Project::openProject()
+
+void Project::saveProject()
 {
-  if (readFileSelector_)
+  if (new_)
   {
-    Gdk_Window selector_win = readFileSelector_->get_window();
+    saveAsProject();
+    return;
+  }
+  if (tocEdit_->saveToc() == 0)
+  {
+    statusMessage("Project saved to ", tocEdit_->filename());
+//FIXME    guiUpdate();
+  }
+  else {
+    string s("Cannot save toc to \"");
+    s += tocEdit_->filename();
+    s+= "\":";
+    
+//FIXME    MessageBox msg(MDI_WINDOW->get_active_window(), "Save Project", 0, s.c_str(), strerror(errno), NULL);
+//    MessageBox msg(this, "Save Project", 0, s.c_str(), strerror(errno), NULL);
+//FIXME    msg.run();
+  }
+}
+
+void Project::saveAsProject()
+{
+  if (saveFileSelector_)
+  {
+    Gdk_Window selector_win = saveFileSelector_->get_window();
     selector_win.show();
     selector_win.raise();
   }
   else
   {
-    readFileSelector_ = new Gtk::FileSelection("Open project");
-    readFileSelector_->get_ok_button()->clicked.connect(
-				slot(this, &Project::readFileSelectorOKCB));
-    readFileSelector_->get_cancel_button()->clicked.connect(
-				slot(this, &Project::readFileSelectorCancelCB));
+    saveFileSelector_ = new Gtk::FileSelection("Save Project");
+    saveFileSelector_->get_ok_button()->clicked.connect(
+				slot(this, &Project::saveFileSelectorOKCB));
+    saveFileSelector_->get_cancel_button()->clicked.connect(
+				slot(this, &Project::saveFileSelectorCancelCB));
   }
-
-  readFileSelector_->show();
+  saveFileSelector_->show();
 }
 
-void Project::readFileSelectorCancelCB()
+void Project::saveFileSelectorCancelCB()
 {
-  readFileSelector_->hide();
-  readFileSelector_->destroy();
-  readFileSelector_ = 0;
+  saveFileSelector_->hide();
+  saveFileSelector_->destroy();
+  saveFileSelector_ = 0;
 }
 
-void Project::readFileSelectorOKCB()
+void Project::saveFileSelectorOKCB()
 {
-  char *s = g_strdup(readFileSelector_->get_filename().c_str());
+  char *s = g_strdup(saveFileSelector_->get_filename().c_str());
 
   if (s != NULL && *s != 0 && s[strlen(s) - 1] != '/') {
-//FIXME: We should test what type of project it is
-//       AudioCD, ISO. No problem now.
-  newAudioCDProject(s);
+    if (tocEdit_->saveAsToc(stripCwd(s)) == 0) {
+      statusMessage("Project saved to \"%s\".", tocEdit_->filename());
+//FIXME  	guiUpdate();
+
+      new_ = false; // The project is now saved
+cout << tocEdit_->filename() << endl;
+      updateWindowTitle();
+    }
+    else {
+  	string m("Cannot save toc to \"");
+  	m += tocEdit_->filename();
+  	m += "\":";
+    
+//FIXME  	MessageBox msg(MDI_WINDOW->get_active_window(), "Save Project", 0, m.c_str(), strerror(errno), NULL);
+//  	MessageBox msg(this, "Save Project", 0, m.c_str(), strerror(errno), NULL);
+//FIXME  	msg.run();
+    }
+    g_free(s);
   }
-  g_free(s);
-
-  readFileSelectorCancelCB();
-}
-
-void Project::saveProject()
-{
-//  GenericChild *child = static_cast <GenericChild *>(this->get_active_child());
-
-//  if (child)
-    audioCDChild_->saveProject();
-}
-
-void Project::saveAsProject()
-{
-//  GenericChild *child = static_cast <GenericChild *>(this->get_active_child());
-
-//  if (child)
-    audioCDChild_->saveAsProject();
+  saveFileSelectorCancelCB();
 }
 
 bool Project::closeProject()
 {
-//FIXME: switch on project type.
-//  GenericChild *child = static_cast <GenericChild *>(this->get_active_child());
-
-//  if (child)
-    if (audioCDChild_->closeProject())
-    {
-//      remove(*child);
-//      childs = g_list_remove(childs, child);
-//      guiUpdate();
-      return true;
-    }
-  return false;
+  switch (projectType)
+  {
+    case P_NONE:
+    case P_CHOOSER: return true;
+                    break;
+    case P_AUDIOCD: if (audioCDChild_->closeProject())
+                    {
+                      delete audioCDChild_;
+                      return true;
+                    }
+                    break;
+    default: break;
+  }
+  return false;  // Do not close the project
 }
 
 void Project::recordToc2CD()
@@ -340,3 +397,19 @@ gint Project::getViewNumber()
   return(viewNumber++);
 }
 
+void Project::statusMessage(const char *fmt, ...)
+{
+  va_list args;
+  va_start(args, fmt);
+
+  strstream str;
+
+  str.vform(fmt, args);
+  str << ends;
+
+  flash(str.str());
+
+  str.freeze(0);
+
+  va_end(args);
+}

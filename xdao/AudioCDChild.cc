@@ -47,13 +47,7 @@
 
 AudioCDChild::AudioCDChild(TocEdit *tocEdit, gint number)
 {
-  char buf[20];
-
-//  tocEdit_ = new TocEdit(NULL, NULL);
   tocEdit_ = tocEdit;
-  Toc *toc = new Toc;
-  sprintf(buf, "unnamed-%i.toc", number);
-//FIXME  tocEdit_->toc(toc, buf);
 
   playing_ = 0;
   playBurst_ = 588 * 10;
@@ -68,8 +62,6 @@ AudioCDChild::AudioCDChild(TocEdit *tocEdit, gint number)
   addFileDialog_ = 0;
   addSilenceDialog_ = 0;
   cdTextDialog_ = 0;
-
-  saveFileSelector_ = 0;  
 
   views = g_list_alloc();
 
@@ -377,72 +369,6 @@ void AudioCDChild::record_to_cd()
   RECORD_GENERIC_DIALOG->toc_to_cd(tocEdit_);
 }
 
-void AudioCDChild::saveProject()
-{
-  if (tocEdit_->saveToc() == 0) {
-//FIXME    MDI_WINDOW->statusMessage("Project saved to \"%s\".", tocEdit_->filename());
-    guiUpdate();
-  }
-  else {
-    string s("Cannot save toc to \"");
-    s += tocEdit_->filename();
-    s+= "\":";
-    
-//FIXME    MessageBox msg(MDI_WINDOW->get_active_window(), "Save Project", 0, s.c_str(), strerror(errno), NULL);
-//    MessageBox msg(this, "Save Project", 0, s.c_str(), strerror(errno), NULL);
-//FIXME    msg.run();
-  }
-}
-
-void AudioCDChild::saveAsProject()
-{
-  if (saveFileSelector_)
-  {
-    Gdk_Window selector_win = saveFileSelector_->get_window();
-    selector_win.show();
-    selector_win.raise();
-  }
-  else
-  {
-    saveFileSelector_ = new Gtk::FileSelection("Save Project");
-    saveFileSelector_->get_ok_button()->clicked.connect(
-				slot(this, &AudioCDChild::saveFileSelectorOKCB));
-    saveFileSelector_->get_cancel_button()->clicked.connect(
-				slot(this, &AudioCDChild::saveFileSelectorCancelCB));
-  }
-
-  saveFileSelector_->show();
-}
-
-void AudioCDChild::saveFileSelectorCancelCB()
-{
-  saveFileSelector_->hide();
-  saveFileSelector_->destroy();
-  saveFileSelector_ = 0;
-}
-
-void AudioCDChild::saveFileSelectorOKCB()
-{
-  char *s = g_strdup(saveFileSelector_->get_filename().c_str());
-
-  if (s != NULL && *s != 0 && s[strlen(s) - 1] != '/') {
-    if (tocEdit_->saveAsToc(stripCwd(s)) == 0) {
-//FIXME  	MDI_WINDOW->statusMessage("Project saved to \"%s\".", tocEdit_->filename());
-  	guiUpdate();
-    }
-    else {
-  	string m("Cannot save toc to \"");
-  	m += tocEdit_->filename();
-  	m += "\":";
-    
-//FIXME  	MessageBox msg(MDI_WINDOW->get_active_window(), "Save Project", 0, m.c_str(), strerror(errno), NULL);
-//  	MessageBox msg(this, "Save Project", 0, m.c_str(), strerror(errno), NULL);
-//FIXME  	msg.run();
-    }
-    g_free(s);
-  }
-  saveFileSelectorCancelCB();
-}
 
 bool AudioCDChild::closeProject()
 {

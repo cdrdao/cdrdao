@@ -36,34 +36,40 @@ private:
   ProjectChooser *projectChooser_;
   AudioCDChild *audioCDChild_;
   Gtk::HBox *hbox;
-  Gtk::Statusbar *statusbar_;  
+//  Gtk::Statusbar *statusbar_;  
+  Gnome::AppBar *statusbar_;  
   Gtk::ProgressBar *progressbar_;  
   Gtk::Button *progressButton_;  
   ViewSwitcher *viewSwitcher_;
   
   int project_number;
   gint viewNumber;
-
+  bool new_; // If it is a new project (not saved)
   enum ProjectType { P_NONE, P_CHOOSER, P_AUDIOCD };
   ProjectType projectType;
 
-  Gtk::FileSelection *readFileSelector_;
+  TocEdit *tocEdit_;
 
   void createMenus();
   void createStatusbar();
+  void updateWindowTitle();
+  void saveProject();
+  void saveAsProject();
+  Gtk::FileSelection *saveFileSelector_;
+  void saveFileSelectorOKCB();
+  void saveFileSelectorCancelCB();
 
-  TocEdit *tocEdit_;
+  void statusMessage(const char *fmt, ...);
+
+  virtual int delete_event_impl(GdkEventAny *event);
 
 public:
   Project(int);
 
+  void readToc(char *name);
+  bool busy();
   void newChooserWindow();
   void newAudioCDProject(const char *name = 0);
-  void openProject();
-  void readFileSelectorOKCB();
-  void readFileSelectorCancelCB();
-  void saveProject();
-  void saveAsProject();
   bool closeProject();
   void recordToc2CD();
   void configureDevices();

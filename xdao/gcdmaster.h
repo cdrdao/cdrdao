@@ -39,11 +39,16 @@ private:
 
   void add(Project *);
 
+  Gtk::FileSelection *readFileSelector_;
+  void readFileSelectorOKCB(Project *project);
+  void readFileSelectorCancelCB();
+
 public:
   GCDMaster();
 
   void appClose();
   void closeProject(Project *);
+  void openProject(Project *project);
   void newChooserWindow();
   void newAudioCDProject(const char *name);
 

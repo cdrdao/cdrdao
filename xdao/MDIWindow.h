@@ -35,7 +35,6 @@ public:
 protected:
   void app_created_impl(Gnome::App& app);
   gint child_number;
-  virtual int delete_event_impl(GdkEventAny *event);
   void nothing_cb();  
   void about_cb();
   void about_destroy_cb();

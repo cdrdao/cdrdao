@@ -27,17 +27,68 @@ GCDMaster::GCDMaster()
 {
   project_number = 0;
   about_ = 0;
+  readFileSelector_ = 0;
+
 }
 
 void GCDMaster::add(Project *project)
 {
   projects.push_back(project);
+cout << "Number of projects = " << projects.size() << endl;
+}
+
+void GCDMaster::openProject(Project *project)
+{
+  if (readFileSelector_)
+  {
+    Gdk_Window selector_win = readFileSelector_->get_window();
+    selector_win.show();
+    selector_win.raise();
+  }
+  else
+  {
+    readFileSelector_ = new Gtk::FileSelection("Open project");
+    readFileSelector_->get_ok_button()->clicked.connect(
+				bind(slot(this, &GCDMaster::readFileSelectorOKCB), project));
+    readFileSelector_->get_cancel_button()->clicked.connect(
+				slot(this, &GCDMaster::readFileSelectorCancelCB));
+  }
+
+  readFileSelector_->show();
+}
+
+void GCDMaster::readFileSelectorCancelCB()
+{
+  readFileSelector_->hide();
+  readFileSelector_->destroy();
+  readFileSelector_ = 0;
+}
+
+void GCDMaster::readFileSelectorOKCB(Project *project)
+{
+  char *s = g_strdup(readFileSelector_->get_filename().c_str());
+
+  if (s != NULL && *s != 0 && s[strlen(s) - 1] != '/')
+  {
+    if (project->busy())
+      project = new Project(project_number);
+
+    project->readToc(s);
+  }
+  g_free(s);
+
+  add(project);
+  readFileSelectorCancelCB();
 }
 
 void GCDMaster::closeProject(Project *project)
 {
   if (project->closeProject())
+  {
+    delete project;
     projects.remove(project);
+  }
+cout << "Number of projects = " << projects.size() << endl;
   if (projects.size() == 0)
     appClose();
 }

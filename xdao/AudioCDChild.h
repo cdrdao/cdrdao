@@ -60,9 +60,6 @@ private: //related windows
   AddFileDialog *addFileDialog_;
   AddSilenceDialog *addSilenceDialog_;
   CdTextDialog *cdTextDialog_;
-  Gtk::FileSelection *saveFileSelector_;
-  void saveFileSelectorOKCB();
-  void saveFileSelectorCancelCB();
 
 //FIXME  void new_view() { Gnome::MDIChild::create_toplevel_view(); }
 
@@ -106,8 +103,6 @@ private:
 public:
 
   void update(unsigned long level);
-  void saveProject();
-  void saveAsProject();
   bool closeProject();
   void record_to_cd();
 

@@ -132,9 +132,7 @@ AudioCDView::AudioCDView(AudioCDChild *child, Project *project)
   sprintf(buf, "selectionBox-%i", viewNumber);
   project->add_docked(*selectionInfoBox, buf, GNOME_DOCK_ITEM_BEH_NEVER_VERTICAL,
   		GNOME_DOCK_BOTTOM, 1, 1, 0);
-  Gnome::DockItem *dockItem = project->get_dock_item_by_name(buf);
-  dockItem->hide();
-  widgetList->push_back(dockItem);
+  widgetList->push_back(project->get_dock_item_by_name(buf));
   selectionInfoBox->show();
 
   Gtk::HButtonBox *buttonBox = new Gtk::HButtonBox(GTK_BUTTONBOX_START, 5);
@@ -171,9 +169,7 @@ AudioCDView::AudioCDView(AudioCDChild *child, Project *project)
   sprintf(buf, "zoomBox-%i", viewNumber);
   project->add_docked(*buttonBox, buf, GNOME_DOCK_ITEM_BEH_NEVER_VERTICAL,
   		GNOME_DOCK_TOP, 1, 1, 0);
-  dockItem = project->get_dock_item_by_name(buf);
-  dockItem->hide();
-  widgetList->push_back(dockItem);
+  widgetList->push_back(project->get_dock_item_by_name(buf));
   buttonBox->show();
 
   sampleDisplay_->markerSet.connect(slot(this,

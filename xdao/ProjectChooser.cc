@@ -66,7 +66,7 @@ ProjectChooser::ProjectChooser(Project *project)
   hbox->show();
   openButton->add(*hbox);
   openButton->show();
-  openButton->clicked.connect(slot(project_, &Project::openProject));
+  openButton->clicked.connect(bind(slot(gcdmaster, &GCDMaster::openProject), project));
   table->attach(*openButton, 1, 2, 0, 1);
 //  pack_start(*openButton, FALSE, TRUE);
 

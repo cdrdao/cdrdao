@@ -108,7 +108,6 @@ MDIWindow::MDIWindow()
 
 //FIXME  set_toolbar_template(toolbarTree);
 
-  readFileSelector_ = 0;
 
 //  delete_event.connect(slot(this, &MDIWindow::delete_event_cb));
 
@@ -137,16 +136,6 @@ MDIWindow:: app_created_impl(Gnome::App& app)
   app.set_wmclass("GCDMaster", "GCDMaster");
 }
 
-gint 
-MDIWindow::delete_event_impl(GdkEventAny* e)
-{
-//FIXME  app_close();
-
-  /* Prevent the window's destruction, since we destroyed it 
-   * ourselves with app_close()
-   */
-  return false;
-}
 
 void MDIWindow::update(unsigned long level)
 {
@@ -178,26 +167,6 @@ void MDIWindow::update(unsigned long level)
 //  audioCdChild_->update(level, tocEdit_);
 }
 
-void MDIWindow::statusMessage(const char *fmt, ...)
-{
-  va_list args;
-  va_start(args, fmt);
-
-  strstream str;
-
-  str.vform(fmt, args);
-  str << ends;
-
-//FIXME  statusBar_->messages().clear();
-//FIXME  statusBar_->push(1, string(str.str()));
-//FIXME: Does this the trick?:
-  Gnome::App *app = get_active_window();
-  app->flash(str.str());
-
-  str.freeze(0);
-
-  va_end(args);
-}
 
 
 void MDIWindow::tocBlockedMsg(const char *op)
