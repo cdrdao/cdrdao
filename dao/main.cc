@@ -19,6 +19,9 @@
 
 /*
  * $Log: main.cc,v $
+ * Revision 1.16  2000/11/19 17:49:33  andreasm
+ * Updated 'msinfo' command.
+ *
  * Revision 1.15  2000/11/12 18:47:59  andreasm
  * Updated 'msinfo' command.
  *
@@ -160,7 +163,7 @@
  *
  */
 
-static char rcsid[] = "$Id: main.cc,v 1.15 2000/11/12 18:47:59 andreasm Exp $";
+static char rcsid[] = "$Id: main.cc,v 1.16 2000/11/19 17:49:33 andreasm Exp $";
 
 #include <config.h>
 
@@ -1013,14 +1016,13 @@ static void showTocInfo(const Toc *toc, const char *tocFile)
   long len = toc->length().lba() * AUDIO_BLOCK_LEN;
   len >>= 20;
 
-  message(0, "%s: %d tracks, length %s, %ld blocks, %ld MB.", tocFile,
-	  toc->nofTracks(), toc->length().str(), toc->length().lba(),
-	  len);
+  printf("%s: %d tracks, length %s, %ld blocks, %ld MB\n", tocFile,
+	 toc->nofTracks(), toc->length().str(), toc->length().lba(), len);
 }
 
 static void showTocSize(const Toc *toc, const char *tocFile)
 {
-  message(0, "%ld", toc->length().lba());
+  printf("%ld\n", toc->length().lba());
 }
 
 static void showToc(const Toc *toc)
@@ -1032,27 +1034,27 @@ static void showToc(const Toc *toc)
   int tcount = 1;
   char buf[14];
 
-  message(0, "TOC TYPE: %s", Toc::tocType2String(toc->tocType()));
+  printf("TOC TYPE: %s\n", Toc::tocType2String(toc->tocType()));
 
   if (toc->catalogValid()) {
     for (i = 0; i < 13; i++) 
       buf[i] = toc->catalog(i) + '0';
     buf[13] = 0;
 
-    message(0, "CATALOG NUMBER: %s", buf);
+    printf("CATALOG NUMBER: %s\n", buf);
   }
 
   TrackIterator itr(toc);
 
   for (t = itr.first(start, end); t != NULL; t = itr.next(start, end)) {
     if (tcount > 1)
-      message(0, "");
+      printf("\n");
 
-    message(0, "TRACK %2d  Mode %s:", tcount,
+    printf("TRACK %2d  Mode %s:\n", tcount,
 	    TrackData::mode2String(t->type()));
     if (t->type() == TrackData::AUDIO) {
       if (t->isrcValid()) {
-	message(0, "          ISRC %c%c %c%c%c %c%c %c%c%c%c%c",
+	printf("          ISRC %c%c %c%c%c %c%c %c%c%c%c%c\n",
 		t->isrcCountry(0), t->isrcCountry(1),
 		t->isrcOwner(0), t->isrcOwner(1), t->isrcOwner(2),
 		t->isrcYear(0) + '0', t->isrcYear(1) + '0',
@@ -1061,30 +1063,30 @@ static void showToc(const Toc *toc)
 		t->isrcSerial(4) + '0');
       }
     }
-    message(0, "          COPY%sPERMITTED",
+    printf("          COPY%sPERMITTED\n",
 	    t->copyPermitted() ? " " : " NOT ");
 
     if (t->type() == TrackData::AUDIO) {
-      message(0, "          %sPRE-EMPHASIS",
+      printf("          %sPRE-EMPHASIS\n",
 	      t->preEmphasis() ? "" : "NO ");
-      message(0, "          %s CHANNEL AUDIO",
+      printf("          %s CHANNEL AUDIO\n",
 	      t->audioType() == 0 ? "TWO" : "FOUR");
     }
 
     if (t->start().lba() != 0) {
-      message(0, "          PREGAP %s(%6ld)", 
+      printf("          PREGAP %s(%6ld)\n", 
 	      t->start().str(), t->start().lba());
     }
-    message(0, "          START  %s(%6ld)",
+    printf("          START  %s(%6ld)\n",
 	    start.str(), start.lba());
     n = t->nofIndices();
     for (i = 0; i < n; i++) {
       index = start + t->getIndex(i);
-      message(0, "          INDEX %2d %s(%6ld)",
+      printf("          INDEX %2d %s(%6ld)\n",
 	      i + 2, index.str(), index.lba());
     }
 
-    message(0, "          END%c   %s(%6ld)",
+    printf("          END%c   %s(%6ld)\n",
 	    t->isPadded() ? '*' : ' ', end.str(), end.lba());
 
     tcount++;
@@ -1118,7 +1120,7 @@ void showData(const Toc *toc, int swap)
     }
 
     for (i = 0; i < SAMPLES_PER_BLOCK; i++) {
-      message(0, "%7lu:%6d %6d", sampleNr, buf[i].left(), buf[i].right());
+      printf("%7lu:%6d %6d\n", sampleNr, buf[i].left(), buf[i].right());
       sampleNr++;
     }
     length -= 1;
@@ -1129,85 +1131,95 @@ void showDiskInfo(DiskInfo *di)
 {
   const char *s1, *s2;
 
-  message(0, "That data below may not reflect the real status of the inserted medium");
+  message(0, "That disk info data may not reflect the real status of the inserted medium");
   message(0, "if a simulation run was performed before. Reload the medium in this case.");
   message(0, "");
 
-  message(0, "CD-RW                : ");
+  printf("CD-RW                : ");
   if (di->valid.cdrw)
-    message(0, di->cdrw ? "yes" : "no");
+    printf(di->cdrw ? "yes" : "no");
   else 
-    message(0, "n/a");
+    printf("n/a");
 
-  message(0, "Total Capacity       : ");
+  printf("\n");
+
+  printf("Total Capacity       : ");
   if (di->valid.capacity)
-    message(0, "%s (%ld blocks, %ld/%ld MB)", Msf(di->capacity).str(),
+    printf("%s (%ld blocks, %ld/%ld MB)", Msf(di->capacity).str(),
 	   di->capacity,
 	   (di->capacity * 2) >> 10,
 	   (di->capacity * AUDIO_BLOCK_LEN) >> 20);
   else
-    message(0, "n/a");
+    printf("n/a");
 
-  message(0, "CD-R medium          : ");
+  printf("\n");
+
+  printf("CD-R medium          : ");
   if (di->valid.manufacturerId) {
     if (CdrDriver::cdrVendor(di->manufacturerId, &s1, &s2)) {
-      message(0, "%s", s1);
-      message(0, "                       %s", s2);
+      printf("%s\n", s1);
+      printf("                       %s\n", s2);
     }
     else {
-      message(0, "%s: unknown vendor ID", di->manufacturerId.str());
+      printf("%s: unknown vendor ID\n", di->manufacturerId.str());
     }
   }
   else {
-    message(0, "n/a");
+    printf("n/a\n");
   }
 
-  message(0, "Recording Speed      : ");
+  printf("Recording Speed      : ");
   if (di->valid.recSpeed)
-    message(0, "%dX - %dX", di->recSpeedLow, di->recSpeedHigh);
+    printf("%dX - %dX", di->recSpeedLow, di->recSpeedHigh);
   else
-    message(0, "n/a");
+    printf("n/a");
 
-  message(0, "CD-R empty           : ");
+  printf("\n");
+
+  printf("CD-R empty           : ");
   if (di->valid.empty)
-    message(0, di->empty ? "yes" : "no");
+    printf(di->empty ? "yes" : "no");
   else 
-    message(0, "n/a");
+    printf("n/a");
+
+  printf("\n");
 
   if (di->valid.empty && !di->empty && di->valid.append) {
-    message(0, "Toc Type             : ");
+    printf("Toc Type             : ");
     switch (di->diskTocType) {
     case 0x00:
-      message(0, "CD-DA or CD-ROM");
+      printf("CD-DA or CD-ROM");
       break;
     case 0x10:
-      message(0, "CD-I");
+      printf("CD-I");
       break;
     case 0x20:
-      message(0, "CD-ROM XA");
+      printf("CD-ROM XA");
       break;
     case 0xff:
-      message(0, "Undefined");
+      printf("Undefined");
       break;
     default:
-      message(0, "invalid: %d", di->diskTocType);
+      printf("invalid: %d", di->diskTocType);
       break;
     }
 
-    message(0, "Sessions             : %d", di->sessionCnt);
-    message(0, "Last Track           : %d", di->lastTrackNr);
-    message(0, "Appendable           : %s", di->append ? "yes" : "no");
+    printf("\n");
+
+    printf("Sessions             : %d\n", di->sessionCnt);
+    printf("Last Track           : %d\n", di->lastTrackNr);
+    printf("Appendable           : %s\n", di->append ? "yes" : "no");
 
     if (di->append) {
-      message(0, "Start of last session: %ld (%s)", di->lastSessionLba,
+      printf("Start of last session: %ld (%s)\n", di->lastSessionLba,
 	      Msf(di->lastSessionLba + 150).str());
-      message(0, "Start of new session : %ld (%s)", di->thisSessionLba,
+      printf("Start of new session : %ld (%s)\n", di->thisSessionLba,
 	      Msf(di->thisSessionLba + 150).str());
 
       if (di->valid.capacity && di->capacity > di->thisSessionLba) {
 	long r = di->capacity - di->thisSessionLba;
 
-	message(0, "Remaining Capacity   : %s (%ld blocks, %ld/%ld MB)",
+	printf("Remaining Capacity   : %s (%ld blocks, %ld/%ld MB)\n",
 		Msf(r).str(), r, (r * 2) >> 10, (r * AUDIO_BLOCK_LEN) >> 20);
       }
     }
@@ -1230,7 +1242,7 @@ static int showMultiSessionInfo(DiskInfo *di)
     }
     else if (di->valid.append) {
       if (di->append) {
-	message(0, "%ld,%ld", di->lastSessionLba, di->thisSessionLba);
+	printf("%ld,%ld\n", di->lastSessionLba, di->thisSessionLba);
 	return 0;
       }
       else {

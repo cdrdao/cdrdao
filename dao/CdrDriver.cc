@@ -18,6 +18,9 @@
  */
 /*
  * $Log: CdrDriver.cc,v $
+ * Revision 1.12  2000/11/19 17:49:32  andreasm
+ * Updated 'msinfo' command.
+ *
  * Revision 1.11  2000/11/05 19:20:59  andreasm
  * Unified progress messages sent from cdrdao to gcdmaster.
  *
@@ -118,7 +121,7 @@
  *
  */
 
-static char rcsid[] = "$Id: CdrDriver.cc,v 1.11 2000/11/05 19:20:59 andreasm Exp $";
+static char rcsid[] = "$Id: CdrDriver.cc,v 1.12 2000/11/19 17:49:32 andreasm Exp $";
 
 #include <config.h>
 
@@ -3690,7 +3693,7 @@ int CdrDriver::readAudioRangeParanoia(ReadDiskInfo *info, int fd, long start,
   paranoiaTrackInfo_ = trackInfo;
   paranoiaStartTrack_ = startTrack;
   paranoiaEndTrack_ = endTrack;
-  paranoiaActLba_ = startLba + 149;
+  paranoiaLastLba_ = paranoiaActLba_ = startLba + 149;
   paranoiaActTrack_ = startTrack;
   paranoiaActIndex_ = 1;
   paranoiaCrcCount_ = 0;
@@ -3753,7 +3756,7 @@ long CdrDriver::paranoiaRead(Sample *buffer, long startLba, long len)
   if (swap)
     swapSamples(buffer, len * SAMPLES_PER_BLOCK);
 
-  if (remote_) {
+  if (remote_ && startLba > paranoiaLastLba_) {
     long totalTrackLen = paranoiaTrackInfo_[paranoiaActTrack_ + 1].start -
                          paranoiaTrackInfo_[paranoiaActTrack_ ].start;
     long progress = startLba - paranoiaTrackInfo_[paranoiaActTrack_ ].start;
@@ -3780,6 +3783,8 @@ long CdrDriver::paranoiaRead(Sample *buffer, long startLba, long len)
     sendReadCdProgressMsg(RCD_EXTRACTING, paranoiaReadInfo_->tracks,
 			  paranoiaActTrack_ + 1, progress, totalProgress);
   }
+
+  paranoiaLastLba_ = startLba;
 
   if (chans == NULL) {
     // drive does not provide sub channel data so that's all we could do here:

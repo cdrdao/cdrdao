@@ -1,9 +1,9 @@
-.TH CDRDAO 1 "Aug 20, 2000"
+.TH CDRDAO 1 "Nov 15, 2000"
 .SH NAME
 cdrdao \- writes audio CD-Rs in disc-at-once mode
 .SH SYNOPSIS
 .B cdrdao
-.RB [ show-toc | read-toc | read-cd | read-cddb | show-data | read-test | disk-info | unlock | simulate | write | copy]
+.RB { show-toc|read-toc|read-cd|read-cddb|show-data|read-test|disk-info|msinfo|unlock|simulate|write|copy }
 .RB [ --device
 .IR device ]
 .RB [ --source-device
@@ -111,6 +111,10 @@ for testing.
 Shows information about the inserted CD-R. If the CD-R has an open session
 it will also print the start of the last and current session which is
 used by mkisofs to create an image for a second or higher session.
+.TP
+.BI msinfo
+Shows information required for creating multi session disks with
+mkisofs. The output is meant for processing by scripts.
 .TP
 .BI unlock
 Tries to unlock the recorder device after a failed write or simulation
@@ -501,7 +505,7 @@ to the real track start, not counting an existing pre-gap.
 A CD-TEXT block may be placed in the global section to define data valid for
 the whole CD and in each track specification of a
 .I toc-file.
-The global section may define a language map that is used to map a
+The global section must define a language map that is used to map a
 .I language-number
 to country codes. Up to 8 different languages can be defined:
 .IP "LANGUAGE_MAP { 0 : c1  1 : c2  ...  7 : c7 }"
@@ -509,17 +513,11 @@ The country code may be an integer value in the range 0..255 or one of the
 following countries (the corresponding integer value is placed in braces 
 behind the token): EN(9, English)
 .br
-It is just necessary to define a mapping for the used languages. The mapping
-for the remaining language-numbers will be undefined and those language-numbers
-should not be used.
-.br
-Currently I am only aware of the country code for English but it is possible
-to make some tests with the general integer format.
+It is just necessary to define a mapping for the used languages.
 .LP
-If no language map is defined 
+If no mapping exists for a
 .I language-number
-0 will be mapped to English. The mapping for the language-numbers 1 to 7
-will be undefined.
+the data for this language will be ignored.
 
 For each language a language block must exist that defines the actual data
 for a certain language.
@@ -693,9 +691,19 @@ parsed but not evaluated, yet.
 
 .SH SETTINGS
 
-The file "$HOME/.cdrdao" may contain settings that are read if
+Some of the command line options can be stored as settings at
+following locations. The files will be read on startup of
 .I cdrdao
-is executed. Command line options will overwrite the loaded settings.
+in that order:
+
+1. /etc/cdrdao.conf
+
+2. /etc/defaults/cdrdao
+
+3. $HOME/.cdrdao
+
+
+Command line options will overwrite the loaded settings.
 The settings file contains name - value pairs separated by a
 colon. String values should be enclosed by ". The file is
 automatically written if the command line option 
