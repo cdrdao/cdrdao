@@ -1,4 +1,4 @@
-.TH CDRDAO 1 "Jan 07, 2001"
+.TH CDRDAO 1 "Apr 29, 2001"
 .SH NAME
 cdrdao \- writes audio CD-Rs in disc-at-once mode
 .SH SYNOPSIS
@@ -35,6 +35,7 @@ cdrdao \- writes audio CD-Rs in disc-at-once mode
 .RB [ --on-the-fly ]
 .RB [ --paranoia-mode
 .IR mode ]
+.RB [ --with-cddb ]
 .RB [ --cddb-servers
 .IR server-list ]
 .RB [ --cddb-timeout
@@ -307,9 +308,20 @@ copy process has finished.
 .BI \--on-the-fly
 Perform CD copy on the fly without creating an image file.
 .TP
+.BI \--with-cddb
+Enables the automatic fetching of CDDB data for use as CD-TEXT data for
+commands
+.I copy,
+.I read-toc
+and
+.I read-cd.
+.TP
 .BI \--cddb-servers " server-list"
-Sets space or ',' separated list of CDDB servers used for
-.I read-cddb.
+Sets space or ',' separated list of CDDB servers used for command
+.I read-cddb
+or for commands where the
+.I --with-cddb
+option is active.
 A server entry may have the following forms:
 .IP <server>
 Connect to <server>, default cddbp port (888), use cddbp protocol.
