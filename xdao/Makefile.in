@@ -38,7 +38,7 @@ PIXMAPS_DIR = $(datadir)/pixmaps/gcdmaster
 #
 CXX = @CXX@
 CXXFLAGS = @CXXFLAGS@ 
-ALL_CXXFLAGS = @DEFS@ @mydefs@ -DVERSION=\"$(VERSION)\" -I.. -I$(srcdir) -I$(srcdir)/../dao -I$(srcdir)/../trackdb $(CXXFLAGS) @GNOMEMM_CFLAGS@ @GTKMM_CFLAGS@ @GNOME_CFLAGS@
+ALL_CXXFLAGS = @DEFS@ @mydefs@ -DVERSION=\"$(VERSION)\" -I.. -I$(srcdir) -I$(srcdir)/../dao -I$(srcdir)/../trackdb $(CXXFLAGS) @GNOMEMM_CFLAGS@
 LDFLAGS = @LDFLAGS@ 
 LIBS =  @scsilib_libs@ @GNOMEMM_LIBS@ @GTKMM_LIBS@ @GNOME_LIBS@ @thread_libs@ @LIBS@ 
 RANLIB = @RANLIB@
@@ -46,7 +46,8 @@ AR = ar
 #
 #
 #
-SRC = xcdrdao.cc SampleDisplay.cc SampleManager.cc \
+SRC = xcdrdao.cc gcdmaster.cc ProjectChooser.cc Project.cc ViewSwitcher.cc \
+      SampleDisplay.cc SampleManager.cc \
       TrackManager.cc AddSilenceDialog.cc TrackInfoDialog.cc TocEdit.cc \
       TextEdit.cc TocInfoDialog.cc guiUpdate.cc TrackDataScrap.cc \
       AddFileDialog.cc CdDevice.cc DeviceConfDialog.cc \
@@ -56,7 +57,6 @@ SRC = xcdrdao.cc SampleDisplay.cc SampleManager.cc \
       DeviceList.cc RecordTocSource.cc RecordCDSource.cc \
       RecordHDTarget.cc AudioCDView.cc TocEditView.cc GenericChild.cc \
       GenericView.cc CdTextDialog.cc \
-      gcdmaster.cc Project.cc ProjectChooser.cc ViewSwitcher.cc \
       @sound_if_src@
 
 OBJ = $(SRC:%.cc=%.o)
