@@ -22,7 +22,7 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <unistd.h>
-#include <malloc.h>
+#include <stdlib.h>
 #include <errno.h>
 #include <ctype.h>
 #include <assert.h>
