@@ -18,6 +18,9 @@
  */
 /*
  * $Log: Settings.cc,v $
+ * Revision 1.3  2000/06/22 12:20:24  andreasm
+ * Changed settings file to "GnomeCDMaster".
+ *
  * Revision 1.2  2000/05/01 18:15:00  andreasm
  * Switch to gnome-config settings.
  * Adapted Message Box to Gnome look, unfortunately the Gnome::MessageBox is
@@ -28,13 +31,13 @@
  *
  */
 
-static char rcsid[] = "$Id: Settings.cc,v 1.2 2000/05/01 18:15:00 andreasm Exp $";
+static char rcsid[] = "$Id: Settings.cc,v 1.3 2000/06/22 12:20:24 andreasm Exp $";
 
 #include "Settings.h"
 
-const char *SET_CDRDAO_PATH = "/xcdrdao/cdrdao/path=cdrdao";
-const char *SET_RECORD_EJECT_WARNING = "/xcdrdao/record/ejectWarning=true";
-const char *SET_RECORD_RELOAD_WARNING = "/xcdrdao/record/reloadWarning=true";
+const char *SET_CDRDAO_PATH = "/GnomeCDMaster/cdrdao/path=cdrdao";
+const char *SET_RECORD_EJECT_WARNING = "/GnomeCDMaster/record/ejectWarning=true";
+const char *SET_RECORD_RELOAD_WARNING = "/GnomeCDMaster/record/reloadWarning=true";
 
-const char *SET_SECTION_DEVICES = "/xcdrdao/devices/";
-const char *SET_DEVICES_NUM = "/xcdrdao/devices/count=0";
+const char *SET_SECTION_DEVICES = "/GnomeCDMaster/devices/";
+const char *SET_DEVICES_NUM = "/GnomeCDMaster/devices/count=0";
