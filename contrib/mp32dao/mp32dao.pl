@@ -50,12 +50,16 @@ foreach my $file (@{$list->list})	{
 	#Sets artist and album name
 	if ($cdtext)	{
 		#If artist is still not defined define as in first song tag
-		if (!$artist)	{ $artist=$file->artist } 
+		if (!$artist)	{
+			$artist=$file->artist;
+		} 
 		#If different artists mark as VVAA
-		if ($artist !~ m/\Q$file->artist\E/i)	{$artist = "Various Artists"}
+		if ( ! $artist =~ /\s*\Q$file->artist\E\s*/i)	{
+			$artist = "Various Artists";
+		}
 		#Same for album name
 		if (!$album)	{ $album = $file->album }
-		if ($album !~ m/\Q$file->album\E/i)	{$album = "Compilation"};
+		if (! $album =~ m/\Q$file->album\E/i)	{$album = "Compilation"};
 	}
 }
 open ($fh, ">$tocfile") or die "Couldn't open $tocfile for write!\n";
