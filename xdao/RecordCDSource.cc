@@ -267,9 +267,11 @@ void RecordCDSource::selectOne()
 {
   if (DEVICES->selection().empty()) {
     Gtk::CList *clist = DEVICES->getCList();
-    if (clist->get_rows())
+    for (int i = 0; i < clist->get_rows(); i++)
     {
-      clist->row(0).select();
+      clist->row(i).select();
+      if (!DEVICES->selection().empty())
+        break;
     }
     return;
   }
