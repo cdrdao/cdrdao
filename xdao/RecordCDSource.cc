@@ -262,3 +262,16 @@ void RecordCDSource::onTheFlyOption(bool visible)
   else
     onTheFlyButton_->hide();
 }
+
+void RecordCDSource::selectOne()
+{
+  if (DEVICES->selection().empty()) {
+    Gtk::CList *clist = DEVICES->getCList();
+    if (clist->get_rows())
+    {
+      clist->row(0).select();
+    }
+    return;
+  }
+}
+

@@ -41,6 +41,8 @@ public:
   DeviceList *getDeviceList() { return DEVICES;}
   void onTheFlyOption(bool);
 
+  void selectOne();
+
 private:
   DeviceList *DEVICES;
 
