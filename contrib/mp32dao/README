@@ -1,0 +1,8 @@
+This perl script converts a set of mp3 files to wave files and creates
+a suitable toc-file for recording them to a CD-R. The clue of this script
+is that a track is padded with samples of the following track's data instead
+of using zero samples to match the CD block size.
+
+The documentation is located at the end of the perl script.
+
+Please send comments/bug reports to Joe Stewart <mp32dao@httptech.com>.

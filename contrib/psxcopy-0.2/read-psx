@@ -1,0 +1,13 @@
+#!/bin/sh
+echo read-psx - v.0.3
+reader_sg="/dev/sg0"
+reader_cd="/dev/scd0"
+if psxdump -T -d $reader_cd 
+then 
+ rm -f $1.toc
+ cdrdao read-toc --device $reader_sg $1.toc
+ cp $1.toc $1.toc.backup
+ cdjob $1.toc $reader_cd
+else
+ echo This is not a PSX disk..
+fi
