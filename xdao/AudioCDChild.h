@@ -36,6 +36,7 @@ class TrackData;
 class TocEdit;
 class TocInfoDialog;
 class TrackInfoDialog;
+class CdTextDialog;
 class AddFileDialog;
 class AddSilenceDialog;
 class AudioCDView;
@@ -58,6 +59,7 @@ private: //related windows
   TrackInfoDialog *trackInfoDialog_;
   AddFileDialog *addFileDialog_;
   AddSilenceDialog *addSilenceDialog_;
+  CdTextDialog *cdTextDialog_;
   Gtk::FileSelection *saveFileSelector_;
   void saveFileSelectorOKCB();
   void saveFileSelectorCancelCB();
@@ -99,7 +101,7 @@ private:
 
   void projectInfo();
   void trackInfo();
-
+  void cdTextDialog();
 
 public:
 

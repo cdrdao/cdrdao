@@ -96,15 +96,15 @@ MDIWindow::MDIWindow()
     using namespace Gnome::UI;
     // Actions menu
     actionsMenuTree.push_back(Item(Icon(GNOME_STOCK_MENU_CDROM),
-								N_("Record"),
+								N_("_Record"),
 								slot(this, &MDIWindow::recordToc2CD),
 								N_("Record")));
     actionsMenuTree.push_back(Item(Icon(GNOME_STOCK_MENU_CDROM),
-								N_("CD to CD copy"),
+								N_("_CD to CD copy"),
 								slot(this, &MDIWindow::recordCD2CD),
 								N_("CD to CD copy")));
     actionsMenuTree.push_back(Item(Icon(GNOME_STOCK_MENU_CDROM),
-								N_("Dump CD to disk"),
+								N_("_Dump CD to disk"),
 								slot(this, &MDIWindow::recordCD2HD),
 								N_("Dump CD to disk")));
 /*
@@ -423,12 +423,15 @@ void MDIWindow::openAudioCDProject(char *name)
   else
   {
     gchar *message;
-	message = g_strdup_printf("Error loading %s", name);
+    
+    message = g_strdup_printf("Error loading %s", name);
     Gnome::Dialogs::error(message); 
     MDI_WINDOW->remove(*child);
+
     g_free(message);
   }
-//FIXME  guiUpdate();
+
+  //guiUpdate();
 }
 
 void MDIWindow::closeProject()

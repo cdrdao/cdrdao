@@ -89,8 +89,6 @@ RecordHDTarget::RecordHDTarget()
 
   pack_start(*contentsHBox);
   contentsHBox->show();
-
-//  show();
 }
 
 RecordHDTarget::~RecordHDTarget()
@@ -98,11 +96,11 @@ RecordHDTarget::~RecordHDTarget()
 }
 
 
-void RecordHDTarget::start(TocEdit *tocEdit)
+void RecordHDTarget::start(TocEdit *tedit)
 {
   active_ = 1;
 
-  update(UPD_CD_DEVICES);
+  update(UPD_CD_DEVICES, tedit);
 
   show();
 }
@@ -112,13 +110,18 @@ void RecordHDTarget::stop()
   if (active_) {
     hide();
     active_ = 0;
+    tocEdit_ = NULL;
   }
 }
 
-void RecordHDTarget::update(unsigned long level)
+void RecordHDTarget::update(unsigned long level, TocEdit *tedit)
 {
   if (!active_)
     return;
+
+  if (tocEdit_ != tedit) {
+    tocEdit_ = tedit;
+  }
 
 //  if (level & UPD_CD_DEVICES)
 //    DEVICES->import();
@@ -132,7 +135,7 @@ void RecordHDTarget::cancelAction()
 }
 
 void RecordHDTarget::startAction(RecordGenericDialog::RecordSourceType source,
-		RecordTocSource *TOC, RecordCDSource *CD)
+				 RecordTocSource *TOC, RecordCDSource *CD)
 {
   int eject, simulate, speed, multiSession, reload;
   int started = 0;
@@ -143,8 +146,10 @@ void RecordHDTarget::startAction(RecordGenericDialog::RecordSourceType source,
   int correction;
   unsigned int i;
 
-//  if (tocEdit_ == NULL)
-//    return;
+  /*
+  if (tocEdit_ == NULL)
+    return;
+  */
 
   if (CD->DEVICES->selection().empty()) {
     MessageBox msg(parent, "Dump CD", 0, 

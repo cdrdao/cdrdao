@@ -156,13 +156,10 @@ int main (int argc, char* argv[])
 //FIXME: perhaps update only the MDI_WINDOW
   guiUpdate();
 
-//  if (argc > 1) {
   while (argc > 1) {
     MDI_WINDOW->openAudioCDProject(argv[1]);
     argv++;
     argc--;
-//    if (tocEdit->readToc(argv[1]) != 0)
-//      exit(1);
   }
 
   application.run();

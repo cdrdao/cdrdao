@@ -39,14 +39,15 @@ public:
   RecordGenericDialog();
   ~RecordGenericDialog();
 
-  void start(TocEdit *, enum RecordSourceType SourceType, enum RecordTargetType TargetType);
+  void start(TocEdit *, RecordSourceType SourceType,
+	     RecordTargetType TargetType);
   void stop();
 
   void toc_to_cd(TocEdit *);
   void cd_to_cd();
   void cd_to_hd();
 
-  void update(unsigned long level);
+  void update(unsigned long level, TocEdit *);
 
   void cancelAction();
   void startAction();
@@ -55,7 +56,6 @@ public:
   gint delete_event_impl(GdkEventAny*);
 
 private:
-  TocEdit *tocEdit_;
   int active_;
 
   RecordTocSource *TOCSOURCE;
@@ -63,9 +63,8 @@ private:
   RecordCDTarget *CDTARGET;
   RecordHDTarget *HDTARGET;
 
-  enum RecordSourceType source_;
-  enum RecordTargetType target_;
-
+  RecordSourceType source_;
+  RecordTargetType target_;
 };
 
 #endif

@@ -19,6 +19,8 @@
 
 #include "TocInfoDialog.h"
 
+#include <gnome--.h>
+
 #include <stdio.h>
 #include <stddef.h>
 #include <string.h>
@@ -30,7 +32,6 @@
 #include "Toc.h"
 #include "CdTextItem.h"
 #include "TextEdit.h"
-#include "CdTextTable.h"
 
 #define MAX_CD_TEXT_LANGUAGE_CODES 22
 
@@ -275,12 +276,12 @@ TocInfoDialog::TocInfoDialog()
 
   Gtk::HButtonBox *bbox = new Gtk::HButtonBox(GTK_BUTTONBOX_SPREAD);
 
-  applyButton_ = new Gtk::Button(string(" Apply "));
+  applyButton_ = new Gnome::StockButton(GNOME_STOCK_BUTTON_APPLY);
   bbox->pack_start(*applyButton_);
   applyButton_->show();
   applyButton_->clicked.connect(SigC::slot(this,&TocInfoDialog::applyAction));
 
-  button = new Gtk::Button(string(" Close "));
+  button = new Gnome::StockButton(GNOME_STOCK_BUTTON_CLOSE);
   bbox->pack_start(*button);
   button->show();
   button->clicked.connect(SigC::slot(this,&TocInfoDialog::closeAction));
@@ -289,7 +290,7 @@ TocInfoDialog::TocInfoDialog()
   bbox->show();
   get_action_area()->show();
 
-  set_title(string("Disk Info"));
+  set_title(string("Project Info"));
 }
 
 TocInfoDialog::~TocInfoDialog()
@@ -429,11 +430,9 @@ Gtk::VBox *TocInfoDialog::createCdTextPage(int n)
 {
   char buf[20];
   Gtk::Table *table = new Gtk::Table(11, 2, FALSE);
-  Gtk::VBox *vbox = new Gtk::VBox;
   Gtk::VBox *vbox1;
   Gtk::HBox *hbox;
   Gtk::Label *label;
-  Gtk::Button *button;
 
   sprintf(buf, "%d", n);
   cdTextPages_[n].label = new Gtk::Label(string(buf));
@@ -555,21 +554,9 @@ Gtk::VBox *TocInfoDialog::createCdTextPage(int n)
   table->attach(*(cdTextPages_[n].genreInfo), 1, 2, 10, 11);
   cdTextPages_[n].genreInfo->show();
 
-  vbox->pack_start(*table, FALSE);
-
-  button = new Gtk::Button(" Entry by Table ");
-  Gtk::HButtonBox *bbox = new Gtk::HButtonBox(GTK_BUTTONBOX_SPREAD);
-  bbox->pack_start(*button);
-  button->show();
-  button->clicked.connect(bind(slot(this, &TocInfoDialog::cdTextTableAction),
-			       n));
-  vbox->pack_start(*bbox, TRUE);
-  bbox->show();
-
-
   hbox = new Gtk::HBox;
-  hbox->pack_start(*vbox, TRUE, TRUE, 3);
-  vbox->show();
+  hbox->pack_start(*table, TRUE, TRUE, 3);
+  table->show();
 
   vbox1 = new Gtk::VBox;
   vbox1->pack_start(*hbox, TRUE, TRUE, 3);
@@ -578,17 +565,6 @@ Gtk::VBox *TocInfoDialog::createCdTextPage(int n)
   vbox1->show();
   
   return vbox1;
-}
-
-void TocInfoDialog::cdTextTableAction(int language)
-{
-  if (tocEditView_ != NULL && tocEditView_->tocEdit()->editable()) {
-    CdTextTable table(tocEditView_->tocEdit(), language);
-
-    if (table.run()) {
-      guiUpdate();
-    }
-  }
 }
 
 gint TocInfoDialog::delete_event_impl(GdkEventAny*)

@@ -18,6 +18,10 @@
  */
 /*
  * $Log: SampleDisplay.cc,v $
+ * Revision 1.9  2001/01/21 13:46:11  andreasm
+ * 'update()' functions of all dialogs require a 'TocEditView' object now.
+ * CD TEXT table entry is now a non modal dialog on its own.
+ *
  * Revision 1.8  2000/09/21 02:07:06  llanero
  * MDI support:
  * Splitted AudioCDChild into same and AudioCDView
@@ -75,7 +79,7 @@
  *
  */
 
-static char rcsid[] = "$Id: SampleDisplay.cc,v 1.8 2000/09/21 02:07:06 llanero Exp $";
+static char rcsid[] = "$Id: SampleDisplay.cc,v 1.9 2001/01/21 13:46:11 andreasm Exp $";
 
 #include <stdio.h>
 #include <limits.h>
@@ -429,6 +433,8 @@ void SampleDisplay::getColor(const char *colorName, Gdk_Color *color)
 
 void SampleDisplay::scrollTo()
 {
+  unsigned long minSample, maxSample;
+
   if (tocEdit_ == NULL)
     return;
 
@@ -438,19 +444,18 @@ void SampleDisplay::scrollTo()
   if (adjust->page_size == 0.0)
     return;
 
-  minSample_ = (unsigned long)adjust->value;
-  maxSample_ = (unsigned long)(adjust->value + adjust->page_size) - 1;
+  minSample = (unsigned long)adjust->value;
+  maxSample = (unsigned long)(adjust->value + adjust->page_size) - 1;
 
-  if (maxSample_ >= toc->length().samples()) {
-    maxSample_ = toc->length().samples() - 1;
-    if (maxSample_ <= (unsigned long)(adjust->page_size - 1))
-      minSample_ = 0;
+  if (maxSample >= toc->length().samples()) {
+    maxSample = toc->length().samples() - 1;
+    if (maxSample <= (unsigned long)(adjust->page_size - 1))
+      minSample = 0;
     else 
-      minSample_ = maxSample_ - (unsigned long)(adjust->page_size - 1);
+      minSample = maxSample - (unsigned long)(adjust->page_size - 1);
   }
 
-  updateSamples();
-  redraw(0, 0, width_, height_, 0);
+  viewModified(minSample, maxSample);
 }
 
 unsigned long SampleDisplay::pixel2sample(gint x)

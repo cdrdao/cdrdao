@@ -39,7 +39,7 @@ public:
   void start(TocEdit *);
   void stop();
 
-  void update(unsigned long level);
+  void update(unsigned long level, TocEdit *);
 
 private:
   TocEdit *tocEdit_;
@@ -52,7 +52,7 @@ private:
 public:
    void cancelAction();
    void startAction(RecordGenericDialog::RecordSourceType source,
-			RecordTocSource *TOC, RecordCDSource *CD);
+		    RecordTocSource *TOC, RecordCDSource *CD);
 
 };
 

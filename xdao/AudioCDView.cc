@@ -157,6 +157,8 @@ AudioCDView::AudioCDView(AudioCDChild *child)
   			&AudioCDView::trackMarkSelectedCallback));
   sampleDisplay_->trackMarkMoved.connect(slot(cdchild,
   			&AudioCDChild::trackMarkMovedCallback));
+  sampleDisplay_->viewModified.connect(slot(this,
+		        &AudioCDView::viewModifiedCallback));
 
   zoomButton_->toggled.connect(bind(slot(this, &AudioCDView::setMode), ZOOM));
   selectButton_->toggled.connect(bind(slot(this, &AudioCDView::setMode), SELECT));
@@ -167,7 +169,7 @@ AudioCDView::AudioCDView(AudioCDChild *child)
 
 void AudioCDView::update(unsigned long level)
 {
-cout << "updating AudioCDView - " << cdchild->get_name() << endl;
+  //cout << "updating AudioCDView - " << cdchild->get_name() << endl;
 
   if (level & (UPD_TOC_DIRTY | UPD_TOC_DATA)) {
     cursorPos_->set_text("");
@@ -316,6 +318,12 @@ cout << "selectionSetCallback called" << endl;
 void AudioCDView::cursorMovedCallback(unsigned long pos)
 {
   cursorPos_->set_text(string(cdchild->sample2string(pos)));
+}
+
+void AudioCDView::viewModifiedCallback(unsigned long start, unsigned long end)
+{
+  tocEditView_->sampleView(start, end);
+  guiUpdate();
 }
 
 void AudioCDView::setMode(Mode m)

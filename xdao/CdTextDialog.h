@@ -1,6 +1,6 @@
 /*  cdrdao - write audio CD-Rs in disc-at-once mode
  *
- *  Copyright (C) 1998-2000  Andreas Mueller <mueller@daneb.ping.de>
+ *  Copyright (C) 1998-2001  Andreas Mueller <mueller@daneb.ping.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -16,60 +16,70 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
-/*
- * $Log: CdTextTable.h,v $
- * Revision 1.1  2000/04/23 09:02:04  andreasm
- * Table entry dialog for CD-TEXT title and performer data.
- *
- */
 
-#ifndef __CD_TEXT_TABLE_H__
-#define __CD_TEXT_TABLE_H__
+#ifndef __CD_TEXT_DIALOG_H__
+#define __CD_TEXT_DIALOG_H__
 
 #include <gtk--.h>
 #include <gtk/gtk.h>
 
-#include "Toc.h"
+//#include "Toc.h"
 #include "CdTextItem.h"
 
-class TocEdit;
+class TocEditView;
 
-class CdTextTable : public Gtk::Dialog {
+class CdTextDialog : public Gtk::Dialog {
 public:
-  CdTextTable(TocEdit *, int language);
-  ~CdTextTable();
+  CdTextDialog();
+  ~CdTextDialog();
 
   gint delete_event_impl(GdkEventAny*);
 
-  int run();
+  void update(unsigned long, TocEditView *);
+
+  void start(TocEditView *);
+  void stop();
 
 private:
-  TocEdit *tocEdit_;
-  int language_;
+  int active_;
 
-  Gtk::Entry *performer_;
-  Gtk::Entry *title_;
-  Gtk::CheckButton *performerButton_;
+  TocEditView *tocEditView_;
+  int trackEntries_;
+
+  Gtk::Button *applyButton_;
+  Gtk::Notebook *languages_;
 
   struct TableEntry {
     Gtk::Entry *performer;
     Gtk::Entry *title;
+    Gtk::Label *label;
+    Gtk::HBox *hbox;
   };
 
-  Gtk::Adjustment adjust_;
+  struct Language {
+    Gtk::Table *table;
+    Gtk::Entry *performer;
+    Gtk::Entry *title;
+    Gtk::Label *tabLabel;
 
-  TableEntry *tracks_;
+    Gtk::CheckButton *performerButton;
+    
+    TableEntry *tracks;
+    
+    Gtk::Adjustment *adjust;
+  };
 
-  int done_;
+  Language page_[8];
 
-  void cancelAction();
-  void okAction();
+  void adjustTableEntries(int);
+  void updateTabLabels();
+  void applyAction();
   void fillPerformerAction();
-  void activatePerformerAction();
+  void activatePerformerAction(int);
 
   void importData();
   void exportData();
-  void setCdTextItem(CdTextItem::PackType, int trackNr, const char *);
+  void setCdTextItem(CdTextItem::PackType, int trackNr, int l, const char *);
 
   const char *checkString(const string &);
 };

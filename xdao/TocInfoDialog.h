@@ -93,7 +93,6 @@ private:
   const char *checkString(const string &);
   int getCdTextLanguageIndex(int code);
   int getCdTextGenreIndex(int code1, int code2);
-  void cdTextTableAction(int language);
 
   void importCdText(const Toc *);
   void importData(const Toc *);

@@ -19,21 +19,55 @@
 
 /*
  * $Log: CdTextContainer.cc,v $
- * Revision 1.1  2000/02/05 01:32:35  llanero
- * Initial revision
+ * Revision 1.2  2001/01/21 13:46:11  andreasm
+ * 'update()' functions of all dialogs require a 'TocEditView' object now.
+ * CD TEXT table entry is now a non modal dialog on its own.
+ *
+ * Revision 1.1.1.1  2000/02/05 01:32:35  llanero
+ * Uploaded cdrdao 1.1.3 with pre10 patch applied.
  *
  * Revision 1.1  1999/04/05 11:02:11  mueller
  * Initial revision
  *
  */
 
-static char rcsid[] = "$Id: CdTextContainer.cc,v 1.1 2000/02/05 01:32:35 llanero Exp $";
+static char rcsid[] = "$Id: CdTextContainer.cc,v 1.2 2001/01/21 13:46:11 andreasm Exp $";
 
 #include <iostream.h>
 #include <assert.h>
 
 #include "CdTextContainer.h"
 #include "CdTextItem.h"
+
+struct LanguageCode {
+  int code;
+  const char *name;
+};
+
+static LanguageCode LANGUAGE_CODES[] = {
+  { 0x75, "Chinese" },
+  { 0x06, "Czech" },
+  { 0x07, "Danish" },
+  { 0x1d, "Dutch" },
+  { 0x09, "English" },
+  { 0x27, "Finnish" },
+  { 0x0f, "French" },
+  { 0x08, "German" },
+  { 0x70, "Greek" },
+  { 0x1b, "Hungarian" },
+  { 0x15, "Italian" },
+  { 0x69, "Japanese" },
+  { 0x65, "Korean" },
+  { 0x1e, "Norwegian" },
+  { 0x20, "Polish" },
+  { 0x21, "Portuguese" },
+  { 0x56, "Russian" },
+  { 0x26, "Slovene" },
+  { 0x0a, "Spanish" },
+  { 0x28, "Swedish" }
+};
+
+static int NOF_LANGUAGE_CODES = sizeof(LANGUAGE_CODES) / sizeof(LanguageCode);
 
 CdTextContainer::CdTextContainer()
 {
@@ -228,4 +262,19 @@ int CdTextContainer::language(int blockNr) const
   assert(blockNr >= 0 && blockNr <= 7);
 
   return language_[blockNr];
+}
+
+const char *CdTextContainer::languageName(int lang)
+{
+  int i;
+
+  if (lang < 0)
+    return "Undefined";
+
+  for (i = 0; i < NOF_LANGUAGE_CODES; i++) {
+    if (lang == LANGUAGE_CODES[i].code)
+      return LANGUAGE_CODES[i].name;
+  }
+
+  return "Unknown";
 }

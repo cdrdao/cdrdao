@@ -18,6 +18,10 @@
  */
 /*
  * $Log: SampleDisplay.h,v $
+ * Revision 1.5  2001/01/21 13:46:11  andreasm
+ * 'update()' functions of all dialogs require a 'TocEditView' object now.
+ * CD TEXT table entry is now a non modal dialog on its own.
+ *
  * Revision 1.4  2000/04/23 09:07:08  andreasm
  * * Fixed most problems marked with '//llanero'.
  * * Added audio CD edit menus to MDIWindow.
@@ -177,6 +181,7 @@ public:
   SigC::Signal2<void, unsigned long, unsigned long> selectionSet;
   SigC::Signal3<void, const Track *, int, int> trackMarkSelected;
   SigC::Signal4<void, const Track *, int, int, unsigned long> trackMarkMoved;
+  SigC::Signal2<void, unsigned long, unsigned long> viewModified;
   
 protected:
   int handle_configure_event (GdkEventConfigure *);

@@ -23,7 +23,6 @@
 #include <gtk--.h>
 #include <gtk/gtk.h>
 
-class TocEdit;
 class CdDevice;
 class DeviceList;
 
@@ -32,7 +31,7 @@ public:
   RecordCDSource();
   ~RecordCDSource();
 
-  void start(TocEdit *);
+  void start();
   void stop();
 
   void update(unsigned long level);
@@ -42,7 +41,6 @@ public:
   int getCorrection();
 
 private:
-  TocEdit *tocEdit_;
   int active_;
   int correction_;
 

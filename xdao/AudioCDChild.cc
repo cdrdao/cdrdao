@@ -41,6 +41,7 @@
 #include "TocInfoDialog.h"
 #include "TrackInfoDialog.h"
 #include "RecordGenericDialog.h"
+#include "CdTextDialog.h"
 
 #include "SampleDisplay.h"
 
@@ -66,6 +67,7 @@ AudioCDChild::AudioCDChild(gint number) : GenericChild()
   trackInfoDialog_ = 0;
   addFileDialog_ = 0;
   addSilenceDialog_ = 0;
+  cdTextDialog_ = 0;
 
   saveFileSelector_ = 0;  
 
@@ -86,6 +88,11 @@ AudioCDChild::AudioCDChild(gint number) : GenericChild()
     push_back(Gnome::UI::Item(N_("Track Info..."),
 			      slot(this, &AudioCDChild::trackInfo),
 			      N_("Edit track data")));
+
+  audioEditMenuTree.
+    push_back(Gnome::UI::Item(N_("CD-TEXT..."),
+			      slot(this, &AudioCDChild::cdTextDialog),
+			      N_("Edit CD-TEXT data")));
 
   audioEditMenuTree.push_back(Gnome::UI::Separator());
 
@@ -185,7 +192,7 @@ Gtk::Widget* AudioCDChild::create_title_impl()
 
 Gtk::Widget *AudioCDChild::update_title_impl(Gtk::Widget *old_label)
 {
-cout << "Inside label update" << endl;
+  cout << "Inside label update" << endl;
   static_cast <AudioCDChildLabel *>(old_label)->set_name(get_name());
   return old_label;
 }
@@ -353,6 +360,16 @@ void AudioCDChild::projectInfo()
   tocInfoDialog_->start(view->tocEditView());
 }
 
+void AudioCDChild::cdTextDialog()
+{
+  if (cdTextDialog_ == 0)
+    cdTextDialog_ = new CdTextDialog();
+
+  GenericView *view = static_cast <GenericView *>(get_active());
+
+  cdTextDialog_->start(view->tocEditView());
+}
+
 void AudioCDChild::record_to_cd()
 {
   RECORD_GENERIC_DIALOG->toc_to_cd(tocEdit_);
@@ -427,7 +444,7 @@ void AudioCDChild::saveFileSelectorOKCB()
 
 bool AudioCDChild::closeProject()
 {
-cout<< "in &AudioCDChild::closeProject() - " << get_name() << endl;
+  cout<< "in &AudioCDChild::closeProject() - " << get_name() << endl;
 
   if (!tocEdit_->editable()) {
     tocBlockedMsg("Close Project");
@@ -437,20 +454,25 @@ cout<< "in &AudioCDChild::closeProject() - " << get_name() << endl;
   if (tocEdit_->tocDirty()) {
 //FIXME: This should be Ask3Box: Save changes? "yes" "no" "cancel"
     gchar *message;
-	message = g_strdup_printf("Project %s not saved.", tocEdit_->filename());
+    
+    message = g_strdup_printf("Project %s not saved.", tocEdit_->filename());
+    
+    // Ask2Box msg(this, "New", 0, 2, "Current project not saved.", "",
     Ask2Box msg(MDI_WINDOW->get_active_window(), "Close", 0, 2, message, "",
-//    Ask2Box msg(this, "New", 0, 2, "Current project not saved.", "",
 		"Continue?", NULL);
+
     g_free(message);
+
     if (msg.run() != 1)
       return false;
   }
+
   return true;
 }
 
 void AudioCDChild::update(unsigned long level)
 {
-  cout << "updating AudioCDChild - " << get_name() << endl;
+  //cout << "updating AudioCDChild - " << get_name() << endl;
 
   if (level & (UPD_TOC_DIRTY | UPD_TOC_DATA)) {
     string s(tocEdit_->filename());
@@ -476,6 +498,9 @@ void AudioCDChild::update(unsigned long level)
 
   if (addSilenceDialog_ != 0)
     addSilenceDialog_->update(level, view->tocEditView());
+
+  if (cdTextDialog_ != 0)
+    cdTextDialog_->update(level, view->tocEditView());
 }
 
 

@@ -140,14 +140,13 @@ RecordGenericDialog::~RecordGenericDialog()
 {
 }
 
-void RecordGenericDialog::start(TocEdit *tocEdit, enum RecordSourceType SourceType, enum RecordTargetType TargetType)
+void RecordGenericDialog::start(TocEdit *tedit, RecordSourceType SourceType,
+				RecordTargetType TargetType)
 {
   gchar *title;
-  tocEdit_ = tocEdit;
 
   if (active_) {
     get_window().raise();
-//    return;
   }
 
   active_ = 1;
@@ -156,7 +155,7 @@ void RecordGenericDialog::start(TocEdit *tocEdit, enum RecordSourceType SourceTy
   {
     switch (source_) 
     {
-	  case S_TOC:
+      case S_TOC:
                   TOCSOURCE->stop();
                   break;
       case S_CD:
@@ -166,10 +165,10 @@ void RecordGenericDialog::start(TocEdit *tocEdit, enum RecordSourceType SourceTy
     switch (SourceType)
     {
       case S_TOC:
-                  TOCSOURCE->start(tocEdit);
+                  TOCSOURCE->start(tedit);
                   break;
       case S_CD:
-                  CDSOURCE->start(tocEdit);
+                  CDSOURCE->start();
                   break;                  
     }
     source_ = SourceType;
@@ -178,8 +177,8 @@ void RecordGenericDialog::start(TocEdit *tocEdit, enum RecordSourceType SourceTy
   {
     switch (source_) 
     {
-	  case S_TOC:
-                  TOCSOURCE->update(UPD_ALL);
+      case S_TOC:
+                  TOCSOURCE->update(UPD_ALL, tedit);
                   break;
       case S_CD:
                   CDSOURCE->update(UPD_ALL);
@@ -191,7 +190,7 @@ void RecordGenericDialog::start(TocEdit *tocEdit, enum RecordSourceType SourceTy
   {
     switch (target_) 
     {
-	  case T_CD:
+      case T_CD:
                   CDTARGET->stop();
                   break;
       case T_HD:
@@ -201,11 +200,11 @@ void RecordGenericDialog::start(TocEdit *tocEdit, enum RecordSourceType SourceTy
     switch (TargetType)
     {
       case T_CD:
-                  CDTARGET->start(tocEdit, SourceType);
+                  CDTARGET->start(tedit, SourceType);
                   break;
       case T_HD:
-                  HDTARGET->start(tocEdit);
-                  break;                  
+                  HDTARGET->start(tedit);
+                  break;
     }
     target_ = TargetType;
   }
@@ -213,50 +212,50 @@ void RecordGenericDialog::start(TocEdit *tocEdit, enum RecordSourceType SourceTy
   {
     switch (target_) 
     {
-	  case T_CD:
-                  CDTARGET->update(UPD_ALL, SourceType);
+      case T_CD:
+                  CDTARGET->update(UPD_ALL, tedit, SourceType);
                   break;
       case T_HD:
-                  HDTARGET->update(UPD_ALL);
+                  HDTARGET->update(UPD_ALL, tedit);
                   break;
     }
   }
 
-//title
+  // title
   switch (source_) 
   {
     case S_TOC:
       switch (target_) 
       {
         case T_CD:
-          title = g_strdup_printf("Write project %s to CD", tocEdit_->filename());
+          title = g_strdup_printf("Write project %s to CD", tedit->filename());
           set_title(string(title));
           g_free(title);
           break;
-                  case T_HD:
-							 set_title(string("Write project to Disk"));
-                             break;
-                }
-                break;
+        case T_HD:
+	  set_title(string("Write project to Disk"));
+          break;
+      }
+      break;
     case S_CD:
-                switch (target_) 
-                {
-                  case T_CD:
-							 set_title(string("Duplicate CD"));
-                             break;
-                  case T_HD:
-							 set_title(string("Dump CD to Disk"));
-                             break;
-                }
-                break;
+      switch (target_) 
+      {
+        case T_CD:
+	  set_title(string("Duplicate CD"));
+	  break;
+        case T_HD:
+	  set_title(string("Dump CD to Disk"));
+	  break;
+      }
+      break;
   }
 
   show();
 }
 
-void RecordGenericDialog::toc_to_cd(TocEdit *tocEdit)
+void RecordGenericDialog::toc_to_cd(TocEdit *tedit)
 {
-  start(tocEdit, S_TOC, T_CD);
+  start(tedit, S_TOC, T_CD);
 }
 
 void RecordGenericDialog::cd_to_cd()
@@ -299,15 +298,15 @@ void RecordGenericDialog::stop()
   target_ = T_NONE;
 }
 
-void RecordGenericDialog::update(unsigned long level)
+void RecordGenericDialog::update(unsigned long level, TocEdit *tedit)
 {
   if (!active_)
     return;
 
   switch (source_) 
   {
-	case S_TOC:
-                TOCSOURCE->update(level);
+    case S_TOC:
+                TOCSOURCE->update(level, tedit);
                 break;
     case S_CD:
                 CDSOURCE->update(level);
@@ -317,10 +316,10 @@ void RecordGenericDialog::update(unsigned long level)
   switch (target_) 
   {
     case T_CD:
-                CDTARGET->update(level, source_);
+                CDTARGET->update(level, tedit, source_);
                 break;
     case T_HD:
-                HDTARGET->update(level);
+                HDTARGET->update(level, tedit);
                 break;
   }
 }

@@ -24,7 +24,6 @@
 #include <gtk/gtk.h>
 
 class TocEdit;
-//class CdDevice;
 
 class RecordTocSource : public Gtk::VBox {
 public:
@@ -36,7 +35,7 @@ public:
   void start(TocEdit *);
   void stop();
 
-  void update(unsigned long level);
+  void update(unsigned long level, TocEdit *);
 
 private:
   TocEdit *tocEdit_;

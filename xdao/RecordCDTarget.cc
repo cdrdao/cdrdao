@@ -172,13 +172,12 @@ RecordCDTarget::~RecordCDTarget()
 }
 
 
-void RecordCDTarget::start(TocEdit *tocEdit, RecordGenericDialog::RecordSourceType source)
+void RecordCDTarget::start(TocEdit *tedit,
+			   RecordGenericDialog::RecordSourceType source)
 {
   active_ = 1;
   
-  tocEdit_ = tocEdit;
-
-  update(UPD_CD_DEVICES, source);
+  update(UPD_ALL, tedit, source);
 
   show();
 }
@@ -188,14 +187,19 @@ void RecordCDTarget::stop()
   if (active_) {
     hide();
     active_ = 0;
+    tocEdit_ = NULL;
   }
 }
 
-void RecordCDTarget::update(unsigned long level,
-		RecordGenericDialog::RecordSourceType source)
+void RecordCDTarget::update(unsigned long level, TocEdit *tedit,
+			    RecordGenericDialog::RecordSourceType source)
 {
   if (!active_)
     return;
+
+  if (tocEdit_ != tedit) {
+    tocEdit_ = tedit;
+  }
 
   if (level & UPD_CD_DEVICES)
     DEVICES->import();
@@ -214,7 +218,7 @@ void RecordCDTarget::cancelAction()
 }
 
 void RecordCDTarget::startAction(RecordGenericDialog::RecordSourceType source,
-	RecordTocSource *TOC, RecordCDSource *CD)
+				 RecordTocSource *TOC, RecordCDSource *CD)
 {
   int eject, simulate, speed, multiSession, reload, onthefly;
   int correction;
@@ -339,15 +343,15 @@ void RecordCDTarget::startAction(RecordGenericDialog::RecordSourceType source,
       if (data != NULL) {
         CdDevice *dev = CdDevice::find(data->bus, data->id, data->lun);
 
-      if (dev != NULL) {
-    	if (dev->recordDao(tocEdit_, simulate, multiSession, speed,
-			     eject, reload, buffer) != 0) {
+	if (dev != NULL) {
+	  if (dev->recordDao(tocEdit_, simulate, multiSession,
+			     speed, eject, reload, buffer) != 0) {
 	    message(-2, "Cannot start disk-at-once recording.");
-  	}
+	  }
 	  else {
 	    started = 1;
 	  }
-        }
+	}
       }
     }
   }

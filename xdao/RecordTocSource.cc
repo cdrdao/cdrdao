@@ -94,13 +94,11 @@ RecordTocSource::~RecordTocSource()
 {
 }
 
-void RecordTocSource::start(TocEdit *tocEdit)
+void RecordTocSource::start(TocEdit *tedit)
 {
   active_ = 1;
 
-  tocEdit_ = tocEdit;
-
-  update(UPD_ALL);
+  update(UPD_ALL, tedit);
 
   show();
 }
@@ -110,42 +108,42 @@ void RecordTocSource::stop()
   if (active_) {
     hide();
     active_ = 0;
+    tocEdit_ = NULL;
   }
 }
 
-void RecordTocSource::update(unsigned long level)
+void RecordTocSource::update(unsigned long level, TocEdit *tedit)
 {
-  char label[256];
-  char buf[50];
-  
   if (!active_)
     return;
 
-  projectLabel_->set(string(tocEdit_->filename()));
-
-//  can also use:
-  tocTypeLabel_->set(string(tocEdit_->toc()->tocType2String(tocEdit_->toc()->tocType())));
-/*
-  switch (tocEdit->toc()->tocType()) {
-  case Toc::CD_DA:
-    tocTypeLabel_->set(string("CD-DA"));
-    break;
-  case Toc::CD_ROM:
-    tocTypeLabel_->set(string("CD-ROM"));
-    break;
-  case Toc::CD_ROM_XA:
-    tocTypeLabel_->set(string("CD-ROM-XA"));
-    break;
-  case Toc::CD_I:
-    tocTypeLabel_->set(string("CD-I"));
-    break;
+  if (tocEdit_ != tedit) {
+    level = UPD_ALL;
+    tocEdit_ = tedit;
   }
-*/
-  sprintf(label, "%d", tocEdit_->toc()->nofTracks());
-  nofTracksLabel_->set(string(label));
 
-  sprintf(buf, "%d:%02d:%02d", tocEdit_->toc()->length().min(),
-	  tocEdit_->toc()->length().sec(), tocEdit_->toc()->length().frac());
-  tocLengthLabel_->set(string(buf));
+  if (tocEdit_ == NULL) {
+    projectLabel_->set(string(""));
+    tocTypeLabel_->set(string(""));
+    nofTracksLabel_->set(string(""));
+    tocLengthLabel_->set(string(""));
+  }
+  else {
+    if (level & UPD_TOC_DATA) {
+      char label[256];
+      char buf[50];
+      const Toc *toc = tocEdit_->toc();
 
+      projectLabel_->set(string(tocEdit_->filename()));
+
+      tocTypeLabel_->set(string(toc->tocType2String(toc->tocType())));
+
+      sprintf(label, "%d", toc->nofTracks());
+      nofTracksLabel_->set(string(label));
+      
+      sprintf(buf, "%d:%02d:%02d", toc->length().min(),
+	      toc->length().sec(), toc->length().frac());
+      tocLengthLabel_->set(string(buf));
+    }
+  }
 }

@@ -30,7 +30,6 @@
 
 #include "CdDevice.h"
 #include "guiUpdate.h"
-#include "TocEdit.h"
 
 #include "util.h"
 
@@ -50,14 +49,13 @@ RecordCDSource::RecordCDSource()
 {
   int i;
   Gtk::HBox *hbox;
-  Gtk::VBox *vbox;
+  //Gtk::VBox *vbox;
   Gtk::Table *table;
   Gtk::Table *table2;
   Gtk::Label *label;
   Gtk::Adjustment *adjustment;
 
   active_ = 0;
-  tocEdit_ = NULL;
 
   speed_ = 1;
 
@@ -157,7 +155,7 @@ RecordCDSource::~RecordCDSource()
 }
 
 
-void RecordCDSource::start(TocEdit *tocEdit)
+void RecordCDSource::start()
 {
   if (active_) {
     get_window().raise();

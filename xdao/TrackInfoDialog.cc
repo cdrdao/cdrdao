@@ -19,6 +19,8 @@
 
 #include "TrackInfoDialog.h"
 
+#include <gnome--.h>
+
 #include <stdio.h>
 #include <stddef.h>
 #include <string.h>
@@ -279,12 +281,12 @@ TrackInfoDialog::TrackInfoDialog()
 
   Gtk::HButtonBox *bbox = new Gtk::HButtonBox(GTK_BUTTONBOX_SPREAD);
 
-  applyButton_ = new Gtk::Button(string(" Apply "));
+  applyButton_ = new Gnome::StockButton(GNOME_STOCK_BUTTON_APPLY);
   bbox->pack_start(*applyButton_);
   applyButton_->show();
   applyButton_->clicked.connect(slot(this, &TrackInfoDialog::applyAction));
 
-  button = new Gtk::Button(string(" Close "));
+  button = new Gnome::StockButton(GNOME_STOCK_BUTTON_CLOSE);
   bbox->pack_start(*button);
   button->show();
   button->clicked.connect(slot(this, &TrackInfoDialog::closeAction));
