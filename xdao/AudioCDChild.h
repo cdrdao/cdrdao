@@ -41,28 +41,20 @@ class AudioCDChild : public GenericChild
 {
 public:
   AudioCDChild(AudioCDProject *project);
+  AudioCDView *newView();
+  bool closeProject();
+  void update(unsigned long level);
+  void record_to_cd();
 
-private:
-  friend class AudioCDView;
-  AudioCDProject *project_;
-
-  TocReader tocReader;
-
-  SoundIF *soundInterface_;
-  unsigned long playLength_; // remaining play length
-  unsigned long playBurst_;
-  unsigned long playPosition_;
-  Sample *playBuffer_;
-  int playing_;
-  int playAbort_;
-
-  void play(unsigned long start, unsigned long end);
-  int playCallback();
-
-  list<AudioCDView *> views;
+  Gtk::Toolbar *getZoomToolbar();
 
   const char *sample2string(unsigned long sample);
   unsigned long string2sample(const char *s);
+
+private:
+  AudioCDProject *project_;
+
+  list<AudioCDView *> views;
 
   void readTocCallback(int);
   void saveAsTocCallback(int);
@@ -70,13 +62,5 @@ private:
   void tocBlockedMsg(const char *);
 
   Gtk::Toolbar *zoomToolbar;
-
-public:
-
-  void update(unsigned long level);
-  bool closeProject();
-  void record_to_cd();
-  AudioCDView *newView();
-  Gtk::Toolbar *getZoomToolbar();
 };
 #endif

@@ -27,7 +27,6 @@
 #include "xcdrdao.h"
 #include "guiUpdate.h"
 #include "MessageBox.h"
-#include "AudioCDProject.h"
 #include "AudioCDChild.h"
 #include "AudioCDView.h"
 #include "SoundIF.h"
@@ -36,6 +35,7 @@
 #include "TocEdit.h"
 #include "TocEditView.h"
 #include "util.h"
+#include "AudioCDProject.h"
 #include "MDIWindow.h"
 #include "RecordGenericDialog.h"
 
@@ -45,12 +45,6 @@ AudioCDChild::AudioCDChild(AudioCDProject *project)
 {
   project_ = project;
   tocEdit_ = project->tocEdit();
-
-  playing_ = 0;
-  playBurst_ = 588 * 10;
-  soundInterface_ = new SoundIF;
-  playBuffer_ = new Sample[playBurst_];
-  soundInterface_ = NULL;
 
   // Menu Stuff
   {
@@ -82,122 +76,6 @@ Gtk::Toolbar *AudioCDChild::getZoomToolbar()
 	return zoomToolbar;
 }
 
-void AudioCDChild::play(unsigned long start, unsigned long end)
-{
-  if (playing_) {
-    playAbort_ = 1;
-    return;
-  }
-
-  if (tocEdit_->lengthSample() == 0)
-    return;
-
-  if (soundInterface_ == NULL) {
-    soundInterface_ = new SoundIF;
-    if (soundInterface_->init() != 0) {
-      delete soundInterface_;
-      soundInterface_ = NULL;
-      return;
-    }
-  }
-
-  if (soundInterface_->start() != 0)
-    return;
-
-  tocReader.init(tocEdit_->toc());
-  if (tocReader.openData() != 0) {
-    tocReader.init(NULL);
-    soundInterface_->end();
-    return;
-    }
-
-  if (tocReader.seekSample(start) != 0) {
-    tocReader.init(NULL);
-    soundInterface_->end();
-    return;
-  }
-
-  playLength_ = end - start + 1;
-  playPosition_ = start;
-  playing_ = 1;
-  playAbort_ = 0;
-
-// FIXME: Need this one?:
-//  tocEdit_->updateLevel_ |= UPD_CURSOR_POS;
-
-//FIXME: use FLAG
-  for (list<AudioCDView *>::iterator i = views.begin();
-       i != views.end(); i++)
-  {
-    (*i)->playLabel_->set_text("Stop");
-  }
-
-//FIXME: Selection / Zooming does not depend
-//       on the Child, but the View.
-//       we should have different blocks!
-  tocEdit_->blockEdit();
-
-  guiUpdate();
-
-  Gtk::Main::idle.connect(slot(this, &AudioCDChild::playCallback));
-}
-
-int AudioCDChild::playCallback()
-{
-  long len = playLength_ > playBurst_ ? playBurst_ : playLength_;
-
-
-  if (tocReader.readSamples(playBuffer_, len) != len ||
-      soundInterface_->play(playBuffer_, len) != 0) {
-    soundInterface_->end();
-    tocReader.init(NULL);
-    playing_ = 0;
-//FIXME: use FLAG
-    for (list<AudioCDView *>::iterator i = views.begin();
-         i != views.end(); i++)
-    {
-      (*i)->playLabel_->set_text("Play");
-    }
-    tocEdit_->unblockEdit();
-    guiUpdate();
-    return 0; // remove idle handler
-  }
-
-  playLength_ -= len;
-  playPosition_ += len;
-
-  unsigned long delay = soundInterface_->getDelay();
-
-  if (delay <= playPosition_) {
-//FIXME: use FLAG
-    for (list<AudioCDView *>::iterator i = views.begin();
-         i != views.end(); i++)
-    {
-      (*i)->sampleDisplay_->setCursor(1, playPosition_ - delay);
-      (*i)->cursorPos_->set_text(string(sample2string(playPosition_ - delay)));
-    }
-  }
-
-  if (len == 0 || playAbort_ != 0) {
-    soundInterface_->end();
-    tocReader.init(NULL);
-    playing_ = 0;
-//FIXME: use FLAG
-    for (list<AudioCDView *>::iterator i = views.begin();
-         i != views.end(); i++)
-    {
-      (*i)->sampleDisplay_->setCursor(0, 0);
-      (*i)->playLabel_->set_text("Play");
-    }
-
-    tocEdit_->unblockEdit();
-    guiUpdate();
-    return 0; // remove idle handler
-  }
-  else {
-    return 1; // keep idle handler
-  }
-}
 
 void AudioCDChild::record_to_cd()
 {
