@@ -50,6 +50,28 @@ cout << "Number of projects = " << projects.size() << endl;
 cout << "Number of choosers = " << choosers.size() << endl;
 }
 
+void GCDMaster::openNewProject(const char* s)
+{
+  TocEdit *tocEdit = new TocEdit(NULL, NULL);
+
+  if (s != NULL && *s != 0 && s[strlen(s) - 1] != '/')
+  {
+    if (tocEdit->readToc(stripCwd(s)) == 0)
+    {
+//FIXME: We should test what type of project it is
+//       AudioCD, ISO. No problem now.
+      cout << "Read ok" << endl;
+	 newAudioCDProject(stripCwd(s), tocEdit, NULL);
+    }
+    else
+    {
+      string message("Error loading ");
+      message += s;
+      Gnome::Dialogs::error(message); 
+    }
+  }
+}
+
 void GCDMaster::openProject(ProjectChooser *projectChooser)
 {
   if (readFileSelector_)

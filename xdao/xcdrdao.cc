@@ -157,13 +157,10 @@ int main (int argc, char* argv[])
     gcdmaster->newChooserWindow();
   else while (argc > 1)
   {
-    gcdmaster->newAudioCDProject(argv[1], NULL, NULL);
+    gcdmaster->openNewProject(argv[1]);
     argv++;
     argc--;
   }
-
-//FIXME: need to update here?
-  guiUpdate();
 
   application.run();
 

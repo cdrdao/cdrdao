@@ -54,6 +54,7 @@ public:
   void appClose(Project *);
   void closeProject(Project *);
   void closeChooser(ProjectChooser *);
+  void openNewProject(const char*);
   void openProject(ProjectChooser *);
   void newChooserWindow();
 //FIXME: join this two: ?

@@ -25,6 +25,7 @@
 #include "TocInfoDialog.h"
 #include "CdTextDialog.h"
 #include "guiUpdate.h"
+#include "util.h"
 
 AudioCDProject::AudioCDProject(int number, const char *name, TocEdit *tocEdit)
 {
@@ -47,7 +48,7 @@ AudioCDProject::AudioCDProject(int number, const char *name, TocEdit *tocEdit)
   }
   else
     new_ = false; // The project file already exists
-
+  
   updateWindowTitle();
 
   createMenus();
