@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_REVISION($Revision: 1.37 $)dnl
+AC_REVISION($Revision: 1.38 $)dnl
 
 AC_INIT(cdrdao, 1.1.9pre1)
 
@@ -206,7 +206,8 @@ en_toc2cue=yes
 en_cue2toc=yes
 en_toc2mp3=no
 
-AC_PATH_LAME(3.92, [utiltools="$utiltools toc2mp3" en_toc2mp3=yes])
+AC_PATH_LAME(3.92, [utiltools="$utiltools toc2mp3" en_toc2mp3=yes],
+        [echo "Building of toc2mp3 disabled"])
 
 dnl Determine whether we're building the gcdaster GUI front-end
 en_xdao=no
@@ -215,8 +216,10 @@ if test "$xdao" = default; then
 fi
 if test "$xdao" = yes; then
   en_xdao=yes
-  PKG_CHECK_MODULES(GTKMM2, gtkmm-2.0 >= 2.2,[],[en_xdao=no])
-  PKG_CHECK_MODULES(LIBGUIMM2, libgnomeuimm-2.0 >= 2.0,[],[en_xdao=no])
+  PKG_CHECK_MODULES(GTKMM2, gtkmm-2.0 >= 2.2,[],
+        [echo "Building of gcdmaster disabled"; en_xdao=no])
+  PKG_CHECK_MODULES(LIBGUIMM2, libgnomeuimm-2.0 >= 2.0,[],
+        [echo "Building of gcdmaster disabled"; en_xdao=no])
 fi
 
 dnl Determine source for scsi interface class
