@@ -61,7 +61,7 @@ installdirs:
 #	$(srcdir)/../mkinstalldirs $(CDRDAO_DATA_DIR)
 
 clean:
-	rm -f *.o toc2cue toc2mp3
+	rm -f *.o toc2cue toc2mp3 toc2cddb
 
 distclean: clean
 	rm -f Makefile
@@ -74,7 +74,9 @@ toc2cue: toc2cue.o $(srcdir)/../trackdb/libtrackdb.a
 
 toc2mp3: toc2mp3.o $(srcdir)/../trackdb/libtrackdb.a
 	$(CXX) $(ALL_LDFLAGS) -o toc2mp3 toc2mp3.o @LAME_LIBS@ -L$(srcdir)/../trackdb -ltrackdb $(LIBS)
-
+	
+toc2cddb: toc2cddb.o $(srcdir)/../trackdb/libtrackdb.a
+	$(CXX) $(ALL_LDFLAGS) -o toc2cddb toc2cddb.o -L$(srcdir)/../trackdb -ltrackdb $(LIBS)
 #
 #
 #
