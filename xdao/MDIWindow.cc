@@ -262,9 +262,24 @@ MDIWindow::install_menus_and_toolbar()
   Gnome::UIInfoTree *toolbarTree = new Gnome::UIInfoTree();
 
   toolbarTree->push_item(Gnome::UIItem(N_("New"),
-                                       N_("Create a new compilation"),
+	                                  N_("Create a new project"),
                                        GNOME_STOCK_PIXMAP_NEW,
-                                       slot(this, &MDIWindow::nothing_cb)));
+			    				slot(this, &MDIWindow::newProject)));
+
+  toolbarTree->push_item(Gnome::UIItem(N_("Load"),
+							    N_("Load a project"),
+							    GNOME_STOCK_PIXMAP_OPEN,
+							    slot(this, &MDIWindow::readProject)));
+
+  toolbarTree->push_item(Gnome::UIItem(N_("Save"),
+							    N_("Save current project"),
+							    GNOME_STOCK_PIXMAP_SAVE,
+			  				  slot(this, &MDIWindow::saveProject)));
+
+//  toolbarTree->push_item(Gnome::UIItem(N_("Save as"),
+//							    N_("Save project with a different name"),
+//							    GNOME_STOCK_PIXMAP_SAVEAS,
+//							    slot(this, &MDIWindow::saveAsProject)));
 
   toolbarTree->push_item(Gnome::UISeparator());
 
@@ -387,13 +402,6 @@ void MDIWindow::tocBlockedMsg(const char *op)
 }
 
 
-void
-nada_cb(GtkWidget *widget, gpointer data)
-{
-  g_print("%s", "asdfsfdasadf");
-  cout << "nothing here" << endl;
-}
-
 /*
 GtkWidget *
 example_creator(GnomeMDIChild *child, gpointer data)
@@ -467,7 +475,7 @@ void MDIWindow::newProject()
   
   tocEdit_->toc(toc, "unnamed.toc");
 
-  guiUpdate();
+	  guiUpdate();
 }
 
 void MDIWindow::readProject()

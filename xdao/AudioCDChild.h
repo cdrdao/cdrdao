@@ -69,7 +69,8 @@ private:
   Gtk::RadioButton *zoomButton_;
   Gtk::RadioButton *selectButton_;
   Gtk::Button *playButton_;
-  
+  Gtk::Label *playLabel_;
+    
   Gtk::Entry *markerPos_;
   Gtk::Entry *cursorPos_;
   Gtk::Entry *selectionStartPos_;

@@ -118,8 +118,11 @@ AudioCDChild::BuildChild()
   selectButton_ = new Gtk::RadioButton(string("Select"));
   selectButton_->set_group(zoomButton_->group());
 
-  playButton_ = new Gtk::Button(string("Play"));
-
+  playButton_ = new Gtk::Button();
+  playLabel_ = new Gtk::Label("Play");
+  playButton_->add (* playLabel_);
+  playLabel_->show();
+  
   buttonBox->pack_start(*zoomButton_);
   zoomButton_->show();
   buttonBox->pack_start(*selectButton_);
@@ -225,6 +228,7 @@ void AudioCDChild::play()
   playPosition_ = start;
   playing_ = 1;
   playAbort_ = 0;
+  playLabel_->set_text("Stop");
 
   tocEdit_->blockEdit();
 
@@ -243,6 +247,7 @@ int AudioCDChild::playCallback()
     soundInterface_->end();
     tocReader.init(NULL);
     playing_ = 0;
+    playLabel_->set_text("Play");
     sampleDisplay_->setCursor(0, 0);
     tocEdit_->unblockEdit();
     guiUpdate();
@@ -263,6 +268,7 @@ int AudioCDChild::playCallback()
     soundInterface_->end();
     tocReader.init(NULL);
     playing_ = 0;
+    playLabel_->set_text("Play");
     sampleDisplay_->setCursor(0, 0);
     tocEdit_->unblockEdit();
     guiUpdate();
