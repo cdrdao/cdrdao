@@ -82,8 +82,14 @@ cdrdao_DEPENDENCIES = \
 	$(top_builddir)/trackdb/libtrackdb.a		\
 	libdao.a
 
+drivertabledir = $(datadir)/cdrdao
+drivertable_DATA = cdrdao.drivers
+
 CDRDAO_DATA_DIR = $(datadir)/cdrdao
 DRIVER_TABLE_FILE = $(CDRDAO_DATA_DIR)/drivers
+
+install-data-hook:
+	mv $(CDRDAO_DATA_DIR)/cdrdao.drivers $(DRIVER_TABLE_FILE)
 
 INCLUDES =						\
 	-I$(srcdir)/../trackdb				\
@@ -93,4 +99,5 @@ INCLUDES =						\
 AM_CXXFLAGS = -DDRIVER_TABLE_FILE=\"$(DRIVER_TABLE_FILE)\"
 
 man1_MANS = cdrdao.man
-EXTRA_DIST = $(man1_MANS)
+EXTRA_DIST = $(man1_MANS) cdrdao.drivers
+
