@@ -4156,6 +4156,7 @@ void CdrDriver::paranoiaMode(int mode)
     break;
 
   case 1:
+    paranoiaMode_ |= PARANOIA_MODE_OVERLAP;
     paranoiaMode_ &= ~PARANOIA_MODE_VERIFY;
     break;
 
