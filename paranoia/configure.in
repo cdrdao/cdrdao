@@ -51,7 +51,7 @@ esac
 AC_CHECK_TYPE(int16_t,,AC_DEFINE_UNQUOTED(int16_t,$SIZE16))
 AC_CHECK_TYPE(int32_t,,AC_DEFINE_UNQUOTED(int32_t,$SIZE32))
 AC_CHECK_TYPE(u_int16_t,,AC_DEFINE_UNQUOTED(u_int16_t,$SIZE16))
-AC_CHECK_TYPE(u_int32_t,,AC_DEFINE_UNQUOTED(u_int32,$SIZE32))
+AC_CHECK_TYPE(u_int32_t,,AC_DEFINE_UNQUOTED(u_int32_t,$SIZE32))
 
 if test -z "$SIZE16"; then
 	AC_MSG_ERROR([No 16 bit type found on this platform!])
