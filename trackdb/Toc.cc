@@ -187,7 +187,8 @@ bool Toc::write(int fd) const
     std::ostringstream oss(std::ostringstream::out);
     print(oss);
 
-    const char* content = oss.str().c_str();
+    std::string ossstr = oss.str();
+    const char* content = ossstr.c_str();
     int written = ::write(fd, content, strlen(content));
 
     return (written >= 0);
