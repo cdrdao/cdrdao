@@ -70,11 +70,13 @@ EXTRA_libdao_a_SOURCES = 	\
 	ScsiIf-nt.cc		\
 	ScsiIf-win.cc
 
+libdao_a_LIBADD =		\
+	@scsilib_objs@
+
 cdrdao_LDADD =						\
 	-L. -ldao					\
 	-L$(top_builddir)/paranoia -lcdda_paranoia	\
 	-L$(top_builddir)/trackdb -ltrackdb		\
-	@scsilib_objs@                                  \
 	@thread_libs@					\
 	@scsilib_libs@
 
