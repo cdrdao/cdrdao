@@ -18,8 +18,12 @@
  */
 /*
  * $Log: PlextorReaderScan.h,v $
- * Revision 1.1  2000/02/05 01:35:11  llanero
- * Initial revision
+ * Revision 1.2  2000/10/08 16:39:40  andreasm
+ * Remote progress message now always contain the track relative and total
+ * progress and the total number of processed tracks.
+ *
+ * Revision 1.1.1.1  2000/02/05 01:35:11  llanero
+ * Uploaded cdrdao 1.1.3 with pre10 patch applied.
  *
  * Revision 1.4  1999/04/05 18:49:22  mueller
  * Added driver options.
@@ -67,8 +71,8 @@ protected:
 
   int readSubChannels(long lba, long len, SubChannel ***, Sample *);
 
-  int readAudioRange(int fd, long start, long end, int startTrack,
-		     int endTrack, TrackInfo *);
+  int readAudioRange(ReadDiskInfo *, int fd, long start, long end,
+		     int startTrack, int endTrack, TrackInfo *);
 
 };
 

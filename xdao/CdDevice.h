@@ -18,6 +18,10 @@
  */
 /*
  * $Log: CdDevice.h,v $
+ * Revision 1.10  2000/10/08 16:39:41  andreasm
+ * Remote progress message now always contain the track relative and total
+ * progress and the total number of processed tracks.
+ *
  * Revision 1.9  2000/08/01 01:27:50  llanero
  * CD to CD copy works now.
  *
@@ -131,10 +135,12 @@ public:
   void abortDaoDuplication();
     
   int progressStatusChanged();
-  void recordProgress(int *status, int *track, int *totalProgress,
+  void recordProgress(int *status, int *totalTracks, int *track,
+		      int *trackProgress, int *totalProgress,
 		      int *bufferFill) const;
   
-  void readProgress(int *status, int *track, int *trackProgress) const;
+  void readProgress(int *status, int *totalTracks, int *track,
+		    int *trackProgress, int *totalProgress) const;
 
   static int maxDriverId();
   static const char *driverName(int id);
@@ -198,6 +204,7 @@ private:
 
   int progressStatusChanged_;
   int progressStatus_;
+  int progressTotalTracks_;
   int progressTrack_;
   int progressTotal_;
   int progressTrackRelative_;

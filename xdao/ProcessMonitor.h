@@ -18,8 +18,12 @@
  */
 /*
  * $Log: ProcessMonitor.h,v $
- * Revision 1.1  2000/02/05 01:38:46  llanero
- * Initial revision
+ * Revision 1.2  2000/10/08 16:39:41  andreasm
+ * Remote progress message now always contain the track relative and total
+ * progress and the total number of processed tracks.
+ *
+ * Revision 1.1.1.1  2000/02/05 01:38:46  llanero
+ * Uploaded cdrdao 1.1.3 with pre10 patch applied.
  *
  */
 
@@ -56,7 +60,7 @@ public:
 
   int statusChanged();
 
-  Process *start(const char *, char *const args[]);
+  Process *start(const char *, char *args[], int pipeFdArgNum);
   void stop(Process *);
 
   void remove(Process *);

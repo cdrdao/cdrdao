@@ -18,6 +18,10 @@
  */
 /*
  * $Log: CdDevice.cc,v $
+ * Revision 1.10  2000/10/08 16:39:41  andreasm
+ * Remote progress message now always contain the track relative and total
+ * progress and the total number of processed tracks.
+ *
  * Revision 1.9  2000/08/01 01:27:50  llanero
  * CD to CD copy works now.
  *
@@ -59,7 +63,7 @@
  *
  */
 
-static char rcsid[] = "$Id: CdDevice.cc,v 1.9 2000/08/01 01:27:50 llanero Exp $";
+static char rcsid[] = "$Id: CdDevice.cc,v 1.10 2000/10/08 16:39:41 andreasm Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -133,8 +137,10 @@ CdDevice::CdDevice(int bus, int id, int lun, const char *vendor,
 
   progressStatusChanged_ = 0;
   progressStatus_ = 0;
+  progressTotalTracks_ = 0;
   progressTrack_ = 0;
   progressTotal_ = 0;
+  progressTrackRelative_ = 0;
   progressBufferFill_ = 0;
 
   process_ = NULL;
@@ -440,7 +446,9 @@ void CdDevice::updateProgress(int fd, GdkInputCondition cond)
 	    msg.totalProgress >= 0 && msg.totalProgress <= 1000 &&
 	    msg.bufferFillRate >= 0 && msg.bufferFillRate <= 100) {
 	  progressStatus_ = msg.status;
+	  progressTotalTracks_ = msg.totalTracks;
 	  progressTrack_ = msg.track;
+	  progressTrackRelative_ = msg.trackProgress;
 	  progressTotal_ = msg.totalProgress;
 	  progressBufferFill_ = msg.bufferFillRate;
 
@@ -463,9 +471,11 @@ void CdDevice::updateProgress(int fd, GdkInputCondition cond)
 	    msg.track >= 0 && msg.track <= 99 &&
 	    msg.trackProgress >= 0 && msg.trackProgress <= 1000) {
 	  progressStatus_ = msg.status;
+	  progressTotalTracks_ = msg.totalTracks;
 	  progressTrack_ = msg.track;
+	  progressTotal_ = msg.totalProgress;
 	  progressTrackRelative_ = msg.trackProgress;
-
+	  
 	  progressStatusChanged_ = 1;
 	}
       }
@@ -516,6 +526,7 @@ int CdDevice::recordDao(TocEdit *tocEdit, int simulate, int multiSession,
   char *execName;
   const char *s;
   char bufferbuf[20];
+  int remoteFdArgNum = 0;
 
   if (status_ != DEV_READY || process_ != NULL)
     return 1;
@@ -544,6 +555,9 @@ int CdDevice::recordDao(TocEdit *tocEdit, int simulate, int multiSession,
     args[n++] = "write";
 
   args[n++] = "--remote";
+
+  remoteFdArgNum = n;
+  args[n++] = NULL;
 
   args[n++] = "-v0";
 
@@ -590,13 +604,6 @@ int CdDevice::recordDao(TocEdit *tocEdit, int simulate, int multiSession,
   
   assert(n <= 20);
   
-  int i;
-
-  message(0, "Starting: ");
-  for (i = 0; i < n - 1; i++)
-    message(0, "%s ", args[i]);
-  message(0, "");
-
   RECORD_PROGRESS_POOL->start(this, tocEdit);
 
   // Remove the SCSI interface of this device to avoid problems with double
@@ -604,7 +611,7 @@ int CdDevice::recordDao(TocEdit *tocEdit, int simulate, int multiSession,
   delete scsiIf_;
   scsiIf_ = NULL;
 
-  process_ = PROCESS_MONITOR->start(execName, args);
+  process_ = PROCESS_MONITOR->start(execName, args, remoteFdArgNum);
 
   delete[] execName;
 
@@ -646,11 +653,14 @@ int CdDevice::progressStatusChanged()
   return 0;
 }
 
-void CdDevice::recordProgress(int *status, int *track, int *totalProgress,
-		      int *bufferFill) const
+void CdDevice::recordProgress(int *status, int *totalTracks, int *track,
+			      int *trackProgress, int *totalProgress,
+			      int *bufferFill) const
 {
   *status = progressStatus_;
+  *totalTracks = progressTotalTracks_;
   *track = progressTrack_;
+  *trackProgress = progressTrackRelative_;
   *totalProgress = progressTotal_;
   *bufferFill = progressBufferFill_;
 }
@@ -668,6 +678,7 @@ int CdDevice::extractDao(char *tocFileName, int correction)
   char *execName;
   const char *s; 
   char correctionbuf[20];
+  int remoteFdArgNum = 0;
 
   if (status_ != DEV_READY || process_ != NULL)
     return 1;
@@ -683,6 +694,9 @@ int CdDevice::extractDao(char *tocFileName, int correction)
   args[n++] = "read-cd";
 
   args[n++] = "--remote";
+
+  remoteFdArgNum = n;
+  args[n++] = NULL;
 
   args[n++] = "-v0";
 
@@ -717,13 +731,6 @@ int CdDevice::extractDao(char *tocFileName, int correction)
   
   assert(n <= 20);
   
-  int i;
-
-  message(0, "Starting: ");
-  for (i = 0; i < n - 1; i++)
-    message(0, "%s ", args[i]);
-  message(0, "");
-
   RECORD_PROGRESS_POOL->start(this, tocFileName);
 
   // Remove the SCSI interface of this device to avoid problems with double
@@ -731,7 +738,7 @@ int CdDevice::extractDao(char *tocFileName, int correction)
   delete scsiIf_;
   scsiIf_ = NULL;
 
-  process_ = PROCESS_MONITOR->start(execName, args);
+  process_ = PROCESS_MONITOR->start(execName, args, remoteFdArgNum);
 
   delete[] execName;
 
@@ -760,11 +767,14 @@ void CdDevice::abortDaoReading()
   }
 }
 
-void CdDevice::readProgress(int *status, int *track, int *trackProgress) const
+void CdDevice::readProgress(int *status, int *totalTracks, int *track,
+			    int *trackProgress, int *totalProgress) const
 {
   *status = progressStatus_;
+  *totalTracks = progressTotalTracks_;
   *track = progressTrack_;
   *trackProgress = progressTrackRelative_;
+  *totalProgress = progressTotal_;
 }
 
 // Starts a 'cdrdao' for duplicating a CD.
@@ -785,7 +795,7 @@ int CdDevice::duplicateDao(int simulate, int multiSession, int speed,
   char *execName;
   const char *s;
   char bufferbuf[20];
-
+  int remoteFdArgNum = 0;
 
 
   if (readdev->status() != DEV_READY || readdev->process() != NULL)
@@ -807,6 +817,9 @@ int CdDevice::duplicateDao(int simulate, int multiSession, int speed,
     args[n++] = "--simulate";
 
   args[n++] = "--remote";
+
+  remoteFdArgNum = n;
+  args[n++] = NULL;
 
   args[n++] = "-v0";
 
@@ -876,14 +889,6 @@ int CdDevice::duplicateDao(int simulate, int multiSession, int speed,
   
   assert(n <= 25);
   
-  int i;
-
-  message(0, "Starting: ");
-  for (i = 0; i < n - 1; i++)
-    message(0, "%s ", args[i]);
-  message(0, "");
-
-
   RECORD_PROGRESS_POOL->start(this, "CD to CD copy");
 
   // Remove the SCSI interface of this device to avoid problems with double
@@ -891,7 +896,7 @@ int CdDevice::duplicateDao(int simulate, int multiSession, int speed,
   delete scsiIf_;
   scsiIf_ = NULL;
 
-  process_ = PROCESS_MONITOR->start(execName, args);
+  process_ = PROCESS_MONITOR->start(execName, args, remoteFdArgNum);
 
   delete[] execName;
 

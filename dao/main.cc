@@ -19,6 +19,10 @@
 
 /*
  * $Log: main.cc,v $
+ * Revision 1.11  2000/10/08 16:39:41  andreasm
+ * Remote progress message now always contain the track relative and total
+ * progress and the total number of processed tracks.
+ *
  * Revision 1.10  2000/08/20 19:12:41  andreasm
  * Added info about driver table download.
  *
@@ -139,7 +143,7 @@
  *
  */
 
-static char rcsid[] = "$Id: main.cc,v 1.10 2000/08/20 19:12:41 andreasm Exp $";
+static char rcsid[] = "$Id: main.cc,v 1.11 2000/10/08 16:39:41 andreasm Exp $";
 
 #include <config.h>
 
@@ -189,6 +193,7 @@ static int FAST_TOC = 0; // toc reading without sub-channel analysis
 static int PAUSE = 1; // pause before writing
 static int READ_RAW = 0; // read raw sectors
 static int REMOTE_MODE = 0;
+static int REMOTE_FD = -1;
 static int RELOAD = 0;
 static int FORCE = 0;
 static int PARANOIA_MODE = 3;
@@ -276,7 +281,8 @@ static void printVersion()
   message(1, "  L-EC encoding library - (C) Heiko Eissfeldt");
   message(1, "  Paranoia DAE library - (C) Monty");
   message(1, "");
-  message(1, "Check http://cdrdao.sourceforge.net/drives.html#dt for actual driver tables.");
+  message(1, "Check http://cdrdao.sourceforge.net/drives.html#dt for current driver tables.");
+  message(1, "");
 }
 
 static void printUsage()
@@ -618,6 +624,21 @@ static int parseCmdline(int argc, char **argv)
 	  argc--, argv++;
 	}
       }
+      else if (strcmp((*argv) + 2, "remote") == 0) {
+	if (argc < 2) {
+	  message(-2, "Missing argument after: %s", *argv);
+	  return 1;
+	}
+	else {
+	  REMOTE_FD = atol(argv[1]);
+	  if (REMOTE_FD < 0) {
+	    message(-2, "Invalid remote message file descriptor: %s", argv[1]);
+	    return 1;
+	  }
+	  REMOTE_MODE = 1;
+	  argc--, argv++;
+	}
+      }
       else if (strcmp((*argv) + 2, "eject") == 0) {
 	EJECT = 1;
       }
@@ -635,9 +656,6 @@ static int parseCmdline(int argc, char **argv)
       }
       else if (strcmp((*argv) + 2, "read-raw") == 0) {
 	READ_RAW = 1;
-      }
-      else if (strcmp((*argv) + 2, "remote") == 0) {
-	REMOTE_MODE = 1;
       }
       else if (strcmp((*argv) + 2, "reload") == 0) {
 	RELOAD = 1;
@@ -1349,7 +1367,7 @@ static int checkToc(const Toc *toc)
 
 static int copyCd(CdrDriver *src, CdrDriver *dst, int session,
 		  const char *dataFilename, int fifoBuffers, int swap,
-		  int remoteMode, int eject, int force, int keepimage)
+		  int eject, int force, int keepimage)
 {
   char dataFilenameBuf[50];
   long pid = getpid();
@@ -1453,7 +1471,7 @@ static int copyCd(CdrDriver *src, CdrDriver *dst, int session,
     return 1;
   }
 
-  if (writeDiskAtOnce(toc, dst, fifoBuffers, swap, 0, remoteMode) != 0) {
+  if (writeDiskAtOnce(toc, dst, fifoBuffers, swap, 0) != 0) {
     if (dst->simulate())
       message(-2, "Simulation failed.");
     else
@@ -1490,7 +1508,7 @@ static int copyCd(CdrDriver *src, CdrDriver *dst, int session,
 
 static int copyCdOnTheFly(CdrDriver *src, CdrDriver *dst, int session,
 			  int fifoBuffers, int swap,
-			  int remoteMode, int eject, int force)
+			  int eject, int force)
 {
   Toc *toc = NULL;
   int pipeFds[2];
@@ -1598,7 +1616,7 @@ static int copyCdOnTheFly(CdrDriver *src, CdrDriver *dst, int session,
     goto fail;
   }
 
-  if (writeDiskAtOnce(toc, dst, fifoBuffers, swap, 0, remoteMode) != 0) {
+  if (writeDiskAtOnce(toc, dst, fifoBuffers, swap, 0) != 0) {
     if (dst->simulate())
       message(-2, "Simulation failed.");
     else
@@ -1804,7 +1822,7 @@ int main(int argc, char **argv)
   case READ_TEST:
     message(1, "Starting read test...");
     message(1, "Process can be aborted with QUIT signal (usually CTRL-\\).");
-    if (writeDiskAtOnce(toc, NULL, FIFO_BUFFERS, SWAP, 1, 0) != 0) {
+    if (writeDiskAtOnce(toc, NULL, FIFO_BUFFERS, SWAP, 1) != 0) {
       message(-2, "Read test failed.");
       exitCode = 1; goto fail;
     }
@@ -1877,7 +1895,7 @@ int main(int argc, char **argv)
 
     cdr->paranoiaMode(PARANOIA_MODE);
     cdr->fastTocReading(FAST_TOC);
-    cdr->remote(REMOTE_MODE);
+    cdr->remote(REMOTE_MODE, REMOTE_FD);
     cdr->force(FORCE);
 
     toc = cdr->readDisk(SESSION,
@@ -1941,6 +1959,7 @@ int main(int argc, char **argv)
     }
 
     cdr->force(FORCE);
+    cdr->remote(REMOTE_MODE, REMOTE_FD);
 
     switch (cdr->checkToc(toc)) {
     case 0: // OK
@@ -1978,7 +1997,7 @@ int main(int argc, char **argv)
       exitCode = 1; goto fail;
     }
 
-    if (writeDiskAtOnce(toc, cdr, FIFO_BUFFERS, SWAP, 0, REMOTE_MODE) != 0) {
+    if (writeDiskAtOnce(toc, cdr, FIFO_BUFFERS, SWAP, 0) != 0) {
       if (cdr->simulate()) {
 	message(-2, "Simulation failed.");
       }
@@ -2025,6 +2044,7 @@ int main(int argc, char **argv)
     
     cdr->simulate(WRITE_SIMULATE);
     cdr->force(FORCE);
+    cdr->remote(REMOTE_MODE, REMOTE_FD);
     
     if (MULTI_SESSION != 0) {
       if (cdr->multiSession(1) != 0) {
@@ -2070,7 +2090,7 @@ int main(int argc, char **argv)
       }
 
       if (copyCdOnTheFly(srcCdr, cdr, SESSION, FIFO_BUFFERS, SWAP,
-			 REMOTE_MODE, EJECT, FORCE) == 0) {
+			 EJECT, FORCE) == 0) {
 	message(1, "On-the-fly CD copying finished successfully.");
       }
       else {
@@ -2081,7 +2101,7 @@ int main(int argc, char **argv)
     }
     else {
       if (copyCd(srcCdr, cdr, SESSION, DATA_FILENAME, FIFO_BUFFERS, SWAP,
-		 REMOTE_MODE, EJECT, FORCE, KEEPIMAGE) == 0) {
+		 EJECT, FORCE, KEEPIMAGE) == 0) {
 	message(1, "CD copying finished successfully.");
       }
       else {

@@ -18,6 +18,10 @@
  */
 /*
  * $Log: PlextorReader.cc,v $
+ * Revision 1.3  2000/10/08 16:39:40  andreasm
+ * Remote progress message now always contain the track relative and total
+ * progress and the total number of processed tracks.
+ *
  * Revision 1.2  2000/04/23 16:29:50  andreasm
  * Updated to state of my private development environment.
  *
@@ -61,7 +65,7 @@
  *
  */
 
-static char rcsid[] = "$Id: PlextorReader.cc,v 1.2 2000/04/23 16:29:50 andreasm Exp $";
+static char rcsid[] = "$Id: PlextorReader.cc,v 1.3 2000/10/08 16:39:40 andreasm Exp $";
 
 #include <config.h>
 
@@ -571,7 +575,8 @@ Toc *PlextorReader::readDisk(int session, const char *dataFilename)
 // Creates 'Toc' object for inserted CD.
 // audioFilename: name of audio file that is placed into TOC
 // Return: newly allocated 'Toc' object or 'NULL' on error
-int PlextorReader::readAudioRangePlextor(int fd,  long startLba, long endLba,
+int PlextorReader::readAudioRangePlextor(ReadDiskInfo *rinfo, int fd,
+					 long startLba, long endLba,
 					 int startTrack, int endTrack, 
 					 TrackInfo *info)
 {
@@ -671,6 +676,7 @@ int PlextorReader::readAudioRangePlextor(int fd,  long startLba, long endLba,
       if (cab > stampLba + 75) {
 	long totalLen = info[cat + 1].start - info[cat].start;
 	long progress = cab - info[cat].start;
+	long totalProgress;
 
 	if (progress > 0) {
 	  progress *= 1000;
@@ -680,7 +686,18 @@ int PlextorReader::readAudioRangePlextor(int fd,  long startLba, long endLba,
 	  progress = 0;
 	}
 
-	sendReadCdProgressMsg(RCD_EXTRACTING, cat + 1, progress);
+	totalProgress = cab - rinfo->startLba;
+
+	if (totalProgress > 0) {
+	  totalProgress *= 1000;
+	  totalProgress /= rinfo->endLba - rinfo->startLba;
+	}
+	else {
+	  totalProgress = 0;
+	}
+
+	sendReadCdProgressMsg(RCD_EXTRACTING, rinfo->tracks, cat + 1, progress,
+			      totalProgress);
 
 	stampLba = cab;
       }
@@ -1053,14 +1070,15 @@ int PlextorReader::readSubChannels(long lba, long len, SubChannel ***chans,
   return 0;
 }
 
-int PlextorReader::readAudioRange(int fd, long start, long end,
-				  int startTrack, int endTrack, 
+int PlextorReader::readAudioRange(ReadDiskInfo *rinfo, int fd, long start,
+				  long end, int startTrack, int endTrack, 
 				  TrackInfo *info)
 {
   if (model_ != 0 && (options_ & OPT_PLEX_USE_PARANOIA) == 0) {
     // we have a plextor drive -> use the special plextor method which
     // will also detect pre-gaps, index marks and ISRC codes
-    return readAudioRangePlextor(fd, start, end, startTrack, endTrack, info);
+    return readAudioRangePlextor(rinfo, fd, start, end, startTrack, endTrack,
+				 info);
   }
   
   if (!onTheFly_) {
@@ -1074,9 +1092,14 @@ int PlextorReader::readAudioRange(int fd, long start, long end,
     message(1, "Analyzing...");
     
     for (t = startTrack; t <= endTrack; t++) {
+      long totalProgress;
+
       message(1, "Track %d...", t + 1);
 
-      sendReadCdProgressMsg(RCD_ANALYZING, t + 1, 0);
+      totalProgress = t * 1000;
+      totalProgress /= rinfo->tracks;
+      sendReadCdProgressMsg(RCD_ANALYZING, rinfo->tracks, t + 1, 0,
+			    totalProgress);
 
 
       if (!fastTocReading_) {
@@ -1113,12 +1136,16 @@ int PlextorReader::readAudioRange(int fd, long start, long end,
       if (info[t].isrcCode[0] != 0)
 	message(1, "Found ISRC code.");
 
-      sendReadCdProgressMsg(RCD_ANALYZING, t + 1, 1000);
+      totalProgress = (t + 1) * 1000;
+      totalProgress /= rinfo->tracks;
+
+      sendReadCdProgressMsg(RCD_ANALYZING, rinfo->tracks, t + 1, 1000,
+			    totalProgress);
     }
 
     message(1, "Reading...");
   }
 
-  return CdrDriver::readAudioRangeParanoia(fd, start, end, startTrack,
+  return CdrDriver::readAudioRangeParanoia(rinfo, fd, start, end, startTrack,
 					   endTrack, info);
 }

@@ -18,6 +18,10 @@
  */
 /*
  * $Log: CdrDriver.h,v $
+ * Revision 1.4  2000/10/08 16:39:40  andreasm
+ * Remote progress message now always contain the track relative and total
+ * progress and the total number of processed tracks.
+ *
  * Revision 1.3  2000/06/22 12:19:28  andreasm
  * Added switch for reading CDs written in TAO mode.
  * The fifo buffer size is now also saved to $HOME/.cdrdao.
@@ -129,6 +133,16 @@ struct DriveInfo {
   unsigned int accurateAudioStream : 1;
 };
 
+struct CdTextPack {
+  unsigned char packType;
+  unsigned char trackNumber;
+  unsigned char sequenceNumber;
+  unsigned char blockCharacter;
+  unsigned char data[12];
+  unsigned char crc0;
+  unsigned char crc1;
+};
+
 struct CdToc {
   int track;            // number
   long start;           // LBA of track start
@@ -161,15 +175,6 @@ struct TrackInfo {
   long bytesWritten;    // number of bytes written to file
 };
 
-struct CdTextPack {
-  unsigned char packType;
-  unsigned char trackNumber;
-  unsigned char sequenceNumber;
-  unsigned char blockCharacter;
-  unsigned char data[12];
-  unsigned char crc0;
-  unsigned char crc1;
-};
 
 class CdrDriver {
 public:
@@ -247,7 +252,10 @@ public:
   virtual void taoSourceAdjust(int val);
 
   // Sets remote mode
-  virtual void remote(int);
+  virtual void remote(int flag, int fd);
+
+  // Return remote mode flag
+  virtual int remote() { return remote_; }
   
   // Sets cdda paranoia mode
   void paranoiaMode(int);
@@ -324,6 +332,12 @@ public:
   // that must be used to send data to the recorder.
   virtual long blockSize(TrackData::Mode) const;
 
+  // sends a status message to the driving application if in remote mode
+  enum WriteCdProgressType { WCD_LEADIN = 1, WCD_DATA = 2, WCD_LEADOUT = 3 };
+  int sendWriteCdProgressMsg(WriteCdProgressType type, int totalTracks,
+			     int track, int trackProgress, int totalProgress,
+			     int bufferFillRate);
+
 
   // static functions
 
@@ -346,6 +360,11 @@ public:
   static int cdrVendor(Msf &, const char **vendor, const char** mediumType);
 
 protected:
+  struct ReadDiskInfo {
+    int tracks;    // total number of tracks
+    long startLba;      // LBA where extraction starts
+    long endLba;        // LBA where extraction ends
+  };
 
   unsigned long options_; // driver option flags
   ScsiIf *scsiIf_;
@@ -371,6 +390,7 @@ protected:
   int onTheFlyFd_; // file descriptor for on the fly data
   int force_; // force flag to allow certain operations
   int remote_; // 1 for remote mode, else 0
+  int remoteFd_; // file descriptor for remote messages
   int taoSource_; // 1 to indicate a TAO writting source CD for read-cd/read-toc
   int taoSourceAdjust_; // number of unreadable sectors between two tracks
                         // written in TAO mode
@@ -526,14 +546,14 @@ protected:
 			     unsigned char *buf);
 
   // Reads a complete data track and saves data to a file.
-  virtual int readDataTrack(int fp, long start, long end,
+  virtual int readDataTrack(ReadDiskInfo *, int fp, long start, long end,
 			    TrackInfo *trackInfo);
 
   // Reads the audio data of given audio track range 'startTrack', 'endTrack'.
   // 'trackInfo' is am array of TrackInfo structures for all tracks. 
   // This function is called by 'readDisk()' and must be overloaded by the
   // actual driver.
-  virtual int readAudioRange(int fp, long start, long end,
+  virtual int readAudioRange(ReadDiskInfo *, int fp, long start, long end,
 			     int startTrack, int endTrack, 
 			     TrackInfo *trackInfo) = 0;
 
@@ -559,8 +579,9 @@ protected:
   void printCdToc(CdToc *toc, int tocLen);
 
   enum ReadCdProgressType { RCD_ANALYZING = 1, RCD_EXTRACTING = 2 };
-  void sendReadCdProgressMsg(ReadCdProgressType, int track,
-			     int trackProgress);
+  void sendReadCdProgressMsg(ReadCdProgressType, int totalTracks, int track,
+			     int trackProgress, int totalProgress);
+
 
   // Interface for Monty's paranoia library:
 public:
@@ -572,7 +593,7 @@ public:
 protected:
   // Extracts audio data for given track range with the help of 
   // Monty's paranoia library.
-  int readAudioRangeParanoia(int fp, long start, long end,
+  int readAudioRangeParanoia(ReadDiskInfo *, int fp, long start, long end,
 			     int startTrack, int endTrack, 
 			     TrackInfo *trackInfo);
 
@@ -581,6 +602,7 @@ private:
   void *paranoia_;                    // paranoia structure
   struct cdrom_drive *paranoiaDrive_; // paranoia device
   int paranoiaMode_;                  // paranoia mode
+  ReadDiskInfo *paranoiaReadInfo_;
   TrackInfo *paranoiaTrackInfo_;
   int paranoiaStartTrack_;
   int paranoiaEndTrack_;
@@ -590,7 +612,7 @@ private:
   long paranoiaCrcCount_;
   int paranoiaError_;
   long paranoiaProgress_;
-
+  
   // callback for the paranoia library, does nothing, currently
   static void paranoiaCallback(long, int);
 

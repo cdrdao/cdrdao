@@ -18,6 +18,10 @@
  */
 /*
  * $Log: PlextorReader.h,v $
+ * Revision 1.3  2000/10/08 16:39:40  andreasm
+ * Remote progress message now always contain the track relative and total
+ * progress and the total number of processed tracks.
+ *
  * Revision 1.2  2000/04/23 16:29:50  andreasm
  * Updated to state of my private development environment.
  *
@@ -105,7 +109,7 @@ protected:
   long readTrackData(TrackData::Mode mode, long lba, long len,
 		     unsigned char *buf);
   int readSubChannels(long lba, long len, SubChannel ***, Sample *);
-  int readAudioRange(int fd, long start, long end,
+  int readAudioRange(ReadDiskInfo *, int fd, long start, long end,
 		     int startTrack, int endTrack, TrackInfo *trackInfo);
 
 
@@ -114,8 +118,8 @@ private:
   int readSubChannelData(int *trackNr, int *indexNr, long *,
 			 unsigned char *ctl);
 
-  int readAudioRangePlextor(int fd,  long start, long end, int startTrack,
-			    int endTrack, TrackInfo *);
+  int readAudioRangePlextor(ReadDiskInfo *, int fd,  long start, long end,
+			    int startTrack, int endTrack, TrackInfo *);
 
 };
 

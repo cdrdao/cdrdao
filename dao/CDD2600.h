@@ -18,6 +18,10 @@
  */
 /*
  * $Log: CDD2600.h,v $
+ * Revision 1.3  2000/10/08 16:39:40  andreasm
+ * Remote progress message now always contain the track relative and total
+ * progress and the total number of processed tracks.
+ *
  * Revision 1.2  2000/04/23 16:29:49  andreasm
  * Updated to state of my private development environment.
  *
@@ -119,7 +123,7 @@ private:
   long readTrackData(TrackData::Mode mode, long lba, long len,
 		     unsigned char *buf);
 
-  int readAudioRange(int fd, long start, long end,
+  int readAudioRange(ReadDiskInfo *, int fd, long start, long end,
 		     int startTrack, int endTrack, TrackInfo *);
 
   int nextWritableAddress(long *lba, int showError);

@@ -19,6 +19,10 @@
 
 /*
  * $Log: YamahaCDR10x.cc,v $
+ * Revision 1.3  2000/10/08 16:39:41  andreasm
+ * Remote progress message now always contain the track relative and total
+ * progress and the total number of processed tracks.
+ *
  * Revision 1.2  2000/04/23 16:29:50  andreasm
  * Updated to state of my private development environment.
  *
@@ -60,7 +64,7 @@
  * Written by Cameron G. MacKinnon <C_MacKinnon@yahoo.com>.
  */
 
-static char rcsid[] = "$Id: YamahaCDR10x.cc,v 1.2 2000/04/23 16:29:50 andreasm Exp $";
+static char rcsid[] = "$Id: YamahaCDR10x.cc,v 1.3 2000/10/08 16:39:41 andreasm Exp $";
 
 #include <config.h>
 
@@ -1073,8 +1077,9 @@ Toc *YamahaCDR10x::readDisk(int session, const char *fname)
   return toc;
 }
 
-int YamahaCDR10x::readAudioRange(int fd, long start, long end,
-				 int startTrack, int endTrack, TrackInfo *info)
+int YamahaCDR10x::readAudioRange(ReadDiskInfo *rinfo, int fd, long start,
+				 long end, int startTrack,
+				 int endTrack, TrackInfo *info)
 {
   if (!onTheFly_) {
     int t;
@@ -1082,7 +1087,12 @@ int YamahaCDR10x::readAudioRange(int fd, long start, long end,
     message(1, "Analyzing...");
     
     for (t = startTrack; t <= endTrack; t++) {
-      sendReadCdProgressMsg(RCD_ANALYZING, t + 1, 0);
+      long totalProgress;
+
+      totalProgress = t * 1000;
+      totalProgress /= rinfo->tracks;
+      sendReadCdProgressMsg(RCD_ANALYZING, rinfo->tracks, t + 1, 0,
+			    totalProgress);
 
       message(1, "Track %d...", t + 1);
       info[t].isrcCode[0] = 0;
@@ -1090,12 +1100,15 @@ int YamahaCDR10x::readAudioRange(int fd, long start, long end,
       if (info[t].isrcCode[0] != 0)
 	message(1, "Found ISRC code.");
 
-      sendReadCdProgressMsg(RCD_ANALYZING, t + 1, 1000);
+      totalProgress = (t + 1) * 1000;
+      totalProgress /= rinfo->tracks;
+      sendReadCdProgressMsg(RCD_ANALYZING, rinfo->tracks, t + 1, 1000,
+			    totalProgress);
     }
 
     message(1, "Reading...");
   }
 
-  return CdrDriver::readAudioRangeParanoia(fd, start, end, startTrack,
+  return CdrDriver::readAudioRangeParanoia(rinfo, fd, start, end, startTrack,
 					   endTrack, info);
 }

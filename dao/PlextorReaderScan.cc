@@ -18,6 +18,10 @@
  */
 /*
  * $Log: PlextorReaderScan.cc,v $
+ * Revision 1.3  2000/10/08 16:39:40  andreasm
+ * Remote progress message now always contain the track relative and total
+ * progress and the total number of processed tracks.
+ *
  * Revision 1.2  2000/04/23 16:29:50  andreasm
  * Updated to state of my private development environment.
  *
@@ -44,7 +48,7 @@
  *
  */
 
-static char rcsid[] = "$Id: PlextorReaderScan.cc,v 1.2 2000/04/23 16:29:50 andreasm Exp $";
+static char rcsid[] = "$Id: PlextorReaderScan.cc,v 1.3 2000/10/08 16:39:40 andreasm Exp $";
 
 #include <config.h>
 
@@ -224,8 +228,8 @@ int PlextorReaderScan::readSubChannels(long lba, long len, SubChannel ***chans,
   return 0;
 }
 
-int PlextorReaderScan::readAudioRange(int fd, long start, long end,
-				      int startTrack, int endTrack, 
+int PlextorReaderScan::readAudioRange(ReadDiskInfo *info, int fd, long start,
+				      long end, int startTrack, int endTrack, 
 				      TrackInfo *trackInfo)
 {
   if (!onTheFly_) {
@@ -236,21 +240,30 @@ int PlextorReaderScan::readAudioRange(int fd, long start, long end,
       message(1, "Analyzing...");
       
       for (t = startTrack; t <= endTrack; t++) {
+	long totalProgress;
+
 	message(1, "Track %d...", t + 1);
-	sendReadCdProgressMsg(RCD_ANALYZING, t + 1, 0);
+
+	totalProgress = t * 1000;
+	totalProgress /= info->tracks;
+	sendReadCdProgressMsg(RCD_ANALYZING, info->tracks, t + 1, 0,
+			      totalProgress);
 
 	trackInfo[t].isrcCode[0] = 0;
 	readIsrc(t + 1, trackInfo[t].isrcCode);
 	if (trackInfo[t].isrcCode[0] != 0)
 	  message(1, "Found ISRC code.");
 
-	sendReadCdProgressMsg(RCD_ANALYZING, t + 1, 1000);
+	totalProgress = (t + 1) * 1000;
+	totalProgress /= info->tracks;
+	sendReadCdProgressMsg(RCD_ANALYZING, info->tracks, t + 1, 1000,
+			      totalProgress);
       }
 
       message(1, "Reading...");
     }
   }
 
-  return CdrDriver::readAudioRangeParanoia(fd, start, end, startTrack,
+  return CdrDriver::readAudioRangeParanoia(info, fd, start, end, startTrack,
 					   endTrack, trackInfo);
 }
