@@ -20,6 +20,7 @@
 #include <gnome.h>
 
 #include "xcdrdao.h"
+#include "DeviceConfDialog.h"
 #include "RecordGenericDialog.h"
 #include "gcdmaster.h"
 
@@ -71,13 +72,14 @@ void GCDMaster::readFileSelectorOKCB(Project *project)
   if (s != NULL && *s != 0 && s[strlen(s) - 1] != '/')
   {
     if (project->busy())
+    {
       project = new Project(project_number);
-
+      add(project);
+    }
     project->readToc(s);
   }
   g_free(s);
 
-  add(project);
   readFileSelectorCancelCB();
 }
 
@@ -126,6 +128,11 @@ void GCDMaster::recordCD2CD()
 void GCDMaster::recordCD2HD()
 {
   RECORD_GENERIC_DIALOG->cd_to_hd();
+}
+
+void GCDMaster::configureDevices()
+{
+  DEVICE_CONF_DIALOG->start();
 }
 
 void GCDMaster::aboutDialog()

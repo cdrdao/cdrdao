@@ -72,7 +72,6 @@ public:
   void newAudioCDProject(const char *name = 0);
   bool closeProject();
   void recordToc2CD();
-  void configureDevices();
 
   gint getViewNumber();
 };

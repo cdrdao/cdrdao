@@ -18,11 +18,12 @@
  */
 
 #include <strstream.h>
+#include <errno.h>
 
 #include "util.h"
 #include "xcdrdao.h"
 #include "gcdmaster.h"
-#include "DeviceConfDialog.h"
+#include "MessageBox.h"
 #include "RecordGenericDialog.h"
 #include "AudioCDChild.h"
 #include "AudioCDView.h"
@@ -123,7 +124,7 @@ void Project::createMenus()
     // Settings menu
     settingsMenuTree.push_back(Item(Icon(GNOME_STOCK_MENU_PREF),
 								N_("Configure Devices..."),
-								slot(this, &Project::configureDevices)));
+								slot(gcdmaster, &GCDMaster::configureDevices)));
   }
 /*
     settingsMenuTree.push_back(Gnome::MenuItems::Preferences
@@ -186,7 +187,7 @@ void Project::readToc(char *name)
     {
 //FIXME: We should test what type of project it is
 //       AudioCD, ISO. No problem now.
-      cout << "Read ok?" << endl;
+      cout << "Read ok" << endl;
       new_ = false; // The project file already exists
 	  newAudioCDProject(name);      
     }
@@ -203,10 +204,8 @@ void Project::readToc(char *name)
 void Project::updateWindowTitle()
 {
   string s(tocEdit_->filename());
-//  char buf[strlen(tocEdit_->filename()) + strlen(APP_NAME) + 4];
   s += " - ";
   s += APP_NAME;
-//  sprintf(buf, "%s - %s", tocEdit_->filename(), APP_NAME);
   set_title(s);
 }
 
@@ -272,13 +271,6 @@ void Project::newAudioCDProject(const char *name)
   audioCDView->tocEditView()->sampleViewFull();
   viewSwitcher_->addView(audioCDView->widgetList, pixmap, label);
 
-  pixmap = new Gnome::StockPixmap(GNOME_STOCK_MENU_CDROM);
-  label = new Gtk::Label("Track Editor");
-  audioCDView = new AudioCDView(audioCDChild_, this);
-  hbox->pack_start(*audioCDView, TRUE, TRUE);
-  audioCDView->tocEditView()->sampleViewFull();
-  viewSwitcher_->addView(audioCDView->widgetList, pixmap, label);
-
   projectType = P_AUDIOCD;
 
 //FIXME  guiUpdate();
@@ -302,9 +294,10 @@ void Project::saveProject()
     s += tocEdit_->filename();
     s+= "\":";
     
-//FIXME    MessageBox msg(MDI_WINDOW->get_active_window(), "Save Project", 0, s.c_str(), strerror(errno), NULL);
-//    MessageBox msg(this, "Save Project", 0, s.c_str(), strerror(errno), NULL);
-//FIXME    msg.run();
+//    MessageBox msg(MDI_WINDOW->get_active_window(), "Save Project", 0, s.c_str(), strerror(errno), NULL);
+    MessageBox msg(this, "Save Project", 0, s.c_str(), strerror(errno), NULL);
+cout << "message box" << endl;
+    msg.run();
   }
 }
 
@@ -381,16 +374,9 @@ bool Project::closeProject()
 
 void Project::recordToc2CD()
 {
-//  GenericChild *child = static_cast <GenericChild *>(this->get_active_child());
-
-//  if (child)
     audioCDChild_->record_to_cd();
 }
 
-void Project::configureDevices()
-{
-  DEVICE_CONF_DIALOG->start();
-}
 
 gint Project::getViewNumber()
 {

@@ -54,6 +54,7 @@ public:
 
   void recordCD2CD();
   void recordCD2HD();
+  void configureDevices();
 
   void aboutDialog();
   void aboutDestroy();
