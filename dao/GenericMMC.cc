@@ -1065,6 +1065,8 @@ int GenericMMC::writeCdTextLeadIn()
   long len = leadInLen_;
   long n;
   long i;
+  int retry;
+  int ret;
   unsigned char *p;
 
   if (cdTextEncoder_ == NULL)
@@ -1109,11 +1111,36 @@ int GenericMMC::writeCdTextLeadIn()
 
     message(5, "Writing %ld CD-TEXT sub-channels at LBA %ld.", n, lba);
 
-    if (sendCmd(cmd, 10, transferBuffer_, n * 96, NULL, 0) != 0) {
+    do {
+      retry = 0;
+
+      ret = sendCmd(cmd, 10, transferBuffer_, n * 96, NULL, 0, 0);
+
+      if(ret == 2) {
+        const unsigned char *sense;
+        int senseLen;
+	
+        sense = scsiIf_->getSense(senseLen);
+
+	// check if drive rejected the command because the internal buffer
+	// is filled
+	if(senseLen >= 14 && (sense[2] & 0x0f) == 0x2 && sense[7] >= 6 &&
+	   sense[12] == 0x4 && sense[13] == 0x8) {
+	  // Not Ready, long write in progress
+	  mSleep(40);
+          retry = 1;
+        }
+	else {
+	  scsiIf_->printError();
+	}
+      }
+    } while (retry);
+
+    if (ret != 0) {
       message(-2, "Writing of CD-TEXT data failed.");
       return 1;
     }
-
+      
 
     len -= n;
     lba += n;
