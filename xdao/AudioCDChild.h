@@ -69,11 +69,14 @@ private:
 
   void tocBlockedMsg(const char *);
 
+  Gtk::Toolbar *zoomToolbar;
+
 public:
 
   void update(unsigned long level);
   bool closeProject();
   void record_to_cd();
   AudioCDView *newView();
+  Gtk::Toolbar *getZoomToolbar();
 };
 #endif
