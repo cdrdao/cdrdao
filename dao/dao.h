@@ -18,6 +18,9 @@
  */
 /*
  * $Log: dao.h,v $
+ * Revision 1.3  2002/09/01 14:34:39  andreasm
+ * Added writing speed simulation for 'read-test'.
+ *
  * Revision 1.2  2000/10/08 16:39:41  andreasm
  * Remote progress message now always contain the track relative and total
  * progress and the total number of processed tracks.
@@ -41,6 +44,6 @@
 #include "CdrDriver.h"
 
 int writeDiskAtOnce(const Toc *, CdrDriver *, int nofBuffers, int swap,
-		    int testMode);
+		    int testMode, int speed);
 
 #endif

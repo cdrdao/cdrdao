@@ -1646,7 +1646,7 @@ static int copyCd(CdrDriver *src, CdrDriver *dst, int session,
     return 1;
   }
 
-  if (writeDiskAtOnce(toc, dst, fifoBuffers, swap, 0) != 0) {
+  if (writeDiskAtOnce(toc, dst, fifoBuffers, swap, 0, 0) != 0) {
     if (dst->simulate())
       message(-2, "Simulation failed.");
     else
@@ -1801,7 +1801,7 @@ static int copyCdOnTheFly(CdrDriver *src, CdrDriver *dst, int session,
     goto fail;
   }
 
-  if (writeDiskAtOnce(toc, dst, fifoBuffers, swap, 0) != 0) {
+  if (writeDiskAtOnce(toc, dst, fifoBuffers, swap, 0, 0) != 0) {
     if (dst->simulate())
       message(-2, "Simulation failed.");
     else
@@ -2024,7 +2024,7 @@ int main(int argc, char **argv)
   case READ_TEST:
     message(1, "Starting read test...");
     message(2, "Process can be aborted with QUIT signal (usually CTRL-\\).");
-    if (writeDiskAtOnce(toc, NULL, FIFO_BUFFERS, SWAP, 1) != 0) {
+    if (writeDiskAtOnce(toc, NULL, FIFO_BUFFERS, SWAP, 1, WRITING_SPEED) != 0) {
       message(-2, "Read test failed.");
       exitCode = 1; goto fail;
     }
@@ -2242,7 +2242,7 @@ int main(int argc, char **argv)
       exitCode = 1; goto fail;
     }
 
-    if (writeDiskAtOnce(toc, cdr, FIFO_BUFFERS, SWAP, 0) != 0) {
+    if (writeDiskAtOnce(toc, cdr, FIFO_BUFFERS, SWAP, 0, 0) != 0) {
       if (cdr->simulate()) {
 	message(-2, "Simulation failed.");
       }

@@ -200,7 +200,7 @@ static void unblockSignals()
 //         1: child process terminated and has been collected with 'wait()'
 //         2: error -> child process must be terminated
 static int writer(const Toc *toc, CdrDriver *cdr, BufferHeader *header,
-		  long lba)
+		  long lba, int speed)
 {
   long total = toc->length().lba() * AUDIO_BLOCK_LEN;
   long totalTracks = toc->nofTracks();
@@ -395,7 +395,13 @@ static int writer(const Toc *toc, CdrDriver *cdr, BufferHeader *header,
 				  buf.trackProgress, actProgress, buffFill);
     }
     else {
-      message(1, "Read %ld of %ld MB.\r", cnt >> 20, total >> 20);
+      if (speed > 0) {
+	message(1, "Read %ld of %ld MB (Buffer %3d%%).\r", cnt >> 20, total >> 20, buffFill);
+	mSleep(1000 / speed);
+      }
+      else {
+	message(1, "Read %ld of %ld MB.\r", cnt >> 20, total >> 20);
+      }
     }
 
 
@@ -596,7 +602,7 @@ fail:
 
 
 int writeDiskAtOnce(const Toc *toc, CdrDriver *cdr, int nofBuffers, int swap,
-		    int testMode)
+		    int testMode, int speed)
 {
   int err = 0;
   BufferHeader *header = NULL;
@@ -729,7 +735,7 @@ int writeDiskAtOnce(const Toc *toc, CdrDriver *cdr, int nofBuffers, int swap,
   }
 #endif
 
-  switch (writer(toc, cdr, header, startLba)) {
+  switch (writer(toc, cdr, header, startLba, speed)) {
   case 1: // error, reader process terminated abnormally
 #ifndef USE_POSIX_THREADS
     pid = 0;
