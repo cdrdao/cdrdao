@@ -1,11 +1,11 @@
-.TH XCDRDAO 1X "Oct 10, 1999"
+.TH GCDMASTER 1X "Oct 10, 1999"
 .SH NAME
-xcdrdao \- Graphical front end to cdrdao for composing audio CDs
+gcdmaster \- Graphical front end to cdrdao for composing audio CDs
 .SH SYNOPSIS
-.B xcdrdao
+.B gcdmaster
 .RI [ toc-file ]
 .SH DESCRIPTION
-.I xcdrdao
+.I gcdmaster
 allows the creation of toc-files for cdrdao and can control the
 recording process. Its main application is the composition of audio
 CDs from one or more audio files. It supports PQ-channel editing,
@@ -195,7 +195,7 @@ Opens a file sector box to select a toc-file to which the current work
 is saved.
 
 .SS File->Quit
-Quits xcdrdao. If the current work is not saved a confirmation box
+Quits gcdmaster. If the current work is not saved a confirmation box
 will pop up.
 
 .SS View->Zoom To Selection
@@ -411,7 +411,7 @@ devices that identify themselves as CD-ROM or WORM device.
 
 All device settings that differ from the default settings will be
 permanently stored in the
-.I $HOME/.xcdrdao
+.I $HOME/.gnome/GnomeCDMaster
 configuration file.
 
 The "Apply" button must be used to make all changes permanent. The
@@ -555,7 +555,7 @@ certain device combinations if multiple devices are recording.
 cdrdao:
 executed for recording
 .TP
-$HOME/.xcdrdao:
+$HOME/.gnome/GnomeCDMaster:
 stores settings permanently
 
 .SH AUTHOR
