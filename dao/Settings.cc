@@ -18,6 +18,10 @@
  */
 /*
  * $Log: Settings.cc,v $
+ * Revision 1.3  2000/06/22 12:19:28  andreasm
+ * Added switch for reading CDs written in TAO mode.
+ * The fifo buffer size is now also saved to $HOME/.cdrdao.
+ *
  * Revision 1.2  2000/06/19 20:17:37  andreasm
  * Added CDDB reading to add CD-TEXT information to toc-files.
  * Fixed bug in reading ATIP data in 'GenericMMC::diskInfo()'.
@@ -31,7 +35,7 @@
  *
  */
 
-static char rcsid[] = "$Id: Settings.cc,v 1.2 2000/06/19 20:17:37 andreasm Exp $";
+static char rcsid[] = "$Id: Settings.cc,v 1.3 2000/06/22 12:19:28 andreasm Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -50,6 +54,7 @@ enum SettingType { SET_INTEGER, SET_STRING };
 const char *SET_WRITE_SPEED = "write_speed";
 const char *SET_WRITE_DRIVER = "write_driver";
 const char *SET_WRITE_DEVICE = "write_device";
+const char *SET_WRITE_BUFFERS = "write_buffers";
 
 const char *SET_READ_DRIVER = "read_driver";
 const char *SET_READ_DEVICE = "read_device";

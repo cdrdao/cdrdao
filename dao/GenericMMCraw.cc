@@ -18,6 +18,10 @@
  */
 /*
  * $Log: GenericMMCraw.cc,v $
+ * Revision 1.3  2000/06/22 12:19:28  andreasm
+ * Added switch for reading CDs written in TAO mode.
+ * The fifo buffer size is now also saved to $HOME/.cdrdao.
+ *
  * Revision 1.2  2000/04/24 12:47:57  andreasm
  * Fixed unit attention problem after writing is finished.
  * Added cddb disk id calculation.
@@ -61,7 +65,7 @@
  *
  */
 
-static char rcsid[] = "$Id: GenericMMCraw.cc,v 1.2 2000/04/24 12:47:57 andreasm Exp $";
+static char rcsid[] = "$Id: GenericMMCraw.cc,v 1.3 2000/06/22 12:19:28 andreasm Exp $";
 
 #include <config.h>
 
@@ -190,6 +194,18 @@ int GenericMMCraw::initDao(const Toc *toc)
   blocksPerWrite_ = scsiIf_->maxDataLen() / blockLength_;
   assert(blocksPerWrite_ > 0);
   message(3, "Block length: %ld", blockLength_);
+
+  if (!simulate_) {
+    if (performPowerCalibration() != 0) {
+      if (!force()) {
+	message(-2, "Use option --force to ignore this error.");
+	return 1;
+      }
+      else {
+	message(-2, "Ignored because of option --force.");
+      }
+    }
+  }
 
   long cueSheetLen;
   unsigned char *cueSheet = createCueSheet(&cueSheetLen);

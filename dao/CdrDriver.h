@@ -18,6 +18,10 @@
  */
 /*
  * $Log: CdrDriver.h,v $
+ * Revision 1.3  2000/06/22 12:19:28  andreasm
+ * Added switch for reading CDs written in TAO mode.
+ * The fifo buffer size is now also saved to $HOME/.cdrdao.
+ *
  * Revision 1.2  2000/04/23 16:29:49  andreasm
  * Updated to state of my private development environment.
  *
@@ -224,6 +228,24 @@ public:
   // if 'fd' is >= 0 and clears it otherwise
   virtual void onTheFly(int fd);
 
+  // Returns force flag
+  virtual int force() const { return force_; }
+
+  // Sets force flag
+  virtual void force(int f) { force_ = f != 0 ? 1 : 0; }
+
+  // Returns TAO source flag
+  virtual int taoSource() const { return taoSource_; }
+
+  // Sets TAO source flag
+  virtual void taoSource(int f) { taoSource_ = f != 0 ? 1 : 0; }
+
+  // Return number of adjust sectors for reading TAO source disks
+  virtual int taoSourceAdjust() const { return taoSourceAdjust_; }
+
+  // Sets number of adjust sectors for reading TAO source disks
+  virtual void taoSourceAdjust(int val);
+
   // Sets remote mode
   virtual void remote(int);
   
@@ -347,9 +369,11 @@ protected:
                        // or if it is taken from the data file
   int onTheFly_; // 1 if operating in on-the-fly mode
   int onTheFlyFd_; // file descriptor for on the fly data
-
+  int force_; // force flag to allow certain operations
   int remote_; // 1 for remote mode, else 0
-
+  int taoSource_; // 1 to indicate a TAO writting source CD for read-cd/read-toc
+  int taoSourceAdjust_; // number of unreadable sectors between two tracks
+                        // written in TAO mode
   const Toc *toc_;
 
   SubChannel **scannedSubChannels_;

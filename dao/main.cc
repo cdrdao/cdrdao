@@ -19,6 +19,10 @@
 
 /*
  * $Log: main.cc,v $
+ * Revision 1.7  2000/06/22 12:19:28  andreasm
+ * Added switch for reading CDs written in TAO mode.
+ * The fifo buffer size is now also saved to $HOME/.cdrdao.
+ *
  * Revision 1.6  2000/06/19 20:17:37  andreasm
  * Added CDDB reading to add CD-TEXT information to toc-files.
  * Fixed bug in reading ATIP data in 'GenericMMC::diskInfo()'.
@@ -124,7 +128,7 @@
  *
  */
 
-static char rcsid[] = "$Id: main.cc,v 1.6 2000/06/19 20:17:37 andreasm Exp $";
+static char rcsid[] = "$Id: main.cc,v 1.7 2000/06/22 12:19:28 andreasm Exp $";
 
 #include <config.h>
 
@@ -180,6 +184,8 @@ static int ON_THE_FLY = 0;
 static int WRITE_SIMULATE = 0;
 static int SAVE_SETTINGS = 0;
 static int CDDB_TIMEOUT = 60;
+static int TAO_SOURCE = 0;
+static int TAO_SOURCE_ADJUST = -1;
 
 static Settings *SETTINGS = NULL; // settings read from $HOME/.cdrdao
 
@@ -300,6 +306,8 @@ static void printUsage()
   --session #             - selects session for read-toc/read-cd\n\
   --fast-toc              - do not extract pre-gaps and index marks\n\
   --read-raw              - read raw sectors for read-cd\n\
+  --tao-source            - indicate that source CD was written in TAO mode\n\
+  --tao-source-adjust #   - # of link blocks for TAO source CDs (def. 2)\n\
   --paranoia-mode #       - DAE paranoia mode (0..3)\n\
   --reload                - reload the disk if necessary for writing\n\
   --force                 - force execution of operation\n\
@@ -329,6 +337,11 @@ static void importSettings(Command cmd)
     if ((ival = SETTINGS->getInteger(SET_WRITE_SPEED)) != NULL &&
 	*ival >= 0) {
       WRITING_SPEED = *ival;
+    }
+
+    if ((ival = SETTINGS->getInteger(SET_WRITE_BUFFERS)) != NULL &&
+	*ival >= 10) {
+      FIFO_BUFFERS = *ival;
     }
   }
 
@@ -395,6 +408,10 @@ static void exportSettings(Command cmd)
 
     if (WRITING_SPEED >= 0) {
       SETTINGS->set(SET_WRITE_SPEED, WRITING_SPEED);
+    }
+
+    if (FIFO_BUFFERS > 0) {
+      SETTINGS->set(SET_WRITE_BUFFERS, FIFO_BUFFERS);
     }
   }
 
@@ -609,6 +626,9 @@ static int parseCmdline(int argc, char **argv)
       else if (strcmp((*argv) + 2, "save") == 0) {
 	SAVE_SETTINGS = 1;
       }
+      else if (strcmp((*argv) + 2, "tao-source") == 0) {
+	TAO_SOURCE = 1;
+      }
       else if (strcmp((*argv) + 2, "driver") == 0) {
 	if (argc < 2) {
 	  message(-2, "Missing argument after: %s", *argv);
@@ -683,6 +703,21 @@ static int parseCmdline(int argc, char **argv)
 	  argc--, argv++;
 	  if (CDDB_TIMEOUT < 1) {
 	    message(-2, "Illegal CDDB timeout: %d", CDDB_TIMEOUT);
+	    return 1;
+	  }
+	}
+      }
+      else if (strcmp((*argv) + 2, "tao-source-adjust") == 0) {
+	if (argc < 2) {
+	  message(-2, "Missing argument after: %s", *argv);
+	  return 1;
+	}
+	else {
+	  TAO_SOURCE_ADJUST = atoi(argv[1]);
+	  argc--, argv++;
+	  if (TAO_SOURCE_ADJUST < 0 || TAO_SOURCE_ADJUST >= 100) {
+	    message(-2, "Illegal number of TAO link blocks: %d",
+		    TAO_SOURCE_ADJUST);
 	    return 1;
 	  }
 	}
@@ -1288,6 +1323,9 @@ static int copyCd(CdrDriver *src, CdrDriver *dst, int session,
   }
 
   src->rawDataReading(1);
+  src->taoSource(TAO_SOURCE);
+  if (TAO_SOURCE_ADJUST >= 0)
+    src->taoSourceAdjust(TAO_SOURCE_ADJUST);
 
   if ((toc = src->readDisk(session, dataFilename)) == NULL) {
     message(-2, "Creation of source CD image failed.");
@@ -1410,6 +1448,10 @@ static int copyCdOnTheFly(CdrDriver *src, CdrDriver *dst, int session,
   }
   
   src->rawDataReading(1);
+  src->taoSource(TAO_SOURCE);
+  if (TAO_SOURCE_ADJUST >= 0)
+    src->taoSourceAdjust(TAO_SOURCE_ADJUST);
+
   src->onTheFly(1); // the fd is not used by 'readDiskToc', just need to
                     // indicate that on-the-fly copying is active for
                     // automatical selection if the first track's pre-gap
@@ -1727,6 +1769,11 @@ int main(int argc, char **argv)
 
     cdr->rawDataReading(READ_RAW);
     cdr->fastTocReading(FAST_TOC);
+    cdr->taoSource(TAO_SOURCE);
+    if (TAO_SOURCE_ADJUST >= 0)
+      cdr->taoSourceAdjust(TAO_SOURCE_ADJUST);
+
+    cdr->force(FORCE);
 
     if ((toc = cdr->readDiskToc(SESSION,
 				(DATA_FILENAME == NULL) ?
@@ -1765,9 +1812,14 @@ int main(int argc, char **argv)
     }
 
     cdr->rawDataReading(READ_RAW);
+    cdr->taoSource(TAO_SOURCE);
+    if (TAO_SOURCE_ADJUST >= 0)
+      cdr->taoSourceAdjust(TAO_SOURCE_ADJUST);
+
     cdr->paranoiaMode(PARANOIA_MODE);
     cdr->fastTocReading(FAST_TOC);
     cdr->remote(REMOTE_MODE);
+    cdr->force(FORCE);
 
     toc = cdr->readDisk(SESSION,
 			(DATA_FILENAME == NULL) ? "data.bin" : DATA_FILENAME);
@@ -1828,6 +1880,8 @@ int main(int argc, char **argv)
 	exitCode = 1; goto fail;
       }
     }
+
+    cdr->force(FORCE);
 
     switch (cdr->checkToc(toc)) {
     case 0: // OK
@@ -1911,6 +1965,7 @@ int main(int argc, char **argv)
     }
     
     cdr->simulate(WRITE_SIMULATE);
+    cdr->force(FORCE);
     
     if (MULTI_SESSION != 0) {
       if (cdr->multiSession(1) != 0) {
@@ -1929,7 +1984,8 @@ int main(int argc, char **argv)
 
     srcCdr->paranoiaMode(PARANOIA_MODE);
     srcCdr->fastTocReading(FAST_TOC);
-
+    srcCdr->force(FORCE);
+    
     if (ON_THE_FLY)
       message(1, "Starting on-the-fly CD copy ");
     else

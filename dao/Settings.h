@@ -18,6 +18,10 @@
  */
 /*
  * $Log: Settings.h,v $
+ * Revision 1.3  2000/06/22 12:19:28  andreasm
+ * Added switch for reading CDs written in TAO mode.
+ * The fifo buffer size is now also saved to $HOME/.cdrdao.
+ *
  * Revision 1.2  2000/06/19 20:17:37  andreasm
  * Added CDDB reading to add CD-TEXT information to toc-files.
  * Fixed bug in reading ATIP data in 'GenericMMC::diskInfo()'.
@@ -37,6 +41,7 @@
 extern const char *SET_WRITE_SPEED;
 extern const char *SET_WRITE_DRIVER;
 extern const char *SET_WRITE_DEVICE;
+extern const char *SET_WRITE_BUFFERS;
 extern const char *SET_READ_DRIVER;
 extern const char *SET_READ_DEVICE;
 extern const char *SET_READ_PARANOIA_MODE;

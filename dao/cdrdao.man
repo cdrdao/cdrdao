@@ -18,6 +18,9 @@ cdrdao \- writes audio CD-Rs in disc-at-once mode
 .RB [ --datafile
 .IR file ]
 .RB [ --read-raw ]
+.RB [ --tao-source ]
+.RB [ --tao-source-adjust
+.IR link-blocks ]
 .RB [ --fast-toc ]
 .RB [ --buffers
 .IR buffer-count ]
@@ -198,6 +201,31 @@ All data sectors will be written as 2352 byte blocks including the sector
 header and L-EC data to the image file. The track mode will be set to
 MODE1_RAW or MODE2_RAW in the created
 .I toc-file.
+.TP
+.BI \--tao-source
+This option indicates to the commands
+.I read-toc
+and
+.I read-cd
+that the source CD was written in TAO mode. It will be assumed that the
+pre-gap length between all tracks (except between two audio tracks) is
+the standard 150 blocks plus the number of link blocks (usually 2). The
+number of link blocks can be controlled with option
+.I --tao-source-adjust.
+
+Use this option only if 
+.I read-toc
+or
+.I read-cd
+give error messages in the transition areas between two tracks. If you use
+this option with pressed CDs or CDs written in DAO mode you will get wrong
+results.
+.TP
+.BI \--tao-source-adjust " link-blocks"
+Specifies the number of link blocks for tracks written in TAO mode. This
+option has only an effect if option
+.I --tao-source
+is given.
 .TP
 .BI \--fast-toc
 Only used for command
@@ -672,6 +700,8 @@ Corresponding option:
 .I --driver
 .IP write_speed
 Specifies writing speed. Corresponding option: --speed
+.IP write_buffers
+Specifies fifo buffers used for recording. Corresponding option: --buffers
 .IP read_device
 Device used for operations
 .I read-toc, read-cd and copy.
