@@ -1,7 +1,8 @@
 This Perl script automates the process of making CDs from MP3/Ogg files.
 It will scan the current directory for MP3/Ogg files, parse the tags (if present),
-decode all files to wav and produce a suitable TOC file (with cd-text 
-info if possible).
+decode all files to wav and produce:
+	[*] a suitable TOC file for cdrdao (with cd-text info if possible)
+	[*] a list of .inf files for cdrecord with cdtext info (if possible)
 Some of the code is taken from Joe Steward's mp32dao, using to pad one track with the next.
 MP3 decoding is done using any of the supported programs:
 * lame
@@ -20,3 +21,4 @@ In order to use mp32dao you need:
 -Audio::Tools::Time Perl module
 
 Please send comments/bug reports to Giuseppe Corbelli <cowo@lugbs.linux.it>
+
