@@ -2061,6 +2061,7 @@ long GenericMMC::readTrackData(TrackData::Mode mode,
       else if ((sense[2] & 0x0f) == 3) { // Medium error
 	switch (sense[12]) {
 	case 0x02: // No seek complete, sector not found
+	case 0x06: // no reference position found
 	case 0x11: // L-EC error
 	case 0x15: // random positioning error
 	  return -2;
