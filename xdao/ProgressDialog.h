@@ -70,6 +70,8 @@ private:
   Gtk::ProgressBar *trackProgress_;
   Gtk::ProgressBar *totalProgress_;
   Gtk::ProgressBar *bufferFillRate_;
+  Gtk::Label *bufferFillRateLabel_;
+  void needBufferProgress(bool visible);
 
   ProgressDialog *poolNext_;
 
@@ -89,8 +91,8 @@ public:
 
   void update(unsigned long);
   
-  ProgressDialog *start(CdDevice *, TocEdit *);
-  ProgressDialog *start(CdDevice *, const char *tocFileName);
+  ProgressDialog *start(CdDevice *, TocEdit *, bool showBuffer);
+  ProgressDialog *start(CdDevice *, const char *tocFileName, bool showBuffer);
   void stop(ProgressDialog *);
 
 private:

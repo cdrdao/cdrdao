@@ -119,9 +119,9 @@ ProgressDialog::ProgressDialog(ProgressDialogPool *father)
   table->attach(*hbox, 1, 2, 1, 2);
   hbox->show();
 
-  label = new Gtk::Label(string("Buffer:"));
+  bufferFillRateLabel_ = new Gtk::Label(string("Buffer:"));
   align = new Gtk::Alignment(1.0, 0.0, 0.0, 0.0);
-  align->add(*label);
+  align->add(*bufferFillRateLabel_);
   label->show();
   table->attach(*align, 0, 1, 2, 3, GTK_FILL);
   align->show();
@@ -361,7 +361,7 @@ void ProgressDialog::update(unsigned long level)
       actTrackProgress_ = trackProgress;
 
       trackProgress_->set_percentage(gfloat(trackProgress) / 1000.0);
-      sprintf(bufProgress, "%.2f %%%%", gfloat(trackProgress/10.0));
+      sprintf(bufProgress, "%.1f %%%%", gfloat(trackProgress/10.0));
       trackProgress_->set_format_string(bufProgress);  
     }
 
@@ -369,7 +369,7 @@ void ProgressDialog::update(unsigned long level)
       actTotalProgress_ = totalProgress;
       
       totalProgress_->set_percentage(gfloat(totalProgress) / 1000.0);
-      sprintf(bufProgress, "%.2f %%%%", gfloat(totalProgress/10.0));
+      sprintf(bufProgress, "%.1f %%%%", gfloat(totalProgress/10.0));
       totalProgress_->set_format_string(bufProgress);
     }
 
@@ -377,7 +377,7 @@ void ProgressDialog::update(unsigned long level)
       actBufferFill_ = bufferFill;
       
       bufferFillRate_->set_percentage(gfloat(bufferFill) / 100.0);
-      sprintf(bufProgress, "%.2f %%%%", gfloat(bufferFill/1.0));
+      sprintf(bufProgress, "%.1f %%%%", gfloat(bufferFill/1.0));
       bufferFillRate_->set_format_string(bufProgress);
     }
   }
@@ -530,6 +530,19 @@ gint ProgressDialog::time(gint timer_nr)
   }
 }
 
+void ProgressDialog::needBufferProgress(bool visible)
+{
+  if (visible)
+  {
+    bufferFillRate_->show();
+    bufferFillRateLabel_->show();
+  }
+  else
+  {
+    bufferFillRate_->hide();
+    bufferFillRateLabel_->hide();
+  }
+}
 
 
 ProgressDialogPool::ProgressDialogPool()
@@ -552,7 +565,7 @@ void ProgressDialogPool::update(unsigned long status)
 }
   
 ProgressDialog *ProgressDialogPool::start(CdDevice *device,
-						      TocEdit *tocEdit)
+						      TocEdit *tocEdit, bool showBuffer)
 {
   ProgressDialog *dialog;
 
@@ -566,6 +579,8 @@ ProgressDialog *ProgressDialogPool::start(CdDevice *device,
 
   dialog->poolNext_ = activeDialogs_;
   activeDialogs_ = dialog;
+
+  dialog->needBufferProgress(showBuffer);
 
   dialog->start(device, tocEdit->filename());
 
@@ -573,7 +588,7 @@ ProgressDialog *ProgressDialogPool::start(CdDevice *device,
 }
 
 ProgressDialog *ProgressDialogPool::start(CdDevice *device,
-					  const char *tocFileName)
+					  const char *tocFileName, bool showBuffer)
 {
   ProgressDialog *dialog;
 
@@ -587,6 +602,8 @@ ProgressDialog *ProgressDialogPool::start(CdDevice *device,
 
   dialog->poolNext_ = activeDialogs_;
   activeDialogs_ = dialog;
+
+  dialog->needBufferProgress(showBuffer);
 
   dialog->start(device, tocFileName);
 
