@@ -330,6 +330,7 @@ Recorders:
   ACER CD-R/RW 4X4X32                 3.LS                   generic-mmc-raw
   AOPEN CD-RW CRW1632                 1.11                   generic-mmc    
   AOPEN CD-RW CRW2040                 1.01                   generic-mmc    
+  AOPEN CD-RW CRW3248                 1.12                   generic-mmc-raw
   AOPEN CD-RW-241040                  ?                      generic-mmc    
   AOPEN CRW1232                       ?                      generic-mmc-raw
   AOPEN CRW620                        2.40                   ricoh-mp6200     10
@@ -344,7 +345,7 @@ Recorders:
   ATAPI CD-R/RW CRW6206A              1.3A                   generic-mmc-raw
   BENQ CRW2410A                       P.MJ                   generic-mmc-raw
   BTC BCE1610IM                       0.19,A.20              generic-mmc-raw
-  BTC BCE2410IM                       A.22                   generic-mmc-raw
+  BTC BCE2410IM                       A.22,A.23              generic-mmc-raw
   BTC BCE621E                         2.0                    generic-mmc-raw
   CD-RW CDR-2440MB                    5SG1                   generic-mmc    
   CREATIVE CD-RW RW1210E              LCS6                   generic-mmc    
@@ -473,6 +474,7 @@ Recorders:
   RICOH CD-R/RW MP7060                1.30, 1.50, 1.70       generic-mmc    
   RICOH CD-R/RW MP7063A               1.80                   generic-mmc    
   RICOH CD-R/RW MP7080                1.10                   generic-mmc    
+  RICOH CD-R/RW MP7083A               1.20                   generic-mmc    
   RICOH DVD/CDRW MP9060               1.50                   generic-mmc    
   RICOH MP6200                        2.20, 2.03, 1.20, 2.40 ricoh-mp6200   
   RICOH MP6201                        ?                      ricoh-mp6200   
@@ -504,6 +506,7 @@ Recorders:
   SONY CRX175A1                       5YS2                   generic-mmc    
   SONY CRX175E                        ?                      generic-mmc    
   SONY CRX185E1                       XYS2                   generic-mmc    
+  SONY CRX195E1                       ?                      generic-mmc-raw
   T.YUDEN CD-WO EW-50                 2.15, 2.16, 2.18       taiyo-yuden    
   TDK 4800                            s7s5                   generic-mmc    
   TDK CDRW121032                      1.02                   generic-mmc    

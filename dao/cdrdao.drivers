@@ -1,5 +1,5 @@
-# Driver table for cdrdao-1.1.6
-# Generated Sun Sep 15 16:51:59 2002 by mueller
+# Driver table for cdrdao-1.1.7
+# Generated Sun Sep 22 18:06:35 2002 by mueller
 
 # Drivers for read operations
 R|ASUS|CD-S340|generic-mmc
@@ -167,6 +167,7 @@ W|RICOH|CD-R/RW MP7040|generic-mmc|OPT_MMC_CD_TEXT
 W|RICOH|CD-R/RW MP7060|generic-mmc|OPT_MMC_CD_TEXT
 W|RICOH|CD-R/RW MP7063A|generic-mmc|OPT_MMC_CD_TEXT
 W|RICOH|CD-R/RW MP7080|generic-mmc|OPT_MMC_CD_TEXT
+W|RICOH|CD-R/RW MP7083A|generic-mmc|OPT_MMC_CD_TEXT
 W|RICOH|DVD/CDRW MP9060|generic-mmc|OPT_MMC_CD_TEXT
 W|SAF|CD-R8020|generic-mmc
 W|SAF|CD-RW4224A|generic-mmc
@@ -225,6 +226,7 @@ W|ACER|4406EU|generic-mmc-raw
 W|ACER|4x4x6|generic-mmc-raw
 W|ACER|8X4X32|generic-mmc-raw
 W|ACER|CD-R/RW 4X4X32|generic-mmc-raw|OPT_MMC_NO_SUBCHAN
+W|AOPEN|CD-RW CRW3248|generic-mmc-raw
 W|AOPEN|CRW1232|generic-mmc-raw
 W|ARTEC|RW241040|generic-mmc-raw
 W|ARTEC|WRA-WA48|generic-mmc-raw
@@ -282,6 +284,7 @@ W|SAMSUNG|CD-R/RW SW-208|generic-mmc-raw
 W|SAMSUNG|CD-R/RW SW-212B|generic-mmc-raw
 W|SAMSUNG|CD-R/RW SW-224|generic-mmc-raw
 W|SAMSUNG|SW-232|generic-mmc-raw
+W|SONY|CRX195E1|generic-mmc-raw
 W|TEAC|CD-W58E|generic-mmc-raw|OPT_MMC_USE_PQ|OPT_MMC_PQ_BCD
 W|TOSHIBA|R/RW 4x4x24|generic-mmc-raw
 W|TRAXDATA|2832|generic-mmc-raw
