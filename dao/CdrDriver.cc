@@ -1,6 +1,6 @@
 /*  cdrdao - write audio CD-Rs in disc-at-once mode
  *
- *  Copyright (C) 1998-2001 Andreas Mueller <andreas@daneb.de>
+ *  Copyright (C) 1998-2002 Andreas Mueller <andreas@daneb.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -846,6 +846,10 @@ CdrDriver::CdrDriver(ScsiIf *scsiIf, unsigned long options)
     hostByteOrder_ = 0; // little endian
   else
     hostByteOrder_ = 1; // big endian
+
+
+  enableBufferUnderRunProtection_ = 1;
+  enableWriteSpeedControl_ = 1;
 
   readCapabilities_ = 0; // reading capabilities are determined dynamically
 

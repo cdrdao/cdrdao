@@ -1,6 +1,6 @@
 /*  cdrdao - write audio CD-Rs in disc-at-once mode
  *
- *  Copyright (C) 1998-2001 Andreas Mueller <andreas@daneb.de>
+ *  Copyright (C) 1998-2002 Andreas Mueller <andreas@daneb.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -72,7 +72,7 @@ public:
   int writeData(TrackData::Mode, TrackData::SubChannelMode, long &lba,
 		const char *buf, long len);
 
-  DriveInfo *driveInfo(int showErrorMsg);
+  const DriveInfo *driveInfo(int showErrorMsg);
   int subChannelEncodingMode(TrackData::SubChannelMode) const;
 
 protected:
@@ -130,6 +130,9 @@ protected:
   int readCdTest(long lba, long len, int subChanMode) const;
 
   int checkDriveReady() const;
+
+  int RicohGetWriteOptions();
+  int RicohSetWriteOptions(const DriveInfo *);
 };
 
 #endif

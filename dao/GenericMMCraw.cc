@@ -1,6 +1,6 @@
 /*  cdrdao - write audio CD-Rs in disc-at-once mode
  *
- *  Copyright (C) 1998-2001 Andreas Mueller <andreas@daneb.de>
+ *  Copyright (C) 1998-2002 Andreas Mueller <andreas@daneb.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -148,17 +148,22 @@ int GenericMMCraw::setWriteParameters(int dataBlockType)
     mp[2] |= 1 << 4; // test write
   }
 
-  DriveInfo *di;
-  if ((di = driveInfo(1)) != NULL && di->burnProof) {
-    // This drive has BURN-Proof function.
-    // Enable it unless explicitly disabled.
-    if (options_ & OPT_MMC_NO_BURNPROOF) {
-      message(2, "Turning BURN-Proof off");
-      mp[2] &= ~0x40;
-    } else {
-      message(2, "Turning BURN-Proof on");
-      mp[2] |= 0x40;
+  const DriveInfo *di;
+  if ((di = driveInfo(1)) != NULL) {
+    if (di->burnProof) {
+      // This drive has BURN-Proof function.
+      // Enable it unless explicitly disabled.
+      if (bufferUnderRunProtection()) {
+	message(2, "Turning BURN-Proof on");
+	mp[2] |= 0x40;
+      }
+      else {
+	message(2, "Turning BURN-Proof off");
+	mp[2] &= ~0x40;
+      }
     }
+
+    RicohSetWriteOptions(di);
   }
 
   mp[3] &= 0x3f; // Multi-session: No B0 pointer, next session not allowed

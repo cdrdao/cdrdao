@@ -161,7 +161,7 @@ int GenericMMC::speed(int s)
 
 int GenericMMC::speed()
 {
-  DriveInfo *di;
+  const DriveInfo *di;
 
   delete driveInfo_;
   driveInfo_ = NULL;
@@ -473,17 +473,22 @@ int GenericMMC::setWriteParameters(unsigned long variant)
     mp[2] |= 1 << 4; // test write
   }
 
-  DriveInfo *di;
-  if ((di = driveInfo(1)) != NULL && di->burnProof) {
-    // This drive has BURN-Proof function.
-    // Enable it unless explicitly disabled.
-    if (options_ & OPT_MMC_NO_BURNPROOF) {
-      message(2, "Turning BURN-Proof off");
-      mp[2] &= ~0x40;
-    } else {
-      message(2, "Turning BURN-Proof on");
-      mp[2] |= 0x40;
+  const DriveInfo *di;
+  if ((di = driveInfo(1)) != NULL) {
+    if (di->burnProof) {
+      // This drive has BURN-Proof function.
+      // Enable it unless explicitly disabled.
+      if (bufferUnderRunProtection()) {
+	message(2, "Turning BURN-Proof on");
+	mp[2] |= 0x40;
+      }
+      else {
+	message(2, "Turning BURN-Proof off");
+	mp[2] &= ~0x40;
+      }
     }
+
+    RicohSetWriteOptions(di);
   }
 
   mp[3] &= 0x3f; // Multi-session: No B0 pointer, next session not allowed
@@ -1894,7 +1899,7 @@ int GenericMMC::getFeature(unsigned int feature, unsigned char *buf,
   return 0;
 }
 
-DriveInfo *GenericMMC::driveInfo(int showErrorMsg)
+const DriveInfo *GenericMMC::driveInfo(int showErrorMsg)
 {
   unsigned char mp[32];
 
@@ -1931,6 +1936,8 @@ DriveInfo *GenericMMC::driveInfo(int showErrorMsg)
 	    cdMasteringFeature[7]);
   }
 #endif
+
+  RicohGetWriteOptions();
 
   return driveInfo_;
 }
@@ -2675,4 +2682,69 @@ unsigned long GenericMMC::getReadCapabilities(const CdToc *toc,
   }
 
   return caps;
+}
+
+int GenericMMC::RicohGetWriteOptions()
+{
+  unsigned char mp[14];
+
+  driveInfo_->ricohJustLink = 0;
+  driveInfo_->ricohJustSpeed = 0;
+   
+  if (getModePage(0x30, mp, 14, NULL, NULL, 1) != 0) {
+    message(-2, "Cannot retrieve Ricoh mode page 30.");
+    return 1;
+  }
+
+  if (mp[2] & (1 << 5))
+    driveInfo_->ricohJustSpeed = 1;
+
+  if (mp[2] & (1 << 1))
+    driveInfo_->ricohJustLink = 1;
+
+  message(0, "%x %x", mp[2], mp[3]);
+  
+  return 0;
+}
+
+int GenericMMC::RicohSetWriteOptions(const DriveInfo *di)
+{
+  unsigned char mp[14];
+
+  if (di->ricohJustLink == 0 && di->ricohJustSpeed == 0)
+    return 0;
+
+  if (getModePage(0x30, mp, 14, NULL, NULL, 1) != 0) {
+    message(-2, "Cannot retrieve Ricoh mode page 30.");
+    return 1;
+  }
+
+  if (di->ricohJustLink) {
+    if (bufferUnderRunProtection()) {
+      message(2, "Enabling JustLink.");
+      mp[3] |= 0x1;
+    } 
+    else {
+      message(2, "Disabling JustLink.");
+      mp[3] &= ~0x1;
+    }
+  }
+
+  if (di->ricohJustSpeed) {
+    if (writeSpeedControl()) {
+      message(2, "Enabling JustSpeed.");
+      mp[3] &= ~(1 << 5); // clear bit to enable write speed control
+    }
+    else {
+      message(2, "Disabling JustSpeed.");
+      mp[3] |= (1 << 5);  // set bit to disable write speed control
+    }
+  }
+
+  if (setModePage(mp, NULL, NULL, 1) != 0) {
+    message(-2, "Cannot set Ricoh mode page 30.");
+    return 1;
+  }
+  
+  return 0;
 }

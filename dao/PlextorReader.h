@@ -49,6 +49,13 @@ public:
   int startDao();
   int finishDao();
   void abortDao();
+  
+  inline int ReadErrorsSlowDown () {return slow_down_on_read_errors;}
+  inline int VibrationsSlowDown () {return slow_down_on_vibrations;}
+  inline int WaitMaxSpeed () {return transfer_data_before_max_speed;}
+  int ReadErrorsSlowDown (int slowdown);
+  int VibrationsSlowDown (int slowdown);
+  int WaitMaxSpeed (int wait);
 
   DiskInfo *diskInfo();
 
@@ -85,7 +92,10 @@ private:
 
   int readAudioRangePlextor(ReadDiskInfo *, int fd,  long start, long end,
 			    int startTrack, int endTrack, TrackInfo *);
-
+    /* These can be -1 if not available, 0 or 1 */
+    int slow_down_on_read_errors;
+    int transfer_data_before_max_speed;
+    int slow_down_on_vibrations;
 };
 
 #endif

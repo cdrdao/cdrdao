@@ -53,7 +53,7 @@ extern "C" {
 
 enum Command { UNKNOWN, SHOW_TOC, SHOW_DATA, READ_TEST, SIMULATE, WRITE,
 	       READ_TOC, DISK_INFO, READ_CD, TOC_INFO, TOC_SIZE, BLANK,
-	       SCAN_BUS, UNLOCK, COPY_CD, READ_CDDB, MSINFO };
+	       SCAN_BUS, UNLOCK, COPY_CD, READ_CDDB, MSINFO, DRIVE_INFO };
 
 static const char *PRGNAME = NULL;
 static const char *TOC_FILE = NULL;
@@ -87,6 +87,9 @@ static int TAO_SOURCE = 0;
 static int TAO_SOURCE_ADJUST = -1;
 static int KEEPIMAGE = 0;
 static int OVERBURN = 0;
+static int BUFFER_UNDER_RUN_PROTECTION = 1;
+static int WRITE_SPEED_CONTROL = 1;
+
 static CdrDriver::BlankingMode BLANKING_MODE = CdrDriver::BLANK_MINIMAL;
 static TrackData::SubChannelMode READ_SUBCHAN_MODE = TrackData::SUBCHAN_NONE;
 
@@ -239,6 +242,11 @@ static void printUsage()
 "  --simulate              - just perform a write simulation\n"
 "  --speed <writing-speed> - selects writing speed\n"
 "  --multi                 - session will not be not closed\n"
+"  --buffer-under-run-protection #\n"
+"                          - 0: disable buffer under run protection\n"
+"                            1: enable buffer under run protection (default)\n"
+"  --write-speed-control # - 0: disable writing speed control by the drive\n"
+"                            1: enable writing speed control (default)\n" 
 "  --overburn              - allow to overburn a medium\n"
 "  --eject                 - ejects cd after writing or simulation\n"
 "  --swap                  - swap byte order of audio files\n"
@@ -357,6 +365,11 @@ static void printUsage()
 "  --simulate              - just perform a copy simulation\n"
 "  --speed <writing-speed> - selects writing speed\n"
 "  --multi                 - session will not be not closed\n"
+"  --buffer-under-run-protection #\n"
+"                          - 0: disable buffer under run protection\n"
+"                            1: enable buffer under run protection (default)\n"
+"  --write-speed-control # - 0: disable writing speed control by the drive\n"
+"                            1: enable writing speed control (default)\n" 
 "  --overburn              - allow to overburn a medium\n"
 "  --eject                 - ejects cd after writing or simulation\n"
 "  --swap                  - swap byte order of audio files\n"
@@ -610,6 +623,9 @@ static int parseCmdline(int argc, char **argv)
   }
   else if (strcmp(*argv, "msinfo") == 0) {
     COMMAND = MSINFO;
+  }
+  else if (strcmp(*argv, "drive-info") == 0) {
+    COMMAND = DRIVE_INFO;
   }
   else {
     COMMAND=UNKNOWN;
@@ -885,6 +901,37 @@ static int parseCmdline(int argc, char **argv)
 	  }
 	}
       }
+      else if (strcmp((*argv) + 2, "buffer-under-run-protection") == 0) {
+	if (argc < 2) {
+	  message(-2, "Missing argument after: %s", *argv);
+	  return 1;
+	}
+	else {
+	  BUFFER_UNDER_RUN_PROTECTION = atoi(argv[1]);
+	  argc--, argv++;
+	  if (BUFFER_UNDER_RUN_PROTECTION < 0 ||
+	      BUFFER_UNDER_RUN_PROTECTION > 1) {
+	    message(-2, "Illegal value for option --buffer-under-run-protection: %d",
+		    BUFFER_UNDER_RUN_PROTECTION);
+	    return 1;
+	  }
+	}
+      }
+      else if (strcmp((*argv) + 2, "write-speed-control") == 0) {
+	if (argc < 2) {
+	  message(-2, "Missing argument after: %s", *argv);
+	  return 1;
+	}
+	else {
+	  WRITE_SPEED_CONTROL = atoi(argv[1]);
+	  argc--, argv++;
+	  if (WRITE_SPEED_CONTROL < 0 || WRITE_SPEED_CONTROL > 1) {
+	    message(-2, "Illegal value for option --write-speed-control: %d",
+		    WRITE_SPEED_CONTROL);
+	    return 1;
+	  }
+	}
+      }
       else if (strcmp((*argv) + 2, "read-subchan") == 0) {
 	if (argc < 2) {
 	  message(-2, "Missing argument after: %s", *argv);
@@ -915,7 +962,8 @@ static int parseCmdline(int argc, char **argv)
   }
 
   if (COMMAND != DISK_INFO && COMMAND != BLANK && COMMAND != SCAN_BUS &&
-      COMMAND != UNLOCK && COMMAND != COPY_CD && COMMAND != MSINFO) {
+      COMMAND != UNLOCK && COMMAND != COPY_CD && COMMAND != MSINFO &&
+      COMMAND != DRIVE_INFO) {
     if (argc < 1) {
       message(-2, "Missing toc-file.");
       return 1;
@@ -1118,6 +1166,21 @@ static CdrDriver *setupDevice(Command cmd, const char *scsiDevice,
   return cdr;
 }
 
+static void showDriveInfo(const DriveInfo *i)
+{
+  if (i == NULL) {
+    message(0, "No drive information available.");
+    return;
+  }
+
+  printf("Maximum reading speed: %d kB/s\n", i->maxReadSpeed);
+  printf("Current reading speed: %d kB/s\n", i->currentReadSpeed);
+  printf("Maximum writing speed: %d kB/s\n", i->maxWriteSpeed);
+  printf("Current writing speed: %d kB/s\n", i->currentWriteSpeed);
+  printf("BurnProof supported: %s\n", i->burnProof ? "yes" : "no");
+  printf("JustLink supported: %s\n", i->ricohJustLink ? "yes" : "no");
+  printf("JustSpeed supported: %s\n", i->ricohJustSpeed ? "yes" : "no");
+}
 
 static void showTocInfo(const Toc *toc, const char *tocFile)
 {
@@ -1937,7 +2000,7 @@ int main(int argc, char **argv)
 
   if (COMMAND != READ_TOC && COMMAND != DISK_INFO && COMMAND != READ_CD &&
       COMMAND != BLANK && COMMAND != SCAN_BUS && COMMAND != UNLOCK &&
-      COMMAND != COPY_CD && COMMAND != MSINFO) {
+      COMMAND != COPY_CD && COMMAND != MSINFO && COMMAND != DRIVE_INFO) {
     toc = Toc::read(TOC_FILE);
 
     if (REMOTE_MODE) {
@@ -1959,12 +2022,13 @@ int main(int argc, char **argv)
 
   if (COMMAND == SIMULATE || COMMAND == WRITE || COMMAND == READ_TOC ||
       COMMAND == DISK_INFO || COMMAND == READ_CD || COMMAND == BLANK ||
-      COMMAND == UNLOCK || COMMAND == COPY_CD || COMMAND == MSINFO) {
+      COMMAND == UNLOCK || COMMAND == COPY_CD || COMMAND == MSINFO ||
+      COMMAND == DRIVE_INFO) {
     cdr = setupDevice(COMMAND, SCSI_DEVICE, DRIVER_ID, 
 		      /* init device? */
 		      (COMMAND == UNLOCK) ? 0 : 1,
 		      /* check for ready status? */
-		      (COMMAND == BLANK) ? 0 : 1,
+		      (COMMAND == BLANK || COMMAND == DRIVE_INFO) ? 0 : 1,
 		      /* reset status of medium if not empty? */
 		      (COMMAND == SIMULATE || COMMAND == WRITE) ? 1 : 0,
 		      REMOTE_MODE, RELOAD);
@@ -2020,6 +2084,10 @@ int main(int argc, char **argv)
 
   case SCAN_BUS:
     scanBus();
+    break;
+
+  case DRIVE_INFO:
+    showDriveInfo(cdr->driveInfo(1));
     break;
 
   case SHOW_TOC:
@@ -2233,6 +2301,9 @@ int main(int argc, char **argv)
       }
     }
 
+    cdr->bufferUnderRunProtection(BUFFER_UNDER_RUN_PROTECTION);
+    cdr->writeSpeedControl(WRITE_SPEED_CONTROL);
+
     cdr->force(FORCE);
     cdr->remote(REMOTE_MODE, REMOTE_FD);
 
@@ -2320,6 +2391,9 @@ int main(int argc, char **argv)
     cdr->simulate(WRITE_SIMULATE);
     cdr->force(FORCE);
     cdr->remote(REMOTE_MODE, REMOTE_FD);
+
+    cdr->bufferUnderRunProtection(BUFFER_UNDER_RUN_PROTECTION);
+    cdr->writeSpeedControl(WRITE_SPEED_CONTROL);
     
     if (MULTI_SESSION != 0) {
       if (cdr->multiSession(1) != 0) {

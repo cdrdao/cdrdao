@@ -87,6 +87,8 @@ struct DriveInfo {
 
   unsigned int accurateAudioStream : 1;
   unsigned int burnProof : 1;
+  unsigned int ricohJustLink : 1;
+  unsigned int ricohJustSpeed : 1;
 };
 
 struct CdTextPack {
@@ -153,12 +155,32 @@ public:
   // 0 for little endian byte order
   virtual int bigEndianSamples() const = 0;
 
+  // return information about drive
+  virtual const DriveInfo *driveInfo(int showErrorMsg) { return NULL; }
+
   // returns current writing speed
   virtual int speed() { return speed_; }
   
   // sets writing speed, returns 0 for OK or 1 for illegal speed,
   // this function may send SCSI commands to the drive
   virtual int speed(int) = 0;
+
+  // sets/return buffer under run protection setting (if supported by
+  // the drive: 1 = enabled, 0 = disbaled
+  virtual int bufferUnderRunProtection() const {
+    return enableBufferUnderRunProtection_;
+  }
+
+  virtual void bufferUnderRunProtection(int s) {
+    enableBufferUnderRunProtection_ = s != 0 ? 1 : 0;
+  }
+    
+  // sets/return writing speed control setting (if supported by
+  // the drive: 1 = enabled, 0 = disbaled
+  virtual int writeSpeedControl() const { return enableWriteSpeedControl_; }
+
+  virtual void writeSpeedControl(int s) {
+    enableWriteSpeedControl_ = s != 0 ? 1 : 0; }
 
   // returns 1 if simulation mode, 0 for real writing
   virtual int simulate() const { return simulate_; }
@@ -356,7 +378,9 @@ protected:
   long blocksPerWrite_; // number of blocks that can be written with a
                         // single SCSI WRITE command
   char *zeroBuffer_; // zeroed buffer for writing zeros
-  
+
+  int enableBufferUnderRunProtection_;
+  int enableWriteSpeedControl_;
   int speed_;
   int simulate_;
   int multiSession_;
