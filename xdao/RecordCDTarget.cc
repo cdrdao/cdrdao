@@ -74,7 +74,7 @@ RecordCDTarget::RecordCDTarget()
   speedButton_ = new Gtk::CheckButton(string("Use max."));
   speedButton_->set_active(true);
 
-  DEVICES = new DeviceList(CD_R);
+  DEVICES = new DeviceList(CdDevice::CD_R);
 
   Gtk::VBox *contents = new Gtk::VBox;
   contents->set_spacing(10);
@@ -180,7 +180,7 @@ RecordCDTarget::~RecordCDTarget()
 }
 
 
-void RecordCDTarget::start(TocEdit *tocEdit, RecordSourceType source)
+void RecordCDTarget::start(TocEdit *tocEdit, RecordGenericDialog::RecordSourceType source)
 {
   active_ = 1;
 
@@ -197,7 +197,8 @@ void RecordCDTarget::stop()
   }
 }
 
-void RecordCDTarget::update(unsigned long level, TocEdit *tocEdit, RecordSourceType source)
+void RecordCDTarget::update(unsigned long level, TocEdit *tocEdit,
+		RecordGenericDialog::RecordSourceType source)
 {
   if (!active_)
     return;
@@ -209,9 +210,9 @@ void RecordCDTarget::update(unsigned long level, TocEdit *tocEdit, RecordSourceT
   else if (level & UPD_CD_DEVICE_STATUS)
     DEVICES->importStatus();
 
-  if (source == S_TOC)
+  if (source == RecordGenericDialog::S_TOC)
     ontheflyButton_->set_sensitive(false);
-  else if (source == S_CD)
+  else if (source == RecordGenericDialog::S_CD)
     ontheflyButton_->set_sensitive(true);
 }
 
@@ -220,7 +221,7 @@ void RecordCDTarget::cancelAction()
   stop();
 }
 
-void RecordCDTarget::startAction(RecordSourceType source,
+void RecordCDTarget::startAction(RecordGenericDialog::RecordSourceType source,
 	RecordTocSource *TOC, RecordCDSource *CD)
 {
   int eject, simulate, speed, multiSession, reload, onthefly;
@@ -232,7 +233,7 @@ void RecordCDTarget::startAction(RecordSourceType source,
 
 //Note: There is duplicated code here, it is easier to separate things
 //      than an if at every single line.
-  if (source == S_TOC)
+  if (source == RecordGenericDialog::S_TOC)
   {
     if (tocEdit_ == NULL)
       return;
@@ -359,7 +360,7 @@ void RecordCDTarget::startAction(RecordSourceType source,
     }
   }
   // We are doing CD to CD copy
-  else if (source == S_CD)
+  else if (source == RecordGenericDialog::S_CD)
   {
     if (CD->DEVICES->selection().empty()) {
       MessageBox msg(parent, "Record", 0, 

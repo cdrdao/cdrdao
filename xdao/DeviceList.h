@@ -24,15 +24,12 @@
 #include <gtk/gtk.h>
 
 class TocEdit;
-class CdDevice;
-
-//FIXME: Should modify CdDevice.h ???
-typedef enum { CD_R, CD_RW, CD_ROM } DeviceType;
+// class CdDevice;
+#include "CdDevice.h"
 
 class DeviceList : public Gtk::Frame {
 public:
-//  DeviceList(enum CdDevice::DeviceType filterType);
-  DeviceList(enum DeviceType filterType);
+  DeviceList(CdDevice::DeviceType filterType);
   ~DeviceList();
 
   Gtk::CList_Helpers::SelectionList selection();
@@ -45,8 +42,7 @@ private:
   TocEdit *tocEdit_;
 
   int speed_;
-//  enum CdDevice::DeviceType filterType_;
-  enum DeviceType filterType_;
+  CdDevice::DeviceType filterType_;
 
   Gtk::CList *list_;
 

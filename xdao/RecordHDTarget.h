@@ -51,7 +51,8 @@ private:
 
 public:
    void cancelAction();
-   void startAction(RecordSourceType source, RecordTocSource *TOC, RecordCDSource *CD);
+   void startAction(RecordGenericDialog::RecordSourceType source,
+			RecordTocSource *TOC, RecordCDSource *CD);
 
 };
 

@@ -36,10 +36,10 @@ public:
 
   Gtk::Window *parent; // the dialog where the vbox is placed
   
-  void start(TocEdit *, RecordSourceType source);
+  void start(TocEdit *, RecordGenericDialog::RecordSourceType source);
   void stop();
 
-  void update(unsigned long level, TocEdit *, RecordSourceType source);
+  void update(unsigned long level, TocEdit *, RecordGenericDialog::RecordSourceType source);
 
 private:
   TocEdit *tocEdit_;
@@ -67,7 +67,8 @@ private:
 
 public:
    void cancelAction();
-   void startAction(RecordSourceType source, RecordTocSource *TOC, RecordCDSource *CD);
+   void startAction(RecordGenericDialog::RecordSourceType source,
+			RecordTocSource *TOC, RecordCDSource *CD);
 
 private:
   void speedButtonChanged();

@@ -76,7 +76,7 @@ RecordCDSource::RecordCDSource()
   correctionMenu_->set_history(correction_);
 
 
-  DEVICES = new DeviceList(CD_ROM);
+  DEVICES = new DeviceList(CdDevice::CD_ROM);
 
   Gtk::VBox *contents = new Gtk::VBox;
   contents->set_spacing(10);

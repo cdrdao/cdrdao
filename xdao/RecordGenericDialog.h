@@ -32,20 +32,11 @@ class RecordCDSource;
 class RecordCDTarget;
 class RecordHDTarget;
 
-typedef enum {
-	S_NONE,
-	S_TOC,
-	S_CD
-}RecordSourceType;
-
-typedef enum {
-	T_NONE,
-	T_CD,
-	T_HD
-}RecordTargetType;
-
 class RecordGenericDialog : public Gtk::Window {
 public:
+  enum RecordSourceType { S_NONE, S_TOC, S_CD };
+  enum RecordTargetType { T_NONE, T_CD, T_HD };
+
   RecordGenericDialog();
   ~RecordGenericDialog();
 

@@ -135,7 +135,7 @@ void RecordHDTarget::cancelAction()
   stop();
 }
 
-void RecordHDTarget::startAction(RecordSourceType source,
+void RecordHDTarget::startAction(RecordGenericDialog::RecordSourceType source,
 		RecordTocSource *TOC, RecordCDSource *CD)
 {
   int eject, simulate, speed, multiSession, reload;

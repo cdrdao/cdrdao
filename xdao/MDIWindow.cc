@@ -444,17 +444,20 @@ void MDIWindow::configureDevices()
 
 void MDIWindow::recordToc2CD()
 {
-  RECORD_GENERIC_DIALOG->start(tocEdit_, S_TOC, T_CD);
+  RECORD_GENERIC_DIALOG->start(tocEdit_,
+		RecordGenericDialog::S_TOC, RecordGenericDialog::T_CD);
 }
 
 void MDIWindow::recordCD2HD()
 {
-  RECORD_GENERIC_DIALOG->start(NULL, S_CD, T_HD);
+  RECORD_GENERIC_DIALOG->start(NULL,
+		RecordGenericDialog::S_CD, RecordGenericDialog::T_HD);
 }
 
 void MDIWindow::recordCD2CD()
 {
-  RECORD_GENERIC_DIALOG->start(NULL, S_CD, T_CD);
+  RECORD_GENERIC_DIALOG->start(NULL,
+		RecordGenericDialog::S_CD, RecordGenericDialog::T_CD);
 }
 
 void MDIWindow::trackInfo()
@@ -588,14 +591,18 @@ MDIWindow::about_cb()
     }
   else
     {
+      gchar *logo_char;
+      string logo;
       vector<string> authors;
       authors.push_back("Andreas Mueller <mueller@daneb.ping.de>");
       authors.push_back("Manuel Clos <llanero@jazzfree.com>");
 
       // not yet wrapped - sorry
-      string logo(gnome_pixmap_file("gcdmaster.png"));
+//      string logo(gnome_pixmap_file("gcdmaster.png"));
+      logo_char = gnome_pixmap_file("gcdmaster.png");
 
-  cout << logo << endl;
+      if (logo_char != NULL)
+        logo = logo_char;
 
       about_ = new Gnome::About(_("gcdmaster"), "1.1.4",
                                "(C) Andreas Mueller",

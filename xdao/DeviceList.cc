@@ -35,7 +35,7 @@
 
 #include "util.h"
 
-DeviceList::DeviceList(enum DeviceType filterType)
+DeviceList::DeviceList(CdDevice::DeviceType filterType)
 {
   Gtk::HBox *hbox;
 
@@ -93,15 +93,15 @@ DeviceList::DeviceList(enum DeviceType filterType)
 
   switch (filterType_)
   {
-    case CD_ROM:
+    case CdDevice::CD_ROM:
                  set_label(string("Available Reader Devices"));
                  list_->set_selection_mode(GTK_SELECTION_SINGLE);
                  break;
-    case CD_R:
+    case CdDevice::CD_R:
                  set_label(string("Available Recorder Devices"));
                  list_->set_selection_mode(GTK_SELECTION_MULTIPLE);
                  break;
-    case CD_RW:
+    case CdDevice::CD_RW:
                  set_label(string("Available Recorder (RW) Devices"));
                  list_->set_selection_mode(GTK_SELECTION_MULTIPLE);
                  break;
@@ -190,7 +190,7 @@ void DeviceList::import()
   for (drun = CdDevice::first(); drun != NULL; drun = CdDevice::next(drun)) {
     switch (filterType_)
     {
-      case CD_ROM:
+      case CdDevice::CD_ROM:
                    if (drun->driverId() > 0 &&
 	               (drun->deviceType() == CdDevice::CD_ROM ||
 	                drun->deviceType() == CdDevice::CD_R ||
@@ -198,14 +198,14 @@ void DeviceList::import()
                      appendTableEntry(drun);
                    }
                    break;
-      case CD_R:
+      case CdDevice::CD_R:
                    if (drun->driverId() > 0 &&
 	               (drun->deviceType() == CdDevice::CD_R ||
 	                drun->deviceType() == CdDevice::CD_RW)) {
                      appendTableEntry(drun);
                    }
                    break;
-      case CD_RW:
+      case CdDevice::CD_RW:
                    if (drun->driverId() > 0 &&
 	               (drun->deviceType() == CdDevice::CD_RW)) {
                      appendTableEntry(drun);
