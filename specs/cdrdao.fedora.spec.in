@@ -1,6 +1,6 @@
 Name:		cdrdao
 Summary:	A Disk-At-Once (DAO) Audio CD writer and GUI editor
-Version:	1.1.9pre1
+Version:	@PACKAGE_VERSION@
 Release:	1
 License:	GPL
 Group:		Applications/Multimedia
