@@ -38,7 +38,7 @@ PIXMAPS_DIR = $(datadir)/pixmaps/gcdmaster
 #
 CXX = @CXX@
 CXXFLAGS = @CXXFLAGS@ 
-ALL_CXXFLAGS = @DEFS@ @mydefs@ -DVERSION=\"$(VERSION)\" -I.. -I$(srcdir) -I$(srcdir)/../dao -I$(srcdir)/../trackdb $(CXXFLAGS) @GNOMEMM_CFLAGS@
+ALL_CXXFLAGS = @DEFS@ @mydefs@ -DVERSION=\"$(VERSION)\" -I.. -I$(srcdir) -I$(srcdir)/../dao -I$(srcdir)/../trackdb $(CXXFLAGS) @GNOME_CFLAGS@ @GNOMEMM_CFLAGS@
 LDFLAGS = @LDFLAGS@ 
 LIBS =  @scsilib_libs@ @GNOMEMM_LIBS@ @GTKMM_LIBS@ @GNOME_LIBS@ @thread_libs@ @LIBS@ 
 RANLIB = @RANLIB@
