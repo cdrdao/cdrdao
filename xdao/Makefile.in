@@ -35,7 +35,7 @@ CXX = @CXX@
 CXXFLAGS = @CXXFLAGS@ 
 ALL_CXXFLAGS = @DEFS@ @mydefs@ -DVERSION=\"$(VERSION)\" -I.. -I$(srcdir) -I$(srcdir)/../dao -I$(srcdir)/../trackdb $(CXXFLAGS) @GTKMM_CFLAGS@
 LDFLAGS = @LDFLAGS@ 
-LIBS =  @scsilib_libs@ @thread_libs@ @extra_libs@ @LIBS@ `gnome-config --libs gnomemm` `gnome-config --libs libglade`
+LIBS =  @scsilib_libs@ `gnome-config --libs gnomemm` `gnome-config --libs libglade` @GTKMM_LIBS@ @thread_libs@ @extra_libs@ @LIBS@ 
 RANLIB = @RANLIB@
 AR = ar
 #
@@ -77,7 +77,7 @@ distclean: clean
 #
 #
 $(PRG): $(OBJ) ../trackdb/libtrackdb.a ../dao/libdao.a
-	$(CXX) $(LDFLAGS) -o $(PRG) $(OBJ) @GTKMM_LIBS@ -L../dao -ldao -L../trackdb -ltrackdb -L../edc_ecc -ledc_ecc -L../paranoia -lcdda_paranoia $(LIBS)
+	$(CXX) $(LDFLAGS) -o $(PRG) $(OBJ) -L../dao -ldao -L../trackdb -ltrackdb -L../edc_ecc -ledc_ecc -L../paranoia -lcdda_paranoia $(LIBS)
 
 %.o : %.cc
 	$(CXX) $(ALL_CXXFLAGS) -c $< -o $@

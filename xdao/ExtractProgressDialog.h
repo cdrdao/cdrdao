@@ -1,6 +1,6 @@
 /*  cdrdao - write audio CD-Rs in disc-at-once mode
  *
- *  Copyright (C) 1998, 1999  Andreas Mueller <mueller@daneb.ping.de>
+ *  Copyright (C) 1998-2000  Andreas Mueller <mueller@daneb.ping.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -46,8 +46,7 @@ private:
   int finished_;
   int actStatus_;
   int actTrack_;
-  int actTotalProgress_;
-  int actBufferFill_;
+  int actTrackProgress_;
 
   int actCloseButtonLabel_;
 
@@ -57,8 +56,7 @@ private:
   Gtk::Label *tocName_;
 
   Gtk::Label *statusMsg_;;
-  Gtk::ProgressBar *totalProgress_;
-  Gtk::ProgressBar *bufferFillRate_;
+  Gtk::ProgressBar *trackProgress_;
 
   ExtractProgressDialog *poolNext_;
 

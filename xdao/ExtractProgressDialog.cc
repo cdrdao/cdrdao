@@ -29,6 +29,7 @@
 #include "guiUpdate.h"
 #include "CdDevice.h"
 
+static char rcsid[] = "$Id: ExtractProgressDialog.cc,v 1.5 2000/04/24 12:49:06 andreasm Exp $";
 
 ExtractProgressDialog::ExtractProgressDialog(ExtractProgressDialogPool *father)
 {
@@ -46,8 +47,7 @@ ExtractProgressDialog::ExtractProgressDialog(ExtractProgressDialogPool *father)
   contents->set_spacing(5);
 
   statusMsg_ = new Gtk::Label(string("XXXXXXXXXXXXXXXXXXX"));
-  totalProgress_ = new Gtk::ProgressBar;
-  bufferFillRate_ = new Gtk::ProgressBar;
+  trackProgress_ = new Gtk::ProgressBar;
   tocName_ = new Gtk::Label;
   abortLabel_ = new Gtk::Label(string(" Abort "));
   closeLabel_ = new Gtk::Label(string(" Dismiss "));
@@ -72,7 +72,7 @@ ExtractProgressDialog::ExtractProgressDialog(ExtractProgressDialogPool *father)
   contents->pack_start(*hbox, FALSE);
   hbox->show();
 
-  table = new Gtk::Table(2, 2, FALSE);
+  table = new Gtk::Table(1, 2, FALSE);
   table->set_row_spacings(5);
   table->set_col_spacings(5);
   contents->pack_start(*table, FALSE);
@@ -86,24 +86,11 @@ ExtractProgressDialog::ExtractProgressDialog(ExtractProgressDialogPool *father)
   align->show();
 
   hbox = new Gtk::HBox;
-  hbox->pack_start(*totalProgress_);
-  totalProgress_->show();
+  hbox->pack_start(*trackProgress_);
+  trackProgress_->show();
   table->attach(*hbox, 1, 2, 0, 1);
   hbox->show();
 
-  label = new Gtk::Label(string("Total:"));
-  align = new Gtk::Alignment(1.0, 0.0, 0.0, 0.0);
-  align->add(*label);
-  label->show();
-  table->attach(*align, 0, 1, 1, 2, GTK_FILL);
-  align->show();
-  
-  hbox = new Gtk::HBox;
-  hbox->pack_start(*bufferFillRate_);
-  bufferFillRate_->show();
-  table->attach(*hbox, 1, 2, 1, 2);
-  hbox->show();
-  
   hbox = new Gtk::HBox;
   hbox->pack_start(*contents, TRUE, TRUE, 10);
   contents->show();
@@ -199,13 +186,10 @@ void ExtractProgressDialog::clear()
   finished_ = 0;
   actStatus_ = 0;
   actTrack_ = 0;
-  actTotalProgress_ = 0;
-  actBufferFill_ = 0;
+  actTrackProgress_ = 0;
 
   statusMsg_->set_text(string(""));
-  totalProgress_->set_percentage(0.0);
-  bufferFillRate_->set_percentage(0.0);
-
+  trackProgress_->set_percentage(0.0);
   
   set_title(string(""));
 }
@@ -214,8 +198,7 @@ void ExtractProgressDialog::update(unsigned long level, TocEdit *tocEdit)
 {
   int status;
   int track;
-  int totalProgress;
-  int bufferFill;
+  int trackProgress;
   char buf[20];
   string s;
 
@@ -227,52 +210,46 @@ void ExtractProgressDialog::update(unsigned long level, TocEdit *tocEdit)
 
   if ((level & UPD_PROGRESS_STATUS) && device_->progressStatusChanged()) {
 
-    device_->readProgress(&status, &track, &totalProgress, &bufferFill);
+    device_->readProgress(&status, &track, &trackProgress);
 
-    if (status != actStatus_) {
+    if (status != actStatus_ || actTrack_ != track) {
       actStatus_ = status;
 
       switch (status) {
       case 1:
-//FIXME: ...
-	statusMsg_->set_text(string("Writing lead-in..."));
-	break;
-      case 2:
 	actTrack_ = track;
 
-	s = "Writing track ";
+	s = "Analyzing track ";
 	sprintf(buf, "%d", track);
 	s += buf;
 
 	statusMsg_->set_text(s);
 	break;
-      case 3:
-	statusMsg_->set_text(string("Writing lead-out..."));
+      case 2:
+	actTrack_ = track;
+
+	s = "Extracting track ";
+	sprintf(buf, "%d", track);
+	s += buf;
+
+	statusMsg_->set_text(s);
 	break;
       }
     }
 
-    if (track != actTrack_ && status == 2) {
-      actTrack_ = track;
+    if (trackProgress != actTrackProgress_) {
+      actTrackProgress_ = trackProgress;
 
-      s = "Writing track ";
-      sprintf(buf, "%d", track);
-      s += buf;
-
-      statusMsg_->set_text(s);
+      trackProgress_->set_percentage(gfloat(trackProgress) / 1000.0);
     }
 
-    if (totalProgress != actTotalProgress_) {
-      actTotalProgress_ = totalProgress;
-
-      totalProgress_->set_percentage(gfloat(totalProgress) / 1000.0);
-    }
-
+    /*
     if (bufferFill != actBufferFill_) {
       actBufferFill_ = bufferFill;
 
       bufferFillRate_->set_percentage(gfloat(bufferFill) / 100.0);
     }
+    */
   }
 
   if (device_->status() != CdDevice::DEV_READING) {

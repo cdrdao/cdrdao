@@ -18,6 +18,10 @@
  */
 /*
  * $Log: guiUpdate.cc,v $
+ * Revision 1.3  2000/04/24 12:49:06  andreasm
+ * Changed handling or message from remote processes to use the
+ * Gtk::Main::input mechanism.
+ *
  * Revision 1.2  2000/04/23 09:07:08  andreasm
  * * Fixed most problems marked with '//llanero'.
  * * Added audio CD edit menus to MDIWindow.
@@ -35,7 +39,7 @@
  *
  */
 
-static char rcsid[] = "$Id: guiUpdate.cc,v 1.2 2000/04/23 09:07:08 andreasm Exp $";
+static char rcsid[] = "$Id: guiUpdate.cc,v 1.3 2000/04/24 12:49:06 andreasm Exp $";
 
 #include "guiUpdate.h"
 
@@ -49,6 +53,8 @@ static char rcsid[] = "$Id: guiUpdate.cc,v 1.2 2000/04/23 09:07:08 andreasm Exp 
 #include "DeviceConfDialog.h"
 #include "RecordDialog.h"
 #include "RecordProgressDialog.h"
+#include "ExtractDialog.h"
+#include "ExtractProgressDialog.h"
 #include "ProcessMonitor.h"
 #include "CdDevice.h"
 
@@ -85,6 +91,12 @@ void guiUpdate(unsigned long level)
 
   if (RECORD_PROGRESS_POOL != NULL)
     RECORD_PROGRESS_POOL->update(level, tocEdit);
+
+  if (EXTRACT_DIALOG != NULL)
+    EXTRACT_DIALOG->update(level, tocEdit);
+
+  if (EXTRACT_PROGRESS_POOL != NULL)
+    EXTRACT_PROGRESS_POOL->update(level, tocEdit);
 }
 
 int guiUpdatePeriodic()
@@ -92,8 +104,13 @@ int guiUpdatePeriodic()
   if (CdDevice::updateDeviceStatus())
     guiUpdate(UPD_CD_DEVICE_STATUS);
 
-  if (CdDevice::updateDeviceProgress())
-    guiUpdate(UPD_PROGRESS_STATUS);
+  /*
+   * not used anymore since Gtk::Main::input signal will call
+   * CdDevice::updateProgress directly.
+
+     if (CdDevice::updateDeviceProgress())
+       guiUpdate(UPD_PROGRESS_STATUS);
+   */
 
   return 1;
 }

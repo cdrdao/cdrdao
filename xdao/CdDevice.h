@@ -1,6 +1,6 @@
 /*  cdrdao - write audio CD-Rs in disc-at-once mode
  *
- *  Copyright (C) 1998, 1999  Andreas Mueller <mueller@daneb.ping.de>
+ *  Copyright (C) 1998-2000  Andreas Mueller <mueller@daneb.ping.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -18,8 +18,15 @@
  */
 /*
  * $Log: CdDevice.h,v $
- * Revision 1.1  2000/02/05 01:38:46  llanero
- * Initial revision
+ * Revision 1.2  2000/04/24 12:49:06  andreasm
+ * Changed handling or message from remote processes to use the
+ * Gtk::Main::input mechanism.
+ *
+ * Revision 1.3  1999/12/15 20:34:18  mueller
+ * CD image extraction added by Manuel Clos.
+ *
+ * Revision 1.2  1999/11/07 09:18:45  mueller
+ * Release 1.1.3
  *
  * Revision 1.1  1999/09/03 16:05:14  mueller
  * Initial revision
@@ -29,16 +36,14 @@
 #ifndef __CD_DEVICE_H__
 #define __CD_DEVICE_H__
 
-/*
-#include <gtk--.h>
-#include <gtk/gtk.h>
-*/
+#include <sigc++/object.h>
+#include <gdk/gdk.h>
 
 class TocEdit;
 class Process;
 class ScsiIf;
 
-class CdDevice /*: public Gtk_Signal_Base*/ {
+class CdDevice : public SigC::Object {
 public:
   enum Status { DEV_READY, DEV_RECORDING, DEV_READING, DEV_BUSY,
 		DEV_NO_DISK, DEV_BLANKING, DEV_FAULT, DEV_UNKNOWN };
@@ -64,7 +69,7 @@ public:
   void status(Status);
   int updateStatus();
 
-  int updateProgress();
+  void updateProgress(int fd, GdkInputCondition);
 
   int autoSelectDriver();
 
@@ -94,8 +99,7 @@ public:
   void recordProgress(int *status, int *track, int *totalProgress,
 		      int *bufferFill) const;
   
-  void readProgress(int *status, int *track, int *totalProgress,
-		      int *bufferFill) const;
+  void readProgress(int *status, int *track, int *trackProgress) const;
 
   static int maxDriverId();
   static const char *driverName(int id);
@@ -121,7 +125,12 @@ public:
   static CdDevice *next(const CdDevice *);
 
   static int updateDeviceStatus();
-  static int updateDeviceProgress();
+
+  /* not used anymore since Gtk::Main::input signal will call
+   * CdDevice::updateProgress directly.
+
+     static int updateDeviceProgress();
+  */
 
   static int count();
 
@@ -151,6 +160,7 @@ private:
   int progressStatus_;
   int progressTrack_;
   int progressTotal_;
+  int progressTrackRelative_;
   int progressBufferFill_;
 
   Process *process_;
