@@ -42,6 +42,8 @@ protected:
   void app_close();
   virtual int delete_event_impl(GdkEventAny *event);
   void nothing_cb();  
+  void about_cb();
+  void about_destroy_cb();
 
 private:
   TocEdit *tocEdit_; // this should be a list of TocEdit objects
@@ -69,6 +71,8 @@ private:
   void recordCD2CD();
   void projectInfo();
   void trackInfo();
+
+  Gnome::About *about_;
 
 public:
   TocEdit *tocEdit() const { return tocEdit_; }

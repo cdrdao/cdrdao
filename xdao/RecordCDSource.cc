@@ -95,7 +95,7 @@ RecordCDSource::RecordCDSource()
   hbox->pack_start(*label, FALSE);
   label->show();
   vbox->pack_start(*hbox, FALSE);
-  hbox->show();
+//  hbox->show();
 
   hbox = new Gtk::HBox;
   label = new Gtk::Label(string("Correction Method: "));
@@ -105,21 +105,16 @@ RecordCDSource::RecordCDSource()
   correctionMenu_->show();
   vbox->pack_start(*hbox, FALSE);
   hbox->show();
-/*
-  onTheFlyButton_ = new Gtk::CheckButton(string("On the Fly"), 0);
-  onTheFlyButton_->set_active(false);
-  vbox->pack_start(*onTheFlyButton_);
-  onTheFlyButton_->show();
-*/
+
   continueOnErrorButton_ = new Gtk::CheckButton(string("Continue if errors found"), 0);
   continueOnErrorButton_->set_active(false);
   vbox->pack_start(*continueOnErrorButton_);
-  continueOnErrorButton_->show();
+//  continueOnErrorButton_->show();
 
   ignoreIncorrectTOCButton_ = new Gtk::CheckButton(string("Ignore incorrect TOC"), 0);
   ignoreIncorrectTOCButton_->set_active(false);
   vbox->pack_start(*ignoreIncorrectTOCButton_);
-  ignoreIncorrectTOCButton_->show();
+//  ignoreIncorrectTOCButton_->show();
 
   contents->pack_start(*extractOptionsFrame, FALSE, FALSE);
   extractOptionsFrame->show();

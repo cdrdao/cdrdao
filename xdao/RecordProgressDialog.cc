@@ -18,6 +18,9 @@
  */
 /*
  * $Log: RecordProgressDialog.cc,v $
+ * Revision 1.7  2000/08/01 01:27:50  llanero
+ * CD to CD copy works now.
+ *
  * Revision 1.6  2000/07/31 01:55:49  llanero
  * got rid of old Extract dialog and Record dialog.
  * both are using RecordProgressDialog now.
@@ -46,7 +49,7 @@
  *
  */
 
-static char rcsid[] = "$Id: RecordProgressDialog.cc,v 1.6 2000/07/31 01:55:49 llanero Exp $";
+static char rcsid[] = "$Id: RecordProgressDialog.cc,v 1.7 2000/08/01 01:27:50 llanero Exp $";
 
 #include <stdio.h>
 #include <stddef.h>
@@ -288,6 +291,17 @@ void RecordProgressDialog::closeAction()
         }
         }
 		break;
+    case CdDevice::A_DUPLICATE:
+        {        
+        Ask2Box msg(this, "Abort Process", 0, 2,
+		    "Abort duplicating process?", NULL);
+
+        if (msg.run() == 1) {
+          if (device_ != NULL) 
+	        device_->abortDaoDuplication();
+        }
+        }
+		break;
 	default:
 	    break;
     }
@@ -443,14 +457,6 @@ void RecordProgressDialog::update(unsigned long level, TocEdit *tocEdit)
         sprintf(bufProgress, "%.2f %%%%", gfloat(trackProgress/10.0));
         trackProgress_->set_format_string(bufProgress);  
       }
-
-    /*
-    if (bufferFill != actBufferFill_) {
-      actBufferFill_ = bufferFill;
-
-      bufferFillRate_->set_percentage(gfloat(bufferFill) / 100.0);
-    }
-    */
     }
 
     if (device_->status() != CdDevice::DEV_READING) {
@@ -475,6 +481,82 @@ void RecordProgressDialog::update(unsigned long level, TocEdit *tocEdit)
 
     break;
   
+  case CdDevice::A_DUPLICATE:
+    if ((level & UPD_PROGRESS_STATUS) && device_->progressStatusChanged()) {
+      device_->recordProgress(&status, &track, &totalProgress, &bufferFill);
+
+//g_print("Message received!\n");
+
+      if (status != actStatus_) {
+        actStatus_ = status;
+
+        switch (status) {
+          case 1:
+            statusMsg_->set_text(string("Writing lead-in..."));
+  	      break;
+          case 2:
+	        actTrack_ = track;
+
+        	s = "Writing track ";
+        	sprintf(buf, "%d", track);
+	        s += buf;
+
+        	statusMsg_->set_text(s);
+    	    break;
+          case 3:
+    	    statusMsg_->set_text(string("Writing lead-out..."));
+	        break;
+        }
+      }
+
+      if (track != actTrack_ && status == 2) {
+        actTrack_ = track;
+
+        s = "Writing track ";
+        sprintf(buf, "%d", track);
+        s += buf;
+
+        statusMsg_->set_text(s);
+      }
+
+      if (totalProgress != actTotalProgress_) {
+        actTotalProgress_ = totalProgress;
+
+        totalProgress_->set_percentage(gfloat(totalProgress) / 1000.0);
+        sprintf(bufProgress, "%.2f %%%%", gfloat(totalProgress/10.0));
+        totalProgress_->set_format_string(bufProgress);
+      }
+
+      if (bufferFill != actBufferFill_) {
+        actBufferFill_ = bufferFill;
+
+        bufferFillRate_->set_percentage(gfloat(bufferFill) / 100.0);
+        sprintf(bufProgress, "%.2f %%%%", gfloat(bufferFill/1.0));
+        bufferFillRate_->set_format_string(bufProgress);
+      }
+    }
+
+    if (device_->status() != CdDevice::DEV_RECORDING) {
+      switch (device_->exitStatus()) {
+      case 0:
+        statusMsg_->set_text(string("Recording finished successfully."));
+        break;
+
+      case 255:
+        statusMsg_->set_text(string("Cannot execute cdrdao. Please check your PATH."));
+        break;
+
+      default:
+        statusMsg_->set_text(string("Recording aborted with error."));
+        break;
+      }
+
+      finished_ = 1;
+
+      setCloseButtonLabel(2);
+    }
+
+    break;
   default:
     break;
   }

@@ -18,6 +18,9 @@
  */
 /*
  * $Log: CdDevice.cc,v $
+ * Revision 1.9  2000/08/01 01:27:50  llanero
+ * CD to CD copy works now.
+ *
  * Revision 1.8  2000/07/31 01:55:49  llanero
  * got rid of old Extract dialog and Record dialog.
  * both are using RecordProgressDialog now.
@@ -56,7 +59,7 @@
  *
  */
 
-static char rcsid[] = "$Id: CdDevice.cc,v 1.8 2000/07/31 01:55:49 llanero Exp $";
+static char rcsid[] = "$Id: CdDevice.cc,v 1.9 2000/08/01 01:27:50 llanero Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -880,9 +883,8 @@ int CdDevice::duplicateDao(int simulate, int multiSession, int speed,
     message(0, "%s ", args[i]);
   message(0, "");
 
-//FIXME: !!!
 
-//  RECORD_PROGRESS_POOL->start(this, NULL);
+  RECORD_PROGRESS_POOL->start(this, "CD to CD copy");
 
   // Remove the SCSI interface of this device to avoid problems with double
   // usage of device nodes.
@@ -893,13 +895,16 @@ int CdDevice::duplicateDao(int simulate, int multiSession, int speed,
 
   delete[] execName;
 
-/*
+
   if (process_ != NULL) {
-    readdev->status(DEV_READING)
-    if (onthefly)
+// don't do it for now!    readdev->status(DEV_READING);
+//    if (onthefly)
       status_ = DEV_RECORDING;
-    else
-      status_ = DEV_WAITING;
+//    else
+//      status_ = DEV_WAITING;
+
+    action_ = A_DUPLICATE;
+
     if (process_->commFd() >= 0) {
       Gtk::Main::instance()->input.connect(slot(this,
 						&CdDevice::updateProgress),
@@ -912,7 +917,6 @@ int CdDevice::duplicateDao(int simulate, int multiSession, int speed,
   else {
     return 1;
   }
-*/
 }
 
 void CdDevice::abortDaoDuplication()

@@ -26,6 +26,8 @@
 
 #include <glade/glade.h>
 
+#include <gnome.h>
+
 #include "util.h"
 #include "xcdrdao.h"
 #include "guiUpdate.h"
@@ -57,6 +59,7 @@ MDIWindow::install_menus_and_toolbar()
 					 N_("Audio CD"),
 					 slot(this, &MDIWindow::newProject),
 					 N_("New Audio CD")));
+/*
   newMenuTree.push_back(Gnome::UI::Item(Gnome::UI::Icon(GNOME_STOCK_MENU_NEW),
 					 N_("Data CD"),
 					 slot(this, &MDIWindow::newProject),
@@ -65,6 +68,7 @@ MDIWindow::install_menus_and_toolbar()
 					 N_("Mixed CD"),
 					 slot(this, &MDIWindow::newProject),
 					 N_("New Mixed CD")));
+*/
 
   // File menu
   //
@@ -84,6 +88,7 @@ MDIWindow::install_menus_and_toolbar()
   				(slot(this, &MDIWindow::saveAsProject)));
 
   fileMenuTree.push_back(Gnome::UI::Separator());
+/*
 
   fileMenuTree.push_back(Gnome::MenuItems::PrintSetup
   				(slot(this, &MDIWindow::nothing_cb)));
@@ -98,7 +103,7 @@ MDIWindow::install_menus_and_toolbar()
 //This Close refers to close the current (selected) child
   fileMenuTree.push_back(Gnome::MenuItems::Close
   				(slot(this, &MDIWindow::nothing_cb)));
-
+*/
   fileMenuTree.push_back(Gnome::MenuItems::Exit
   				(slot(this, &MDIWindow::app_close)));
 
@@ -196,13 +201,13 @@ MDIWindow::install_menus_and_toolbar()
 					    slot(this, &MDIWindow::recordCD2CD)));
   actionsMenuTree.push_back(Gnome::UI::Item(N_("Dump CD to disk"),
 					    slot(this, &MDIWindow::recordCD2HD)));
-  actionsMenuTree.push_back(Gnome::UI::Item(N_("Fixate CD"),
+/*  actionsMenuTree.push_back(Gnome::UI::Item(N_("Fixate CD"),
 					    slot(this, &MDIWindow::nothing_cb)));
   actionsMenuTree.push_back(Gnome::UI::Item(N_("Blank CD-RW"),
 					    slot(this, &MDIWindow::nothing_cb)));
   actionsMenuTree.push_back(Gnome::UI::Item(N_("Get Info"),
 					    slot(this, &MDIWindow::nothing_cb)));
-
+*/
   menus.push_back(Gnome::UI::Menu(N_("_Actions"), actionsMenuTree));
 
   // Settings menu
@@ -211,10 +216,10 @@ MDIWindow::install_menus_and_toolbar()
     push_back(Gnome::UI::Item(Gnome::UI::Icon(GNOME_STOCK_MENU_PREF),
 			      N_("Configure Devices..."),
 			      slot(this, &MDIWindow::configureDevices)));
-
+/*
   settingsMenuTree.push_back(Gnome::MenuItems::Preferences
   				(slot(this, &MDIWindow::nothing_cb)));
-
+*/
   menus.push_back(Gnome::Menus::Settings(settingsMenuTree));
 
 
@@ -223,7 +228,7 @@ MDIWindow::install_menus_and_toolbar()
   //helpMenuTree.push_back(Gnome::UI::Help("Quick Start"));
 
   helpMenuTree.push_back(Gnome::MenuItems::About
-  				(slot(this, &MDIWindow::nothing_cb)));
+  				(slot(this, &MDIWindow::about_cb)));
 
   menus.push_back(Gnome::Menus::Help(helpMenuTree));
 
@@ -257,12 +262,12 @@ MDIWindow::install_menus_and_toolbar()
 					  slot(this, &MDIWindow::recordToc2CD),
 					  N_("Record to CD")));
 
-  toolbarTree.push_back(Gnome::UI::Item(Gnome::UI::Icon(GNOME_STOCK_PIXMAP_HELP),
+  toolbarTree.push_back(Gnome::UI::Item(Gnome::UI::Icon(GNOME_STOCK_PIXMAP_CDROM),
   					N_("CD to CD"),
   					slot(this, &MDIWindow::recordCD2CD),
   					N_("CD duplication")));
 
-  toolbarTree.push_back(Gnome::UI::Item(Gnome::UI::Icon(GNOME_STOCK_PIXMAP_HELP),
+  toolbarTree.push_back(Gnome::UI::Item(Gnome::UI::Icon(GNOME_STOCK_PIXMAP_CDROM),
   					N_("Dump CD"),
   					slot(this, &MDIWindow::recordCD2HD),
   					N_("Dump CD to disk")));
@@ -273,12 +278,12 @@ MDIWindow::install_menus_and_toolbar()
 					N_("Devices"),
 					slot(this, &MDIWindow::configureDevices),
 					N_("Configure devices")));
-
+/*
   toolbarTree.push_back(Gnome::UI::Item(Gnome::UI::Icon(GNOME_STOCK_PIXMAP_PREFERENCES),
 				      N_("Prefs"),
 				      slot(this, &MDIWindow::nothing_cb),
 				      N_("Preferences")));
-
+*/
   toolbarTree.push_back(Gnome::UI::Separator());
 
   toolbarTree.push_back(Gnome::UI::Item(Gnome::UI::Icon(GNOME_STOCK_PIXMAP_QUIT),
@@ -569,5 +574,44 @@ void MDIWindow::readWriteFileSelectorOKCB()
   }
 
   readSaveFileSelector_.hide();
+}
+
+void
+MDIWindow::about_cb()
+{
+
+  if(about_) // "About" box hasn't been closed, so just raise it
+    {
+      Gdk_Window about_win(about_->get_window());
+      about_win.show();
+      about_win.raise();
+    }
+  else
+    {
+      vector<string> authors;
+      authors.push_back("Andreas Mueller <mueller@daneb.ping.de>");
+      authors.push_back("Manuel Clos <llanero@jazzfree.com>");
+
+      // not yet wrapped - sorry
+      string logo(gnome_pixmap_file("gcdmaster.png"));
+
+  cout << logo << endl;
+
+      about_ = new Gnome::About(_("gcdmaster"), "1.1.4",
+                               "(C) Andreas Mueller",
+                               authors,
+                               _("A CD Mastering app for Gnome."),
+                               logo);
+
+
+      about_->set_parent(*this);
+      about_->destroy.connect(slot(this, &MDIWindow::about_destroy_cb));
+      about_->show();
+    }
+}
+
+void MDIWindow::about_destroy_cb()
+{
+  about_ = 0;
 }
 

@@ -18,6 +18,9 @@
  */
 /*
  * $Log: CdDevice.h,v $
+ * Revision 1.9  2000/08/01 01:27:50  llanero
+ * CD to CD copy works now.
+ *
  * Revision 1.8  2000/07/31 01:55:49  llanero
  * got rid of old Extract dialog and Record dialog.
  * both are using RecordProgressDialog now.
@@ -72,7 +75,7 @@ public:
 		DEV_NO_DISK, DEV_BLANKING, DEV_FAULT, DEV_UNKNOWN };
   enum DeviceType { CD_R, CD_RW, CD_ROM };
 
-  enum Action { A_RECORD, A_READ, A_NONE };
+  enum Action { A_RECORD, A_READ, A_DUPLICATE, A_NONE };
 
   CdDevice(int bus, int id, int lun, const char *vendor,
 	   const char *product);
