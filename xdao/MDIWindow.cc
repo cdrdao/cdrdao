@@ -34,8 +34,6 @@
 #include "MessageBox.h"
 #include "AudioCDChild.h"
 #include "DeviceConfDialog.h"
-#include "RecordDialog.h"
-#include "ExtractDialog.h"
 #include "RecordGenericDialog.h"
 #include "TocInfoDialog.h"
 #include "TrackInfoDialog.h"
@@ -198,10 +196,6 @@ MDIWindow::install_menus_and_toolbar()
 					    slot(this, &MDIWindow::recordCD2CD)));
   actionsMenuTree.push_back(Gnome::UI::Item(N_("Dump CD to disk"),
 					    slot(this, &MDIWindow::recordCD2HD)));
-  actionsMenuTree.push_back(Gnome::UI::Item(N_("Record (old)"),
-					    slot(this, &MDIWindow::record)));
-  actionsMenuTree.push_back(Gnome::UI::Item(N_("Extract (old)"),
-					    slot(this, &MDIWindow::extract)));
   actionsMenuTree.push_back(Gnome::UI::Item(N_("Fixate CD"),
 					    slot(this, &MDIWindow::nothing_cb)));
   actionsMenuTree.push_back(Gnome::UI::Item(N_("Blank CD-RW"),
@@ -441,16 +435,6 @@ MDIWindow::add_view(*example);
 void MDIWindow::configureDevices()
 {
   DEVICE_CONF_DIALOG->start(tocEdit_);
-}
-
-void MDIWindow::extract()
-{
-  EXTRACT_DIALOG->start(tocEdit_);
-}
-
-void MDIWindow::record()
-{
-  RECORD_DIALOG->start(tocEdit_);
 }
 
 void MDIWindow::recordToc2CD()

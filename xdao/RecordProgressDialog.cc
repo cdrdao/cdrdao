@@ -18,6 +18,10 @@
  */
 /*
  * $Log: RecordProgressDialog.cc,v $
+ * Revision 1.6  2000/07/31 01:55:49  llanero
+ * got rid of old Extract dialog and Record dialog.
+ * both are using RecordProgressDialog now.
+ *
  * Revision 1.5  2000/05/24 18:42:44  llanero
  * added % to progressbars
  *
@@ -42,7 +46,7 @@
  *
  */
 
-static char rcsid[] = "$Id: RecordProgressDialog.cc,v 1.5 2000/05/24 18:42:44 llanero Exp $";
+static char rcsid[] = "$Id: RecordProgressDialog.cc,v 1.6 2000/07/31 01:55:49 llanero Exp $";
 
 #include <stdio.h>
 #include <stddef.h>
@@ -51,7 +55,6 @@ static char rcsid[] = "$Id: RecordProgressDialog.cc,v 1.5 2000/05/24 18:42:44 ll
 
 #include "RecordProgressDialog.h"
 #include "MessageBox.h"
-
 #include "TocEdit.h"
 #include "guiUpdate.h"
 #include "CdDevice.h"
@@ -73,12 +76,15 @@ RecordProgressDialog::RecordProgressDialog(RecordProgressDialogPool *father)
   contents->set_spacing(5);
 
   statusMsg_ = new Gtk::Label(string("XXXXXXXXXXXXXXXXXXX"));
+  trackProgress_ = new Gtk::ProgressBar;
+  trackProgress_->set_show_text(TRUE);
+//  trackProgress_->set_format_string("Starting...");    
   totalProgress_ = new Gtk::ProgressBar;
   totalProgress_->set_show_text(TRUE);
-  totalProgress_->set_format_string("Starting...");    
+//  totalProgress_->set_format_string("Starting...");    
   bufferFillRate_ = new Gtk::ProgressBar;
   bufferFillRate_->set_show_text(TRUE);
-  bufferFillRate_->set_format_string("Starting...");    
+//  bufferFillRate_->set_format_string("Starting...");    
   tocName_ = new Gtk::Label;
   abortLabel_ = new Gtk::Label(string(" Abort "));
   closeLabel_ = new Gtk::Label(string(" Dismiss "));
@@ -103,13 +109,13 @@ RecordProgressDialog::RecordProgressDialog(RecordProgressDialogPool *father)
   contents->pack_start(*hbox, FALSE);
   hbox->show();
 
-  table = new Gtk::Table(2, 2, FALSE);
+  table = new Gtk::Table(3, 2, FALSE);
   table->set_row_spacings(5);
   table->set_col_spacings(5);
   contents->pack_start(*table, FALSE);
   table->show();
 
-  label = new Gtk::Label(string("Progress:"));
+  label = new Gtk::Label(string("Track:"));
   align = new Gtk::Alignment(1.0, 0.0, 0.0, 0.0);
   align->add(*label);
   label->show();
@@ -117,22 +123,35 @@ RecordProgressDialog::RecordProgressDialog(RecordProgressDialogPool *father)
   align->show();
 
   hbox = new Gtk::HBox;
+  hbox->pack_start(*trackProgress_);
+  trackProgress_->show();
+  table->attach(*hbox, 1, 2, 0, 1);
+  hbox->show();
+
+  label = new Gtk::Label(string("Total:"));
+  align = new Gtk::Alignment(1.0, 0.0, 0.0, 0.0);
+  align->add(*label);
+  label->show();
+  table->attach(*align, 0, 1, 1, 2, GTK_FILL);
+  align->show();
+
+  hbox = new Gtk::HBox;
   hbox->pack_start(*totalProgress_);
   totalProgress_->show();
-  table->attach(*hbox, 1, 2, 0, 1);
+  table->attach(*hbox, 1, 2, 1, 2);
   hbox->show();
 
   label = new Gtk::Label(string("Buffer:"));
   align = new Gtk::Alignment(1.0, 0.0, 0.0, 0.0);
   align->add(*label);
   label->show();
-  table->attach(*align, 0, 1, 1, 2, GTK_FILL);
+  table->attach(*align, 0, 1, 2, 3, GTK_FILL);
   align->show();
   
   hbox = new Gtk::HBox;
   hbox->pack_start(*bufferFillRate_);
   bufferFillRate_->show();
-  table->attach(*hbox, 1, 2, 1, 2);
+  table->attach(*hbox, 1, 2, 2, 3);
   hbox->show();
   
   hbox = new Gtk::HBox;
@@ -191,6 +210,37 @@ void RecordProgressDialog::start(CdDevice *device, TocEdit *tocEdit)
   show();
 }
 
+void RecordProgressDialog::start(CdDevice *device, char *tocFileName)
+{
+  string s;
+
+  if (device == NULL)
+    return;
+
+  if (active_) {
+    get_window().raise();
+    return;
+  }
+
+  active_ = 1;
+  device_ = device;
+
+  clear();
+
+  statusMsg_->set_text(string("Initializing..."));
+  tocName_->set_text(string(tocFileName));
+
+  setCloseButtonLabel(1);
+
+  s = device->vendor();
+  s += " ";
+  s += device->product();
+
+  set_title(s);
+  
+  show();
+}
+
 void RecordProgressDialog::stop()
 {
   if (active_) {
@@ -214,12 +264,32 @@ void RecordProgressDialog::closeAction()
     poolFather_->stop(this);
   }
   else {
-    Ask2Box msg(this, "Abort Recording", 0, 2,
-		"Abort recording process?", NULL);
+    switch (device_->action()) {
+    case CdDevice::A_RECORD:
+        {
+        Ask2Box msg(this, "Abort Recording", 0, 2,
+		  "Abort recording process?", NULL);
 
-    if (msg.run() == 1) {
-      if (device_ != NULL) 
-	device_->abortDaoRecording();
+  	  if (msg.run() == 1) {
+          if (device_ != NULL) 
+            device_->abortDaoRecording();
+        }
+        }
+        break;
+
+    case CdDevice::A_READ:
+        {        
+        Ask2Box msg(this, "Abort Reading", 0, 2,
+		    "Abort reading process?", NULL);
+
+        if (msg.run() == 1) {
+          if (device_ != NULL) 
+	        device_->abortDaoReading();
+        }
+        }
+		break;
+	default:
+	    break;
     }
   }
 }
@@ -230,13 +300,17 @@ void RecordProgressDialog::clear()
   finished_ = 0;
   actStatus_ = 0;
   actTrack_ = 0;
+  actTrackProgress_ = 0;
   actTotalProgress_ = 0;
   actBufferFill_ = 0;
 
   statusMsg_->set_text(string(""));
+  trackProgress_->set_percentage(0.0);
+  trackProgress_->set_format_string("");
   totalProgress_->set_percentage(0.0);
+  totalProgress_->set_format_string("");
   bufferFillRate_->set_percentage(0.0);
-
+  bufferFillRate_->set_format_string("");
   
   set_title(string(""));
 }
@@ -245,6 +319,7 @@ void RecordProgressDialog::update(unsigned long level, TocEdit *tocEdit)
 {
   int status;
   int track;
+  int trackProgress;
   int totalProgress;
   int bufferFill;
   char buf[20];
@@ -257,77 +332,151 @@ void RecordProgressDialog::update(unsigned long level, TocEdit *tocEdit)
   if (finished_)
     return;
 
-  if ((level & UPD_PROGRESS_STATUS) && device_->progressStatusChanged()) {
-    
-    device_->recordProgress(&status, &track, &totalProgress, &bufferFill);
+  switch (device_->action()) {
+    case CdDevice::A_RECORD:
+    if ((level & UPD_PROGRESS_STATUS) && device_->progressStatusChanged()) {
+      device_->recordProgress(&status, &track, &totalProgress, &bufferFill);
 
-    if (status != actStatus_) {
-      actStatus_ = status;
+      if (status != actStatus_) {
+        actStatus_ = status;
 
-      switch (status) {
-      case 1:
-	statusMsg_->set_text(string("Writing lead-in..."));
-	break;
-      case 2:
-	actTrack_ = track;
+        switch (status) {
+          case 1:
+            statusMsg_->set_text(string("Writing lead-in..."));
+  	      break;
+          case 2:
+	        actTrack_ = track;
 
-	s = "Writing track ";
-	sprintf(buf, "%d", track);
-	s += buf;
+        	s = "Writing track ";
+        	sprintf(buf, "%d", track);
+	        s += buf;
 
-	statusMsg_->set_text(s);
-	break;
-      case 3:
-	statusMsg_->set_text(string("Writing lead-out..."));
-	break;
+        	statusMsg_->set_text(s);
+    	    break;
+          case 3:
+    	    statusMsg_->set_text(string("Writing lead-out..."));
+	        break;
+        }
+      }
+
+      if (track != actTrack_ && status == 2) {
+        actTrack_ = track;
+
+        s = "Writing track ";
+        sprintf(buf, "%d", track);
+        s += buf;
+
+        statusMsg_->set_text(s);
+      }
+
+      if (totalProgress != actTotalProgress_) {
+        actTotalProgress_ = totalProgress;
+
+        totalProgress_->set_percentage(gfloat(totalProgress) / 1000.0);
+        sprintf(bufProgress, "%.2f %%%%", gfloat(totalProgress/10.0));
+        totalProgress_->set_format_string(bufProgress);
+      }
+
+      if (bufferFill != actBufferFill_) {
+        actBufferFill_ = bufferFill;
+
+        bufferFillRate_->set_percentage(gfloat(bufferFill) / 100.0);
+        sprintf(bufProgress, "%.2f %%%%", gfloat(bufferFill/1.0));
+        bufferFillRate_->set_format_string(bufProgress);
       }
     }
 
-    if (track != actTrack_ && status == 2) {
-      actTrack_ = track;
+    if (device_->status() != CdDevice::DEV_RECORDING) {
+      switch (device_->exitStatus()) {
+      case 0:
+        statusMsg_->set_text(string("Recording finished successfully."));
+        break;
 
-      s = "Writing track ";
-      sprintf(buf, "%d", track);
-      s += buf;
+      case 255:
+        statusMsg_->set_text(string("Cannot execute cdrdao. Please check your PATH."));
+        break;
 
-      statusMsg_->set_text(s);
+      default:
+        statusMsg_->set_text(string("Recording aborted with error."));
+        break;
+      }
+
+      finished_ = 1;
+
+      setCloseButtonLabel(2);
     }
+    break;
 
-    if (totalProgress != actTotalProgress_) {
-      actTotalProgress_ = totalProgress;
+  case CdDevice::A_READ:
+    if ((level & UPD_PROGRESS_STATUS) && device_->progressStatusChanged()) {
+      device_->readProgress(&status, &track, &trackProgress);
 
-      totalProgress_->set_percentage(gfloat(totalProgress) / 1000.0);
-      sprintf(bufProgress, "%.2f %%%%", gfloat(totalProgress/10.0));
-      totalProgress_->set_format_string(bufProgress);
-    }
+      if (status != actStatus_ || actTrack_ != track) {
+        actStatus_ = status;
 
+        switch (status) {
+        case 1:
+      	actTrack_ = track;
+
+      	s = "Analyzing track ";
+      	sprintf(buf, "%d", track);
+      	s += buf;
+
+      	statusMsg_->set_text(s);
+      	break;
+        case 2:
+      	actTrack_ = track;
+
+      	s = "Extracting track ";
+	      sprintf(buf, "%d", track);
+	      s += buf;
+
+      	statusMsg_->set_text(s);
+	      break;
+        }
+      }
+
+      if (trackProgress != actTrackProgress_) {
+        actTrackProgress_ = trackProgress;
+
+        trackProgress_->set_percentage(gfloat(trackProgress) / 1000.0);
+        sprintf(bufProgress, "%.2f %%%%", gfloat(trackProgress/10.0));
+        trackProgress_->set_format_string(bufProgress);  
+      }
+
+    /*
     if (bufferFill != actBufferFill_) {
       actBufferFill_ = bufferFill;
 
       bufferFillRate_->set_percentage(gfloat(bufferFill) / 100.0);
-      sprintf(bufProgress, "%.2f %%%%", gfloat(bufferFill/1.0));
-      bufferFillRate_->set_format_string(bufProgress);
     }
-  }
-
-  if (device_->status() != CdDevice::DEV_RECORDING) {
-    switch (device_->exitStatus()) {
-    case 0:
-      statusMsg_->set_text(string("Recording finished successfully."));
-      break;
-
-    case 255:
-      statusMsg_->set_text(string("Cannot execute cdrdao. Please check your PATH."));
-      break;
-
-    default:
-      statusMsg_->set_text(string("Recording aborted with error."));
-      break;
+    */
     }
 
-    finished_ = 1;
+    if (device_->status() != CdDevice::DEV_READING) {
+      switch (device_->exitStatus()) {
+      case 0:
+        statusMsg_->set_text(string("Reading finished successfully."));
+        break;
 
-    setCloseButtonLabel(2);
+      case 255:
+        statusMsg_->set_text(string("Cannot execute cdrdao. Please check your PATH."));
+        break;
+
+      default:
+        statusMsg_->set_text(string("Reading aborted with error."));
+        break;
+      }
+
+      finished_ = 1;
+
+      setCloseButtonLabel(2);
+    }
+
+    break;
+  
+  default:
+    break;
   }
 }
 
@@ -394,6 +543,27 @@ RecordProgressDialog *RecordProgressDialogPool::start(CdDevice *device,
 
   return dialog;
 }
+
+RecordProgressDialog *RecordProgressDialogPool::start(CdDevice *device, char *tocFileName)
+{
+  RecordProgressDialog *dialog;
+
+  if (pool_ == NULL) {
+    dialog = new RecordProgressDialog(this);
+  }
+  else {
+    dialog = pool_;
+    pool_ = pool_->poolNext_;
+  }
+
+  dialog->poolNext_ = activeDialogs_;
+  activeDialogs_ = dialog;
+
+  dialog->start(device, tocFileName);
+
+  return dialog;
+}
+
 
 void RecordProgressDialogPool::stop(RecordProgressDialog *dialog)
 {

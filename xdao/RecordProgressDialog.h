@@ -18,6 +18,10 @@
  */
 /*
  * $Log: RecordProgressDialog.h,v $
+ * Revision 1.3  2000/07/31 01:55:49  llanero
+ * got rid of old Extract dialog and Record dialog.
+ * both are using RecordProgressDialog now.
+ *
  * Revision 1.2  2000/02/20 23:34:54  llanero
  * fixed scsilib directory (files mising ?-()
  * ported xdao to 1.1.8 / gnome (MDI) app
@@ -56,6 +60,7 @@ private:
   int finished_;
   int actStatus_;
   int actTrack_;
+  int actTrackProgress_;
   int actTotalProgress_;
   int actBufferFill_;
 
@@ -67,6 +72,7 @@ private:
   Gtk::Label *tocName_;
 
   Gtk::Label *statusMsg_;;
+  Gtk::ProgressBar *trackProgress_;
   Gtk::ProgressBar *totalProgress_;
   Gtk::ProgressBar *bufferFillRate_;
 
@@ -74,6 +80,7 @@ private:
 
   void update(unsigned long, TocEdit *);
   void start(CdDevice *, TocEdit *);
+  void start(CdDevice *, char *tocFileName);
   void stop();
   void closeAction();
   void clear();
@@ -89,6 +96,7 @@ public:
   void update(unsigned long, TocEdit *);
   
   RecordProgressDialog *start(CdDevice *, TocEdit *);
+  RecordProgressDialog *start(CdDevice *, char *tocFileName);
   void stop(RecordProgressDialog *);
 
 private:

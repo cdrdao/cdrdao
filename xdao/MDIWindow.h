@@ -64,8 +64,6 @@ private:
 //llanero  void quit();
   void configureDevices();
 
-  void extract();
-  void record();
   void recordToc2CD();
   void recordCD2HD();
   void recordCD2CD();

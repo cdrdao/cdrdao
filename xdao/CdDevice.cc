@@ -18,6 +18,10 @@
  */
 /*
  * $Log: CdDevice.cc,v $
+ * Revision 1.8  2000/07/31 01:55:49  llanero
+ * got rid of old Extract dialog and Record dialog.
+ * both are using RecordProgressDialog now.
+ *
  * Revision 1.7  2000/07/30 14:25:53  llanero
  * fixed bug with --device not receiving the right device
  *
@@ -52,7 +56,7 @@
  *
  */
 
-static char rcsid[] = "$Id: CdDevice.cc,v 1.7 2000/07/30 14:25:53 llanero Exp $";
+static char rcsid[] = "$Id: CdDevice.cc,v 1.8 2000/07/31 01:55:49 llanero Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -72,7 +76,6 @@ static char rcsid[] = "$Id: CdDevice.cc,v 1.7 2000/07/30 14:25:53 llanero Exp $"
 #include "ProcessMonitor.h"
 #include "xcdrdao.h"
 #include "guiUpdate.h"
-#include "ExtractProgressDialog.h"
 #include "RecordProgressDialog.h"
 #include "Settings.h"
 
@@ -270,6 +273,11 @@ void CdDevice::manuallyConfigured(int f)
 CdDevice::Status CdDevice::status() const
 {
   return status_;
+}
+
+CdDevice::Action CdDevice::action() const
+{
+  return action_;
 }
 
 Process *CdDevice::process() const
@@ -599,6 +607,7 @@ int CdDevice::recordDao(TocEdit *tocEdit, int simulate, int multiSession,
 
   if (process_ != NULL) {
     status_ = DEV_RECORDING;
+    action_ = A_RECORD;
     free(tocFileName);
 
     if (process_->commFd() >= 0) {
@@ -712,7 +721,7 @@ int CdDevice::extractDao(char *tocFileName, int correction)
     message(0, "%s ", args[i]);
   message(0, "");
 
-  EXTRACT_PROGRESS_POOL->start(this, tocFileName);
+  RECORD_PROGRESS_POOL->start(this, tocFileName);
 
   // Remove the SCSI interface of this device to avoid problems with double
   // usage of device nodes.
@@ -725,6 +734,7 @@ int CdDevice::extractDao(char *tocFileName, int correction)
 
   if (process_ != NULL) {
     status_ = DEV_READING;
+    action_ = A_READ;
 
     if (process_->commFd() >= 0) {
       Gtk::Main::instance()->input.connect(slot(this,
@@ -732,7 +742,6 @@ int CdDevice::extractDao(char *tocFileName, int correction)
 					  process_->commFd(),
 					  (GdkInputCondition)(GDK_INPUT_READ|GDK_INPUT_EXCEPTION));
     }
-
     return 0;
   }
   else {
@@ -839,7 +848,7 @@ int CdDevice::duplicateDao(int simulate, int multiSession, int speed,
   args[n++] = "--source-device";
 
   if (readdev->specialDevice() != NULL && *(readdev->specialDevice()) != 0) {
-    args[n++] = readdev->specialDevice();
+    args[n++] = strdup(readdev->specialDevice());
   }
   else {
     sprintf(r_devname, "%d,%d,%d", readdev->bus(), readdev->id(), readdev->lun());

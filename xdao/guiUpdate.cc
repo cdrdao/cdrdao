@@ -18,6 +18,10 @@
  */
 /*
  * $Log: guiUpdate.cc,v $
+ * Revision 1.5  2000/07/31 01:55:49  llanero
+ * got rid of old Extract dialog and Record dialog.
+ * both are using RecordProgressDialog now.
+ *
  * Revision 1.4  2000/07/17 22:08:33  llanero
  * DeviceList is now a class
  * RecordGenericDialog and RecordCDTarget first implemented.
@@ -43,7 +47,7 @@
  *
  */
 
-static char rcsid[] = "$Id: guiUpdate.cc,v 1.4 2000/07/17 22:08:33 llanero Exp $";
+static char rcsid[] = "$Id: guiUpdate.cc,v 1.5 2000/07/31 01:55:49 llanero Exp $";
 
 #include "guiUpdate.h"
 
@@ -56,10 +60,7 @@ static char rcsid[] = "$Id: guiUpdate.cc,v 1.4 2000/07/17 22:08:33 llanero Exp $
 #include "AddFileDialog.h"
 #include "DeviceConfDialog.h"
 #include "RecordGenericDialog.h"
-#include "RecordDialog.h"
 #include "RecordProgressDialog.h"
-#include "ExtractDialog.h"
-#include "ExtractProgressDialog.h"
 #include "ProcessMonitor.h"
 #include "CdDevice.h"
 
@@ -91,20 +92,17 @@ void guiUpdate(unsigned long level)
   if (DEVICE_CONF_DIALOG != NULL)
     DEVICE_CONF_DIALOG->update(level, tocEdit);
 
-  if (RECORD_DIALOG != NULL)
-    RECORD_DIALOG->update(level, tocEdit);
-
   if (RECORD_GENERIC_DIALOG != NULL)
     RECORD_GENERIC_DIALOG->update(level, tocEdit);
 
   if (RECORD_PROGRESS_POOL != NULL)
     RECORD_PROGRESS_POOL->update(level, tocEdit);
 
-  if (EXTRACT_DIALOG != NULL)
-    EXTRACT_DIALOG->update(level, tocEdit);
+//  if (EXTRACT_DIALOG != NULL)
+//    EXTRACT_DIALOG->update(level, tocEdit);
 
-  if (EXTRACT_PROGRESS_POOL != NULL)
-    EXTRACT_PROGRESS_POOL->update(level, tocEdit);
+//  if (EXTRACT_PROGRESS_POOL != NULL)
+//    EXTRACT_PROGRESS_POOL->update(level, tocEdit);
 }
 
 int guiUpdatePeriodic()

@@ -44,9 +44,9 @@ AR = ar
 SRC = xcdrdao.cc SampleDisplay.cc SampleManager.cc \
       TrackManager.cc AddSilenceDialog.cc TrackInfoDialog.cc TocEdit.cc \
       TextEdit.cc TocInfoDialog.cc guiUpdate.cc TrackDataScrap.cc \
-      AddFileDialog.cc CdDevice.cc DeviceConfDialog.cc RecordDialog.cc \
+      AddFileDialog.cc CdDevice.cc DeviceConfDialog.cc \
       ProcessMonitor.cc RecordProgressDialog.cc Settings.cc MessageBox.cc \
-      ExtractDialog.cc ExtractProgressDialog.cc CdTextTable.cc MDIWindow.cc \
+      CdTextTable.cc MDIWindow.cc \
       AudioCDChild.cc RecordGenericDialog.cc RecordCDTarget.cc \
       DeviceList.cc RecordTocSource.cc RecordCDSource.cc \
       RecordHDTarget.cc @sound_if_src@

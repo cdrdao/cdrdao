@@ -18,6 +18,10 @@
  */
 /*
  * $Log: xcdrdao.cc,v $
+ * Revision 1.14  2000/07/31 01:55:49  llanero
+ * got rid of old Extract dialog and Record dialog.
+ * both are using RecordProgressDialog now.
+ *
  * Revision 1.13  2000/07/30 02:41:03  llanero
  * started CD to CD copy. Still not functional.
  *
@@ -97,9 +101,6 @@
 #include "AddSilenceDialog.h"
 #include "AddFileDialog.h"
 #include "DeviceConfDialog.h"
-#include "ExtractDialog.h"
-#include "ExtractProgressDialog.h"
-#include "RecordDialog.h"
 #include "RecordProgressDialog.h"
 #include "RecordGenericDialog.h"
 #include "guiUpdate.h"
@@ -114,11 +115,8 @@ TocInfoDialog *TOC_INFO_DIALOG = NULL;
 AddSilenceDialog *ADD_SILENCE_DIALOG = NULL;
 AddFileDialog *ADD_FILE_DIALOG = NULL;
 DeviceConfDialog *DEVICE_CONF_DIALOG = NULL;
-ExtractDialog *EXTRACT_DIALOG = NULL;
-RecordDialog *RECORD_DIALOG = NULL;
 ProcessMonitor *PROCESS_MONITOR = NULL;
 RecordProgressDialogPool *RECORD_PROGRESS_POOL = NULL;
-ExtractProgressDialogPool *EXTRACT_PROGRESS_POOL = NULL;
 RecordGenericDialog *RECORD_GENERIC_DIALOG = NULL;
 
 static int VERBOSE = 0;
@@ -222,9 +220,6 @@ int main (int argc, char* argv[])
   ADD_SILENCE_DIALOG = new AddSilenceDialog;
   ADD_FILE_DIALOG = new AddFileDialog;
   DEVICE_CONF_DIALOG = new DeviceConfDialog;
-  EXTRACT_DIALOG = new ExtractDialog;
-  EXTRACT_PROGRESS_POOL = new ExtractProgressDialogPool;
-  RECORD_DIALOG = new RecordDialog;
   RECORD_PROGRESS_POOL = new RecordProgressDialogPool;
   RECORD_GENERIC_DIALOG = new RecordGenericDialog;
 
