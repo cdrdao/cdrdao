@@ -54,8 +54,10 @@ Project::Project(int number) : Gnome::App("gcdmaster", APP_NAME)
 
 void Project::createMenus()
 {
-  vector<Gnome::UI::Info> menus, newMenuTree, fileMenuTree, actionsMenuTree;
+  vector<Gnome::UI::SubTree> menus;
+  vector<Gnome::UI::Info> fileMenuTree, newMenuTree, actionsMenuTree;
   vector<Gnome::UI::Info> settingsMenuTree, helpMenuTree, windowsMenuTree;
+  
 
   {
     using namespace Gnome::UI;
@@ -84,16 +86,16 @@ void Project::createMenus()
     fileMenuTree.push_back(SaveAs(slot(this, &Project::saveAsProject)));
 
     fileMenuTree.push_back(Gnome::UI::Separator());
-/*
-    fileMenuTree.push_back(PrintSetup(slot(this, &Project::nothing_cb)));
 
-    fileMenuTree.push_back(Gnome::UI::Item(Gnome::UI::Icon(GNOME_STOCK_MENU_PRINT),
-								 N_("Print Cover..."),
-								 slot(this, &Project::nothing_cb),
-								 N_("Print Cover")));
+//    fileMenuTree.push_back(PrintSetup(slot(this, &Project::nothing_cb)));
+//
+//    fileMenuTree.push_back(Gnome::UI::Item(Gnome::UI::Icon(GNOME_STOCK_MENU_PRINT),
+//								 N_("Print Cover..."),
+//								 slot(this, &Project::nothing_cb),
+//								 N_("Print Cover")));
+//
+//    fileMenuTree.push_back(Gnome::UI::Separator());
 
-    fileMenuTree.push_back(Gnome::UI::Separator());
-*/
     // Close the current child (project);
     fileMenuTree.push_back(Close(bind(slot(gcdmaster, &GCDMaster::closeProject), this)));
     fileMenuTree.push_back(Exit(slot(gcdmaster, &GCDMaster::appClose)));
@@ -114,23 +116,23 @@ void Project::createMenus()
 								N_("_Dump CD to disk"),
 								slot(gcdmaster, &GCDMaster::recordCD2HD),
 								N_("Dump CD to disk")));
-/*
-    actionsMenuTree.push_back(Gnome::UI::Item(N_("Fixate CD"),
-					    slot(this, &Project::nothing_cb)));
-    actionsMenuTree.push_back(Gnome::UI::Item(N_("Blank CD-RW"),
-					    slot(this, &Project::nothing_cb)));
-    actionsMenuTree.push_back(Gnome::UI::Item(N_("Get Info"),
-					    slot(this, &Project::nothing_cb)));
-*/
+
+//    actionsMenuTree.push_back(Gnome::UI::Item(N_("Fixate CD"),
+//					    slot(this, &Project::nothing_cb)));
+//    actionsMenuTree.push_back(Gnome::UI::Item(N_("Blank CD-RW"),
+//					    slot(this, &Project::nothing_cb)));
+//    actionsMenuTree.push_back(Gnome::UI::Item(N_("Get Info"),
+//					    slot(this, &Project::nothing_cb)));
+
     // Settings menu
     settingsMenuTree.push_back(Item(Icon(GNOME_STOCK_MENU_PREF),
 								N_("Configure Devices..."),
 								slot(gcdmaster, &GCDMaster::configureDevices)));
   }
-/*
-    settingsMenuTree.push_back(Gnome::MenuItems::Preferences
-  				(slot(this, &Project::nothing_cb)));
-*/
+
+//    settingsMenuTree.push_back(Gnome::MenuItems::Preferences
+//  				(slot(this, &Project::nothing_cb)));
+
 
   // Help menu
   //helpMenuTree.push_back(Gnome::UI::Help("Quick Start"));
