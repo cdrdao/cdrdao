@@ -91,7 +91,7 @@ std::string DeviceList::selection()
   if (i) {
     return ((std::string)((*i)[listColumns_.dev])).c_str();
   } else
-    return NULL;
+    return std::string();
 }
 
 void DeviceList::appendTableEntry(CdDevice *dev)
