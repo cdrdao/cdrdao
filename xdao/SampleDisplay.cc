@@ -18,6 +18,10 @@
  */
 /*
  * $Log: SampleDisplay.cc,v $
+ * Revision 1.6  2000/04/17 21:30:49  andreasm
+ * Fixed sample display.
+ * AudioCDChild displays animated cursor again when playing.
+ *
  * Revision 1.5  2000/04/14 13:22:02  llanero
  * changed the MDI object to GnomeApp until gnome-- MDI is done.
  * Also catched a bug in SampleDisplay.cc:1000.
@@ -51,7 +55,7 @@
  *
  */
 
-static char rcsid[] = "$Id: SampleDisplay.cc,v 1.5 2000/04/14 13:22:02 llanero Exp $";
+static char rcsid[] = "$Id: SampleDisplay.cc,v 1.6 2000/04/17 21:30:49 andreasm Exp $";
 
 #include <stdio.h>
 #include <limits.h>
@@ -193,9 +197,6 @@ SampleDisplay::SampleDisplay()
   		&SampleDisplay::handleButtonReleaseEvent));
   enter_notify_event.connect(slot(this, &SampleDisplay::handleEnterEvent));
   leave_notify_event.connect(slot(this, &SampleDisplay::handleLeaveEvent));
-
-  //connect_to_method (motion_notify_event, this, &handle_motion_notify_event);
-  //connect_to_method (button_press_event, this, &handle_button_press_event);
 
   set_events (GDK_EXPOSURE_MASK
 	      | GDK_LEAVE_NOTIFY_MASK
@@ -469,10 +470,11 @@ gint SampleDisplay::sample2pixel(unsigned long sample)
 
 int SampleDisplay::handle_configure_event (GdkEventConfigure *event)
 {
-//llanero  if (drawGc_ == NULL) {
   if (!drawGc_) {
     Gdk_Bitmap mask;
     Gdk_Window window(get_window());
+
+    printf("Allocating GC\n");
 
     drawGc_ = Gdk_GC(window);
         
@@ -521,10 +523,11 @@ int SampleDisplay::handle_configure_event (GdkEventConfigure *event)
 
     trackMarkerWidth_ = trackMarkerWidth();
     trackManager_ = new TrackManager(TRACK_MARKER_XPM_WIDTH);
-}
+  }
 
   width_ = width();
   height_ = height();
+
   chanHeight_ = (height_ - timeLineHeight_ - trackLineHeight_ - 2) / 2;
 
   lcenter_ = chanHeight_ / 2 + trackLineHeight_;
@@ -539,18 +542,17 @@ int SampleDisplay::handle_configure_event (GdkEventConfigure *event)
   sampleEndX_ = width_ - 10;
   sampleWidthX_ = sampleEndX_ - sampleStartX_ + 1;
   
+  printf("Sample w %d\n", sampleWidthX_);
   
-//llanero  if (pixmap_ != NULL)
-//llanero    delete pixmap_;
-    if (pixmap_)
-      pixmap_.release();
+  if (pixmap_)
+    pixmap_.release();
       
   pixmap_ = Gdk_Pixmap(get_window(), width(), height(), -1);
 
-  //message(0, "handle_configure_event: %d\n", width_);
+  message(0, "handle_configure_event: %d\n", width_);
 
-//FIXME: will crash if some .toc loaded!!!
-//  updateSamples();
+  if (width_ > 100 && height_ > 100)
+    updateSamples();
 
   return TRUE;
 }
@@ -811,10 +813,8 @@ void SampleDisplay::updateSamples()
 {
   Toc *toc = tocEdit_->toc();
 
-//llanero  if (pixmap_ == NULL)
   if (!pixmap_)
     return;
-
 
   gint halfHeight = chanHeight_ / 2;
 
@@ -858,20 +858,10 @@ void SampleDisplay::updateSamples()
     }
   }
 
-g_print("DEBUG: %s\n", "Inside UpdateSamples");
-
   drawGc_.set_foreground(sampleColor_);
-
-g_print("DEBUG: %s %i\n", "bres =", bres);
-g_print("DEBUG: %s %i\n", "maxSample =", maxSample_);
-g_print("DEBUG: %s %i\n", "res =", res);
-g_print("DEBUG: %s %i\n", "minSample =", minSample_);
-g_print("DEBUG: %s %i\n", "toc =", toc);
 
   if (bres > 0) {
     //message(0, "Draw 1");
-
-g_print("DEBUG: %s\n", "Inside Draw 1!?");
 
     for (s = minSample_, i = sampleStartX_;
 	 s < maxSample_ && i <= sampleEndX_;
@@ -916,8 +906,6 @@ g_print("DEBUG: %s\n", "Inside Draw 1!?");
     }
   }
   else if (maxSample_ > 0 && res >= 1) {
-
-g_print("DEBUG: %s\n", "Inside Draw 2!?");
 
     //message(0, "Draw 2: %ld < %ld", res,
     //        tocEdit_->sampleManager()->blocking());
@@ -992,17 +980,11 @@ g_print("DEBUG: %s\n", "Inside Draw 2!?");
   else if (toc != NULL && maxSample_ > minSample_ + 1) {
     //message(0, "Draw 3");
 
-g_print("DEBUG: %s\n", "Inside Draw 3!?");
-
     TocReader reader(toc);
-
-g_print("DEBUG: %s %i\n", "Readed toc =", toc);
 
     if (reader.openData() == 0) {
       long len = maxSample_ - minSample_ + 1;
-g_print("DEBUG: %s\n", "we get HERE!!");
       Sample *sampleBuf = new Sample[len];
-g_print("DEBUG: %s\n", "but NOT HERE!!");
 
       double pres = double(sampleWidthX_ - 1) / double(len - 1);
       double di;
@@ -1109,7 +1091,6 @@ g_print("DEBUG: %s\n", "but NOT HERE!!");
 
 void SampleDisplay::drawCursor(gint x)
 {
-//llanero  if (pixmap_ == NULL)
   if (!pixmap_)
     return;
 
@@ -1144,7 +1125,6 @@ void SampleDisplay::drawTimeTick(gint x, gint y, unsigned long sample)
 {
   char buf[50];
 
-//llanero  if (pixmap_ == NULL)
   if (!pixmap_)
     return;
 
@@ -1245,35 +1225,29 @@ gint SampleDisplay::trackMarkerWidth()
 void SampleDisplay::drawTrackMarker(int mode, gint x, int trackNr,
 				    int indexNr, int selected, int extend)
 {
-
-//llanero: VERY IMPORTANT!!!
-/*
   if (mode < 2) {
     char buf[20];
 
     sprintf(buf, "%d.%d", trackNr, indexNr);
 
-//llanero    Gdk_Pixmap *marker;
-//llanero Do we need to free() this??
-    Gdk_Pixmap marker;
+    Gdk_Pixmap *marker;
 
     if (extend) {
-      marker = indexNr == 1 ? trackExtendPixmap_ : indexExtendPixmap_;
+      marker = indexNr == 1 ? &trackExtendPixmap_ : &indexExtendPixmap_;
     }
     else {
       if (selected)
-	marker = indexNr == 1 ? trackMarkerSelectedPixmap_ :
-	                        indexMarkerSelectedPixmap_;
+	marker = indexNr == 1 ? &trackMarkerSelectedPixmap_ :
+	                        &indexMarkerSelectedPixmap_;
       else
-	marker = indexNr == 1 ? trackMarkerPixmap_ : indexMarkerPixmap_;
+	marker = indexNr == 1 ? &trackMarkerPixmap_ : &indexMarkerPixmap_;
     }
 
-//FIXME: This make it compile but doesn't work!
-//llanero    Gdk_Drawable dr(get_window());
-    Gdk_DraPixmap dr(get_window());
+    Gdk_Window win(get_window());
+    Gdk_Drawable *dr = &win;
 
     if (mode == 0)
-      dr = pixmap_;
+      dr = &pixmap_;
 
     if (mode == 0) {
       if (selected)
@@ -1281,24 +1255,23 @@ void SampleDisplay::drawTrackMarker(int mode, gint x, int trackNr,
       else
 	drawGc_.set_foreground(get_colormap().white());
 	
-      dr.draw_rectangle(drawGc_, TRUE,  x-4, trackLineY_ - trackLineHeight_,
+      dr->draw_rectangle(drawGc_, TRUE,  x-4, trackLineY_ - trackLineHeight_,
 			trackMarkerWidth_, trackLineHeight_);
     }
 
     drawGc_.set_foreground(get_colormap().black());
 
-    dr.draw_pixmap(drawGc_, marker, 0, 0,
+    dr->draw_pixmap(drawGc_, *marker, 0, 0,
 		   x - 4, trackLineY_ - TRACK_MARKER_XPM_HEIGHT,
 		   TRACK_MARKER_XPM_WIDTH, TRACK_MARKER_XPM_HEIGHT);
 
-    dr.draw_string(trackMarkerFont_, drawGc_, 
+    dr->draw_string(trackMarkerFont_, drawGc_, 
 		    x + TRACK_MARKER_XPM_WIDTH / 2 + 2, trackLineY_ - 1, buf);
   }
   else {
     redraw(x - 4, trackLineY_ - trackLineHeight_, trackMarkerWidth_,
 	   trackLineHeight_, 0x03);
   }
-*/
 }
 
 void SampleDisplay::drawTrackLine()

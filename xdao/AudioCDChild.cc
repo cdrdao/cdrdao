@@ -59,6 +59,8 @@ AudioCDChild::BuildChild()
 
   sampleDisplay_ = new SampleDisplay;
   sampleDisplay_->setTocEdit(tocEdit_);
+  
+  sampleDisplay_->set_usize(200, 300);
 
   vbox_->pack_start(*sampleDisplay_, TRUE, TRUE);
   sampleDisplay_->show();
@@ -280,12 +282,11 @@ int AudioCDChild::playCallback()
 
 //FIXME: 
 //llanero
-/*
   if (delay <= playPosition_) {
     sampleDisplay_->setCursor(1, playPosition_ - delay);
     cursorPos_->set_text(string(sample2string(playPosition_ - delay)));
   }
-*/
+
   if (len == 0 || playAbort_ != 0) {
     soundInterface_->end();
     tocReader.init(NULL);
@@ -299,4 +300,22 @@ int AudioCDChild::playCallback()
   else {
     return 1; // keep idle handler
   }
+}
+
+const char *AudioCDChild::sample2string(unsigned long sample)
+{
+  static char buf[50];
+
+  unsigned long min = sample / (60 * 44100);
+  sample %= 60 * 44100;
+
+  unsigned long sec = sample / 44100;
+  sample %= 44100;
+
+  unsigned long frame = sample / 588;
+  sample %= 588;
+
+  sprintf(buf, "%2lu:%02lu:%02lu.%03lu", min, sec, frame, sample);
+  
+  return buf;
 }
