@@ -45,9 +45,7 @@ class AudioCDChildLabel;
 class AudioCDChild : public GenericChild
 {
 public:
-  AudioCDChild(TocEdit *tocEdit, gint number);
-
-//FIXME  void create_view() { Gnome::MDIChild::create_view(); }
+  AudioCDChild(Gnome::App *app, TocEdit *tocEdit, gint number);
 
 protected:
   virtual Gtk::Widget *create_view_impl();
@@ -55,13 +53,12 @@ protected:
   virtual Gtk::Widget* update_title_impl(Gtk::Widget *old_label);
 
 private: //related windows
+  Gnome::App *app_;
   TocInfoDialog *tocInfoDialog_;
   TrackInfoDialog *trackInfoDialog_;
   AddFileDialog *addFileDialog_;
   AddSilenceDialog *addSilenceDialog_;
   CdTextDialog *cdTextDialog_;
-
-//FIXME  void new_view() { Gnome::MDIChild::create_toplevel_view(); }
 
 private:
   friend class AudioCDView;

@@ -45,9 +45,10 @@
 
 #include "SampleDisplay.h"
 
-AudioCDChild::AudioCDChild(TocEdit *tocEdit, gint number)
+AudioCDChild::AudioCDChild(Gnome::App *app, TocEdit *tocEdit, gint number)
 {
   tocEdit_ = tocEdit;
+  app_ = app;
 
   playing_ = 0;
   playBurst_ = 588 * 10;
@@ -64,8 +65,6 @@ AudioCDChild::AudioCDChild(TocEdit *tocEdit, gint number)
   cdTextDialog_ = 0;
 
   views = g_list_alloc();
-
-//FIXME  set_name(tocEdit_->filename());
 
   vector<Gnome::UI::Info> menus, audioEditMenuTree, viewMenuTree;
 
@@ -165,7 +164,7 @@ AudioCDChild::AudioCDChild(TocEdit *tocEdit, gint number)
   menus.push_back(Gnome::Menus::Edit(audioEditMenuTree));
   menus.push_back(Gnome::Menus::View(viewMenuTree));
 
-//FIXME  create_menus(menus);
+//FIXME  app_->insert_menus("Edit", menus);
 }
 
 
@@ -177,30 +176,6 @@ AudioCDChildLabel::AudioCDChildLabel(const string &name) :
   pack_start(label);
   show_all();
 }
-
-
-Gtk::Widget* AudioCDChild::create_title_impl()
-{
-//FIXME  return manage(new AudioCDChildLabel(get_name()));
-}
-
-Gtk::Widget *AudioCDChild::update_title_impl(Gtk::Widget *old_label)
-{
-  cout << "Inside label update" << endl;
-//FIXME  static_cast <AudioCDChildLabel *>(old_label)->set_name(get_name());
-  return old_label;
-}
-
-Gtk::Widget *
-AudioCDChild::create_view_impl()
-{
-//FIXME  AudioCDView * view = manage(new AudioCDView(this));
-//FIXME  view->add_view.connect(slot(this, &AudioCDChild::create_view));
-//FIXME: gnome-- || C++ way
-//FIXME  g_list_prepend(views, view);
-//FIXME  return view;
-}
-
 
 void AudioCDChild::play(unsigned long start, unsigned long end)
 {

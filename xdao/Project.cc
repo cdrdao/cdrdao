@@ -48,7 +48,8 @@ Project::Project(int number) : Gnome::App("gcdmaster", APP_NAME)
   viewNumber = 0;
   viewSwitcher_ = new ViewSwitcher(hbox);
   viewSwitcher_->show();
-  set_usize(450, 350);
+  set_usize(500, 350);
+  enable_layout_config(true);
 }
 
 void Project::createMenus()
@@ -156,6 +157,7 @@ void Project::createStatusbar()
   statusbar_ = new Gnome::AppBar(FALSE, TRUE, GNOME_PREFERENCES_NEVER);
   progressbar_ = new Gtk::ProgressBar;
   progressButton_ = new Gtk::Button("Cancel");
+  progressButton_->set_sensitive(false);
 
   progressbar_->set_usize(150, 0);
   container->pack_start(*statusbar_, TRUE, TRUE); 
@@ -258,7 +260,7 @@ void Project::newAudioCDProject(const char *name)
 
   Gnome::StockPixmap *pixmap = new Gnome::StockPixmap(GNOME_STOCK_MENU_CDROM);
   Gtk::Label *label = new Gtk::Label("Track Editor");
-  audioCDChild_ = new AudioCDChild(tocEdit_, ++project_number);
+  audioCDChild_ = new AudioCDChild(this, tocEdit_, ++project_number);
   AudioCDView *audioCDView = new AudioCDView(audioCDChild_, this);
   hbox->pack_start(*audioCDView, TRUE, TRUE);
   audioCDView->tocEditView()->sampleViewFull();
@@ -294,9 +296,7 @@ void Project::saveProject()
     s += tocEdit_->filename();
     s+= "\":";
     
-//    MessageBox msg(MDI_WINDOW->get_active_window(), "Save Project", 0, s.c_str(), strerror(errno), NULL);
     MessageBox msg(this, "Save Project", 0, s.c_str(), strerror(errno), NULL);
-cout << "message box" << endl;
     msg.run();
   }
 }
@@ -316,6 +316,7 @@ void Project::saveAsProject()
 				slot(this, &Project::saveFileSelectorOKCB));
     saveFileSelector_->get_cancel_button()->clicked.connect(
 				slot(this, &Project::saveFileSelectorCancelCB));
+    saveFileSelector_->set_transient_for(*this);
   }
   saveFileSelector_->show();
 }
@@ -339,19 +340,18 @@ void Project::saveFileSelectorOKCB()
       new_ = false; // The project is now saved
 cout << tocEdit_->filename() << endl;
       updateWindowTitle();
+      saveFileSelectorCancelCB();
     }
     else {
   	string m("Cannot save toc to \"");
   	m += tocEdit_->filename();
   	m += "\":";
     
-//FIXME  	MessageBox msg(MDI_WINDOW->get_active_window(), "Save Project", 0, m.c_str(), strerror(errno), NULL);
-//  	MessageBox msg(this, "Save Project", 0, m.c_str(), strerror(errno), NULL);
-//FIXME  	msg.run();
+  	MessageBox msg(saveFileSelector_, "Save Project", 0, m.c_str(), strerror(errno), NULL);
+  	msg.run();
     }
     g_free(s);
   }
-  saveFileSelectorCancelCB();
 }
 
 bool Project::closeProject()

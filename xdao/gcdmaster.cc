@@ -138,39 +138,45 @@ void GCDMaster::configureDevices()
 void GCDMaster::aboutDialog()
 {
 
-  if(about_) // "About" box hasn't been closed, so just raise it
-    {
+  if (about_) // "About" dialog hasn't been closed, so just raise it
+  {
       Gdk_Window about_win = about_->get_window();
       about_win.show();
       about_win.raise();
-    }
+  }
   else
-    {
-      gchar *logo_char;
-      string logo;
-      vector<string> authors;
-      authors.push_back("Andreas Mueller <mueller@daneb.ping.de>");
-      authors.push_back("Manuel Clos <llanero@jazzfree.com>");
+  {
+    gchar *logo_char;
+    string logo;
+    vector<string> authors;
+    authors.push_back("Andreas Mueller <mueller@daneb.ping.de>");
+    authors.push_back("Manuel Clos <llanero@jazzfree.com>");
 
 //FIXME: not yet wrapped
-      logo_char = gnome_pixmap_file("gcdmaster.png");
+    logo_char = gnome_pixmap_file("gcdmaster.png");
 
-      if (logo_char != NULL)
-        logo = logo_char;
+    if (logo_char != NULL)
+      logo = logo_char;
 
-      about_ = new Gnome::About(_("gcdmaster"), "1.1.4",
+    about_ = new Gnome::About(_("gcdmaster"), "1.1.4",
                                "(C) Andreas Mueller",
                                authors,
                                _("A CD Mastering app for Gnome."),
                                logo);
 
-//      about_->set_parent(*this);
-      about_->destroy.connect(slot(this, &GCDMaster::aboutDestroy));
-      about_->show();
-    }
+//    about_->set_parent(*this);
+//    about_->destroy.connect(slot(this, &GCDMaster::aboutDestroy));
+    // We attach to the close signal because default behaviour is
+    // close_hides = true, as in a normal dialog
+    about_->close.connect(slot(this, &GCDMaster::aboutDestroy));
+    about_->show();
+  }
 }
 
-void GCDMaster::aboutDestroy()
+int GCDMaster::aboutDestroy()
 {
+  cout << "about closed" << endl;
+  delete about_;
   about_ = 0;
+  return true; // Do not close, as we have already deleted it.
 }

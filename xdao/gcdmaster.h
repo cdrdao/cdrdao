@@ -43,6 +43,8 @@ private:
   void readFileSelectorOKCB(Project *project);
   void readFileSelectorCancelCB();
 
+  int aboutDestroy();
+
 public:
   GCDMaster();
 
@@ -57,8 +59,6 @@ public:
   void configureDevices();
 
   void aboutDialog();
-  void aboutDestroy();
-
 };
 #endif
 
