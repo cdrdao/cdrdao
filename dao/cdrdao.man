@@ -170,13 +170,15 @@ the reading device to the CD recorder.
 
 .SH OPTIONS
 .TP
-.BI \--device " bus,id,lun"
+.BI \--device " [prot:]bus,id,lun"
 Sets the SCSI address of the CD-recorder in form of a bus/id/lun
 triple, e.g. '0,2,0' for the logical unit 0 of SCSI device with ID 2
-on bus 0. On some systems a device node may be specified directly,
-e.g. '/dev/sg0' on Linux systems.
+on bus 0. ATAPI devices can be specified by using the prefix 'ATAPI:',
+e.g. 'ATAPI:0,0,0'. On some systems a device node may be specified
+directly, e.g. '/dev/sg0' on Linux systems. Linux 2.6 users may also
+try the newer ATAPI interface with the 'ATA:' prefix.
 .TP
-.BI \--source-device " bus,id,lun"
+.BI \--source-device " [prot:]bus,id,lun"
 Like above but used for the
 .BI copy
 command to specify the source device.
