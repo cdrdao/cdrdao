@@ -305,8 +305,11 @@ void DeviceConfDialog::addDeviceAction()
 
   cddev = CdDevice::add(dev.c_str(), vendor.c_str(), product.c_str());
 
-  Gtk::TreeIter new_entry = appendTableEntry(cddev);
-  list_.get_selection()->select(new_entry);
+  if (cddev) {
+      cddev->manuallyConfigured(true);
+      Gtk::TreeIter new_entry = appendTableEntry(cddev);
+      list_.get_selection()->select(new_entry);
+  }
 
   guiUpdate(UPD_CD_DEVICES);
 }
