@@ -2851,7 +2851,7 @@ CdTextPack *CdrDriver::readCdTextPacks(long *nofPacks)
   cmd[8] = 4;
 
   if (sendCmd(cmd, 10, NULL, 0, reqData, 4, 0) != 0) {
-    message(1, "Cannot read CD-TEXT data - maybe not supported by drive.");
+    message(3, "Cannot read CD-TEXT data - maybe not supported by drive.");
     return NULL;
   }
 
