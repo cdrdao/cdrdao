@@ -1,18 +1,16 @@
 Name:		cdrdao
-Summary:	A Disk-At-Once (DAO) Audio CD writer and GUI editor
 Version:	@PACKAGE_VERSION@
-Release:	1
-License:	GPL
-Group:		Applications/Multimedia
-BuildRoot:      %{_builddir}/%{name}-buildroot
-Source:		%{name}-%{version}.tar.gz
+Release:        0.fdr.1.2
+Epoch:          0
+Summary:	A Disk-At-Once (DAO) Audio CD writer and GUI editor
 
-BuildRequires:	gtkmm2-devel >= 2.2.0
-BuildRequires:	libgnomeuimm2-devel >= 2.0
-BuildRequires:  libsigc++-devel
+Group:		Applications/Multimedia
+License:	GPL
+URL:            http://cdrdao.sourceforge.net/
+BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
+Source0:	http://cdrdao.sourceforge.net/download/%{name}-%{version}.tar.gz
 
 %description
-
 Writes audio CD-Rs in disc-at-once (DAO) mode allowing control over
 pre-gaps (length down to 0, nonzero audio data) and sub-channel
 information like ISRC codes. All data that is written to the disc must
@@ -22,11 +20,13 @@ format.
 %package gcdmaster
 Summary:        The Gnome2/GTK2 GUI front-end to cdrdao
 Group:          Applications/Multimedia
-Requires:       %{name} = %{version}
-Requires:	gtkmm2 >= 2.2.0
-Requires:	libgnomeuimm2 >= 2.0
-Requires:	GConf2 >= 2.0.0
-Requires:       libsigc++
+Requires:       %{name} = %{epoch}:%{version}-%{release}
+Requires:	gtkmm20 >= 0:2.2.0
+Requires:	libgnomeuimm20 >= 0:2.0
+Requires:       libsigc++ >= 0:1.2
+BuildRequires:	gtkmm20-devel >= 0:2.2.0
+BuildRequires:	libgnomeuimm20-devel >= 0:2.0
+BuildRequires:  libsigc++ >= 0:1.2
 
 %description gcdmaster
 Gcdmaster is a GNOME2 GUI front-end to cdrdao that makes it easy to
@@ -34,34 +34,49 @@ visualize and manipulate audio information before burning it onto
 CD. Its features include: cut/copy/paste of sound samples, track marks
 edition and silence insertion.
 
+# -----------------------------------------------------------------------------
+
 %prep
 %setup -q
 
+# -----------------------------------------------------------------------------
+
 %build
-
 %configure
-
 make %{?_smp_mflags}
 
+# -----------------------------------------------------------------------------
+
+%install
+rm -rf $RPM_BUILD_ROOT
 %makeinstall
+ 
+find $RPM_BUILD_ROOT -type f -name "*.la" -exec rm -f {} ';'
+
+# -----------------------------------------------------------------------------
 
 %clean
-[ -n "$RPM_BUILD_ROOT" -a "$RPM_BUILD_ROOT" != / ] && rm -rf $RPM_BUILD_ROOT
+rm -rf $RPM_BUILD_ROOT
+
+# -----------------------------------------------------------------------------
 
 %post
 
+# -----------------------------------------------------------------------------
+
 %files
-%defattr(-, root, root)
+%defattr(-, root, root, -)
 %doc AUTHORS COPYING CREDITS ChangeLog INSTALL README NEWS README.PlexDAE README.Win32
 %{_bindir}/cdrdao
 %{_datadir}/cdrdao/*
 %{_bindir}/toc2*
 %{_bindir}/cue2toc
-%{_mandir}/man1/cdrdao.1
-%{_mandir}/man1/cue2toc.1
+%{_mandir}/man1/cdrdao*
+%{_mandir}/man1/cue2toc*
 
 %files gcdmaster
+%defattr(-, root, root, -)
 %{_bindir}/gcdmaster
 %{_datadir}/applications/gcdmaster.desktop
 %{_datadir}/pixmaps/gcdmaster.png
-%{_mandir}/man1/gcdmaster.1
+%{_mandir}/man1/gcdmaster*
