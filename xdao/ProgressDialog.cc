@@ -165,41 +165,6 @@ ProgressDialog::~ProgressDialog()
 {
 }
 
-void ProgressDialog::start(CdDevice *device, TocEdit *tocEdit)
-{
-  string s;
-  gint m_t_nr;
-
-  if (device == NULL)
-    return;
-
-  if (active_) {
-    get_window().raise();
-    return;
-  }
-
-  active_ = 1;
-  device_ = device;
-
-  clear();
-
-  SigC::Slot0<gint> my_slot = bind(slot(this,&ProgressDialog::time),m_t_nr);
-  Gtk::Connection conn = Gtk::Main::timeout.connect(my_slot, 1000);
-
-  statusMsg_->set_text(string("Initializing..."));
-  tocName_->set_text(string(tocEdit->filename()));
-
-  setCloseButtonLabel(1);
-
-  s = device->vendor();
-  s += " ";
-  s += device->product();
-
-  set_title(s);
-  
-  show();
-}
-
 void ProgressDialog::start(CdDevice *device, const char *tocFileName)
 {
   string s;
@@ -602,7 +567,7 @@ ProgressDialog *ProgressDialogPool::start(CdDevice *device,
   dialog->poolNext_ = activeDialogs_;
   activeDialogs_ = dialog;
 
-  dialog->start(device, tocEdit);
+  dialog->start(device, tocEdit->filename());
 
   return dialog;
 }

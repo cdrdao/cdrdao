@@ -74,7 +74,6 @@ private:
   ProgressDialog *poolNext_;
 
   void update(unsigned long);
-  void start(CdDevice *, TocEdit *);
   void start(CdDevice *, const char *tocFileName);
   void stop();
   void closeAction();
