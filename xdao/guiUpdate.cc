@@ -22,7 +22,6 @@
 #include "xcdrdao.h"
 #include "gcdmaster.h"
 #include "DeviceConfDialog.h"
-#include "RecordGenericDialog.h"
 #include "ProgressDialog.h"
 #include "ProcessMonitor.h"
 #include "CdDevice.h"
@@ -39,9 +38,6 @@ void guiUpdate(unsigned long level)
 
   if (DEVICE_CONF_DIALOG != NULL)
     DEVICE_CONF_DIALOG->update(level);
-
-  if (RECORD_GENERIC_DIALOG != NULL)
-    RECORD_GENERIC_DIALOG->update(level);
 
   if (PROGRESS_POOL != NULL)
     PROGRESS_POOL->update(level);
