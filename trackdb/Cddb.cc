@@ -28,9 +28,11 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <signal.h>
+#include <fcntl.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/time.h>
+#include <sys/stat.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
@@ -67,6 +69,8 @@ Cddb::Cddb(const Toc *t)
 
   serverList_ = NULL;
   selectedServer_ = NULL;
+  localCddbDirectory_ = NULL;
+
   fd_ = -1;
   connected_ = 0;
   queryResults_ = NULL;
@@ -86,6 +90,9 @@ Cddb::~Cddb()
 
   clearQueryResults();
   clearCddbEntry();
+
+  delete[] localCddbDirectory_;
+  localCddbDirectory_ = NULL;
 
   delete[] httpCmd_;
   httpCmd_ = NULL;
@@ -115,6 +122,21 @@ void Cddb::timeout(int t)
 {
   if (t > 0)
     timeout_ = t;
+}
+
+void Cddb::localCddbDirectory(const char *dir)
+{
+  const char *homeDir;
+
+  delete[] localCddbDirectory_;
+
+  // replace ~/ by the path to the home directory as indicated by $HOME
+  if (dir[0] == '~' && dir[1] == '/' && (homeDir = getenv("HOME")) != NULL) {
+    localCddbDirectory_ = strdupvCC(homeDir, dir + 1, NULL);
+  }
+  else {
+    localCddbDirectory_ = strdupCC(dir);
+  }
 }
 
 void Cddb::appendQueryResult(const char *category, const char *diskId,
@@ -528,7 +550,7 @@ int Cddb::connectDb(const char *userName, const char *hostName,
 
 /* Queries for entries that match the current 'toc_'.
  * 'results' will be filled with a list of matching diskIds/category/title
- * triples. 'results' will be NULL is no matching entry is found.
+ * triples. 'results' will be NULL if no matching entry is found.
  * Return: 0: OK
  *         1: communication error occured
  */
@@ -673,6 +695,7 @@ int Cddb::readDb(const char *category, const char *diskId, CddbEntry **entry)
   int code[3];
   const char *args[4];
   const char *resp;
+  int localRecordFd = -1;
 
   clearCddbEntry();
 
@@ -699,7 +722,10 @@ int Cddb::readDb(const char *category, const char *diskId, CddbEntry **entry)
   message(3, "CDDB: READ response: %s", resp);
 
   if (code[0] == 2) {
-    if (readDbEntry() != 0) {
+    if ((localRecordFd = createLocalCddbFile(category, diskId)) == -2) {
+      message(-1, "Existing local CDDB record for %s/%s will not be overwritten.", category, diskId);
+    }
+    if (readDbEntry(localRecordFd) != 0) {
       message(-2, "CDDB: Received invalid database entry.");
       goto fail;
     }
@@ -714,12 +740,18 @@ int Cddb::readDb(const char *category, const char *diskId, CddbEntry **entry)
   if (httpMode_)
     closeConnection();
 
+  if (localRecordFd >= 0)
+    close(localRecordFd);
+
   return 0;
 
  fail:
 
   if (httpMode_)
     closeConnection();
+
+  if (localRecordFd >= 0)
+    close(localRecordFd);
 
   *entry = NULL;
   return 1;
@@ -1150,6 +1182,11 @@ static void convertEscapeSequences(const char *in, char *out)
   *out = 0;
 }
 
+/* Retrieves the category, disk ID and title from a query response string.
+ * The provided strings 'category', 'diskId' and 'title' must point to
+ * existing buffers with at least the same length as 'line'.
+ * Return: 1 if 'line' was successfully parsed, else 0
+ */
 static int parseQueryResult(char *line, char *category, char *diskId,
 			    char *title)
 {
@@ -1181,7 +1218,12 @@ static int parseQueryResult(char *line, char *category, char *diskId,
   return 0;
 }
 
-int Cddb::readDbEntry()
+/* Reads a CDDB record from 'fd_' and fills 'cddbEntry_' with the required
+ * data.
+ * Return: 0: OK
+ *         1: communication error occured
+ */
+int Cddb::readDbEntry(int localRecordFd)
 {
   const char *resp;
   char buf[CDDB_MAX_LINE_LEN];
@@ -1209,6 +1251,12 @@ int Cddb::readDbEntry()
   
   while ((resp = readLine()) != NULL && strcmp(resp, ".") != 0) {
     message(3, "CDDB: READ data: %s", resp);
+
+    if (localRecordFd >= 0) {
+      // save to local CDDB record file
+      fullWrite(localRecordFd, resp, strlen(resp));
+      fullWrite(localRecordFd, "\n", 1);
+    }
 
     convertEscapeSequences(resp, buf);
 
@@ -1310,4 +1358,87 @@ int Cddb::readDbEntry()
   clearCddbEntry();
 
   return 1;
+}
+
+
+int Cddb::createLocalCddbFile(const char *category, const char *diskId)
+{
+  char *categoryDir = NULL;
+  char *recordFile = NULL;
+  struct stat sbuf;
+  int ret;
+  int fd = -1;
+
+  if (localCddbDirectory_ == NULL)
+    return -1;
+
+  ret = stat(localCddbDirectory_, &sbuf);
+
+  if (ret != 0 && errno == ENOENT) {
+    message(-1, "CDDB: Local CDDB directory \"%s\" does not exist.",
+	    localCddbDirectory_);
+    return -1;
+  }
+  else if (ret == 0) {
+    if (!S_ISDIR(sbuf.st_mode)) {
+      message(-2, "CDDB: \"%s\" is not a directory.", localCddbDirectory_);
+      return -1;
+    }
+  }
+  else {
+    message(-2, "CDDB: stat of \"%s\" failed: %s", localCddbDirectory_,
+	    strerror(errno));
+    return -1;
+  }
+
+  categoryDir = strdup3CC(localCddbDirectory_, "/", category);
+
+  ret = stat(categoryDir, &sbuf);
+
+  if (ret != 0 && errno == ENOENT) {
+    if (mkdir(categoryDir, 0777) != 0) {
+      message(-2, "CDDB: Cannot create directory \"%s\": %s", categoryDir,
+	      strerror(errno));
+      goto fail;
+    }
+  }
+  else if (ret == 0) {
+    if (!S_ISDIR(sbuf.st_mode)) {
+      message(-2, "CDDB: \"%s\" is not a directory.", categoryDir);
+    }
+  }
+  else {
+    message(-2, "CDDB: stat of \"%s\" failed: %s", categoryDir,
+	    strerror(errno));
+    goto fail;
+  }
+
+  recordFile = strdup3CC(categoryDir, "/", diskId);
+  
+  ret = stat(recordFile, &sbuf);
+
+  if (ret != 0 && errno == ENOENT) {
+    if ((fd = open(recordFile, O_WRONLY|O_CREAT, 0666)) < 0) {
+      message(-2, "CDDB: Cannot create CDDB record file \"%s\": %s",
+	      recordFile, strerror(errno));
+      fd = -1;
+      goto fail;
+    }
+  }
+  else if (ret == 0) {
+    fd = -2;
+    goto fail;
+  }
+  else {
+    message(-2, "CDDB: stat of \"%s\" failed: %s", categoryDir,
+	    strerror(errno));
+    goto fail;
+  }
+  
+ fail:
+
+  delete[] categoryDir;
+  delete[] recordFile;
+
+  return fd;
 }

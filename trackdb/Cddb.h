@@ -48,6 +48,7 @@ public:
   Cddb(const Toc *);
   ~Cddb();
 
+  void localCddbDirectory(const char *);
   void appendServer(const char *s);
 
   void timeout(int);
@@ -76,6 +77,8 @@ private:
   ServerList *serverList_; // list of CDDB servers
   ServerList *selectedServer_;
 
+  char *localCddbDirectory_;
+
   int fd_; // file descriptor for connection to CDDB server
   int connected_; // 1 if connection to CDDB server was established, else 0
   int timeout_; // timeout in seconds
@@ -101,8 +104,9 @@ private:
   const char *getServerResponse(int code[3]);
   int sendCommand(int nargs, const char *args[]);
   const char *calcCddbId();
-  int readDbEntry();
+  int readDbEntry(int);
   void shutdown();
+  int createLocalCddbFile(const char *category, const char *diskId);
 };
 
 #endif
