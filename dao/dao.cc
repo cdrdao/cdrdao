@@ -18,8 +18,11 @@
  */
 /*
  * $Log: dao.cc,v $
- * Revision 1.1  2000/02/05 01:38:06  llanero
- * Initial revision
+ * Revision 1.2  2000/05/01 18:13:18  andreasm
+ * Fixed too small mode page buffer.
+ *
+ * Revision 1.1.1.1  2000/02/05 01:38:06  llanero
+ * Uploaded cdrdao 1.1.3 with pre10 patch applied.
  *
  * Revision 1.12  1999/05/11 20:04:09  mueller
  * SYSV message queues are not used anymore. The communication between
@@ -55,7 +58,7 @@
  *
  */
 
-static char rcsid[] = "$Id: dao.cc,v 1.1 2000/02/05 01:38:06 llanero Exp $";
+static char rcsid[] = "$Id: dao.cc,v 1.2 2000/05/01 18:13:18 andreasm Exp $";
 
 #include <config.h>
 
@@ -996,6 +999,7 @@ static int getSharedMemory(long nofBuffers,
   *nofSegments = 1;
 
   (*shmSegment)->id = -1;
+
   (*shmSegment)->buffer = new char[sizeof(BufferHeader) +
 				   nofBuffers * sizeof(Buffer) +
 				   nofBuffers * bufferSize];
@@ -1004,7 +1008,6 @@ static int getSharedMemory(long nofBuffers,
     message(-2, "Cannot allocated memory for ring buffer.");
     return 1;
   }
-
 
   *header = (BufferHeader*)((*shmSegment)->buffer);
   (*header)->nofBuffers = nofBuffers;

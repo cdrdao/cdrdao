@@ -19,6 +19,9 @@
 
 /*
  * $Log: GenericMMC.cc,v $
+ * Revision 1.3  2000/05/01 18:13:18  andreasm
+ * Fixed too small mode page buffer.
+ *
  * Revision 1.2  2000/04/23 16:29:50  andreasm
  * Updated to state of my private development environment.
  *
@@ -72,7 +75,7 @@
  *
  */
 
-static char rcsid[] = "$Id: GenericMMC.cc,v 1.2 2000/04/23 16:29:50 andreasm Exp $";
+static char rcsid[] = "$Id: GenericMMC.cc,v 1.3 2000/05/01 18:13:18 andreasm Exp $";
 
 #include <config.h>
 
@@ -1425,9 +1428,9 @@ int GenericMMC::readSubChannels(long lba, long len, SubChannel ***chans,
 
 int GenericMMC::driveInfo(DriveInfo *info, int showErrorMsg)
 {
-  unsigned char mp[22];
+  unsigned char mp[32];
 
-  if (getModePage(0x2a, mp, 22, NULL, NULL, showErrorMsg) != 0) {
+  if (getModePage(0x2a, mp, 32, NULL, NULL, showErrorMsg) != 0) {
     if (showErrorMsg) {
       message(-2, "Cannot retrieve CD capabilities mode page.");
     }
