@@ -18,6 +18,7 @@
 #endif
 #define CD_FRAMESAMPLES (CD_FRAMESIZE_RAW / 4)
 
+#include <sys/types.h>
 
 typedef struct cdrom_drive{
   long nsectors; /* number of sectors that can be read at once */
