@@ -1,5 +1,5 @@
 # Driver table for cdrdao-1.1.5
-# Generated Sun May 12 18:53:09 2002 by mueller
+# Generated Tue May 14 20:22:30 2002 by mueller
 
 # Drivers for read operations
 R|ASUS|CD-S340|generic-mmc
@@ -14,10 +14,12 @@ R|HITACHI|CDR-7730|generic-mmc
 R|HITACHI|CDR-8435|generic-mmc|OPT_MMC_NO_SUBCHAN
 R|LG|CD-ROM CRD-8480C|generic-mmc|OPT_MMC_NO_SUBCHAN
 R|LG|CD-ROM CRD-8482B|generic-mmc|OPT_MMC_NO_SUBCHAN
+R|LG|CD-ROM CRD-8521B|generic-mmc
 R|LG|DVD-ROM DRN8080B|generic-mmc|OPT_DRV_GET_TOC_GENERIC
 R|LITE-ON|CD-ROM|generic-mmc|OPT_DRV_GET_TOC_GENERIC
 R|MATSHITA|CD-ROM CR-588|generic-mmc
 R|MATSHITA|CD-ROM CR-589|generic-mmc|OPT_MMC_USE_PQ|OPT_MMC_PQ_BCD
+R|MATSHITA|DVD-ROM SR-8585|generic-mmc|OPT_MMC_USE_PQ|OPT_MMC_PQ_BCD
 R|MEMOREX|CD-233E|generic-mmc
 R|MITSUMI|CD-ROM FX4820|generic-mmc|OPT_MMC_NO_SUBCHAN
 R|OPTICS_S|8622|generic-mmc
@@ -52,6 +54,7 @@ R|PIONEER|CD-ROM DR-U10|plextor|OPT_DRV_GET_TOC_GENERIC
 R|PIONEER|CD-ROM DR-U12|plextor|OPT_DRV_GET_TOC_GENERIC
 R|PIONEER|CD-ROM DR-U16|plextor|OPT_DRV_GET_TOC_GENERIC
 R|PIONEER|DVD-303|plextor
+R|PIONEER|DVD-305|plextor
 R|SAF|CD-R2006PLUS|plextor
 R|SONY|CD-ROM|plextor
 R|SONY|CD-ROM CDU-76|plextor
@@ -70,6 +73,7 @@ R|TOSHIBA|CD-ROM XM-6401TA|toshiba
 R|TOSHIBA|DVD-ROM SD-2102|toshiba
 
 # Drivers for write operations
+W|GRUNDIG|CDR100IPW|cdd2600
 W|HP|CD-Writer 4020|cdd2600
 W|HP|CD-Writer 6020|cdd2600
 W|IMS|522|cdd2600
@@ -78,8 +82,10 @@ W|KODAK|PCD-225|cdd2600
 W|PHILIPS|CDD2000|cdd2600
 W|PHILIPS|CDD2600|cdd2600
 W|PHILIPS|CDD522|cdd2600
+W|AOPEN|CD-RW CRW1632|generic-mmc
 W|AOPEN|CD-RW-241040|generic-mmc
 W|AOPEN|CRW9624|generic-mmc
+W|CD-RW|CDR-2440MB|generic-mmc
 W|CREATIVE|CD-RW RW4424|generic-mmc
 W|CREATIVE|CD5233E|generic-mmc
 W|DELTA|OME-W141|generic-mmc
@@ -89,18 +95,20 @@ W|HP|9510i|generic-mmc|OPT_MMC_CD_TEXT
 W|HP|CD-Writer+ 7570|generic-mmc|OPT_MMC_CD_TEXT
 W|HP|CD-Writer+ 8100|generic-mmc|OPT_MMC_CD_TEXT
 W|HP|CD-Writer+ 8200|generic-mmc|OPT_MMC_CD_TEXT
+W|HP|CD-Writer+ 8290|generic-mmc|OPT_MMC_CD_TEXT
 W|HP|CD-Writer+ 9100|generic-mmc|OPT_MMC_CD_TEXT
 W|HP|CD-Writer+ 9110|generic-mmc|OPT_MMC_CD_TEXT
 W|HP|CD-Writer+ 9200|generic-mmc|OPT_MMC_CD_TEXT
 W|HP|CD-Writer+ 9300|generic-mmc|OPT_MMC_CD_TEXT
 W|HP|CD-Writer+ 9600|generic-mmc|OPT_MMC_CD_TEXT
 W|HP|DVD Writer 100j|generic-mmc
-W|LG|8083B|generic-mmc
+W|IDE-CD|R/RW 16x10A|generic-mmc
 W|LG|8088B|generic-mmc
 W|LG|8120B|generic-mmc|OPT_MMC_CD_TEXT
 W|LG|CD-ROM CDR-8428B|generic-mmc
 W|LG|CD-RW CED-8080B|generic-mmc|OPT_MMC_CD_TEXT
 W|LG|CD-RW CED-8081B|generic-mmc|OPT_MMC_CD_TEXT
+W|LG|CD-RW CED-8083B|generic-mmc
 W|LG|CD-RW GCE-8240B|generic-mmc|OPT_MMC_CD_TEXT
 W|LG|COMBO|generic-mmc
 W|LG|HL-DT-ST RW/DVD GCC-4120|generic-mmc|OPT_MMC_CD_TEXT
@@ -132,7 +140,7 @@ W|PLEXTOR|CD-R   PX-W8220|generic-mmc|OPT_MMC_CD_TEXT
 W|PLEXTOR|CD-R   PX-W8432|generic-mmc|OPT_MMC_CD_TEXT
 W|PLEXTOR|CD-R PX-W241040|generic-mmc|OPT_MMC_CD_TEXT
 W|PLEXTOR|CD-R PX-W2410a|generic-mmc
-W|PLEXTOR|CD-R PX-W4012A|generic-mmc
+W|PLEXTOR|CD-R PX-W4012A|generic-mmc|OPT_MMC_CD_TEXT
 W|RICOH|CD-R/RW MP7060|generic-mmc|OPT_MMC_CD_TEXT
 W|RICOH|CD-R/RW MP7063A|generic-mmc|OPT_MMC_CD_TEXT
 W|RICOH|CD-R/RW MP7080|generic-mmc|OPT_MMC_CD_TEXT
@@ -160,9 +168,11 @@ W|TEAC|CD-W512EB|generic-mmc|OPT_MMC_CD_TEXT
 W|TEAC|CD-W516EB|generic-mmc|OPT_MMC_CD_TEXT
 W|TEAC|CD-W524E|generic-mmc|OPT_MMC_CD_TEXT
 W|TEAC|CD-W54E|generic-mmc
+W|TORiSAN|CDW-U4424|generic-mmc
 W|TOSHIBA|DVD-ROM SD-M1612|generic-mmc
 W|TOSHIBA|DVD-ROM SD-R1002|generic-mmc
 W|TOSHIBA|DVD-ROM SD-R1202|generic-mmc
+W|TRAXDATA|241040|generic-mmc
 W|TRAXDATA|CDRW4260|generic-mmc
 W|WAITEC|WT624|generic-mmc|OPT_MMC_NO_SUBCHAN
 W|YAMAHA|CDR200|generic-mmc
@@ -177,11 +187,15 @@ W|YAMAHA|CRW6416|generic-mmc
 W|YAMAHA|CRW8424|generic-mmc
 W|YAMAHA|CRW8824|generic-mmc
 W|_NEC|NR-7700A|generic-mmc
+W|_NEC|NR-7800A|generic-mmc
 W|ACER|2010A|generic-mmc-raw
 W|ACER|8X4X32|generic-mmc-raw
 W|ACER|CD-R/RW 4X4X32|generic-mmc-raw|OPT_MMC_NO_SUBCHAN
+W|ARTEC|WRA-WA48|generic-mmc-raw
+W|ATAPI|CD-R/RW 12X8X32|generic-mmc-raw
 W|ATAPI|CD-R/RW 4X4X32|generic-mmc-raw
 W|ATAPI|CD-R/RW CRW6206A|generic-mmc-raw
+W|BENQ|CRW2410A|generic-mmc-raw
 W|BTC|BCE621E|generic-mmc-raw
 W|CYBERDRV|CW038D|generic-mmc-raw
 W|HP|CD-Writer+ 7100|generic-mmc-raw
@@ -211,7 +225,7 @@ W|PHILIPS|PCRW404|generic-mmc-raw
 W|PHILIPS|PCRW804|generic-mmc-raw
 W|SAMSUNG|CD-R/RW SW-208B|generic-mmc-raw
 W|SAMSUNG|CD-R/RW SW-212B|generic-mmc-raw
-W|SAMSUNG|SW-224|generic-mmc-raw
+W|SAMSUNG|CD-R/RW SW-224|generic-mmc-raw
 W|TEAC|CD-W58E|generic-mmc-raw|OPT_MMC_USE_PQ|OPT_MMC_PQ_BCD
 W|TRAXDATA|2832|generic-mmc-raw
 W|TRAXDATA|CDRW2260+|generic-mmc-raw
@@ -220,6 +234,7 @@ W|WAITEC|WT2444EI|generic-mmc-raw
 W|WAITEC|WT4424|generic-mmc-raw
 W|_NEC|7900|generic-mmc-raw
 W|AOPEN|CRW620|ricoh-mp6200
+W|MEMOREX|CRW620|ricoh-mp6200
 W|PHILIPS|OMNIWRITER26|ricoh-mp6200
 W|RICOH|MP6200|ricoh-mp6200
 W|RICOH|MP6201|ricoh-mp6200
