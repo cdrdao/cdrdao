@@ -18,6 +18,9 @@
  */
 /*
  * $Log: Settings.cc,v $
+ * Revision 1.4  2001/08/18 19:15:43  llanero
+ * added SET_DUPLICATE_ONTHEFLY_WARNING
+ *
  * Revision 1.3  2000/06/22 12:20:24  andreasm
  * Changed settings file to "GnomeCDMaster".
  *
@@ -31,13 +34,14 @@
  *
  */
 
-static char rcsid[] = "$Id: Settings.cc,v 1.3 2000/06/22 12:20:24 andreasm Exp $";
+static char rcsid[] = "$Id: Settings.cc,v 1.4 2001/08/18 19:15:43 llanero Exp $";
 
 #include "Settings.h"
 
 const char *SET_CDRDAO_PATH = "/GnomeCDMaster/cdrdao/path=cdrdao";
 const char *SET_RECORD_EJECT_WARNING = "/GnomeCDMaster/record/ejectWarning=true";
 const char *SET_RECORD_RELOAD_WARNING = "/GnomeCDMaster/record/reloadWarning=true";
+const char *SET_DUPLICATE_ONTHEFLY_WARNING = "/GnomeCDMaster/duplicate/ontheflyWarning=true";
 
 const char *SET_SECTION_DEVICES = "/GnomeCDMaster/devices/";
 const char *SET_DEVICES_NUM = "/GnomeCDMaster/devices/count=0";

@@ -18,6 +18,9 @@
  */
 /*
  * $Log: Settings.h,v $
+ * Revision 1.3  2001/08/18 19:15:43  llanero
+ * added SET_DUPLICATE_ONTHEFLY_WARNING
+ *
  * Revision 1.2  2000/05/01 18:15:00  andreasm
  * Switch to gnome-config settings.
  * Adapted Message Box to Gnome look, unfortunately the Gnome::MessageBox is
@@ -34,6 +37,7 @@
 extern const char *SET_CDRDAO_PATH;
 extern const char *SET_RECORD_EJECT_WARNING;
 extern const char *SET_RECORD_RELOAD_WARNING;
+extern const char *SET_DUPLICATE_ONTHEFLY_WARNING;
 extern const char *SET_SECTION_DEVICES;
 extern const char *SET_DEVICES_NUM;
 
