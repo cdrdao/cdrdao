@@ -1,0 +1,13 @@
+// AUDIO track followed by a MODE1 track.
+// Causes my PlexWriter to hang until a SCSI bus reset occus when the
+// first sector of the MODE1 track is written.
+
+CD_ROM
+
+TRACK AUDIO
+SILENCE 1:0:0
+
+TRACK MODE1
+PREGAP 0:2:0
+ZERO 1:0:0
+

@@ -1,0 +1,794 @@
+/*  cdrdao - write audio CD-Rs in disc-at-once mode
+ *
+ *  Copyright (C) 1998  Andreas Mueller <mueller@daneb.ping.de>
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ */
+/*
+ * $Log: CDD2600.cc,v $
+ * Revision 1.1  2000/02/05 01:35:37  llanero
+ * Initial revision
+ *
+ * Revision 1.14  1999/04/05 11:04:10  mueller
+ * Added driver option flags.
+ *
+ * Revision 1.13  1999/03/27 20:52:02  mueller
+ * Adapted to changed writing interface.
+ *
+ * Revision 1.12  1998/10/24 14:30:40  mueller
+ * Changed prototype of 'readDiskToc()'.
+ *
+ * Revision 1.11  1998/10/03 15:11:05  mueller
+ * Moved basic writing methods to class 'CDD2600Base'.
+ *
+ * Revision 1.10  1998/09/27 19:17:46  mueller
+ * Fixed 'disc-info' for CDD2000.
+ * Added retrieval of control nibbles for track with 'analyzeTrack()'.
+ *
+ * Revision 1.9  1998/09/22 19:15:13  mueller
+ * Removed memory allocations during write process.
+ *
+ * Revision 1.8  1998/09/08 11:54:22  mueller
+ * Extended disk info structure because CDD2000 does not support the
+ * 'READ DISK INFO' command.
+ *
+ * Revision 1.7  1998/09/07 15:20:20  mueller
+ * Reorganized read-toc related code.
+ *
+ * Revision 1.6  1998/09/06 13:34:22  mueller
+ * Use 'message()' for printing messages.
+ *
+ * Revision 1.5  1998/08/25 19:23:46  mueller
+ * Added index extraction for 'read-toc'.
+ * Added disk info code.
+ *
+ * Revision 1.4  1998/08/07 12:44:30  mueller
+ * Changed group 1 mode select commands to group 0 mode select commands.
+ * Implement pre-gap detection in 'readDiscToc()'.
+ *
+ */
+
+static char rcsid[] = "$Id: CDD2600.cc,v 1.1 2000/02/05 01:35:37 llanero Exp $";
+
+#include <config.h>
+
+#include <string.h>
+#include <assert.h>
+
+#include "CDD2600.h"
+#include "SubChannel.h"
+#include "PQSubChannel16.h"
+
+#include "Toc.h"
+#include "util.h"
+
+CDD2600::CDD2600(ScsiIf *scsiIf, unsigned long options)
+  : CdrDriver(scsiIf, options|OPT_DRV_NO_PREGAP_READ), CDD2600Base(this)
+{
+  driverName_ = "CDD2600 - Version 1.1";
+  
+  leadInLength_ = leadOutLength_ = 0;
+  speed_ = 2;
+  simulate_ = 1;
+  encodingMode_ = 0;
+
+  // reads big endian samples
+  audioDataByteOrder_ = 1;
+
+  memset(&diskInfo_, 0, sizeof(DiskInfo));
+}
+
+CDD2600::~CDD2600()
+{
+}
+
+// static constructor
+CdrDriver *CDD2600::instance(ScsiIf *scsiIf, unsigned long options)
+{
+  return new CDD2600(scsiIf, options);
+}
+
+// sets speed
+// return: 0: OK
+//         1: illegal speed
+int CDD2600::speed(int s)
+{
+  if (s >= 0 && s <= 2) {
+    speed_ = s;
+    return 0;
+  }
+  else if (s > 2) {
+    speed_ = 2;
+    return 0;
+  }
+  else {
+    return 1;
+  }
+}
+
+// loads ('unload' == 0) or ejects ('unload' == 1) tray
+// return: 0: OK
+//         1: scsi command failed
+
+int CDD2600::loadUnload(int unload) const
+{
+  unsigned char cmd[10];
+
+  memset(cmd, 0, 10);
+
+  cmd[0] = 0xe7; // MEDIUM LOAD/UNLOAD
+  if (unload) {
+    cmd[8] |= 0x01;
+  }
+  
+  if (sendCmd(cmd, 10, NULL, 0, NULL, 0) != 0) {
+    message(-2, "Cannot load/unload medium.");
+    return 1;
+  }
+
+  return 0;
+}
+
+// sets various audio play parameters, output channels are set to stereo mode
+// and given volume
+// immediate: 0: wait until audio play command finished
+//            1: command finishs immediately after playback has started
+// sotc:      0: play across track boundaries
+//            1: stop playing at track boundaries
+int CDD2600::modeSelectPlay(int immediate, int sotc, unsigned char volume)
+{
+  unsigned char mp[16];
+
+  memset(mp, 0, 16);
+
+  mp[0] = 0x0e; // PLAY page code
+  mp[1] = 14; // parameter length
+  if (immediate != 0) {
+    mp[2] |= 0x04;
+  }
+  if (sotc != 0) {
+    mp[2] |= 0x02;
+  }
+  mp[8]  = 1;
+  mp[9]  = volume;
+  mp[10] = 2;
+  mp[11] = volume;
+
+  if (setModePage(mp, NULL, NULL, 1) != 0) {
+    message(-2, "Cannot set play parameters.");
+    return 1;
+  }
+
+  return 0;
+}
+
+int CDD2600::initDao(const Toc *toc)
+{
+  long n;
+  blockLength_ = AUDIO_BLOCK_LEN;
+  blocksPerWrite_ = scsiIf_->maxDataLen() / blockLength_;
+
+  assert(blocksPerWrite_ > 0);
+
+  toc_ = toc;
+
+  if (modeSelectBlockSize(blockLength_, 1) != 0 ||
+      modeSelectSpeed(-1, speed_, simulate_, 1) != 0 ||
+      modeSelectCatalog(toc_) != 0 ||
+      readSessionInfo(&leadInLength_, &leadOutLength_, 1) != 0) {
+    return 1;
+  }
+
+  // allocate buffer for write zeros
+  n = blocksPerWrite_ * blockLength_;
+  delete[] zeroBuffer_;
+  zeroBuffer_ = new char[n];
+  memset(zeroBuffer_, 0, n);
+
+  return 0;
+}
+
+int CDD2600::startDao()
+{
+  long lba = -leadInLength_ - 150; // Value is not really important since the
+                                   // LBA is not used by 'writeData'.
+
+  if (writeSession(toc_, multiSession_) != 0) {
+    return 1;
+  }
+
+  message(1, "Writing lead-in and gap...");
+
+  // write lead-in
+  if (writeZeros(toc_->leadInMode(), lba, 0, leadInLength_) != 0) {
+    flushCache();
+    return 1;
+  }
+
+  // write gap (2 seconds)
+  if (writeZeros(toc_->leadInMode(), lba, 0, 150) != 0) {
+    flushCache();
+    return 1;
+  }
+
+
+  message(1, "");
+
+  return 0;
+}
+
+int CDD2600::finishDao()
+{
+  long lba = toc_->length().lba();
+
+  message(1, "Writing lead-out...");
+
+  // write lead-out
+  if (writeZeros(toc_->leadOutMode(), lba, lba + 150, leadOutLength_) != 0) {
+    flushCache();
+    return 1;
+  }
+
+  message(1, "\nFlushing cache...");
+  
+  if (flushCache() != 0) {
+    return 1;
+  }
+
+  message(1, "");
+
+  delete[] zeroBuffer_, zeroBuffer_ = NULL;
+
+  return 0;
+}
+
+void CDD2600::abortDao()
+{
+  flushCache();
+}
+
+// Writes data to target, the block length depends on the actual writing mode
+// and is stored internally. 'len' is number of blocks to write.
+// 'lba' specifies the next logical block address for writing and is updated
+// by this function but not used for writing
+// return: 0: OK
+//         1: scsi command failed
+int CDD2600::writeData(TrackData::Mode mode, long &lba, const char *buf,
+		       long len)
+{
+  assert(blocksPerWrite_ > 0);
+  assert(blockLength_ > 0);
+  assert(mode == TrackData::AUDIO);
+  int nwritten = 0;
+  int writeLen = 0;
+  unsigned char cmd[10];
+
+  memset(cmd, 0, 10);
+  cmd[0] = 0x2a; // WRITE1
+  
+  while (len > 0) {
+    writeLen = (len > blocksPerWrite_ ? blocksPerWrite_ : len);
+
+    cmd[7] = writeLen >> 8;
+    cmd[8] = writeLen & 0xff;
+
+    if (sendCmd(cmd, 10, (unsigned char *)(buf + (nwritten * blockLength_)),
+		writeLen * blockLength_, NULL, 0) != 0) {
+      message(-2, "Write data failed.");
+      return 1;
+    }
+
+    lba += writeLen;
+
+    len -= writeLen;
+    nwritten += writeLen;
+  }
+      
+  return 0;
+}
+
+Toc *CDD2600::readDiskToc(int session, const char *audioFilename)
+{
+
+  blockLength_ = AUDIO_BLOCK_LEN;
+  if (modeSelectBlockSize(blockLength_, 1) != 0) {
+    return NULL;
+  }
+
+  modeSelectSpeed(2, -1, 1, 0);
+
+  Toc *toc = CdrDriver::readDiskToc(session, audioFilename);
+
+  setBlockSize(MODE1_BLOCK_LEN);
+  
+  return toc;
+}
+
+Toc *CDD2600::readDisk(int session, const char *fname)
+{
+  Toc *toc = CdrDriver::readDisk(session, fname);
+
+  setBlockSize(MODE1_BLOCK_LEN);
+
+  return toc;
+}
+
+int CDD2600::readIsrc(int trackNr, char *buf)
+{
+  unsigned char cmd[10];
+  unsigned short dataLen = 0x30;
+  unsigned char data[0x30];
+  int i;
+
+  memset(cmd, 0, 10);
+  cmd[0] = 0x42; // READ SUB CHANNEL
+  cmd[2] = 0x40; // get sub channel data
+  cmd[3] = 0x03; // get ISRC code
+  cmd[6] = trackNr;
+  cmd[7] = dataLen >> 8;
+  cmd[8] = dataLen;
+
+  if (sendCmd(cmd, 10, NULL, 0, data, dataLen) != 0) {
+    message(-1, "Cannot read ISRC code.");
+    return 1;
+  }
+  else {
+    if (data[0x08] & 0x80) {
+      for (i = 0; i < 12; i++) {
+	buf[i] = data[0x09 + i];
+      }
+      buf[12] = 0;
+    }
+  }
+
+  return 0;
+}
+
+// tries to read catalog number from disk and adds it to 'toc'
+// return: 1 if valid catalog number was found, else 0
+
+int CDD2600::readCatalog(Toc *toc, long startLba, long endLba)
+{
+  unsigned char cmd[10];
+  unsigned short dataLen = 0x30;
+  unsigned char data[0x30];
+  char catalog[14];
+  int i;
+
+  // read sub channel information
+  memset(cmd, 0, 10);
+  cmd[0] = 0x42; // READ SUB CHANNEL
+  cmd[2] = 0x40; // get sub channel data
+  cmd[3] = 0x02; // get media catalog number
+  cmd[7] = dataLen >> 8;
+  cmd[8] = dataLen;
+
+  if (sendCmd(cmd, 10, NULL, 0, data, dataLen) != 0) {
+    message(-2, "Cannot read sub channel data.");
+    return 0;
+  }
+
+  if (data[0x08] & 0x80) {
+    for (i = 0; i < 13; i++) {
+      catalog[i] = data[0x09 + i];
+    }
+    catalog[13] = 0;
+
+    if (toc->catalog(catalog) == 0) {
+      return 1;
+    }
+  }
+
+  return 0;
+}
+
+int CDD2600::analyzeTrack(TrackData::Mode mode, int trackNr, long startLba,
+			  long endLba,
+			  Msf *index, int *indexCnt, long *pregap,
+			  char *isrcCode, unsigned char *ctl)
+{
+  blockLength_ = AUDIO_BLOCK_LEN;
+  modeSelectBlockSize(blockLength_, 1);
+
+  int ret = analyzeTrackSearch(mode, trackNr, startLba, endLba,
+			       index, indexCnt, pregap, isrcCode, ctl);
+
+  *isrcCode = 0;
+
+  if (mode == TrackData::AUDIO) {
+    // read ISRC code from sub channel
+    readIsrc(trackNr, isrcCode);
+  }
+
+  return ret;
+}
+
+int CDD2600::getTrackIndex(long lba, int *trackNr, int *indexNr, 
+			   unsigned char *ctl)
+{
+  long relPos;
+
+  readBlock(lba);
+
+  return readSubChannelData(trackNr, indexNr, &relPos, ctl);
+}
+
+int CDD2600::readSubChannelData(int *trackNr, int *indexNr, long *relPos,
+				unsigned char *ctl)
+{
+  unsigned char cmd[10];
+  unsigned short dataLen = 0x30;
+  unsigned char data[0x30];
+
+  // read sub channel information
+  memset(cmd, 0, 10);
+  cmd[0] = 0x42; // READ SUB CHANNEL
+  cmd[2] = 0x40; // get sub channel data
+  cmd[3] = 0x00; // get sub Q channel data
+  cmd[6] = 0;
+  cmd[7] = dataLen >> 8;
+  cmd[8] = dataLen;
+
+  if (sendCmd(cmd, 10, NULL, 0, data, dataLen) != 0) {
+    message(-2, "Cannot read sub Q channel data.");
+    return 1;
+  }
+
+  *trackNr = data[6];
+  *indexNr = data[7];
+  *relPos = 0;
+  *relPos |= data[0x0c] << 24;
+  *relPos |= data[0x0d] << 16;
+  *relPos |= data[0x0e] << 8;
+  *relPos |= data[0x0f];
+
+  if (ctl != NULL) {
+    *ctl = data[5] & 0x0f;
+  }
+
+  return 0;
+}
+
+// reads a single block of length 'blockLength_' from given sector
+// return: 0: OK
+//         1: error occured
+void CDD2600::readBlock(unsigned long sector)
+{
+  unsigned char cmd[10];
+  unsigned long dataLen = 2 * blockLength_;
+  unsigned char *data = new (unsigned char)[dataLen];
+
+
+  // read sub channel information
+  memset(cmd, 0, 10);
+  cmd[0] = 0x28; // READ10
+  cmd[2] = sector >> 24;
+  cmd[3] = sector >> 16;
+  cmd[4] = sector >> 8;
+  cmd[5] = sector;
+  cmd[7] = 0;
+  cmd[8] = 2;
+
+  if (sendCmd(cmd, 10, NULL, 0, data, dataLen) != 0) {
+    message(-2, "Cannot read block - ignored.");
+  }
+
+  delete[] data;
+}
+
+// Retrieve disk information.
+// return: DiskInfo structure or 'NULL' on error
+DiskInfo *CDD2600::diskInfo()
+{
+  unsigned char cmd[10];
+  unsigned long dataLen = 34;
+  unsigned char data[34];
+
+  memset(&diskInfo_, 0, sizeof(DiskInfo));
+
+  if (readCapacity(&(diskInfo_.capacity), 0) == 0) {
+    diskInfo_.valid.capacity = 1;
+  }
+  
+  if (readSessionInfo(&leadInLength_, &leadOutLength_, 0) == 0) {
+    diskInfo_.valid.manufacturerId = 1;
+    
+    // start time of lead-in
+    diskInfo_.manufacturerId = Msf(450150 - leadInLength_ - 150 );
+    diskInfo_.empty = 1; // this is for the CDD2000 which does not support
+                         // READ DISK INFORMATION
+  }
+  else {
+    diskInfo_.empty = 0; // this is for the CDD2000 which does not support
+                         // READ DISK INFORMATION
+  }
+  diskInfo_.valid.empty = 1;
+
+  memset(cmd, 0, 10);
+  memset(data, 0, dataLen);
+
+  cmd[0] = 0x51; // READ DISK INFORMATION
+  cmd[7] = dataLen >> 8;
+  cmd[8] = dataLen;
+
+  if (sendCmd(cmd, 10, NULL, 0, data, dataLen, 0) == 0) {
+    diskInfo_.empty = (data[2] & 0x03) == 0 ? 1 : 0;
+    diskInfo_.cdrw = (data[2] & 0x10) != 0 ? 1 : 0;
+    diskInfo_.valid.cdrw = 1;
+  }
+
+  return &diskInfo_;
+}
+
+CdRawToc *CDD2600::getRawToc(int sessionNr, int *len)
+{
+  unsigned char cmd[10];
+  unsigned short dataLen;
+  unsigned char *data = NULL;;
+  unsigned char reqData[4]; // buffer for requestion the actual length
+  unsigned char *p = NULL;
+  int i;
+  CdRawToc *rawToc;
+  int entries;
+
+  assert(sessionNr >= 1);
+
+  // read disk toc length
+  memset(cmd, 0, 10);
+  cmd[0] = 0x43; // READ TOC
+  cmd[6] = sessionNr;
+  cmd[8] = 4;
+  cmd[9] |= 2 << 6; // get Q subcodes
+
+  if (sendCmd(cmd, 10, NULL, 0, reqData, 4) != 0) {
+    message(-2, "Cannot read raw disk toc.");
+    return NULL;
+  }
+
+  dataLen = ((reqData[0] << 8) | reqData[1]) + 2;
+
+  message(3, "Raw toc data len: %d", dataLen);
+
+  data = new (unsigned char)[dataLen];
+  
+  // read disk toc
+  cmd[7] = dataLen >> 8;
+  cmd[8] = dataLen;
+
+  if (sendCmd(cmd, 10, NULL, 0, data, dataLen) != 0) {
+    message(-2, "Cannot read raw disk toc.");
+    delete[] data;
+    return NULL;
+  }
+
+  entries = (((data[0] << 8) | data[1]) - 2) / 11;
+
+
+  rawToc = new CdRawToc[entries];
+
+  for (i = 0, p = data + 4; i < entries; i++, p += 11 ) {
+#if 0
+    message(0, "%d %02x %02d %2x %02x:%02x:%02x %02x %02x:%02x:%02x",
+	    p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7], p[8], p[9], p[10]);
+#endif
+    rawToc[i].sessionNr = p[0];
+    rawToc[i].adrCtl = p[1];
+    rawToc[i].point = p[3];
+    rawToc[i].pmin = p[8];
+    rawToc[i].psec = p[9];
+    rawToc[i].pframe = p[10];
+  }
+
+  delete[] data;
+
+  *len = entries;
+
+  return rawToc;
+}
+
+long CDD2600::readTrackData(TrackData::Mode mode, long lba, long len,
+			    unsigned char *buf)
+{
+  unsigned char cmd[10];
+  long blockLen = 2340;
+  long i;
+  TrackData::Mode actMode;
+  int ok = 0;
+  const unsigned char *sense;
+  int senseLen;
+  int softError;
+
+  if (setBlockSize(blockLen) != 0)
+    return 0;
+
+  memset(cmd, 0, 10);
+
+  cmd[0] = 0x28; // READ10
+  cmd[2] = lba >> 24;
+  cmd[3] = lba >> 16;
+  cmd[4] = lba >> 8;
+  cmd[5] = lba;
+
+  /*  
+  if (mode == TrackData::MODE2_FORM1 || mode == TrackData::MODE2_FORM2)
+    cmd[9] = 1 << 6; // MIX flag
+    */
+
+  while (len > 0 && !ok) {
+    cmd[7] = len >> 8;
+    cmd[8] = len;
+
+    memset(transferBuffer_, 0, len * blockLen);
+    switch (sendCmd(cmd, 10, NULL, 0, transferBuffer_, len * blockLen, 0)) {
+    case 0:
+      ok = 1;
+      break;
+
+    case 2:
+      softError = 0;
+      sense = scsiIf_->getSense(senseLen);
+
+      if (senseLen > 0x0c) {
+	if ((sense[2] &0x0f) == 5) {
+	  switch (sense[12]) {
+	  case 0x64: // Illegal mode for this track
+	    softError = 1;
+	    break;
+	  }
+	}
+	else if ((sense[2] & 0x0f) == 3) { // Medium error
+	  switch (sense[12]) {
+	  case 0x02: // No seek complete, sector not found
+	  case 0x11: // L-EC error
+	    return -2;
+	    break;
+	  }
+	}
+      }
+
+      if (!softError) {
+	scsiIf_->printError();
+	return -1;
+      }
+      break;
+
+    default:
+      message(-2, "Read error at LBA %ld, len %ld", lba, len);
+      return -1;
+      break;
+    }
+
+    if (!ok) {
+      len--;
+    }
+  }
+
+  unsigned char *sector = transferBuffer_;
+  for (i = 0; i < len; i++) {
+    actMode = determineSectorMode(sector);
+
+    if (!(actMode == mode ||
+	  (mode == TrackData::MODE2_FORM_MIX &&
+	   (actMode == TrackData::MODE2_FORM1 ||
+	    actMode == TrackData::MODE2_FORM2)) ||
+
+	  (mode == TrackData::MODE1_RAW && actMode == TrackData::MODE1) ||
+
+	  (mode == TrackData::MODE2_RAW &&
+	   (actMode == TrackData::MODE2 ||
+	    actMode == TrackData::MODE2_FORM1 ||
+	    actMode == TrackData::MODE2_FORM2)))) {
+      return i;
+    }
+
+    if (buf != NULL) {
+      switch (mode) {
+      case TrackData::MODE1:
+	memcpy(buf, sector + 4, MODE1_BLOCK_LEN);
+	buf += MODE1_BLOCK_LEN;
+	break;
+      case TrackData::MODE2:
+      case TrackData::MODE2_FORM_MIX:
+	memcpy(buf, sector + 4, MODE2_BLOCK_LEN);
+	buf += MODE2_BLOCK_LEN;
+	break;
+      case TrackData::MODE2_FORM1:
+	memcpy(buf, sector + 12, MODE2_FORM1_DATA_LEN);
+	buf += MODE2_FORM1_DATA_LEN;
+	break;
+      case TrackData::MODE2_FORM2:
+	memcpy(buf, sector + 12, MODE2_FORM2_DATA_LEN);
+	buf += MODE2_FORM2_DATA_LEN;
+	break;
+      case TrackData::MODE1_RAW:
+      case TrackData::MODE2_RAW:
+	memcpy(buf, syncPattern, 12);
+	memcpy(buf + 12, sector, 2340);
+	buf += AUDIO_BLOCK_LEN;
+	break;
+      case TrackData::MODE0:
+      case TrackData::AUDIO:
+	message(-3, "CDD2600::readTrackData: Illegal mode.");
+	return 0;
+	break;
+      }
+    }
+
+    sector += blockLen;
+  }
+
+  return len;
+}
+
+int CDD2600::readSubChannels(long lba, long len, SubChannel ***chans,
+			     Sample *audioData)
+{
+  unsigned char cmd[10];
+  int tries = 5;
+  int ret;
+
+  if (setBlockSize(AUDIO_BLOCK_LEN) != 0)
+    return 1;
+
+  memset(cmd, 0, 10);
+
+  cmd[0] = 0x28; // READ10
+  cmd[2] = lba >> 24;
+  cmd[3] = lba >> 16;
+  cmd[4] = lba >> 8;
+  cmd[5] = lba;
+  cmd[7] = len >> 8;
+  cmd[8] = len;
+
+  do {
+    ret = sendCmd(cmd, 10, NULL, 0, 
+		  (unsigned char*)audioData, len * AUDIO_BLOCK_LEN,
+		  (tries == 1) ? 1 : 0);
+
+    if (ret != 0 && tries == 1) {
+      message(-2, "Reading of audio data failed at sector %ld.", lba);
+      return 1;
+    }
+    
+    tries--;
+  } while (ret != 0 && tries > 0);
+
+  *chans = NULL;
+  return 0;
+}
+
+int CDD2600::readAudioRange(int fd, long start, long end,
+			    int startTrack, int endTrack,
+			    TrackInfo *info)
+{
+  if (!onTheFly_) {
+    int t;
+
+    message(1, "Analyzing...");
+
+    for (t = startTrack; t <= endTrack; t++) {
+      message(1, "Track %d...", t + 1);
+      info[t].isrcCode[0] = 0;
+      readIsrc(t + 1, info[t].isrcCode);
+    if (info[t].isrcCode[0] != 0)
+      message(1, "Found ISRC code.");
+    }
+
+    message(1, "Reading...");
+  }
+
+  return CdrDriver::readAudioRangeParanoia(fd, start, end, startTrack,
+					   endTrack, info);
+}

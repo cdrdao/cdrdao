@@ -1,0 +1,124 @@
+#
+# make compatibility
+#
+SHELL = /bin/sh
+
+.SUFFIXES:
+.SUFFIXES: .c .cc .cpp .o .d
+# 
+# Source and Installation Paths
+#
+prefix  =       @prefix@
+exec_prefix =   @exec_prefix@
+srcdir =        @srcdir@
+VPATH =         @srcdir@
+#
+# Installation directories for binaries and manual pages
+#
+BINDIR  =       @bindir@
+MANDIR  =       @mandir@
+#
+# install program
+#
+INSTALL =               @INSTALL@
+INSTALL_PROGRAM =       ${INSTALL} -c
+INSTALL_DATA =          ${INSTALL} -c -m 644
+#
+# pccts installation directory and tools
+#
+PCCTS_BIN = @pcctsbin@
+PCCTS_INCLUDE = @pcctsinc@
+ANTLR = $(PCCTS_BIN)/antlr
+DLG = $(PCCTS_BIN)/dlg
+#
+# compiler and library stuff
+#
+CXX = @CXX@
+CXXFLAGS = @CXXFLAGS@ 
+ALL_CXXFLAGS = @DEFS@ @mydefs@ -I.. -I$(srcdir) -I$(PCCTS_INCLUDE) $(CXXFLAGS)
+AR = ar
+RANLIB = @RANLIB@
+#
+#
+#
+LIB = libtrackdb.a
+
+SRC = util.cc TrackData.cc TrackDataList.cc Msf.cc SubTrack.cc Track.cc \
+      Toc.cc CdTextItem.cc CdTextContainer.cc
+
+PARSER_OBJ = TocParser.o TocParserGram.o TocLexerBase.o \
+             CueParser.o CueParserGram.o CueLexerBase.o \
+             AParser.o DLexerBase.o ATokenBuffer.o
+
+OBJ = $(SRC:%.cc=%.o)  $(PARSER_OBJ)
+
+DEP = $(SRC:%.cc=%.d) TocParser.d TocParserGram.d TocLexerBase.d \
+      CueParser.d CueParserGram.d CueLexerBase.d
+
+#
+#
+#
+all: $(LIB)
+
+install: all
+
+clean:
+	rm -f *.o $(LIB)
+
+distclean:
+	rm -f *.o TocLexer.dlg TocParser.cpp TocParserGram.cpp \
+                  TocLexerBase.cpp TocLexerBase.h TocParserTokens.h \
+                  TocParserGram.h \
+                  CueLexer.dlg CueParser.cpp CueParserGram.cpp \
+                  CueLexerBase.cpp CueLexerBase.h CueParserTokens.h \
+                  CueParserGram.h \
+                  $(LIB) Makefile depend.list
+	rm -f *.d
+
+depend:
+	rm -f depend.list
+	$(CXX) -M $(ALL_CXXFLAGS) $(SRC:%=$(srcdir)/%) | sed -e "s|/usr.*h||g" > depend.list
+
+
+#
+#
+#
+$(LIB): $(OBJ)
+	$(AR) rc $(LIB) $(OBJ)
+	$(RANLIB) $(LIB)
+
+%.o : %.cc
+	$(CXX) $(ALL_CXXFLAGS) -c $< -o $@
+
+%.o : %.cpp
+	$(CXX) $(ALL_CXXFLAGS) -c $< -o $@
+
+%.d : %.cc
+	@echo Creating dependencies for $<
+	@$(CXX) -M $(ALL_CXXFLAGS) -c $< > $@
+
+%.d : %.cpp
+	@echo Creating dependencies for $<
+	@$(CXX) -M $(ALL_CXXFLAGS) -c $< > $@
+
+AParser.o :  $(PCCTS_INCLUDE)/AParser.cpp
+	$(CXX) $(ALL_CXXFLAGS) -c $< -o $@
+
+DLexerBase.o : $(PCCTS_INCLUDE)/DLexerBase.cpp
+	$(CXX) $(ALL_CXXFLAGS) -c $< -o $@
+
+ATokenBuffer.o : $(PCCTS_INCLUDE)/ATokenBuffer.cpp
+	$(CXX) $(ALL_CXXFLAGS) -c $< -o $@
+
+TocParser.cpp TocParserGram.cpp TocLexerBase.cpp: $(srcdir)/TocParser.g
+	$(ANTLR) -k 3 -CC  -w2 -fl TocLexer.dlg -ft TocParserTokens.h $(srcdir)/TocParser.g
+	$(DLG) -C2 -CC -cl TocLexerBase TocLexer.dlg 
+
+CueParser.cpp CueParserGram.cpp CueLexerBase.cpp: $(srcdir)/CueParser.g
+	$(ANTLR) -k 1 -CC  -w2 -fl CueLexer.dlg -ft CueParserTokens.h $(srcdir)/CueParser.g
+	$(DLG) -C2 -CC -cl CueLexerBase CueLexer.dlg 
+#
+#
+#
+
+include $(DEP)

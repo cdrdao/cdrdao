@@ -1,0 +1,230 @@
+/*
+ * Define to empty if the keyword does not work.
+ */
+#undef const
+#define	HAVE_C_BIGENDIAN
+#undef WORDS_BIGENDIAN
+#define	HAVE_C_BITFIELDS
+#undef BITFIELDS_HTOL
+/*
+ * Define as the return type of signal handlers (int or void).
+ */
+#undef RETSIGTYPE
+
+/*
+ * Header Files
+ */
+#undef PROTOTYPES	/* if Compiler supports ANSI C prototypes */
+#undef HAVE_STDARG_H	/* to use stdarg.h, else use varargs.h NOTE: SaberC on a Sun has prototypes but no stdarg.h */
+#undef HAVE_STDLIB_H	/* to use general utility defines (malloc(), size_t ...) and general C library prototypes */
+#undef HAVE_STRING_H	/* to get NULL and ANSI C string function prototypes */
+#undef HAVE_STRINGS_H	/* to get BSD string function prototypes */
+#undef STDC_HEADERS	/* if ANSI compliant stdlib.h, stdarg.h, string.h, float.h are present */
+#undef HAVE_UNISTD_H	/* to get POSIX syscall prototypes XXX sys/file.h fcntl.h (unixstd/fctl)XXX*/
+#undef HAVE_LIMITS_H	/* to get POSIX numeric limits constants */
+#undef HAVE_A_OUT_H	/* if a.out.h is present (may be a system using a.out format) */
+#undef HAVE_AOUTHDR_H	/* if aouthdr.h is present. This is a COFF system */
+#undef HAVE_ELF_H	/* if elf.h is present. This is an ELF system */
+#undef HAVE_FCNTL_H	/* to access, O_XXX constants for open(), otherwise use sys/file.h */
+#undef HAVE_INTTYPES_H	/* to use UNIX-98 inttypes.h */
+#undef HAVE_DIRENT_H	/* to use POSIX dirent.h */
+#undef HAVE_SYS_DIR_H	/* to use BSD sys/dir.h */
+#undef HAVE_NDIR_H	/* to use ndir.h */
+#undef HAVE_SYS_NDIR_H	/* to use sys/ndir.h */
+#undef HAVE_MALLOC_H	/* if malloc.h exists */
+#undef HAVE_TERMIOS_H	/* to use POSIX termios.h */
+#undef HAVE_TERMIO_H	/* to use SVR4 termio.h */
+#undef HAVE_SHADOW_H	/* if shadow.h exists */
+#undef HAVE_SYSLOG_H	/* if syslog.h exists */
+#undef HAVE_SYS_TIME_H	/* may include sys/time.h for struct timeval */
+#undef TIME_WITH_SYS_TIME_H	/* may include both time.h and sys/time.h */
+#undef HAVE_UTIMES		/* to use BSD utimes() and sys/time.h */
+#undef HAVE_UTIME_H		/* to use utime.h for the utimbuf structure declaration, else declare struct utimbuf yourself */
+#undef HAVE_SYS_IOCTL_H		/* if sys/ioctl.h is present */
+#undef HAVE_SYS_PARAM_H		/* if sys/param.h is present */
+#undef HAVE_MNTENT_H		/* if mntent.h is present */
+#undef HAVE_SYS_MNTENT_H	/* if sys/mntent.h is present */
+#undef HAVE_SYS_MNTTAB_H	/* if sys/mnttab.h is present */
+#undef HAVE_SYS_MOUNT_H		/* if sys/mount.h is present */
+#undef HAVE_WAIT_H		/* to use wait.h for prototypes and union wait */
+#undef HAVE_SYS_WAIT_H		/* else use sys/wait.h */
+#undef HAVE_SYS_RESOURCE_H	/* to use sys/resource.h for rlimit() and wait3() */
+#undef HAVE_SYS_PROCFS_H	/* to use sys/procfs.h for wait3() emulation */
+#undef HAVE_SYS_SYSTEMINFO_H	/* to use SVr4 sysinfo() */
+#undef HAVE_SYS_UTSNAME_H	/* to use uname() */
+#undef HAVE_SYS_PRIOCNTL_H	/* to use SVr4 priocntl() instead of nice()/setpriority() */
+#undef HAVE_SYS_RTPRIOCNTL_H	/* if the system supports SVr4 real time classes */
+#undef HAVE_SYS_MTIO_H		/* to use mtio definitions from sys/mtio.h */
+#undef HAVE_SYS_MMAN_H		/* to use definitions for mmap()/madvise()... from sys/mman.h */
+#undef MAJOR_IN_MKDEV		/* if we should include sys/mkdev.h to get major()/minor()/makedev() */
+#undef MAJOR_IN_SYSMACROS	/* if we should include sys/sysmacros.h to get major()/minor()/makedev() */
+#undef HAVE_SYS_DKIO_H		/* if we may include sys/dkio.h for disk ioctls */
+#undef HAVE_SYS_DKLABEL_H	/* if we may include sys/dklabel.h for disk label */
+#undef HAVE_SUN_DKIO_H		/* if we may include sun/dkio.h for disk ioctls */
+#undef HAVE_SUN_DKLABEL_H	/* if we may include sun/dklabel.h for disk label */
+#undef HAVE_POLL_H		/* if we may include poll.h to use poll() */
+#undef HAVE_SYS_POLL_H		/* if we may include sys/poll.h to use poll() */
+#undef HAVE_LINUX_PG_H		/* if we may include linux/pg.h for PP ATAPI sypport */
+#undef HAVE_CAMLIB_H		/* if we may include camlib.h for CAM SCSI transport definitions */
+#undef HAVE_IEEEFP_H		/* if we may include ieeefp.h for FINITE()/IS_INF()/IS_NAN() */
+#undef HAVE_FP_H		/* if we may include fp.h for FINITE()/IS_INF()/IS_NAN() */
+#undef HAVE_VALUES_H		/* if we may include values.h for MAXFLOAT */
+#undef HAVE_FLOAT_H		/* if we may include float.h for FLT_MAX */
+#undef HAVE_USG_STDIO		/* if we have USG derived STDIO */
+#undef HAVE_ERRNO_DEF		/* if we have errno definition in <errno.h> */
+#undef HAVE_VFORK_H		/* if we should include vfork.h for vfork() definitions */
+
+/*
+ * Convert to SCHILY name
+ */
+#ifdef	STDC_HEADERS
+#	ifndef	HAVE_STDC_HEADERS
+#		define	HAVE_STDC_HEADERS
+#	endif
+#endif
+
+#ifdef	HAVE_ELF_H
+#define	HAVE_ELF			/* This system uses ELF */
+#else
+#	ifdef	HAVE_AOUTHDR_H
+#	define	HAVE_COFF		/* This system uses COFF */
+#	else
+#		ifdef HAVE_A_OUT_H
+#		define HAVE_AOUT	/* This system uses AOUT */
+#		endif
+#	endif
+#endif
+
+/*
+ * Library Functions
+ */
+#undef HAVE_STRERROR		/* strerror() is present in libc */
+#undef HAVE_MEMMOVE		/* memmove() is present in libc */
+#undef HAVE_MLOCKALL		/* working mlockall() is present in libc */
+#undef HAVE_MMAP		/* working mmap() is present in libc */
+#undef HAVE_FLOCK		/* flock() is present in libc */
+#undef HAVE_FCHDIR		/* fchdir() is present in libc */
+#undef HAVE_STATVFS		/* statvfs() is present in libc */
+#undef HAVE_QUOTACTL		/* quotactl() is present in libc */
+#undef HAVE_QUOTAIOCTL		/* use ioctl(f, Q_QUOTACTL, &q) instead of quotactl() */
+#undef HAVE_SETREUID		/* setreuid() is present in libc */
+#undef HAVE_SETRESUID		/* setresuid() is present in libc */
+#undef HAVE_SETEUID		/* seteuid() is present in libc */
+#undef HAVE_SETUID		/* setuid() is present in libc */
+#undef HAVE_SETREGID		/* setregid() is present in libc */
+#undef HAVE_SETRESGID		/* setresgid() is present in libc */
+#undef HAVE_SETEGID		/* setegid() is present in libc */
+#undef HAVE_SETGID		/* setgid() is present in libc */
+#undef HAVE_SYNC		/* sync() is present in libc */
+#undef HAVE_WAIT3		/* working wait3() is present in libc */
+#undef HAVE_WAIT4		/* wait4() is present in libc */
+#undef HAVE_WAITID		/* waitid() is present in libc */
+#undef HAVE_WAITPID		/* waitpid() is present in libc */
+#undef HAVE_GETHOSTID		/* gethostid() is present in libc */
+#undef HAVE_GETHOSTNAME		/* gethostname() is present in libc */
+#undef HAVE_GETDOMAINNAME	/* getdomainname() is present in libc */
+#undef HAVE_GETPAGESIZE		/* getpagesize() is present in libc */
+#undef HAVE_GETRUSAGE		/* getrusage() is present in libc */
+#undef HAVE_POLL		/* poll() is present in libc */
+#undef HAVE_SELECT		/* select() is present in libc */
+#undef HAVE_LCHOWN		/* lchown() is present in libc */
+#undef HAVE_BRK			/* brk() is present in libc */
+#undef HAVE_SBRK		/* sbrk() is present in libc */
+#undef HAVE_VA_COPY		/* va_copy() is present in varargs.h/stdarg.h */
+#undef HAVE__VA_COPY		/* __va_copy() is present in varargs.h/stdarg.h */
+#undef HAVE_DTOA		/* BSD-4.4 __dtoa() is present in libc */
+#undef HAVE_GETCWD		/* POSIX getcwd() is present in libc */
+#undef HAVE_SMMAP		/* may map anonymous memory to get shared mem */
+#undef HAVE_SHMAT		/* shmat() is present in libc */
+#undef HAVE_SEMGET		/* semget() is present in libc */
+#undef HAVE_LSTAT		/* lstat() is present in libc */
+#undef HAVE_READLINK		/* readlink() is present in libc */
+#undef HAVE_RENAME		/* rename() is present in libc */
+#undef HAVE_ECVT		/* ecvt() is present in libc */
+#undef HAVE_FCVT		/* fcvt() is present in libc */
+#undef HAVE_GCVT		/* gcvt() is present in libc */
+#undef HAVE_ECVT_R		/* ecvt_r() is present in libc */
+#undef HAVE_FCVT_R		/* fcvt_r() is present in libc */
+#undef HAVE_GCVT_R		/* gcvt_r() is present in libc */
+#undef HAVE_ECONVERT		/* econvert() is present in libc */
+#undef HAVE_FCONVERT		/* fconvert() is present in libc */
+#undef HAVE_GCONVERT		/* gconvert() is present in libc */
+#undef HAVE_SETPRIORITY		/* setpriority() is present in libc */
+#undef HAVE_NICE		/* nice() is present in libc */
+#undef HAVE_DOSSETPRIORITY	/* DosSetPriority() is present in libc */
+#undef HAVE_DOSALLOCSHAREDMEM	/* DosAllocSharedMem() is present in libc */
+#undef HAVE_SEEKDIR		/* seekdir() is present in libc */
+#undef HAVE_PUTENV		/* putenv() is present in libc (preferred function) */
+#undef HAVE_SETENV		/* setenv() is present in libc (use instead of putenv()) */
+#undef HAVE_UNAME		/* uname() is present in libc */
+#undef HAVE_STRCASECMP		/* strcasecmp() is present in libc */
+#undef HAVE_STRSIGNAL		/* strsignal() is present in libc */
+#undef HAVE_STR2SIG		/* str2sig() is present in libc */
+#undef HAVE_SIG2STR		/* sig2str() is present in libc */
+#undef HAVE_KILLPG		/* killpg() is present in libc */
+#undef HAVE_SIGRELSE		/* sigrelse() is present in libc */
+#undef HAVE_SYS_SIGLIST		/* char *sys_siglist[] is present in libc */
+#undef HAVE_NANOSLEEP		/* nanosleep() is present in libc */
+#undef HAVE_USLEEP		/* usleep() is present in libc */
+#undef HAVE_FORK		/* fork() is present in libc */
+#undef vfork
+
+#if	defined(HAVE_QUOTACTL) || defined(HAVE_QUOTAIOCTL)
+#	define HAVE_QUOTA	/* The system inludes quota */
+#endif
+
+#ifdef HAVE_SHMAT
+#	define	HAVE_USGSHM	/* USG shared memory is present */
+#endif
+#ifdef HAVE_SEMGET
+#	define	HAVE_USGSEM	/* USG semaphores are present */
+#endif
+
+/*
+ * Structures
+ */
+#undef HAVE_MTGET_DSREG		/* if struct mtget contains mt_dsreg (drive status) */
+#undef HAVE_MTGET_RESID		/* if struct mtget contains mt_resid (residual count) */
+#undef HAVE_MTGET_FILENO	/* if struct mtget contains mt_fileno (file #) */
+#undef HAVE_MTGET_BLKNO		/* if struct mtget contains mt_blkno (block #0) */
+#undef HAVE_STRUCT_RUSAGE	/* have struct rusage in sys/resource.h */
+#undef HAVE_UNION_SEMUN		/* have an illegal definition for union semun in sys/sem.h */
+#undef HAVE_UNION_WAIT		/* have union wait in wait.h */
+#undef HAVE_ST_SPARE1		/* if struct stat contains st_spare1 (usecs) */
+#undef HAVE_ST_NSEC		/* if struct stat contains st_atim.st_nsec (nanosecs */
+#undef HAVE_ST_BLKSIZE		/* if struct stat contains st_blksize */
+#undef HAVE_ST_BLOCKS		/* if struct stat contains st_blocks */
+#undef HAVE_ST_RDEV		/* if struct stat contains st_rdev */
+#undef STAT_MACROS_BROKEN	/* if the macros S_ISDIR, S_ISREG .. don't work */
+
+#undef DEV_MINOR_BITS		/* # if bits needed to hold minor device number */
+#undef DEV_MINOR_NONCONTIG	/* if bits in minor device number are noncontiguous */
+
+/*
+ * Types
+ */
+#undef SIZEOF_CHAR
+#undef SIZEOF_SHORT_INT
+#undef SIZEOF_INT
+#undef SIZEOF_LONG_INT
+#undef SIZEOF_LONG_LONG
+#undef SIZEOF_CHAR_P
+#undef SIZEOF_UNSIGNED_CHAR
+#undef SIZEOF_UNSIGNED_SHORT_INT
+#undef SIZEOF_UNSIGNED_INT
+#undef SIZEOF_UNSIGNED_LONG_INT
+#undef SIZEOF_UNSIGNED_LONG_LONG
+#undef SIZEOF_UNSIGNED_CHAR_P
+
+#undef HAVE_LONGLONG		/* Compiler defines long long type */
+#undef CHAR_IS_UNSIGNED		/* Compiler defines char to be unsigned */
+
+/*#undef HAVE_SIZE_T*/
+/*#undef NO_SIZE_T*/
+#undef VA_LIST_IS_ARRAY		/* va_list is an array */
+#undef GETGROUPS_T
+#define GID_T		GETGROUPS_T
+
+#undef HOST_CPU
+#undef HOST_VENDOR
+#undef HOST_OS

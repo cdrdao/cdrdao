@@ -1,0 +1,92 @@
+#
+# make compatibility
+#
+SHELL = /bin/sh
+
+.SUFFIXES:
+.SUFFIXES: .c .cc .cpp .o .d
+# 
+# Source and Installation Paths
+#
+prefix  =      @prefix@
+exec_prefix =  @exec_prefix@
+srcdir =       @srcdir@
+VPATH =        @srcdir@
+#
+# Installation directories for binaries and manual pages
+#
+bindir  =      @bindir@
+mandir  =      @mandir@
+man1dir =      $(mandir)/man1
+#
+# install program
+#
+INSTALL =               @INSTALL@
+INSTALL_PROGRAM =       ${INSTALL}
+INSTALL_DATA =          ${INSTALL} -m 644
+#
+# Program version
+#
+VERSION = @cdrdao_version@
+#
+# compiler and library stuff
+#
+CXX = @CXX@
+CXXFLAGS = @CXXFLAGS@ 
+ALL_CXXFLAGS = @DEFS@ @mydefs@ -DVERSION=\"$(VERSION)\" -I.. -I$(srcdir) -I$(srcdir)/../dao -I$(srcdir)/../trackdb $(CXXFLAGS) @GTKMM_CFLAGS@
+LDFLAGS = @LDFLAGS@ 
+LIBS = @scsilib_libs@ @thread_libs@ @extra_libs@ @LIBS@
+RANLIB = @RANLIB@
+AR = ar
+#
+#
+#
+SRC = xcdrdao.cc MainWindow.cc SampleDisplay.cc SampleManager.cc \
+      TrackManager.cc AddSilenceDialog.cc TrackInfoDialog.cc TocEdit.cc \
+      TextEdit.cc TocInfoDialog.cc guiUpdate.cc TrackDataScrap.cc \
+      AddFileDialog.cc CdDevice.cc DeviceConfDialog.cc RecordDialog.cc \
+      ProcessMonitor.cc RecordProgressDialog.cc Settings.cc MessageBox.cc \
+      ExtractDialog.cc ExtractProgressDialog.cc @sound_if_src@
+
+OBJ = $(SRC:%.cc=%.o)
+
+DEP = $(SRC:%.cc=%.d)
+
+PRG = xcdrdao
+#
+#
+#
+all: $(PRG)
+
+install: all installdirs
+	$(INSTALL_PROGRAM) $(PRG) $(bindir)
+	$(INSTALL_DATA) xcdrdao.man $(man1dir)/xcdrdao.1
+
+installdirs:
+	$(srcdir)/../mkinstalldirs $(bindir)
+	$(srcdir)/../mkinstalldirs $(man1dir)
+
+clean:
+	rm -f *.o $(PRG)
+
+distclean: clean
+	rm -f Makefile
+	rm -f *.d
+#
+#
+#
+$(PRG): $(OBJ) ../trackdb/libtrackdb.a ../dao/libdao.a
+	$(CXX) $(LDFLAGS) -o $(PRG) $(OBJ) @GTKMM_LIBS@ -L../dao -ldao -L../trackdb -ltrackdb -L../edc_ecc -ledc_ecc -L../paranoia -lcdda_paranoia $(LIBS)
+
+%.o : %.cc
+	$(CXX) $(ALL_CXXFLAGS) -c $< -o $@
+
+%.d : %.cc
+	@echo Creating dependencies for $<
+	@$(CXX) -M $(ALL_CXXFLAGS) -c $< > $@
+
+#
+#
+#
+
+include $(DEP)

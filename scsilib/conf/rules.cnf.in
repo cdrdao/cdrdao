@@ -1,0 +1,2 @@
+SCSILIB= @scsi_lib@
+LIB_CRYPT= @lib_crypt@

@@ -1,0 +1,71 @@
+AC_INIT(paranoia.c)
+
+AC_CANONICAL_HOST
+
+if test -z "$CC"; then
+	AC_PROG_CC	
+fi
+AC_PROG_RANLIB
+AC_CHECK_PROG(AR,ar,ar)
+
+
+if test -z "$GCC"; then
+	DEBUG="-g"
+	OPT="-O"
+else
+	case $host in 
+	i?86-*-linux*)
+		DEBUG="-g -Wall -fsigned-char"
+		OPT="-O20 -ffast-math -fsigned-char -finline-functions";;
+	*)
+		DEBUG="-g -Wall -fsigned-char"
+		OPT="-O20 -fsigned-char";;
+        esac
+fi
+
+AC_HEADER_STDC
+
+CFLAGS=""
+
+TYPESIZES="" 
+
+AC_CHECK_SIZEOF(short)
+AC_CHECK_SIZEOF(int)
+AC_CHECK_SIZEOF(long)
+AC_CHECK_SIZEOF(long long)
+
+case 2 in
+	$ac_cv_sizeof_short) TYPESIZES="$TYPESIZES -Dsize16='short'"
+		SIZE16=TRUE;;
+	$ac_cv_sizeof_int) TYPESIZES="$TYPESIZES -Dsize16='int'"
+		SIZE16=TRUE;;
+esac
+
+case 4 in
+	$ac_cv_sizeof_short) TYPESIZES="$TYPESIZES -Dsize32='short'"
+		SIZE32=TRUE;;
+	$ac_cv_sizeof_int) TYPESIZES="$TYPESIZES -Dsize32='int'"
+		SIZE32=TRUE;;
+	$ac_cv_sizeof_long) TYPESIZES="$TYPESIZES -Dsize32='long'"
+		SIZE32=TRUE;;
+esac
+
+if test -z "$SIZE16"; then
+	AC_MSG_ERROR(No 16 bit tupe found on this platform!)
+fi
+if test -z "$SIZE32"; then
+	AC_MSG_ERROR(No 32 bit tupe found on this platform!)
+fi
+	
+
+AC_PROG_MAKE_SET
+AC_C_CONST
+
+AC_SUBST(SBPCD_H)
+AC_SUBST(UCDROM_H)
+AC_SUBST(TYPESIZES)
+AC_SUBST(OPT)
+AC_SUBST(DEBUG)
+AC_SUBST(CC)
+
+AC_OUTPUT(Makefile)

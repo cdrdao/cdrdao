@@ -1,0 +1,23 @@
+PATH setzen
+LD_RUN_PATH loeschen
+LD_LIBRARY_PATH Loeschen
+umask setzen
+
+symlink libxxx.so -> libxxx.so.x.y
+bei install setzen
+
+highlevel rules:
+
+rules.aux
+rules.cmd
+rules.dir
+rules.drv
+rules.lib
+rules.loc
+rules.mks
+rules.mod
+rules.rdi
+rules.shl
+
+sollten umbenannt werden z.B. in xrules.*
+

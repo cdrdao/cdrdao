@@ -1,0 +1,17 @@
+// MODE1 track followed by an AUDIO track followed by a MODE1 track.
+// This works on my PlexWriter in contrast to 'data3.toc'.
+
+CD_ROM
+
+TRACK MODE1
+ZERO 1:0:0
+
+TRACK AUDIO
+PREGAP 0:2:0
+SILENCE 1:0:0
+
+TRACK MODE1
+PREGAP 0:2:0
+ZERO 1:0:0
+
+

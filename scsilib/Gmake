@@ -1,0 +1,4 @@
+#!/bin/sh
+MAKEPROG=gmake
+export MAKEPROG
+exec gmake "$@"

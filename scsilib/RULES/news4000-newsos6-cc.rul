@@ -1,0 +1,72 @@
+#ident @(#)news4000-newsos6-cc.rul	1.2 99/08/29 
+###########################################################################
+#
+# Platform dependent MACROS for Sony NEWS-OS 6.x
+#
+###########################################################################
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2, or (at your option)
+# any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; see the file COPYING.  If not, write to
+# the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+###########################################################################
+include $(SRCROOT)/$(RULESDIR)/rules.prg
+###########################################################################
+
+CPPFLAGS=	$(CPPOPTS) $(CPPOPTX)
+CFLAGS=		$(COPTS) $(CWARNOPTS) $(COPTOPT) $(COPTX)
+
+#
+#		From objectx@polyphony.scei.co.jp XXX is -D__STDC__=0 correct ???
+#
+OSDEFS=		-D__SVR4 -DSVR4 -D__STDC__=0
+CPPOPTS=	-I. -I$(ARCHDIR) -I$(OINCSDIR) $(INCDIRS:%=-I%) $(OSDEFS)
+COPTS=
+CWOPTS=		-fullwarn
+COPTOPT=	-O
+KDEFINES=	-DKERNEL -D_KERNEL
+COPTDYN=	-Kpic
+COPTGPROF=	-p1
+
+LIB_PREFIX=	lib
+LIB_SUFFIX=	.a
+SHL_SUFFIX=	.so.1
+
+LIB_SOCKET=	-lsocket
+LIB_MATH=	-lm
+LIB_KVM=	
+
+LIBS_PATH=	-L$(OLIBSDIR)
+
+LDFLAGS=	$(LDOPTS) $(LDOPTX)
+LDLIBS=		$(LIBS) $(LIBX)
+
+#LDOPTS=		$(LIBS_PATH) $(LDPATH) $(RUNPATH)
+LDOPTS=		$(LIBS_PATH) $(LDPATH)
+#LDOPTDYN=	-dy -G -ztext -h $(TARGET) -ldl
+LNDYNLIB=	@
+
+FLOAT_OPTIONS=	
+
+CC=		@echo "	==> COMPILING \"$@\""; cc
+LDCC=		@echo "	==> LINKING \"$@\""; cc
+DYNLD=		@echo "	==> LINKING dynamic library \"$@\""; cc
+RANLIB=		@echo "	==> RANDOMIZING ARCHIVE \"$@\""; true
+ARFLAGS=	crs
+#
+# lorder seems not to work on some machines, disable it
+#
+LORDER=		echo
+TSORT=		cat
+
+RMDEP=		:
+MKDEP=		@echo "	==> MAKING DEPENDENCIES \"$@\""; $(RMDEP); cc -M
+MKDEP_OUT=

@@ -1,0 +1,15 @@
+This is Monty's <monty@xiph.org> paranoia library that allows high quality
+digital audio extraction even with scratched CDs. It is taken from the
+cdparanoia-III-alpha9.5 package.
+
+Changes:
+  - Provided my own version of the 'cdrom_drive' structure and changed
+    the include path for "cdda_interface.h". It is now located in
+    "dao/cdda_interface.h".
+  - Removed include of "../interface/smallft.h" because nothing from it
+    was used.
+  - Commented out the functions 'i_paranoia_firstlast()' and 
+    'paranoia_seek()' to reduce the required cdda interface functions.
+    Now only 'cdda_read()' is referenced by the library.
+  - Added function 'paranoia_set_range()' to set the valid range of audio
+    sectors.

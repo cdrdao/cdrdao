@@ -1,0 +1,236 @@
+dnl Process this file with autoconf to produce a configure script.
+AC_REVISION($Revision: 1.1 $)dnl
+
+cdrdao_version=1.1.3
+
+AC_INIT(cdrdao.lsm)
+AC_CONFIG_HEADER(config.h)
+AC_CONFIG_SUBDIRS(paranoia)
+
+AC_CANONICAL_HOST
+
+AC_ARG_WITH(pcctsbin,[  --with-pcctsbin=dir     set directory of PCCTS parser generator executables],pcctsbin=$withval,pcctsbin=default)
+AC_ARG_WITH(pcctsinc,[  --with-pcctsinc=dir     set directory of PCCTS parser generator includes],pcctsinc=$withval,pcctsinc=default)
+AC_ARG_WITH(linux-qnx-sched,[  --with-linux-qnx-sched  enable QNX real time scheduling for Linux],AC_DEFINE(LINUX_QNX_SCHEDULING))
+AC_ARG_WITH(posix-threads,[  --with-posix-threads    use Posix threads for ring buffer (default: on)],use_pthreads=$withval,use_pthreads=default)
+AC_ARG_WITH(scglib,[  --with-scglib           use Joerg Schillings SCSI library (default: on)],use_scglib=$withval,use_scglib=default)
+AC_ARG_WITH(scglib-inc,[  --with-scglib-inc=dir   set directory for SCSI library include files],scglib_inc=$withval,scglib_inc=default)
+AC_ARG_WITH(scglib-lib,[  --with-scglib-lib=dir   set directory that contains the SCSI library],scglib_lib=$withval,scglib_lib=default)
+
+
+dnl Checks for programs.
+AC_PROG_CC
+AC_PROG_CXX
+AC_PROG_CPP
+AC_PROG_INSTALL
+AC_PROG_RANLIB
+AC_PROG_MAKE_SET
+
+dnl Checks for header files.
+AC_HEADER_STDC
+AC_HEADER_SYS_WAIT
+AC_CHECK_HEADERS(fcntl.h malloc.h unistd.h sys/mman.h)
+
+dnl Checks for typedefs, structures, and compiler characteristics.
+AC_C_CONST
+AC_TYPE_SIGNAL
+AC_CHECK_SIZEOF(short)
+AC_CHECK_SIZEOF(int)
+
+case 2 in
+	$ac_cv_sizeof_short) 
+                AC_DEFINE(size16,short)
+		SIZE16=TRUE;;
+	$ac_cv_sizeof_int)
+                AC_DEFINE(size16,int)
+		SIZE16=TRUE;;
+esac
+
+if test -z "$SIZE16"; then
+	AC_MSG_ERROR(No 16 bit type found on this platform!)
+fi
+
+dnl Checks for library functions.
+AC_CHECK_FUNCS(strerror)
+AC_CHECK_FUNCS(mlockall munlockall)
+AC_CHECK_FUNCS(seteuid setegid getpagesize)
+AC_CHECK_FUNCS(usleep)
+
+AC_CHECK_FUNC(sched_getparam,AC_DEFINE(HAVE_SCHED_GETPARAM),
+  AC_CHECK_LIB(posix4,sched_getparam,[use_libposix4=yes;AC_DEFINE(HAVE_SCHED_GETPARAM)]))
+
+AC_CHECK_FUNC(sched_get_priority_max,AC_DEFINE(HAVE_SCHED_GET_PRIORITY_MAX),
+  AC_CHECK_LIB(posix4,sched_get_priority_max,[use_libposix4=yes;AC_DEFINE(HAVE_SCHED_GET_PRIORITY_MAX)]))
+
+AC_CHECK_FUNC(sched_setscheduler,AC_DEFINE(HAVE_SCHED_SETSCHEDULER),
+  AC_CHECK_LIB(posix4,sched_setscheduler,[use_libposix4=yes;AC_DEFINE(HAVE_SCHED_SETSCHEDULER)]))
+
+
+dnl Check if libposix4 must be linked
+if test "$use_libposix4" = yes; then
+  extra_libs="$extra_libs -lposix4"
+fi
+
+dnl check if Posix threads should be used
+if test "$use_pthreads" = default; then
+  use_pthreads=yes
+fi
+
+if test "$use_pthreads" = yes; then
+  AC_CHECK_LIB(pthread,pthread_create,have_pthread=yes,have_pthread=no)
+  AC_CHECK_LIB(pthread32,pthread_create,have_pthread32=yes,have_pthread32=no)
+  AC_CHECK_LIB(c_r,pthread_create,have_c_r=yes,have_c_r=no)
+
+  if test "$have_pthread" = yes; then
+    AC_DEFINE(USE_POSIX_THREADS)
+    thread_libs="-lpthread"
+    thread_test_lib="pthread"
+  elif test "$have_pthread32" = yes; then
+    AC_DEFINE(USE_POSIX_THREADS)
+    thread_libs="-lpthread32"
+    thread_test_lib="pthread32"
+  elif test "$have_c_r" = yes; then
+    AC_DEFINE(USE_POSIX_THREADS)
+    thread_libs="-lc_r"
+    thread_test_lib="c_r"
+  else
+    use_pthreads=no
+  fi
+
+  if test "$use_pthreads" = yes; then
+    AC_CHECK_LIB($thread_test_lib,pthread_sigmask,AC_DEFINE(HAVE_PTHREAD_SIGMASK))
+    AC_CHECK_LIB($thread_test_lib,pthread_attr_setschedpolicy,AC_DEFINE(HAVE_PTHREAD_ATTR_SETSCHEDPOLICY))
+    AC_CHECK_LIB($thread_test_lib,pthread_attr_setschedparam,AC_DEFINE(HAVE_PTHREAD_ATTR_SETSCHEDPARAM))
+    AC_CHECK_LIB($thread_test_lib,pthread_getschedparam,AC_DEFINE(HAVE_PTHREAD_GETSCHEDPARAM))
+    AC_CHECK_LIB($thread_test_lib,pthread_setschedparam,AC_DEFINE(HAVE_PTHREAD_SETSCHEDPARAM))
+  fi
+fi  
+
+if test "$use_pthreads" = yes; then
+  mydefs="-D_THREAD_SAFE -D_REENTRANT $mydefs"
+fi
+
+
+dnl Checks for pccts parser generator
+if test "$pcctsbin" = default; then
+  pcctsbin=/usr/local/bin
+fi
+
+if test "$pcctsinc" = default; then
+  pcctsinc=/usr/local/include/pccts
+fi
+
+AC_CHECK_PROG(HAVE_ANTLR,antlr,yes,no,$pcctsbin)
+AC_CHECK_PROG(HAVE_DLG,dlg,yes,no,$pcctsbin)
+
+if test $HAVE_ANTLR != "yes" -o $HAVE_DLG != "yes" ; then
+  AC_MSG_ERROR([No PCCTS installation detected.])
+fi
+
+AC_PATH_GTKMM(1.0.0, xdao=xdao, [echo Disabled building of xcdrdao.])
+
+
+
+dnl Determine source for scsi interface class
+if test "$use_scglib" = default; then
+  use_scglib=yes
+fi
+
+if test "$use_scglib" = yes; then
+  AC_DEFINE(USE_SCGLIB)
+
+  if test "$scglib_inc" = default -o "$scglib_lib" = default; then
+    scsilib_dir=scsilib
+    scsilib_incl='-I$(srcdir)/../scsilib/export -I$(srcdir)/../scsilib/export/libschily'
+    scsilib_libs="-L../scsilib/export"
+  else
+    scsilib_dir=""
+    scsilib_incl="-I$scglib_inc"
+    scsilib_libs="-L$scglib_lib"
+  fi
+  
+  scsilib_libs="$scsilib_libs -lscg -lschily"
+  scsi_if_src=ScsiIf-lib.cc
+  
+  case "$host" in
+    *-freebsd3* | *-freebsd4*)
+			       scsilib_libs="$scsilib_libs -lcam"
+			       ;;
+  esac
+
+else
+
+  scsilib_dir=""
+  scsilib_incl=""
+  scsilib_libs=""
+
+  case "$host" in
+    *-linux-*)
+	       scsi_if_src="ScsiIf-linux.cc sg_err.cc"
+	       ;;
+    
+    *-freebsd3* | *-freebsd4*)
+			       scsi_if_src="ScsiIf-freebsd-cam.cc"
+			       scsilib_libs="-lcam"
+			       ;;
+
+    *-pc-cygwin32)
+		   scsi_if_src="ScsiIf-win.cc"
+		   ;;
+
+    *)
+       AC_MSG_ERROR([Unsupported operating system: $host_os]) 
+       ;;
+    esac
+fi
+
+dnl Selection of buffer code
+case "$host" in
+  *)
+     dao_src=dao.cc
+     ;;
+esac
+
+dnl Additional operating system dependent selections
+case "$host" in
+  *-freebsd*)
+	      if test "$use_pthreads" = yes; then
+		mydefs="-pthread $mydefs"
+		LDFLAGS="-pthread $LDFLAGS"
+dnl -lc_r is automatically done by the linker
+		thread_libs=""
+	      fi
+	      ;;
+esac
+
+dnl Sound device selection for xcdrdao
+case "$host" in
+  *-linux-*)
+	     sound_if_src=SoundIF-linux.cc
+	     ;;
+
+  *-solaris*)
+	      sound_if_src=SoundIF-solaris.cc
+	      ;;
+
+  *)
+     sound_if_src=SoundIF-none.cc
+     ;;
+esac
+
+
+AC_SUBST(scsi_if_src)
+AC_SUBST(cdrdao_version)
+AC_SUBST(xdao)
+AC_SUBST(scsilib_dir)
+AC_SUBST(scsilib_incl)
+AC_SUBST(scsilib_libs)
+AC_SUBST(extra_libs)
+AC_SUBST(pcctsbin)
+AC_SUBST(pcctsinc)
+AC_SUBST(dao_src)
+AC_SUBST(sound_if_src)
+AC_SUBST(thread_libs)
+AC_SUBST(mydefs)
+
+AC_OUTPUT(edc_ecc/Makefile trackdb/Makefile dao/Makefile xdao/Makefile Makefile)

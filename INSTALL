@@ -1,0 +1,66 @@
+Installation:
+
+You will need the parser generator PCCTS Version 1.33 to compile this
+package. It is available from:
+
+        http://www.polhode.com/pccts.html
+or
+	http://www.antlr.org/1.33/pccts.tar.gz
+
+While compiling the PCCTS packages you may get errors on the target 'genmk'.
+These errors can be safely ignored since cdrdao does not use 'genmk'. All
+required tools are already built at that time.
+
+Some parts of the standard PCCTS package won't compile with the actual
+gcc-2.95 version. You can
+ - compile with  make CXXFLAGS="-fpermissive -O2"
+ - use the PCCTS bug fix release 1.33mr20a from 
+       http://www.mcs.net/~tmoog/pccts.html
+ - or fix the obvious errors in the PCCTS installation
+
+The xcdrdao GUI needs the Gimp toolkit gtk+-1.2.0 and the C++ binding
+Gtk---1.0.0. Both are available from www.gtk.org.
+
+1. Type './configure'.
+   Configure options for PCCTS:
+     --with-pcctsbin=dir     Specifies directory that contains the PCCTS 
+                             executables (default: /usr/local/bin)
+
+     --with-pcctsinc=dir     Specifies directory that contains the PCCTS
+                             header and source files
+                             (default: /usr/local/include/pccts)
+
+   Configure options for SCSI interface:
+     --without-scglib        Use a direct SCSI implementation instead of
+                             Joerg Schilling's SCSI library. This makes only
+                             sense if the SCSI library does not compile for
+                             some reason. Direct SCSI implementations are
+                             currently available for Linux and FreeBSD.
+                             The included SCSI library will be built if the
+                             following options are not given.
+     
+     --with-scglib-inc=dir   Use SCSI library include files from specified
+                             directory instead from the SCSI library that
+                             comes with the cdrdao package. This option will
+                             only have an effect if '--with-scglib-lib' is
+                             specified, too. If both options are given the
+                             SCSI library will not be built.
+
+     --with-scglib-lib=dir   Specifies the directory that contains the SCSI
+                             library. This option will only have an effect if
+                             '--with-scglib-inc' is specified, too. If both
+                             options are given the SCSI library will not be
+                             built.
+
+   Misc Configure options:
+     --with-linux-qnx-sched  Enables Linux QNX real time scheduling.
+                             This will only work if your kernel is compiled
+                             with the QNX scheduler.
+
+     --without-posix-threads Do not use posix threads for ring buffer even
+                             if the system supports it.
+
+2. Type 'make' to compile the package.
+
+3. Type 'make install' as root to install the binary and the manual page under
+   '/usr/local'.

@@ -1,0 +1,20 @@
+Begin3
+Title:          cdrdao
+Version:        1.0
+Entered-date:   03AUG98
+Description:    Writes audio CD-Rs in disc-at-once (DAO) mode allowing
+                control over pre-gaps (length down to 0, nonzero audio
+                data) and sub-channel information like ISRC codes. All
+                data that is written to the disc must be specified with
+                a text file. Audio data may be in WAVE or raw format.
+Keywords:       CD-recording, audio, disc-at-once
+Author:         mueller@daneb.ping.de (Andreas Mueller)
+Maintained-by:  mueller@daneb.ping.de (Andreas Mueller)
+Primary-site:   sunsite.unc.edu /pub/Linux/utils/disk-management/
+                 67 kB cdrdao-1.0.src.tar.gz
+                103 kB cdrdao-1.0.bin.x86.linux.tar.gz
+Alternate-site: 
+Platforms:      Linux
+                Supported hardware: Philips CDD 2600
+Copying-policy: GPL
+End

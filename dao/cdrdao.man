@@ -1,0 +1,605 @@
+.TH CDRDAO 1 "Oct 17, 1999"
+.SH NAME
+cdrdao \- writes audio CD-Rs in disc-at-once mode
+.SH SYNOPSIS
+.B cdrdao
+.RB [ show-toc | read-toc | read-cd | show-data | read-test | disk-info | simulate | write | copy]
+.RB [ --device
+.IR device ]
+.RB [ --source-device
+.IR device ]
+.RB [ --driver
+.IR driver-id ]
+.RB [ --source-driver
+.IR driver-id ]
+.RB [ --simulate ]
+.RB [ --speed
+.IR writing-speed ]
+.RB [ --datafile
+.IR file ]
+.RB [ --read-raw ]
+.RB [ --fast-toc ]
+.RB [ --buffers
+.IR buffer-count ]
+.RB [ --multi ]
+.RB [ --eject ]
+.RB [ --swap ]
+.RB [ --session ]
+.RB [ --force ]
+.RB [ --reload ]
+.RB [ --on-the-fly ]
+.RB [ --paranoia-mode
+.IR mode ]
+.RB [ -n ]
+.RB [ -v 
+.IR verbose-level ]
+.RI toc-file
+.SH DESCRIPTION
+.I cdrdao
+creates audio and data CD-Rs in disk-at-once (DAO) mode driven by a description
+file called
+.I toc-file.
+In DAO mode it is possible to create non standard track pre-gaps that
+have other lengths than 2 seconds and contain nonzero audio
+data. This is for example useful to divide live recordings into
+tracks where 2 second gaps would be kind of irritating.
+
+Instead of a
+.I toc-file
+a cue file (used by a famous DOS/Windows mastering tool) may be used. See
+the CUE FILES section for more details. 
+
+.SH COMMANDS
+.TP
+The first argument must be one of the following commands:
+.TP
+.BI show-toc
+Print out a summary about what will be written to the CD-R.  
+.TP
+.BI read-toc
+Analyze each track of the inserted CD and create a
+.I toc-file
+that can be used to make a more or less exact copy of the CD. 
+This command does not read out the audio or data tracks,
+use
+.BI read-cd
+for this purpose.
+
+You can specify a filename for the data file via the
+.BI \--datafile
+option.
+.TP
+.BI read-cd
+Copies all tracks of the inserted CD to an image file and creates a corresponding
+.I toc-file.
+The name of the image file defaults to "data.bin" if no
+.BI --datafile
+option is given.
+.TP
+.BI show-data
+Print out all samples that would be written to the CD-R. Each line
+contains the sample number (starting at 0) and the decimal sample
+value for the left and right channel. Useful to check if the byte
+order of audio files is correct.
+.TP
+.BI read-test
+Check if all data can be read from the audio files that are defined in
+the
+.I toc-file.
+This will also check the communication with the slave process that is
+responsible for writing the audio data to the CD-recorder. Mainly used
+for testing.
+.TP
+.BI disk-info
+Shows information about the inserted CD-R. If the CD-R has an open session
+it will also print the start of the last and current session which is
+used by mkisofs to create an image for a second or higher session.
+.TP
+.BI simulate
+Like
+.BI write
+but laser stays cold. It is a shortcut for
+.BI write --simulate.
+.TP
+.BI write
+Write the CD-R according to the specifications in the
+.I toc-file.
+.TP
+.BI copy
+Performs all steps to copy a CD. The device containing the source CD must
+be specified with option
+.BI --source-device
+and the recorder device with option
+.BI --device.
+If only a single device is available the option
+.BI --source-device
+must be omitted and cdrdao will prompt to insert the CD-R after an image
+of the source CD was created.
+
+The image file with name "cddata<pid>.bin" will be created in the current
+working directory if no
+.BI --datafile
+option is given. The created image will be removed after it has been
+written.
+
+If option
+.BI --on-the-fly
+is given no image file is created and the data will be directly piped from
+the reading device to the CD recorder.
+
+
+.SH OPTIONS
+.TP
+.BI \--device " bus,id,lun"
+Sets the SCSI address of the CD-recorder in form of a bus/id/lun
+triple, e.g. '0,2,0' for the logical unit 0 of SCSI device with ID 2
+on bus 0. On some systems a device node may be specified directly,
+e.g. '/dev/sg0' on Linux systems.
+.TP
+.BI \--source-device " bus,id,lun"
+Like above but used for the
+.BI copy
+command to specify the source device.
+.TP
+.BI \--driver " driver-id:option-flags"
+Force usage of specified driver instead of the automatically
+determined driver. Available driver IDs:
+.br
+cdd2600, plextor, plextor-scan, generic-mmc, generic-mmc-raw,
+ricoh-mp6200, yamaha-cdr10x, teac-cdr55, sony-cdu920, sony-cdu948,
+taiyo-yuden
+.br
+Specifying an illegal driver ID will give a list of available drivers.
+Option flags may be used to modify the behavior of some drivers. See
+.BI README
+for details.
+.TP
+.BI \--source-driver " driver-id:option-flags"
+Like above but used for the device specified with option
+.BI --source-device.
+.TP
+.BI \--speed " value"
+Set the writing speed to
+.I value.
+Default is the highest possible speed.
+.TP
+.BI \--datafile " file"
+Used for
+.BI read-toc, read-cd
+and
+.BI copy.
+Set the default data file placed in the toc-file by
+.BI read-toc. Use "-" to indicate STDIN.
+For commands
+.BI read-cd
+and
+.BI copy
+it specifies the name of the created image file.
+.TP
+.BI \--read-raw
+Only used for command
+.BI read-cd.
+All data sectors will be written as 2352 byte blocks including the sector
+header and L-EC data to the image file. The track mode will be set to
+MODE1_RAW or MODE2_RAW in the created
+.I toc-file.
+.TP
+.BI \--fast-toc
+Only used for command
+.BI read-toc.
+This option suppresses the pre-gap length and index mark extraction
+which
+speeds up the read-toc process. Standard 2 second pre-gaps (but no
+silence!) will be placed into the toc-file. The resulting CD will
+sound like the source CD. Only the CD player's display will behave
+slightly different in the transition area between two tracks.
+
+This option might help, too, if read-toc fails with your drive otherwise.
+
+.TP
+.BI \--buffers " buffer-count"
+Specifies the number of buffers that are allocated to avoid buffer under runs.
+The minimal buffer count is fixed to 10, default is 32 except
+on FreeBSD systems, on which default is 20.
+Each buffer holds 1 second of audio data so that dividing
+.I buffer-count
+by the writing speed gives the maximum time for which reading of audio data
+may be stalled.
+.TP
+.BI \--multi
+If this option is given the session will not be closed after the audio data
+is successfully written. It is possible to append another session on such
+disks, e.g. to create a CD-EXTRA.
+.TP
+.BI \--eject
+Eject the CD-R after writing or write simulation.
+.TP
+.BI \--swap
+Swap the byte order of all samples that are send to the CD-recorder.
+.TP
+.BI \--session " session-nr"
+Used for
+.BI read-toc
+and
+.BI read-cd
+to specify the session which should be processed on multi session CDs.
+.TP
+.BI \--reload
+Indicates that the tray may be opened before writing without prompting
+the user to reset the disk status after a simulation run.
+.TP
+.BI \--force
+Forces the execution of an operation that otherwise would not be
+performed.
+.TP
+.BI \--paranoia-mode " mode"
+Sets the correction mode for digital audio extraction. 0: No checking,
+data is copied directly from the drive. 1: Perform overlapped reading
+to avoid jitter. 2: Like 1 but with additional checks of the read
+audio data. 3: Like 2 but with additional scratch detection and
+repair.
+
+The extraction speed reduces from 0 to 3.
+.TP
+.BI \--on-the-fly
+Perform CD copy on the fly without creating an image file.
+.TP
+.BI \-n
+Suppresses the 10 second pause before writing or simulating.
+.TP
+.BI \-v " verbose-level
+Sets verbose level. Levels > 2 are debug levels which produce a lot of
+output.
+
+.SH "TOC FILES"
+The
+.I toc-file
+describes what data is written to the CD-R and allows control
+over track/index positions, pre-gaps and sub-channel information. It
+is a simple text file, use your favorite text editor to create it.
+
+A
+.I toc-file
+contains an optional header and a sequence of track
+specifications. Comments starting with '//' reaching until end of line can be
+placed anywhere.
+
+.SS Header
+.IP CATALOG\ "ddddddddddddd"
+Specifies the optional catalog number of the CD. The string must
+contain exactly 13 digits.
+.LP
+The following flags specify the type of session that will be created. It
+is used to create the correct CD-TOC format and to check the consistency of
+the track modes for the desired session type. If multiple flags are given
+the last one will take effect.
+.IP CD_DA 
+The disc contains only audio tracks.
+.IP CD_ROM
+The disc contains just mode 1 tracks or mode 1 and audio tracks (mixed
+mode CD).
+.IP CD_ROM_XA
+The disc contains mode 2 form 1 or mode 2 form 2 tracks. Audio tracks
+are allowed, too. This type must be used if multi session disks are
+created (option --multi).
+.IP CD_TEXT\ {\ ...\ }
+Defines global CD-TEXT data like the album title and the used languages.
+See the CD-TEXT section below for the syntax of the CD-TEXT block contents.
+.SS Track\ Specification
+.IP TRACK\ <track-mode>
+Starts a new track, the track number is incremented by 1. The length
+of a track must be at least 4 seconds. The block length of the input
+data depends on the <track-mode>: AUDIO: 2352 bytes (588 samples),
+MODE1: 2048 bytes, MODE1_RAW: 2352 bytes, MODE2: 2336 bytes,
+MODE2_FORM1: 2048 bytes, MODE2_FORM2: 2324 bytes, MODE2_FORM_MIX: 2336 bytes
+including the sub-header, MODE2_RAW: 2352 bytes. 
+If the input data length is not a multiple of the block length  it
+will be padded with zeros. 
+.LP
+The following flags may follow the track start statement. They are
+used to set sub-channel information for the current track. Each flag
+is optional. If not given the following defaults are used: copy not
+permitted, no pre emphasis, two channel audio, no ISRC code. 
+.IP "[ NO ] COPY"
+Sets or clears the copy permitted flag. 
+.IP "[ NO ] PRE_EMPHASIS"
+Sets or clears the pre emphasis flag (only for audio tracks).
+.IP TWO_CHANNEL_AUDIO
+Indicates that track contains two channel audio data (only for audio tracks).
+.IP FOUR_CHANNEL_AUDIO
+Indicates that track contains four channel audio data (only for audio tracks).
+.IP ISRC\ "CCOOOYYSSSSS" 
+Sets ISRC code of track (only for audio tracks).
+.br
+C: country code (upper case letters or digits)
+.br
+O: owner code (upper case letters or digits)
+.br
+Y: year (digits)
+.br
+S: serial number (digits)
+.LP
+An optional CD-TEXT block that defines the CD-TEXT data for this track
+may follow. See the CD-TEXT section below for the syntax of the CD-TEXT
+block contents.
+.IP "CD_TEXT { ... }"
+.LP
+At least one of the following statements must appear to specify the
+data for the actual track. Lengths and start positions may be
+expressed in samples (1/44100 seconds) for audio tracks or in bytes
+for data tracks. It is also possible to give the length in blocks
+with the MSF format 'MM:SS:FF' specifying minutes, seconds and frames
+(0 <= 'FF' < 75) . A frame equals one block. 
+
+If more than one statement is used the track will be composed by
+concatenating the data in the specified order.
+.IP "SILENCE <length>"
+Adds zero audio data of specified length to actual audio track. 
+Useful to create silent pre-gaps.
+.IP "ZERO <length>"
+Adds zero data to data tracks. Must be used to
+define pre- or post-gaps between tracks of different mode.
+.IP [\ FILE\ |\ AUDIOFILE\ ]\ "<filename>"\ <start>\ [\ <length>\ ]
+Adds the audio data of specified file to actual audio track. It is possible
+to select a portion of an audio file with <start> and <length>
+which allows non destructive cutting. The first sample of an audio file is
+addressed with <start> = 0. If <length> is omitted or set to 0 all
+audio data from <start> until the end of file is used.
+
+Audio files may have raw or WAVE format with 16 bits per sample, 44.1
+kHz sampling rate, stereo. Raw files must have the layout 'MSBLeft
+LSBLeft MSBRight LSBRight ...' (big endian byte order). WAVE files are
+expected to have little endian byte order. The option --swap reverses
+the expected byte order for all raw and WAVE files. Only filenames
+with a ".wav" ending are treated as WAVE files, all other names are
+assumed to be raw audio files. Use tools like sox(1) to convert other
+file formats to supported formats.
+
+Specifying a "-" as filename causes data to be read from STDIN. Currently
+only raw files are supported from STDIN.
+ 
+If you are unsure about the byte order of your audio files try the
+command 'show-data'. If the byte order is correct you will see a
+sequence of increasing or decreasing numbers for both
+channels. Otherwise numbers are jumping between very high and low
+values - high volume static.
+.IP DATAFILE\ "<filename>"\ [\ <length>\ ]
+Adds data from given file to actual data track. If <length> is omitted
+the actual file length will be used.
+.IP "START [ MM:SS:FF ]"
+Defines the length of the pre-gap (position where index switches from
+0 to 1). If the MSF value is omitted the current track length is
+used. If the current track length is not a multiple of the block
+length the pre-gap length will be rounded up to next block boundary.
+
+If no START statement is given the track will not have a pre-gap.
+.IP "PREGAP MM:SS:FF"
+This is an alternate way to specify a pre-gap with zero audio data. It
+may appear before the first SILENCE, ZERO or FILE statement. Either PREGAP
+or START can be used within a track specification. It is equivalent to
+the sequence
+.br
+  SILENCE MM:SS:FF
+.br
+  START
+.br
+for audio tracks or
+.br
+  ZERO MM:SS:FF
+.br
+  START
+.br
+for data tracks.
+.LP
+Nothing prevents mixing 'DATAFILE'/'ZERO' and 'AUDIOFILE'/'SILENCE'
+statements within the same track. The results, however, are undefined.
+
+
+The end of a track specification may contain zero or more index
+increment statements:
+.IP "INDEX MM:SS:FF"
+Increments the index number at given position within the track. The
+first statement will increment from 1 to 2. The position is relative
+to the real track start, not counting an existing pre-gap.
+
+.SS CD-TEXT Blocks
+A CD-TEXT block may be placed in the global section to define data valid for
+the whole CD and in each track specification of a
+.I toc-file.
+The global section may define a language map that is used to map a
+.I language-number
+to country codes. Up to 8 different languages can be defined:
+.IP "LANGUAGE_MAP { 0 : c1  1 : c2  ...  7 : c7 }"
+The country code may be an integer value in the range 0..255 or one of the
+following countries (the corresponding integer value is placed in braces 
+behind the token): EN(9, English)
+.br
+It is just necessary to define a mapping for the used languages. The mapping
+for the remaining language-numbers will be undefined and those language-numbers
+should not be used.
+.br
+Currently I am only aware of the country code for English but it is possible
+to make some tests with the general integer format.
+.LP
+If no language map is defined 
+.I language-number
+0 will be mapped to English. The mapping for the language-numbers 1 to 7
+will be undefined.
+
+For each language a language block must exist that defines the actual data
+for a certain language.
+.IP "LANGUAGE language-number { cd-text-item cd-text-data cd-text-item cd-text-data ... }"
+Defines the CD-TEXT items for given
+.I language-number
+which must be defined in the language map. 
+.LP
+
+The
+.I cd-text-data
+may be either a string enclosed by " or binary data like
+.nf
+.in +.5i
+{ 0, 10, 255, ... }
+.in -.5i
+.fi
+where each integer number must be in the range 0..255.
+.br
+The
+.I cd-text-item
+may be one of the following:
+.IP TITLE
+String data: Title of CD or track.
+.IP PERFORMER
+String data.
+.IP SONGWRITER
+String data.
+.IP COMPOSER
+String data.
+.IP ARRANGER
+String data.
+.IP MESSAGE
+String data. Message to the user.
+.IP DISC_ID
+String data: Should only appear in the global CD-TEXT block. The format is
+usually: XY12345
+.IP GENRE
+I am not sure if this item should contain string or binary data.
+.IP TOC_INFO1
+Binary data: Structure currently unknown. Should only appear in the global
+CD-TEXT block.
+.IP TOC_INFO2
+Binary data: Structure currently unknown. Should only appear in the global
+CD-TEXT block.
+.IP UPC_EAN
+String data: This item should only appear in the global CD-TEXT block. Was
+always an empty string on the CD-TEXT CDs I had access to.
+.IP ISRC
+String data: ISRC code of track. The format is usually: CC-OOO-YY-SSSSS
+.IP SIZE_INFO
+Binary data: Contains summary about all CD-TEXT data and should only appear
+in the global CD-TEXT block. This item is automatically created if not present.
+If CD-TEXT data is read via
+.BI read-toc
+or
+.BI read-cd
+and modified afterwards the SIZE_INFO item must be deleted because the data
+will not be valid anymore.
+.LP
+
+If one of the CD-TEXT items TITLE, PERFORMER, SONGWRITER, COMPOSER, ARRANGER,
+ISRC is defined for at least on track it must be defined for all tracks. If a
+CD-TEXT item is missing for a track and it is defined in the global CD-TEXT
+block the data from the global CD-TEXT block is used for the track.
+
+It is currently not possible to write CD-TEXT CDs with more than one language.
+The resulting CD will not be accepted by a CD-TEXT capable CD player.
+
+.SS Examples
+
+Simple track without pre-gap with all audio data from WAVE file
+"data.wav":
+.nf
+.in +.5i
+CD_DA
+TRACK AUDIO
+FILE "data.wav" 0
+.in -.5i
+.fi
+
+Standard track with two second pre-gap, ISRC code and CD-TEXT:
+.nf
+.in +.5i
+CD_DA
+CD_TEXT {
+  LANGUAGE_MAP {
+    0 : EN
+  }
+
+  LANGUAGE 0 {
+    TITLE "CD Title"
+    PERFORMER "Performer"
+    DISC_ID "XY12345"
+    UPC_EAN ""
+  }
+}
+
+TRACK AUDIO
+ISRC "DEXXX9800001"
+CD_TEXT {
+  LANGUAGE 0 {
+    TITLE "Track Title"
+    PERFORMER "Performer"
+    ISRC "DE-XXX-98-00001"
+  }
+}
+PREGAP 0:2:0
+FILE "data.wav" 0
+.in -.5i
+.fi
+
+Track with 10 second pre-gap containing audio data from raw file
+"data.cdr":
+.nf
+.in +.5i
+CD_DA
+TRACK AUDIO
+FILE "data.cdr" 0 
+START 0:10:0
+.in -.5i
+.fi
+
+Composed track with data from different files. Pre-gap data and length
+is taken from "pregapdata.wav". The first minute of
+"track.cdr" is omitted and two seconds silence are inserted at
+\'2:0:0\'. Index will be incremented after 2 and 4 minutes past track start:
+.nf
+.in +.5i
+CD_DA
+TRACK AUDIO
+FILE "pregapdata.wav" 0 
+START
+FILE "track.cdr" 1:0:0 1:0:0
+SILENCE 0:2:0
+FILE "track.cdr" 2:0:0
+INDEX 2:0:0
+INDEX 4:0:0
+.in -.5i
+.fi
+
+Mixed mode CD with a data track as first track followed by two audio tracks.
+.nf
+.in +.5i
+CD_ROM
+TRACK MODE1
+DATAFILE "data_1"
+ZERO 00:02:00 // post-gap
+
+TRACK AUDIO
+SILENCE 00:02:00 // pre-gap
+START
+FILE "data_2.wav" 0 
+
+TRACK AUDIO
+FILE "data_3.wav" 0
+.in -.5i
+.fi
+
+.SH CUE FILES
+
+Cue files may be used wherever a
+.I toc-file
+is expected. The corresponding bin file is not taken from the FILE statement
+of a cue file but constructed from the cue file name by replacing ".cue" by
+".bin". The cue file must have exactly one FILE statement.
+
+Currently, following track modes are supported: MODE1/2048, MODE1/2352,
+MODE2/2336, MODE2/2352. The CATALOG, ISRC and POSTGAP statements are
+parsed but not evaluated, yet. 
+
+.SH BUGS
+If the program is terminated during the write/simulation process used IPC
+resources may not be released. Use ipcs(8) and ipcrm(8) to delete them.
+.SH AUTHOR
+Andreas Mueller mueller@daneb.ping.de
+.SH SEE ALSO
+.BR cdda2wav "(1), "cdparanoia "(1), " sox "(1), " ipcs "(8), " ipcrm (8)

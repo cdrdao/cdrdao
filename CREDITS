@@ -1,0 +1,30 @@
+To:  Heiko Eissfeldt <heiko@colossus.escape.de>
+For: Data sector L-EC encoding library 'libedc_ecc'.
+
+To:  Yasuhito Futatsuki <futatuki@fureai.or.jp>
+For: Maintaining the FreeBSD port.
+
+To:  Max Khon <fjoe@iclub.nsu.ru>
+For: Direct SCSI interface implementation for FreeBSD.
+
+To:  Cameron G. MacKinnon <C_MacKinnon@yahoo.com>
+For: Implementation of the yamaha-cdr10x driver.
+
+To:  Monty <xiphmont@mit.edu>
+For: cdda_paranoia library for high quality DAE.
+
+To:  Piergiorgio Sartor <sartor@sony.de>
+For: SCSI manual for the Sony CDU948 recorder.
+     Implementation of sub-channel scanning for catalog number.
+
+To:  Joerg Schilling <schilling@fokus.gmd.de>
+For: Portable SCSI interface library 'libscg'.
+
+To:  Henk-Jan Slotboom
+For: Implementation of the taiyo-yuden driver.
+
+To:  Michael Weber <Michael.Weber@Post.RWTH-AAchen.DE>
+For: First implementation of on-the-fly writing.
+
+To:  Leon Woestenberg
+For: Bitwise correct audio extraction with Plextor drives.

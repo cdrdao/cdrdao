@@ -1,0 +1,62 @@
+#ident @(#)rules.ins	1.7 97/06/20 
+###########################################################################
+# Written 1996 by J. Schilling
+###########################################################################
+#
+# Rules for target installation
+#
+###########################################################################
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2, or (at your option)
+# any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; see the file COPYING.  If not, write to
+# the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+###########################################################################
+$(INS_BASE)/$(INSDIR):
+			$(MKDIR) -p $@
+$(SRCROOT)/bins/$(OARCH):
+			$(MKDIR) -p $@
+
+$(INS_BASE)/$(INSDIR)/$(TARGET):	$(PTARGET)
+			$(INSTALL) $(PTARGET) $@
+
+$(SRCROOT)/bins/$(OARCH)/$(TARGET):	$(PTARGET)
+			$(INSTALL) $(PTARGET) $@
+
+PHARDLINKS=	$(HARDLINKS:%=$(INS_BASE)/$(INSDIR)/%)
+hardlinks:	$(PHARDLINKS)
+
+dummy $(PHARDLINKS):	$(INS_BASE)/$(INSDIR)/$(TARGET)
+	@echo "	==> INSTALLING link \"$@\""; $(LN) $(INS_BASE)/$(INSDIR)/$(TARGET) $@
+
+xinstall:
+	@if [ ".$(XMK_FILE)" != . ] ; then				\
+		for XMK_F in $(XMK_FILE) XxZzY-- ; do			\
+			(						\
+			if [ -r ./$$XMK_F ] ; then				\
+				echo "	==> MAKING \"install\" ON SUBCOMPONENT \"$(CURDIR)/$$XMK_F\""; \
+				$(MAKE) -f $$XMK_F $(MAKEMACS) XARCH=$(XARCH) install;	\
+			else							\
+				if [ $$XMK_F != XxZzY-- ]; then		\
+					echo "NOTICE: Partial source ($(DIRNAME)/$$XMK_F) missing";\
+				fi					\
+			fi						\
+			);						\
+		done							\
+	fi
+
+install:	all	$(INS_BASE)/$(INSDIR) \
+			$(INS_BASE)/$(INSDIR)/$(TARGET) \
+			hardlinks \
+			xinstall
+
+ibins:		all	$(SRCROOT)/bins/$(OARCH) \
+			$(SRCROOT)/bins/$(OARCH)/$(TARGET)

@@ -1,0 +1,7 @@
+// MODE2 track
+// 
+
+CD_ROM
+
+TRACK MODE2
+ZERO 1:0:0

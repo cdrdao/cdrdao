@@ -1,0 +1,54 @@
+/* config.h.in.  Generated automatically from configure.in by autoheader.  */
+
+/* Define to empty if the keyword does not work.  */
+#undef const
+
+#undef size16
+
+/* Define if you have <sys/wait.h> that is POSIX.1 compatible.  */
+#undef HAVE_SYS_WAIT_H
+
+/* Define as the return type of signal handlers (int or void).  */
+#undef RETSIGTYPE
+
+/* Define if you have the ANSI C header files.  */
+#undef STDC_HEADERS
+
+/* Define if you have the strerror function.  */
+#undef HAVE_STRERROR
+
+/* Define if you have the <fcntl.h> header file.  */
+#undef HAVE_FCNTL_H
+
+/* Define if you have the <malloc.h> header file.  */
+#undef HAVE_MALLOC_H
+
+/* Define if you have the <unistd.h> header file.  */
+#undef HAVE_UNISTD_H
+
+/* real time scheduling defines */
+#undef LINUX_QNX_SCHEDULING
+#undef HAVE_SCHED_GETPARAM
+#undef HAVE_SCHED_GET_PRIORITY_MAX
+#undef HAVE_SCHED_SETSCHEDULER
+
+/* memory locking */
+#undef HAVE_MLOCKALL
+#undef HAVE_MUNLOCKALL
+#undef HAVE_SYS_MMAN_H
+
+#undef HAVE_SETEUID
+#undef HAVE_SETEGID
+#undef HAVE_GETPAGESIZE
+
+#undef HAVE_USLEEP
+
+#undef USE_POSIX_THREADS
+#undef HAVE_PTHREAD_SIGMASK
+#undef HAVE_PTHREAD_ATTR_SETSCHEDPOLICY
+#undef HAVE_PTHREAD_ATTR_SETSCHEDPARAM
+#undef HAVE_PTHREAD_GETSCHEDPARAM
+#undef HAVE_PTHREAD_SETSCHEDPARAM
+
+/* SCSI interface selection */
+#undef USE_SCGLIB

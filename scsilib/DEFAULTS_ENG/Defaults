@@ -1,0 +1,8 @@
+#ident "%W% %E% %Q%"
+###########################################################################
+#
+# global definitions: include system specific file
+#
+###########################################################################
+
+include		$(DEFLTSROOT)/$(DEFLTSDIR)/Defaults.$(O_ARCH)

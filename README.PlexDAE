@@ -1,0 +1,35 @@
+Plextor CD-ROM digital audio extraction for cdrdao
+
+These patches enhance "cdrdao" with bitwise-exact digital audio extraction
+for "Plextor"-brand CD-ROM drives.
+
+It uses Plextor vendor unique SCSI command enhancements in order to
+implement this. These features are not known to exist in other
+brand drives (by me, as of 25-3-1999), or to be exploited in any
+other software at this moment.
+
+Status is alpha, and there are some known bugs and things to do.
+
+Currently known bugs:
+
+- Incremental extraction of a CDDA block (by collecting correct samples
+in successive reads of a partly errenous CDDA block) is known to fail
+in some cases (leading to non-unique CDDA extraction).
+
+Current things to do:
+
+- Include output formats other than raw (big-endian).
+- Include output to stdio (for on-the-fly application maybe).
+- ...
+
+Usage hints:
+
+This clones a CD-DA as exactly as possible (but see known bugs!):
+
+cdrdao read-cd --device /dev/sga --datafile data.cdr data.toc
+cdrdao write --swap --device /dev/sgb data.toc 
+
+You may want to do a "md5sum" of "data.cdr" on two successive reads
+to ensure the known bug did not occur.
+
+Leon Woestenberg <leon@stack.nl> 

@@ -1,0 +1,6 @@
+// additional pre-gap for track 1
+
+TRACK AUDIO
+NO COPY       // so that all CTL flags are 0
+SILENCE 1:0:0
+START 0:10:0  // 10 second pre-gap

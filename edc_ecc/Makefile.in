@@ -1,0 +1,106 @@
+#
+# make compatibility
+#
+SHELL = /bin/sh
+
+.SUFFIXES:
+.SUFFIXES: .c .o
+# 
+# Source and Installation Paths
+#
+prefix  =       @prefix@
+exec_prefix =   @exec_prefix@
+srcdir =        @srcdir@
+VPATH =         @srcdir@
+#
+# Installation directories for binaries and manual pages
+#
+BINDIR  =       @bindir@
+MANDIR  =       @mandir@
+#
+# install program
+#
+INSTALL =               @INSTALL@
+INSTALL_PROGRAM =       ${INSTALL} -c
+INSTALL_DATA =          ${INSTALL} -c -m 644
+#
+# compiler and library stuff
+#
+CC = @CC@
+CFLAGS = @CFLAGS@ 
+ALL_CFLAGS = @DEFS@ @mydefs@ -I.. -I$(srcdir) $(CFLAGS)
+LIBS = @LIBS@
+AR = ar
+RANLIB = @RANLIB@
+#
+#
+#
+LIB = libedc_ecc.a
+
+SRC = edc_ecc.c
+
+OBJ = $(SRC:%.c=%.o)
+
+#
+#
+#
+all: $(LIB)
+
+install: all
+
+clean:
+	rm -f *.o $(LIB) crctable gen_encodes verify_mode_1_encoder
+	rm -f verify_mode_2_form_1_encoder verify_mode_2_form_2_encoder
+
+distclean: clean
+	rm -f *.o encoder_tables crctable.out Makefile
+
+
+#
+#
+#
+
+crctable.out: crctable
+	./crctable
+
+encoder_tables: gen_encodes
+	rm -f encoder_tables
+	./gen_encodes > encoder_tables
+
+crctable: crctable.o crcmodel.o
+	$(CC) $(LDFLAGS) -o crctable crctable.o crcmodel.o $(LIBS)
+
+gen_encodes: gen_encodes.o
+	$(CC) $(LDFLAGS) -o gen_encodes gen_encodes.o $(LIBS)
+
+verify_mode_1_encoder: verify_mode_1_encoder.o edc_ecc.o
+	$(CC) $(LDFLAGS) -o verify_mode_1_encoder verify_mode_1_encoder.o edc_ecc.o
+
+verify_mode_2_form_1_encoder: verify_mode_2_form_1_encoder.o edc_ecc.o
+	$(CC) $(LDFLAGS) -o verify_mode_2_form_1_encoder verify_mode_2_form_1_encoder.o edc_ecc.o
+
+verify_mode_2_form_2_encoder: verify_mode_2_form_2_encoder.o edc_ecc.o
+	$(CC) $(LDFLAGS) -o verify_mode_2_form_2_encoder verify_mode_2_form_2_encoder.o edc_ecc.o
+
+#
+#
+#
+$(LIB): $(OBJ)
+	$(AR) rc $(LIB) $(OBJ)
+	$(RANLIB) $(LIB)
+
+%.o : %.c
+	$(CC) $(ALL_CFLAGS) -c $< -o $@
+
+#
+#
+#
+edc_ecc.o: $(srcdir)/edc_ecc.c $(srcdir)/ecc.h encoder_tables crctable.out
+
+crctable.o: $(srcdir)/crctable.c $(srcdir)/crcmodel.h $(srcdir)/sniptype.h \
+            $(srcdir)/crc.h
+
+crctmodel.o: $(srcdir)/crcmodel.c $(srcdir)/crcmodel.h $(srcdir)/sniptype.h \
+             $(srcdir)/crc.h
+
+gen_encodes.o: $(srcdir)/gen_encodes.c $(srcdir)/ecc.h

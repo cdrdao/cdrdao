@@ -1,0 +1,10 @@
+// simplest cue sheet for two tracks
+
+TRACK AUDIO
+NO COPY       // so that all CTL flags are 0
+SILENCE 1:0:0
+
+TRACK AUDIO
+NO COPY       // so that all CTL flags are 0
+SILENCE 1:0:0
+

@@ -1,0 +1,72 @@
+#ident "@(#)r-make.dep	1.4 97/02/11 "
+###########################################################################
+# Written 1996 by J. Schilling
+###########################################################################
+#
+# Dependency building rules for make
+#
+###########################################################################
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2, or (at your option)
+# any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program; see the file COPYING.  If not, write to
+# the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+###########################################################################
+DEP_SUFFIX=	.dep
+RMDEP=		$(RM) $(RM_FORCE) $@
+DEP_FILE=	$(ARCHDIR)/$(TARGET).dep
+PDEP_FILE=	$(ARCHDIR)/$(TARGET).dep
+PALLDEP_FILE=	$(CFILES:%.c=$(ARCHDIR)/%.d) $(ARCHDIR)/$(TARGET).dep
+DEP_DEP=	$(ARCHDIR)/Dnull
+###########################################################################
+depend: rmdep $(DEP_FILE)
+
+rmdep:
+	$(RM) $(RM_FORCE) $(PALLDEP_FILE)
+
+###########################################################################
+#
+# Make the complete path to the architecture subdirectory.
+#
+###########################################################################
+$(ARCHDIR):
+		$(MKDIR) -p $@
+
+###########################################################################
+#
+# Generate dependency file(s).
+# This rules is checked when the dependency file(s) are included.
+#
+# Modify the the path for .o files to reflect that they are placed in
+# $(ARCHDIR). Add the dependency file itself to each line so that
+# the dependencies will be rebuilt if a source is newer that the
+# appropriate dependency file.
+#
+###########################################################################
+$(ARCHDIR)/%.dep: %.c
+		$(MKDEP) $(CPPFLAGS) $(MKDEP_OUT) $< \
+			| sed -e "s;^\(.*\).o:;$(ARCHDIR)/\1.o $(DEP_FILE):;" > $@
+
+$(DEP_FILE):	$(DEP_DEP) $(CFILES)
+		$(MKDEP) $(CPPFLAGS) $(MKDEP_OUT) $(CFILES) \
+			| sed -e "s;^\(.*\).o:;$(ARCHDIR)/\1.o $(DEP_FILE):;" > $@
+
+$(DEP_DEP):	$(ARCHDIR)
+	@if [ ! -f $@ ]; then	\
+		echo > $@;	\
+	fi
+
+###########################################################################
+#
+# Include the dependency file(s) generated from the rules above.
+#
+###########################################################################
+include		$(DEP_FILE)

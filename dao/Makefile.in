@@ -1,0 +1,99 @@
+#
+# make compatibility
+#
+SHELL = /bin/sh
+
+.SUFFIXES:
+.SUFFIXES: .c .cc .cpp .o .d
+# 
+# Source and Installation Paths
+#
+prefix  =      @prefix@
+exec_prefix =  @exec_prefix@
+srcdir =       @srcdir@
+VPATH =        @srcdir@
+#
+# Installation directories for binaries and manual pages
+#
+bindir  =      @bindir@
+mandir  =      @mandir@
+man1dir =      $(mandir)/man1
+#
+# install program
+#
+INSTALL =               @INSTALL@
+INSTALL_PROGRAM =       ${INSTALL}
+INSTALL_DATA =          ${INSTALL} -m 644
+#
+# Program version
+#
+VERSION = @cdrdao_version@
+#
+# compiler and library stuff
+#
+CXX = @CXX@
+CXXFLAGS = @CXXFLAGS@ 
+ALL_CXXFLAGS = @DEFS@ @mydefs@ -DVERSION=\"$(VERSION)\" -I$(srcdir)/.. -I$(srcdir) -I$(srcdir)/../trackdb @scsilib_incl@ $(CXXFLAGS)
+LDFLAGS = 
+ALL_LDFLAGS = @LDFLAGS@ $(LDFLAGS)
+LIBS = @scsilib_libs@ @thread_libs@ @extra_libs@ @LIBS@
+RANLIB = @RANLIB@
+AR = ar
+#
+#
+#
+SRC = port.cc CdrDriver.cc CDD2600Base.cc CDD2600.cc PlextorReader.cc \
+      GenericMMC.cc SubChannel.cc PQSubChannel16.cc PWSubChannel96.cc \
+      PQChannelEncoder.cc GenericMMCraw.cc PlextorReaderScan.cc \
+      RicohMP6200.cc TaiyoYuden.cc YamahaCDR10x.cc TeacCdr55.cc \
+      SonyCDU920.cc SonyCDU948.cc \
+      CdTextEncoder.cc @dao_src@ @scsi_if_src@
+
+
+OBJ = $(SRC:%.cc=%.o)
+
+DEP = $(SRC:%.cc=%.d) main.d
+
+PRG = cdrdao
+#
+#
+#
+all: $(PRG)
+
+install: all installdirs
+	$(INSTALL_PROGRAM) $(PRG) $(bindir)
+	$(INSTALL_DATA) cdrdao.man $(man1dir)/cdrdao.1
+
+installdirs:
+	$(srcdir)/../mkinstalldirs $(bindir)
+	$(srcdir)/../mkinstalldirs $(man1dir)
+
+clean:
+	rm -f *.o $(PRG)
+	rm -f libdao.a
+
+distclean: clean
+	rm -f Makefile
+	rm -f *.d
+#
+#
+#
+$(PRG): main.o libdao.a ../trackdb/libtrackdb.a
+	$(CXX) $(ALL_LDFLAGS) -o $(PRG) main.o -L. -ldao -L../paranoia -lcdda_paranoia -L../trackdb -ltrackdb -L../edc_ecc -ledc_ecc $(LIBS)
+
+
+libdao.a: $(OBJ)
+	ar r libdao.a $(OBJ)
+	ranlib libdao.a
+
+%.o : %.cc
+	$(CXX) $(ALL_CXXFLAGS) -c $< -o $@
+
+%.d : %.cc
+	@echo Creating dependencies for $<
+	@$(CXX) -M $(ALL_CXXFLAGS) -c $< > $@
+#
+#
+#
+
+include $(DEP)

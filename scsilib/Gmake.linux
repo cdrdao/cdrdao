@@ -1,0 +1,8 @@
+#!/bin/sh
+
+MAKEPROG=gmake
+export MAKEPROG
+
+# gmake is called 'make' on Linux
+
+exec make "$@"

@@ -1,0 +1,95 @@
+diff -r ./DEFAULTS/Defaults.linux ../../cdrecord-1.8/DEFAULTS/Defaults.linux
+30c30
+< INS_BASE=	/usr/local
+---
+> INS_BASE=	/opt/schily
+
+
+diff -r ./RULES/rules.lib ../../cdrecord-1.8/RULES/rules.lib
+43c43
+< #include		$(SRCROOT)/$(RULESDIR)/rules.cnf
+---
+> include		$(SRCROOT)/$(RULESDIR)/rules.cnf
+
+diff -r ./RULES/rules.mks ../../cdrecord-1.8/RULES/rules.mks
+38c38
+< #include		$(SRCROOT)/$(RULESDIR)/rules.cnf
+---
+> include		$(SRCROOT)/$(RULESDIR)/rules.cnf
+
+diff -r ./include/schily.h ../../cdrecord-1.8/include/schily.h
+1c1
+< /* @(#)schily.h	1.21 99/08/12 Copyright 1985 J. Schilling */
+---
+> /* @(#)schily.h	1.22 99/08/30 Copyright 1985 J. Schilling */
+51,54d50
+< #ifdef __cplusplus
+< extern "C" {
+< #endif
+< 
+159a156,164
+> #ifdef	EOF	/* stdio.h has been included */
+> extern	int	js_fprintf	__PR((FILE *, const char *, ...));
+> extern	int	js_printf	__PR((const char *, ...));
+> #ifdef	HAVE_SIZE_T
+> extern	int	js_snprintf	__PR((char *, size_t, const char *, ...));
+> #endif
+> extern	int	js_sprintf	__PR((char *, const char *, ...));
+> #endif	/* EOF */
+> 
+166,169d170
+< 
+< #ifdef __cplusplus
+< }
+< #endif
+diff -r ./include/standard.h ../../cdrecord-1.8/include/standard.h
+97d96
+< #ifndef __cplusplus
+99d97
+< #endif
+
+diff -r ./libscg/scg/scsitransp.h ../../cdrecord-1.8/libscg/scg/scsitransp.h
+1c1
+< /* @(#)scsitransp.h	1.22 99/08/08 Copyright 1995 J. Schilling */
+---
+> /* @(#)scsitransp.h	1.24 99/09/07 Copyright 1995 J. Schilling */
+30a31
+> 	int	flags;		/* Libscg flags (see below)		*/
+42a44
+> 	int	error;		/* libscg error number			*/
+48a51,52
+> 	char	*errstr;	/* Error string for scsi_open/sendmcd	*/
+> 	char	*errptr;	/* Actual write pointer into errstr	*/
+55c59
+<  * From scsitransp.c:
+---
+>  * Flags for struct SCSI:
+57,59c61,69
+< #ifdef __cplusplus
+< extern "C" {
+< #endif
+---
+> /* NONE yet */
+> 
+> #define	SCSI_ERRSTR_SIZE	4096
+> 
+> /*
+>  * Libscg error codes:
+>  */
+> #define	SCG_ERRBASE		1000000
+> #define	SCG_NOMEM		1000001
+60a71,73
+> /*
+>  * From scsitransp.c:
+>  */
+64a78
+> extern	int	scsi_initiator_id	__PR((SCSI *scgp));
+102c116
+< extern	SCSI	*open_scsi	__PR((char *scsidev, int debug, int be_verbose));
+---
+> extern	SCSI	*open_scsi	__PR((char *scsidev, char *errs, int slen, int debug, int be_verbose));
+107,110d120
+< 
+< #ifdef __cplusplus
+< }
+< #endif

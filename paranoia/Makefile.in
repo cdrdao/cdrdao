@@ -1,0 +1,54 @@
+# cdda_paranoia makefile.in ready to go for autoconf.
+
+# DO NOT EDIT BELOW! ##########################################################
+# (unless, of course, you know what you are doing :) ##########################
+
+.SUFFIXES: .t
+VPATH=@srcdir@
+srcdir=@srcdir@
+
+@SET_MAKE@
+FLAGS=@TYPESIZES@ @CFLAGS@
+OPT=@OPT@ $(FLAGS)
+DEBUG=@DEBUG@ $(FLAGS)
+CC=@CC@
+LD=@CC@
+LDFLAGS=@LDFLAGS@ $(FLAGS)
+AR=@AR@
+RANLIB=@RANLIB@
+
+
+OFILES = paranoia.o p_block.o overlap.o gap.o isort.o
+#TFILES = isort.t gap.t p_block.t paranoia.t
+
+LIBS = ../interface/cdda_interface.a -lm
+
+all: 
+	$(MAKE) libcdda_paranoia.a CFLAGS="$(OPT)" 
+
+debug: 
+	$(MAKE) libcdda_paranoia.a CFLAGS="$(DEBUG)"
+
+lib:	
+	$(MAKE) libcdda_paranoia.a CFLAGS="$(OPT)" 
+
+#test:	$(TFILES)
+#
+	
+libcdda_paranoia.a: 	$(OFILES)	
+		$(AR) -r libcdda_paranoia.a $(OFILES)
+		$(RANLIB) libcdda_paranoia.a
+
+.c.o:
+	$(CC) $(CFLAGS) -c $<
+
+.c.t:
+	$(CC) -g -DTEST $(DEBUG) -o $@ $< $(LIBS)
+	$@
+
+clean:
+	-rm -f *.o *.a *.t core *~ 
+
+distclean:
+	-rm -f *.o *.a core *~ Makefile config.cache config.log config.status
+

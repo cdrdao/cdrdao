@@ -1,0 +1,1 @@
+CFILES=		scsitransp.c scsiopen.c scsierrs.c

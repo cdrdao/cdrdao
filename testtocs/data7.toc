@@ -1,0 +1,11 @@
+// Video CD
+// 
+
+CD_ROM_XA
+
+TRACK MODE1 // ISO filesystem
+ZERO 1:0:0
+
+TRACK MODE2_FORM_MIX // XA track with form 1 and form 2 sectors
+PREGAP 0:2:0
+ZERO 1:0:0

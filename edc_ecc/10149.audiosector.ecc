@@ -1,0 +1,58 @@
+Cross Interleaved Reed-Solomon Code for audio sectors
+
+24 bytes (data) are extended by 8 bytes CIRC EDC/ECC information.
+
+32 bytes are extended by one subchannel byte.
+
+1 + 12 +  4 + 12 + 4 = 33 bytes. This is a small frame.
+S + D1 + Q1 + D2 + P1
+(S = subchannel, D1 = first data portion, Q1 = Q parity
+D2 = second data portion, P1 = P parity)
+
+98 small frames yield 3234 bytes (one sector or big frame).
+That is 98 subchannel bytes (including 2 sync bytes) plus
+24*98=2352 data bytes plus
+(4+4)*98=392+392 Q+P-CIRC bytes
+
+The input of the Reed-Solomon encoder consists of
+12 16-bit-words of data giving 24 bytes.
+
+These bytes go through delay and scrambling stages.
+The delay is two bytes (for some bytes).
+
+Four Q parity bytes are generated (Encoder C2).
+
+28 bytes go through a second delay stage (delays vary from
+0 to 108 bytes).
+
+Four P parity bytes are generated (Encoder C1).
+
+32 bytes are delayed (0 or 1 bytes).
+At this stage the total delay so far is 3 up to 108 bytes.
+
+Q and P parity are inverted.
+
+This gives D1, Q1, D2, P1.
+Decoding reverses the process.
+Total constant delay of encoding and decoding is 111 bytes.
+
+Reed-Solomon operates on bytes.
+
+Polynomial:
+P(x) = x^8 + x^4 + x^3 + x^2 + 1
+
+primitive element alpha of GF(2^8):
+alpha = (00000010) (MSBit - LSBit)
+
+first stage (Q-parity)
+
+(28,24) Reed-Solomon code bytes over GF(2^8)
+P1[n] = sum over m (S[(m * 24) + n]
+P2[n] = sum over m (S[(m * 24) + n]
+
+second stage (P-parity)
+
+(32,28) Reed-Solomon code bytes over GF(2^8)
+Q1[n] = sum over m (S[(m * 28) + n]
+Q2[n] = sum over m (S[(m * 28) + n]
+

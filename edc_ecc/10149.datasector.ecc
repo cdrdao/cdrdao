@@ -1,0 +1,44 @@
+Mode 1:
+
+<- sync -><- header, user data, edc, intermediate -><- p -><- q ->
+0         12                                        2076   2248   2352
+<---------------------- 2352 ------------------------------------>
+          <- fed into Reed-Solomon encoder (2064) ->
+          <- fed into Reed-Solomon decoder (2340)               ->
+
+Mode 2 Form 1:
+
+<- sync -><- header, subheader, user data, edc -><- p -><- q ->
+0         12                                     2076   2248   2352
+<---------------------- 2352 ------------------------------------>
+          <- fed into Reed-Solomon encoder (2064) ->
+          <- fed into Reed-Solomon decoder (2340)               ->
+
+Reed-Solomon Product Code for data sectors
+
+The 2340 bytes are structured in 16-bit-words.
+2340 bytes of the 2352 bytes (B) are accessed in 16-bit words (S).
+
+S[n] = B[2n + 1 + 12] << 8 (MSB) + B[2n + 12] (LSB)
+
+Reed-Solomon operates on bytes. Reed-Solomon is applied to the MSByte
+of a word first, and then to the LSByte.
+
+Polynomial:
+P(x) = x^8 + x^4 + x^3 + x^2 + 1
+
+primitive element alpha of GF(2^8):
+alpha = (00000010) (MSBit - LSBit)
+
+first stage (P-parity)
+
+(26,24) Reed-Solomon code 16-bit-words over GF(2^8)
+P1[n] = sum over m (S[(m * 43) + n]
+P2[n] = sum over m (S[(m * 43) + n]
+
+second stage (Q-parity)
+
+(45,43) Reed-Solomon code 16-bit-words over GF(2^8)
+Q1[n] = sum over m (S[((m * 44) + 43*n) mod 1118]
+Q2[n] = sum over m (S[((m * 44) + 43*n) mod 1118]
+

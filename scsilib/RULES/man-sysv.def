@@ -1,0 +1,50 @@
+#ident @(#)man-sysv.def	1.1 97/02/11 
+###########################################################################
+# Written 1997 by J. Schilling
+###########################################################################
+#
+# Definition for manual sections on SYSV based systems
+#
+###########################################################################
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2, or (at your option)
+# any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program; see the file COPYING.  If not, write to
+# the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+###########################################################################
+
+MANSECT_CMD=		man1
+MANSECT_SYSCALL=	man2
+MANSECT_LIB=		man3
+MANSECT_FILEFORM=	man4
+MANSECT_HDR=		man5
+MANSECT_TABLES=		man5
+MANSECT_MACROS=		man5
+MANSECT_GAMES=		man6
+MANSECT_DEMOS=		man6
+MANSECT_DEVICE=		man7
+MANSECT_NETWORK=	man7
+MANSECT_ADMIN=		man8
+MANSECT_DRIVER=		man9
+
+MANSUFF_CMD=		1
+MANSUFF_SYSCALL=	2
+MANSUFF_LIB=		3
+MANSUFF_FILEFORM=	4
+MANSUFF_HDR=		5
+MANSUFF_TABLES=		5
+MANSUFF_MACROS=		5
+MANSUFF_GAMES=		6
+MANSUFF_DEMOS=		6
+MANSUFF_DEVICE=		7
+MANSUFF_NETWORK=	7
+MANSUFF_ADMIN=		8
+MANSUFF_DRIVER=		9

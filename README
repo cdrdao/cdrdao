@@ -1,0 +1,517 @@
+Cdrdao - Write audio/data CD-Rs in disk-at-once mode
+===============================================================================
+
+This file contains some additional information. See the manual page for usage
+of the tool.
+
+Please use the write simulation mode (command 'simulate') when trying this
+program the first time on your system. This will detect problems or
+incompatibilities without wasting a CD-recordable. Note that you may have to
+eject and reinsert the CD-R after simulation before a real write can start.
+
+
+Drivers
+-------
+The following driver IDs may be used with option '--driver'. It is possible
+to specify option bits which modify the behavior of the driver. Global
+and driver specific options are available. Options flags can be combined
+by logical 'or' and appended to the '--driver' option, e.g.
+'--driver plextor-scan:0x03'.
+
+  Global Option Bits:
+     read-toc/read-cd related:
+        0x00010000: Use the generic method to read the TOC of a CD for commands
+                    'read-toc' and 'read-cd'. If this flag is selected multi
+                    session disks will not be handled properly but some drives
+                    do not work with the currently implemented method for
+                    reading the TOC of a specific session.
+
+        0x00020000: If the byte order of the audio data retrieved with 
+                    'read-cd' is wrong (i.e. not big endian samples) use
+                    this option.
+
+        0x00040000: Use this option if your drive cannot read audio data
+                    from the first track's pre-gap. You will get read error
+                    messages in this case which should vanish if this option
+                    is used.
+
+  Available Drivers:
+
+  plextor
+     Supports CD structure analysis (command 'read-toc') for Plextor CD-ROM
+     readers. Pre-gaps and index marks are detected by performing a binary
+     search over the Q sub-channel for each track. This method is fast and
+     gives very exact results on Plextor drives. The driver uses generic
+     SCSI commands (PLAY AUDIO and READ SUB-CHANNEL) so it may work on other
+     models, too, but result and speed is directly correlated to the digital
+     audio extraction capabilities.
+
+     Option Bits:
+        read-toc/read-cd related:
+           0x00000001: Force usage of the paranoia method for audio extraction
+                       instead of the special Plextor method that is used
+                       with Plextor drives.
+
+           0x00000002: Use the READ10 command to read audio data instead of
+                       the vendor specific READ CDDA command.
+                       Only used if the paranoia DAE method is selected.
+  plextor-scan
+     This is an alternate driver for CD structure analysis with Plextor
+     drives. It scans the Q sub-channels of a track linearly like the 
+     'generic-mmc' driver but is faster on Plextor drives.
+
+     Option Bits:
+        read-toc/read-cd related:
+           0x00000001: Read 16 bytes PQ sub-channel instead of 96 byte
+                       raw P-W sub-channel data. If 'read-toc' fails on
+                       your drive try to select this options.
+                       
+           0x00000002: Only used if option '0x00000001' is selected. If set
+                       the read PQ sub-channel data is expected to contain
+                       BCD instead of HEX values. If the time count that
+                       is displayed while running 'read-toc' jumps you will
+                       have to toggle this option.
+
+           0x00000004: Do not take ISRC code from the sub-channel data but use
+                       the appropriate SCSI command for reading the ISRC 
+                       code. This option is automatically selected if 16
+                       byte PQ sub-channel data with HEX values is used.
+
+  cdd2600
+     This is a native driver for the Philips CDD2000/CDD2600 drive family.
+     'read-toc' is implemented like in the 'plextor' driver but it is slow
+     and not very exact due to poor digital audio extraction capabilities of
+     these drives. Anyway, I don't recommend doing CD structure analysis with
+     the CDD2x00 because it stresses the mechanism too much. 
+
+  generic-mmc
+     This is a driver for SCSI-3/mmc compatible CD-recorders that support
+     session-at-once (cue sheet based) writing. Most of the recent drives
+     should be compatible with this or with the 'generic-mmc-raw' driver
+     described below. Data track support is also available.
+     'read-toc' scans linearly the Q sub-channel of each track to retrieve
+     the pre-gap length and index marks. This method is very accurate but
+     takes the same time like digital audio extraction. It should also work
+     with recent CD-ROM readers.
+
+     Option Bits:
+        read-toc/read-cd related:
+           0x00000001: See 'plextor-scan'.
+                       
+           0x00000002: See 'plextor-scan'.
+
+           0x00000004: See 'plextor-scan'.
+
+           0x00000008: Try to retrieve the media catalog number by scanning
+                       the sub-channels instead of using the appropriate
+                       SCSI command. This might be an option if the CD-R/CD-ROM
+                       drive does not extract the catalog number otherwise.
+
+                       Note: A media catalog number need not be present on
+                             on a CD.
+
+           0x00000020: Use this option if the drive cannot read sub-channel
+                       data along with audio data. A binary search method for
+                       pre-gap and index mark extraction will be selected in
+                       this case which has to play a sector before the
+                       sub-channel data can be retrieved.
+                       If 'read-toc'/'read-cd' works only with this option
+                       you should consider to use '--fast-toc' since the
+                       data retrieved with the binary search method is usually
+                       not very reliable and not worth the additional time.
+                       
+        writing related:
+           0x00000010: Drive supports CD-TEXT writing.
+
+  generic-mmc-raw
+     This is an alternate driver for SCSI-3/mmc compatible CD-recorders.
+     It uses the raw writing interface where the driver has to provide the
+     PQ sub-channel data in addition to the audio data. This writing mode
+     allows using part of the lead-out area for audio data since the drive's
+     firmware has no chance to prevent this. Of course, you will get some
+     error message at the end of writing when the CD-R capacity is exhausted.
+     CD structure analysis is done like in the 'generic-mmc' driver. 
+
+     Option Bits:
+        See 'generic-mmc' but CD-TEXT writing is not supported.
+
+  ricoh-mp6200
+     Supports writing with the Ricoh MP6200S CD recorder.
+     CD structure analysis is done like in the 'generic-mmc' driver.
+
+  sony-cdu920
+     Driver for the Sony CDU920 recorder. Audio and data tracks are supported.
+     The Sony CDU948 recorder will work with this driver, too. Use option
+     '--speed 0' to get the full writing speed.
+     'read-toc' uses the Q sub-channel scanning method. 
+
+  sony-cdu948
+     Driver for the Sony CDU948 recorder. It extends the 'sony-cdu920' driver
+     by CD-TEXT writing and multi session mode.
+
+  taiyo-yuden
+     This is an adapted 'cdd2600' driver for Taiyo-Yuden recorders.
+     'read-toc' is done with 'plextor' method.
+
+  teac-cdr55
+     Driver for the Teac CD-R55 recorder. Audio and data tracks are supported.
+      'read-toc' uses the Q sub-channel scanning method.
+
+  yamaha-cdr10x
+     Driver for the Yamaha CDR10X recorder series that supports audio and
+     data tracks. 'read-toc' uses the Q sub-channel scanning method.
+
+
+SCSI Device
+-----------
+Cdrdao uses Joerg Schilling's SCSI library. Thus the same SCSI device
+addressing scheme applies as for 'cdrecord'. A SCSI device is addressed
+by a bus/id/lun triple, e.g. '--device 0,2,0' for a device with SCSI ID 2 on 
+SCSI bus 0. On some systems it is also possible (sometimes required) to
+specify a device node directly, e.g. '--device /dev/sg0' can be used on
+Linux systems instead of the bus/id/lun triple.
+
+On Linux systems the generic SCSI device ('/dev/sg?') is required to access
+the CD writer. Try 'cat /proc/devices' to check out if your kernel supports
+the character device 'sg'.
+If not insert the corresponding module ('insmod sg.o') or reconfigure and
+compile the kernel. Cdrdao opens '/dev/cdrecorder' by default which should
+be a link to the appropriate generic SCSI device.
+
+
+Digital Audio Extraction
+------------------------
+The digital audio extraction is done with the help of Monty's paranoia
+library except the 'plextor' driver which uses a special method for Plextor
+drives. If you want to use the paranoia mode with the 'plextor' driver you
+will have to use option '--driver plextor:0x1'.
+
+The output file will always contain raw signed 16 bit audio samples
+with MSB-LSB (big endian) byte order. If the byte order of the output
+file is not MSB-LSB you will have to use the driver option '0x20000',
+e.g. '--driver plextor:0x20000'. Please do not try to use '--swap' for
+writing in this case because the byte order of the audio samples that are fed
+to the paranoia library is wrong, too, which will cause malfunction of the
+paranoia library routines.
+
+Even if you specify a file name with a ".wav" extension the resulting
+file will be a raw audio file without any header.
+
+'read-cd' and 'copy' will read the first track's pre-gap, too. If your drive
+cannot access these audio sectors which is usually indicated by read errors
+you will have to use driver option 0x40000.
+
+Currently, cdrdao does not support as many CD-ROM drives as cdparanoia. If
+audio extraction works with cdparanoia but not with cdrdao please send me
+a log of a 'cdparanoia -v' run and I will implement the required access
+command.
+
+
+CD-TEXT Writing
+---------------
+CD-TEXT data is read with 'read-toc' or 'read-cd' if your drive supports
+it (e.g. Teac CD-532e, HP CD-Writer+ 8100) and will be stored in the toc-file.
+It is also possible to create the CD-TEXT data manually by editing the
+toc-file or by using the xcdrdao GUI.
+If you want to create your own CD-TEXT data be sure to add the fields
+'TITLE' and 'PERFORMER' to all tracks. 
+
+The directory "testtocs" contains a template toc-file "cdtext.toc".
+
+
+Drives Known to Work
+--------------------
+Recorders:
+
+  Model                    Firmware Rev.    Driver           Notes
+  ----------------------------------------------------------------
+  ATAPI CD-R/RW CRW6206A   1.3A             generic-mmc-raw
+  BTC BCE621E              2.0              generic-mmc-raw
+  HP CD-Writer 4020        1.27             cdd2600        
+  HP CD-Writer 6020        1.07             cdd2600        
+  HP CD-Writer+ 7100       3.01             generic-mmc-raw
+  HP CD-Writer+ 7200       3.01             generic-mmc-raw
+  HP CD-Writer+ 7570       1.0a             generic-mmc      5
+  HP CD-Writer+ 8100       1.0g             generic-mmc      5
+  HP CD-Writer+ 8200       1.0f             generic-mmc      5
+  IDE-CD R/RW 2x2x24       1.4              generic-mmc-raw
+  IMS CDD2000              1.25,1.26        cdd2600        
+  MATSHITA CD-R   CW-7502  X.14, X.17       generic-mmc      5
+  MATSHITA CD-R   CW-7503  1.04             generic-mmc    
+  MATSHITA CD-R   CW-7582  1.00, 1.05       generic-mmc    
+  MEMOREX CD-RW4224        1.17             generic-mmc    
+  MEMOREX CDRW-2216        1.0b             generic-mmc-raw
+  MEMOREX CR-622           D4.0             generic-mmc-raw  5
+  MEMOREX CRW-1662         D4.0             generic-mmc-raw
+  MITSUMI CR-4801          2.02             generic-mmc      2
+  MITSUMI CR-4802          1.2B, 1.4D       generic-mmc-raw  4
+  PANASONIC CD-R   CW-7582 1.05             generic-mmc    
+  PHILIPS CDD2000          1.25             cdd2600        
+  PHILIPS CDD2600          1.07             cdd2600        
+  PHILIPS CDD3600          2.00             generic-mmc-raw
+  PHILIPS CDD3610          2.02, 3.01       generic-mmc-raw
+  PHILIPS OMNIWRITER26     1.20             ricoh-mp6200   
+  PHILIPS PCA460RW         1.0e             generic-mmc    
+  PLEXTOR CD-R   PX-R412   1.04, 1.06, 1.07 generic-mmc    
+  PLEXTOR CD-R   PX-R820   1.03             generic-mmc    
+  PLEXTOR CD-R   PX-W4220  1.01, 1.02       generic-mmc    
+  RICOH MP6200             2.20, 2.03, 1.20 ricoh-mp6200   
+  RICOH MP6201             ?                ricoh-mp6200   
+  SAF CD-R2006PLUS         2.05             teac-cdr55     
+  SAF CD-R4012             6.0J, 6.0L       teac-cdr55     
+  SAF CD-RW 226            1.12             teac-cdr55     
+  SONY CD-R   CDU920       ?                sony-cdu920    
+  SONY CD-R   CDU924       1.1d             sony-cdu920    
+  SONY CD-R   CDU948       1.0j             sony-cdu948      5
+  SONY CRX100              ?                generic-mmc      5
+  T.YUDEN CD-WO EW-50      2.15, 2.16       taiyo-yuden    
+  TEAC CD-R50              ?                teac-cdr55     
+  TEAC CD-R55              1.0k, 1.0n       teac-cdr55     
+  TEAC CD-R56              ?                generic-mmc    
+  TRAXDATA CDR4120         5.0G, 5.0N       teac-cdr55     
+  TRAXDATA CDRW2260+       3.01             generic-mmc-raw
+  TRAXDATA CDRW4260        1.0f             generic-mmc    
+  TRAXDATA CRW2260 PRO     2.0              generic-mmc-raw
+  WAITEC WT4424            1.01             generic-mmc-raw
+  WAITEC WT624             7.0F             generic-mmc    
+  YAMAHA CDR100            ?                yamaha-cdr10x  
+  YAMAHA CDR102            1.00, 1.01       yamaha-cdr10x  
+  YAMAHA CDR200            1.0k             generic-mmc    
+  YAMAHA CDR400            1.0k, 1.0n       generic-mmc      1,5
+  YAMAHA CRW2260           1.0f             generic-mmc    
+  YAMAHA CRW4260           1.0h, 1.0q       generic-mmc      5
+  YAMAHA CRW4416           1.0b             generic-mmc    
+  YAMAHA CRW6416           ?                generic-mmc    
+
+Readers (command 'read-toc'):
+
+  Model                    Firmware Rev.    Driver           Notes
+  ----------------------------------------------------------------
+  ASUS CD-S400             2.40             generic-mmc    
+  E-IDE CD-ROM 36X/AKU     U23              generic-mmc      3
+  HITACHI DVD-ROM GD-2500  A011             plextor        
+  LITEON CD-ROM            ?                generic-mmc    
+  MATSHITA CD-ROM CR-588   LS15             generic-mmc    
+  MEMOREX CD-233E          U10A             generic-mmc      6
+  NAKAMICH MJ-5.16S        1.07             plextor        
+  PIONEER CD-ROM DR-U06    1.05             plextor        
+  PIONEER CD-ROM DR-U12    1.06             plextor        
+  PIONEER CD-ROM DR-U16    1.06             plextor        
+  PIONEER DVD-103          1.09, 1.15       generic-mmc    
+  PIONEER DVD-303          1.09             plextor        
+  PLEXTOR CD-ROM           ?                plextor-scan   
+  SONY CD-ROM              ?                plextor        
+  SONY CD-ROM CDU-76       1.1c             plextor        
+  SONY CD-ROM CDU31A-02    ?                generic-mmc    
+  TEAC CD-532E             1.0A             generic-mmc    
+  TEAC CD-ROM CD-532S      1.0A             plextor-scan   
+  TOSHIBA CD-ROM XM-5701TA 0167             plextor        
+  TOSHIBA CD-ROM XM-6201TA 1037             plextor        
+  TOSHIBA CD-ROM XM-6302B  1012             generic-mmc    
+
+Notes:
+  1) Writing with firmware revision 1.0i does not work.
+  2) read-toc with plextor driver.
+  3) Sold as Philips PCA36XCD CD-ROM.
+  4) The generic-mmc driver will also work but the firmware seems to create wrong sub-channel data in some cases.
+  5) See notes at the end of this file.
+  6) This drive seems to ignore ISRC Codes and the Catalog Number.
+
+
+Pre-compiled Binaries
+---------------------
+The pre-compiled binaries should work with 2.0.x, 2.1.x and 2.2.x kernels
+(tested with kernel 2.0.33 and 2.2.13). Older kernels may require recompilation
+because of a different maximum message size of the generic SCSI device.
+
+
+Example for CD Copying
+----------------------
+The following command will copy the CD in the source drive specified with
+option '--source-device' to the CD-R/CD-RW inserted in the destination drive
+specified with option '--device'. Only a single session will be copied which
+can be selected with option '--session' (default: 1st session). If you want
+to keep the session open you will have to use option '--multi'.
+
+        cdrdao copy --source-device 0,2,0 --device 0,5,0 --buffers 64
+
+
+The option '--buffers' is used to adjust the ring buffer size. Each buffer
+holds 1 second audio data. Dividing the specified number of buffers by the
+writing speed gives the approx. time for which data input my be stalled,
+e.g. 64 buffers and writing at 4x speed results in 16 seconds.
+
+On the fly copying is selected with option '--on-the-fly'. No intermediate
+data will be stored on the disk in this case.
+
+If the source CD contains audio tracks and the source drive is slow you should
+consider to reduce the audio extraction quality with option '--paranoia-mode 0'
+or reduce the writing speed to 2x. For '--paranoia-mode 0' you will need a
+perfect CD-ROM drive that can provide an accurate audio stream. 
+
+The standard generic SCSI interface of the Linux kernel cannot handle
+multiple commands in parallel. Since the reading and the writing part of
+cdrdao use the generic SCSI interface mutual blocking will occur. This
+results in low fill rates of cdrdao's ring buffer and very likely
+produces buffer under runs.
+
+To avoid these problems you should apply Heiko Eissfeldt's sg-buffer
+patch which can be downloaded from:
+	ftp://ftp.fokus.gmd.de/pub/unix/cdrecord/alpha/
+It is available for 2.0.x and 2.1.x kernels. For 2.2.x kernels with
+x < 6 the "SG-2.2.tar.gz" patch should be used. Kernel versions >= 2.2.6
+do not need any patch.
+      
+I strongly recommend to perform some simulation runs before trying real
+writing.
+
+
+Example for composing an audio CD
+---------------------------------
+Assume three existing audio files 'audio1.wav', 'audio2.wav' and 'audio3.wav'
+that go in three tracks. We do not want a pause between track 1 and 2 (no
+pre-gap). The first 10 seconds of 'audio1.wav' should be used as pre-gap for
+track 3. Here is the toc-file:
+
+
+// Track 1
+TRACK AUDIO
+FILE "audio1.wav" 0  // take all audio data from 'audio1.wav', length is taken
+                     // from file
+
+// Track 2
+TRACK AUDIO
+FILE "audio2.wav" 0  // take all audio data from 'audio2.wav', length is taken
+                     // from file, no pre-gap
+
+// Track 3
+TRACK AUDIO
+FILE "audio1.wav" 0 0:10:0 // take first 10 seconds from 'audio1.wav'
+START                      // everything before this line goes into the pre-gap
+FILE "audio3.wav" 0  // take all audio data from 'audio3.wav', length is taken
+                     // from file
+
+
+Type 'cdrdao show-toc example.toc' to check for the correct syntax of the
+toc-file. Note that even for the command 'show-toc' the audio files must exist
+if the length of the audio files is not specified like in the example.
+
+Type 'cdrdao read-test example.toc' to check if all audio files can be read
+without error (optional).
+
+Type 'cdrdao simulate example.toc' to perform a write simulation (optional).
+
+Type 'cdrdao write example.toc' to create the audio CD.
+
+
+Contact
+-------
+Please report bugs and suggestions to 
+Andreas Mueller <mueller@daneb.ping.de>
+
+Cdrdao Homepage: http://www.ping.de/sites/daneb/cdrdao.html
+                 http://www.cdrdao.purespace.de/
+
+Download:        http://www.ping.de/sites/daneb/download.html
+                 http://www.cdrdao.purespace.de/download.html
+
+
+
+Notes about some CD recorder models
+-----------------------------------
+MATSHITA/PANASONIC CW-7502
+
+    This drive will only produce useful disks with the recent firmware
+    revision X.17. The X depends on the drive hardware revision. 
+
+    Thanks to Jeroen Steenblik <jeroens@esrac.ele.tue.nl> for adapting
+    the generic-mmc driver to the CW-7502 recorder. He spend a lot of time
+    and wasted many CD-Rs until it was obvious that the pre-X.14
+    firmware does not completely comply with the SCSI-3/mmc standard. 
+
+    Here are Jeroen's notes for upgrading the firmware:
+    The update can be found at the Plasmon technical website,
+    http://tech.plasmon.co.uk/, choose 'Download Files' and obtain the
+    X.17 firmware for the CDR480. This includes all instructions.
+    One thing I might add, when downloading the two files in the sequence
+    described in their document, my drive refused the second file. I had
+    to reboot after downloading the first file and only then I could download
+    the second. Quite scary stuff. Swapping the download sequence should
+    prevent this (so I've read). 
+
+
+MEMOREX CR-622
+    Submitted by Bryan E. Chafy <bchafy@ccs.neu.edu>:
+
+    The drive as shipped comes with firmware that does not support DAO.
+    The firmware lives on a PROM, it is not flashable.
+    You need an EPROM burner, a 27c020 PLCC EPROM, and the
+    D4.0 ROM image for the CRW-1622 (can download it from Memorex web site,
+    the name of the image is d39e.dat).
+
+    The ROM is socketed at the rear of the drive, you will see it when you
+    remove the top cover.  Mine had a sticker on it with the numbers E07/885B.
+
+    Note, this is for the CR-622 (and its sister the CDR-622 wearnes drive),
+    NOT the CRW-1622.  The CRW-1622 drive is flash-upgradeable).
+
+    IMHO, Wearnes/Memorex should be sending us new ROM's free of charge because
+    the box clearly states the CR-622 supports DAO.
+
+    The new firmware does not turn the CR-622 into a cd-rw capable drive.
+    You can still only burn cd-r media.
+
+
+YAMAHA CDR400, CRW4260
+    These drives sometimes have problems with writing at 4x speed. The
+    resulting disk is hard read for some reason. Disks written at 1x or
+    2x speed are fine. Yamaha's support is aware of this problem. It might
+    be related to the actual firmware revision.
+    I successfully wrote CD-Rs at 4x speed with a CDR400t and firmware
+    revision 1.0k.
+
+
+HP CD-Writer+ 75XX, HP CD-Writer+ 8100, SONY CRX100, HP CD-Writer+ 8200
+    The firmware restricts the possible disk types in DAO mode to one of
+    the following:
+    
+     o Pure audio CD.
+     o Mixed mode CD where the 1st track is a data track followed by at
+       least 1 audio track.
+     o CD-EXTRA where the 1st session contains only audio tracks and the
+       2nd session contains 1 data track.
+	  
+    Further restrictions:
+
+     o The length of the 1st track's pre-gap is restricted to a certain
+       amount.
+     o Cue sheets with ISRC codes are rejected of the COPY flag is set.
+       This might be fixed in future versions.
+
+    If you want to create a pure data CD you will have to append a dummy
+    audio track to the toc-file, e.g. with:
+
+        TRACK AUDIO
+	PREGAP 0:2:0
+	SILENCE 0:4:0
+
+
+SONY CD-R CDU948
+    The firmware restricts the possible disk types in DAO mode to one of
+    the following:
+
+     o Pure audio CD.
+     o Mixed mode CD where the 1st track is a data track followed by at
+       least 1 audio track.
+     o CD-EXTRA where the 1st session contains only audio tracks and the
+       2nd session contains 1 data track.
+	  
+    The length of the 1st track's pre-gap is restricted to a certain
+    amount, too.
+
+    If you want to create a pure data CD you will have to append a dummy
+    audio track to the toc-file, e.g. with:
+
+        TRACK AUDIO
+	PREGAP 0:2:0
+	SILENCE 0:4:0

@@ -1,0 +1,37 @@
+#ident "%W% %E% %Q%"
+###########################################################################
+#
+# global definitions for Solaris Systems
+#
+###########################################################################
+#
+# Compiler stuff
+#
+###########################################################################
+DEFCCOM=	cc
+#DEFCCOM=	gcc
+###########################################################################
+#
+# If the next line is commented out, compilattion is done with max warn level
+# If the next line is uncommented, compilattion is done with minimal warnings
+#
+###########################################################################
+CWARNOPTS=
+
+DEFINCDIRS=	$(SRCROOT)/include
+LDPATH=		-L/opt/schily/lib
+RUNPATH=	-R $(INS_BASE)/lib -R /opt/schily/lib -R $(OLIBSDIR)
+
+###########################################################################
+#
+# Installation config stuff
+#
+###########################################################################
+INS_BASE=	/opt/schily
+INS_KBASE=	/
+#
+DEFUMASK=	002
+#
+DEFINSMODE=    755
+DEFINSUSR=     bin
+DEFINSGRP=     bin

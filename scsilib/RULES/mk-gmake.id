@@ -1,0 +1,75 @@
+#ident "@(#)mk-gmake.id	1.10 98/12/06 "
+###########################################################################
+# Written 1996 by J. Schilling
+###########################################################################
+#
+# Name of make program (make/gmake/smake)
+#
+###########################################################################
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2, or (at your option)
+# any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; see the file COPYING.  If not, write to
+# the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+###########################################################################
+
+MAKEPROG=	gmake
+
+###########################################################################
+#
+# standard (automatic) machine identification
+#
+###########################################################################
+#
+# XP_ARCH = uname -p	= mach	  # Processor (sparc/mc68020)
+# XK_ARCH = uname -m	= arch -k # Kernel (sun3/sun4c/sun4m)
+# XM_ARCH = arch	~ arch -k # Machine (sun3/sun4)
+#
+###########################################################################
+
+ifndef		ARCH_DONE
+
+_MACHCMD=	(mach || uname -p || true)	2> /dev/null
+_ARCHCMD=	(arch || /usr/ucb/arch || true)	2> /dev/null
+
+XP_ARCH:=	$(shell $(_MACHCMD) | tr '[A-Z]' '[a-z]' | tr ', /\\()"' ',//////' | tr ',/' ',-')
+XK_ARCH:=	$(shell uname -m    | tr '[A-Z]' '[a-z]' | tr ', /\\()"' ',//////' | tr ',/' ',-')
+XM_ARCH:=	$(shell $(_ARCHCMD) | tr '[A-Z]' '[a-z]' | tr ', /\\()"' ',//////' | tr ',/' ',-')
+
+P_ARCH=		$(XP_ARCH)
+K_ARCH=		$(XK_ARCH)
+M_ARCH=		$(XM_ARCH)
+
+_XP_ARCH=	$(XP_ARCH:unknown=$(K_ARCH))
+
+_P_ARCH=	$(_UNIQ)$(_XP_ARCH)
+__P_ARCH=	$(_P_ARCH:$(_UNIQ)=$(K_ARCH))
+P_ARCH=		$(__P_ARCH:$(_UNIQ)%=%)
+
+_M_ARCH=	$(_UNIQ)$(XM_ARCH)
+__M_ARCH=	$(_M_ARCH:$(_UNIQ)=$(K_ARCH))
+M_ARCH=		$(__M_ARCH:$(_UNIQ)%=%)
+
+OSNAME:=	$(shell uname -s | tr '[A-Z]' '[a-z]' | tr ', /\\()"' ',//////' | tr ',/' ',-')
+OSREL:=		$(shell uname -r | tr '[A-Z]' '[a-z]' | tr ', /\\()"' ',//////' | tr ',/' ',-')
+
+ARCH_DONE=	TRUE
+
+export		XP_ARCH
+export		K_ARCH
+export		XM_ARCH
+export		P_ARCH
+export		M_ARCH
+export		OSNAME
+export		OSREL
+export		ARCH_DONE
+
+endif
