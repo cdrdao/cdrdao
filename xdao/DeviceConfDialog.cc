@@ -18,6 +18,15 @@
  */
 /*
  * $Log: DeviceConfDialog.cc,v $
+ * Revision 1.3  2000/04/23 09:07:08  andreasm
+ * * Fixed most problems marked with '//llanero'.
+ * * Added audio CD edit menus to MDIWindow.
+ * * Moved central storage of TocEdit object to MDIWindow.
+ * * AudioCdChild is now handled like an ordinary non modal dialog, i.e.
+ *   it has a normal 'update' member function now.
+ * * Added CdTextTable modal dialog.
+ * * Old functionality of xcdrdao is now available again.
+ *
  * Revision 1.2  2000/02/20 23:34:53  llanero
  * fixed scsilib directory (files mising ?-()
  * ported xdao to 1.1.8 / gnome (MDI) app
@@ -30,7 +39,7 @@
  *
  */
 
-static char rcsid[] = "$Id: DeviceConfDialog.cc,v 1.2 2000/02/20 23:34:53 llanero Exp $";
+static char rcsid[] = "$Id: DeviceConfDialog.cc,v 1.3 2000/04/23 09:07:08 andreasm Exp $";
 
 #include <stdio.h>
 #include <limits.h>
@@ -99,32 +108,31 @@ DeviceConfDialog::DeviceConfDialog()
   list_->unselect_row.connect(SigC::slot(this,&DeviceConfDialog::unselectRow));
 
 
-/*llanero
-  driverMenuFactory_ = new Gtk::ItemFactory_Menu("<Main>");
+  Gtk::Menu *dmenu = manage(new Gtk::Menu);
+  Gtk::MenuItem *mi;
 
   for (i = 0; i <= CdDevice::maxDriverId(); i++) {
-    string s("/");
-    s += CdDevice::driverName(i);
-
-    driverMenuFactory_->create_item(s, 0, "<Item>", ItemFactoryConnector<DeviceConfDialog, int>(this, &DeviceConfDialog::setDriverId, i));
+    mi = manage(new Gtk::MenuItem(CdDevice::driverName(i)));
+    mi->activate.connect(bind(slot(this, &DeviceConfDialog::setDriverId), i));
+    mi->show();
+    dmenu->append(*mi);
   }
 
   driverMenu_ = new Gtk::OptionMenu;
-  driverMenu_->set_menu(driverMenuFactory_->get_menu_widget(string("")));
+  driverMenu_->set_menu(dmenu);
 
 
-  devtypeMenuFactory_ = new Gtk::ItemFactory_Menu("<Main>");
+  Gtk::Menu *tmenu = manage(new Gtk::Menu);
 
   for (i = 0; i <= MAX_DEVICE_TYPE_ID; i++) {
-    string s("/");
-    s += CdDevice::deviceType2string(ID2DEVICE_TYPE[i]);
-    devtypeMenuFactory_->create_item(s, 0, "<Item>",
-				     ItemFactoryConnector<DeviceConfDialog, int>(this, &DeviceConfDialog::setDeviceType, i));
+    mi = manage(new Gtk::MenuItem(CdDevice::deviceType2string(ID2DEVICE_TYPE[i])));
+    mi->activate.connect(bind(slot(this, &DeviceConfDialog::setDeviceType), i));
+    mi->show();
+    tmenu->append(*mi);
   }
 
   devtypeMenu_ = new Gtk::OptionMenu;
-  devtypeMenu_->set_menu(devtypeMenuFactory_->get_menu_widget(string("")));
-*/
+  devtypeMenu_->set_menu(tmenu);
 
   Gtk::Adjustment *adjust = new Gtk::Adjustment(0.0, 0.0, 16.0);
   busEntry_ = new Gtk::SpinButton(*adjust, 1.0, 1);
@@ -217,7 +225,7 @@ DeviceConfDialog::DeviceConfDialog()
   label->show();
   hbox->show();
   hbox = new Gtk::HBox;
-//llanero  hbox->pack_start(*devtypeMenu_, FALSE, FALSE);
+  hbox->pack_start(*devtypeMenu_, FALSE, FALSE);
   table->attach(*hbox, 1, 2, 0, 1);
   devtypeMenu_->show();
   hbox->show();

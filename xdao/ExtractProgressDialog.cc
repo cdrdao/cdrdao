@@ -304,17 +304,8 @@ void ExtractProgressDialog::setCloseButtonLabel(int l)
   if (actCloseButtonLabel_ == l)
     return;
 
-  switch (actCloseButtonLabel_) {
-  case 1:
-//llanero    closeButton_->remove(abortLabel_);
-    closeButton_->remove();
-    break;
-  case 2:
-//llanero    closeButton_->remove(closeLabel_);
-    closeButton_->remove();
-    break;
-  }
-
+  closeButton_->remove();
+  
   switch (l) {
   case 1:
     closeButton_->add(*abortLabel_);

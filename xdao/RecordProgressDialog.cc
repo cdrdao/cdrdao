@@ -18,6 +18,15 @@
  */
 /*
  * $Log: RecordProgressDialog.cc,v $
+ * Revision 1.4  2000/04/23 09:07:08  andreasm
+ * * Fixed most problems marked with '//llanero'.
+ * * Added audio CD edit menus to MDIWindow.
+ * * Moved central storage of TocEdit object to MDIWindow.
+ * * AudioCdChild is now handled like an ordinary non modal dialog, i.e.
+ *   it has a normal 'update' member function now.
+ * * Added CdTextTable modal dialog.
+ * * Old functionality of xcdrdao is now available again.
+ *
  * Revision 1.3  2000/04/16 20:31:20  andreasm
  * Added missing stdio.h includes.
  *
@@ -30,7 +39,7 @@
  *
  */
 
-static char rcsid[] = "$Id: RecordProgressDialog.cc,v 1.3 2000/04/16 20:31:20 andreasm Exp $";
+static char rcsid[] = "$Id: RecordProgressDialog.cc,v 1.4 2000/04/23 09:07:08 andreasm Exp $";
 
 #include <stdio.h>
 #include <stddef.h>
@@ -318,16 +327,7 @@ void RecordProgressDialog::setCloseButtonLabel(int l)
   if (actCloseButtonLabel_ == l)
     return;
 
-  switch (actCloseButtonLabel_) {
-  case 1:
-//llanero    closeButton_->remove(abortLabel_);
-    closeButton_->remove();
-    break;
-  case 2:
-//llanero    closeButton_->remove(closeLabel_);
-    closeButton_->remove();
-    break;
-  }
+  closeButton_->remove();
 
   switch (l) {
   case 1:

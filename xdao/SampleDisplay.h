@@ -18,6 +18,15 @@
  */
 /*
  * $Log: SampleDisplay.h,v $
+ * Revision 1.4  2000/04/23 09:07:08  andreasm
+ * * Fixed most problems marked with '//llanero'.
+ * * Added audio CD edit menus to MDIWindow.
+ * * Moved central storage of TocEdit object to MDIWindow.
+ * * AudioCdChild is now handled like an ordinary non modal dialog, i.e.
+ *   it has a normal 'update' member function now.
+ * * Added CdTextTable modal dialog.
+ * * Old functionality of xcdrdao is now available again.
+ *
  * Revision 1.3  2000/03/04 01:28:52  llanero
  * SampleDisplay.{cc,h} are fixed now = gtk 1.1.8 compliant.
  *
@@ -161,20 +170,13 @@ public:
   void updateTrackMarks();
   void setCursor(int, unsigned long);
 
-  void updateToc();
+  void updateToc(unsigned long, unsigned long);
 
-//llanero: Should be removed if works
-//  Signal1<unsigned long> markerSet;
-//  Signal1<unsigned long> cursorMoved;
-//  Signal2<unsigned long, unsigned long> selectionSet;
-//  Signal3<const Track *, int, int> trackMarkSelected;
-//  Signal4<const Track *, int, int, unsigned long> trackMarkMoved;
-// the first "parameter" is the return type
-  SigC::Signal1 <void, unsigned long> markerSet;
-  SigC::Signal1 <void, unsigned long> cursorMoved;
-  SigC::Signal2 <void, unsigned long, unsigned long> selectionSet;
-  SigC::Signal3 <void, const Track *, int, int> trackMarkSelected;
-  SigC::Signal4 <void, const Track *, int, int, unsigned long> trackMarkMoved;
+  SigC::Signal1<void, unsigned long> markerSet;
+  SigC::Signal1<void, unsigned long> cursorMoved;
+  SigC::Signal2<void, unsigned long, unsigned long> selectionSet;
+  SigC::Signal3<void, const Track *, int, int> trackMarkSelected;
+  SigC::Signal4<void, const Track *, int, int, unsigned long> trackMarkMoved;
   
 protected:
   int handle_configure_event (GdkEventConfigure *);

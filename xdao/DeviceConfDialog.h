@@ -18,6 +18,15 @@
  */
 /*
  * $Log: DeviceConfDialog.h,v $
+ * Revision 1.3  2000/04/23 09:07:08  andreasm
+ * * Fixed most problems marked with '//llanero'.
+ * * Added audio CD edit menus to MDIWindow.
+ * * Moved central storage of TocEdit object to MDIWindow.
+ * * AudioCdChild is now handled like an ordinary non modal dialog, i.e.
+ *   it has a normal 'update' member function now.
+ * * Added CdTextTable modal dialog.
+ * * Old functionality of xcdrdao is now available again.
+ *
  * Revision 1.2  2000/02/20 23:34:53  llanero
  * fixed scsilib directory (files mising ?-()
  * ported xdao to 1.1.8 / gnome (MDI) app
@@ -67,10 +76,8 @@ private:
   Gtk::CList *list_;
   Gtk::Button *applyButton_;
 
-//llanero  Gtk::ItemFactory::Menu *driverMenuFactory_;
   Gtk::OptionMenu *driverMenu_;
 
-//llanero  Gtk::ItemFactory::Menu *devtypeMenuFactory_;
   Gtk::OptionMenu *devtypeMenu_;
 
   Gtk::SpinButton *busEntry_, *idEntry_, *lunEntry_;

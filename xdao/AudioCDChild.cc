@@ -1,6 +1,6 @@
 /*  cdrdao - write audio CD-Rs in disc-at-once mode
  *
- *  Copyright (C) 1998  Andreas Mueller <mueller@daneb.ping.de>
+ *  Copyright (C) 1998-2000  Andreas Mueller <mueller@daneb.ping.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -24,11 +24,16 @@
 #include <stdarg.h>
 #include <strstream.h>
 
-
+#include "xcdrdao.h"
+#include "guiUpdate.h"
+#include "MessageBox.h"
 #include "AudioCDChild.h"
 #include "SampleDisplay.h"
 #include "SoundIF.h"
 #include "TocEdit.h"
+#include "AddFileDialog.h"
+#include "AddSilenceDialog.h"
+#include "MDIWindow.h"
 
 #include "Toc.h"
 #include "TrackData.h"
@@ -53,15 +58,8 @@ AudioCDChild::BuildChild()
   vbox_aux_ = gtk_vbox_new(FALSE, 5);
   vbox_ = Gtk::wrap((GtkVBox *) vbox_aux_);
 
-//  fileSelector_ = new Gtk::FileSelection("");
-//  fileSelector_->complete(string("*.toc"));
-
-
   sampleDisplay_ = new SampleDisplay;
-  sampleDisplay_->setTocEdit(tocEdit_);
   
-  sampleDisplay_->set_usize(200, 300);
-
   vbox_->pack_start(*sampleDisplay_, TRUE, TRUE);
   sampleDisplay_->show();
 
@@ -75,23 +73,18 @@ AudioCDChild::BuildChild()
 
   markerPos_ = new Gtk::Entry;
   markerPos_->set_editable(true);
-//llanero  connect_to_method(markerPos_->activate, this, &MainWindow::markerSet);
-//  markerPos_->activate.connect(slot(this, &MainWindow::markerSet));
+  markerPos_->activate.connect(slot(this, &AudioCDChild::markerSet));
 
   cursorPos_ = new Gtk::Entry;
   cursorPos_->set_editable(false);
 
   selectionStartPos_ = new Gtk::Entry;
   selectionStartPos_->set_editable(true);
-//llanero  connect_to_method(selectionStartPos_->activate, this,
-//		    &MainWindow::selectionSet);
-//  selectionStartPos_->activate.connect(slot(this, &MainWindow::selectionSet));
+  selectionStartPos_->activate.connect(slot(this, &AudioCDChild::selectionSet));
 
   selectionEndPos_ = new Gtk::Entry;
   selectionEndPos_->set_editable(true);
-//llanero  connect_to_method(selectionEndPos_->activate, this,
-//		    &MainWindow::selectionSet);
-//  selectionEndPos_->activate.connect(slot(this, &MainWindow::selectionSet));
+  selectionEndPos_->activate.connect(slot(this, &AudioCDChild::selectionSet));
 
   label = new Gtk::Label(string("Cursor: "));
   selectionInfoBox->pack_start(*label, FALSE, FALSE);
@@ -121,9 +114,7 @@ AudioCDChild::BuildChild()
   selectionInfoBox->show();
 
   Gtk::HButtonBox *buttonBox = new Gtk::HButtonBox(GTK_BUTTONBOX_START, 5);
-//llanero  zoomButton_ = new Gtk::RadioButton(NULL, string("Zoom"));
   zoomButton_ = new Gtk::RadioButton(string("Zoom"));
-//llanero  selectButton_ = new Gtk::RadioButton(zoomButton_->group(), string("Select"));
   selectButton_ = new Gtk::RadioButton(string("Select"));
   selectButton_->set_group(zoomButton_->group());
 
@@ -134,10 +125,20 @@ AudioCDChild::BuildChild()
   buttonBox->pack_start(*selectButton_);
   selectButton_->show();
   zoomButton_->set_active(true);
-//  setMode(ZOOM);
+  setMode(ZOOM);
   buttonBox->pack_start(*playButton_);
   playButton_->show();
 
+  Gtk::Button *button = manage(new Gtk::Button("Zoom Out"));
+  buttonBox->pack_start(*button);
+  button->show();
+  button->clicked.connect(slot(this, &AudioCDChild::zoomOut));
+
+  button = manage(new Gtk::Button("Full View"));
+  buttonBox->pack_start(*button);
+  button->show();
+  button->clicked.connect(slot(this, &AudioCDChild::fullView));
+  
   vbox_->pack_start(*buttonBox, FALSE, FALSE);
   buttonBox->show();
 
@@ -145,52 +146,29 @@ AudioCDChild::BuildChild()
 //llanero  add(&vbox_);
 //MDI  vbox_->show();
 
-//llanero:
-/*  connect_to_method(sampleDisplay_->markerSet, this,
-                    &MainWindow::markerSetCallback);
-  connect_to_method(sampleDisplay_->selectionSet, this,
-		    &MainWindow::selectionSetCallback);
-  connect_to_method(sampleDisplay_->cursorMoved, this,
-                    &MainWindow::cursorMovedCallback);
-  connect_to_method(sampleDisplay_->trackMarkSelected, this,
-		    &MainWindow::trackMarkSelectedCallback);
-  connect_to_method(sampleDisplay_->trackMarkMoved, this,
-		    &MainWindow::trackMarkMovedCallback);
-*/
-/* 
   sampleDisplay_->markerSet.connect(slot(this,
-  			&MainWindow::markerSetCallback));
+  			&AudioCDChild::markerSetCallback));
   sampleDisplay_->selectionSet.connect(slot(this,
-  			&MainWindow::selectionSetCallback));
+  			&AudioCDChild::selectionSetCallback));
   sampleDisplay_->cursorMoved.connect(slot(this,
-  			&MainWindow::cursorMovedCallback));
+  			&AudioCDChild::cursorMovedCallback));
   sampleDisplay_->trackMarkSelected.connect(slot(this,
-  			&MainWindow::trackMarkSelectedCallback));
+  			&AudioCDChild::trackMarkSelectedCallback));
   sampleDisplay_->trackMarkMoved.connect(slot(this,
-  			&MainWindow::trackMarkMovedCallback));
+  			&AudioCDChild::trackMarkMovedCallback));
 
-*/
-//llanero:
-/*  connect_to_method(zoomButton_->toggled, this, &MainWindow::setMode, ZOOM);
-  connect_to_method(selectButton_->toggled, this, &MainWindow::setMode, SELECT);
-  connect_to_method(playButton_->clicked, this, &MainWindow::play);
-*/
-
-//  zoomButton_->toggled.connect(bind(slot(this, &MainWindow::setMode), ZOOM));
-//  selectButton_->toggled.connect(bind(slot(this, &MainWindow::setMode), SELECT));
+  zoomButton_->toggled.connect(bind(slot(this, &AudioCDChild::setMode), ZOOM));
+  selectButton_->toggled.connect(bind(slot(this, &AudioCDChild::setMode), SELECT));
   playButton_->clicked.connect(slot(this, &AudioCDChild::play));
 
 }
 
 
-AudioCDChild::AudioCDChild(TocEdit *tedit) : Gnome::MDIGenericChild("Untitled AudioCD")
+AudioCDChild::AudioCDChild() : Gnome::MDIGenericChild("Untitled AudioCD")
 {
-  tocEdit_ = tedit;
+  tocEdit_ = NULL;
 
   AudioCDChild::BuildChild();
-
-
-
 
   playing_ = 0;
   playBurst_ = 588 * 5;
@@ -202,7 +180,6 @@ AudioCDChild::AudioCDChild(TocEdit *tedit) : Gnome::MDIGenericChild("Untitled Au
 //FIXME: MDI STUFF  AudioCDChild::set_view_creator(&AudioCDChild_Creator, vbox_aux_);
 
 }
-
 
 void AudioCDChild::play()
 {
@@ -251,10 +228,8 @@ void AudioCDChild::play()
 
   tocEdit_->blockEdit();
 
-//FIXME: !!!
-//  guiUpdate();
+  guiUpdate();
 
-//llanero  connect_to_method(Gtk::Main::idle(), this, &MainWindow::playCallback);
   Gtk::Main::idle.connect(slot(this, &AudioCDChild::playCallback));
 }
 
@@ -270,8 +245,7 @@ int AudioCDChild::playCallback()
     playing_ = 0;
     sampleDisplay_->setCursor(0, 0);
     tocEdit_->unblockEdit();
-//FIXME: !!!
-//llanero    guiUpdate();
+    guiUpdate();
     return 0; // remove idle handler
   }
 
@@ -280,8 +254,6 @@ int AudioCDChild::playCallback()
 
   unsigned long delay = soundInterface_->getDelay();
 
-//FIXME: 
-//llanero
   if (delay <= playPosition_) {
     sampleDisplay_->setCursor(1, playPosition_ - delay);
     cursorPos_->set_text(string(sample2string(playPosition_ - delay)));
@@ -293,13 +265,141 @@ int AudioCDChild::playCallback()
     playing_ = 0;
     sampleDisplay_->setCursor(0, 0);
     tocEdit_->unblockEdit();
-//FIXME: !!!
-//llanero    guiUpdate();
+    guiUpdate();
     return 0; // remove idle handler
   }
   else {
     return 1; // keep idle handler
   }
+}
+
+void AudioCDChild::update(unsigned long level, TocEdit *tedit)
+{
+  if (tocEdit_ != tedit) {
+    tocEdit_ = tedit;
+    sampleDisplay_->setTocEdit(tedit);
+    level = UPD_ALL;
+  }
+
+  if (level & (UPD_TOC_DIRTY | UPD_TOC_DATA)) {
+    cursorPos_->set_text("");
+  }
+
+  if (level & UPD_TRACK_MARK_SEL) {
+    int trackNr, indexNr;
+
+    if (tocEdit_->trackSelection(&trackNr) && 
+	tocEdit_->indexSelection(&indexNr)) {
+      sampleDisplay_->setSelectedTrackMarker(trackNr, indexNr);
+    }
+    else {
+      sampleDisplay_->setSelectedTrackMarker(0, 0);
+    }
+  }
+
+  if (level & UPD_SAMPLES) {
+    unsigned long smin, smax;
+    tocEdit_->sampleView(&smin, &smax);
+    sampleDisplay_->updateToc(smin, smax);
+  }
+  else if (level & (UPD_TRACK_DATA | UPD_TRACK_MARK_SEL)) {
+    sampleDisplay_->updateTrackMarks();
+  }
+
+  if (level & UPD_SAMPLE_MARKER) {
+    unsigned long marker;
+
+    if (tocEdit_->sampleMarker(&marker)) {
+      markerPos_->set_text(string(sample2string(marker)));
+      sampleDisplay_->setMarker(marker);
+    }
+    else {
+      markerPos_->set_text(string(""));
+      sampleDisplay_->clearMarker();
+    }
+  }
+
+  if (level & UPD_SAMPLE_SEL) {
+    unsigned long start, end;
+
+    if (tocEdit_->sampleSelection(&start, &end)) {
+      selectionStartPos_->set_text(string(sample2string(start)));
+      selectionEndPos_->set_text(string(sample2string(end)));
+      sampleDisplay_->setRegion(start, end);
+    }
+    else {
+      selectionStartPos_->set_text(string(""));
+      selectionEndPos_->set_text(string(""));
+      sampleDisplay_->setRegion(1, 0);
+    }
+  }
+}
+
+void AudioCDChild::zoomIn()
+{
+  unsigned long start, end;
+
+  if (tocEdit_->sampleSelection(&start, &end)) {
+    tocEdit_->sampleView(start, end);
+    guiUpdate();
+  }
+}
+ 
+void AudioCDChild::zoomOut()
+{
+  unsigned long start, end, len, center;
+
+  tocEdit_->sampleView(&start, &end);
+
+  len = end - start + 1;
+  center = start + len / 2;
+
+  if (center > len)
+    start = center - len;
+  else 
+    start = 0;
+
+  end = center + len;
+  if (end >= tocEdit_->toc()->length().samples())
+    end = tocEdit_->toc()->length().samples() - 1;
+
+  tocEdit_->sampleView(start, end);
+  guiUpdate();
+}
+
+void AudioCDChild::fullView()
+{
+  tocEdit_->sampleViewFull();
+  guiUpdate();
+}
+
+void AudioCDChild::markerSetCallback(unsigned long sample)
+{
+  tocEdit_->sampleMarker(sample);
+  guiUpdate();
+}
+
+void AudioCDChild::selectionSetCallback(unsigned long start,
+				      unsigned long end)
+{
+  if (mode_ == ZOOM) {
+    tocEdit_->sampleView(start, end);
+  }
+  else {
+    tocEdit_->sampleSelection(start, end);
+  }
+
+  guiUpdate();
+}
+
+void AudioCDChild::cursorMovedCallback(unsigned long pos)
+{
+  cursorPos_->set_text(string(sample2string(pos)));
+}
+
+void AudioCDChild::setMode(Mode m)
+{
+  mode_ = m;
 }
 
 const char *AudioCDChild::sample2string(unsigned long sample)
@@ -318,4 +418,341 @@ const char *AudioCDChild::sample2string(unsigned long sample)
   sprintf(buf, "%2lu:%02lu:%02lu.%03lu", min, sec, frame, sample);
   
   return buf;
+}
+
+unsigned long AudioCDChild::string2sample(const char *str)
+{
+  int m = 0;
+  int s = 0;
+  int f = 0;
+  int n = 0;
+
+  sscanf(str, "%d:%d:%d.%d", &m, &s, &f, &n);
+
+  if (m < 0)
+    m = 0;
+
+  if (s < 0 || s > 59)
+    s = 0;
+
+  if (f < 0 || f > 74)
+    f = 0;
+
+  if (n < 0 || n > 587)
+    n = 0;
+
+  return Msf(m, s, f).samples() + n;
+}
+
+int AudioCDChild::snapSampleToBlock(unsigned long sample, long *block)
+{
+  unsigned long rest = sample % SAMPLES_PER_BLOCK;
+
+  *block = sample / SAMPLES_PER_BLOCK;
+
+  if (rest == 0) 
+    return 0;
+
+  if (rest > SAMPLES_PER_BLOCK / 2)
+    *block += 1;
+
+  return 1;
+}
+
+
+void AudioCDChild::trackMarkSelectedCallback(const Track *, int trackNr,
+					   int indexNr)
+{
+  tocEdit_->trackSelection(trackNr);
+  tocEdit_->indexSelection(indexNr);
+  guiUpdate();
+}
+
+void AudioCDChild::trackMarkMovedCallback(const Track *, int trackNr,
+					int indexNr, unsigned long sample)
+{
+  if (!tocEdit_->editable()) {
+    tocBlockedMsg("Move Track Marker");
+    return;
+  }
+
+  long lba;
+  int snapped = snapSampleToBlock(sample, &lba);
+
+  switch (tocEdit_->moveTrackMarker(trackNr, indexNr, lba)) {
+  case 0:
+    MDI_WINDOW->statusMessage("Moved track marker to %s%s.", Msf(lba).str(),
+			      snapped ? " (snapped to next block)" : "");
+    break;
+
+  case 6:
+    MDI_WINDOW->statusMessage("Cannot modify a data track.");
+    break;
+  default:
+    MDI_WINDOW->statusMessage("Illegal track marker position.");
+    break;
+  }
+
+  tocEdit_->trackSelection(trackNr);
+  tocEdit_->indexSelection(indexNr);
+  guiUpdate();
+}
+
+int AudioCDChild::getMarker(unsigned long *sample)
+{
+  if (tocEdit_->lengthSample() == 0)
+    return 0;
+
+  if (sampleDisplay_->getMarker(sample) == 0) {
+    MDI_WINDOW->statusMessage("Please set marker.");
+    return 0;
+  }
+
+  return 1;
+}
+
+void AudioCDChild::addTrackMark()
+{
+  unsigned long sample;
+
+  if (!tocEdit_->editable()) {
+    tocBlockedMsg("Add Track Mark");
+    return;
+  }
+
+  if (getMarker(&sample)) {
+    long lba;
+    int snapped = snapSampleToBlock(sample, &lba);
+
+    switch (tocEdit_->addTrackMarker(lba)) {
+    case 0:
+      MDI_WINDOW->statusMessage("Added track mark at %s%s.", Msf(lba).str(),
+				snapped ? " (snapped to next block)" : "");
+      guiUpdate();
+      break;
+
+    case 2:
+      MDI_WINDOW->statusMessage("Cannot add track at this point.");
+      break;
+
+    case 3:
+    case 4:
+      MDI_WINDOW->statusMessage("Resulting track would be shorter than 4 seconds.");
+      break;
+
+    case 5:
+      MDI_WINDOW->statusMessage("Cannot modify a data track.");
+      break;
+
+    default:
+      MDI_WINDOW->statusMessage("Internal error in addTrackMark(), please report.");
+      break;
+    }
+  }
+}
+
+void AudioCDChild::addIndexMark()
+{
+  unsigned long sample;
+
+  if (!tocEdit_->editable()) {
+    tocBlockedMsg("Add Index Mark");
+    return;
+  }
+
+  if (getMarker(&sample)) {
+    long lba;
+    int snapped = snapSampleToBlock(sample, &lba);
+
+    switch (tocEdit_->addIndexMarker(lba)) {
+    case 0:
+      MDI_WINDOW->statusMessage("Added index mark at %s%s.", Msf(lba).str(),
+				snapped ? " (snapped to next block)" : "");
+      guiUpdate();
+      break;
+
+    case 2:
+      MDI_WINDOW->statusMessage("Cannot add index at this point.");
+      break;
+
+    case 3:
+      MDI_WINDOW->statusMessage("Track has already 98 index marks.");
+      break;
+
+    default:
+      MDI_WINDOW->statusMessage("Internal error in addIndexMark(), please report.");
+      break;
+    }
+  }
+}
+
+void AudioCDChild::addPregap()
+{
+  unsigned long sample;
+
+  if (!tocEdit_->editable()) {
+    tocBlockedMsg("Add Pre-Gap");
+    return;
+  }
+
+  if (getMarker(&sample)) {
+    long lba;
+    int snapped = snapSampleToBlock(sample, &lba);
+
+    switch (tocEdit_->addPregap(lba)) {
+    case 0:
+      MDI_WINDOW->statusMessage("Added pre-gap mark at %s%s.", Msf(lba).str(),
+				snapped ? " (snapped to next block)" : "");
+      guiUpdate();
+      break;
+
+    case 2:
+      MDI_WINDOW->statusMessage("Cannot add pre-gap at this point.");
+      break;
+
+    case 3:
+      MDI_WINDOW->statusMessage("Track would be shorter than 4 seconds.");
+      break;
+
+    case 4:
+      MDI_WINDOW->statusMessage("Cannot modify a data track.");
+      break;
+
+    default:
+      MDI_WINDOW->statusMessage("Internal error in addPregap(), please report.");
+      break;
+    }
+  }
+}
+
+void AudioCDChild::removeTrackMark()
+{
+  int trackNr;
+  int indexNr;
+
+  if (!tocEdit_->editable()) {
+    tocBlockedMsg("Remove Track Mark");
+    return;
+  }
+
+  if (tocEdit_->trackSelection(&trackNr) &&
+      tocEdit_->indexSelection(&indexNr)) {
+    switch (tocEdit_->removeTrackMarker(trackNr, indexNr)) {
+    case 0:
+      MDI_WINDOW->statusMessage("Removed track/index marker.");
+      guiUpdate();
+      break;
+    case 1:
+      MDI_WINDOW->statusMessage("Cannot remove first track.");
+      break;
+    case 3:
+      MDI_WINDOW->statusMessage("Cannot modify a data track.");
+      break;
+    default:
+      MDI_WINDOW->statusMessage("Internal error in removeTrackMark(), please report.");
+      break; 
+    }
+  }
+  else {
+    MDI_WINDOW->statusMessage("Please select a track/index mark.");
+  }
+
+}
+
+void AudioCDChild::appendTrack()
+{
+  ADD_FILE_DIALOG->mode(AddFileDialog::M_APPEND_TRACK);
+  ADD_FILE_DIALOG->start(tocEdit_);
+}
+
+
+
+void AudioCDChild::appendFile()
+{
+  ADD_FILE_DIALOG->mode(AddFileDialog::M_APPEND_FILE);
+  ADD_FILE_DIALOG->start(tocEdit_);
+}
+
+
+void AudioCDChild::insertFile()
+{
+  ADD_FILE_DIALOG->mode(AddFileDialog::M_INSERT_FILE);
+  ADD_FILE_DIALOG->start(tocEdit_);
+}
+
+void AudioCDChild::appendSilence()
+{
+  ADD_SILENCE_DIALOG->mode(AddSilenceDialog::M_APPEND);
+  ADD_SILENCE_DIALOG->start(tocEdit_);
+}
+
+void AudioCDChild::insertSilence()
+{
+  ADD_SILENCE_DIALOG->mode(AddSilenceDialog::M_INSERT);
+  ADD_SILENCE_DIALOG->start(tocEdit_);
+}
+
+
+void AudioCDChild::cutTrackData()
+{
+  if (!tocEdit_->editable()) {
+    tocBlockedMsg("Cut");
+    return;
+  }
+
+  switch (tocEdit_->removeTrackData()) {
+  case 0:
+    MDI_WINDOW->statusMessage("Removed selected samples.");
+    guiUpdate();
+    break;
+  case 1:
+    MDI_WINDOW->statusMessage("Please select samples.");
+    break;
+  case 2:
+    MDI_WINDOW->statusMessage("Selected sample range crosses track boundaries.");
+    break;
+  }
+}
+
+void AudioCDChild::pasteTrackData()
+{
+  if (!tocEdit_->editable()) {
+    tocBlockedMsg("Paste");
+    return;
+  }
+
+  switch (tocEdit_->insertTrackData()) {
+  case 0:
+    MDI_WINDOW->statusMessage("Pasted samples.");
+    guiUpdate();
+    break;
+  case 1:
+    MDI_WINDOW->statusMessage("No samples in scrap.");
+    break;
+  }
+}
+
+void AudioCDChild::markerSet()
+{
+  unsigned long s = string2sample(markerPos_->get_text().c_str());
+
+  tocEdit_->sampleMarker(s);
+  guiUpdate();
+}
+
+void AudioCDChild::selectionSet()
+{
+  unsigned long s1 = string2sample(selectionStartPos_->get_text().c_str());
+  unsigned long s2 = string2sample(selectionEndPos_->get_text().c_str());
+
+  tocEdit_->sampleSelection(s1, s2);
+  guiUpdate();
+}
+
+void AudioCDChild::tocBlockedMsg(const char *op)
+{
+  MessageBox msg(MDI_WINDOW, op, 0,
+		 "Cannot perform requested operation because", 
+		 "project is in read-only state.", NULL);
+  msg.run();
 }

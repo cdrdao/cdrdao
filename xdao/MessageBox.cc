@@ -18,6 +18,15 @@
  */
 /*
  * $Log: MessageBox.cc,v $
+ * Revision 1.3  2000/04/23 09:07:08  andreasm
+ * * Fixed most problems marked with '//llanero'.
+ * * Added audio CD edit menus to MDIWindow.
+ * * Moved central storage of TocEdit object to MDIWindow.
+ * * AudioCdChild is now handled like an ordinary non modal dialog, i.e.
+ *   it has a normal 'update' member function now.
+ * * Added CdTextTable modal dialog.
+ * * Old functionality of xcdrdao is now available again.
+ *
  * Revision 1.2  2000/02/20 23:34:54  llanero
  * fixed scsilib directory (files mising ?-()
  * ported xdao to 1.1.8 / gnome (MDI) app
@@ -27,7 +36,7 @@
  *
  */
 
-static char rcsid[] = "$Id: MessageBox.cc,v 1.2 2000/02/20 23:34:54 llanero Exp $";
+static char rcsid[] = "$Id: MessageBox.cc,v 1.3 2000/04/23 09:07:08 andreasm Exp $";
 
 #include <stddef.h>
 #include <stdarg.h>
@@ -65,32 +74,26 @@ void MessageBoxBase::init(const char *title, int askDontShow,
 
   set_title(title);
 
-#warning "handle to pointer conversion (Gtk_HButtonBox)"
-  Gtk::HButtonBox* bbox(new Gtk::HButtonBox(GTK_BUTTONBOX_SPREAD));
+  Gtk::HButtonBox* bbox = manage(new Gtk::HButtonBox(GTK_BUTTONBOX_SPREAD));
   bbox->show();
 
-#warning "handle to pointer conversion (Gtk_VBox)"
-  Gtk::VBox* contents(new Gtk::VBox);
+  Gtk::VBox* contents = manage(new Gtk::VBox);
   contents->show();
   //contents->set_spacing(5);
 
   
   for (i = 1; i <= nButtons; i++) {
-#warning "handle to pointer conversion (Gtk_Button)"
-    Gtk::Button* button(new Gtk::Button(string(buttons[i - 1])));
+    Gtk::Button* button = manage(new Gtk::Button(string(buttons[i - 1])));
     button->show();
-    button->clicked.connect(SigC::bind(SigC::slot(this,&MessageBoxBase::buttonAction),i));
+    button->clicked.connect(bind(slot(this,&MessageBoxBase::buttonAction),i));
     bbox->add(*button);
   }
 
   while ((s = va_arg(args, const char *)) != NULL) {
-#warning "handle to pointer conversion (Gtk_HBox)"
-    Gtk::HBox* lbox(new Gtk::HBox);
+    Gtk::HBox* lbox = manage(new Gtk::HBox);
     lbox->show();
-#warning "handle to pointer conversion (Gtk_Label)"
-    Gtk::Label* label(new Gtk::Label(s));
+    Gtk::Label* label = manage(new Gtk::Label(s));
     label->show();
-//llanero    lbox->pack_start(label, FALSE);
     lbox->pack_start(*label, FALSE);
     contents->pack_start(*lbox, FALSE);
   }
@@ -99,10 +102,9 @@ void MessageBoxBase::init(const char *title, int askDontShow,
     dontShowAgain_ = new Gtk::CheckButton(string("Don't show this message again"));
     dontShowAgain_->set_active(FALSE);
     dontShowAgain_->show();
-#warning "handle to pointer conversion (Gtk_HBox)"
-    Gtk::HBox* box(new Gtk::HBox);
-#warning "handle to pointer conversion (Gtk_Label)"
-    Gtk::Label* label(new Gtk::Label(string("")));
+
+    Gtk::HBox* box = manage(new Gtk::HBox);
+    Gtk::Label* label = manage(new Gtk::Label(string("")));
 
     label->show();
     box->show();
@@ -111,8 +113,7 @@ void MessageBoxBase::init(const char *title, int askDontShow,
     contents->pack_start(*box, FALSE);
   }
 
-#warning "handle to pointer conversion (Gtk_HBox)"
-  Gtk::HBox* hcontens(new Gtk::HBox);
+  Gtk::HBox* hcontens = manage(new Gtk::HBox);
   hcontens->show();
 
   hcontens->pack_start(*contents, TRUE, TRUE, 10);

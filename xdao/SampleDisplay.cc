@@ -18,6 +18,15 @@
  */
 /*
  * $Log: SampleDisplay.cc,v $
+ * Revision 1.7  2000/04/23 09:07:08  andreasm
+ * * Fixed most problems marked with '//llanero'.
+ * * Added audio CD edit menus to MDIWindow.
+ * * Moved central storage of TocEdit object to MDIWindow.
+ * * AudioCdChild is now handled like an ordinary non modal dialog, i.e.
+ *   it has a normal 'update' member function now.
+ * * Added CdTextTable modal dialog.
+ * * Old functionality of xcdrdao is now available again.
+ *
  * Revision 1.6  2000/04/17 21:30:49  andreasm
  * Fixed sample display.
  * AudioCDChild displays animated cursor again when playing.
@@ -55,7 +64,7 @@
  *
  */
 
-static char rcsid[] = "$Id: SampleDisplay.cc,v 1.6 2000/04/17 21:30:49 andreasm Exp $";
+static char rcsid[] = "$Id: SampleDisplay.cc,v 1.7 2000/04/23 09:07:08 andreasm Exp $";
 
 #include <stdio.h>
 #include <limits.h>
@@ -227,9 +236,17 @@ void SampleDisplay::setTocEdit(TocEdit *t)
   }
 }
 
-void SampleDisplay::updateToc()
+void SampleDisplay::updateToc(unsigned long smin, unsigned long smax)
 {
+  if (tocEdit_ == NULL)
+    return;
+
   Toc *toc = tocEdit_->toc();
+
+  if (smin <= smax) {
+    minSample_ = smin;
+    maxSample_ = smax;
+  }
 
   if (toc->length().samples() == 0) {
     minSample_ = maxSample_ = 0;
@@ -254,6 +271,9 @@ void SampleDisplay::updateToc()
 
 void SampleDisplay::setView(unsigned long start, unsigned long end)
 {
+  if (tocEdit_ == NULL)
+    return;
+
   Toc *toc = tocEdit_->toc();
 
   if (end < start)
@@ -343,6 +363,9 @@ void SampleDisplay::setSelectedTrackMarker(int trackNr, int indexNr)
 
 void SampleDisplay::setRegion(unsigned long start, unsigned long end)
 {
+  if (tocEdit_ == NULL)
+    return;
+
   Toc *toc = tocEdit_->toc();
 
   if (end <= start || end >= toc->length().samples()) {
@@ -395,6 +418,9 @@ void SampleDisplay::getColor(const char *colorName, Gdk_Color *color)
 
 void SampleDisplay::scrollTo()
 {
+  if (tocEdit_ == NULL)
+    return;
+
   Toc *toc = tocEdit_->toc();
   GtkAdjustment *adjust = adjustment_->gtkobj();
 
@@ -418,6 +444,9 @@ void SampleDisplay::scrollTo()
 
 unsigned long SampleDisplay::pixel2sample(gint x)
 {
+  if (tocEdit_ == NULL)
+    return 0;
+
   Toc *toc = tocEdit_->toc();
   unsigned long sample;
 
@@ -473,8 +502,6 @@ int SampleDisplay::handle_configure_event (GdkEventConfigure *event)
   if (!drawGc_) {
     Gdk_Bitmap mask;
     Gdk_Window window(get_window());
-
-    printf("Allocating GC\n");
 
     drawGc_ = Gdk_GC(window);
         
@@ -542,14 +569,12 @@ int SampleDisplay::handle_configure_event (GdkEventConfigure *event)
   sampleEndX_ = width_ - 10;
   sampleWidthX_ = sampleEndX_ - sampleStartX_ + 1;
   
-  printf("Sample w %d\n", sampleWidthX_);
-  
   if (pixmap_)
     pixmap_.release();
       
   pixmap_ = Gdk_Pixmap(get_window(), width(), height(), -1);
 
-  message(0, "handle_configure_event: %d\n", width_);
+  //message(0, "handle_configure_event: %d\n", width_);
 
   if (width_ > 100 && height_ > 100)
     updateSamples();
@@ -811,6 +836,9 @@ void SampleDisplay::clearMarker()
 
 void SampleDisplay::updateSamples()
 {
+  if (tocEdit_ == NULL)
+    return;
+
   Toc *toc = tocEdit_->toc();
 
   if (!pixmap_)
@@ -1152,6 +1180,9 @@ gint SampleDisplay::timeTickWidth()
 
 void SampleDisplay::drawTimeLine()
 {
+  if (tocEdit_ == NULL)
+    return;
+
   Toc *toc = tocEdit_->toc();
 
   if (toc->length().lba() == 0)
@@ -1305,6 +1336,9 @@ void SampleDisplay::drawTrackLine()
 
 void SampleDisplay::updateTrackMarks()
 {
+  if (tocEdit_ == NULL)
+    return;
+
   Toc *toc = tocEdit_->toc();
 
   drawGc_.set_foreground(get_colormap().white());

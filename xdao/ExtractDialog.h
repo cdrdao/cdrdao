@@ -56,7 +56,6 @@ private:
   Gtk::CList *list_;
   Gtk::Button *startButton_;
 
-//llanero  Gtk::ItemFactory::Menu *speedMenuFactory_;
   Gtk::OptionMenu *speedMenu_;
 
   Gtk::Entry *fileNameEntry_;

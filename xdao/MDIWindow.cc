@@ -26,8 +26,18 @@
 
 #include <glade/glade.h>
 
+#include "util.h"
 #include "xcdrdao.h"
+#include "guiUpdate.h"
+#include "TocEdit.h"
 #include "MDIWindow.h"
+#include "MessageBox.h"
+#include "AudioCDChild.h"
+#include "DeviceConfDialog.h"
+#include "RecordDialog.h"
+#include "ExtractDialog.h"
+#include "TocInfoDialog.h"
+#include "TrackInfoDialog.h"
 
 void
 MDIWindow::nothing_cb()
@@ -46,13 +56,13 @@ MDIWindow::install_menus_and_toolbar()
   Gnome::UIInfoTree *newMenuTree = new Gnome::UIInfoTree();
   newMenuTree->push_item(Gnome::UIItem(N_("Audio CD"), N_("New Audio CD"),
   				GNOME_STOCK_MENU_NEW,
-  				slot(this, &MDIWindow::nothing_cb)));
+  				slot(this, &MDIWindow::newProject)));
   newMenuTree->push_item(Gnome::UIItem(N_("Data CD"), N_("New Data CD"),
   				GNOME_STOCK_MENU_NEW,
-  				slot(this, &MDIWindow::nothing_cb)));
+  				slot(this, &MDIWindow::newProject)));
   newMenuTree->push_item(Gnome::UIItem(N_("Mixed CD"), N_("New Mixed CD"),
   				GNOME_STOCK_MENU_NEW,
-  				slot(this, &MDIWindow::nothing_cb)));
+  				slot(this, &MDIWindow::newProject)));
 
   StockMenuItems::NewSubtree *newMenu = new 
   				StockMenuItems::NewSubtree(*newMenuTree);
@@ -70,13 +80,13 @@ MDIWindow::install_menus_and_toolbar()
   fileMenuTree->push_item(*newMenu);
 
   fileMenuTree->push_item(StockMenuItems::Open
-  				(slot(this, &MDIWindow::nothing_cb)));
+  				(slot(this, &MDIWindow::readProject)));
 
   fileMenuTree->push_item(StockMenuItems::Save
-  				(slot(this, &MDIWindow::nothing_cb)));
+  				(slot(this, &MDIWindow::saveProject)));
 
   fileMenuTree->push_item(StockMenuItems::SaveAs
-  				(slot(this, &MDIWindow::nothing_cb)));
+  				(slot(this, &MDIWindow::saveAsProject)));
 
   fileMenuTree->push_item(Gnome::UISeparator());
 
@@ -104,18 +114,102 @@ MDIWindow::install_menus_and_toolbar()
 // It is here for fast copy and paste ;)
   // Edit menu
   //
-  Gnome::UIInfoTree *editMenuTree = new Gnome::UIInfoTree();
-  StockMenus::Edit *editMenu = new StockMenus::Edit(*editMenuTree);
+  Gnome::UIInfoTree *audioEditMenuTree = new Gnome::UIInfoTree();
+  audioEditMenuTree->
+    push_item(Gnome::UIItem(N_("Project Info..."),
+			    N_("Edit global project data"),
+			    GNOME_STOCK_MENU_BLANK,
+			    slot(this, &MDIWindow::projectInfo)));
+
+  audioEditMenuTree->
+    push_item(Gnome::UIItem(N_("Track Info..."),
+			    N_("Edit track data"),
+			    GNOME_STOCK_MENU_BLANK,
+			    slot(this, &MDIWindow::trackInfo)));
+
+  audioEditMenuTree->push_item(Gnome::UISeparator());
+
+  audioEditMenuTree->
+    push_item(Gnome::UIItem(N_("Cut"), N_("Cut out selected samples"),
+			    GNOME_STOCK_MENU_CUT,
+			    slot(audioCdChild_, &AudioCDChild::cutTrackData)));
+
+  audioEditMenuTree->
+    push_item(Gnome::UIItem(N_("Paste"), N_("Paste previously cut samples"),
+			    GNOME_STOCK_MENU_PASTE,
+			    slot(audioCdChild_, &AudioCDChild::pasteTrackData)));
+
+  audioEditMenuTree->push_item(Gnome::UISeparator());
+
+  audioEditMenuTree->
+    push_item(Gnome::UIItem(N_("Add Track Mark"),
+			    N_("Add track marker at current marker position"),
+			    GNOME_STOCK_MENU_BLANK,
+			    slot(audioCdChild_, &AudioCDChild::addTrackMark)));
+
+  audioEditMenuTree->
+    push_item(Gnome::UIItem(N_("Add Index Mark"),
+			    N_("Add index marker at current marker position"),
+			    GNOME_STOCK_MENU_BLANK,
+			    slot(audioCdChild_, &AudioCDChild::addIndexMark)));
+
+  audioEditMenuTree->
+    push_item(Gnome::UIItem(N_("Add Pre-Gap"),
+			    N_("Add pre-gap at current marker position"),
+			    GNOME_STOCK_MENU_BLANK,
+			    slot(audioCdChild_, &AudioCDChild::addPregap)));
+
+  audioEditMenuTree->
+    push_item(Gnome::UIItem(N_("Remove Track Mark"),
+			    N_("Remove selected track/index marker or pre-gap"),
+			    GNOME_STOCK_MENU_BLANK,
+			    slot(audioCdChild_, &AudioCDChild::removeTrackMark)));
+
+  audioEditMenuTree->push_item(Gnome::UISeparator());
+
+  audioEditMenuTree->
+    push_item(Gnome::UIItem(N_("Append Track"),
+			    N_("Append track with data from audio file"),
+			    GNOME_STOCK_MENU_BLANK,
+			    slot(audioCdChild_, &AudioCDChild::appendTrack)));
+
+  audioEditMenuTree->
+    push_item(Gnome::UIItem(N_("Append File"),
+			    N_("Append data from audio file to last track"),
+			    GNOME_STOCK_MENU_BLANK,
+			    slot(audioCdChild_, &AudioCDChild::appendFile)));
+  
+  audioEditMenuTree->
+    push_item(Gnome::UIItem(N_("Insert File"),
+			    N_("Insert data from audio file at current marker position"),
+			    GNOME_STOCK_MENU_BLANK,
+			    slot(audioCdChild_, &AudioCDChild::insertFile)));
+
+  audioEditMenuTree->push_item(Gnome::UISeparator());
+
+  audioEditMenuTree->
+    push_item(Gnome::UIItem(N_("Append Silence"),
+			    N_("Append silence to last track"),
+			    GNOME_STOCK_MENU_BLANK,
+			    slot(audioCdChild_, &AudioCDChild::appendSilence)));
+
+  audioEditMenuTree->
+    push_item(Gnome::UIItem(N_("Insert Silence"),
+			    N_("Insert silence at current marker position"),
+			    GNOME_STOCK_MENU_BLANK,
+			    slot(audioCdChild_, &AudioCDChild::insertSilence)));
+
+  StockMenus::Edit *audioEditMenu = new StockMenus::Edit(*audioEditMenuTree);
 
   // Actions menu
   //
   Gnome::UIInfoTree *actionsMenuTree = new Gnome::UIInfoTree();
   actionsMenuTree->push_item(Gnome::UIItem(N_("Duplicate CD"), N_(""),
   				GNOME_STOCK_MENU_BLANK,
-  				slot(this, &MDIWindow::nothing_cb)));
+  				slot(this, &MDIWindow::extract)));
   actionsMenuTree->push_item(Gnome::UIItem(N_("Record"), N_(""),
   				GNOME_STOCK_MENU_BLANK,
-  				slot(this, &MDIWindow::nothing_cb)));
+  				slot(this, &MDIWindow::record)));
   actionsMenuTree->push_item(Gnome::UIItem(N_("Fixate CD"), N_(""),
   				GNOME_STOCK_MENU_BLANK,
   				slot(this, &MDIWindow::nothing_cb)));
@@ -134,7 +228,7 @@ MDIWindow::install_menus_and_toolbar()
   Gnome::UIInfoTree *settingsMenuTree = new Gnome::UIInfoTree();
   settingsMenuTree->push_item(Gnome::UIItem(N_("Configure Devices..."), N_(""),
   				GNOME_STOCK_MENU_PROP,
-  				slot(this, &MDIWindow::nothing_cb)));
+  				slot(this, &MDIWindow::configureDevices)));
   settingsMenuTree->push_item(StockMenuItems::Preferences
   				(slot(this, &MDIWindow::nothing_cb)));
 
@@ -155,7 +249,7 @@ MDIWindow::install_menus_and_toolbar()
   Gnome::UIInfoTree *menus = new Gnome::UIInfoTree();
 
   menus->push_item(*fileMenu);
-  menus->push_item(*editMenu);
+  menus->push_item(*audioEditMenu);
   menus->push_item(*actionsMenu);
   menus->push_item(*settingsMenu);
   menus->push_item(*helpMenu);
@@ -182,32 +276,50 @@ MDIWindow::install_menus_and_toolbar()
 //FIXME: MDI STUFF  set_toolbar_template(*toolbarTree);
   create_toolbar(*toolbarTree);
 
-//  install_menu_hints(*menus);
+  install_menu_hints(*menus);
 }
 
-MDIWindow::MDIWindow()
+MDIWindow::MDIWindow(TocEdit *tedit)
 //FIXME: MDI STUFF  : Gnome::MDI("StillNoName", "StillNoTitle")
-  : Gnome::App("StillNoName", "StillNoTitle")
+  : Gnome::App("StillNoName", "StillNoTitle"),
+    readSaveFileSelector_("")
 {
+  tocEdit_ = tedit;
+
+  readSaveOperation_ = 0;
+
 //  set_policy(false, true, false);
-//  set_default_size(600, 400);
+  set_default_size(600, 400);
+  set_usize(600, 400);
+
 //  set_wmclass("StillNoClass", "StillNoClass");
+
+  readSaveFileSelector_.get_ok_button()->clicked.connect(slot(this, &MDIWindow::readWriteFileSelectorOKCB));
+  readSaveFileSelector_.get_cancel_button()->clicked.connect(slot(this, &MDIWindow::readWriteFileSelectorCancelCB));
+
+  audioCdChild_ = new AudioCDChild();
+
+  statusBar_ = new Gtk::Statusbar;
+  set_statusbar(*statusBar_);
   
   install_menus_and_toolbar();
 
-//   delete_event.connect(slot(this, &MDIWindow::delete_event_cb));
+  //FIXME: MDI STUFF  MDI_WINDOW->add_child(*AUDIOCD_CHILD);
+  //FIXME: MDI STUFF  MDI_WINDOW->add_view(*AUDIOCD_CHILD);
+  set_contents(*audioCdChild_->vbox_);
+
+  //delete_event.connect(slot(this, &MDIWindow::delete_event_cb));
 
 }
 
 void MDIWindow::app_close()
 {
-/*  if (tocEdit_->tocDirty()) {
+  if (tocEdit_->tocDirty()) {
     Ask2Box msg(this, "Quit", 0, 2, "Current work not saved.", "",
 		"Really Quit?", NULL);
     if (msg.run() != 1)
       return;
   }
-*/
 
 //  destroy();
   
@@ -229,7 +341,7 @@ MDIWindow::delete_event_impl(GdkEventAny* e)
   return true;
 }
 
-/*
+
 void MDIWindow::update(unsigned long level)
 {
   if (level & (UPD_TOC_DIRTY | UPD_TOC_DATA)) {
@@ -239,58 +351,41 @@ void MDIWindow::update(unsigned long level)
       s += "(*)";
     
     set_title(s);
-
-    cursorPos_->set_text("");
   }
 
-  if (level & UPD_TRACK_MARK_SEL) {
-    int trackNr, indexNr;
-
-    if (tocEdit_->trackSelection(&trackNr) && 
-	tocEdit_->indexSelection(&indexNr)) {
-      sampleDisplay_->setSelectedTrackMarker(trackNr, indexNr);
-    }
-    else {
-      sampleDisplay_->setSelectedTrackMarker(0, 0);
-    }
-  }
-
-  if (level & UPD_SAMPLES) {
-    sampleDisplay_->updateToc();
-  }
-  else if (level & (UPD_TRACK_DATA | UPD_TRACK_MARK_SEL)) {
-    sampleDisplay_->updateTrackMarks();
-  }
-
-  if (level & UPD_SAMPLE_MARKER) {
-    unsigned long marker;
-
-    if (tocEdit_->sampleMarker(&marker)) {
-      markerPos_->set_text(string(sample2string(marker)));
-      sampleDisplay_->setMarker(marker);
-    }
-    else {
-      markerPos_->set_text(string(""));
-      sampleDisplay_->clearMarker();
-    }
-  }
-
-  if (level & UPD_SAMPLE_SEL) {
-    unsigned long start, end;
-
-    if (tocEdit_->sampleSelection(&start, &end)) {
-      selectionStartPos_->set_text(string(sample2string(start)));
-      selectionEndPos_->set_text(string(sample2string(end)));
-      sampleDisplay_->setRegion(start, end);
-    }
-    else {
-      selectionStartPos_->set_text(string(""));
-      selectionEndPos_->set_text(string(""));
-      sampleDisplay_->setRegion(1, 0);
-    }
-  }
+  // send update to active child only
+  audioCdChild_->update(level, tocEdit_);
 }
-*/
+
+void MDIWindow::statusMessage(const char *fmt, ...)
+{
+  va_list args;
+  va_start(args, fmt);
+
+  strstream str;
+
+  str.vform(fmt, args);
+  str << ends;
+
+  statusBar_->messages().clear();
+
+  statusBar_->push(1, string(str.str()));
+
+  str.freeze(0);
+
+  va_end(args);
+}
+
+
+void MDIWindow::tocBlockedMsg(const char *op)
+{
+  MessageBox msg(this, op, 0,
+		 "Cannot perform requested operation because", 
+		 "project is in read-only state.", NULL);
+  msg.run();
+
+}
+
 
 void
 nada_cb(GtkWidget *widget, gpointer data)
@@ -327,3 +422,133 @@ MDIWindow::add_child(*example);
 MDIWindow::add_view(*example);
 }
 */
+
+
+void MDIWindow::configureDevices()
+{
+  DEVICE_CONF_DIALOG->start(tocEdit_);
+}
+
+void MDIWindow::extract()
+{
+  EXTRACT_DIALOG->start(tocEdit_);
+}
+
+void MDIWindow::record()
+{
+  RECORD_DIALOG->start(tocEdit_);
+}
+
+void MDIWindow::trackInfo()
+{
+  TRACK_INFO_DIALOG->start(tocEdit_);
+}
+
+void MDIWindow::projectInfo()
+{
+  TOC_INFO_DIALOG->start(tocEdit_);
+}
+
+void MDIWindow::newProject()
+{
+  if (!tocEdit_->editable()) {
+    tocBlockedMsg("New Project");
+    return;
+  }
+
+  if (tocEdit_->tocDirty()) {
+    Ask2Box msg(this, "New", 0, 2, "Current project not saved.", "",
+		"Continue?", NULL);
+    if (msg.run() != 1)
+      return;
+  }
+
+  Toc *toc = new Toc;
+  
+  tocEdit_->toc(toc, "unnamed.toc");
+
+  guiUpdate();
+}
+
+void MDIWindow::readProject()
+{
+  readSaveFileSelector_.set_title("Read Project");
+  readSaveOperation_ = 1;
+
+  readSaveFileSelector_.show();
+  
+}
+
+void MDIWindow::saveProject()
+{
+  if (tocEdit_->saveToc() == 0) {
+    statusMessage("Project saved to \"%s\".", tocEdit_->filename());
+    guiUpdate();
+  }
+  else {
+    string s("Cannot save toc to \"");
+    s += tocEdit_->filename();
+    s+= "\":";
+    
+    MessageBox msg(this, "Save Project", 0, s.c_str(), strerror(errno), NULL);
+    msg.run();
+  }
+}
+
+void MDIWindow::saveAsProject()
+{
+  readSaveFileSelector_.set_title("Save Project");
+  readSaveOperation_ = 2;
+
+  readSaveFileSelector_.show();
+}
+
+void MDIWindow::readWriteFileSelectorCancelCB()
+{
+  readSaveFileSelector_.hide();
+}
+
+void MDIWindow::readWriteFileSelectorOKCB()
+{
+  if (readSaveOperation_ == 1) {
+    if (!tocEdit_->editable()) {
+      tocBlockedMsg("Read Project");
+      return;
+    }
+
+    if (tocEdit_->tocDirty()) {
+      Ask2Box msg(this, "Read Project", 0, 2, "Current work not saved.", "",
+		  "Continue?", NULL);
+      if (msg.run() != 1)
+	return;
+    }
+
+    const char *s = readSaveFileSelector_.get_filename().c_str();
+
+    if (s != NULL && *s != 0 && s[strlen(s) - 1] != '/') {
+      if (tocEdit_->readToc(stripCwd(s)) == 0) {
+	tocEdit_->sampleViewFull();
+	guiUpdate();
+      }
+    }
+  }
+  else if (readSaveOperation_ == 2) {
+    const char *s = readSaveFileSelector_.get_filename().c_str();
+
+    if (s != NULL && *s != 0 && s[strlen(s) - 1] != '/') {
+      if (tocEdit_->saveAsToc(stripCwd(s)) == 0) {
+	statusMessage("Project saved to \"%s\".", tocEdit_->filename());
+	guiUpdate();
+      }
+      else {
+	string m("Cannot save toc to \"");
+	m += tocEdit_->filename();
+	m += "\":";
+    
+	MessageBox msg(this, "Save Project", 0, m.c_str(), strerror(errno), NULL);
+	msg.run();
+      }
+    }
+  }
+}
+

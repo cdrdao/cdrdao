@@ -18,8 +18,17 @@
  */
 /*
  * $Log: TocEdit.h,v $
- * Revision 1.1  2000/02/05 01:38:52  llanero
- * Initial revision
+ * Revision 1.2  2000/04/23 09:07:08  andreasm
+ * * Fixed most problems marked with '//llanero'.
+ * * Added audio CD edit menus to MDIWindow.
+ * * Moved central storage of TocEdit object to MDIWindow.
+ * * AudioCdChild is now handled like an ordinary non modal dialog, i.e.
+ *   it has a normal 'update' member function now.
+ * * Added CdTextTable modal dialog.
+ * * Old functionality of xcdrdao is now available again.
+ *
+ * Revision 1.1.1.1  2000/02/05 01:38:52  llanero
+ * Uploaded cdrdao 1.1.3 with pre10 patch applied.
  *
  * Revision 1.1  1999/08/19 20:27:39  mueller
  * Initial revision
@@ -67,7 +76,12 @@ public:
 
   void sampleSelection(unsigned long, unsigned long);
   int sampleSelection(unsigned long *, unsigned long *) const;
-  
+
+  void sampleViewFull();
+  void sampleViewInclude(unsigned long, unsigned long);
+  void sampleView(unsigned long *, unsigned long *) const;
+  void sampleView(unsigned long smin, unsigned long smax);
+
   void trackSelection(int);
   int trackSelection(int *) const;
 
@@ -128,6 +142,9 @@ private:
   int sampleSelectionValid_;
   unsigned long sampleSelectionMin_;
   unsigned long sampleSelectionMax_;
+
+  unsigned long sampleViewMin_;
+  unsigned long sampleViewMax_;
   
   int trackSelectionValid_;
   int trackSelection_;

@@ -1,6 +1,6 @@
 /*  cdrdao - write audio CD-Rs in disc-at-once mode
  *
- *  Copyright (C) 1998  Andreas Mueller <mueller@daneb.ping.de>
+ *  Copyright (C) 2000  Andreas Mueller <mueller@daneb.ping.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -90,7 +90,6 @@ private:
   unsigned long string2sample(const char *s);
 
   int snapSampleToBlock(unsigned long sample, long *block);
-  void statusMessage(const char *fmt, ...);
   int getMarker(unsigned long *sample);
   void readTocCallback(int);
   void saveAsTocCallback(int);
@@ -98,42 +97,35 @@ private:
 
   void tocBlockedMsg(const char *);
 
-  void appendTrack();
-  void appendFile();
-  void insertFile();
-
-  void appendSilence();
-  void insertSilence();
-
-  void trackInfo();
-  void tocInfo();
-
-  void cutTrackData();
-  void pasteTrackData();
-
-  void newToc();
-  void readToc();
-  void saveToc();
-  void saveAsToc();
   void zoomIn();
   void zoomOut();
   void fullView();
   void play();
-
-  void addTrackMark();
-  void addIndexMark();
-  void addPregap();
-  void removeTrackMark();
 
   void markerSet();
   void selectionSet();
 
 
 public:
-  AudioCDChild(TocEdit *tedit);
+  AudioCDChild();
   void BuildChild();
 
-//  void update(unsigned long level);
+  void update(unsigned long level, TocEdit *);
+
+  void cutTrackData();
+  void pasteTrackData();
+
+  void addTrackMark();
+  void addIndexMark();
+  void addPregap();
+  void removeTrackMark();
+
+  void appendSilence();
+  void insertSilence();
+
+  void appendTrack();
+  void appendFile();
+  void insertFile();
 
 };
 

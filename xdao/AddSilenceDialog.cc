@@ -18,6 +18,15 @@
  */
 /*
  * $Log: AddSilenceDialog.cc,v $
+ * Revision 1.3  2000/04/23 09:07:08  andreasm
+ * * Fixed most problems marked with '//llanero'.
+ * * Added audio CD edit menus to MDIWindow.
+ * * Moved central storage of TocEdit object to MDIWindow.
+ * * AudioCdChild is now handled like an ordinary non modal dialog, i.e.
+ *   it has a normal 'update' member function now.
+ * * Added CdTextTable modal dialog.
+ * * Old functionality of xcdrdao is now available again.
+ *
  * Revision 1.2  2000/02/20 23:34:53  llanero
  * fixed scsilib directory (files mising ?-()
  * ported xdao to 1.1.8 / gnome (MDI) app
@@ -38,7 +47,7 @@
  *
  */
 
-static char rcsid[] = "$Id: AddSilenceDialog.cc,v 1.2 2000/02/20 23:34:53 llanero Exp $";
+static char rcsid[] = "$Id: AddSilenceDialog.cc,v 1.3 2000/04/23 09:07:08 andreasm Exp $";
 
 #include <stdio.h>
 #include <limits.h>
@@ -121,8 +130,6 @@ AddSilenceDialog::AddSilenceDialog()
   applyButton_ = new Gtk::Button(string(" Apply "));
   bbox->pack_start(*applyButton_);
   applyButton_->show();
-//llanero  connect_to_method(applyButton_->clicked, this,
-//		    &AddSilenceDialog::applyAction);
   applyButton_->clicked.connect(slot(this, &AddSilenceDialog::applyAction));
 
   button = new Gtk::Button(string(" Clear "));

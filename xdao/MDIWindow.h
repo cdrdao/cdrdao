@@ -25,6 +25,7 @@
 
 #include <gnome--.h>
 
+class TocEdit;
 GtkWidget* example_creator(GnomeMDIChild *child, gpointer data);
 
 //FIXME: Until we get gnome-- MDI support!
@@ -32,7 +33,7 @@ GtkWidget* example_creator(GnomeMDIChild *child, gpointer data);
 class MDIWindow : public Gnome::App
 {
 public:
-  MDIWindow();
+  MDIWindow(TocEdit *);
   void example_child();
 //  GtkWidget* example_creator(GnomeMDIChild *child, gpointer data);
 
@@ -43,15 +44,39 @@ protected:
   void nothing_cb();  
 
 private:
-//llanero  void quit();
-//llanero  void configureDevices();
+  TocEdit *tocEdit_; // this should be a list of TocEdit objects
 
-//llanero  void extract();
-//llanero  void record();
+  Gtk::Statusbar *statusBar_;
+  class AudioCDChild *audioCdChild_;
+
+  Gtk::FileSelection readSaveFileSelector_;
+  int readSaveOperation_; // 1 for read, 2 for save
+
+  void tocBlockedMsg(const char *);
+
+  void readWriteFileSelectorOKCB();
+  void readWriteFileSelectorCancelCB();
+  void newProject();
+  void readProject();
+  void saveProject();
+  void saveAsProject();
+
+//llanero  void quit();
+  void configureDevices();
+
+  void extract();
+  void record();
+  void projectInfo();
+  void trackInfo();
+
 //llanero perhaps record must be a per child menu? and extract??
 
 public:
-//  void update(unsigned long level);
+  TocEdit *tocEdit() const { return tocEdit_; }
+
+ void statusMessage(const char *fmt, ...);
+
+  void update(unsigned long level);
 //  gint delete_event_impl(GdkEventAny*);
 
 };

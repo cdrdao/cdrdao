@@ -1,6 +1,6 @@
 /*  cdrdao - write audio CD-Rs in disc-at-once mode
  *
- *  Copyright (C) 1998  Andreas Mueller <mueller@daneb.ping.de>
+ *  Copyright (C) 1998-2000  Andreas Mueller <mueller@daneb.ping.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -18,6 +18,15 @@
  */
 /*
  * $Log: TocInfoDialog.cc,v $
+ * Revision 1.4  2000/04/23 09:07:08  andreasm
+ * * Fixed most problems marked with '//llanero'.
+ * * Added audio CD edit menus to MDIWindow.
+ * * Moved central storage of TocEdit object to MDIWindow.
+ * * AudioCdChild is now handled like an ordinary non modal dialog, i.e.
+ *   it has a normal 'update' member function now.
+ * * Added CdTextTable modal dialog.
+ * * Old functionality of xcdrdao is now available again.
+ *
  * Revision 1.3  2000/04/16 20:31:20  andreasm
  * Added missing stdio.h includes.
  *
@@ -33,7 +42,7 @@
  *
  */
 
-static char rcsid[] = "$Id: TocInfoDialog.cc,v 1.3 2000/04/16 20:31:20 andreasm Exp $";
+static char rcsid[] = "$Id: TocInfoDialog.cc,v 1.4 2000/04/23 09:07:08 andreasm Exp $";
 
 #include "TocInfoDialog.h"
 
@@ -47,6 +56,7 @@ static char rcsid[] = "$Id: TocInfoDialog.cc,v 1.3 2000/04/16 20:31:20 andreasm 
 #include "Toc.h"
 #include "CdTextItem.h"
 #include "TextEdit.h"
+#include "CdTextTable.h"
 
 #define MAX_CD_TEXT_LANGUAGE_CODES 22
 
@@ -129,7 +139,6 @@ TocInfoDialog::TocInfoDialog()
   Gtk::Table *table;
   Gtk::Button *button;
   Gtk::VBox *contents = new Gtk::VBox;
-  Toc::TocType tocType;
 
   tocEdit_ = NULL;
   active_ = 0;
@@ -146,25 +155,36 @@ TocInfoDialog::TocInfoDialog()
   catalog_->space(0);
   catalog_->digits(1);
 
-/* llanero :(
-  tocTypeMenuFactory_ = new Gtk::ItemFactory_Menu("<Main>");
 
-  tocType = Toc::CD_DA;
-  tocTypeMenuFactory_->create_item("/CD-DA", 0, "<Item>", ItemFactoryConnector<TocInfoDialog, Toc::TocType>(this, &TocInfoDialog::setSelectedTocType, tocType));
+  Gtk::Menu *menu = manage(new Gtk::Menu);
+  Gtk::MenuItem *mi;
 
-  tocType = Toc::CD_ROM;
-  tocTypeMenuFactory_->create_item("/CD-ROM", 0, "<Item>", ItemFactoryConnector<TocInfoDialog, Toc::TocType>(this, &TocInfoDialog::setSelectedTocType, tocType));
+  mi = manage(new Gtk::MenuItem("CD-DA"));
+  mi->activate.connect(bind(slot(this, &TocInfoDialog::setSelectedTocType),
+			    Toc::CD_DA));
+  mi->show();
+  menu->append(*mi);
 
-  tocType = Toc::CD_ROM_XA;
-  tocTypeMenuFactory_->create_item("/CD-ROM-XA", 0, "<Item>", ItemFactoryConnector<TocInfoDialog, Toc::TocType>(this, &TocInfoDialog::setSelectedTocType, tocType));
+  mi = manage(new Gtk::MenuItem("CD-ROM"));
+  mi->activate.connect(bind(slot(this, &TocInfoDialog::setSelectedTocType),
+			    Toc::CD_ROM));
+  mi->show();
+  menu->append(*mi);
 
-  tocType = Toc::CD_I;
-  tocTypeMenuFactory_->create_item("/CD-I", 0, "<Item>", ItemFactoryConnector<TocInfoDialog, Toc::TocType>(this, &TocInfoDialog::setSelectedTocType, tocType));
+  mi = manage(new Gtk::MenuItem("CD-ROM-XA"));
+  mi->activate.connect(bind(slot(this, &TocInfoDialog::setSelectedTocType),
+			    Toc::CD_ROM_XA));
+  mi->show();
+  menu->append(*mi);
+
+  mi = manage(new Gtk::MenuItem("CD-I"));
+  mi->activate.connect(bind(slot(this, &TocInfoDialog::setSelectedTocType),
+			    Toc::CD_I));
+  mi->show();
+  menu->append(*mi);
 
   tocType_ = new Gtk::OptionMenu;
-  tocType_->set_menu(tocTypeMenuFactory_->get_menu_widget(string("")));
-
-*/
+  tocType_->set_menu(menu);
 
   contents->set_spacing(10);
 
@@ -221,8 +241,8 @@ TocInfoDialog::TocInfoDialog()
   label = new Gtk::Label(string("Toc Type: "));
   hbox->pack_start(*label, FALSE);
   label->show();
-//llanero  hbox->pack_start(tocType_, FALSE);
-//llanero  tocType_->show();
+  hbox->pack_start(*tocType_, FALSE);
+  tocType_->show();
   vbox->pack_start(*hbox);
   hbox->show();
 
@@ -390,19 +410,21 @@ void TocInfoDialog::createCdTextLanguageMenu(int n)
   int i;
 
   bval.block = n;
-/*llanero
-  cdTextPages_[n].languageMenuFactory = new Gtk::ItemFactory_Menu("<Main>");
+
+  Gtk::Menu *menu = manage(new Gtk::Menu);
+  Gtk::MenuItem *mi;
 
   for (i = 0; i < MAX_CD_TEXT_LANGUAGE_CODES; i++) {
-    string s("/");
-    s += CD_TEXT_LANGUAGE_CODES[i].name;
     bval.value = i;
-    cdTextPages_[n].languageMenuFactory->create_item(s, 0, "<Item>", ItemFactoryConnector<TocInfoDialog, TocInfoDialog::BlockValue>(this, &TocInfoDialog::setSelectedCDTextLanguage, bval));
+
+    mi = manage(new Gtk::MenuItem(CD_TEXT_LANGUAGE_CODES[i].name));
+    mi->activate.connect(bind(slot(this, &TocInfoDialog::setSelectedCDTextLanguage), bval));
+    mi->show();
+    menu->append(*mi);
   }
 
   cdTextPages_[n].language = new Gtk::OptionMenu;
-  cdTextPages_[n].language->set_menu(cdTextPages_[n].languageMenuFactory->get_menu_widget(string("")));
-*/
+  cdTextPages_[n].language->set_menu(menu);
 }
 
 void TocInfoDialog::createCdTextGenreMenu(int n)
@@ -411,19 +433,21 @@ void TocInfoDialog::createCdTextGenreMenu(int n)
   int i;
 
   bval.block = n;
-/*llanero
-  cdTextPages_[n].genreMenuFactory = new Gtk::ItemFactory_Menu("<Main>");
+
+  Gtk::Menu *menu = manage(new Gtk::Menu);
+  Gtk::MenuItem *mi;
 
   for (i = 0; i < MAX_CD_TEXT_GENRE_CODES; i++) {
-    string s("/");
-    s += CD_TEXT_GENRE_CODES[i].name;
     bval.value = i;
-    cdTextPages_[n].genreMenuFactory->create_item(s, 0, "<Item>", ItemFactoryConnector<TocInfoDialog, TocInfoDialog::BlockValue>(this, &TocInfoDialog::setSelectedCDTextGenre, bval));
+
+    mi = manage(new Gtk::MenuItem(CD_TEXT_GENRE_CODES[i].name));
+    mi->activate.connect(bind(slot(this, &TocInfoDialog::setSelectedCDTextGenre), bval));
+    mi->show();
+    menu->append(*mi);
   }
 
   cdTextPages_[n].genre = new Gtk::OptionMenu;
-  cdTextPages_[n].genre->set_menu(cdTextPages_[n].genreMenuFactory->get_menu_widget(string("")));
-*/
+  cdTextPages_[n].genre->set_menu(menu);
 }
 
 
@@ -432,8 +456,10 @@ Gtk::VBox *TocInfoDialog::createCdTextPage(int n)
   char buf[20];
   Gtk::Table *table = new Gtk::Table(11, 2, FALSE);
   Gtk::VBox *vbox = new Gtk::VBox;
+  Gtk::VBox *vbox1;
   Gtk::HBox *hbox;
   Gtk::Label *label;
+  Gtk::Button *button;
 
   sprintf(buf, "%d", n);
   cdTextPages_[n].label = new Gtk::Label(string(buf));
@@ -556,9 +582,39 @@ Gtk::VBox *TocInfoDialog::createCdTextPage(int n)
   cdTextPages_[n].genreInfo->show();
 
   vbox->pack_start(*table, FALSE);
+
+  button = new Gtk::Button(" Entry by Table ");
+  Gtk::HButtonBox *bbox = new Gtk::HButtonBox(GTK_BUTTONBOX_SPREAD);
+  bbox->pack_start(*button);
+  button->show();
+  button->clicked.connect(bind(slot(this, &TocInfoDialog::cdTextTableAction),
+			       n));
+  vbox->pack_start(*bbox, TRUE);
+  bbox->show();
+
+
+  hbox = new Gtk::HBox;
+  hbox->pack_start(*vbox, TRUE, TRUE, 3);
   vbox->show();
 
-  return vbox;
+  vbox1 = new Gtk::VBox;
+  vbox1->pack_start(*hbox, TRUE, TRUE, 3);
+  hbox->show();
+
+  vbox1->show();
+  
+  return vbox1;
+}
+
+void TocInfoDialog::cdTextTableAction(int language)
+{
+  if (tocEdit_ != NULL && tocEdit_->editable()) {
+    CdTextTable table(tocEdit_, language);
+
+    if (table.run()) {
+      guiUpdate();
+    }
+  }
 }
 
 gint TocInfoDialog::delete_event_impl(GdkEventAny*)
@@ -578,7 +634,7 @@ void TocInfoDialog::clear()
   nofTracks_->set_text(string(""));
   tocLength_->set_text(string(""));
 
-//llanero  tocType_->set_history(0);
+  tocType_->set_history(0);
   selectedTocType_ = Toc::CD_DA;
 
   catalog_->set_text(string(""));
@@ -849,16 +905,16 @@ void TocInfoDialog::importData(const Toc *toc)
 
   switch (toc->tocType()) {
   case Toc::CD_DA:
-//llanero    tocType_->set_history(0);
+    tocType_->set_history(0);
     break;
   case Toc::CD_ROM:
-//llanero    tocType_->set_history(1);
+    tocType_->set_history(1);
     break;
   case Toc::CD_ROM_XA:
-//llanero    tocType_->set_history(2);
+    tocType_->set_history(2);
     break;
   case Toc::CD_I:
-//llanero    tocType_->set_history(3);
+    tocType_->set_history(3);
     break;
   }
   selectedTocType_ = toc->tocType();

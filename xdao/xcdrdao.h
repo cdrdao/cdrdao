@@ -18,8 +18,17 @@
  */
 /*
  * $Log: xcdrdao.h,v $
- * Revision 1.1  2000/02/05 01:38:57  llanero
- * Initial revision
+ * Revision 1.2  2000/04/23 09:07:08  andreasm
+ * * Fixed most problems marked with '//llanero'.
+ * * Added audio CD edit menus to MDIWindow.
+ * * Moved central storage of TocEdit object to MDIWindow.
+ * * AudioCdChild is now handled like an ordinary non modal dialog, i.e.
+ *   it has a normal 'update' member function now.
+ * * Added CdTextTable modal dialog.
+ * * Old functionality of xcdrdao is now available again.
+ *
+ * Revision 1.1.1.1  2000/02/05 01:38:57  llanero
+ * Uploaded cdrdao 1.1.3 with pre10 patch applied.
  *
  * Revision 1.1  1998/11/20 18:58:41  mueller
  * Initial revision
@@ -29,7 +38,7 @@
 #ifndef __XCDRDAO_H__
 #define __XCDRDAO_H__
 
-extern class MainWindow *MAIN_WINDOW;
+extern class MDIWindow *MDI_WINDOW;
 extern class TrackInfoDialog *TRACK_INFO_DIALOG;
 extern class TocInfoDialog *TOC_INFO_DIALOG;
 extern class AddSilenceDialog *ADD_SILENCE_DIALOG;

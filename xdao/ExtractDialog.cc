@@ -60,22 +60,23 @@ ExtractDialog::ExtractDialog()
   set_title(string("Extract"));
   set_usize(0, 300);
 
-/*llanero
-  speedMenuFactory_ = new Gtk::ItemFactory_Menu("<Main>");
+  Gtk::Menu *menu = manage(new Gtk::Menu);
+  Gtk::MenuItem *mi;
 
   for (i = 0; i <= MAX_SPEED_ID; i++) {
-    string s("/");
-    s += SPEED_TABLE[i].name;
-
-    speedMenuFactory_->create_item(s, 0, "<Item>", ItemFactoryConnector<ExtractDialog, int>(this, &ExtractDialog::setSpeed, i));
+    mi = manage(new Gtk::MenuItem(SPEED_TABLE[i].name));
+    mi->activate.connect(bind(slot(this, &ExtractDialog::setSpeed), i));
+    mi->show();
+    menu->append(*mi);
   }
 
   speedMenu_ = new Gtk::OptionMenu;
-  speedMenu_->set_menu(speedMenuFactory_->get_menu_widget(string("")));
+  speedMenu_->set_menu(menu);
 
   speed_ = 0;
   speedMenu_->set_history(speed_);
-*/
+
+
   fileNameEntry_ = new Gtk::Entry;
 
   startButton_ = new Gtk::Button(string(" Start "));
@@ -156,9 +157,9 @@ ExtractDialog::ExtractDialog()
   hbox = new Gtk::HBox;
   label = new Gtk::Label(string("Reading Speed: "));
   hbox->pack_start(*label, FALSE);
-//  label->show();
-//llanero  hbox->pack_start(*speedMenu_, FALSE);
-//  speedMenu_->show();
+  label->show();
+  hbox->pack_start(*speedMenu_, FALSE);
+  speedMenu_->show();
   table->attach(*hbox, 2, 3, 0, 1);
   hbox->show();
 
@@ -413,7 +414,8 @@ void ExtractDialog::import()
 
   for (drun = CdDevice::first(); drun != NULL; drun = CdDevice::next(drun)) {
     if (drun->driverId() > 0 &&
-	(drun->deviceType() == CdDevice::CD_R ||
+	(drun->deviceType() == CdDevice::CD_ROM ||
+	 drun->deviceType() == CdDevice::CD_R ||
 	 drun->deviceType() == CdDevice::CD_RW)) {
       appendTableEntry(drun);
     }

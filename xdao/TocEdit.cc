@@ -1,6 +1,6 @@
 /*  cdrdao - write audio CD-Rs in disc-at-once mode
  *
- *  Copyright (C) 1998, 1999 Andreas Mueller <mueller@daneb.ping.de>
+ *  Copyright (C) 1998-2000 Andreas Mueller <mueller@daneb.ping.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -18,15 +18,24 @@
  */
 /*
  * $Log: TocEdit.cc,v $
- * Revision 1.1  2000/02/05 01:40:06  llanero
- * Initial revision
+ * Revision 1.2  2000/04/23 09:07:08  andreasm
+ * * Fixed most problems marked with '//llanero'.
+ * * Added audio CD edit menus to MDIWindow.
+ * * Moved central storage of TocEdit object to MDIWindow.
+ * * AudioCdChild is now handled like an ordinary non modal dialog, i.e.
+ *   it has a normal 'update' member function now.
+ * * Added CdTextTable modal dialog.
+ * * Old functionality of xcdrdao is now available again.
+ *
+ * Revision 1.1.1.1  2000/02/05 01:40:06  llanero
+ * Uploaded cdrdao 1.1.3 with pre10 patch applied.
  *
  * Revision 1.1  1999/08/19 20:27:39  mueller
  * Initial revision
  *
  */
 
-static char rcsid[] = "$Id: TocEdit.cc,v 1.1 2000/02/05 01:40:06 llanero Exp $";
+static char rcsid[] = "$Id: TocEdit.cc,v 1.2 2000/04/23 09:07:08 andreasm Exp $";
 
 #include "TocEdit.h"
 
@@ -104,6 +113,8 @@ void TocEdit::toc(Toc *t, const char *filename)
   sampleSelectionValid_ = 0;
   trackSelectionValid_ = 0;
   indexSelectionValid_ = 0;
+
+  sampleViewFull();
 
   updateLevel_ = UPD_ALL;
 }
@@ -243,6 +254,44 @@ int TocEdit::sampleSelection(unsigned long *smin, unsigned long *smax) const
   }
 
   return sampleSelectionValid_;
+}
+
+void TocEdit::sampleView(unsigned long smin, unsigned long smax)
+{
+  if (smin <= smax && smax < lengthSample()) {
+    sampleViewMin_ = smin;
+    sampleViewMax_ = smax;
+    updateLevel_ |= UPD_SAMPLES;
+  }
+}
+
+void TocEdit::sampleView(unsigned long *smin, unsigned long *smax) const
+{
+  *smin = sampleViewMin_;
+  *smax = sampleViewMax_;
+}
+
+void TocEdit::sampleViewFull()
+{
+  sampleViewMin_ = 0;
+
+  if ((sampleViewMax_ = lengthSample()) > 0)
+    sampleViewMax_ -= 1;
+
+  updateLevel_ |= UPD_SAMPLES;
+}
+
+void TocEdit::sampleViewInclude(unsigned long smin, unsigned long smax)
+{
+  if (smin < sampleViewMin_) {
+    sampleViewMin_ = smin;
+    updateLevel_ |= UPD_SAMPLES;
+  }
+
+  if (smax < lengthSample() && smax > sampleViewMax_) {
+    sampleViewMax_ = smax;
+    updateLevel_ |= UPD_SAMPLES;
+  }
 }
   
 void TocEdit::trackSelection(int tnum)
