@@ -1,6 +1,6 @@
 /*  cdrdao - write audio CD-Rs in disc-at-once mode
  *
- *  Copyright (C) 1998  Andreas Mueller <mueller@daneb.ping.de>
+ *  Copyright (C) 1998-2002  Andreas Mueller <andreas@daneb.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -15,34 +15,6 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- */
-/*
- * $Log: SubChannel.h,v $
- * Revision 1.2  2000/12/17 10:51:23  andreasm
- * Default verbose level is now 2. Adaopted message levels to have finer
- * grained control about the amount of messages printed by cdrdao.
- * Added CD-TEXT writing support to the GenericMMCraw driver.
- * Fixed CD-TEXT cue sheet creating for the GenericMMC driver.
- *
- * Revision 1.1.1.1  2000/02/05 01:35:13  llanero
- * Uploaded cdrdao 1.1.3 with pre10 patch applied.
- *
- * Revision 1.5  1999/04/05 11:04:48  mueller
- * Added decoding of media catalog number and ISRC code.
- *
- * Revision 1.4  1999/03/27 20:58:55  mueller
- * Added various access functions.
- *
- * Revision 1.3  1998/09/07 15:20:20  mueller
- * Reorganized read-toc related code.
- *
- * Revision 1.2  1998/08/30 19:10:32  mueller
- * Added handling of Catalog Number and ISRC codes.
- *
- * Revision 1.1  1998/08/29 21:31:00  mueller
- * Initial revision
- *
- *
  */
 
 #ifndef __SUB_CHANNEL_H__
