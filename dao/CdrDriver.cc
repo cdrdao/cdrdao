@@ -178,6 +178,7 @@ static DriverSelectTable BUILTIN_WRITE_DRIVER_TABLE[] = {
 { "generic-mmc", "PLEXTOR", "CD-R   PX-R820", 0, NULL },
 { "generic-mmc", "PLEXTOR", "CD-R   PX-W1210", OPT_MMC_CD_TEXT, NULL },
 { "generic-mmc", "PLEXTOR", "CD-R   PX-W124", 0, NULL },
+{ "generic-mmc", "PLEXTOR", "CD-R   PX-W1610", OPT_MMC_CD_TEXT, NULL },
 { "generic-mmc", "PLEXTOR", "CD-R   PX-W4220", OPT_MMC_CD_TEXT, NULL },
 { "generic-mmc", "PLEXTOR", "CD-R   PX-W8220", OPT_MMC_CD_TEXT, NULL },
 { "generic-mmc", "PLEXTOR", "CD-R   PX-W8432", OPT_MMC_CD_TEXT, NULL },
