@@ -60,7 +60,7 @@ installdirs:
 	$(srcdir)/../mkinstalldirs $(CDRDAO_DATA_DIR)
 
 clean:
-	rm -f *.o toc2cue
+	rm -f *.o toc2cue toc2mp3
 
 distclean: clean
 	rm -f Makefile
