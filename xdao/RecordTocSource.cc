@@ -37,16 +37,16 @@
 
 #include "util.h"
 
-RecordTocSource::RecordTocSource()
+RecordTocSource::RecordTocSource(TocEdit *tocEdit)
 {
   Gtk::Table *table;
   Gtk::Label *label;  
 
   active_ = 0;
-  tocEdit_ = NULL;
+  tocEdit_ = tocEdit;
 
   // device settings
-  Gtk::Frame *infoFrame = new Gtk::Frame(string("Disk Information"));
+  Gtk::Frame *infoFrame = new Gtk::Frame(string("Project Information"));
   infoFrame->show();
   
   table = new Gtk::Table(5, 2, FALSE);
@@ -90,15 +90,11 @@ RecordTocSource::RecordTocSource()
 //  show();
 }
 
-RecordTocSource::~RecordTocSource()
-{
-}
-
-void RecordTocSource::start(TocEdit *tedit)
+void RecordTocSource::start()
 {
   active_ = 1;
 
-  update(UPD_ALL, tedit);
+  update(UPD_ALL);
 
   show();
 }
@@ -108,7 +104,6 @@ void RecordTocSource::stop()
   if (active_) {
     hide();
     active_ = 0;
-    tocEdit_ = NULL;
   }
 }
 

@@ -27,12 +27,11 @@ class TocEdit;
 
 class RecordTocSource : public Gtk::VBox {
 public:
-  RecordTocSource();
-  ~RecordTocSource();
+  RecordTocSource(TocEdit *);
 
   Gtk::Window *parent; // the dialog where the vbox is placed
   
-  void start(TocEdit *);
+  void start();
   void stop();
 
   void update(unsigned long level);
