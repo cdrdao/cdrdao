@@ -8,6 +8,6 @@ autoconf
 rm -rf pccts
 tar xvzf pccts.tar.gz
 
-# This deletes the (old) scsi dir and unpacks the latest version
+# This deletes the (old) scsilib dir and unpacks the latest version
 rm -rf scsilib
 tar xvzf scsilib.tar.gz
