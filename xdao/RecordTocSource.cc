@@ -76,6 +76,13 @@ RecordTocSource::RecordTocSource()
   nofTracksLabel_->show();
   table->attach(*nofTracksLabel_, 1, 2, 2, 3);
 
+  label = new Gtk::Label(string("Length: "), 1);
+  label->show();
+  table->attach(*label, 0, 1, 3, 4);
+  tocLengthLabel_ = new Gtk::Label(string(""), 0);
+  tocLengthLabel_->show();
+  table->attach(*tocLengthLabel_, 1, 2, 3, 4);
+
   infoFrame->add(*table);
 
   pack_start(*infoFrame, FALSE, FALSE);
@@ -107,6 +114,7 @@ void RecordTocSource::stop()
 void RecordTocSource::update(unsigned long level, TocEdit *tocEdit)
 {
   char label[256];
+  char buf[50];
   
   if (!active_)
     return;
@@ -115,6 +123,9 @@ void RecordTocSource::update(unsigned long level, TocEdit *tocEdit)
 
   projectLabel_->set(string(tocEdit->filename()));
 
+//  can also use:
+  tocTypeLabel_->set(string(tocEdit->toc()->tocType2String(tocEdit->toc()->tocType())));
+/*
   switch (tocEdit->toc()->tocType()) {
   case Toc::CD_DA:
     tocTypeLabel_->set(string("CD-DA"));
@@ -129,9 +140,12 @@ void RecordTocSource::update(unsigned long level, TocEdit *tocEdit)
     tocTypeLabel_->set(string("CD-I"));
     break;
   }
-
-  sprintf(label, "%i", tocEdit_->toc()->nofTracks());
+*/
+  sprintf(label, "%d", tocEdit_->toc()->nofTracks());
   nofTracksLabel_->set(string(label));
 
-  
+  sprintf(buf, "%d:%02d:%02d", tocEdit->toc()->length().min(),
+	  tocEdit->toc()->length().sec(), tocEdit->toc()->length().frac());
+  tocLengthLabel_->set(string(buf));
+
 }

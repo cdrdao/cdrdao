@@ -1,9 +1,6 @@
 Status  Who	Description
 ======  ======  ==============================================================
 
--	-	install gcdmaster.png icon in $gnome-data-dir/share/pixmaps
--	-	install gcdmaster.desktop file in ??? category
-
 -	-	Device Listing class needs "Load" and "Eject" buttons
 
 WORKING	Manuel	Finish MDI stuff if MDI support is available in
@@ -11,6 +8,7 @@ WORKING	Manuel	Finish MDI stuff if MDI support is available in
 		NOT IN gnome-- 1.1.10 !!!! will write to gnome-devel-list.
 		Needs more discusion?
 
+-	-	Detect CD Drive driver automagically.
 -	-	Use Gnome::Dialog for dialogs.
 
 -	Jonas?	What we need to pass to cdrecord in fs=# to get the same

@@ -45,6 +45,7 @@ private:
   Gtk::Label *projectLabel_;
   Gtk::Label *tocTypeLabel_;
   Gtk::Label *nofTracksLabel_;
+  Gtk::Label *tocLengthLabel_;
 
 };
 
