@@ -20,43 +20,34 @@
 #ifndef __RECORD_HD_TARGET_H
 #define __RECORD_HD_TARGET_H
 
-#include <gtk--.h>
-#include <gtk/gtk.h>
 #include <gnome--.h>
 
 class TocEdit;
 class CdDevice;
 class DeviceList;
 
-#include "RecordGenericDialog.h"
-
 class RecordHDTarget : public Gtk::VBox {
 public:
   RecordHDTarget();
-  ~RecordHDTarget();
 
   Gtk::Window *parent; // the dialog where the vbox is placed
   
-  void start(TocEdit *);
+  void start();
   void stop();
 
   void update(unsigned long level);
-  void update(unsigned long level, TocEdit *);
+  void cancelAction();
+
+  Gtk::string getFilename();
+  Gtk::string getPath();
 
 private:
-  TocEdit *tocEdit_;
   int active_;
-
-  Gnome::FileEntry *dirEntry_;
-
-  Gtk::Entry *fileNameEntry_;
 
   int speed_;
 
-public:
-   void cancelAction();
-   void startAction(RecordGenericDialog::RecordSourceType source,
-		    RecordTocSource *TOC, RecordCDSource *CD);
+  Gnome::FileEntry *dirEntry_;
+  Gtk::Entry *fileNameEntry_;
 
 };
 
