@@ -258,6 +258,56 @@ void DeviceList::importStatus()
 
 }
 
+void DeviceList::selectOne()
+{
+  if (list_->selection().empty()) {
+    for (int i = 0; i < list_->get_rows(); i++)
+    {
+      list_->row(i).select();
+      if (list_->selection().empty())
+        break;
+    }
+  }
+}
+
+void DeviceList::selectOneBut(Gtk::CList_Helpers::SelectionList &targetSelection)
+{
+  if (list_->selection().empty()) {
+    for (int i = 0; i < list_->get_rows(); i++)
+    {
+      bool targetSelected = false;
+      DeviceList::DeviceData *sourceData =
+          (DeviceList::DeviceData*)list_->row(i).get_data();
+
+      for (int j = 0; j < targetSelection.size(); j++) {
+        DeviceList::DeviceData *targetData =
+            (DeviceList::DeviceData*)targetSelection[j].get_data();
+    
+        if (targetData == NULL)
+          break;
+
+        if ((targetData->bus == sourceData->bus)
+         && (targetData->id == sourceData->id)
+         && (targetData->lun == sourceData->lun))
+        {
+          targetSelected = true;
+          break;
+        }
+      }
+
+      if (!targetSelected)
+      {
+        list_->row(i).select();
+        if (!list_->selection().empty())
+          break;
+      }
+    }
+  }
+
+  // Try selectOne in case we don't selected any device.
+  selectOne();
+}
+
 void DeviceList::selection_changed_emit(gint p0, gint p1, GdkEvent* p2)
 {
 //Emited when the selection ends.

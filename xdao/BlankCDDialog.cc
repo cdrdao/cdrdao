@@ -192,6 +192,8 @@ void BlankCDDialog::update(unsigned long level)
     Devices->import();
   else if (level & UPD_CD_DEVICE_STATUS)
     Devices->importStatus();
+
+  Devices->selectOne();
 }
 
 gint BlankCDDialog::delete_event_impl(GdkEventAny*)

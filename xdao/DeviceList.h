@@ -38,7 +38,8 @@ public:
     int bus, id, lun;
   };
 
-  Gtk::CList *getCList() { return list_; }
+  void selectOne();
+  void selectOneBut(Gtk::CList_Helpers::SelectionList &);
 
 private:
   TocEdit *tocEdit_;

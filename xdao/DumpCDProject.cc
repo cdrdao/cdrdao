@@ -229,8 +229,6 @@ void DumpCDProject::update(unsigned long level)
   CDSource->update(level);
   HDTarget->update(level);
 
-  DeviceList *sourceList = CDSource->getDeviceList();
-
-  CDSource->selectOne();
+  CDSource->getDeviceList()->selectOne();
 }
 
