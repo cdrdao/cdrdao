@@ -15,6 +15,7 @@
 #define MIN_SECTOR_EPSILON  128     /* words */
 #define MIN_SECTOR_BACKUP    16     /* sectors */
 #define JIGGLE_MODULO        15     /* sectors */
+#define MIN_SILENCE_BOUNDARY 1024   /* 16 bit words */
 
 #define min(x,y) ((x)>(y)?(y):(x))
 #define max(x,y) ((x)<(y)?(y):(x))
@@ -53,7 +54,7 @@ extern linked_list *copy_list(linked_list *list); /* shallow; doesn't copy
 
 typedef struct c_block{
   /* The buffer */
-  size16 *vector;
+  int16_t *vector;
   long begin;
   long size;
 
@@ -84,7 +85,7 @@ typedef struct v_fragment{
 
   long begin;
   long size;
-  size16 *vector;
+  int16_t *vector;
 
   /* end of session cases */
   long lastsector;
@@ -98,7 +99,7 @@ typedef struct v_fragment{
 extern void free_v_fragment(v_fragment *c);
 extern v_fragment *new_v_fragment(struct cdrom_paranoia *p,c_block *one,
 				  long begin, long end, int lastsector);
-extern size16 *v_buffer(v_fragment *v);
+extern int16_t *v_buffer(v_fragment *v);
 
 extern c_block *c_first(struct cdrom_paranoia *p);
 extern c_block *c_last(struct cdrom_paranoia *p);
@@ -116,6 +117,8 @@ typedef struct root_block{
   struct cdrom_paranoia *p;
 
   c_block *vector; /* doesn't use any sorting */
+  int silenceflag;
+  long silencebegin;
 } root_block;
 
 typedef struct offsets{
@@ -158,12 +161,12 @@ typedef struct cdrom_paranoia{
 
 } cdrom_paranoia;
 
-extern c_block *c_alloc(size16 *vector,long begin,long size);
+extern c_block *c_alloc(int16_t *vector,long begin,long size);
 extern void c_set(c_block *v,long begin);
-extern void c_insert(c_block *v,long pos,size16 *b,long size);
+extern void c_insert(c_block *v,long pos,int16_t *b,long size);
 extern void c_remove(c_block *v,long cutpos,long cutsize);
-extern void c_overwrite(c_block *v,long pos,size16 *b,long size);
-extern void c_append(c_block *v, size16 *vector, long size);
+extern void c_overwrite(c_block *v,long pos,int16_t *b,long size);
+extern void c_append(c_block *v, int16_t *vector, long size);
 extern void c_removef(c_block *v, long cut);
 
 #define ce(v) (v->begin+v->size)

@@ -68,7 +68,7 @@ static void sort_sort(sort_info *i,long sortlo,long sorthi){
 }
 
 /* size *must* be less than i->maxsize */
-void sort_setup(sort_info *i,size16 *vector,long *abspos,
+void sort_setup(sort_info *i,int16_t *vector,long *abspos,
 		long size,long sortlo,long sorthi){
   if(i->sortbegin!=-1)sort_unsortall(i);
 

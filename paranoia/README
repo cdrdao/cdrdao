@@ -1,6 +1,6 @@
 This is Monty's <monty@xiph.org> paranoia library that allows high quality
 digital audio extraction even with scratched CDs. It is taken from the
-cdparanoia-III-alpha9.5 package.
+cdparanoia-III-alpha9.8 package.
 
 Changes:
   - Provided my own version of the 'cdrom_drive' structure and changed

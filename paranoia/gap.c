@@ -12,7 +12,7 @@
 
 /**** Gap analysis code ***************************************************/
 
-long i_paranoia_overlap_r(size16 *buffA,size16 *buffB,
+long i_paranoia_overlap_r(int16_t *buffA,int16_t *buffB,
 			  long offsetA, long offsetB){
   long beginA=offsetA;
   long beginB=offsetB;
@@ -25,7 +25,7 @@ long i_paranoia_overlap_r(size16 *buffA,size16 *buffB,
   return(offsetA-beginA);
 }
 
-long i_paranoia_overlap_f(size16 *buffA,size16 *buffB,
+long i_paranoia_overlap_f(int16_t *buffA,int16_t *buffB,
 			  long offsetA, long offsetB,
 			  long sizeA,long sizeB){
   long endA=offsetA;
@@ -37,7 +37,7 @@ long i_paranoia_overlap_f(size16 *buffA,size16 *buffB,
   return(endA-offsetA);
 }
 
-int i_stutter_or_gap(size16 *A, size16 *B,long offA, long offB,
+int i_stutter_or_gap(int16_t *A, int16_t *B,long offA, long offB,
 		     long gap){
   long a1=offA;
   long b1=offB;
@@ -52,7 +52,7 @@ int i_stutter_or_gap(size16 *A, size16 *B,long offA, long offB,
 }
 
 /* riftv is the first value into the rift -> or <- */
-void i_analyze_rift_f(size16 *A,size16 *B,
+void i_analyze_rift_f(int16_t *A,int16_t *B,
 		      long sizeA, long sizeB,
 		      long aoffset, long boffset, 
 		      long *matchA,long *matchB,long *matchC){
@@ -108,7 +108,7 @@ void i_analyze_rift_f(size16 *A,size16 *B,
 
 /* riftv must be first even val of rift moving back */
 
-void i_analyze_rift_r(size16 *A,size16 *B,
+void i_analyze_rift_r(int16_t *A,int16_t *B,
 		      long sizeA, long sizeB,
 		      long aoffset, long boffset, 
 		      long *matchA,long *matchB,long *matchC){
@@ -162,7 +162,7 @@ void i_analyze_rift_r(size16 *A,size16 *B,
   }
 }
 
-void  analyze_rift_silence_f(size16 *A,size16 *B,long sizeA,long sizeB,
+void  analyze_rift_silence_f(int16_t *A,int16_t *B,long sizeA,long sizeB,
 			     long aoffset, long boffset,
 			     long *matchA, long *matchB){
   *matchA=-1;

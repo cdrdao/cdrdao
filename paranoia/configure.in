@@ -38,20 +38,20 @@ AC_CHECK_SIZEOF(long)
 AC_CHECK_SIZEOF(long long)
 
 case 2 in
-	$ac_cv_sizeof_short) TYPESIZES="$TYPESIZES -Dsize16='short'"
-		SIZE16=TRUE;;
-	$ac_cv_sizeof_int) TYPESIZES="$TYPESIZES -Dsize16='int'"
-		SIZE16=TRUE;;
+	$ac_cv_sizeof_short) SIZE16="short";;
+	$ac_cv_sizeof_int) SIZE16="int";;
 esac
 
 case 4 in
-	$ac_cv_sizeof_short) TYPESIZES="$TYPESIZES -Dsize32='short'"
-		SIZE32=TRUE;;
-	$ac_cv_sizeof_int) TYPESIZES="$TYPESIZES -Dsize32='int'"
-		SIZE32=TRUE;;
-	$ac_cv_sizeof_long) TYPESIZES="$TYPESIZES -Dsize32='long'"
-		SIZE32=TRUE;;
+	$ac_cv_sizeof_short) SIZE32="short";;
+	$ac_cv_sizeof_int) SIZE32="int";;
+	$ac_cv_sizeof_long) SIZE32="long";;
 esac
+
+AC_CHECK_TYPE(int16_t,,AC_DEFINE_UNQUOTED(int16_t,$SIZE16))
+AC_CHECK_TYPE(int32_t,,AC_DEFINE_UNQUOTED(int32_t,$SIZE32))
+AC_CHECK_TYPE(u_int16_t,,AC_DEFINE_UNQUOTED(u_int16_t,$SIZE16))
+AC_CHECK_TYPE(u_int32_t,,AC_DEFINE_UNQUOTED(u_int32,$SIZE32))
 
 if test -z "$SIZE16"; then
 	AC_MSG_ERROR([No 16 bit type found on this platform!])

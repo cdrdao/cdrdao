@@ -11,7 +11,7 @@ typedef struct sort_link{
 } sort_link;
 
 typedef struct sort_info{
-  size16 *vector;                /* vector (storage doesn't belong to us) */
+  int16_t *vector;                /* vector (storage doesn't belong to us) */
 
   long  *abspos;                 /* pointer for side effects */
   long  size;                    /* vector size */
@@ -33,7 +33,7 @@ typedef struct sort_info{
 
 extern sort_info *sort_alloc(long size);
 extern void sort_unsortall(sort_info *i);
-extern void sort_setup(sort_info *i,size16 *vector,long *abspos,long size,
+extern void sort_setup(sort_info *i,int16_t *vector,long *abspos,long size,
 		       long sortlo, long sorthi);
 extern void sort_free(sort_info *i);
 extern sort_link *sort_getmatch(sort_info *i,long post,long overlap,int value);

@@ -9,10 +9,10 @@
 /* immediate todo:: */
 /* Allow disabling of root fixups? */ 
 /* Dupe bytes are creeping into cases that require greater overlap
-   *than a single fragment can provide.  We need to check against a
-   *larger area* (+/-32 sectors of root?) to better eliminate
-   *dupes. Of course this leads to other problems... Is it actually a
-   *practically solvable problem? */
+   than a single fragment can provide.  We need to check against a
+   larger area* (+/-32 sectors of root?) to better eliminate
+   dupes. Of course this leads to other problems... Is it actually a
+   practically solvable problem? */
 /* Bimodal overlap distributions break us. */
 /* scratch detection/tolerance not implemented yet */
 
@@ -36,13 +36,13 @@
 
 /***************************************************************
 
-  Silence case continues to dog us; let's try the following to put the
-  damned thing to rest (stage 2 mods only):
+  Silence.  "It's BAAAAAAaaack."
 
-  a) at root fixup stage: past the rift is one silence and the other
-     signal?  Believe the signal.
-  b) if signal is in root, truncate the fragment.  if the signal is in
-     the fragment, truncate root
+  audio is now treated as great continents of values floating on a
+  mantle of molten silence.  Silence is not handled by basic
+  verification at all; we simply anchor sections of nonzero audio to a
+  position and fill in everything else as silence.  We also note the
+  audio that interfaces with silence; an edge must be 'wet'.
 
   **************************************************************/
 
@@ -76,7 +76,7 @@ static inline long rs(root_block *root){
   return(cs(root->vector));
 }
 
-static inline size16 *rv(root_block *root){
+static inline int16_t *rv(root_block *root){
   if(!root)return(NULL);
   if(!root->vector)return(NULL);
   return(cv(root->vector));
@@ -86,7 +86,7 @@ static inline size16 *rv(root_block *root){
 
 /**** matching and analysis code *****************************************/
 
-static inline long i_paranoia_overlap(size16 *buffA,size16 *buffB,
+static inline long i_paranoia_overlap(int16_t *buffA,int16_t *buffB,
 			       long offsetA, long offsetB,
 			       long sizeA,long sizeB,
 			       long *ret_begin, long *ret_end){
@@ -106,7 +106,7 @@ static inline long i_paranoia_overlap(size16 *buffA,size16 *buffB,
   return(endA-beginA);
 }
 
-static inline long i_paranoia_overlap2(size16 *buffA,size16 *buffB,
+static inline long i_paranoia_overlap2(int16_t *buffA,int16_t *buffB,
 				       char *flagsA,char *flagsB,
 				       long offsetA, long offsetB,
 				       long sizeA,long sizeB,
@@ -178,9 +178,9 @@ static inline long do_const_sync(c_block *A,
   return(0);
 }
 
-/* post is w.r.t. B.  9.3 is a bit different; in stage one, we post
-   from new.  In stage 2 we post from root. Begin, end, offset count
-   from B's frame of reference */
+/* post is w.r.t. B.  in stage one, we post from old.  In stage 2 we
+   post from root. Begin, end, offset count from B's frame of
+   reference */
 
 static inline long try_sort_sync(cdrom_paranoia *p,
 				 sort_info *A,char *Aflags,
@@ -246,18 +246,18 @@ static inline void stage1_matched(c_block *old,c_block *new,
      (new->flags[newadjbegin]&1) ||
      (old->flags[oldadjbegin]&1)){
     if(matchoffset)
-      (*callback)(matchbegin,PARANOIA_CB_FIXUP_EDGE);
+      if(callback)(*callback)(matchbegin,PARANOIA_CB_FIXUP_EDGE);
   }else
-    (*callback)(matchbegin,PARANOIA_CB_FIXUP_ATOM);
+    if(callback)(*callback)(matchbegin,PARANOIA_CB_FIXUP_ATOM);
   
   if(matchend-matchoffset>=ce(new) ||
      (new->flags[newadjend]&1) ||
      matchend>=ce(old) ||
      (old->flags[oldadjend]&1)){
     if(matchoffset)
-      (*callback)(matchend,PARANOIA_CB_FIXUP_EDGE);
+      if(callback)(*callback)(matchend,PARANOIA_CB_FIXUP_EDGE);
   }else
-    (*callback)(matchend,PARANOIA_CB_FIXUP_ATOM);
+    if(callback)(*callback)(matchend,PARANOIA_CB_FIXUP_ATOM);
   
   /* Mark the verification flags.  Don't mark the first or
      last OVERLAP/2 elements so that overlapping fragments
@@ -303,7 +303,19 @@ static long i_iterate_stage1(cdrom_paranoia *p,c_block *old,c_block *new,
 		       callback)==1){
 	
 	matched+=matchend-matchbegin;
-	stage1_matched(old,new,matchbegin,matchend,matchoffset,callback);
+
+	/* purely cosmetic: if we're matching zeros, don't use the
+           callback because they will appear to be all skewed */
+	{
+	  long j=matchbegin-cb(old);
+	  long end=matchend-cb(old);
+	  for(;j<end;j++)if(cv(old)[j]!=0)break;
+	  if(j<end){
+	    stage1_matched(old,new,matchbegin,matchend,matchoffset,callback);
+	  }else{
+	    stage1_matched(old,new,matchbegin,matchend,matchoffset,NULL);
+	  }
+	}
 	ret++;
 	if(matchend-1>j)j=matchend-1;
       }
@@ -330,7 +342,7 @@ static long i_stage1(cdrom_paranoia *p,c_block *new,
 
   while(ptr && ptr!=new){
 
-    (*callback)(cb(new),PARANOIA_CB_VERIFY);
+    if(callback)(*callback)(cb(new),PARANOIA_CB_VERIFY);
     i_iterate_stage1(p,ptr,new,callback);
 
     ptr=c_prev(ptr);
@@ -365,8 +377,8 @@ typedef struct sync_result {
   long end;
 } sync_result;
 
-static long i_iterate_stage2(cdrom_paranoia *p,
-			     v_fragment *v,int multi,
+/* do *not* match using zero posts */
+static long i_iterate_stage2(cdrom_paranoia *p,v_fragment *v,
 			     sync_result *r,void(*callback)(long,int)){
   root_block *root=&(p->root);
   long matchbegin=-1,matchend=-1,offset;
@@ -379,19 +391,15 @@ static long i_iterate_stage2(cdrom_paranoia *p,
   if(min(fe(v)+p->dynoverlap,re(root))-
     max(fb(v)-p->dynoverlap,rb(root))<=0)return(0);
 
-  (*callback)(fb(v),PARANOIA_CB_VERIFY);
+  if(callback)(*callback)(fb(v),PARANOIA_CB_VERIFY);
 
-  /* just a bit of v unless multi; determine the correct area */
+  /* just a bit of v; determine the correct area */
   fbv=max(fb(v),rb(root)-p->dynoverlap);
-  /* stage 2 silence handling mod A,B */
-  if(!multi){
-    /* we want to avoid zeroes */
-    while(fbv<fe(v) && fv(v)[fbv-fb(v)]==0)fbv++;
-    if(fbv==fe(v))return(0);
-    fev=min(min(fbv+256,re(root)+p->dynoverlap),fe(v));
-  }else{
-    fev=min(re(root)+p->dynoverlap,fe(v));
-  }
+
+  /* we want to avoid zeroes */
+  while(fbv<fe(v) && fv(v)[fbv-fb(v)]==0)fbv++;
+  if(fbv==fe(v))return(0);
+  fev=min(min(fbv+256,re(root)+p->dynoverlap),fe(v));
   
   {
     /* spread the search area a bit.  We post from root, so containment
@@ -402,19 +410,17 @@ static long i_iterate_stage2(cdrom_paranoia *p,
     long j;
     
     sort_setup(i,fv(v),&fb(v),fs(v),fbv,fev);
-    
     for(j=searchbegin;j<searchend;j+=23){
-      if(!multi)
-	while(j<searchend && rv(root)[j-rb(root)]==0)j++;
+      while(j<searchend && rv(root)[j-rb(root)]==0)j++;
       if(j==searchend)break;
-     
+
       if(try_sort_sync(p,i,NULL,rc(root),j,
 		       &matchbegin,&matchend,&offset,callback)){
-
+	
 	r->begin=matchbegin;
 	r->end=matchend;
 	r->offset=-offset;
-	if(offset)(*callback)(r->begin,PARANOIA_CB_FIXUP_EDGE);
+	if(offset)if(callback)(*callback)(r->begin,PARANOIA_CB_FIXUP_EDGE);
 	return(1);
       }
     }
@@ -423,8 +429,91 @@ static long i_iterate_stage2(cdrom_paranoia *p,
   return(0);
 }
 
+/* simple test for a root vector that ends in silence*/
+static void i_silence_test(root_block *root){
+  int16_t *vec=rv(root);
+  long end=re(root)-rb(root)-1;
+  long j;
+  
+  for(j=end-1;j>=0;j--)if(vec[j]!=0)break;
+  if(j<0 || end-j>MIN_SILENCE_BOUNDARY){
+    if(j<0)j=0;
+    root->silenceflag=1;
+    root->silencebegin=rb(root)+j;
+    if(root->silencebegin<root->returnedlimit)
+      root->silencebegin=root->returnedlimit;
+  }
+}
+
+/* match into silence vectors at offset zero if at all possible.  This
+   also must be called with vectors in ascending begin order in case
+   there are nonzero islands */
+static long i_silence_match(root_block *root, v_fragment *v,
+			  void(*callback)(long,int)){
+
+  cdrom_paranoia *p=v->p;
+  int16_t *vec=fv(v);
+  long end=fs(v),begin;
+  long j;
+
+  /* does this vector begin wet? */
+  if(end<MIN_SILENCE_BOUNDARY)return(0);
+  for(j=0;j<end;j++)if(vec[j]!=0)break;
+  if(j<MIN_SILENCE_BOUNDARY)return(0);
+  j+=fb(v);
+
+  /* is the new silent section ahead of the end of the old by <
+     p->dynoverlap? */
+  if(fb(v)>=re(root) && fb(v)-p->dynoverlap<re(root)){
+    /* extend the zeroed area of root */
+    long addto=fb(v)+MIN_SILENCE_BOUNDARY-re(root);
+    int16_t vec[addto];
+    memset(vec,0,sizeof(vec));
+    c_append(rc(root),vec,addto);
+  }
+
+  /* do we have an 'effortless' overlap? */
+  begin=max(fb(v),root->silencebegin);
+  end=min(j,re(root));
+  
+  if(begin<end){
+
+    /* don't use it unless it will extend... */
+
+    if(fe(v)>re(root)){
+      long voff=begin-fb(v);
+      
+      c_remove(rc(root),begin-rb(root),-1);
+      c_append(rc(root),vec+voff,fs(v)-voff);
+    }
+    offset_add_value(p,&p->stage2,0,callback);
+
+  }else{
+    if(j<begin){
+      /* OK, we'll have to force it a bit as the root is jittered
+         forward */
+      long voff=j-fb(v);
+
+      /* don't use it unless it will extend... */
+      if(begin+fs(v)-voff>re(root)){
+	c_remove(rc(root),root->silencebegin-rb(root),-1);
+	c_append(rc(root),vec+voff,fs(v)-voff);
+      }
+      offset_add_value(p,&p->stage2,end-begin,callback);
+    }else
+      return(0);
+  }
+
+  /* test the new root vector for ending in silence */
+  root->silenceflag=0;
+  i_silence_test(root);
+
+  if(v->lastsector)root->lastsector=1;
+  free_v_fragment(v);
+  return(1);
+}
+
 static long i_stage2_each(root_block *root, v_fragment *v,
-			  int freeit,int multi,
 			  void(*callback)(long,int)){
 
   cdrom_paranoia *p=v->p;
@@ -437,7 +526,7 @@ static long i_stage2_each(root_block *root, v_fragment *v,
   }else{
     sync_result r;
 
-    if(i_iterate_stage2(p,v,multi,&r,callback)){
+    if(i_iterate_stage2(p,v,&r,callback)){
 
       long begin=r.begin-rb(root);
       long end=r.end-rb(root);
@@ -459,9 +548,9 @@ static long i_stage2_each(root_block *root, v_fragment *v,
 	long beginL=begin+offset;
 
 	if(l==NULL){
-	  size16 *buff=malloc(fs(v)*sizeof(size16));
+	  int16_t *buff=malloc(fs(v)*sizeof(int16_t));
 	  l=c_alloc(buff,fb(v),fs(v));
-	  memcpy(buff,fv(v),fs(v)*sizeof(size16));
+	  memcpy(buff,fv(v),fs(v)*sizeof(int16_t));
 	}
 
 	i_analyze_rift_r(rv(root),cv(l),
@@ -478,7 +567,7 @@ static long i_stage2_each(root_block *root, v_fragment *v,
 	  /* a problem with root */
 	  if(matchA>0){
 	    /* dropped bytes; add back from v */
-	    (*callback)(begin+rb(root)-1,PARANOIA_CB_FIXUP_DROPPED);
+	    if(callback)(*callback)(begin+rb(root)-1,PARANOIA_CB_FIXUP_DROPPED);
 	    if(rb(root)+begin<p->root.returnedlimit)
 	      break;
 	    else{
@@ -490,7 +579,7 @@ static long i_stage2_each(root_block *root, v_fragment *v,
 	    }
 	  }else{
 	    /* duplicate bytes; drop from root */
-	    (*callback)(begin+rb(root)-1,PARANOIA_CB_FIXUP_DUPED);
+	    if(callback)(*callback)(begin+rb(root)-1,PARANOIA_CB_FIXUP_DUPED);
 	    if(rb(root)+begin+matchA<p->root.returnedlimit) 
 	      break;
 	    else{
@@ -504,13 +593,13 @@ static long i_stage2_each(root_block *root, v_fragment *v,
 	  /* a problem with the fragment */
 	  if(matchB>0){
 	    /* dropped bytes */
-	    (*callback)(begin+rb(root)-1,PARANOIA_CB_FIXUP_DROPPED);
+	    if(callback)(*callback)(begin+rb(root)-1,PARANOIA_CB_FIXUP_DROPPED);
 	    c_insert(l,beginL,rv(root)+begin-matchB,
 			 matchB);
 	    offset+=matchB;
 	  }else{
 	    /* duplicate bytes */
-	    (*callback)(begin+rb(root)-1,PARANOIA_CB_FIXUP_DUPED);
+	    if(callback)(*callback)(begin+rb(root)-1,PARANOIA_CB_FIXUP_DUPED);
 	    c_remove(l,beginL+matchB,-matchB);
 	    offset+=matchB;
 	  }
@@ -549,9 +638,9 @@ static long i_stage2_each(root_block *root, v_fragment *v,
 	long endL=end+offset;
 	
 	if(l==NULL){
-	  size16 *buff=malloc(fs(v)*sizeof(size16));
+	  int16_t *buff=malloc(fs(v)*sizeof(int16_t));
 	  l=c_alloc(buff,fb(v),fs(v));
-	  memcpy(buff,fv(v),fs(v)*sizeof(size16));
+	  memcpy(buff,fv(v),fs(v)*sizeof(int16_t));
 	}
 
 	i_analyze_rift_f(rv(root),cv(l),
@@ -568,13 +657,13 @@ static long i_stage2_each(root_block *root, v_fragment *v,
 	  /* a problem with root */
 	  if(matchA>0){
 	    /* dropped bytes; add back from v */
-	    (*callback)(end+rb(root),PARANOIA_CB_FIXUP_DROPPED);
+	    if(callback)(*callback)(end+rb(root),PARANOIA_CB_FIXUP_DROPPED);
 	    if(end+rb(root)<p->root.returnedlimit)
 	      break;
 	    c_insert(rc(root),end,cv(l)+endL,matchA);
 	  }else{
 	    /* duplicate bytes; drop from root */
-	    (*callback)(end+rb(root),PARANOIA_CB_FIXUP_DUPED);
+	    if(callback)(*callback)(end+rb(root),PARANOIA_CB_FIXUP_DUPED);
 	    if(end+rb(root)<p->root.returnedlimit)
 	      break;
 	    c_remove(rc(root),end,-matchA);
@@ -583,11 +672,11 @@ static long i_stage2_each(root_block *root, v_fragment *v,
 	  /* a problem with the fragment */
 	  if(matchB>0){
 	    /* dropped bytes */
-	    (*callback)(end+rb(root),PARANOIA_CB_FIXUP_DROPPED);
+	    if(callback)(*callback)(end+rb(root),PARANOIA_CB_FIXUP_DROPPED);
 	    c_insert(l,endL,rv(root)+end,matchB);
 	  }else{
 	    /* duplicate bytes */
-	    (*callback)(end+rb(root),PARANOIA_CB_FIXUP_DUPED);
+	    if(callback)(*callback)(end+rb(root),PARANOIA_CB_FIXUP_DUPED);
 	    c_remove(l,endL,-matchB);
 	  }
 	}else if(matchC){
@@ -613,7 +702,7 @@ static long i_stage2_each(root_block *root, v_fragment *v,
 	    /* silence in fragment; lose it */
 	    
 	    if(l)i_cblock_destructor(l);
-	    if(freeit)free_v_fragment(v);
+	    free_v_fragment(v);
 	    return(1);
 
 	  }else{
@@ -636,7 +725,7 @@ static long i_stage2_each(root_block *root, v_fragment *v,
 	long sizeA=rs(root);
 	long sizeB;
 	long vecbegin;
-	size16 *vector;
+	int16_t *vector;
 	  
 	if(l){
 	  sizeB=cs(l);
@@ -658,19 +747,21 @@ static long i_stage2_each(root_block *root, v_fragment *v,
 	  if(sizeB-offset-end)c_append(rc(root),vector+end+offset,
 					 sizeB-offset-end);
 	  
+	  i_silence_test(root);
+
 	  /* add offset into dynoverlap stats */
 	  offset_add_value(p,&p->stage2,offset+vecbegin-rb(root),callback);
 	}
       }
       if(l)i_cblock_destructor(l);
-      if(freeit)free_v_fragment(v);
+      free_v_fragment(v);
       return(1);
       
     }else{
       /* D'oh.  No match.  What to do with the fragment? */
-      if(fe(v)+dynoverlap<re(root)){
+      if(fe(v)+dynoverlap<re(root) && !root->silenceflag){
 	/* It *should* have matched.  No good; free it. */
-	if(freeit)free_v_fragment(v);
+	free_v_fragment(v);
       }
       /* otherwise, we likely want this for an upcoming match */
       /* we don't free the sort info (if it was collected) */
@@ -693,10 +784,13 @@ static int i_init_root(root_block *root, v_fragment *v,long begin,
     }
 
     {
-      size16 *buff=malloc(fs(v)*sizeof(size16));
-      memcpy(buff,fv(v),fs(v)*sizeof(size16));
+      int16_t *buff=malloc(fs(v)*sizeof(int16_t));
+      memcpy(buff,fv(v),fs(v)*sizeof(int16_t));
       root->vector=c_alloc(buff,fb(v),fs(v));
     }    
+
+    i_silence_test(root);
+
     return(1);
   }else
     return(0);
@@ -709,13 +803,17 @@ static int vsort(const void *a,const void *b){
 static int i_stage2(cdrom_paranoia *p,long beginword,long endword,
 			  void(*callback)(long,int)){
 
-  int flag=1,multi=0,ret=0;
+  int flag=1,ret=0;
   root_block *root=&(p->root);
 
 #ifdef NOISY
   fprintf(stderr,"Fragments:%ld\n",p->fragments->active);
   fflush(stderr);
 #endif
+
+  /* even when the 'silence flag' is lit, we try to do non-silence
+     matching in the event that there are still audio vectors with
+     content to be sunk before the silence */
 
   while(flag){
     /* loop through all the current fragments */
@@ -731,8 +829,13 @@ static int i_stage2(cdrom_paranoia *p,long beginword,long endword,
 
     flag=0;
     if(count){
+      /* sorted in ascending order of beginning */
       qsort(list,active,sizeof(v_fragment *),&vsort);
       
+      /* we try a nonzero based match even if in silent mode in
+	 the case that there are still cached vectors to sink
+	 behind continent->ocean boundary */
+
       for(count=0;count<active;count++){
 	first=list[count];
 	if(first->one){
@@ -743,22 +846,28 @@ static int i_stage2(cdrom_paranoia *p,long beginword,long endword,
 	      ret++;
 	    }
 	  }else{
-	    if(i_stage2_each(root,first,1,multi,callback)){
+	    if(i_stage2_each(root,first,callback)){
 	      ret++;
 	      flag=1;
-	      multi=0;
 	    }
 	  }
 	}
       }
-    }
-    if(!flag){
-      if(!multi){
-	multi=1;
-	flag=1;
+
+      /* silence handling */
+      if(!flag && p->root.silenceflag){
+	for(count=0;count<active;count++){
+	  first=list[count];
+	  if(first->one){
+	    if(rv(root)!=NULL){
+	      if(i_silence_match(root,first,callback)){
+		ret++;
+		flag=1;
+	      }
+	    }
+	  }
+	}
       }
-    }else{
-      multi=0;
     }
   }
   return(ret);
@@ -817,7 +926,7 @@ static void verify_skip_case(cdrom_paranoia *p,void(*callback)(long,int)){
   }
   if(post==-1)post=0;
 
-  (*callback)(post,PARANOIA_CB_SKIP);
+  if(callback)(*callback)(post,PARANOIA_CB_SKIP);
   
   /* We want to add a sector.  Look for a c_block that spans,
      preferrably a verified area */
@@ -861,7 +970,7 @@ static void verify_skip_case(cdrom_paranoia *p,void(*callback)(long,int)){
       gend=min(gend+OVERLAP_ADJ,cend);
 
       if(rv(root)==NULL){
-	size16 *buff=malloc(cs(graft));
+	int16_t *buff=malloc(cs(graft));
 	memcpy(buff,cv(graft),cs(graft));
 	rc(root)=c_alloc(buff,cb(graft),cs(graft));
       }else{
@@ -876,7 +985,7 @@ static void verify_skip_case(cdrom_paranoia *p,void(*callback)(long,int)){
 
   /* No?  Fine.  Great.  Write in some zeroes :-P */
   {
-    void *temp=calloc(CD_FRAMESIZE_RAW,sizeof(size16));
+    void *temp=calloc(CD_FRAMESIZE_RAW,sizeof(int16_t));
 
     if(rv(root)==NULL){
       rc(root)=c_alloc(temp,post,CD_FRAMESIZE_RAW);
@@ -892,6 +1001,7 @@ static void verify_skip_case(cdrom_paranoia *p,void(*callback)(long,int)){
 
 void paranoia_free(cdrom_paranoia *p){
   paranoia_resetall(p);
+  sort_free(p->sortcache);
   free(p);
 }
 
@@ -950,7 +1060,7 @@ c_block *i_read_c_block(cdrom_paranoia *p,long beginword,long endword,
   long driftcomp=(float)p->dyndrift/CD_FRAMEWORDS+.5;
   c_block *new=NULL;
   root_block *root=&p->root;
-  size16 *buffer=NULL;
+  int16_t *buffer=NULL;
   char *flags=NULL;
   long sofar;
   long dynoverlap=(p->dynoverlap+CD_FRAMEWORDS-1)/CD_FRAMEWORDS; 
@@ -1030,7 +1140,7 @@ c_block *i_read_c_block(cdrom_paranoia *p,long beginword,long endword,
 	/* Uhhh... right.  Make something up. But don't make us seek
            backward! */
 
-	(*callback)((adjread+thisread)*CD_FRAMEWORDS,PARANOIA_CB_READERR);  
+	if(callback)(*callback)((adjread+thisread)*CD_FRAMEWORDS,PARANOIA_CB_READERR);  
 	memset(buffer+(sofar+thisread)*CD_FRAMEWORDS,0,
 	       CD_FRAMESIZE_RAW*(secread-thisread));
 	if(flags)memset(flags+(sofar+thisread)*CD_FRAMEWORDS,2,
@@ -1051,7 +1161,7 @@ c_block *i_read_c_block(cdrom_paranoia *p,long beginword,long endword,
       if(adjread+secread-1==p->current_lastsector)
 	new->lastsector=-1;
       
-      (*callback)((adjread+secread-1)*CD_FRAMEWORDS,PARANOIA_CB_READ);
+      if(callback)(*callback)((adjread+secread-1)*CD_FRAMEWORDS,PARANOIA_CB_READ);
       
       sofar+=secread;
       readat=adjread+secread; 
@@ -1079,7 +1189,15 @@ c_block *i_read_c_block(cdrom_paranoia *p,long beginword,long endword,
 /* The returned buffer is *not* to be freed by the caller.  It will
    persist only until the next call to paranoia_read() for this p */
 
-size16 *paranoia_read(cdrom_paranoia *p, void(*callback)(long,int)){
+int16_t *paranoia_read(cdrom_paranoia *p, void(*callback)(long,int)){
+  return paranoia_read_limited(p,callback,20);
+}
+
+  /* I added max_retry functionality this way in order to avoid
+     breaking any old apps using the nerw libs.  cdparanoia 9.8 will
+     need the updated libs, but nothing else will require it. */
+int16_t *paranoia_read_limited(cdrom_paranoia *p, void(*callback)(long,int),
+			       int max_retries){
 
   long beginword=p->cursor*(CD_FRAMEWORDS);
   long endword=beginword+CD_FRAMEWORDS;
@@ -1174,7 +1292,7 @@ size16 *paranoia_read(cdrom_paranoia *p, void(*callback)(long,int)){
 
       if(retry_count%5==0){
 	if(p->dynoverlap==MAX_SECTOR_OVERLAP*CD_FRAMEWORDS ||
-	   retry_count==20){
+	   retry_count==max_retries){
 	  if(!(p->enable&PARANOIA_MODE_NEVERSKIP))verify_skip_case(p,callback);
 	  retry_count=0;
 	}else{
@@ -1182,7 +1300,7 @@ size16 *paranoia_read(cdrom_paranoia *p, void(*callback)(long,int)){
 	    p->dynoverlap*=1.5;
 	    if(p->dynoverlap>MAX_SECTOR_OVERLAP*CD_FRAMEWORDS)
 	      p->dynoverlap=MAX_SECTOR_OVERLAP*CD_FRAMEWORDS;
-	    (*callback)(p->dynoverlap,PARANOIA_CB_OVERLAP);
+	    if(callback)(*callback)(p->dynoverlap,PARANOIA_CB_OVERLAP);
 	  }
 	}
       }
