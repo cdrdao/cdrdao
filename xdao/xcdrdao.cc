@@ -18,6 +18,9 @@
  */
 /*
  * $Log: xcdrdao.cc,v $
+ * Revision 1.5  2000/03/05 22:25:52  llanero
+ * more code translated to gtk-- 1.1.8
+ *
  * Revision 1.4  2000/03/04 01:28:52  llanero
  * SampleDisplay.{cc,h} are fixed now = gtk 1.1.8 compliant.
  *
@@ -192,7 +195,8 @@ glade_gnome_init ();
 // perhaps the declaration os guiUpdatePeriodic must be changed in some way?
 // In C I would do it this way: (it works ;)
   gtk_timeout_add(2000, (GtkFunction)guiUpdatePeriodic, NULL);
-  
+
+
   installSignalHandler(SIGPIPE, SIG_IGN);
 
   // scan for SCSI devices

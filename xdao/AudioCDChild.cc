@@ -63,10 +63,10 @@ AudioCDChild::BuildChild()
   vbox_->pack_start(*sampleDisplay_, TRUE, TRUE);
   sampleDisplay_->show();
 
-//  Gtk::HScrollbar *scrollBar =
-//    new Gtk::HScrollbar(*(sampleDisplay_->getAdjustment()));
-//  vbox_->pack_start(*scrollBar, FALSE, FALSE);
-//  scrollBar->show();
+  Gtk::HScrollbar *scrollBar =
+    new Gtk::HScrollbar(*(sampleDisplay_->getAdjustment()));
+  vbox_->pack_start(*scrollBar, FALSE, FALSE);
+  scrollBar->show();
   
   Gtk::Label *label;
   Gtk::HBox *selectionInfoBox = new Gtk::HBox;
@@ -174,15 +174,12 @@ AudioCDChild::BuildChild()
   connect_to_method(playButton_->clicked, this, &MainWindow::play);
 */
 
-/*
-  zoomButton_->toggled.connect(bind(slot(this, &MainWindow::setMode), ZOOM));
-  selectButton_->toggled.connect(bind(slot(this, &MainWindow::setMode), SELECT));
-  playButton_->clicked.connect(slot(this, &MainWindow::play));
-*/
-
-
+//  zoomButton_->toggled.connect(bind(slot(this, &MainWindow::setMode), ZOOM));
+//  selectButton_->toggled.connect(bind(slot(this, &MainWindow::setMode), SELECT));
+  playButton_->clicked.connect(slot(this, &AudioCDChild::play));
 
 }
+
 
 AudioCDChild::AudioCDChild(TocEdit *tedit) : Gnome::MDIGenericChild("Untitled AudioCD")
 {
@@ -202,4 +199,104 @@ AudioCDChild::AudioCDChild(TocEdit *tedit) : Gnome::MDIGenericChild("Untitled Au
   //Quick hack until gnome-- gets a good function to bypass this.
   AudioCDChild::set_view_creator(&AudioCDChild_Creator, vbox_aux_);
 
+}
+
+
+void AudioCDChild::play()
+{
+  unsigned long start, end;
+
+  if (playing_) {
+    playAbort_ = 1;
+    return;
+  }
+
+  if (tocEdit_->lengthSample() == 0)
+    return;
+
+  if (soundInterface_ == NULL) {
+    soundInterface_ = new SoundIF;
+    if (soundInterface_->init() != 0) {
+      delete soundInterface_;
+      soundInterface_ = NULL;
+      return;
+    }
+  }
+
+  if (soundInterface_->start() != 0)
+    return;
+
+  if (!sampleDisplay_->getRegion(&start, &end))
+    sampleDisplay_->getView(&start, &end);
+
+  tocReader.init(tocEdit_->toc());
+  if (tocReader.openData() != 0) {
+    tocReader.init(NULL);
+    soundInterface_->end();
+    return;
+    }
+
+  if (tocReader.seekSample(start) != 0) {
+    tocReader.init(NULL);
+    soundInterface_->end();
+    return;
+  }
+
+  playLength_ = end - start + 1;
+  playPosition_ = start;
+  playing_ = 1;
+  playAbort_ = 0;
+
+  tocEdit_->blockEdit();
+
+//FIXME: !!!
+//  guiUpdate();
+
+//llanero  connect_to_method(Gtk::Main::idle(), this, &MainWindow::playCallback);
+  Gtk::Main::idle.connect(slot(this, &AudioCDChild::playCallback));
+}
+
+int AudioCDChild::playCallback()
+{
+  long len = playLength_ > playBurst_ ? playBurst_ : playLength_;
+
+
+  if (tocReader.readSamples(playBuffer_, len) != len ||
+      soundInterface_->play(playBuffer_, len) != 0) {
+    soundInterface_->end();
+    tocReader.init(NULL);
+    playing_ = 0;
+    sampleDisplay_->setCursor(0, 0);
+    tocEdit_->unblockEdit();
+//FIXME: !!!
+//llanero    guiUpdate();
+    return 0; // remove idle handler
+  }
+
+  playLength_ -= len;
+  playPosition_ += len;
+
+  unsigned long delay = soundInterface_->getDelay();
+
+//FIXME: 
+//llanero
+/*
+  if (delay <= playPosition_) {
+    sampleDisplay_->setCursor(1, playPosition_ - delay);
+    cursorPos_->set_text(string(sample2string(playPosition_ - delay)));
+  }
+*/
+  if (len == 0 || playAbort_ != 0) {
+    soundInterface_->end();
+    tocReader.init(NULL);
+    playing_ = 0;
+    sampleDisplay_->setCursor(0, 0);
+    tocEdit_->unblockEdit();
+//FIXME: !!!
+//llanero    guiUpdate();
+    return 0; // remove idle handler
+  }
+  else {
+    return 1; // keep idle handler
+  }
 }

@@ -18,6 +18,9 @@
  */
 /*
  * $Log: SampleDisplay.cc,v $
+ * Revision 1.4  2000/03/05 22:25:52  llanero
+ * more code translated to gtk-- 1.1.8
+ *
  * Revision 1.3  2000/03/04 01:28:52  llanero
  * SampleDisplay.{cc,h} are fixed now = gtk 1.1.8 compliant.
  *
@@ -44,7 +47,7 @@
  *
  */
 
-static char rcsid[] = "$Id: SampleDisplay.cc,v 1.3 2000/03/04 01:28:52 llanero Exp $";
+static char rcsid[] = "$Id: SampleDisplay.cc,v 1.4 2000/03/05 22:25:52 llanero Exp $";
 
 #include <stdio.h>
 #include <limits.h>
@@ -463,11 +466,10 @@ gint SampleDisplay::sample2pixel(unsigned long sample)
 int SampleDisplay::handle_configure_event (GdkEventConfigure *event)
 {
 //llanero  if (drawGc_ == NULL) {
+  if (!drawGc_) {
     Gdk_Bitmap mask;
     Gdk_Window window(get_window());
 
-//llanero: IMPORTANT
-//original was:    drawGc_ = new Gdk_GC(window);
     drawGc_ = Gdk_GC(window);
         
     getColor("darkslateblue", &sampleColor_);
@@ -476,8 +478,6 @@ int SampleDisplay::handle_configure_event (GdkEventConfigure *event)
     getColor("red", &markerColor_);
     getColor("#ffc0e0", &selectionBackgroundColor_);
 
-//llanero: IMPORTANT
-//was:    timeTickFont_ = new Gdk_Font("fixed");
     timeTickFont_ = Gdk_Font("fixed");
     drawGc_.set_font(timeTickFont_);
 
@@ -486,40 +486,30 @@ int SampleDisplay::handle_configure_event (GdkEventConfigure *event)
     timeLineHeight_ = timeTickFont_.char_height('0') + 6;
     trackLineHeight_ = timeTickFont_.char_height('0') + 10;
 
-//llanero: IMPORTANT
-//was:    trackMarkerPixmap_ = new Gdk_Pixmap;
     trackMarkerPixmap_ = Gdk_Pixmap();
     trackMarkerPixmap_.create_from_xpm_d(window, mask,
 					  get_colormap().white(),
 					  TRACK_MARKER_XPM_DATA);
-//llanero: IMPORTANT
-//was:    indexMarkerPixmap_ = new Gdk_Pixmap;
+
     indexMarkerPixmap_ = Gdk_Pixmap();
     indexMarkerPixmap_.create_from_xpm_d(window, mask,
 					  get_colormap().white(),
 					  INDEX_MARKER_XPM_DATA);
-//llanero: IMPORTANT
-//was:    trackMarkerSelectedPixmap_ = new Gdk_Pixmap;
+
     trackMarkerSelectedPixmap_ = Gdk_Pixmap();
     trackMarkerSelectedPixmap_.create_from_xpm_d(window, mask,
 						  markerColor_,
 						  TRACK_MARKER_XPM_DATA);
 						  
-//llanero: IMPORTANT
-//was:    indexMarkerSelectedPixmap_ = new Gdk_Pixmap;
     indexMarkerSelectedPixmap_ = Gdk_Pixmap();
     indexMarkerSelectedPixmap_.create_from_xpm_d(window, mask,
 						  markerColor_,
 						  INDEX_MARKER_XPM_DATA);
-//llanero: IMPORTANT
-//was:    trackExtendPixmap_ = new Gdk_Pixmap;
     trackExtendPixmap_ = Gdk_Pixmap();
     trackExtendPixmap_.create_from_xpm_d(window, mask,
 					  get_colormap().white(),
 					  TRACK_EXTEND_XPM_DATA);
 
-//llanero: IMPORTANT
-//was:    indexExtendPixmap_ = new Gdk_Pixmap;
     indexExtendPixmap_ = Gdk_Pixmap();
     indexExtendPixmap_.create_from_xpm_d(window, mask,
 					  get_colormap().white(),
@@ -527,7 +517,7 @@ int SampleDisplay::handle_configure_event (GdkEventConfigure *event)
 
     trackMarkerWidth_ = trackMarkerWidth();
     trackManager_ = new TrackManager(TRACK_MARKER_XPM_WIDTH);
-//llanero  }
+}
 
   width_ = width();
   height_ = height();
@@ -551,13 +541,12 @@ int SampleDisplay::handle_configure_event (GdkEventConfigure *event)
     if (pixmap_)
       pixmap_.release();
       
-//llanero: IMPORTANT
-//was:  pixmap_ = new Gdk_Pixmap(get_window(), width(), height(), -1);
   pixmap_ = Gdk_Pixmap(get_window(), width(), height(), -1);
 
   //message(0, "handle_configure_event: %d\n", width_);
 
-  updateSamples();
+//FIXME: will crash if some .toc loaded!!!
+//  updateSamples();
 
   return TRUE;
 }
@@ -822,6 +811,7 @@ void SampleDisplay::updateSamples()
   if (!pixmap_)
     return;
 
+
   gint halfHeight = chanHeight_ / 2;
 
   drawGc_.set_foreground(get_colormap().white());
@@ -868,6 +858,7 @@ void SampleDisplay::updateSamples()
 
   if (bres > 0) {
     //message(0, "Draw 1");
+
     for (s = minSample_, i = sampleStartX_;
 	 s < maxSample_ && i <= sampleEndX_;
 	 s += res, i++) {
@@ -1053,6 +1044,7 @@ void SampleDisplay::updateSamples()
 
       delete[] sampleBuf;
     }
+
   }
 
 
@@ -1228,16 +1220,17 @@ gint SampleDisplay::trackMarkerWidth()
 void SampleDisplay::drawTrackMarker(int mode, gint x, int trackNr,
 				    int indexNr, int selected, int extend)
 {
-//llanero: VERY IMPORTANT!!!
-/* Removed to allow compilation!!! :(
-   Don't know how to solve the compiler error :(
 
+//llanero: VERY IMPORTANT!!!
+/*
   if (mode < 2) {
     char buf[20];
 
     sprintf(buf, "%d.%d", trackNr, indexNr);
 
-    Gdk_Pixmap *marker;
+//llanero    Gdk_Pixmap *marker;
+//llanero Do we need to free() this??
+    Gdk_Pixmap marker;
 
     if (extend) {
       marker = indexNr == 1 ? trackExtendPixmap_ : indexExtendPixmap_;
@@ -1250,29 +1243,30 @@ void SampleDisplay::drawTrackMarker(int mode, gint x, int trackNr,
 	marker = indexNr == 1 ? trackMarkerPixmap_ : indexMarkerPixmap_;
     }
 
-
-    Gdk_Drawable dr(get_window());
+//FIXME: This make it compile but doesn't work!
+//llanero    Gdk_Drawable dr(get_window());
+    Gdk_DraPixmap dr(get_window());
 
     if (mode == 0)
-      dr = *pixmap_;
+      dr = pixmap_;
 
     if (mode == 0) {
       if (selected)
-	drawGc_->set_foreground(markerColor_);
+	drawGc_.set_foreground(markerColor_);
       else
-	drawGc_->set_foreground(get_colormap().white());
+	drawGc_.set_foreground(get_colormap().white());
 	
       dr.draw_rectangle(drawGc_, TRUE,  x-4, trackLineY_ - trackLineHeight_,
 			trackMarkerWidth_, trackLineHeight_);
     }
 
-    drawGc_->set_foreground(get_colormap().black());
+    drawGc_.set_foreground(get_colormap().black());
 
-    dr.draw_pixmap(drawGc_, *marker, 0, 0,
+    dr.draw_pixmap(drawGc_, marker, 0, 0,
 		   x - 4, trackLineY_ - TRACK_MARKER_XPM_HEIGHT,
 		   TRACK_MARKER_XPM_WIDTH, TRACK_MARKER_XPM_HEIGHT);
 
-    dr.draw_string(*trackMarkerFont_, drawGc_, 
+    dr.draw_string(trackMarkerFont_, drawGc_, 
 		    x + TRACK_MARKER_XPM_WIDTH / 2 + 2, trackLineY_ - 1, buf);
   }
   else {
