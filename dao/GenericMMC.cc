@@ -196,6 +196,50 @@ int GenericMMC::loadUnload(int unload) const
   return 0;
 }
 
+// Checks for ready status of the drive after a write operation
+// Return: 0: drive ready
+//         1: error occured
+//         2: drive not ready
+
+int GenericMMC::checkDriveReady() const
+{
+  unsigned char cmd[10];
+  unsigned char data[4];
+  int ret;
+
+  ret = testUnitReady(0);
+
+  if (ret == 0) {
+    // testUnitReady reports ready status but this might actually not
+    // be the truth -> additionally check the READ DISK INFO command 
+    
+    memset(cmd, 0, 10);
+
+    cmd[0] = 0x51; // READ DISK INFORMATION
+    cmd[8] = 4;
+    
+    ret = sendCmd(cmd, 10, NULL, 0, data, 4, 0);
+    
+    if (ret == 2) {
+      const unsigned char *sense;
+      int senseLen;
+      
+      ret = 0; // indicates ready status
+
+      sense = scsiIf_->getSense(senseLen);
+      
+      if (senseLen >= 14 && (sense[2] & 0x0f) == 0x2 && sense[7] >= 6 &&
+          sense[12] == 0x4 && 
+          (sense[13] == 0x8 || sense[13] == 0x7)) {
+        // Not Ready, long write in progress
+        ret = 2; // indicates not ready status
+      }
+    }
+  }
+
+  return ret;
+}
+
 // Performs complete blanking of a CD-RW.
 // return: 0: OK
 //         1: scsi command failed
@@ -236,7 +280,7 @@ int GenericMMC::blankDisk(BlankingMode mode)
   do {
     mSleep(2000);
 
-    ret = testUnitReady(0);
+    ret = checkDriveReady();
 
     if (ret == 1) {
       message(-2, "Test Unit Ready command failed.");
@@ -1098,7 +1142,7 @@ int GenericMMC::finishDao()
 {
   int ret;
 
-  while ((ret = testUnitReady(0)) == 2) {
+  while ((ret = checkDriveReady()) == 2) {
     mSleep(2000);
   }
 
@@ -2081,7 +2125,7 @@ long GenericMMC::readTrackData(TrackData::Mode mode,
 
   default:
     message(-2, "Read error at LBA %ld, len %ld", lba, len);
-    return -1;
+    return -2;
     break;
   }
 
@@ -2563,7 +2607,7 @@ unsigned long GenericMMC::getReadCapabilities(const CdToc *toc,
 	  caps |= CDR_READ_CAP_DATA_RW_COOKED;
 	}
 	else {
-	  message(3, "Raw R-W sub-channel reading (data track) is not supported.");
+	  message(3, "Cooked R-W sub-channel reading (data track) is not supported.");
 	}
       }
     }
