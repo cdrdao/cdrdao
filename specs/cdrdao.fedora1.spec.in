@@ -50,5 +50,6 @@ make %{?_smp_mflags}
 %{_bindir}/cdrdao
 %{_bindir}/gcdmaster
 %{_bindir}/toc2cue
+%{_bindir}/cue2toc
 %{_bindir}/toc2mp3
 %{_mandir}/man1/*

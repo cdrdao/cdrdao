@@ -1,0 +1,213 @@
+.\" cue2toc.1 - manual page for cue2toc
+.\" Copyright (C) 2004 Matthias Czapla <dermatsch@gmx.de>
+.\"
+.\" This file is part of cue2toc.
+.\"
+.\" This program is free software; you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation; either version 2 of the License, or
+.\" (at your option) any later version.
+.\"
+.\" This program is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program; if not, write to the Free Software
+.\" Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+.\"
+.TH CUE2TOC 1
+
+.SH NAME
+cue2toc \- convert CUE to TOC format for audio CDs
+
+.SH SYNOPSIS
+.BR "cue2toc" " [" "-hnv" "] [" "-o"
+.IR "tocfile" "]"
+.RB "[" "-w"
+.IR "wavefile" "] [" "cuefile" "]"
+
+.SH DESCRIPTION
+.B Cue2toc
+converts
+.I cuefile
+from CUE to TOC format and writes the result to standard output or
+the file given to the "-o" option. If
+.I cuefile
+is unspecified or "-" it is taken to be standard input. Similarly
+if the "-o" option was given an argument of "-" it is taken to
+be standard output.
+
+CUE files are created by popular Windows programs for CD mastering
+and backup and typically
+carry the extension ".cue". They accompany binary disc images
+and audio files describing the layout of the disc in a plain text
+format. For audio CDs they may contain CD-Text information which
+describes the title, performer and so on of the disc and each track.
+Cdrdao is a CD-burning application which has its own native TOC
+format for disc layout. Although cdrdao directly supports the CUE
+format it is currently limited to data tracks only.
+
+.B Cue2toc
+converts CUE files as they are in widespread use for audio CDs
+to cdrdao's TOC format. CD-Text data if present in the input file
+is preserved during conversion
+but this can be disabled to get a TOC file without CD-Text.
+CUE files often come with MP3 files so we probably have to
+decode it into a WAVE file because cdrdao currently doesnt support
+MP3 directly. Since this MP3 file is referenced by the FILE statement
+in the CUE file
+there is an option to specify a WAVE file to be referenced in
+the TOC file instead.
+
+.SH OPTIONS
+.TP
+.B -h
+print a short help message
+
+.TP
+.B -n
+no CD-Text; disable output of CD-Text information
+
+.TP
+.BI "-o " "tocfile"
+write result to
+.I tocfile
+instead of standard ouput
+
+.TP
+.B -v
+verbose mode; print warnings about unrecognized
+commands in the input
+
+.TP
+.BI "-w " "wavefile"
+use
+.I wavefile
+instead of the one given in the FILE statement of the
+CUE file
+
+.SH EXAMPLE
+Lets say we have the two files elektro.mp3 and elektro.cue.
+The file elektro.cue contains the following text:
+
+.nf
+.in +4m
+PERFORMER "Elektrochemie LK"
+TITLE "Gold"
+FILE "elektro.mp3" WAVE
+  TRACK 01 AUDIO
+    TITLE "Schall - Album Version"
+    PERFORMER "Elektrochemie LK"
+    INDEX 01 00:00:00
+  TRACK 02 AUDIO
+    TITLE "Chichi"
+    PERFORMER "Elektrochemie LK"
+    INDEX 01 04:24:17
+  TRACK 03 AUDIO
+    TITLE "Girl"
+    PERFORMER "Elektrochemie LK"
+    INDEX 01 09:44:02
+.fi
+.in -4m
+
+Since cdrdao doesnt decode MP3s on the fly we have to decode
+the MP3 file first (e.g. lame --decode elektro.mp3 elektro.wav).
+Now the command
+
+.nf
+.in +4m
+cue2toc -w elektro.wav -o elektro.toc elektro.cue
+.fi
+.in -4m
+
+produces the file elektro.toc containing the following:
+
+.nf
+.in +4m
+CD_DA
+CD_TEXT {
+    LANGUAGE_MAP {
+        0 : EN
+    }
+    LANGUAGE 0 {
+        TITLE "Gold"
+        PERFORMER "Elektrochemie LK"
+    }
+}
+
+TRACK AUDIO
+CD_TEXT {
+    LANGUAGE 0 {
+        TITLE "Schall - Album Version"
+        PERFORMER "Elektrochemie LK"
+    }
+}
+PREGAP 0:2:0
+FILE "elektro.wav" 00:00:00 04:24:17
+
+TRACK AUDIO
+CD_TEXT {
+    LANGUAGE 0 {
+        TITLE "Chichi"
+        PERFORMER "Elektrochemie LK"
+    }
+}
+FILE "elektro.wav" 04:24:17 05:19:60
+
+TRACK AUDIO
+CD_TEXT {
+    LANGUAGE 0 {
+        TITLE "Girl"
+        PERFORMER "Elektrochemie LK"
+    }
+}
+FILE "elektro.wav" 09:44:02
+
+.fi
+.in -4m
+
+which can now be used with cdrdao to burn the audio CD.
+If you dont want CD-Text use the "-n" option:
+
+.nf
+.in +4m
+cue2toc -n -w elektro.wav -o elektro.toc elektro.cue
+.fi
+.in -4m
+
+which produces elektro.toc containing the following:
+
+.nf
+.in +4m
+CD_DA
+TRACK AUDIO
+PREGAP 0:2:0
+FILE "elektro.wav" 00:00:00 04:24:17
+TRACK AUDIO
+FILE "elektro.wav" 04:24:17 05:19:60
+TRACK AUDIO
+FILE "elektro.wav" 09:44:02
+.fi
+.in -4m
+
+.SH SEE ALSO
+.BR cdrdao (1),
+.BR lame (1)
+
+.SH BUGS
+The name
+.B Cue2toc
+is misleading because it cannot convert every type of
+CUE file, only audio CDs.
+
+I have no definitive reference for the CUE format, just
+a number of different files I came across. So its very likely
+that
+.B Cue2toc
+may fail on other CUE files. In this case I would
+be glad if you could send me the file(s) so that I can fix it.
+
+.SH AUTHOR
+Matthias Czapla <dermatsch@gmx.de>
