@@ -41,7 +41,7 @@ Track::Track(TrackData::Mode t, TrackData::SubChannelMode st)
   subTracks_ = lastSubTrack_ = NULL;
 
   nofIndices_ = 0;
-  index_ = new Msf[98](0);
+  index_ = new Msf[98];
 
   isrcValid_ = 0;
 
@@ -75,7 +75,7 @@ Track::Track(const Track &obj)
   }
 
   nofIndices_ = obj.nofIndices_;
-  index_ = new Msf[98](0);
+  index_ = new Msf[98];
   for (i = 0; i < nofIndices_; i++) {
     index_[i] = obj.index_[i];
   }

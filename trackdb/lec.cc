@@ -278,7 +278,7 @@ static u_int32_t calc_edc(u_int8_t *data, int len)
   u_int32_t crc = 0;
 
   while (len--) {
-    crc = CRCTABLE[(crc ^ *data++) & 0xffL] ^ (crc >> 8);
+    crc = CRCTABLE[(crc ^ *data++) & 0xff] ^ (crc >> 8);
   }
 
   return crc;
