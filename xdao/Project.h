@@ -20,8 +20,6 @@
 #ifndef __PROJECT_H__
 #define __PROJECT_H__
 
-#include <gtk--.h>
-#include <gtk/gtk.h>
 #include <gnome--.h>
 
 class AudioCDChild;
@@ -32,6 +30,7 @@ class TocEdit;
 class Project : public Gnome::App
 {
 protected:
+  Gtk::Toolbar *toolbar;
   Gtk::HBox *hbox;
 //  Gtk::Statusbar *statusbar_;  
   Gnome::AppBar *statusbar_;  
@@ -46,6 +45,7 @@ protected:
   TocEdit *tocEdit_;
 
   void createMenus();
+  void createToolbar();
   void createStatusbar();
   void updateWindowTitle();
   void saveProject();

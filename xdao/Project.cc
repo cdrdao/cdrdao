@@ -20,6 +20,7 @@
 #include <strstream.h>
 #include <errno.h>
 
+#include "Project.h"
 #include "util.h"
 #include "xcdrdao.h"
 #include "guiUpdate.h"
@@ -28,11 +29,8 @@
 #include "RecordGenericDialog.h"
 #include "AudioCDChild.h"
 #include "AudioCDView.h"
-#include "Project.h"
 #include "TocEdit.h"
 #include "TocEditView.h"
-
-#include <gnome.h>
 
 Project::Project() : Gnome::App("gcdmaster", APP_NAME)
 {
@@ -44,8 +42,12 @@ Project::Project() : Gnome::App("gcdmaster", APP_NAME)
   viewNumber = 0;
   viewSwitcher_ = new ViewSwitcher(hbox);
   viewSwitcher_->show();
-//  set_usize(500, 350);
+  set_usize(630, 440);
   enable_layout_config(true);
+
+  createMenus();
+  createToolbar();
+  createStatusbar();
 }
 
 void Project::createMenus()
@@ -152,6 +154,46 @@ void Project::createMenus()
   }
 
   create_menus(menus);
+}
+
+void Project::createToolbar()
+{
+  toolbar = new Gtk::Toolbar;
+  Gtk::AccelGroup *accel_group = Gtk::AccelGroup::create();
+  vector<Gnome::UI::Info> toolbarTree;
+
+  {
+    using namespace Gnome::UI;
+    toolbarTree.push_back(Item(Icon(GNOME_STOCK_PIXMAP_NEW),
+								N_("New"),
+								slot(gcdmaster, &GCDMaster::newChooserWindow),
+								N_("New Project")));
+    toolbarTree.push_back(Item(Icon(GNOME_STOCK_PIXMAP_OPEN),
+								N_("Open"),
+								bind(slot(gcdmaster, &GCDMaster::openProject), (ProjectChooser *)0),
+								N_("Open a project")));
+    toolbarTree.push_back(Item(Icon(GNOME_STOCK_PIXMAP_CLOSE),
+								N_("Close"),
+								bind(slot(gcdmaster, &GCDMaster::closeProject), this),
+								N_("Close current project")));
+    toolbarTree.push_back(Item(Icon(GNOME_STOCK_PIXMAP_SAVE),
+								N_("Save"),
+								slot(this, &Project::saveProject),
+								N_("Save current project")));
+
+    toolbarTree.push_back(Item(Icon(GNOME_STOCK_PIXMAP_CDROM),
+								N_("Record"),
+								slot(this, &Project::recordToc2CD),
+								N_("Record to CD")));
+  }
+
+  fill(*toolbar, toolbarTree, *accel_group);
+
+  toolbar->show();
+  toolbar->set_border_width(2);
+
+  add_docked(*toolbar, "main_toolbar", GNOME_DOCK_ITEM_BEH_NORMAL, GNOME_DOCK_TOP, 1, 2, 0);
+
 }
 
 void Project::createStatusbar()
