@@ -18,6 +18,9 @@
  */
 /*
  * $Log: Track.cc,v $
+ * Revision 1.3  2001/03/04 19:34:13  andreasm
+ * Added class 'SubTrackIterator'.
+ *
  * Revision 1.2  2000/06/10 14:44:47  andreasm
  * Tracks that are shorter than 4 seconds do not lead to a fatal error anymore.
  * The user has the opportunity to record such tracks now.
@@ -48,7 +51,7 @@
  *
  */
 
-static char rcsid[] = "$Id: Track.cc,v 1.2 2000/06/10 14:44:47 andreasm Exp $";
+static char rcsid[] = "$Id: Track.cc,v 1.3 2001/03/04 19:34:13 andreasm Exp $";
 
 #include <config.h>
 
@@ -1766,3 +1769,38 @@ long TrackReader::readSamples(Sample *buf, long len)
   
   return ret;
 }
+
+
+SubTrackIterator::SubTrackIterator(const Track *t)
+{
+  track_ = t;
+  iterator_ = NULL;
+}
+
+
+SubTrackIterator::~SubTrackIterator()
+{
+  track_ = NULL;
+  iterator_ = NULL;
+}
+
+const SubTrack *SubTrackIterator::first()
+{
+  iterator_ = track_->subTracks_;
+
+  return next();
+}
+
+const SubTrack *SubTrackIterator::next()
+{
+  if (iterator_ != NULL) {
+    SubTrack *s = iterator_;
+
+    iterator_ = iterator_->next_;
+    return s;
+  }
+  else {
+    return NULL;
+  }
+}
+

@@ -44,6 +44,7 @@ private:
 
   friend class Track;
   friend class TrackReader;
+  friend class SubTrackIterator;
 };
 
 
