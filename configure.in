@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_REVISION($Revision: 1.16 $)dnl
+AC_REVISION($Revision: 1.17 $)dnl
 
 cdrdao_version=1.1.5
 
@@ -29,7 +29,7 @@ AC_PROG_MAKE_SET
 dnl Checks for header files.
 AC_HEADER_STDC
 AC_HEADER_SYS_WAIT
-AC_CHECK_HEADERS(fcntl.h malloc.h unistd.h sys/mman.h sched.h)
+AC_CHECK_HEADERS(fcntl.h getopt.h malloc.h unistd.h sys/mman.h sched.h)
 
 dnl Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST

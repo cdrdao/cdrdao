@@ -1,6 +1,6 @@
 #! /bin/sh
 
-# From configure.in Revision: 1.15 
+# From configure.in Revision: 1.16 
 cdrdao_version=1.1.5
 
 # Configure paths for GTK--
@@ -1389,7 +1389,7 @@ EOF
 
 fi
 
-for ac_hdr in fcntl.h malloc.h unistd.h sys/mman.h sched.h
+for ac_hdr in fcntl.h getopt.h malloc.h unistd.h sys/mman.h sched.h
 do
 ac_safe=`echo "$ac_hdr" | sed 'y%./+-%__p_%'`
 echo $ac_n "checking for $ac_hdr""... $ac_c" 1>&6

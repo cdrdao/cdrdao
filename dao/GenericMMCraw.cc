@@ -334,7 +334,7 @@ int GenericMMCraw::initDao(const Toc *toc)
   message(4, "Block length: %ld", blockLength_);
 
   long cueSheetLen;
-  unsigned char *cueSheet = createCueSheet(&cueSheetLen);
+  unsigned char *cueSheet = createCueSheet(0, &cueSheetLen);
 
   if (cueSheet == NULL) {
     return 1;

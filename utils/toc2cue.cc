@@ -25,7 +25,9 @@
 #include <unistd.h>
 #include <errno.h>
 #include <stdarg.h>
+#ifdef HAVE_GETOPT_H
 #include <getopt.h>
+#endif
 #include <fstream.h>
 
 #include "util.h"

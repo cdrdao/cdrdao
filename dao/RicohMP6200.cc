@@ -1,6 +1,6 @@
 /*  cdrdao - write audio CD-Rs in disc-at-once mode
  *
- *  Copyright (C) 1998-2000  Andreas Mueller <mueller@daneb.ping.de>
+ *  Copyright (C) 1998-2001  Andreas Mueller <andreas@daneb.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -16,43 +16,10 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
-/*
- * $Log: RicohMP6200.cc,v $
- * Revision 1.3  2000/12/17 10:51:22  andreasm
- * Default verbose level is now 2. Adaopted message levels to have finer
- * grained control about the amount of messages printed by cdrdao.
- * Added CD-TEXT writing support to the GenericMMCraw driver.
- * Fixed CD-TEXT cue sheet creating for the GenericMMC driver.
- *
- * Revision 1.2  2000/04/23 16:29:50  andreasm
- * Updated to state of my private development environment.
- *
- * Revision 1.6  1999/11/07 09:14:59  mueller
- * Release 1.1.3
- *
- * Revision 1.5  1999/04/05 11:04:10  mueller
- * Added driver option flags.
- *
- * Revision 1.4  1999/03/27 20:50:24  mueller
- * Adapted to changed writing interface.
- * Fixed problems with the ATAPI version of these drives.
- *
- * Revision 1.3  1999/01/24 17:08:38  mueller
- * Tried different load/unload SCSI command for ejecting the disk.
- *
- * Revision 1.2  1998/10/06 18:10:24  mueller
- * Disabled setting of Catalogue Number.
- *
- * Revision 1.1  1998/10/03 15:04:37  mueller
- * Initial revision
- *
- */
 
 /* Driver for the Ricoh MP6200 drive. It's mainly SCSI-3/mmc compatible but
  * disk-at-once writing is done with the Philips CDD2x00 commands.
  */
-
-static char rcsid[] = "$Id: RicohMP6200.cc,v 1.3 2000/12/17 10:51:22 andreasm Exp $";
 
 #include <config.h>
 

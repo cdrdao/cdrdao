@@ -87,11 +87,12 @@ protected:
   int readIsrc(int, char *);
 
   virtual int selectSpeed(int readSpeed);
-  virtual int setWriteParameters();
+  virtual int setWriteParameters(unsigned long variant);
+  int setSimulationMode(int showMessage);
   int performPowerCalibration();
   int readBufferCapacity(long *capacity);
 
-  unsigned char *createCueSheet(long *cueSheetLen);
+  unsigned char *createCueSheet(unsigned long variant, long *cueSheetLen);
   int sendCueSheet();
 
   int writeCdTextLeadIn();

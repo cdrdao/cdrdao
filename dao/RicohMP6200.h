@@ -1,6 +1,6 @@
 /*  cdrdao - write audio CD-Rs in disc-at-once mode
  *
- *  Copyright (C) 1998  Andreas Mueller <mueller@daneb.ping.de>
+ *  Copyright (C) 1998-2001  Andreas Mueller <andreas@daneb.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -15,25 +15,6 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- */
-/*
- * $Log: RicohMP6200.h,v $
- * Revision 1.1  2000/02/05 01:35:11  llanero
- * Initial revision
- *
- * Revision 1.4  1999/04/05 11:04:10  mueller
- * Added driver option flags.
- *
- * Revision 1.3  1999/03/27 20:50:24  mueller
- * Adapted to changed writing interface.
- * Fixed problems with the ATAPI version of these drives.
- *
- * Revision 1.2  1999/01/24 17:08:38  mueller
- * Tried different load/unload SCSI command for ejecting the disk.
- *
- * Revision 1.1  1998/10/03 15:04:37  mueller
- * Initial revision
- *
  */
 
 /* Driver for the Ricoh MP6200 drive. It's mainly SCSI-3/mmc compatible but

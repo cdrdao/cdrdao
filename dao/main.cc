@@ -192,7 +192,7 @@ command:\n\
   write     - writes CD\n\
   copy      - copies CD\n");
     
-    message (0, "\n Try '%s <command> -h' to get a list of available options\n");
+    message (0, "\n Try '%s <command> -h' to get a list of available options\n", PRGNAME);
     break;
     
   case SHOW_TOC:
@@ -2324,6 +2324,8 @@ int main(int argc, char **argv)
 	exitCode = 1; goto fail;
       }
     }
+
+    cdr->simulate(WRITE_SIMULATE);
 
     message(1, "Blanking disk...");
     if (cdr->blankDisk(BLANKING_MODE) != 0) {

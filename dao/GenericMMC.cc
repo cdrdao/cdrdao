@@ -32,6 +32,27 @@
 #include "PWSubChannel96.h"
 #include "CdTextEncoder.h"
 
+
+
+// Variants for cue sheet generation
+
+// do not set ctl flags for ISRC cue sheet entries
+#define CUE_VAR_ISRC_NO_CTL 0x1
+
+// do not set start of lead-in time in lead-in cue sheet entry
+#define CUE_VAR_CDTEXT_NO_TIME 0x2
+
+#define CUE_VAR_MAX 0x3 
+
+
+// Variants for write parameters mode page
+
+//do not set data block type to block size 2448 if a CD-TEXT lead-in is written
+#define WMP_VAR_CDTEXT_NO_DATA_BLOCK_TYPE 0x1
+
+#define WMP_VAR_MAX 0x1
+
+
 GenericMMC::GenericMMC(ScsiIf *scsiIf, unsigned long options)
   : CdrDriver(scsiIf, options)
 {
@@ -150,6 +171,9 @@ int GenericMMC::blankDisk(BlankingMode mode)
   unsigned char cmd[12];
   int ret;
   time_t startTime, endTime;
+
+  setSimulationMode(0);
+
 
   memset(cmd, 0, 12);
 
@@ -336,7 +360,7 @@ int GenericMMC::performPowerCalibration()
 // Sets write parameters via mode page 0x05.
 // return: 0: OK
 //         1: scsi command failed
-int GenericMMC::setWriteParameters()
+int GenericMMC::setWriteParameters(unsigned long variant)
 {
   unsigned char mp[0x38];
   unsigned char mpHeader[8];
@@ -383,10 +407,11 @@ int GenericMMC::setWriteParameters()
                  // used for session at once writing)
 
   if (cdTextEncoder_ != NULL) {
-    mp[4] |= 3; /* Data Block Type: raw data with raw P-W sub-channel data,
-		   block size 2448, required for CD-TEXT lead-in writing
-		   according to the SCSI/MMC-3 manual
-		*/
+    if ((variant & WMP_VAR_CDTEXT_NO_DATA_BLOCK_TYPE) == 0)
+      mp[4] |= 3; /* Data Block Type: raw data with raw P-W sub-channel data,
+		     block size 2448, required for CD-TEXT lead-in writing
+		     according to the SCSI/MMC-3 manual
+		  */
   }
 
   message(4, "Data block type: %u",  mp[4] & 0x0f);
@@ -406,8 +431,39 @@ int GenericMMC::setWriteParameters()
 
   message(4, "Toc type: 0x%x", mp[8]);
 
-  if (setModePage(mp, mpHeader, NULL, 1) != 0) {
+  if (setModePage(mp, mpHeader, NULL, 0) != 0) {
     message(-2, "Cannot set write parameters mode page.");
+    return 1;
+  }
+
+  return 0;
+}
+
+// Sets simulation mode via mode page 0x05.
+// return: 0: OK
+//         1: scsi command failed
+int GenericMMC::setSimulationMode(int showMessage)
+{
+  unsigned char mp[0x38];
+  unsigned char mpHeader[8];
+
+  if (getModePage(5/*write parameters mode page*/, mp, 0x38,
+		  mpHeader, NULL, showMessage) != 0) {
+    if (showMessage)
+      message(-2, "Cannot retrieve write parameters mode page.");
+    return 1;
+  }
+
+  mp[0] &= 0x7f; // clear PS flag
+
+  if (simulate_)
+    mp[2] |= 1 << 4; // test write
+  else
+    mp[2] &= ~(1 << 4);
+
+  if (setModePage(mp, mpHeader, NULL, showMessage) != 0) {
+    if (showMessage)
+      message(-2, "Cannot set write parameters mode page.");
     return 1;
   }
 
@@ -524,7 +580,8 @@ static unsigned char leadInOutDataMode(TrackData::Mode mode)
 // Creates cue sheet for current toc.
 // cueSheetLen: filled with length of cue sheet in bytes
 // return: newly allocated cue sheet buffer or 'NULL' on error
-unsigned char *GenericMMC::createCueSheet(long *cueSheetLen)
+unsigned char *GenericMMC::createCueSheet(unsigned long variant,
+					  long *cueSheetLen)
 {
   const Track *t;
   int trackNr;
@@ -606,7 +663,8 @@ unsigned char *GenericMMC::createCueSheet(long *cueSheetLen)
 
   cueSheet[n*8+4] = 0;    // Serial Copy Management System
 
-  if (cdTextEncoder_ != NULL) {
+  if (cdTextEncoder_ != NULL &&
+      (variant & CUE_VAR_CDTEXT_NO_TIME) == 0) {
     cueSheet[n*8+5] = leadInStart_.min();
     cueSheet[n*8+6] = leadInStart_.sec();
     cueSheet[n*8+7] = leadInStart_.frac();
@@ -667,7 +725,11 @@ unsigned char *GenericMMC::createCueSheet(long *cueSheetLen)
       }
 
       if (t->isrcValid()) {
-	cueSheet[n*8] = ctl | 0x03;
+	if ((variant & CUE_VAR_ISRC_NO_CTL) == 0)
+	  cueSheet[n*8] = ctl | 0x03;
+	else
+	  cueSheet[n*8] = 0x03;
+
 	cueSheet[n*8+1] = trackNr;
 	cueSheet[n*8+2] = t->isrcCountry(0);
 	cueSheet[n*8+3] = t->isrcCountry(1);
@@ -677,7 +739,11 @@ unsigned char *GenericMMC::createCueSheet(long *cueSheetLen)
 	cueSheet[n*8+7] = t->isrcYear(0) + '0';
 	n++;
 
-	cueSheet[n*8] = ctl | 0x03;
+	if ((variant & CUE_VAR_ISRC_NO_CTL) == 0)
+	  cueSheet[n*8] = ctl | 0x03;
+	else
+	  cueSheet[n*8] = 0x03;
+
 	cueSheet[n*8+1] = trackNr;
 	cueSheet[n*8+2] = t->isrcYear(1) + '0';
 	cueSheet[n*8+3] = t->isrcSerial(0) + '0';
@@ -766,7 +832,7 @@ unsigned char *GenericMMC::createCueSheet(long *cueSheetLen)
   cueSheet[n*8+6] = lostart.sec();
   cueSheet[n*8+7] = lostart.frac();
 
-  message(3, "\nCue Sheet:");
+  message(3, "\nCue Sheet (variant %lx):", variant);
   message(3, "CTL/  TNO  INDEX  DATA  SCMS  MIN  SEC  FRAME");
   message(3, "ADR               FORM");
   for (n = 0; n < len; n++) {
@@ -784,28 +850,49 @@ int GenericMMC::sendCueSheet()
 {
   unsigned char cmd[10];
   long cueSheetLen;
-  unsigned char *cueSheet = createCueSheet(&cueSheetLen);
+  unsigned long variant;
+  unsigned char *cueSheet;
+  int cueSheetSent = 0;
 
-  if (cueSheet == NULL) {
-    return 1;
+  for (variant = 0; variant <= CUE_VAR_MAX; variant++) {
+
+    if (cdTextEncoder_ == NULL &&
+	(variant & CUE_VAR_CDTEXT_NO_TIME) != 0) {
+      // skip CD-TEXT variants if no CD-TEXT has to be written
+      continue;
+    }
+
+    cueSheet = createCueSheet(variant, &cueSheetLen);
+
+    if (cueSheet != NULL) {
+      memset(cmd, 0, 10);
+
+      cmd[0] = 0x5d; // SEND CUE SHEET
+
+      cmd[6] = cueSheetLen >> 16;
+      cmd[7] = cueSheetLen >> 8;
+      cmd[8] = cueSheetLen;
+
+      if (sendCmd(cmd, 10, cueSheet, cueSheetLen, NULL, 0, 0) != 0) {
+	delete[] cueSheet;
+      }
+      else {
+	message(3, "Drive accepted cue sheet variant %lx.", variant);
+	delete[] cueSheet;
+	cueSheetSent = 1;
+	break;
+      }
+    }
   }
 
-  memset(cmd, 0, 10);
-
-  cmd[0] = 0x5d; // SEND CUE SHEET
-
-  cmd[6] = cueSheetLen >> 16;
-  cmd[7] = cueSheetLen >> 8;
-  cmd[8] = cueSheetLen;
-
-  if (sendCmd(cmd, 10, cueSheet, cueSheetLen, NULL, 0) != 0) {
-    message(-2, "Cannot send cue sheet.");
-    delete[] cueSheet;
+  if (cueSheetSent) {
+    return 0;
+  }
+  else {
+    message(-2,
+	    "Drive does not accept any cue sheet variant - please report.");
     return 1;
   }
-
-  delete[] cueSheet;
-  return 0;
 }
 
 int GenericMMC::initDao(const Toc *toc)
@@ -863,10 +950,31 @@ int GenericMMC::initDao(const Toc *toc)
 
 int GenericMMC::startDao()
 {
+  unsigned long variant;
+  int writeParametersSet = 0;
+
   scsiTimeout_ = scsiIf_->timeout(3 * 60);
 
-  if (setWriteParameters() != 0)
+  for (variant = 0; variant <= WMP_VAR_MAX; variant++) {
+    if (cdTextEncoder_ == NULL &&
+	(variant & WMP_VAR_CDTEXT_NO_DATA_BLOCK_TYPE) != 0) {
+      // skip CD-TEXT variants if no CD-TEXT has to be written
+      continue;
+    }
+
+    if (setWriteParameters(variant) == 0) {
+      message(3, "Drive accepted write parameter mode page variant %lx.",
+	      variant);
+      writeParametersSet = 1;
+      break;
+    }
+  }
+
+  if (!writeParametersSet) {
+    message(-2, "Cannot setup write parameters for session-at-once mode.");
+    message(-2, "Please try to use the 'generic-mmc-raw' driver.");
     return 1;
+  }
 
   if (!simulate_) {
     if (performPowerCalibration() != 0) {
