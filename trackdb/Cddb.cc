@@ -315,6 +315,9 @@ int Cddb::openConnection()
   unsigned short port;
   struct sigaction newAlarmHandler;
   struct sigaction oldAlarmHandler;
+#ifndef HAVE_INET_ATON
+  long inetAddr;
+#endif
 
   if (fd_ >= 0) // already connected
     return 0;
@@ -356,7 +359,11 @@ int Cddb::openConnection()
       message(1, "CDDB: Connecting to cddbp://%s:%u ...", server, port);
     }
 
+#ifdef HAVE_INET_ATON
     if (!inet_aton(server, &sockAddr.sin_addr)) {
+#else
+    if ((inetAddr = (long)inet_addr(server)) == -1) {
+#endif
       if ((hostEnt = gethostbyname(server)) == NULL ||
 	  hostEnt->h_addrtype != AF_INET) {
 	alarm(0);
@@ -367,6 +374,11 @@ int Cddb::openConnection()
 	memcpy((char*) &sockAddr.sin_addr, hostEnt->h_addr, hostEnt->h_length);
       }
     }
+#ifndef HAVE_INET_ATON
+    else {
+      memcpy((char*)&sockAddr.sin_addr, (char*)&inetAddr, sizeof(inetAddr));
+    }
+#endif
 
     message(3, "CDDB: Hostname: %s -> IP: %s", server,
 	    inet_ntoa(sockAddr.sin_addr));
