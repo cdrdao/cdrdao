@@ -221,93 +221,129 @@ The directory "testtocs" contains a template toc-file "cdtext.toc".
 
 Drives Known to Work
 --------------------
+
 Recorders:
 
-  Model                    Firmware Rev.    Driver           Notes
-  ----------------------------------------------------------------
-  ATAPI CD-R/RW CRW6206A   1.3A             generic-mmc-raw
-  BTC BCE621E              2.0              generic-mmc-raw
-  HP CD-Writer 4020        1.27             cdd2600        
-  HP CD-Writer 6020        1.07             cdd2600        
-  HP CD-Writer+ 7100       3.01             generic-mmc-raw
-  HP CD-Writer+ 7200       3.01             generic-mmc-raw
-  HP CD-Writer+ 7570       1.0a             generic-mmc      5
-  HP CD-Writer+ 8100       1.0g             generic-mmc      5
-  HP CD-Writer+ 8200       1.0f             generic-mmc      5
-  IDE-CD R/RW 2x2x24       1.4              generic-mmc-raw
-  IMS CDD2000              1.25,1.26        cdd2600        
-  MATSHITA CD-R   CW-7502  X.14, X.17       generic-mmc      5
-  MATSHITA CD-R   CW-7503  1.04             generic-mmc    
-  MATSHITA CD-R   CW-7582  1.00, 1.05       generic-mmc    
-  MEMOREX CD-RW4224        1.17             generic-mmc    
-  MEMOREX CDRW-2216        1.0b             generic-mmc-raw
-  MEMOREX CR-622           D4.0             generic-mmc-raw  5
-  MEMOREX CRW-1662         D4.0             generic-mmc-raw
-  MITSUMI CR-4801          2.02             generic-mmc      2
-  MITSUMI CR-4802          1.2B, 1.4D       generic-mmc-raw  4
-  PANASONIC CD-R   CW-7582 1.05             generic-mmc    
-  PHILIPS CDD2000          1.25             cdd2600        
-  PHILIPS CDD2600          1.07             cdd2600        
-  PHILIPS CDD3600          2.00             generic-mmc-raw
-  PHILIPS CDD3610          2.02, 3.01       generic-mmc-raw
-  PHILIPS OMNIWRITER26     1.20             ricoh-mp6200   
-  PHILIPS PCA460RW         1.0e             generic-mmc    
-  PLEXTOR CD-R   PX-R412   1.04, 1.06, 1.07 generic-mmc    
-  PLEXTOR CD-R   PX-R820   1.03             generic-mmc    
-  PLEXTOR CD-R   PX-W4220  1.01, 1.02       generic-mmc    
-  RICOH MP6200             2.20, 2.03, 1.20 ricoh-mp6200   
-  RICOH MP6201             ?                ricoh-mp6200   
-  SAF CD-R2006PLUS         2.05             teac-cdr55     
-  SAF CD-R4012             6.0J, 6.0L       teac-cdr55     
-  SAF CD-RW 226            1.12             teac-cdr55     
-  SONY CD-R   CDU920       ?                sony-cdu920    
-  SONY CD-R   CDU924       1.1d             sony-cdu920    
-  SONY CD-R   CDU948       1.0j             sony-cdu948      5
-  SONY CRX100              ?                generic-mmc      5
-  T.YUDEN CD-WO EW-50      2.15, 2.16       taiyo-yuden    
-  TEAC CD-R50              ?                teac-cdr55     
-  TEAC CD-R55              1.0k, 1.0n       teac-cdr55     
-  TEAC CD-R56              ?                generic-mmc    
-  TRAXDATA CDR4120         5.0G, 5.0N       teac-cdr55     
-  TRAXDATA CDRW2260+       3.01             generic-mmc-raw
-  TRAXDATA CDRW4260        1.0f             generic-mmc    
-  TRAXDATA CRW2260 PRO     2.0              generic-mmc-raw
-  WAITEC WT4424            1.01             generic-mmc-raw
-  WAITEC WT624             7.0F             generic-mmc    
-  YAMAHA CDR100            ?                yamaha-cdr10x  
-  YAMAHA CDR102            1.00, 1.01       yamaha-cdr10x  
-  YAMAHA CDR200            1.0k             generic-mmc    
-  YAMAHA CDR400            1.0k, 1.0n       generic-mmc      1,5
-  YAMAHA CRW2260           1.0f             generic-mmc    
-  YAMAHA CRW4260           1.0h, 1.0q       generic-mmc      5
-  YAMAHA CRW4416           1.0b             generic-mmc    
-  YAMAHA CRW6416           ?                generic-mmc    
+  Model                    Firmware Rev.          Driver           Notes
+  ----------------------------------------------------------------------
+  AOPEN CRW9624            1.70                   generic-mmc    
+  ATAPI CD-R/RW 4X4X32     3.GS                   generic-mmc-raw  7
+  ATAPI CD-R/RW CRW6206A   1.3A                   generic-mmc-raw
+  BTC BCE621E              2.0                    generic-mmc-raw
+  GENERIC CRD-RW2          1.12                   generic-mmc      9
+  HP CD-Writer 4020        1.27                   cdd2600        
+  HP CD-Writer 6020        1.07                   cdd2600        
+  HP CD-Writer+ 7100       3.01                   generic-mmc-raw
+  HP CD-Writer+ 7200       3.01                   generic-mmc-raw
+  HP CD-Writer+ 7570       1.0a                   generic-mmc      5
+  HP CD-Writer+ 8100       1.0g                   generic-mmc      5
+  HP CD-Writer+ 8200       1.0f                   generic-mmc      5
+  HP CD-Writer+ 9100       1.0c                   generic-mmc      5
+  HP CD-Writer+ 9200       1.0c, 1.0e             generic-mmc      5
+  IDE-CD R/RW 2x2x24       1.4                    generic-mmc-raw
+  IMS CDD2000              1.25,1.26              cdd2600        
+  IOMEGA ZIPCD 4x650       1.04                   generic-mmc-raw
+  JVC R2626                1.10                   teac-cdr55     
+  KODAK PCD-225            1.06                   cdd2600        
+  MATSHITA CD-R   CW-7502  X.14, X.17             generic-mmc      5
+  MATSHITA CD-R   CW-7503  1.04, 1.8              generic-mmc    
+  MATSHITA CD-R   CW-7582  1.00, 1.05, 1.10       generic-mmc    
+  MATSHITA CDRRW01         1.34                   generic-mmc    
+  MEMOREX CD-RW4224        1.17                   generic-mmc    
+  MEMOREX CDRW-2216        1.0b                   generic-mmc-raw
+  MEMOREX CR-622           D4.0                   generic-mmc-raw  5
+  MEMOREX CRW-1662         D4.0                   generic-mmc-raw
+  MITSUMI CR-4801          2.02                   generic-mmc      2
+  MITSUMI CR-4802          1.2B, 1.4D             generic-mmc-raw  4
+  PANASONIC CD-R   CW-7582 1.05                   generic-mmc    
+  PHILIPS CDD2000          1.25, 1.26             cdd2600        
+  PHILIPS CDD2600          1.07                   cdd2600        
+  PHILIPS CDD3600          2.00                   generic-mmc-raw
+  PHILIPS CDD3610          2.02, 3.01, 3.09       generic-mmc-raw
+  PHILIPS CDD522           ?                      cdd2600        
+  PHILIPS OMNIWRITER26     1.20                   ricoh-mp6200   
+  PHILIPS PCA460RW         1.0e                   generic-mmc    
+  PHILIPS PCRW404          1.06                   generic-mmc-raw
+  PLEXTOR CD-R   PX-R412   1.04, 1.06, 1.07       generic-mmc    
+  PLEXTOR CD-R   PX-R820   1.03, 1.07             generic-mmc    
+  PLEXTOR CD-R   PX-W124   1.02                   generic-mmc    
+  PLEXTOR CD-R   PX-W4220  1.01, 1.02             generic-mmc    
+  PLEXTOR CD-R   PX-W8220  1.01                   generic-mmc    
+  PLEXTOR CD-R   PX-W8432  1.03, 1.05             generic-mmc    
+  RICOH CD-R/RW MP7060     1.30, 1.50, 1.70       generic-mmc    
+  RICOH MP6200             2.20, 2.03, 1.20, 2.40 ricoh-mp6200   
+  RICOH MP6201             ?                      ricoh-mp6200   
+  SAF CD-R 8020            1.24                   generic-mmc    
+  SAF CD-R2006PLUS         2.05                   teac-cdr55     
+  SAF CD-R4012             6.0J, 6.0L             teac-cdr55     
+  SAF CD-RW 226            1.12                   teac-cdr55     
+  SAF CD-RW6424            1.30                   generic-mmc    
+  SONY CD-R   CDU920       ?                      sony-cdu920    
+  SONY CD-R   CDU924       1.1d                   sony-cdu920    
+  SONY CD-R   CDU948       1.0j                   sony-cdu948      5
+  SONY CRX100              1.0m                   generic-mmc      5
+  SONY CRX120              ?                      generic-mmc      5
+  SONY CRX140              ?                      generic-mmc      5
+  T.YUDEN CD-WO EW-50      2.15, 2.16, 2.18       taiyo-yuden    
+  TEAC CD-R50              ?                      teac-cdr55     
+  TEAC CD-R55              1.0k, 1.0n             teac-cdr55     
+  TEAC CD-R56              ?                      generic-mmc    
+  TEAC CD-R58              1.0J, 1.0H             generic-mmc    
+  TEAC CD-W54E             1.1B                   generic-mmc    
+  TRAXDATA CDR4120         5.0G, 5.0J, 5.0N       teac-cdr55     
+  TRAXDATA CDRW2260+       3.01                   generic-mmc-raw
+  TRAXDATA CDRW4260        1.0f                   generic-mmc    
+  TRAXDATA CRW2260 PRO     2.0                    generic-mmc-raw
+  WAITEC WT4424            1.01                   generic-mmc-raw
+  WAITEC WT624             7.0F                   generic-mmc    
+  YAMAHA CDR100            1.0                    yamaha-cdr10x  
+  YAMAHA CDR102            1.00, 1.01             yamaha-cdr10x  
+  YAMAHA CDR200            1.0k                   generic-mmc    
+  YAMAHA CDR400            1.0k, 1.0n             generic-mmc      1,5
+  YAMAHA CRW2260           1.0f                   generic-mmc    
+  YAMAHA CRW4001           1.0q                   generic-mmc    
+  YAMAHA CRW4260           1.0h, 1.0q             generic-mmc      5
+  YAMAHA CRW4416           1.0b                   generic-mmc    
+  YAMAHA CRW6416           1.0c                   generic-mmc      8
+  YAMAHA CRW8424           1.0d                   generic-mmc    
 
 Readers (command 'read-toc'):
 
-  Model                    Firmware Rev.    Driver           Notes
-  ----------------------------------------------------------------
-  ASUS CD-S400             2.40             generic-mmc    
-  E-IDE CD-ROM 36X/AKU     U23              generic-mmc      3
-  HITACHI DVD-ROM GD-2500  A011             plextor        
-  LITEON CD-ROM            ?                generic-mmc    
-  MATSHITA CD-ROM CR-588   LS15             generic-mmc    
-  MEMOREX CD-233E          U10A             generic-mmc      6
-  NAKAMICH MJ-5.16S        1.07             plextor        
-  PIONEER CD-ROM DR-U06    1.05             plextor        
-  PIONEER CD-ROM DR-U12    1.06             plextor        
-  PIONEER CD-ROM DR-U16    1.06             plextor        
-  PIONEER DVD-103          1.09, 1.15       generic-mmc    
-  PIONEER DVD-303          1.09             plextor        
-  PLEXTOR CD-ROM           ?                plextor-scan   
-  SONY CD-ROM              ?                plextor        
-  SONY CD-ROM CDU-76       1.1c             plextor        
-  SONY CD-ROM CDU31A-02    ?                generic-mmc    
-  TEAC CD-532E             1.0A             generic-mmc    
-  TEAC CD-ROM CD-532S      1.0A             plextor-scan   
-  TOSHIBA CD-ROM XM-5701TA 0167             plextor        
-  TOSHIBA CD-ROM XM-6201TA 1037             plextor        
-  TOSHIBA CD-ROM XM-6302B  1012             generic-mmc    
+  Model                    Firmware Rev.          Driver           Notes
+  ----------------------------------------------------------------------
+  ASUS CD-S340             1.60                   generic-mmc    
+  ASUS CD-S400             2.40                   generic-mmc    
+  E-IDE CD-ROM 36X/AKU     U23                    generic-mmc      3
+  HITACHI CDR-8435         0010                   generic-mmc    
+  HITACHI DVD-ROM GD-2500  A011                   plextor        
+  KENWOOD CD-ROM UCR-415   100K                   generic-mmc    
+  LG CD-ROM CRD-8480C      1.04                   generic-mmc    
+  LITEON CD-ROM            ?                      generic-mmc    
+  MATSHITA CD-ROM CR-506   8S04                   plextor        
+  MATSHITA CD-ROM CR-588   LS15                   generic-mmc    
+  MEMOREX CD-233E          U10A                   generic-mmc      6
+  NAKAMICH MJ-5.16S        1.07                   plextor        
+  PHILIPS CD-ROM PCCD052   F50P                   generic-mmc    
+  PHILIPS E-IDE CD-ROM 36X U23                    generic-mmc    
+  PIONEER CD-ROM DR-U03    1.01                   plextor        
+  PIONEER CD-ROM DR-U06    1.05                   plextor        
+  PIONEER CD-ROM DR-U10    1.07                   plextor        
+  PIONEER CD-ROM DR-U12    1.06                   plextor        
+  PIONEER CD-ROM DR-U16    1.06                   plextor        
+  PIONEER DVD-103          1.09, 1.15             generic-mmc    
+  PIONEER DVD-303          1.09                   plextor        
+  PLEXTOR CD-ROM           ?                      plextor-scan   
+  SONY CD-ROM              ?                      plextor        
+  SONY CD-ROM CDU-76       1.1c                   plextor        
+  SONY CD-ROM CDU31A-02    ?                      generic-mmc    
+  TEAC CD-524E             3.0B                   generic-mmc    
+  TEAC CD-532E             1.0A                   generic-mmc    
+  TEAC CD-ROM CD-532S      1.0A                   plextor-scan   
+  TOSHIBA CD-ROM XM-3206B  ?                      generic-mmc    
+  TOSHIBA CD-ROM XM-5701TA 0167                   toshiba        
+  TOSHIBA CD-ROM XM-6201TA 1037                   toshiba        
+  TOSHIBA CD-ROM XM-6302B  1012                   generic-mmc    
+  TOSHIBA CD-ROM XM-6401TA 1009                   toshiba        
 
 Notes:
   1) Writing with firmware revision 1.0i does not work.
@@ -316,6 +352,9 @@ Notes:
   4) The generic-mmc driver will also work but the firmware seems to create wrong sub-channel data in some cases.
   5) See notes at the end of this file.
   6) This drive seems to ignore ISRC Codes and the Catalog Number.
+  7) Firmware version 3.DS does not work well in DAO mode. Update to 3.GS!
+  8) With firmware 1.0c and Adaptec 2940U2W the transmission must be set to asynchron according to Adaptec and Yamaha.
+  9) Sanyo OEM 32x/12x/4x CD-RW drive.
 
 
 Pre-compiled Binaries
