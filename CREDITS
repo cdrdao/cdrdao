@@ -28,3 +28,6 @@ For: First implementation of on-the-fly writing.
 
 To:  Leon Woestenberg
 For: Bitwise correct audio extraction with Plextor drives.
+
+To:  José Carlos García Sogo <jsogo@arrakis.es>
+For: The --keepimage option.
