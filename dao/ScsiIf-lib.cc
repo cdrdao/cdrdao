@@ -24,13 +24,6 @@
 #include <assert.h>
 #include <errno.h>
 
-#ifdef linux
-#include <fcntl.h>
-#include <sys/ioctl.h>
-#include <linux/../scsi/scsi.h>  /* cope with silly includes */
-#include <linux/../scsi/sg.h>    /* cope with silly includes */
-#endif
-
 #include "ScsiIf.h"
 #include "util.h"
 
@@ -120,25 +113,10 @@ int ScsiIf::init()
 {
   char errstr[80];
 
-  scg_remote();
-
-#ifdef linux
-  if (impl_->dev_[0] == '/' && strchr(impl_->dev_, ':') == NULL) {
-    // we have a device name, check if it is a generic SCSI device or
-    // try to map it a generic SCSI device
-    const char *fname = impl_->openScsiDevAsSg(impl_->dev_);
-
-    if (fname != NULL) {
-      char *old = impl_->dev_;
-      impl_->dev_ = strdupCC(fname);
-      delete[] old;
-    }
-  }
-#endif
-
   if ((impl_->scgp_ = scg_open(impl_->dev_, errstr, sizeof(errstr), 0, 0))
 	 == NULL) {
     message(-2, "Cannot open SCSI device '%s': %s", impl_->dev_, errstr);
+    scg_help(stderr);
     return 1;
   }
 
@@ -367,7 +345,6 @@ ScsiIf::ScanData *ScsiIf::scan(int *len)
   *len = 0;
 
   //set_progname("cdrdao");
-  scg_remote();
 
   if ((scgp = scg_open(NULL, errstr, sizeof(errstr), 0, 0)) == NULL)
     return NULL;
@@ -427,150 +404,3 @@ static void printVersionInfo(SCSI *scgp)
 }
 
 #include "ScsiIf-common.cc"
-
-#ifdef linux
-
-/* Function for mapping any SCSI device to the corresponding SG device.
- * Taken from D. Gilbert's example code.
- */
-
-#define MAX_SG_DEVS 26
-
-#define SCAN_ALPHA 0
-#define SCAN_NUMERIC 1
-#define DEF_SCAN SCAN_ALPHA
-
-const char *ScsiIfImpl::makeDevName(int k, int do_numeric)
-{
-  static char filename[100];
-  char buf[20];
-
-  strcpy(filename, "/dev/sg");
-
-  if (do_numeric) {
-    sprintf(buf, "%d", k);
-    strcat(filename, buf);
-  }
-  else {
-    if (k <= 26) {
-      buf[0] = 'a' + (char)k;
-      buf[1] = '\0';
-      strcat(filename, buf);
-    }
-    else {
-      strcat(filename, "xxxx");
-    }
-  }
-
-  return filename;
-}
-
-const char *ScsiIfImpl::openScsiDevAsSg(const char *devname)
-{
-  int fd, bus, bbus, k;
-  int do_numeric = DEF_SCAN;
-  const char *fname = devname;
-  struct {
-    int mux4;
-    int hostUniqueId;
-  } m_idlun, mm_idlun;
-
-  if ((fd = open(fname, O_RDONLY | O_NONBLOCK)) < 0) {
-    if (EACCES == errno)
-      fd = open(fname, O_RDWR | O_NONBLOCK);
-  }
-
-  if (fd < 0) {
-    message(-2, "Cannot open \"%s\": %s", fname, strerror(errno));
-    return NULL;
-  }
-
-  if (ioctl(fd, SG_GET_TIMEOUT, 0) < 0) { /* not a sg device ? */
-
-#ifdef SCSI_IOCTL_GET_BUS_NUMBER
-    if (ioctl(fd, SCSI_IOCTL_GET_BUS_NUMBER, &bus) < 0) {
-      message(-2, "%s: Need a filename that resolves to a SCSI device.",
-	      fname);
-      close(fd);
-      return NULL;
-    }
-#else
-    bus = 0;
-#endif
-
-
-    if (ioctl(fd, SCSI_IOCTL_GET_IDLUN, &m_idlun) < 0) {
-      message(-2, "%s: Need a filename that resolves to a SCSI device (2).",
-	      fname);
-      close(fd);
-      return NULL;
-    }
-    close(fd);
-    
-    for (k = 0; k < MAX_SG_DEVS; k++) {
-      fname = makeDevName(k, do_numeric);
-      if ((fd = open(fname, O_RDONLY | O_NONBLOCK)) < 0) {
-	if (EACCES == errno) 
-	  fd = open(fname, O_RDWR | O_NONBLOCK);
-	if (fd < 0) {
-	  if ((ENOENT == errno) && (0 == k) && (do_numeric == DEF_SCAN)) {
-	    do_numeric = ! DEF_SCAN;
-	    fname = makeDevName(k, do_numeric);
-	    if ((fd = open(fname, O_RDONLY | O_NONBLOCK)) < 0) {
-	      if (EACCES == errno) 
-		fd = open(fname, O_RDWR | O_NONBLOCK);
-	    }
-	  }
-	  if (fd < 0) {
-	    if (EBUSY == errno)
-	      continue;  /* step over if O_EXCL already on it */
-	    else
-	      break;
-	  }
-	}
-      }
-
-#ifdef SCSI_IOCTL_GET_BUS_NUMBER
-      if (ioctl(fd, SCSI_IOCTL_GET_BUS_NUMBER, &bbus) < 0) {
-	message(-2, "%s: SG: ioctl SCSI_IOCTL_GET_BUS_NUMBER failed: %s",
-		fname, strerror(errno));
-	close(fd);
-	fd = -9999;
-      }
-#else
-      bbus = 0;
-#endif
-      
-      if (ioctl(fd, SCSI_IOCTL_GET_IDLUN, &mm_idlun) < 0) {
-	message(-2, "%s: SG: ioctl SCSI_IOCTL_GET_IDLUN failed: %s", 
-		fname, strerror(errno));
-	close(fd);
-	fd = -9999;
-      }
-      if ((bus == bbus) && 
-	  ((m_idlun.mux4 & 0xff) == (mm_idlun.mux4 & 0xff)) &&
-	  (((m_idlun.mux4 >> 8) & 0xff) == 
-	   ((mm_idlun.mux4 >> 8) & 0xff)) &&
-	  (((m_idlun.mux4 >> 16) & 0xff) == 
-	   ((mm_idlun.mux4 >> 16) & 0xff))) {
-	message(4, "Mapping %s to sg device: %s", devname, fname);
-	break;
-      }
-      else {
-	close(fd);
-	fd = -9999;
-      }
-    }
-  }
-
-  if (fd >= 0) {
-    close(fd);
-    return fname;
-  }
-  else {
-    message(-2, "Cannot map \"%s\" to a SG device.", devname);
-    return NULL;
-  }
-}
-
-#endif /* linux */
