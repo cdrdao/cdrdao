@@ -491,8 +491,8 @@ static void importSettings(Command cmd)
     }
   }
 
-  if (cmd == READ_CDDB ||
-      (WITH_CDDB && (cmd == COPY_CD || cmd == READ_TOC || cmd == READ_CD))) {
+  if (cmd == READ_CDDB || cmd == COPY_CD || cmd == READ_TOC ||
+      cmd == READ_CD) {
     if ((sval = SETTINGS->getString(SET_CDDB_SERVER_LIST)) != NULL) {
       CDDB_SERVER_LIST = strdupCC(sval);
     }
