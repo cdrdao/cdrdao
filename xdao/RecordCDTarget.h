@@ -17,43 +17,61 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#ifndef __RECORD_GENERIC_DIALOG_H
-#define __RECORD_GENERIC_DIALOG_H
+#ifndef __RECORD_CD_TARGET_H
+#define __RECORD_CD_TARGET_H
 
 #include <gtk--.h>
 #include <gtk/gtk.h>
 
-#include <gnome--.h>
-
-#include "RecordCDTarget.h"
-
 class TocEdit;
-//class CdDevice;
+class CdDevice;
+class DeviceList;
 
-typedef enum {
-	CD,
-	HD
-}RecordTargetType;
-
-class RecordGenericDialog : public Gtk::Window {
+class RecordCDTarget : public Gtk::VBox {
 public:
-  RecordGenericDialog();
-  ~RecordGenericDialog();
+  RecordCDTarget();
+  ~RecordCDTarget();
 
-  void start(TocEdit *, enum RecordTargetType TargetType);
+  Gtk::Window *parent; // the dialog where the vbox is placed
+  
+  void start(TocEdit *);
   void stop();
 
   void update(unsigned long level, TocEdit *);
 
-  void cancelAction();
-  void startAction();
-  void help();
+private:
+  TocEdit *tocEdit_;
+  int active_;
 
-  gint delete_event_impl(GdkEventAny*);
+  DeviceList *DEVICES;
+
+  int speed_;
+
+  struct SpeedTable {
+    int speed;
+    const char *name;
+  };
+
+  Gtk::RadioButton *writeButton_;
+  Gtk::RadioButton *simulateButton_;
+  
+  Gtk::CheckButton *closeSessionButton_;
+  Gtk::CheckButton *ejectButton_;
+  Gtk::CheckButton *reloadButton_;
+
+  Gtk::OptionMenu *speedMenu_;
+
+  Gtk::SpinButton *bufferSpinButton_;
+  Gtk::Label *bufferRAMLabel_;
+
+  void updateBufferRAMLabel();
+
+public:  // to allow binding to the clicked signal
+   void cancelAction();
+   void startAction();
 
 private:
-  int active_;
-  RecordCDTarget *CDTARGET;
+  void setSpeed(int);
 
 };
 

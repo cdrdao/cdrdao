@@ -314,7 +314,7 @@
 	    <class>GtkCheckButton</class>
 	    <name>checkbutton5</name>
 	    <can_focus>True</can_focus>
-	    <label>Maximum read speed</label>
+	    <label>Use maxim</label>
 	    <active>True</active>
 	    <draw_indicator>True</draw_indicator>
 	    <child>

@@ -18,6 +18,10 @@
  */
 /*
  * $Log: xcdrdao.cc,v $
+ * Revision 1.12  2000/07/17 22:08:33  llanero
+ * DeviceList is now a class
+ * RecordGenericDialog and RecordCDTarget first implemented.
+ *
  * Revision 1.11  2000/06/10 14:49:49  andreasm
  * Changed Warning to WARNING in 'message()'.
  *
@@ -236,19 +240,6 @@ int main (int argc, char* argv[])
 
   guiUpdate();
 
-{
-/*
-  GtkWidget *message_box;
-  GtkWidget *boton;
-  message_box = gnome_message_box_new("This is a test!",
-    GNOME_MESSAGE_BOX_WARNING, GNOME_STOCK_BUTTON_CLOSE, NULL);
-  gtk_widget_show(message_box);
-  boton = gtk_button_new();
-  gtk_container_add(GTK_CONTAINER(message_box), boton);
-  gtk_widget_show(boton);
-*/    
-}
-	
   application.run();
 
   // save settings

@@ -18,6 +18,10 @@
  */
 /*
  * $Log: MessageBox.cc,v $
+ * Revision 1.6  2000/07/17 22:08:33  llanero
+ * DeviceList is now a class
+ * RecordGenericDialog and RecordCDTarget first implemented.
+ *
  * Revision 1.5  2000/05/14 16:54:59  andreasm
  * Adapted to gtkmm-1.2.0 and gnomemm-1.1.9
  *
@@ -44,7 +48,7 @@
  *
  */
 
-static char rcsid[] = "$Id: MessageBox.cc,v 1.5 2000/05/14 16:54:59 andreasm Exp $";
+static char rcsid[] = "$Id: MessageBox.cc,v 1.6 2000/07/17 22:08:33 llanero Exp $";
 
 #include <stddef.h>
 #include <stdarg.h>
@@ -78,24 +82,29 @@ Gtk::Button *MessageBoxBase::createButton(const char *name)
   const char *text;
 
   if (strcmp(name, GNOME_STOCK_BUTTON_OK) == 0) {
-    pixmap = manage(Gnome::StockPixmap::pixmap_widget(*this, name));
+//    pixmap = manage(Gnome::StockPixmap::pixmap_widget(*this, name));
+    pixmap = new Gnome::StockPixmap(name);
     text = "Ok";
   }
   else if (strcmp(name, GNOME_STOCK_BUTTON_CANCEL) == 0) {
-    pixmap = manage(Gnome::StockPixmap::pixmap_widget(*this, name));
+//    pixmap = manage(Gnome::StockPixmap::pixmap_widget(*this, name));
+    pixmap = new Gnome::StockPixmap(name);
     text = "Cancel";
   }
   else if (strcmp(name, GNOME_STOCK_BUTTON_YES) == 0) {
-    pixmap = manage(Gnome::StockPixmap::pixmap_widget(*this, name));
+//    pixmap = manage(Gnome::StockPixmap::pixmap_widget(*this, name));
+    pixmap = new Gnome::StockPixmap(name);
     text = "Yes";
   }
   else if (strcmp(name, GNOME_STOCK_BUTTON_NO) == 0) {
-    pixmap = manage(Gnome::StockPixmap::pixmap_widget(*this, name));
+//    pixmap = manage(Gnome::StockPixmap::pixmap_widget(*this, name));
+    pixmap = new Gnome::StockPixmap(name);
     text = "No";
   }
 
   if (pixmap != NULL)
-    return Gnome::StockPixmap::pixmap_button(*pixmap, text);
+//    return Gnome::StockPixmap::pixmap_button(*pixmap, text);
+    return new Gnome::Stock::Buttons::Button(name);
   else 
     return new Gtk::Button(name);
 }

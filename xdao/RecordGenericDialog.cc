@@ -17,25 +17,9 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-//#include <stdio.h>
-//#include <limits.h>
-//#include <math.h>
-//#include <assert.h>
-
-//#include <gnome.h>
+#include <gnome--.h>
 
 #include "RecordGenericDialog.h"
-//#include "MessageBox.h"
-//#include "xcdrdao.h"
-//#include "Settings.h"
-
-//#include "CdDevice.h"
-//#include "guiUpdate.h"
-//#include "TocEdit.h"
-
-//#include "util.h"
-
-#include <gnome--.h>
 
 RecordGenericDialog::RecordGenericDialog()
 {
@@ -50,8 +34,13 @@ RecordGenericDialog::RecordGenericDialog()
   Gtk::Button *closeButton;
   Gtk::Button *helpButton;
 
-  set_title(string("CD duplication, etc ..."));
-  set_usize(0, 400);
+  active_ = 0;
+
+  CDTARGET = new RecordCDTarget;
+
+  set_title(string("Record Project, CD duplication, etc ..."));
+//  set_usize(0, 400);
+  set_border_width(5);
 
 //  main_vbox = get_vbox();
   main_vbox = new Gtk::VBox;
@@ -67,7 +56,7 @@ RecordGenericDialog::RecordGenericDialog()
   left_vbox->show();
 
   vseparator = new Gtk::VSeparator;
-  main_hbox->pack_start(*vseparator);
+  main_hbox->pack_start(*vseparator, FALSE, FALSE);
   vseparator->show();
   
   right_vbox = new Gtk::VBox;
@@ -83,51 +72,38 @@ RecordGenericDialog::RecordGenericDialog()
   buttonbox->show();
 
 
-//  startButton = manage( new Gtk::Button ("Start"));
-  startButton = Gnome::StockPixmap::pixmap_button(
-  			*manage(Gnome::StockPixmap::pixmap_widget(*this,
-  			GNOME_STOCK_BUTTON_YES)),
-  			"Start");
+//  startButton = manage( new Gtk::Button ("Accept"));
+  startButton = new Gnome::Stock::Buttons::Button(GNOME_STOCK_BUTTON_OK);
   buttonbox->pack_start(*startButton);
   startButton->show();
 
-//  closeButton = manage( new Gtk::Button ("Close"));
-  closeButton = Gnome::StockPixmap::pixmap_button(
-  			*manage(Gnome::StockPixmap::pixmap_widget(*this,
-  			GNOME_STOCK_BUTTON_CLOSE)),
-  			"Close");
+//  closeButton = manage( new Gtk::Button ("Cancel"));
+  closeButton = new Gnome::Stock::Buttons::Button(GNOME_STOCK_BUTTON_CLOSE);
   buttonbox->add (*closeButton);
   closeButton->show();
 
 //  helpButton = manage( new Gtk::Button ("Help"));
-  helpButton = Gnome::StockPixmap::pixmap_button(
-  			*manage(Gnome::StockPixmap::pixmap_widget(*this,
-  			GNOME_STOCK_BUTTON_HELP)),
-  			"Help");
+  helpButton = new Gnome::Stock::Buttons::Button(GNOME_STOCK_BUTTON_HELP);
   buttonbox->add (*helpButton);
   helpButton->show();
 
   main_vbox->show();
 
-/*    
-  startButton->clicked.connect(SigC::slot(this,&RecordDialog::startAction));
+  right_vbox->pack_start(*CDTARGET, TRUE, TRUE);
+  CDTARGET->show();
 
-  contents = new Gtk::VBox;
-  contents->set_spacing(10);
-*/
+  startButton->clicked.connect(SigC::slot(this,&RecordGenericDialog::startAction));
+  closeButton->clicked.connect(SigC::slot(this,&RecordGenericDialog::cancelAction));
+  helpButton->clicked.connect(SigC::slot(this,&RecordGenericDialog::help));
 
 }
 
 RecordGenericDialog::~RecordGenericDialog()
 {
-/*
-  delete startButton_;
-  startButton_ = NULL;
-*/
 }
 
 
-void RecordGenericDialog::start()
+void RecordGenericDialog::start(TocEdit *tocEdit, enum RecordTargetType TargetType)
 {
   if (active_) {
     get_window().raise();
@@ -135,6 +111,9 @@ void RecordGenericDialog::start()
   }
 
   active_ = 1;
+
+// case or if stament
+  CDTARGET->start(tocEdit);
 
   show();
 }
@@ -145,12 +124,17 @@ void RecordGenericDialog::stop()
     hide();
     active_ = 0;
   }
+// case or if stament
+  CDTARGET->stop();
 }
 
-void RecordGenericDialog::update(unsigned long level)
+void RecordGenericDialog::update(unsigned long level, TocEdit *tocEdit)
 {
   if (!active_)
     return;
+
+// case or if stament
+  CDTARGET->update(level, tocEdit);
 }
 
 
@@ -166,5 +150,11 @@ void RecordGenericDialog::cancelAction()
 }
 
 void RecordGenericDialog::startAction()
+{
+// case or if stament
+  CDTARGET->startAction();
+}
+
+void RecordGenericDialog::help()
 {
 }

@@ -17,43 +17,40 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#ifndef __RECORD_GENERIC_DIALOG_H
-#define __RECORD_GENERIC_DIALOG_H
+#ifndef __DEVICE_LIST_H
+#define __DEVICE_LIST_H
 
 #include <gtk--.h>
 #include <gtk/gtk.h>
 
-#include <gnome--.h>
-
-#include "RecordCDTarget.h"
-
 class TocEdit;
-//class CdDevice;
+class CdDevice;
 
-typedef enum {
-	CD,
-	HD
-}RecordTargetType;
-
-class RecordGenericDialog : public Gtk::Window {
+class DeviceList : public Gtk::Frame {
 public:
-  RecordGenericDialog();
-  ~RecordGenericDialog();
+  DeviceList();
+  ~DeviceList();
 
-  void start(TocEdit *, enum RecordTargetType TargetType);
-  void stop();
+  Gtk::CList_Helpers::SelectionList selection();
 
-  void update(unsigned long level, TocEdit *);
+//  Gtk::Window *parent; // the dialog where the vbox is placed
 
-  void cancelAction();
-  void startAction();
-  void help();
-
-  gint delete_event_impl(GdkEventAny*);
+  struct DeviceData {
+    int bus, id, lun;
+  };
 
 private:
-  int active_;
-  RecordCDTarget *CDTARGET;
+  TocEdit *tocEdit_;
+
+  int speed_;
+
+  Gtk::CList *list_;
+
+public:
+
+  void appendTableEntry(CdDevice *);
+  void import();
+  void importStatus();
 
 };
 

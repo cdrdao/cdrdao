@@ -4,14 +4,14 @@ Status  Who	Description
 DONE	Manuel	put xx.xx % in progressbars
 DONE	Manuel	make a nice icon while we get a better one.
 
--	-	change executable name to gcdmaster
+DONE	Manuel	change executable name to gcdmaster
 -	-	install gcdmaster.png icon in $gnome-data-dir/share/pixmaps
 -	-	install gcdmaster.desktop file in ??? category
 
--	-	Device Listing should be a class
+WORKING	Manuel	Device Listing should be a class
 -	-	Device Listing class needs "Load" and "Eject" buttons
 
--	Manuel	Finish MDI stuff if MDI support is available in
+WORKING	Manuel	Finish MDI stuff if MDI support is available in
 		gnome-- 1.1.10 (will need gtk-- 1.2.1?)
 		Needs more discusion?
 
@@ -25,8 +25,7 @@ DONE	Manuel	make a nice icon while we get a better one.
 -	-	Create a Project Class that will contain AudioCDChild,
 		IsoCDChild, ... as needed.
 
-Started Manuel  Make RecordGenericDialog.
-		Only GUI atm. Paused until July.
+WORKING	Manuel  Make RecordGenericDialog.
 
 -	Andreas	Is total progress support for "Extract" in cdrdao finished?
 		Both Extract and Record ProgressDialog should merge in
@@ -53,7 +52,7 @@ Started Manuel  Make RecordGenericDialog.
 		encoding we can use LAME http://www.sulaco.org/mp3/
 
 -	-	Write extensive documentation: what's the right way
-		to do this? sgml? how?
+		to do this? docbook? how?
 
 -	-	Put a message in the record progress dialog telling:
 		"Don't panic if the progressbar doesn't update,
@@ -62,3 +61,6 @@ Started Manuel  Make RecordGenericDialog.
 -	-	"Generate log" option in the record dialog, so we can
 		dump lots of messages to a file like "log.txt" for later
 		reviewing.
+
+-	-	Don't wait to buffer (on the fly) - option: it should began
+		to write when you have already 10 audio seconds * speed.

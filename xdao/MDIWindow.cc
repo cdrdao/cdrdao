@@ -54,15 +54,15 @@ MDIWindow::install_menus_and_toolbar()
   // File->New menu
   //
 
-  newMenuTree.push_back(Gnome::UI::Item(Gnome::Icon(GNOME_STOCK_MENU_NEW),
+  newMenuTree.push_back(Gnome::UI::Item(Gnome::UI::Icon(GNOME_STOCK_MENU_NEW),
 					 N_("Audio CD"),
 					 slot(this, &MDIWindow::newProject),
 					 N_("New Audio CD")));
-  newMenuTree.push_back(Gnome::UI::Item(Gnome::Icon(GNOME_STOCK_MENU_NEW),
+  newMenuTree.push_back(Gnome::UI::Item(Gnome::UI::Icon(GNOME_STOCK_MENU_NEW),
 					 N_("Data CD"),
 					 slot(this, &MDIWindow::newProject),
 					 N_("New Data CD")));
-  newMenuTree.push_back(Gnome::UI::Item(Gnome::Icon(GNOME_STOCK_MENU_NEW),
+  newMenuTree.push_back(Gnome::UI::Item(Gnome::UI::Icon(GNOME_STOCK_MENU_NEW),
 					 N_("Mixed CD"),
 					 slot(this, &MDIWindow::newProject),
 					 N_("New Mixed CD")));
@@ -70,7 +70,7 @@ MDIWindow::install_menus_and_toolbar()
   // File menu
   //
   
-  fileMenuTree.push_back(Gnome::UI::SubTree(Gnome::Icon(GNOME_STOCK_MENU_NEW),
+  fileMenuTree.push_back(Gnome::UI::SubTree(Gnome::UI::Icon(GNOME_STOCK_MENU_NEW),
 					     N_("New"),
 					     newMenuTree,
 					    "Create a new compilation"));
@@ -89,7 +89,7 @@ MDIWindow::install_menus_and_toolbar()
   fileMenuTree.push_back(Gnome::MenuItems::PrintSetup
   				(slot(this, &MDIWindow::nothing_cb)));
 
-  fileMenuTree.push_back(Gnome::UI::Item(Gnome::Icon(GNOME_STOCK_MENU_PRINT),
+  fileMenuTree.push_back(Gnome::UI::Item(Gnome::UI::Icon(GNOME_STOCK_MENU_PRINT),
 					 N_("Print Cover..."),
 					 slot(this, &MDIWindow::nothing_cb),
 					 N_("Print Cover")));
@@ -124,13 +124,13 @@ MDIWindow::install_menus_and_toolbar()
   audioEditMenuTree.push_back(Gnome::UI::Separator());
 
   audioEditMenuTree.
-    push_back(Gnome::UI::Item(Gnome::Icon(GNOME_STOCK_MENU_CUT),
+    push_back(Gnome::UI::Item(Gnome::UI::Icon(GNOME_STOCK_MENU_CUT),
 			      N_("Cut"),
 			      slot(audioCdChild_, &AudioCDChild::cutTrackData),
 			      N_("Cut out selected samples")));
 
   audioEditMenuTree.
-    push_back(Gnome::UI::Item(Gnome::Icon(GNOME_STOCK_MENU_PASTE),
+    push_back(Gnome::UI::Item(Gnome::UI::Icon(GNOME_STOCK_MENU_PASTE),
 			      N_("Paste"),
 			      slot(audioCdChild_,
 				   &AudioCDChild::pasteTrackData),
@@ -191,11 +191,13 @@ MDIWindow::install_menus_and_toolbar()
 
   // Actions menu
   //
-  actionsMenuTree.push_back(Gnome::UI::Item(N_("Test Generic"),
-					    slot(this, &MDIWindow::recordgeneric)));
-  actionsMenuTree.push_back(Gnome::UI::Item(N_("Duplicate CD"),
-					    slot(this, &MDIWindow::extract)));
   actionsMenuTree.push_back(Gnome::UI::Item(N_("Record"),
+					    slot(this, &MDIWindow::recordgeneric)));
+  actionsMenuTree.push_back(Gnome::UI::Item(N_("CD to CD copy"),
+					    slot(this, &MDIWindow::extract)));
+  actionsMenuTree.push_back(Gnome::UI::Item(N_("Dump CD to disk"),
+					    slot(this, &MDIWindow::extract)));
+  actionsMenuTree.push_back(Gnome::UI::Item(N_("Record (old)"),
 					    slot(this, &MDIWindow::record)));
   actionsMenuTree.push_back(Gnome::UI::Item(N_("Fixate CD"),
 					    slot(this, &MDIWindow::nothing_cb)));
@@ -209,7 +211,7 @@ MDIWindow::install_menus_and_toolbar()
   // Settings menu
   //
   settingsMenuTree.
-    push_back(Gnome::UI::Item(Gnome::Icon(GNOME_STOCK_MENU_PREF),
+    push_back(Gnome::UI::Item(Gnome::UI::Icon(GNOME_STOCK_MENU_PREF),
 			      N_("Configure Devices..."),
 			      slot(this, &MDIWindow::configureDevices)));
 
@@ -236,36 +238,53 @@ MDIWindow::install_menus_and_toolbar()
   //
   vector<Gnome::UI::Info> toolbarTree;
 
-  toolbarTree.push_back(Gnome::UI::Item(Gnome::Icon(GNOME_STOCK_PIXMAP_NEW),
+  toolbarTree.push_back(Gnome::UI::Item(Gnome::UI::Icon(GNOME_STOCK_PIXMAP_NEW),
 					N_("New"),
 					slot(this, &MDIWindow::newProject),
 					N_("Create a new project")));
 
-  toolbarTree.push_back(Gnome::UI::Item(Gnome::Icon(GNOME_STOCK_PIXMAP_OPEN),
+  toolbarTree.push_back(Gnome::UI::Item(Gnome::UI::Icon(GNOME_STOCK_PIXMAP_OPEN),
 					N_("Open"),
 					slot(this, &MDIWindow::readProject),
 					N_("Open a project")));
 
-  toolbarTree.push_back(Gnome::UI::Item(Gnome::Icon(GNOME_STOCK_PIXMAP_SAVE),
+  toolbarTree.push_back(Gnome::UI::Item(Gnome::UI::Icon(GNOME_STOCK_PIXMAP_SAVE),
 					N_("Save"),
 					slot(this, &MDIWindow::saveProject),
 					N_("Save current project")));
 
   toolbarTree.push_back(Gnome::UI::Separator());
 
-  toolbarTree.push_back(Gnome::UI::Item(Gnome::Icon(GNOME_STOCK_PIXMAP_PREFERENCES),
+  toolbarTree.push_back(Gnome::UI::Item(Gnome::UI::Icon(GNOME_STOCK_PIXMAP_CDROM),
+  					N_("Record"),
+					  slot(this, &MDIWindow::recordgeneric),
+					  N_("Record to CD")));
+
+  toolbarTree.push_back(Gnome::UI::Item(Gnome::UI::Icon(GNOME_STOCK_PIXMAP_HELP),
+  					N_("CD to CD"),
+  					slot(this, &MDIWindow::extract),
+  					N_("Dump CD to disk")));
+
+  toolbarTree.push_back(Gnome::UI::Item(Gnome::UI::Icon(GNOME_STOCK_PIXMAP_HELP),
+  					N_("Dump CD"),
+  					slot(this, &MDIWindow::extract),
+  					N_("Dump CD to disk")));
+
+  toolbarTree.push_back(Gnome::UI::Separator());
+
+  toolbarTree.push_back(Gnome::UI::Item(Gnome::UI::Icon(GNOME_STOCK_PIXMAP_PREFERENCES),
 					N_("Devices"),
 					slot(this, &MDIWindow::configureDevices),
 					N_("Configure devices")));
 
-  toolbarTree.push_back(Gnome::UI::Item(Gnome::Icon(GNOME_STOCK_PIXMAP_PREFERENCES),
+  toolbarTree.push_back(Gnome::UI::Item(Gnome::UI::Icon(GNOME_STOCK_PIXMAP_PREFERENCES),
 				      N_("Prefs"),
 				      slot(this, &MDIWindow::nothing_cb),
 				      N_("Preferences")));
 
   toolbarTree.push_back(Gnome::UI::Separator());
 
-  toolbarTree.push_back(Gnome::UI::Item(Gnome::Icon(GNOME_STOCK_PIXMAP_QUIT),
+  toolbarTree.push_back(Gnome::UI::Item(Gnome::UI::Icon(GNOME_STOCK_PIXMAP_QUIT),
 					N_("Quit"),
 					slot(this, &MDIWindow::app_close),
 					N_("Quit application")));
@@ -322,8 +341,8 @@ void MDIWindow::app_close()
   
 //  hide();
 //  MDIWindow::remove_all(0);
-//  Gnome::Main::quit();
-  Gtk::Main::quit();
+  Gnome::Main::quit();
+//  Gtk::Main::quit();
 
 }
 
@@ -431,7 +450,7 @@ void MDIWindow::record()
 
 void MDIWindow::recordgeneric()
 {
-  RECORD_GENERIC_DIALOG->start();
+  RECORD_GENERIC_DIALOG->start(tocEdit_, CD);
 }
 
 void MDIWindow::trackInfo()
