@@ -29,6 +29,7 @@ class MDIWindow : public Gnome::MDI
 {
 public:
   MDIWindow();
+  void example_child();
 
 protected:
   void install_menus_and_toolbar();

@@ -30,7 +30,8 @@
 void
 MDIWindow::nothing_cb()
 {
-  cout << "nothing here\n";
+  g_print("%s", "asdfsfdasadf");
+  cout << "nothing here" << endl;
 }
 
 void
@@ -39,13 +40,24 @@ MDIWindow::install_menus_and_toolbar()
 
   using namespace Gnome::Menu_Helpers;
   
+  // File->New menu
+  Gnome::UIInfoTree *newMenuTree = new Gnome::UIInfoTree();
+  newMenuTree->push_item(Gnome::UIItem(N_("Example"), N_("New example"),
+  				GNOME_STOCK_MENU_NEW,
+  				slot(this, &MDIWindow::example_child)));
+
+  Gnome::UIItem *newMenu = new Gnome::UISubtree(N_("New"),
+  				*newMenuTree, GNOME_STOCK_MENU_NEW);
+
   // File menu
   //
   Gnome::UIInfoTree *fileMenuTree = new Gnome::UIInfoTree();
   
-  fileMenuTree->push_item(StockMenuItems::New(N_("New..."),
+/*  fileMenuTree->push_item(StockMenuItems::New(N_("New"),
   				("Create a new compilation"),
 				slot(this, &MDIWindow::nothing_cb)));
+*/
+  fileMenuTree->push_item(*newMenu);
 
   fileMenuTree->push_item(StockMenuItems::Open
   				(slot(this, &MDIWindow::nothing_cb)));
@@ -222,3 +234,10 @@ void MDIWindow::update(unsigned long level)
 }
 */
 
+void
+MDIWindow::example_child()
+{
+Gnome::MDIGenericChild *example = new Gnome::MDIGenericChild("example");
+
+MDIWindow::add_child(*example);
+}
