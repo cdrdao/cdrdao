@@ -1,5 +1,7 @@
 noinst_LIBRARIES = libtrackdb.a
-libtrackdb_a_SOURCES = Cddb.cc lec.cc Toc.cc TrackDataList.cc CdTextContainer.cc Msf.cc Track.cc util.cc CdTextItem.cc SubTrack.cc TrackData.cc TocParser.cpp TocParserGram.cpp TocLexerBase.cpp CueParser.cpp CueParserGram.cpp CueLexerBase.cpp @pcctsinc@/AParser.cpp @pcctsinc@/DLexerBase.cpp @pcctsinc@/ATokenBuffer.cpp Cddb.h CdTextContainer.h CdTextItem.h CueLexerBase.h CueParserGram.h CueParserTokens.h lec.h Msf.h Sample.h SubTrack.h Toc.h TocLexerBase.h TocParserGram.h TocParserTokens.h TrackData.h TrackDataList.h Track.h util.h CueParser.g TocParser.g
+libtrackdb_a_SOURCES = Cddb.cc lec.cc Toc.cc TrackDataList.cc CdTextContainer.cc Msf.cc Track.cc util.cc CdTextItem.cc SubTrack.cc TrackData.cc @pcctsinc@/AParser.cpp @pcctsinc@/DLexerBase.cpp @pcctsinc@/ATokenBuffer.cpp Cddb.h CdTextContainer.h CdTextItem.h lec.h Msf.h Sample.h SubTrack.h Toc.h TrackData.h TrackDataList.h Track.h util.h CueParser.g TocParser.g
+
+nodist_libtrackdb_a_SOURCES = TocParser.cpp TocParserGram.cpp TocLexerBase.cpp CueParser.cpp CueParserGram.cpp CueLexerBase.cpp CueLexerBase.h CueParserGram.h CueParserTokens.h TocLexerBase.h TocParserGram.h TocParserTokens.h
 
 INCLUDES = -I@pcctsinc@
 ANTLR = @antlr_path@
