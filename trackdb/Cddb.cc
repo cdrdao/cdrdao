@@ -1147,7 +1147,7 @@ const char *Cddb::calcCddbId()
   }
 
   id = (n % 0xff) << 24 | o << 8 | tcount;
-  sprintf(buf, "%lx", id);
+  sprintf(buf, "%08lx", id);
 
   return buf;
 } 
