@@ -18,6 +18,10 @@
  */
 /*
  * $Log: CdrDriver.cc,v $
+ * Revision 1.6  2000/06/19 20:25:07  andreasm
+ * Fixed bug in CD-TEXT reading.
+ * read-cd is now configured to handle DAO disks again.
+ *
  * Revision 1.5  2000/06/19 20:17:37  andreasm
  * Added CDDB reading to add CD-TEXT information to toc-files.
  * Fixed bug in reading ATIP data in 'GenericMMC::diskInfo()'.
@@ -94,7 +98,7 @@
  *
  */
 
-static char rcsid[] = "$Id: CdrDriver.cc,v 1.5 2000/06/19 20:17:37 andreasm Exp $";
+static char rcsid[] = "$Id: CdrDriver.cc,v 1.6 2000/06/19 20:25:07 andreasm Exp $";
 
 #include <config.h>
 
@@ -2970,27 +2974,25 @@ Toc *CdrDriver::readDisk(int session, const char *dataFilename)
 	  trackInfos[trs].pregap = trackInfos[trs].start;
       }
       else {
-	/*
 	if (trackInfos[trs].mode != trackInfos[trs - 1].mode)
 	  trackInfos[trs].pregap = 150;
-	*/
 
-	  trackInfos[trs].pregap = 152;
+	// TAO: trackInfos[trs].pregap = 152;
       }
 
       slba = trackInfos[trs].start;
       elba = trackInfos[trs + 1].start;
 
-      /*
       if (trackInfos[trs].mode != trackInfos[trs + 1].mode) {
 	elba -= 150;
       }
-      */
 
+      /* TAO:
       if (trs < nofTracks - 1)
 	elba -= 152;
       else
 	elba -= 2;
+      */
 
       message(1, "Copying data track %d (%s): start %s, ", trs + 1, 
 	      TrackData::mode2String(trackInfos[trs].mode),
