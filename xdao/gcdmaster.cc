@@ -21,19 +21,21 @@
 
 #include "xcdrdao.h"
 #include "DeviceConfDialog.h"
-#include "RecordGenericDialog.h"
 #include "ProjectChooser.h"
 #include "gcdmaster.h"
 #include "TocEdit.h"
 #include "util.h"
 #include "AudioCDProject.h"
+#include "DuplicateCDProject.h"
+#include "BlankCDDialog.h"
+#include "DumpCDProject.h"
 
 GCDMaster::GCDMaster()
 {
   project_number = 0;
   about_ = 0;
   readFileSelector_ = 0;
-
+  blankCDDialog_ = 0;
 }
 
 void GCDMaster::add(Project *project)
@@ -116,7 +118,7 @@ void GCDMaster::readFileSelectorOKCB(ProjectChooser *projectChooser)
 
       newAudioCDProject(stripCwd(s), tocEdit, NULL);
       if (projectChooser)
-	closeChooser(projectChooser);
+        closeChooser(projectChooser);
     }
     else
     {
@@ -219,6 +221,24 @@ void GCDMaster::newAudioCDProject2(ProjectChooser *projectChooser)
     closeChooser(projectChooser);
 }
 
+void GCDMaster::newDuplicateCDProject(ProjectChooser *projectChooser)
+{
+  DuplicateCDProject *project = new DuplicateCDProject();
+  add(project);
+  project->show();
+  if (projectChooser)
+    closeChooser(projectChooser);
+}
+
+void GCDMaster::newDumpCDProject(ProjectChooser *projectChooser)
+{
+  DumpCDProject *project = new DumpCDProject();
+  add(project);
+  project->show();
+  if (projectChooser)
+    closeChooser(projectChooser);
+}
+
 void GCDMaster::update(unsigned long level)
 {
   for (list<Project *>::iterator i = projects.begin();
@@ -226,21 +246,22 @@ void GCDMaster::update(unsigned long level)
   {
     (*i)->update(level);
   }
-}
 
-void GCDMaster::recordCD2CD()
-{
-  RECORD_GENERIC_DIALOG->cd_to_cd();
-}
-
-void GCDMaster::recordCD2HD()
-{
-  RECORD_GENERIC_DIALOG->cd_to_hd();
+  if (blankCDDialog_ != 0)
+    blankCDDialog_->update(level);
 }
 
 void GCDMaster::configureDevices()
 {
   DEVICE_CONF_DIALOG->start();
+}
+
+void GCDMaster::blankCDRW()
+{
+  if (blankCDDialog_ == 0)
+    blankCDDialog_ = new BlankCDDialog;
+
+  blankCDDialog_->start();
 }
 
 void GCDMaster::aboutDialog()

@@ -27,6 +27,7 @@
 #include <list>
 
 class ProjectChooser;
+class BlankCDDialog;
 #include "Project.h"
 
 class GCDMaster : public Gtk::Widget
@@ -38,6 +39,7 @@ private:
   gint project_number;
 
   Gnome::About *about_;  
+  BlankCDDialog *blankCDDialog_;
 
   void add(Project *);
   void add(ProjectChooser *);
@@ -61,12 +63,13 @@ public:
 //FIXME: join this two: ?
   void newAudioCDProject2(ProjectChooser *);
   void newAudioCDProject(const char *name, TocEdit *tocEdit, ProjectChooser *);
+  void newDuplicateCDProject(ProjectChooser *);
+  void newDumpCDProject(ProjectChooser *);
 
   void update(unsigned long level);
 
-  void recordCD2CD();
-  void recordCD2HD();
   void configureDevices();
+  void blankCDRW();
 
   void aboutDialog();
 };
