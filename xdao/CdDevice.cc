@@ -784,23 +784,26 @@ int CdDevice::duplicateDao(int simulate, int multiSession, int speed,
     args[n++] = drivername;
   }
 
-  args[n++] = "--source-device";
 
-  if (readdev->specialDevice() != NULL && *(readdev->specialDevice()) != 0) {
-    args[n++] = strdup(readdev->specialDevice());
-  }
-  else {
-    sprintf(r_devname, "%d,%d,%d", readdev->bus(), readdev->id(), readdev->lun());
-    args[n++] = r_devname;
-  }
+  if (readdev != this) { // reader and write the same, skip source device
+		  
+    args[n++] = "--source-device";
+    
+    if (readdev->specialDevice() != NULL && *(readdev->specialDevice()) != 0) {
+      args[n++] = strdup(readdev->specialDevice());
+    }
+    else {
+      sprintf(r_devname, "%d,%d,%d", readdev->bus(), readdev->id(), readdev->lun());
+      args[n++] = r_devname;
+    }
 
-  if (readdev->driverId() > 0) {
-    sprintf(r_drivername, "%s:0x%lx", driverName(readdev->driverId()),
-    			 readdev->driverOptions());
-    args[n++] = "--source-driver";
-    args[n++] = r_drivername;
+    if (readdev->driverId() > 0) {
+      sprintf(r_drivername, "%s:0x%lx", driverName(readdev->driverId()),
+      			 readdev->driverOptions());
+      args[n++] = "--source-driver";
+      args[n++] = r_drivername;
+    }
   }
-
   if (buffer >= 10) {
     sprintf(bufferbuf, "%i", buffer);
     args[n++] = "--buffers";
