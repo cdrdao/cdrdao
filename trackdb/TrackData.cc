@@ -19,6 +19,10 @@
 
 /*
  * $Log: TrackData.cc,v $
+ * Revision 1.3  2001/03/25 07:36:14  andreasm
+ * Updated SCSI lib to version from cdrtools-1.10a17.
+ * Added patches from compilation under UnixWare.
+ *
  * Revision 1.2  2000/06/10 14:44:47  andreasm
  * Tracks that are shorter than 4 seconds do not lead to a fatal error anymore.
  * The user has the opportunity to record such tracks now.
@@ -62,7 +66,7 @@
  *
  */
 
-static char rcsid[] = "$Id: TrackData.cc,v 1.2 2000/06/10 14:44:47 andreasm Exp $";
+static char rcsid[] = "$Id: TrackData.cc,v 1.3 2001/03/25 07:36:14 andreasm Exp $";
 
 #include <config.h>
 
@@ -78,6 +82,12 @@ static char rcsid[] = "$Id: TrackData.cc,v 1.2 2000/06/10 14:44:47 andreasm Exp 
 #include "TrackData.h"
 #include "Msf.h"
 #include "util.h"
+
+#ifdef UNIXWARE
+extern "C" {
+  extern int      strcasecmp(const char *, const char *);
+}
+#endif
 
 // creates an object representing a portion of an audio data file
 TrackData::TrackData(const char *filename, long offset,

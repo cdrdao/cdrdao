@@ -346,7 +346,12 @@ int Cddb::openConnection()
 
   memset(&newAlarmHandler, 0, sizeof(newAlarmHandler));
   sigemptyset(&(newAlarmHandler.sa_mask));
+
+#ifdef UNIXWARE
+  newAlarmHandler.sa_handler = (void (*)()) alarmHandler;
+#else
   newAlarmHandler.sa_handler = alarmHandler;
+#endif
   
   if (sigaction(SIGALRM, &newAlarmHandler, &oldAlarmHandler) != 0) {
     message(-2, "CDDB: Cannot install alarm signal handler: %s",

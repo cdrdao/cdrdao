@@ -18,6 +18,10 @@
  */
 /*
  * $Log: dao.cc,v $
+ * Revision 1.7  2001/03/25 07:36:14  andreasm
+ * Updated SCSI lib to version from cdrtools-1.10a17.
+ * Added patches from compilation under UnixWare.
+ *
  * Revision 1.6  2000/12/17 10:51:23  andreasm
  * Default verbose level is now 2. Adaopted message levels to have finer
  * grained control about the amount of messages printed by cdrdao.
@@ -77,7 +81,7 @@
  *
  */
 
-static char rcsid[] = "$Id: dao.cc,v 1.6 2000/12/17 10:51:23 andreasm Exp $";
+static char rcsid[] = "$Id: dao.cc,v 1.7 2001/03/25 07:36:14 andreasm Exp $";
 
 #include <config.h>
 
@@ -964,7 +968,7 @@ static int getSharedMemory(long nofBuffers,
       segmentLength += sizeof(BufferHeader) + nofBuffers * sizeof(Buffer);
     }
 
-    (*shmSegments)[i].id = shmget(IPC_PRIVATE, segmentLength, 0600);
+    (*shmSegments)[i].id = shmget(IPC_PRIVATE, segmentLength, 0600|IPC_CREAT);
     if ((*shmSegments)[i].id < 0) {
       message(-2, "Cannot create shared memory segment: %s",
 	      strerror(errno));

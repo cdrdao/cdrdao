@@ -1,7 +1,7 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_REVISION($Revision: 1.14 $)dnl
+AC_REVISION($Revision: 1.15 $)dnl
 
-cdrdao_version=1.1.5-pre3
+cdrdao_version=1.1.5-pre4
 
 AC_INIT(cdrdao.lsm)
 AC_CONFIG_HEADER(config.h)
@@ -282,6 +282,16 @@ case "$host" in
   *)
      sound_if_src=SoundIF-none.cc
      ;;
+esac
+
+
+dnl General platform specific setup
+
+case "$host" in
+  *-sysv4*)
+		mydefs="-DUNIXWARE $mydefs"
+		LIBS="$LIBS -L/usr/ucblib -lucb"
+		;;
 esac
 
 

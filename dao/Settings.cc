@@ -18,6 +18,10 @@
  */
 /*
  * $Log: Settings.cc,v $
+ * Revision 1.5  2001/03/25 07:36:14  andreasm
+ * Updated SCSI lib to version from cdrtools-1.10a17.
+ * Added patches from compilation under UnixWare.
+ *
  * Revision 1.4  2000/08/06 13:13:08  andreasm
  * Added option --cddb-directory and corresponding setting to specify where
  * fetched CDDB record should be stored.
@@ -39,7 +43,7 @@
  *
  */
 
-static char rcsid[] = "$Id: Settings.cc,v 1.4 2000/08/06 13:13:08 andreasm Exp $";
+static char rcsid[] = "$Id: Settings.cc,v 1.5 2001/03/25 07:36:14 andreasm Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -53,6 +57,14 @@ static char rcsid[] = "$Id: Settings.cc,v 1.4 2000/08/06 13:13:08 andreasm Exp $
 
 #include "util.h"
 
+
+#ifdef UNIXWARE
+extern "C" {
+  extern int      strcasecmp(const char *, const char *);
+}
+#endif
+
+  
 enum SettingType { SET_INTEGER, SET_STRING };
 
 const char *SET_WRITE_SPEED = "write_speed";

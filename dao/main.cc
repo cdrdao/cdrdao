@@ -42,6 +42,13 @@
 #include "Settings.h"
 #include "Cddb.h"
 
+#ifdef UNIXWARE
+extern "C" {
+  extern int seteuid(uid_t);
+  extern int setegid(uid_t);
+};
+#endif
+
 enum Command { UNKNOWN, SHOW_TOC, SHOW_DATA, READ_TEST, SIMULATE, WRITE,
 	       READ_TOC, DISK_INFO, READ_CD, TOC_INFO, TOC_SIZE, BLANK,
 	       SCAN_BUS, UNLOCK, COPY_CD, READ_CDDB, MSINFO };
