@@ -538,7 +538,7 @@ int CdDevice::recordDao(TocEdit *tocEdit, int simulate, int multiSession,
   
   assert(n <= 20);
   
-  PROGRESS_POOL->start(this, tocEdit, true);
+  PROGRESS_POOL->start(this, tocEdit);
 
   // Remove the SCSI interface of this device to avoid problems with double
   // usage of device nodes.
@@ -813,7 +813,7 @@ int CdDevice::duplicateDao(int simulate, int multiSession, int speed,
   
   assert(n <= 25);
   
-  PROGRESS_POOL->start(this, "CD to CD copy", true);
+  PROGRESS_POOL->start(this, "CD to CD copy");
 
   // Remove the SCSI interface of this device to avoid problems with double
   // usage of device nodes.
@@ -925,7 +925,7 @@ int CdDevice::blank(int fast, int speed, int eject, int reload)
   
   assert(n <= 20);
   
-  PROGRESS_POOL->start(this, "Blanking CDRW", false);
+  PROGRESS_POOL->start(this, "Blanking CDRW", false, false);
 
   // Remove the SCSI interface of this device to avoid problems with double
   // usage of device nodes.
