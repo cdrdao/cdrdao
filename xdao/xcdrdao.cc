@@ -45,6 +45,7 @@
 #include "guiUpdate.h"
 #include "CdDevice.h"
 #include "ProcessMonitor.h"
+#include "ProjectChooser.h"
 
 #include "gcdmaster.h"
 
@@ -157,7 +158,12 @@ int main (int argc, char* argv[])
     gcdmaster->newChooserWindow();
   else while (argc > 1)
   {
-    gcdmaster->openNewProject(argv[1]);
+    if(!gcdmaster->openNewProject(argv[1]))
+    {
+      string message("Error loading ");
+      message += argv[1];
+      Gnome::Dialogs::error(*(gcdmaster->newChooserWindow2()), message);
+    }
     argv++;
     argc--;
   }
