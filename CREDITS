@@ -40,3 +40,6 @@ For: Help screen rework and multi session improvements
 
 To: Giuseppe "Cowo" Corbelli <cowo@lugbs.linux.it>
 For: Support for Plextor specific options in plextor driver.
+
+To: Matthias Czapla <dermatsch@gmx.de>
+For: The cue2toc utility
