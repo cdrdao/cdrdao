@@ -116,12 +116,6 @@ TrackData::TrackData(Mode m, SubChannelMode sm, const char *filename,
   init(m, sm, filename, offset, length);
 }
 
-TrackData::TrackData(Mode m, SubChannelMode sm, const char *filename,
-		     unsigned long length)
-{
-  init(m, sm, filename, 0, length);
-}
-
 void TrackData::init(Mode m, SubChannelMode sm, const char *filename,
 		     long offset, unsigned long length)
 {
@@ -153,6 +147,26 @@ void TrackData::init(Mode m, SubChannelMode sm, const char *filename,
   swapSamples_ = 0;
 }
 
+TrackData::TrackData(Mode m, SubChannelMode sm, const char *filename,
+		     unsigned long length)
+{
+  assert(filename != NULL && *filename != 0);
+
+  mode_ = m;
+  subChannelMode_ = sm;
+  audioCutMode_ = 0;
+
+  type_ = FIFO;
+  fileType_ = RAW;
+  filename_ = strdupCC(filename);
+
+  offset_ = 0;
+  length_ = length;
+
+  startPos_ = 0;
+  swapSamples_ = 0;
+}
+
 // copy constructor
 TrackData::TrackData(const TrackData &obj)
 {
@@ -163,20 +177,20 @@ TrackData::TrackData(const TrackData &obj)
 
   offset_ = obj.offset_;
 
-  if (type_ == DATAFILE) {
+  switch (type_) {
+  case DATAFILE:
+  case STDIN:
+  case FIFO:
     filename_ = strdupCC(obj.filename_);
     startPos_ = obj.startPos_;
     fileType_ = obj.fileType_;
-  }
-  else if (type_ == STDIN) {
-    filename_ = strdupCC("STDIN");
-    startPos_ = obj.startPos_;
-    fileType_ = obj.fileType_;
-  }
-  else {
+    break;
+
+  case ZERODATA:
     filename_ = NULL;
     startPos_ = 0;
     fileType_ = RAW;
+    break;
   }
 
   length_ = obj.length_;
@@ -285,12 +299,19 @@ int TrackData::check(int trackNr) const
   case STDIN:
     // cannot do much here...
     break;
+  case FIFO:
+    if (access(filename_, R_OK) != 0) {
+      message(-2, "Track %d: Cannot access FIFO \"%s\": %s", trackNr,
+	      filename_, strerror(errno));
+      return 2;
+    }
+    break;
   case DATAFILE:
     if (mode_ == AUDIO) {
       unsigned long len = 0;
 
       if (fileType_ == WAVE && subChannelMode_ != SUBCHAN_NONE) {
-	message(-2, "Track %d: WAVE audio files cannot contain sub-channel data.");
+	message(-2, "Track %d: WAVE audio files cannot contain sub-channel data.", trackNr);
 	return 2;
       }
 
@@ -436,6 +457,20 @@ void TrackData::print(ostream &out) const
     out << endl;
     break;
 
+  case FIFO:
+    out << "FIFO \"" << filename_ << "\" ";
+
+    if ((length() % blen) == 0) {
+      out << Msf(length() / blen).str();
+      out << " // length in bytes: " << length();
+    }
+    else {
+      out << length();
+    }
+
+    out << endl;
+    break;
+
   case ZERODATA:
     if (audioCutMode()) {
       out << "SILENCE ";
@@ -500,6 +535,7 @@ TrackData *TrackData::merge(const TrackData *obj) const
     break;
 
   case STDIN:
+  case FIFO:
     // can't merge this type at all
     break;
   }
@@ -1045,6 +1081,19 @@ int TrackDataReader::openData()
       }
     }
   }
+  else if (trackData_->type_ == TrackData::FIFO) {
+#ifdef __CYGWIN__
+    if ((fd_ = open(trackData_->filename_, O_RDONLY | O_BINARY)) < 0)
+#else
+    if ((fd_ = open(trackData_->filename_, O_RDONLY)) < 0)
+#endif
+    {
+      message(-2, "Cannot open FIFO \"%s\": %s", trackData_->filename_,
+              strerror(errno));
+	return 1;
+    }
+    headerLength_ = 0;
+  }
   else if (trackData_->type_ == TrackData::STDIN) {
     headerLength_ = 0;
     fd_ = fileno(stdin);
@@ -1061,7 +1110,8 @@ int TrackDataReader::openData()
 void TrackDataReader::closeData()
 {
   if (open_ != 0) {
-    if (trackData_->type_ == TrackData::DATAFILE) {
+    if (trackData_->type_ == TrackData::DATAFILE ||
+	trackData_->type_ == TrackData::FIFO) {
       close(fd_);
     }
 
@@ -1102,6 +1152,7 @@ long TrackDataReader::readData(Sample *buffer, long len)
 
   case TrackData::STDIN:
   case TrackData::DATAFILE:
+  case TrackData::FIFO:
     if (trackData_->audioCutMode()) {
       readLen = fullRead(fd_, buffer, len * sizeof(Sample));
 

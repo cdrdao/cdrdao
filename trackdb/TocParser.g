@@ -142,6 +142,7 @@ public:
 #token FourChannel      "FOUR_CHANNEL_AUDIO"
 #tokclass AudioFile     { "AUDIOFILE" "FILE" }
 #token DataFile         "DATAFILE"
+#token Fifo             "FIFO"
 #token Silence          "SILENCE"
 #token Zero             "ZERO"
 #token Pregap           "PREGAP"
@@ -452,6 +453,12 @@ subTrack < [ TrackData::Mode trackType, TrackData::SubChannelMode subChanType ] 
                                                        filename, 
                                                        offset, len));
           $lineNr = $1->getLine();
+       >>
+     | Fifo string > [ filename ] 
+            dataLength [$trackType, $subChanType ] > [ len ]
+       << $st = new SubTrack(SubTrack::DATA, TrackData($trackType,
+                                                       $subChanType,
+                                                       filename, len));
        >>
      | Silence samples > [len]
        << $st = new SubTrack(SubTrack::DATA, TrackData(len));

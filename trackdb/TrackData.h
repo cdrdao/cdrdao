@@ -44,7 +44,7 @@ public:
 
   enum SubChannelMode { SUBCHAN_NONE, SUBCHAN_RW, SUBCHAN_RW_RAW };
 
-  enum Type { DATAFILE, ZERODATA, STDIN };
+  enum Type { DATAFILE, ZERODATA, STDIN, FIFO };
   
   enum FileType { RAW, WAVE };
 
@@ -62,6 +62,8 @@ public:
   // creates a file entry with given mode
   TrackData(Mode, SubChannelMode, const char *filename, long offset,
 	    unsigned long length);
+
+  // create a fifo entry with given mode
   TrackData(Mode, SubChannelMode, const char *filename, unsigned long length);
 
   // copy constructor
