@@ -32,16 +32,13 @@
 #include "config.h"
 
 #include "xcdrdao.h"
-#include "MDIWindow.h"
 #include "TocEdit.h"
-#include "MainWindow.h"
 #include "TrackInfoDialog.h"
 #include "TocInfoDialog.h"
 #include "AddSilenceDialog.h"
 #include "AddFileDialog.h"
 #include "DeviceConfDialog.h"
 #include "ProgressDialog.h"
-#include "RecordGenericDialog.h"
 #include "guiUpdate.h"
 #include "CdDevice.h"
 #include "ProcessMonitor.h"
@@ -55,7 +52,6 @@ GCDMaster *gcdmaster = NULL;
 DeviceConfDialog *DEVICE_CONF_DIALOG = NULL;
 ProcessMonitor *PROCESS_MONITOR = NULL;
 ProgressDialogPool *PROGRESS_POOL = NULL;
-RecordGenericDialog *RECORD_GENERIC_DIALOG = NULL;
 
 static int VERBOSE = 0;
 static int PROCESS_MONITOR_SIGNAL_BLOCKED = 0;
@@ -148,9 +144,12 @@ int main (int argc, char* argv[])
   // scan for SCSI devices
   CdDevice::scan();
 
+  // this forces a CdDevice::updateDeviceStatus() so
+  // when gcdmaster is first show we already have the device status
+  guiUpdatePeriodic();
+
   DEVICE_CONF_DIALOG = new DeviceConfDialog;
   PROGRESS_POOL = new ProgressDialogPool;
-  RECORD_GENERIC_DIALOG = new RecordGenericDialog;
 
   gcdmaster = new GCDMaster;
 
