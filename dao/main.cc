@@ -19,6 +19,9 @@
 
 /*
  * $Log: main.cc,v $
+ * Revision 1.18  2001/01/07 18:59:40  andreasm
+ * Added option '--overburn' and disabled overburning by default.
+ *
  * Revision 1.17  2000/12/17 10:51:23  andreasm
  * Default verbose level is now 2. Adaopted message levels to have finer
  * grained control about the amount of messages printed by cdrdao.
@@ -169,7 +172,7 @@
  *
  */
 
-static char rcsid[] = "$Id: main.cc,v 1.17 2000/12/17 10:51:23 andreasm Exp $";
+static char rcsid[] = "$Id: main.cc,v 1.18 2001/01/07 18:59:40 andreasm Exp $";
 
 #include <config.h>
 
@@ -230,6 +233,7 @@ static int CDDB_TIMEOUT = 60;
 static int TAO_SOURCE = 0;
 static int TAO_SOURCE_ADJUST = -1;
 static int KEEPIMAGE = 0;
+static int OVERBURN = 0;
 
 static Settings *SETTINGS = NULL; // settings read from $HOME/.cdrdao
 
@@ -344,6 +348,7 @@ static void printUsage()
   --simulate              - just perform a write simulation\n\
   --speed <writing-speed> - selects writing speed\n\
   --multi                 - session will not be not closed\n\
+  --overburn              - allow to overburn a medium\n\
   --eject                 - ejects cd after writing or simulation\n\
   --swap                  - swap byte order of audio files\n\
   --on-the-fly            - perform on-the-fly copy, no image file is created\n\
@@ -704,6 +709,9 @@ static int parseCmdline(int argc, char **argv)
       }
       else if (strcmp((*argv) + 2, "keepimage") == 0) {
 	KEEPIMAGE = 1;
+      }
+      else if (strcmp((*argv) + 2, "overburn") == 0) {
+	OVERBURN = 1;
       }
       else if (strcmp((*argv) + 2, "driver") == 0) {
 	if (argc < 2) {
@@ -1532,7 +1540,6 @@ static int copyCd(CdrDriver *src, CdrDriver *dst, int session,
 		strerror(errno));
     }
 
-
     delete toc;
     return 1;
   }
@@ -2033,11 +2040,20 @@ int main(int argc, char **argv)
     }
 
     if (toc->length().lba() > di->capacity) {
-      message(-1, "Length of toc (%s, %ld blocks) exceeds capacity ",
+      message((OVERBURN ? -1 : -2),
+	      "Length of toc (%s, %ld blocks) exceeds capacity ",
 	      toc->length().str(), toc->length().lba());
       message(0, "of CD-R (%s, %ld blocks).", Msf(di->capacity).str(),
 	      di->capacity);
-      message(-1, "Some drives may fail to record this toc.");
+
+      if (OVERBURN) {
+	message(-1, "Ignored because of option '--overburn'.");
+	message(-1, "Some drives may fail to record this toc.");
+      }
+      else {
+	message(-2, "Please use option '--overburn' to start recording anyway.");
+	exitCode = 1; goto fail;
+      }
     }
 
     if (MULTI_SESSION != 0) {
