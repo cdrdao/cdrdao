@@ -19,6 +19,10 @@
 
 /*
  * $Log: main.cc,v $
+ * Revision 1.9  2000/08/20 17:16:26  andreasm
+ * Added option '--keepimage' to not remove the image create with command
+ * 'copy'.
+ *
  * Revision 1.8  2000/08/06 13:13:09  andreasm
  * Added option --cddb-directory and corresponding setting to specify where
  * fetched CDDB record should be stored.
@@ -132,7 +136,7 @@
  *
  */
 
-static char rcsid[] = "$Id: main.cc,v 1.8 2000/08/06 13:13:09 andreasm Exp $";
+static char rcsid[] = "$Id: main.cc,v 1.9 2000/08/20 17:16:26 andreasm Exp $";
 
 #include <config.h>
 
@@ -191,6 +195,7 @@ static int SAVE_SETTINGS = 0;
 static int CDDB_TIMEOUT = 60;
 static int TAO_SOURCE = 0;
 static int TAO_SOURCE_ADJUST = -1;
+static int KEEPIMAGE = 0;
 
 static Settings *SETTINGS = NULL; // settings read from $HOME/.cdrdao
 
@@ -311,6 +316,7 @@ static void printUsage()
   --session #             - selects session for read-toc/read-cd\n\
   --fast-toc              - do not extract pre-gaps and index marks\n\
   --read-raw              - read raw sectors for read-cd\n\
+  --keepimage             - the image created by 'copy' will not be deleted\n\
   --tao-source            - indicate that source CD was written in TAO mode\n\
   --tao-source-adjust #   - # of link blocks for TAO source CDs (def. 2)\n\
   --paranoia-mode #       - DAE paranoia mode (0..3)\n\
@@ -643,6 +649,9 @@ static int parseCmdline(int argc, char **argv)
       }
       else if (strcmp((*argv) + 2, "tao-source") == 0) {
 	TAO_SOURCE = 1;
+      }
+      else if (strcmp((*argv) + 2, "keepimage") == 0) {
+	KEEPIMAGE = 1;
       }
       else if (strcmp((*argv) + 2, "driver") == 0) {
 	if (argc < 2) {
@@ -1336,9 +1345,10 @@ static int checkToc(const Toc *toc)
 
 static int copyCd(CdrDriver *src, CdrDriver *dst, int session,
 		  const char *dataFilename, int fifoBuffers, int swap,
-		  int remoteMode, int eject, int force)
+		  int remoteMode, int eject, int force, int keepimage)
 {
   char dataFilenameBuf[50];
+  long pid = getpid();
   Toc *toc;
   int ret = 0;
   DiskInfo *di = NULL;
@@ -1346,7 +1356,6 @@ static int copyCd(CdrDriver *src, CdrDriver *dst, int session,
 
   if (dataFilename == NULL) {
     // create a unique temporary data file name in current directory
-    long pid = getpid();
     sprintf(dataFilenameBuf, "cddata%ld.bin", pid);
     dataFilename = dataFilenameBuf;
   }
@@ -1357,8 +1366,20 @@ static int copyCd(CdrDriver *src, CdrDriver *dst, int session,
     src->taoSourceAdjust(TAO_SOURCE_ADJUST);
 
   if ((toc = src->readDisk(session, dataFilename)) == NULL) {
+    unlink(dataFilename);
     message(-2, "Creation of source CD image failed.");
     return 1;
+  }
+
+  if (keepimage) {
+    char tocFilename[50];
+
+    sprintf(tocFilename, "cd%ld.toc", pid);
+    
+    message(1, "Keeping created image file \"%s\".", dataFilenameBuf);
+    message(1, "Corresponding toc-file is written to \"%s\".", tocFilename);
+
+    toc->write(tocFilename);
   }
 
   if (checkToc(toc)) {
@@ -1417,9 +1438,12 @@ static int copyCd(CdrDriver *src, CdrDriver *dst, int session,
 
 
   if (dst->preventMediumRemoval(1) != 0) {
-    if (unlink(dataFilename) != 0)
-      message(-2, "Cannot remove CD image file \"%s\": %s", dataFilename,
-	      strerror(errno));
+    if (!keepimage) {
+      if (unlink(dataFilename) != 0)
+	message(-2, "Cannot remove CD image file \"%s\": %s", dataFilename,
+		strerror(errno));
+    }
+
 
     delete toc;
     return 1;
@@ -1449,9 +1473,11 @@ static int copyCd(CdrDriver *src, CdrDriver *dst, int session,
     dst->loadUnload(1);
   }
 
-  if (unlink(dataFilename) != 0)
-    message(-2, "Cannot remove CD image file \"%s\": %s", dataFilename,
-	    strerror(errno));
+  if (!keepimage) {
+    if (unlink(dataFilename) != 0)
+      message(-2, "Cannot remove CD image file \"%s\": %s", dataFilename,
+	      strerror(errno));
+  }
 
   delete toc;
 
@@ -2051,7 +2077,7 @@ int main(int argc, char **argv)
     }
     else {
       if (copyCd(srcCdr, cdr, SESSION, DATA_FILENAME, FIFO_BUFFERS, SWAP,
-		 REMOTE_MODE, EJECT, FORCE) == 0) {
+		 REMOTE_MODE, EJECT, FORCE, KEEPIMAGE) == 0) {
 	message(1, "CD copying finished successfully.");
       }
       else {

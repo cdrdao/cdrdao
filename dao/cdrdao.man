@@ -1,4 +1,4 @@
-.TH CDRDAO 1 "Jun 19, 2000"
+.TH CDRDAO 1 "Aug 20, 2000"
 .SH NAME
 cdrdao \- writes audio CD-Rs in disc-at-once mode
 .SH SYNOPSIS
@@ -30,6 +30,7 @@ cdrdao \- writes audio CD-Rs in disc-at-once mode
 .RB [ --session ]
 .RB [ --force ]
 .RB [ --reload ]
+.RB [ --keepimage ]
 .RB [ --on-the-fly ]
 .RB [ --paranoia-mode
 .IR mode ]
@@ -287,6 +288,12 @@ repair.
 The extraction speed reduces from 0 to 3.
 
 Default is the full paranoia mode (3).
+.TP
+.BI \--keepimage
+If a CD is copied with command
+.I copy
+this option will cause that the created image is not removed after the
+copy process has finished. 
 .TP
 .BI \--on-the-fly
 Perform CD copy on the fly without creating an image file.
