@@ -5,9 +5,13 @@
 autoconf
 
 # This deletes the (old) pccts dir and unpacks the latest version
-rm -rf pccts
-tar xvzf pccts.tar.gz
+if test -e pccts.tar.gz ; then
+  rm -rf pccts
+  tar xvzf pccts.tar.gz
+fi
 
 # This deletes the (old) scsilib dir and unpacks the latest version
-rm -rf scsilib
-tar xvzf scsilib.tar.gz
+if test -e scsilib.tar.gz ; then
+  rm -rf scsilib
+  tar xvzf scsilib.tar.gz
+fi
