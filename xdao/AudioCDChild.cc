@@ -53,7 +53,7 @@ AudioCDChild::AudioCDChild(gint number)
   tocEdit_->toc(toc, buf);
 
   playing_ = 0;
-  playBurst_ = 588 * 5;
+  playBurst_ = 588 * 10;
   soundInterface_ = new SoundIF;
   playBuffer_ = new Sample[playBurst_];
   soundInterface_ = NULL;

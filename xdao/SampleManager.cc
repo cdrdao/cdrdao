@@ -18,6 +18,10 @@
  */
 /*
  * $Log: SampleManager.cc,v $
+ * Revision 1.4  2000/09/24 17:39:07  andreasm
+ * Fixed length of processed data per idle signal call so that playback does
+ * not jump when audio data scanning is active.
+ *
  * Revision 1.3  2000/04/23 09:07:08  andreasm
  * * Fixed most problems marked with '//llanero'.
  * * Added audio CD edit menus to MDIWindow.
@@ -307,7 +311,7 @@ int SampleManagerImpl::scanToc(unsigned long start, unsigned long end)
     withGui_ = 1;
   }
   else {
-    burstBlock_ = 500;
+    burstBlock_ = 75;
     percentStep_ = gfloat(burstBlock_) / gfloat(len);
     withGui_ = 1;
   }
