@@ -17,6 +17,8 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+#include "Toc.h"
+#include "SoundIF.h"
 #include "AudioCDProject.h"
 #include "AudioCDChild.h"
 #include "AudioCDView.h"
@@ -33,6 +35,11 @@ AudioCDProject::AudioCDProject(int number, const char *name, TocEdit *tocEdit)
 
   tocInfoDialog_ = 0;
   cdTextDialog_ = 0;
+  playStatus_ = STOPPED;
+  playBurst_ = 588 * 10;
+  soundInterface_ = new SoundIF;
+  playBuffer_ = new Sample[playBurst_];
+  soundInterface_ = NULL;
 
   if (tocEdit == NULL)
     tocEdit_ = new TocEdit(NULL, NULL);
@@ -74,9 +81,23 @@ AudioCDProject::AudioCDProject(int number, const char *name, TocEdit *tocEdit)
  
   get_dock_item_by_name("viewSwitcher")->show();
 
+  playToolbar = new Gtk::Toolbar;
+  playToolbar->set_border_width(2);
+  playToolbar->set_button_relief(GTK_RELIEF_NONE);
+  playToolbar->set_style(GTK_TOOLBAR_ICONS);
+  playToolbar->show();
+  add_docked(*playToolbar, "playToolbar", GNOME_DOCK_ITEM_BEH_NORMAL,
+  		GNOME_DOCK_TOP, 2, 2, 0);
+  get_dock_item_by_name("playToolbar")->show();
+
   audioCDChild_ = new AudioCDChild(this);
 
   newAudioCDView();
+}
+
+Gtk::Toolbar *AudioCDProject::getPlayToolbar()
+{
+  return playToolbar;
 }
 
 void AudioCDProject::newAudioCDView()
@@ -144,4 +165,126 @@ void AudioCDProject::update(unsigned long level)
     cdTextDialog_->update(level, tocEdit_);
 }
 
+void AudioCDProject::playStart(unsigned long start, unsigned long end)
+{
+  unsigned long level = 0;
+
+  if (playStatus_ == PLAYING)
+    return;
+
+  if (tocEdit_->lengthSample() == 0)
+  {
+    guiUpdate(UPD_PLAY_STATUS);
+    return;
+  }
+
+  if (soundInterface_ == NULL) {
+    soundInterface_ = new SoundIF;
+    if (soundInterface_->init() != 0) {
+      delete soundInterface_;
+      soundInterface_ = NULL;
+      guiUpdate(UPD_PLAY_STATUS);
+      return;
+    }
+  }
+
+  if (soundInterface_->start() != 0)
+  {
+    guiUpdate(UPD_PLAY_STATUS);
+    return;
+  }
+
+  tocReader.init(tocEdit_->toc());
+  if (tocReader.openData() != 0) {
+    tocReader.init(NULL);
+    soundInterface_->end();
+    guiUpdate(UPD_PLAY_STATUS);
+    return;
+    }
+
+  if (tocReader.seekSample(start) != 0) {
+    tocReader.init(NULL);
+    soundInterface_->end();
+    guiUpdate(UPD_PLAY_STATUS);
+    return;
+  }
+
+  playLength_ = end - start + 1;
+  playPosition_ = start;
+  playStatus_ = PLAYING;
+  playAbort_ = 0;
+
+  level |= UPD_PLAY_STATUS;
+
+//FIXME: Selection / Zooming does not depend
+//       on the Child, but the View.
+//       we should have different blocks!
+  tocEdit_->blockEdit();
+
+  guiUpdate(level);
+
+  Gtk::Main::idle.connect(slot(this, &AudioCDProject::playCallback));
+}
+
+void AudioCDProject::playStop()
+{
+  playAbort_ = 1;
+}
+
+int AudioCDProject::playCallback()
+{
+  unsigned long level = 0;
+
+  long len = playLength_ > playBurst_ ? playBurst_ : playLength_;
+
+  if (tocReader.readSamples(playBuffer_, len) != len ||
+      soundInterface_->play(playBuffer_, len) != 0) {
+    soundInterface_->end();
+    tocReader.init(NULL);
+    playing_ = 0;
+
+    level |= UPD_PLAY_STATUS;
+
+    tocEdit_->unblockEdit();
+    guiUpdate(level);
+    return 0; // remove idle handler
+  }
+
+  playLength_ -= len;
+  playPosition_ += len;
+
+  unsigned long delay = soundInterface_->getDelay();
+
+  if (delay <= playPosition_)
+    level |= UPD_PLAY_STATUS;
+
+  if (len == 0 || playAbort_ != 0) {
+    soundInterface_->end();
+    tocReader.init(NULL);
+    playStatus_ = STOPPED;
+    level |= UPD_PLAY_STATUS;
+    tocEdit_->unblockEdit();
+    guiUpdate(level);
+    return 0; // remove idle handler
+  }
+  else {
+    guiUpdate(level);
+    return 1; // keep idle handler
+  }
+}
+
+enum AudioCDProject::PlayStatus AudioCDProject::getPlayStatus()
+{
+  return playStatus_;
+}
+
+unsigned long AudioCDProject::playPosition()
+{
+  return playPosition_;
+}
+
+unsigned long AudioCDProject::getDelay()
+{
+  return soundInterface_->getDelay();
+}
 

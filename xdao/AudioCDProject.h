@@ -24,6 +24,10 @@
 #include <gtk/gtk.h>
 #include <gnome--.h>
 
+class Toc;
+class Track;
+class Sample;
+class SoundIF;
 class AudioCDChild;
 class AudioCDView;
 class TocInfoDialog;
@@ -33,7 +37,22 @@ class TocEdit;
 
 class AudioCDProject : public Project
 {
+public:
+  enum PlayStatus {PLAYING, PAUSED, STOPPED};
+
 private:
+  TocReader tocReader;
+
+  SoundIF *soundInterface_;
+  unsigned long playLength_; // remaining play length
+  unsigned long playBurst_;
+  unsigned long playPosition_;
+  Sample *playBuffer_;
+  int playing_;
+  int playAbort_;
+
+  int playCallback();
+
   AudioCDChild *audioCDChild_;
   TocInfoDialog *tocInfoDialog_;
   CdTextDialog *cdTextDialog_;
@@ -41,11 +60,21 @@ private:
   void projectInfo();
   void cdTextDialog();
   void update(unsigned long level);
+
+  Gtk::Toolbar *playToolbar;
+  enum PlayStatus playStatus_;
  
 public:
   AudioCDProject(int number, const char *name, TocEdit *tocEdit);
   void newAudioCDView(); 
   bool closeProject();
+  Gtk::Toolbar *getPlayToolbar();
+
+  void playStart(unsigned long start, unsigned long end);
+  void playStop();
+  enum PlayStatus getPlayStatus();
+  unsigned long playPosition();
+  unsigned long getDelay();
 };
 #endif
 
