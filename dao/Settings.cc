@@ -178,6 +178,7 @@ int SettingsImpl::read(FILE *fp)
   char buf[MAX_LINE_LENGTH];
   char *p, *p1;
   char *name;
+  long n;
 
   while (fgets(buf, MAX_LINE_LENGTH, fp) != NULL) {
     // handle comment
@@ -200,6 +201,16 @@ int SettingsImpl::read(FILE *fp)
       while (*p != 0 && isspace(*p))
 	p++;
 
+      // strip off trailing white space
+      if ((n = strlen(p)) > 0) {
+	for (p1 = p + n - 1; p1 >= p; p1--) {
+	  if (isspace(*p1)) {
+	    printf("Stripped off %d\n", *p1);
+	    *p1 = 0;
+	  }
+	}
+      }
+      
       parseAndSetValue(name, p);
     }
   }
