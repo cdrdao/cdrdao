@@ -1,3 +1,10 @@
+The following standard GPL applies for all parts of the cdrdao project except
+that section 2 of the GPL does not apply for the source code within the
+"edc_ecc" directory. If you create a work derived from cdrdao, you may not ship
+this derived work with the edc_ecc source code.
+
+
+
 		    GNU GENERAL PUBLIC LICENSE
 		       Version 2, June 1991
 
