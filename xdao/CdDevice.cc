@@ -852,6 +852,114 @@ void CdDevice::abortDaoDuplication()
   }
 }
 
+// Starts a 'cdrdao' for blanking a CD.
+// Return: 0: OK, process succesfully launched
+//         1: error occured
+int CdDevice::blank(int fast, int speed, int eject, int reload)
+{
+  char *args[20];
+  int n = 0;
+  char devname[30];
+  char drivername[50];
+  char speedbuf[20];
+  char *execName;
+  const char *s;
+  char bufferbuf[20];
+  int remoteFdArgNum = 0;
+
+  if (status_ != DEV_READY || process_ != NULL)
+    return 1;
+
+  if ((s = gnome_config_get_string(SET_CDRDAO_PATH)) != NULL)
+    execName = strdupCC(s);
+  else
+    execName = strdupCC("cdrdao");
+
+  args[n++] = execName;
+
+  args[n++] = "blank";
+
+  args[n++] = "--remote";
+
+  remoteFdArgNum = n;
+  args[n++] = NULL;
+
+  args[n++] = "-v0";
+
+  args[n++] = "--blank-mode";
+
+  if (fast)
+    args[n++] = "minimal";
+  else
+    args[n++] = "full";
+
+  if (speed > 0) {
+    sprintf(speedbuf, "%d", speed);
+    args[n++] = "--speed";
+    args[n++] = speedbuf;
+  }
+
+  if (eject)
+    args[n++] = "--eject";
+
+  if (reload)
+    args[n++] = "--reload";
+
+  args[n++] = "--device";
+
+  if (specialDevice_ != NULL && *specialDevice_ != 0) {
+    args[n++] = specialDevice_;
+  }
+  else {
+    sprintf(devname, "%d,%d,%d", bus_, id_, lun_);
+    args[n++] = devname;
+  }
+
+  if (driverId_ > 0) {
+    sprintf(drivername, "%s:0x%lx", driverName(driverId_), options_);
+    args[n++] = "--driver";
+    args[n++] = drivername;
+  }
+
+  args[n++] = NULL;
+  
+  assert(n <= 20);
+  
+  PROGRESS_POOL->start(this, "Blanking CDRW");
+
+  // Remove the SCSI interface of this device to avoid problems with double
+  // usage of device nodes.
+  delete scsiIf_;
+  scsiIf_ = NULL;
+
+  process_ = PROCESS_MONITOR->start(execName, args, remoteFdArgNum);
+
+  delete[] execName;
+
+  if (process_ != NULL) {
+    status_ = DEV_BLANKING;
+    action_ = A_BLANK;
+
+    if (process_->commFd() >= 0) {
+      Gtk::Main::instance()->input.connect(slot(this,
+						&CdDevice::updateProgress),
+					   process_->commFd(),
+					   (GdkInputCondition)(GDK_INPUT_READ|GDK_INPUT_EXCEPTION));
+    }
+    return 0;
+  }
+  else {
+    return 1;
+  }
+}
+
+void CdDevice::abortBlank()
+{
+  if (process_ != NULL && !process_->exited()) {
+    PROCESS_MONITOR->stop(process_);
+  }
+}
+
 void CdDevice::createScsiIf()
 {
   char buf[100];

@@ -33,7 +33,7 @@ public:
 		DEV_NO_DISK, DEV_BLANKING, DEV_FAULT, DEV_UNKNOWN };
   enum DeviceType { CD_R, CD_RW, CD_ROM };
 
-  enum Action { A_RECORD, A_READ, A_DUPLICATE, A_NONE };
+  enum Action { A_RECORD, A_READ, A_DUPLICATE, A_BLANK, A_NONE };
 
   CdDevice(int bus, int id, int lun, const char *vendor,
 	   const char *product);
@@ -87,6 +87,9 @@ public:
   int duplicateDao(int simulate, int multiSession, int speed,
 		int eject, int reload, int buffer, int onthefly, int correction, CdDevice *readdev);
   void abortDaoDuplication();
+
+  int blank(int fast, int speed, int eject, int reload);
+  void abortBlank();
     
   int progressStatusChanged();
   void progress(int *status, int *totalTracks, int *track,
