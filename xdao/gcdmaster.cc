@@ -22,7 +22,11 @@
 #include "xcdrdao.h"
 #include "DeviceConfDialog.h"
 #include "RecordGenericDialog.h"
+#include "ProjectChooser.h"
 #include "gcdmaster.h"
+#include "TocEdit.h"
+#include "util.h"
+#include "AudioCDProject.h"
 
 GCDMaster::GCDMaster()
 {
@@ -36,9 +40,17 @@ void GCDMaster::add(Project *project)
 {
   projects.push_back(project);
 cout << "Number of projects = " << projects.size() << endl;
+cout << "Number of choosers = " << choosers.size() << endl;
 }
 
-void GCDMaster::openProject(Project *project)
+void GCDMaster::add(ProjectChooser *projectChooser)
+{
+  choosers.push_back(projectChooser);
+cout << "Number of projects = " << projects.size() << endl;
+cout << "Number of choosers = " << choosers.size() << endl;
+}
+
+void GCDMaster::openProject(ProjectChooser *projectChooser)
 {
   if (readFileSelector_)
   {
@@ -50,7 +62,7 @@ void GCDMaster::openProject(Project *project)
   {
     readFileSelector_ = new Gtk::FileSelection("Open project");
     readFileSelector_->get_ok_button()->clicked.connect(
-				bind(slot(this, &GCDMaster::readFileSelectorOKCB), project));
+				bind(slot(this, &GCDMaster::readFileSelectorOKCB), projectChooser));
     readFileSelector_->get_cancel_button()->clicked.connect(
 				slot(this, &GCDMaster::readFileSelectorCancelCB));
   }
@@ -65,18 +77,28 @@ void GCDMaster::readFileSelectorCancelCB()
   readFileSelector_ = 0;
 }
 
-void GCDMaster::readFileSelectorOKCB(Project *project)
+void GCDMaster::readFileSelectorOKCB(ProjectChooser *projectChooser)
 {
+  TocEdit *tocEdit = new TocEdit(NULL, NULL);
   char *s = g_strdup(readFileSelector_->get_filename().c_str());
 
   if (s != NULL && *s != 0 && s[strlen(s) - 1] != '/')
   {
-    if (project->busy())
+    if (tocEdit->readToc(stripCwd(s)) == 0)
     {
-      project = new Project(project_number);
-      add(project);
+//FIXME: We should test what type of project it is
+//       AudioCD, ISO. No problem now.
+      cout << "Read ok" << endl;
+	 newAudioCDProject(stripCwd(s), tocEdit, NULL);
+	 if (projectChooser)
+	   closeChooser(projectChooser);
     }
-    project->readToc(s);
+    else
+    {
+      string message("Error loading ");
+      message += s;
+      Gnome::Dialogs::error(message); 
+    }
   }
   g_free(s);
 
@@ -91,7 +113,18 @@ void GCDMaster::closeProject(Project *project)
     projects.remove(project);
   }
 cout << "Number of projects = " << projects.size() << endl;
-  if (projects.size() == 0)
+cout << "Number of choosers = " << choosers.size() << endl;
+  if ((projects.size() == 0) & (choosers.size() == 0))
+    appClose();
+}
+
+void GCDMaster::closeChooser(ProjectChooser *projectChooser)
+{
+  delete projectChooser;
+  choosers.remove(projectChooser);
+cout << "Number of projects = " << projects.size() << endl;
+cout << "Number of choosers = " << choosers.size() << endl;
+  if ((projects.size() == 0) & (choosers.size() == 0))
     appClose();
 }
 
@@ -108,16 +141,30 @@ void GCDMaster::appClose()
 
 void GCDMaster::newChooserWindow()
 {
-  Project *project = new Project(project_number);
-  project->newChooserWindow();
-  add(project);
+  ProjectChooser *projectChooser = new ProjectChooser();
+  projectChooser->show();
+//  Project *project = new Project(project_number);
+//  project->newChooserWindow();
+//  As it always can be closed, we don't add it.
+  add(projectChooser);
 }
 
-void GCDMaster::newAudioCDProject(const char *name)
+void GCDMaster::newAudioCDProject(const char *name, TocEdit *tocEdit, ProjectChooser *projectChooser)
 {
-  Project *project = new Project(project_number);
-  project->newAudioCDProject(name);
+  AudioCDProject *project = new AudioCDProject(project_number++, name, tocEdit);
   add(project);
+  project->show();
+  if (projectChooser)
+    closeChooser(projectChooser);
+}
+
+void GCDMaster::newAudioCDProject2(ProjectChooser *projectChooser)
+{
+  AudioCDProject *project = new AudioCDProject(project_number++, "", NULL);
+  add(project);
+  project->show();
+  if (projectChooser)
+    closeChooser(projectChooser);
 }
 
 void GCDMaster::recordCD2CD()
@@ -158,7 +205,7 @@ void GCDMaster::aboutDialog()
     if (logo_char != NULL)
       logo = logo_char;
 
-    about_ = new Gnome::About(_("gcdmaster"), "1.1.5",
+    about_ = new Gnome::About(_("gcdmaster"), VERSION,
                                "(C) Andreas Mueller",
                                authors,
                                _("A CD Mastering app for Gnome."),

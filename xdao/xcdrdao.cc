@@ -128,7 +128,7 @@ static RETSIGTYPE signalHandler(int sig)
 
 int main (int argc, char* argv[])
 {
-  Gnome::Main application("GnomeCDMaster", "1.1.4a", argc, argv);
+  Gnome::Main application("GnomeCDMaster", VERSION, argc, argv);
    
   Gtk::ButtonBox::set_child_size_default(50, 10);
 
@@ -157,7 +157,7 @@ int main (int argc, char* argv[])
     gcdmaster->newChooserWindow();
   else while (argc > 1)
   {
-    gcdmaster->newAudioCDProject(argv[1]);
+    gcdmaster->newAudioCDProject(argv[1], NULL, NULL);
     argv++;
     argc--;
   }

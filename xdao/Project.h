@@ -28,13 +28,10 @@ class AudioCDChild;
 class AudioCDView;
 class TocEdit;
 #include "ViewSwitcher.h"
-#include "ProjectChooser.h"
 
 class Project : public Gnome::App
 {
-private:
-  ProjectChooser *projectChooser_;
-  AudioCDChild *audioCDChild_;
+protected:
   Gtk::HBox *hbox;
 //  Gtk::Statusbar *statusbar_;  
   Gnome::AppBar *statusbar_;  
@@ -45,8 +42,6 @@ private:
   int project_number;
   gint viewNumber;
   bool new_; // If it is a new project (not saved)
-  enum ProjectType { P_NONE, P_CHOOSER, P_AUDIOCD };
-  ProjectType projectType;
 
   TocEdit *tocEdit_;
 
@@ -64,13 +59,10 @@ private:
   virtual int delete_event_impl(GdkEventAny *event);
 
 public:
-  Project(int);
+  Project();
 
   void readToc(char *name);
-  bool busy();
-  void newChooserWindow();
-  void newAudioCDProject(const char *name = 0);
-  bool closeProject();
+  virtual bool closeProject() = 0;
   void recordToc2CD();
 
   gint getViewNumber();

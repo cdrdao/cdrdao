@@ -21,7 +21,7 @@
 
 #include "xcdrdao.h"
 #include "gcdmaster.h"
-#include "Project.h"
+//* #include "Project.h"
 #include "ProjectChooser.h"
 
 #define ICON_PADDING 10
@@ -29,7 +29,7 @@
 #define BUTTONS_RELIEF GTK_RELIEF_NORMAL
 
 
-ProjectChooser::ProjectChooser(Project *project) 
+ProjectChooser::ProjectChooser()
 {
 //  static const GtkTargetEntry drop_types [] =
 //  {
@@ -51,7 +51,7 @@ ProjectChooser::ProjectChooser(Project *project)
   Gtk::Label *label;
   Gdk_Font font;
 
-  project_ = project;
+//  gcdmaster_ = gcdmaster;
   
 //  table->set_col_spacings(20);
   table->set_border_width(40);
@@ -70,7 +70,7 @@ ProjectChooser::ProjectChooser(Project *project)
   hbox->show();
   openButton->add(*hbox);
   openButton->show();
-  openButton->clicked.connect(bind(slot(gcdmaster, &GCDMaster::openProject), project));
+  openButton->clicked.connect(bind(slot(gcdmaster, &GCDMaster::openProject), this));
   table->attach(*openButton, 1, 2, 0, 1);
 //  pack_start(*openButton, FALSE, TRUE);
 
@@ -86,10 +86,11 @@ ProjectChooser::ProjectChooser(Project *project)
   hbox->show();
   audioCDButton->add(*hbox);
   audioCDButton->show();
-  audioCDButton->clicked.connect(bind(slot(project_, &Project::newAudioCDProject), ""));
+  audioCDButton->clicked.connect(bind(slot(gcdmaster, &GCDMaster::newAudioCDProject2), this));
   table->attach(*audioCDButton, 1, 2, 1, 2, GTK_FILL);
 //  pack_start(*audioCDButton, FALSE, TRUE);
 
+/*
   Gtk::Button *dataCDButton = manage(new Gtk::Button());
   dataCDButton->set_relief(BUTTONS_RELIEF);
   hbox = manage(new Gtk::HBox);
@@ -121,7 +122,7 @@ dataCDButton->set_sensitive(false);
 mixedCDButton->set_sensitive(false);
   table->attach(*mixedCDButton, 1, 2, 3, 4, GTK_FILL);
 //  pack_start(*mixedCDButton, TRUE, TRUE);
-
+*/
   Gtk::Button *copyCDButton = manage(new Gtk::Button());
   copyCDButton->set_relief(BUTTONS_RELIEF);
   hbox = manage(new Gtk::HBox);
@@ -155,6 +156,7 @@ mixedCDButton->set_sensitive(false);
   table->attach(*dumpCDButton, 1, 2, 5, 6, GTK_FILL);
 //  pack_start(*dumpCDButton, TRUE, TRUE);
 
+/*
   Gtk::Button *helpButton = manage(new Gtk::Button());
   helpButton->set_relief(BUTTONS_RELIEF);
   hbox = manage(new Gtk::HBox);
@@ -170,9 +172,10 @@ mixedCDButton->set_sensitive(false);
 helpButton->set_sensitive(false);
   table->attach(*helpButton, 1, 2, 6, 7, GTK_FILL);
 //  pack_start(*helpButton, TRUE, TRUE);
-
+*/
   table->show();
-  pack_start(*table, TRUE, TRUE);
+//  pack_start(*table, TRUE, TRUE);
+  add(*table);
 }
 
 /*
@@ -214,4 +217,12 @@ void AudioCDView::drag_data_received_cb(GdkDragContext *context,
 
 ProjectChooser::~ProjectChooser() 
 {
+  
 }
+
+gint ProjectChooser::delete_event_impl(GdkEventAny* e)
+{
+  gcdmaster->closeChooser(this);
+  return true;  // Do not close window, we will delete it from gcdmaster
+}
+

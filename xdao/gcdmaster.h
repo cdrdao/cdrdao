@@ -26,21 +26,24 @@
 
 #include <list>
 
+class ProjectChooser;
 #include "Project.h"
 
 class GCDMaster : public Gtk::Widget
 {
 private:
   list<Project *> projects;
+  list<ProjectChooser *> choosers;
 
   gint project_number;
 
   Gnome::About *about_;  
 
   void add(Project *);
+  void add(ProjectChooser *);
 
   Gtk::FileSelection *readFileSelector_;
-  void readFileSelectorOKCB(Project *project);
+  void readFileSelectorOKCB(ProjectChooser *projectChooser);
   void readFileSelectorCancelCB();
 
   int aboutDestroy();
@@ -50,9 +53,12 @@ public:
 
   void appClose();
   void closeProject(Project *);
-  void openProject(Project *project);
+  void closeChooser(ProjectChooser *);
+  void openProject(ProjectChooser *);
   void newChooserWindow();
-  void newAudioCDProject(const char *name);
+//FIXME: join this two: ?
+  void newAudioCDProject2(ProjectChooser *);
+  void newAudioCDProject(const char *name, TocEdit *tocEdit, ProjectChooser *);
 
   void recordCD2CD();
   void recordCD2HD();

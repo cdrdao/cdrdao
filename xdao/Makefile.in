@@ -46,7 +46,7 @@ SRC = xcdrdao.cc SampleDisplay.cc SampleManager.cc \
       TextEdit.cc TocInfoDialog.cc guiUpdate.cc TrackDataScrap.cc \
       AddFileDialog.cc CdDevice.cc DeviceConfDialog.cc \
       ProcessMonitor.cc ProgressDialog.cc Settings.cc MessageBox.cc \
-      MDIWindow.cc \
+      MDIWindow.cc AudioCDProject.cc \
       AudioCDChild.cc RecordGenericDialog.cc RecordCDTarget.cc \
       DeviceList.cc RecordTocSource.cc RecordCDSource.cc \
       RecordHDTarget.cc AudioCDView.cc TocEditView.cc GenericChild.cc \
