@@ -24,7 +24,7 @@
 #ifndef __GENERIC_CHILD_H__
 #define __GENERIC_CHILD_H__
 
-#include <gnome--.h>
+#include <libgnomeuimm.h>
 
 class TocEdit;
 

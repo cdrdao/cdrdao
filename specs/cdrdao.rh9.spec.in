@@ -1,0 +1,54 @@
+Name:		cdrdao
+Summary:	A Disk-At-Once (DAO) Audio CD writer and GUI editor
+Version:	@PACKAGE_VERSION@
+Release:	1
+License:	GPL
+Group:		Applications/Multimedia
+BuildRoot:      %{_builddir}/%{name}-buildroot
+Source:		%{name}-%{version}.tar.gz
+
+Requires:	lame >= 3
+Requires:	gtkmm2 >= 2.2.0
+Requires:	libgnomeuimm >= 2.0
+Requires:	GConf2 >= 2.0.0
+
+BuildRequires:	lame-devel >= 3
+BuildRequires:	cdrecord-devel
+BuildRequires:	gtkmm2-devel >= 2.2.0
+BuildRequires:	libgnomeuimm-devel >= 2.0
+
+%description
+
+Writes audio CD-Rs in disc-at-once (DAO) mode allowing control over
+pre-gaps (length down to 0, nonzero audio data) and sub-channel
+information like ISRC codes. All data that is written to the disc must
+be specified with a text file. Audio data may be in WAVE or raw
+format. Gcdmaster is a GNOME2 GUI front-end to cdrdao that makes it easy to
+visualize and manipulate audio information before burning it onto
+CD. Its features include: cut/copy/paste of sound samples, track marks
+edition and silence insertion.
+
+%prep
+%setup -q
+
+%build
+
+%configure --with-scglib-inc=/usr/include/schily --with-scglib-lib=/usr/lib
+
+make %{?_smp_mflags}
+
+%makeinstall
+
+%clean
+[ -n "$RPM_BUILD_ROOT" -a "$RPM_BUILD_ROOT" != / ] && rm -rf $RPM_BUILD_ROOT
+
+%post
+
+%files
+%defattr(-, root, root)
+%doc AUTHORS COPYING CREDITS ChangeLog INSTALL README NEWS README.FreeBSD README.PlexDAE README.Win32
+%{_bindir}/cdrdao
+%{_bindir}/gcdmaster
+%{_bindir}/toc2cue
+%{_bindir}/toc2mp3
+%{_mandir}/man1/*

@@ -22,6 +22,7 @@
 #include <math.h>
 #include <assert.h>
 
+#include <gtkmm.h>
 #include <gnome.h>
 
 #include "RecordHDTarget.h"
@@ -38,54 +39,43 @@ RecordHDTarget::RecordHDTarget()
   Gtk::Table *table;
   Gtk::Label *label;
 
-  active_ = 0;
+  active_ = false;
 
   set_spacing(10);
 
   // device settings
-  Gtk::Frame *recordOptionsFrame = new Gtk::Frame("Record Options");
+  Gtk::Frame *recordOptionsFrame =
+    manage(new Gtk::Frame(_(" Record Options ")));
 
-  table = new Gtk::Table(2, 2, false);
+  table = manage(new Gtk::Table(2, 2, false));
   table->set_row_spacings(2);
   table->set_col_spacings(10);
   table->set_border_width(5);
-  table->show();
 
-  Gtk::VBox *vbox = new Gtk::VBox;
-  vbox->show();
-  vbox->pack_start(*table, false, false, 5);
-  recordOptionsFrame->add(*vbox);
-  
-  pack_start(*recordOptionsFrame, false, false);
-  recordOptionsFrame->show();
+  recordOptionsFrame->add(*table);
+  recordOptionsFrame->show_all();
+  pack_start(*recordOptionsFrame, Gtk::PACK_SHRINK);
 
-  label = new Gtk::Label("Directory: ");
-  label->show();
-  table->attach(*label, 0, 1, 0, 1, GTK_FILL);
+  label = manage(new Gtk::Label(_("Directory: ")));
+  table->attach(*label, 0, 1, 0, 1, Gtk::FILL);
 
-  dirEntry_ = new Gnome::FileEntry("record_hd_target_dir_entry",
-				   "Select Directory for Image");
-  dirEntry_->set_directory(TRUE);
-  dirEntry_->set_usize(30, 0);
-  dirEntry_->show();
+  dirEntry_ = manage(new Gnome::UI::FileEntry(_("record_hd_target_dir_entry"),
+                                              _("Select Directory for Image")));
+  dirEntry_->set_directory_entry(true);
 
   table->attach(*dirEntry_, 1, 2, 0, 1);
 
-  label = new Gtk::Label("Name: ");
-  label->show();
-  table->attach(*label, 0, 1, 1, 2, GTK_FILL);
+  label = manage(new Gtk::Label(_("Name: ")));
+  table->attach(*label, 0, 1, 1, 2, Gtk::FILL);
 
-  fileNameEntry_ = new Gtk::Entry;
-  fileNameEntry_->show();
+  fileNameEntry_ = manage(new Gtk::Entry);
   table->attach(*fileNameEntry_, 1, 2, 1, 2);
 }
 
 void RecordHDTarget::start()
 {
-  active_ = 1;
-
+  active_ = true;
   update(UPD_ALL);
-
   show();
 }
 
@@ -93,7 +83,7 @@ void RecordHDTarget::stop()
 {
   if (active_) {
     hide();
-    active_ = 0;
+    active_ = false;
   }
 }
 
@@ -108,12 +98,12 @@ void RecordHDTarget::cancelAction()
   stop();
 }
 
-Gtk::string RecordHDTarget::getFilename()
+std::string RecordHDTarget::getFilename()
 {
   return fileNameEntry_->get_text();
 }
 
-Gtk::string RecordHDTarget::getPath()
+std::string RecordHDTarget::getPath()
 {
   Gtk::Entry *entry = static_cast<Gtk::Entry *>(dirEntry_->gtk_entry());
   return entry->get_text();

@@ -1,25 +1,20 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_REVISION($Revision: 1.30 $)dnl
-AC_INIT(cdrdao.lsm)
+AC_REVISION($Revision: 1.31 $)dnl
 
-cdrdao_version=1.1.8-pre2
+AC_INIT(cdrdao, 1.1.8pre2)
 
-AC_CONFIG_HEADER(config.h)
-AC_CONFIG_SUBDIRS(paranoia)
-
+AC_CONFIG_SRCDIR(dao/main.cc)
+AM_INIT_AUTOMAKE
+AM_CONFIG_HEADER(config.h)
 AC_CANONICAL_HOST
 
 AC_ARG_WITH(pcctsbin,[  --with-pcctsbin=dir     set directory of PCCTS parser generator executables],pcctsbin=$withval,pcctsbin=default)
 AC_ARG_WITH(pcctsinc,[  --with-pcctsinc=dir     set directory of PCCTS parser generator includes],pcctsinc=$withval,pcctsinc=default)
-AC_ARG_WITH(linux-qnx-sched,[  --with-linux-qnx-sched  enable QNX real time scheduling for Linux],AC_DEFINE(LINUX_QNX_SCHEDULING))
+AC_ARG_WITH(linux-qnx-sched,[  --with-linux-qnx-sched  enable QNX real time scheduling for Linux],AC_DEFINE(LINUX_QNX_SCHEDULING,1,"Use real time scheduling for Linux"))
 AC_ARG_WITH(posix-threads,[  --with-posix-threads    use Posix threads for ring buffer (default: on)],use_pthreads=$withval,use_pthreads=default)
 AC_ARG_WITH(scglib,[  --with-scglib           use Joerg Schillings SCSI library (default: on)],use_scglib=$withval,use_scglib=default)
 AC_ARG_WITH(scglib-inc,[  --with-scglib-inc=dir   set directory for SCSI library include files],scglib_inc=$withval,scglib_inc=default)
 AC_ARG_WITH(scglib-lib,[  --with-scglib-lib=dir   set directory that contains the SCSI library],scglib_lib=$withval,scglib_lib=default)
-
-
-utils_targets="toc2cue toc2cddb"
-utils_sources="toc2cue.cc toc2cddb.cc"
 
 
 dnl Checks for programs.
@@ -28,6 +23,7 @@ AC_PROG_CXX
 AC_PROG_CPP
 AC_PROG_INSTALL
 AC_PROG_RANLIB
+AC_CHECK_PROG(AR,ar,ar)
 AC_PROG_MAKE_SET
 
 dnl Checks for header files.
@@ -40,15 +36,28 @@ AC_C_CONST
 AC_TYPE_SIGNAL
 AC_CHECK_SIZEOF(short)
 AC_CHECK_SIZEOF(int)
+AC_CHECK_SIZEOF(long)
+AC_CHECK_SIZEOF(long long)
 
 case 2 in
 	$ac_cv_sizeof_short) 
-                AC_DEFINE(size16,short)
+                AC_DEFINE(size16,short,"")
 		SIZE16=TRUE;;
 	$ac_cv_sizeof_int)
-                AC_DEFINE(size16,int)
+                AC_DEFINE(size16,int,"")
 		SIZE16=TRUE;;
 esac
+
+case 4 in
+	$ac_cv_sizeof_short) SIZE32="short";;
+	$ac_cv_sizeof_int) SIZE32="int";;
+	$ac_cv_sizeof_long) SIZE32="long";;
+esac
+
+AC_CHECK_TYPE(int16_t,,AC_DEFINE_UNQUOTED(int16_t,$SIZE16,""))
+AC_CHECK_TYPE(int32_t,,AC_DEFINE_UNQUOTED(int32_t,$SIZE32,""))
+AC_CHECK_TYPE(u_int16_t,,AC_DEFINE_UNQUOTED(u_int16_t,$SIZE16,""))
+AC_CHECK_TYPE(u_int32_t,,AC_DEFINE_UNQUOTED(u_int32_t,$SIZE32,""))
 
 if test -z "$SIZE16"; then
 	AC_MSG_ERROR(No 16 bit type found on this platform!)
@@ -56,14 +65,14 @@ fi
 
 dnl Check for additionally required libraries
 
-AC_CHECK_FUNC(sched_getparam,AC_DEFINE(HAVE_SCHED_GETPARAM),
+AC_CHECK_FUNC(sched_getparam,AC_DEFINE(HAVE_SCHED_GETPARAM,1,""),
   AC_CHECK_LIB(posix4,sched_getparam,[use_libposix4=yes;AC_DEFINE(HAVE_SCHED_GETPARAM)]))
 
-AC_CHECK_FUNC(sched_get_priority_max,AC_DEFINE(HAVE_SCHED_GET_PRIORITY_MAX),
-  AC_CHECK_LIB(posix4,sched_get_priority_max,[use_libposix4=yes;AC_DEFINE(HAVE_SCHED_GET_PRIORITY_MAX)]))
+AC_CHECK_FUNC(sched_get_priority_max,AC_DEFINE(HAVE_SCHED_GET_PRIORITY_MAX,1,""),
+  AC_CHECK_LIB(posix4,sched_get_priority_max,[use_libposix4=yes;AC_DEFINE(HAVE_SCHED_GET_PRIORITY_MAX,1,"")]))
 
-AC_CHECK_FUNC(sched_setscheduler,AC_DEFINE(HAVE_SCHED_SETSCHEDULER),
-  AC_CHECK_LIB(posix4,sched_setscheduler,[use_libposix4=yes;AC_DEFINE(HAVE_SCHED_SETSCHEDULER)]))
+AC_CHECK_FUNC(sched_setscheduler,AC_DEFINE(HAVE_SCHED_SETSCHEDULER,1,""),
+  AC_CHECK_LIB(posix4,sched_setscheduler,[use_libposix4=yes;AC_DEFINE(HAVE_SCHED_SETSCHEDULER,1,"")]))
 
 AC_CHECK_LIB(socket,socket,[use_libsocket=yes])
 AC_CHECK_LIB(socket,connect,[use_libsocket=yes])
@@ -104,14 +113,14 @@ if test "$use_pthreads" = yes; then
   AC_CHECK_FUNC(pthread_create,have_pthread_std=yes,have_pthread_std=no)
 
   if test "$have_pthread_std" = yes; then
-    AC_DEFINE(USE_POSIX_THREADS)
+    AC_DEFINE(USE_POSIX_THREADS,1,"")
     thread_libs=""
     thread_test_lib=""
   else
     AC_CHECK_LIB(pthread,pthread_create,have_pthread=yes,have_pthread=no)
 
     if test "$have_pthread" = yes; then
-      AC_DEFINE(USE_POSIX_THREADS)
+      AC_DEFINE(USE_POSIX_THREADS,1,"")
       thread_libs="-lpthread"
       thread_test_lib="pthread"
     else
@@ -185,26 +194,17 @@ if test "$pcctsinc" = default; then
   pcctsinc='$(srcdir)/../pccts/h'
 fi
 
+utiltools=toc2cue
+en_cdrdao=yes
+en_toc2cue=yes
+en_toc2mp3=no
 
-AC_PATH_LAME(3.92,
-[dnl
-utils_targets="$utils_targets toc2mp3"
-utils_sources="$utils_sources toc2mp3.cc"])
+AC_PATH_LAME(3.92, [utiltools="$utiltools toc2mp3" en_toc2mp3=yes])
 
-xdao=xdao
-AC_PATH_GTKMM(1.2.9,,[xdao=no; echo Disabled building of xcdrdao.])
-
-if test $xdao = xdao; then
-  AC_PATH_GNOME(1.4.0.0,, [xdao=no; echo Disabled building of xcdrdao.])
-fi
-
-if test $xdao = xdao; then
-  AC_PATH_GNOME_MODULE(gnomemm,1.2.2,GNOMEMM_CFLAGS,GNOMEMM_LIBS,,[xdao=no; echo Disabled building of xcdrdao.])
-fi
-
-if test $xdao != xdao; then
-  xdao=
-fi
+en_xdao=yes
+en_scsilib=yes
+PKG_CHECK_MODULES(GTKMM2, gtkmm-2.0 >= 2.2,[],[en_xdao=no])
+PKG_CHECK_MODULES(LIBGUIMM2, libgnomeuimm-2.0 >= 2.0,[],[en_xdao=no])
 
 dnl Determine source for scsi interface class
 if test "$use_scglib" = default; then
@@ -212,7 +212,8 @@ if test "$use_scglib" = default; then
 fi
 
 if test "$use_scglib" = yes; then
-  AC_DEFINE(USE_SCGLIB)
+  AC_DEFINE(USE_SCGLIB,1,"")
+  AC_DEFINE(SCSI_ATAPI, 1, "Allow ATAPI support device")
 
   if test "$scglib_inc" = default -o "$scglib_lib" = default; then
     scsilib_dir=scsilib
@@ -220,6 +221,7 @@ if test "$use_scglib" = yes; then
     scsilib_libs="-L../scsilib/export"
   else
     scsilib_dir=""
+    en_scsilib="no (bypassed by configuration)"
     scsilib_incl="-I$scglib_inc"
     scsilib_libs="-L$scglib_lib"
   fi
@@ -277,7 +279,7 @@ dnl -lc_r is automatically done by the linker
 	      fi
 	      ;;
   *darwin*)
-            AC_DEFINE(_P1003_1B_VISIBLE)
+            AC_DEFINE(_P1003_1B_VISIBLE,1,"")
             LIBS="$LIBS -framework CoreServices -framework IOKit"
             ;;
 
@@ -286,15 +288,15 @@ esac
 dnl Sound device selection for xcdrdao
 case "$host" in
   *-linux-*)
-	     sound_if_src=SoundIF-linux.cc
+	     sound_if_obj=SoundIF-linux.o
 	     ;;
 
   *-solaris*)
-	      sound_if_src=SoundIF-solaris.cc
+	      sound_if_obj=SoundIF-solaris.o
 	      ;;
 
   *)
-     sound_if_src=SoundIF-none.cc
+     sound_if_obj=SoundIF-none.o
      ;;
 esac
 
@@ -310,18 +312,43 @@ esac
 
 
 AC_SUBST(scsi_if_src)
-AC_SUBST(cdrdao_version)
-AC_SUBST(xdao)
+AC_SUBST(en_xdao)
+AC_SUBST(en_toc2mp3)
+AC_SUBST(en_toc2cue)
+AC_SUBST(en_cdrdao)
 AC_SUBST(scsilib_dir)
 AC_SUBST(scsilib_incl)
 AC_SUBST(scsilib_libs)
 AC_SUBST(pccts_target)
 AC_SUBST(pcctsinc)
 AC_SUBST(dao_src)
-AC_SUBST(sound_if_src)
+AC_SUBST(sound_if_obj)
 AC_SUBST(thread_libs)
 AC_SUBST(mydefs)
-AC_SUBST(utils_targets)
-AC_SUBST(utils_sources)
 
-AC_OUTPUT(trackdb/Makefile dao/Makefile utils/Makefile xdao/Makefile Makefile)
+AM_CONDITIONAL([COND_XDAO], [test "$en_xdao" = yes])
+AM_CONDITIONAL([COND_TOC2MP3], [test "$en_toc2mp3" = yes])
+AM_CONDITIONAL([COND_SCSILIB], [test "$en_scsilib" = yes])
+
+AC_CONFIG_FILES([
+        trackdb/Makefile
+        dao/Makefile
+        utils/Makefile
+        xdao/Makefile
+        xdao/stock/Makefile
+        paranoia/Makefile
+        Makefile
+        specs/cdrdao.rh9.spec
+        specs/cdrdao.fedora1.spec
+        ])
+
+AC_OUTPUT
+
+echo
+echo "------------------------------------------------------"
+echo "  Building scsilib   : $en_scsilib"
+echo "  Building cdrdao    : $en_cdrdao"
+echo "  Building toc2cue   : $en_toc2cue"
+echo "  Building toc2mp3   : $en_toc2mp3"
+echo "  Building gcdmaster : $en_xdao"
+echo "------------------------------------------------------"

@@ -3944,6 +3944,7 @@ void CdrDriver::sendReadCdProgressMsg(ReadCdProgressType type, int totalTracks,
     p.trackProgress = trackProgress;
     p.totalProgress = totalProgress;
     p.bufferFillRate = 0;
+    p.writerFillRate = 0;
 
     if (write(fd, REMOTE_MSG_SYNC_, sizeof(REMOTE_MSG_SYNC_)) != sizeof(REMOTE_MSG_SYNC_) ||
 	write(fd, (const char*)&p, sizeof(p)) != sizeof(p)) {
@@ -3956,7 +3957,7 @@ void CdrDriver::sendReadCdProgressMsg(ReadCdProgressType type, int totalTracks,
 int CdrDriver::sendWriteCdProgressMsg(WriteCdProgressType type, 
 				      int totalTracks, int track,
 				      int trackProgress, int totalProgress,
-				      int bufferFillRate)
+				      int bufferFillRate, int writeFill)
 {
   if (remote_) {
     int fd = remoteFd_;
@@ -3968,6 +3969,7 @@ int CdrDriver::sendWriteCdProgressMsg(WriteCdProgressType type,
     p.trackProgress = trackProgress;
     p.totalProgress = totalProgress;
     p.bufferFillRate = bufferFillRate;
+    p.writerFillRate = writeFill;
 
     if (write(fd, REMOTE_MSG_SYNC_, sizeof(REMOTE_MSG_SYNC_)) != sizeof(REMOTE_MSG_SYNC_) ||
 	write(fd, (const char*)&p, sizeof(p)) != sizeof(p)) {
@@ -3992,6 +3994,7 @@ int CdrDriver::sendBlankCdProgressMsg(int totalProgress)
     p.trackProgress = 0;
     p.totalProgress = totalProgress;
     p.bufferFillRate = 0;
+    p.writerFillRate = 0;
 
     if (write(fd, REMOTE_MSG_SYNC_, sizeof(REMOTE_MSG_SYNC_)) != sizeof(REMOTE_MSG_SYNC_) ||
 	write(fd, (const char*)&p, sizeof(p)) != sizeof(p)) {

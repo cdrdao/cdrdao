@@ -22,8 +22,10 @@
 #include <math.h>
 #include <assert.h>
 
-#include <gnome--.h>
+#include <gtkmm.h>
 #include <gnome.h>
+#include <libgnomemm.h>
+#include <libgnomeuimm.h>
 
 #include "RecordCDTarget.h"
 #include "MessageBox.h"
@@ -47,10 +49,10 @@ RecordCDTarget::RecordCDTarget(Gtk::Window *parent)
 
   DEVICES = new DeviceList(CdDevice::CD_R);
 
-  pack_start(*DEVICES, false, false);
+  pack_start(*DEVICES);
 
   // device settings
-  Gtk::Frame *recordOptionsFrame = new Gtk::Frame("Record Options");
+  Gtk::Frame *recordOptionsFrame = new Gtk::Frame(" Record Options ");
 
   Gtk::VBox *vbox = new Gtk::VBox;
   recordOptionsFrame->add(*vbox);
@@ -69,13 +71,13 @@ RecordCDTarget::RecordCDTarget(Gtk::Window *parent)
   speedSpinButton_->set_digits(0);
   speedSpinButton_->show();
   speedSpinButton_->set_sensitive(false);
-  adjustment->value_changed.connect(SigC::slot(this, &RecordCDTarget::speedChanged));
+  adjustment->signal_value_changed().connect(SigC::slot(*this, &RecordCDTarget::speedChanged));
   hbox->pack_start(*speedSpinButton_, false, false, 10);
 
   speedButton_ = new Gtk::CheckButton("Use max.", 0);
   speedButton_->set_active(true);
   speedButton_->show();
-  speedButton_->toggled.connect(SigC::slot(this, &RecordCDTarget::speedButtonChanged));
+  speedButton_->signal_toggled().connect(SigC::slot(*this, &RecordCDTarget::speedButtonChanged));
   hbox->pack_start(*speedButton_, true, true);
   vbox->pack_start(*hbox);
 
@@ -92,8 +94,9 @@ RecordCDTarget::RecordCDTarget(Gtk::Window *parent)
   hbox->pack_start(*copiesSpinButton_, false, false, 10);
   vbox->pack_start(*hbox);
 
-  Gnome::StockPixmap *moreOptionsPixmap =
-  	manage(new Gnome::StockPixmap(GNOME_STOCK_MENU_PROP));
+  Gtk::Image* moreOptionsPixmap =
+      manage(new Gtk::Image(Gtk::StockID(Gtk::Stock::PROPERTIES),
+                            Gtk::ICON_SIZE_SMALL_TOOLBAR));
   Gtk::Label *moreOptionsLabel = manage(new Gtk::Label("More Options"));
   Gtk::HBox *moreOptionsBox = manage(new Gtk::HBox);
   moreOptionsBox->set_border_width(2);
@@ -101,7 +104,7 @@ RecordCDTarget::RecordCDTarget(Gtk::Window *parent)
   moreOptionsBox->pack_start(*moreOptionsPixmap, false, false, 3);
   moreOptionsBox->pack_start(*moreOptionsLabel, false, false, 4);
   moreOptionsButton->add(*moreOptionsBox);
-  moreOptionsButton->clicked.connect(slot(this, &RecordCDTarget::moreOptions));
+  moreOptionsButton->signal_clicked().connect(slot(*this, &RecordCDTarget::moreOptions));
   moreOptionsPixmap->show();
   moreOptionsLabel->show();
   moreOptionsBox->show();
@@ -111,7 +114,7 @@ RecordCDTarget::RecordCDTarget(Gtk::Window *parent)
   vbox->pack_start(*moreOptionsBox, false, false);
   moreOptionsBox->pack_end(*moreOptionsButton, false, false);
 
-  pack_start(*recordOptionsFrame, false, false);
+  pack_start(*recordOptionsFrame, Gtk::PACK_SHRINK);
   recordOptionsFrame->show();
 }
 
@@ -142,66 +145,57 @@ void RecordCDTarget::moreOptions()
 {
   if (!moreOptionsDialog_)
   {
-    std::vector <std::string> buttons;
-    buttons.push_back(GNOME_STOCK_BUTTON_CLOSE);
-    moreOptionsDialog_ = new Gnome::Dialog("Target options", buttons);
-
-    moreOptionsDialog_->set_parent(*parent_);
-    moreOptionsDialog_->set_close(true);
+    moreOptionsDialog_ = new Gtk::MessageDialog(*parent_, "Target options",
+                                                Gtk::MESSAGE_QUESTION,
+                                                Gtk::BUTTONS_CLOSE);
 
     Gtk::VBox *vbox = moreOptionsDialog_->get_vbox();
-    Gtk::Frame *frame = new Gtk::Frame("More Target Options");
+    Gtk::Frame *frame = new Gtk::Frame(" More Target Options ");
     vbox->pack_start(*frame);
     vbox = new Gtk::VBox;
     vbox->set_border_width(10);
     vbox->set_spacing(5);
-    vbox->show();
     frame->add(*vbox);
-    frame->show();
 
     overburnButton_ = new Gtk::CheckButton("Allow over-burning", 0);
     overburnButton_->set_active(false);
-    overburnButton_->show();
     vbox->pack_start(*overburnButton_);
 
     ejectButton_ = new Gtk::CheckButton("Eject the CD after writing", 0);
     ejectButton_->set_active(false);
-    ejectButton_->show();
     vbox->pack_start(*ejectButton_);
 
-    reloadButton_ = new Gtk::CheckButton("Reload the CD after writing, if necessary", 0);
+    reloadButton_ =
+        new Gtk::CheckButton("Reload the CD after writing, if necessary", 0);
     reloadButton_->set_active(false);
-    reloadButton_->show();
     vbox->pack_start(*reloadButton_);
 
-    closeSessionButton_ = new Gtk::CheckButton("Close disk - no further writing possible!", 0);
+    closeSessionButton_ =
+        new Gtk::CheckButton("Close disk - no further writing possible!", 0);
     closeSessionButton_->set_active(true);
-    closeSessionButton_->show();
     vbox->pack_start(*closeSessionButton_);
 
     Gtk::HBox *hbox = new Gtk::HBox;
-    hbox->show();
     Gtk::Label *label = new Gtk::Label("Buffer: ", 0);
-    label->show();
     hbox->pack_start(*label, false, false);
 
     Gtk::Adjustment *adjustment = new Gtk::Adjustment(10, 10, 1000);
     bufferSpinButton_ = new Gtk::SpinButton(*adjustment);
-    bufferSpinButton_->show();
     hbox->pack_start(*bufferSpinButton_, false, false, 10);
 
     label = new Gtk::Label("audio seconds ");
     hbox->pack_start(*label, false, false);
-    label->show();
     bufferRAMLabel_ = new Gtk::Label("= 1.72 Mb buffer.", 0);
     hbox->pack_start(*bufferRAMLabel_, true, true);
-    bufferRAMLabel_->show();
-    adjustment->value_changed.connect(SigC::slot(this, &RecordCDTarget::updateBufferRAMLabel));
+    adjustment->signal_value_changed().
+        connect(SigC::slot(*this, &RecordCDTarget::updateBufferRAMLabel));
     
     vbox->pack_start(*hbox);
   }
 
-  moreOptionsDialog_->show();
+  moreOptionsDialog_->show_all();
+  moreOptionsDialog_->run();
+  moreOptionsDialog_->hide();
 }
 
 void RecordCDTarget::update(unsigned long level)
@@ -348,8 +342,8 @@ void RecordCDTarget::updateBufferRAMLabel()
 {
   char label[20];
   
-  sprintf(label, "= %0.2f Mb buffer.", bufferSpinButton_->get_value_as_float() * 0.171875);
-  bufferRAMLabel_->set(label);
+  sprintf(label, "= %0.2f Mb buffer.", bufferSpinButton_->get_value() * 0.171875);
+  bufferRAMLabel_->set_text(label);
 }
 
 void RecordCDTarget::speedButtonChanged()
@@ -366,26 +360,21 @@ void RecordCDTarget::speedButtonChanged()
 
 void RecordCDTarget::speedChanged()
 {
-//FIXME: get max burn speed from selected burner(s)
+  // TODO: get max burn speed from selected burner(s)
   int new_speed;
 
   new_speed = speedSpinButton_->get_value_as_int();
 
-  if ((new_speed % 2) == 1)
-  {
-    if (new_speed > 2)
-    {
+  if ((new_speed % 2) == 1) {
+    if (new_speed > 2) {
       if (new_speed > speed_)
-      {
         new_speed = new_speed + 1;
-      }
       else
-      {
         new_speed = new_speed - 1;
-      }
     }
     speedSpinButton_->set_value(new_speed);
   }
+
   speed_ = new_speed;
 }
 

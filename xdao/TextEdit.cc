@@ -93,17 +93,18 @@ void TextEdit::insert_text_impl(const gchar *c, gint p2, gint *p3)
 
   *p = 0;
 
-  Gtk::Entry::insert_text_impl(s, p2, p3);
+  insert_text(s, p2, *p3);
 
   delete[] s;
 }
 
 void TextEdit::setSize(const char *sample)
 {
-  const Gtk::Style *style = get_style();
-  const GtkStyle *s = style->gtkobj();
+  Glib::RefPtr<Pango::Context> context = get_layout()->get_context();
+  Pango::FontDescription fdesc = context->get_font_description();
 
-  Gdk_Font font(s->font);
+  int cw = context->get_metrics(fdesc).get_approximate_char_width() / 1000;
+  int ch = context->get_metrics(fdesc).get_ascent() / 1000;
 
-  set_usize(font.string_width(sample) + 8, font.string_height(sample) + 12);
+  set_size_request((strlen(sample) * cw) + 8, -1);
 }

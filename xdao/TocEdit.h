@@ -18,6 +18,21 @@
  */
 /*
  * $Log: TocEdit.h,v $
+ * Revision 1.5  2004/02/12 01:13:32  poolshark
+ * Merge from gnome2 branch
+ *
+ * Revision 1.4.6.2  2004/01/19 18:17:51  poolshark
+ * Support for multiple selections in add track dialog
+ *
+ * Revision 1.4.6.1  2004/01/05 00:34:03  poolshark
+ * First checking of gnome2 port
+ *
+ * Revision 1.2  2003/12/12 02:49:36  denis
+ * AudioCDProject and AudioCDView cleanup.
+ *
+ * Revision 1.1.1.1  2003/12/09 05:32:28  denis
+ * Fooya
+ *
  * Revision 1.4  2000/11/05 12:24:41  andreasm
  * Improved handling of TocEdit views. Introduced a new class TocEditView that
  * holds all view data (displayed sample range, selected sample range,
@@ -55,6 +70,9 @@
 #ifndef __TOC_EDIT_H__
 #define __TOC_EDIT_H__
 
+#include <string>
+#include <list>
+
 #include "Toc.h"
 #include "CdTextItem.h"
 
@@ -81,7 +99,7 @@ public:
 
   void blockEdit();
   void unblockEdit();
-  int editable() const;
+  bool editable() const;
 
   // returns and resets update level
   unsigned long updateLevel();
@@ -93,17 +111,19 @@ public:
   int saveToc();
   int saveAsToc(const char *);
   
-
   int moveTrackMarker(int trackNr, int indexNr, long lba);
   int addTrackMarker(long lba);
   int removeTrackMarker(int trackNr, int indexNr);
   int addIndexMarker(long lba);
   int addPregap(long lba);
 
-
-  int appendTrack(const char *fname);
-  int appendFile(const char *fname);
+  int appendTrack(const char* filename);
+  int appendTracks(std::list<std::string>& tracks);
+  int appendFile(const char* filename);
+  int appendFiles(std::list<std::string>& tracks);
   int insertFile(const char *fname, unsigned long pos, unsigned long *len);
+  int insertFiles(std::list<std::string>& tracks, unsigned long pos,
+                  unsigned long *len);
   int appendSilence(unsigned long);
   int insertSilence(unsigned long length, unsigned long pos);
 

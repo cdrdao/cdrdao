@@ -262,6 +262,10 @@ public:
 
   virtual int readCapacity(long *length, int showMessage = 1);
 
+  virtual bool readBufferCapacity(long* total, long* available) {
+    return false;
+  }
+
   // CD-RW specific commands
   
   enum BlankingMode { BLANK_FULL, BLANK_MINIMAL };
@@ -333,7 +337,7 @@ public:
 			     WCD_LEADOUT = PGSMSG_WCD_LEADOUT };
   int sendWriteCdProgressMsg(WriteCdProgressType type, int totalTracks,
 			     int track, int trackProgress, int totalProgress,
-			     int bufferFillRate);
+			     int bufferFillRate, int writeBufferFill = 0);
 
   int sendBlankCdProgressMsg(int totalProgress);
 

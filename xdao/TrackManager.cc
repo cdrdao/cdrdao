@@ -18,8 +18,17 @@
  */
 /*
  * $Log: TrackManager.cc,v $
- * Revision 1.1  2000/02/05 01:40:19  llanero
- * Initial revision
+ * Revision 1.2  2004/02/12 01:13:32  poolshark
+ * Merge from gnome2 branch
+ *
+ * Revision 1.1.1.1.6.1  2004/01/05 00:34:03  poolshark
+ * First checking of gnome2 port
+ *
+ * Revision 1.1.1.1  2003/12/09 05:32:28  denis
+ * Fooya
+ *
+ * Revision 1.1.1.1  2000/02/05 01:40:19  llanero
+ * Uploaded cdrdao 1.1.3 with pre10 patch applied.
  *
  * Revision 1.2  1999/05/24 18:10:25  mueller
  * Adapted to new reading interface of 'trackdb'.

@@ -20,21 +20,21 @@
 #ifndef __TOC_INFO_DIALOG_H__
 #define __TOC_INFO_DIALOG_H__
 
-#include <gtk--.h>
+#include <gtkmm.h>
 #include <gtk/gtk.h>
 
 #include "Toc.h"
 
 class TocEdit;
-//class TocEditView;
 class TextEdit;
 
-class TocInfoDialog : public Gtk::Dialog {
+class TocInfoDialog : public Gtk::Dialog
+{
 public:
-  TocInfoDialog();
+  TocInfoDialog(Gtk::Window* parent);
   ~TocInfoDialog();
 
-  gint delete_event_impl(GdkEventAny*);
+  bool on_delete_event(GdkEventAny*);
 
   void update(unsigned long, TocEdit *);
 
@@ -43,7 +43,7 @@ public:
 
 private:
   TocEdit *tocEdit_;
-  int active_;
+  bool active_;
 
   Gtk::Button *applyButton_;
   Gtk::Label *tocLength_;

@@ -28,9 +28,17 @@
 #include "util.h"
 
 #include "xconfig.h"
+
 #include "standard.h"
 #include "scg/scgcmd.h"
 #include "scg/scsitransp.h"
+#include "scg/scsireg.h"
+
+// schily/standard.h define these, i don't know what they smoked the
+// day they came up with those defines.
+#undef vendor
+#undef product
+#undef revision
 
 static void printVersionInfo(SCSI *scgp);
 
@@ -217,7 +225,7 @@ int ScsiIf::sendCmd(const unsigned char *cmd, int cmdLen,
 	
   impl_->scgp_->cmdname = " ";
   impl_->scgp_->verbose = 0;
-  impl_->scgp_->silent = showMessage ? 0 : 1;
+  impl_->scgp_->silent = 1;
   
   if (scg_cmd(impl_->scgp_) < 0) {
     return scmd->sense_count > 0 ?  2 : 1;
@@ -253,7 +261,7 @@ int ScsiIf::inquiry()
   cmd[5] = 0;
 
 
-  if (sendCmd(cmd, 6, NULL, 0, result, 0x2c, 1) != 0) {
+  if (sendCmd(cmd, 6, NULL, 0, result, 0x2c, 0) != 0) {
     message (-2, "Inquiry command failed on '%s'.", impl_->dev_);
     return 1;
   }
@@ -287,6 +295,8 @@ static int scanInquiry(SCSI *scgp, unsigned char *buf, ScsiIf::ScanData *sdata)
   struct scg_cmd *cmd = scgp->scmd;
   int i;
 
+  int dev_sense = scg_sense_key(scgp);
+
   memset(buf, 0, 36);
   memset(cmd, 0, sizeof(struct scg_cmd));
 
@@ -301,32 +311,27 @@ static int scanInquiry(SCSI *scgp, unsigned char *buf, ScsiIf::ScanData *sdata)
   scgp->silent = 1;
   scgp->cmdname = "inquiry";
 
-  if (scg_cmd(scgp) == 0) {
-    if ((buf[0] & 0x1f) == 0x04 || (buf[0] & 0x1f) == 0x05) {
-      sdata->bus = scg_scsibus(scgp);
-      sdata->id = scg_target(scgp);
-      sdata->lun = scg_lun(scgp);
+#ifdef SCSI_ATAPI
+  int is_atapi = scg_isatapi(scgp);
+#else
+  int is_atapi = 0;
+#endif
+  int cmd_status = scg_cmd(scgp);
 
-      strncpy(sdata->vendor, (char *)(buf + 0x08), 8);
+  if (cmd_status == 0 || (is_atapi && dev_sense >= 0)) {
+    struct scsi_inquiry* inq = (struct scsi_inquiry*)buf;
+    if (inq->type == INQ_OPTD || inq->type == INQ_ROMD) {
+      char buf[16];
+      sprintf(buf, "%d,%d,%d", scg_scsibus(scgp), scg_target(scgp),
+              scg_lun(scgp));
+      sdata->dev +=  buf;
+
+      strncpy(sdata->vendor, inq->vendor_info, 8);
       sdata->vendor[8] = 0;
-
-      strncpy(sdata->product, (char *)(buf + 0x10), 16);
+      strncpy(sdata->product, inq->prod_ident, 16);
       sdata->product[16] = 0;
-
-      strncpy(sdata->revision, (char *)(buf + 0x20), 4);
+      strncpy(sdata->revision, inq->prod_revision, 4);
       sdata->revision[4] = 0;
-
-      for (i = 7; i >= 0 && sdata->vendor[i] == ' '; i--) {
-	sdata->vendor[i] = 0;
-      }
-
-      for (i = 15; i >= 0 && sdata->product[i] == ' '; i--) {
-	sdata->product[i] = 0;
-      }
-
-      for (i = 3; i >= 0 && sdata->revision[i] == ' '; i--) {
-	sdata->revision[i] = 0;
-      }
 
       return 1;
     }
@@ -335,7 +340,7 @@ static int scanInquiry(SCSI *scgp, unsigned char *buf, ScsiIf::ScanData *sdata)
   return 0;
 }
 
-ScsiIf::ScanData *ScsiIf::scan(int *len)
+ScsiIf::ScanData *ScsiIf::scan(int *len, char* scsi_dev)
 {
   ScanData *sdata = NULL;
   SCSI *scgp;
@@ -344,9 +349,7 @@ ScsiIf::ScanData *ScsiIf::scan(int *len)
 
   *len = 0;
 
-  //set_progname("cdrdao");
-
-  if ((scgp = scg_open(NULL, errstr, sizeof(errstr), 0, 0)) == NULL)
+  if ((scgp = scg_open(scsi_dev, errstr, sizeof(errstr), 0, 0)) == NULL)
     return NULL;
 
   printVersionInfo(scgp);
@@ -366,6 +369,10 @@ ScsiIf::ScanData *ScsiIf::scan(int *len)
 
       for (int target=0; target < 16 && *len < MAX_SCAN_DATA_LEN; target++) {
 	scg_settarget(scgp, bus, target, lun);
+        if (scsi_dev) {
+          sdata[*len].dev = scsi_dev;
+          sdata[*len].dev += ":";
+        }
 	if (scanInquiry(scgp, buf, &(sdata[*len])))
 	  *len += 1;
       }

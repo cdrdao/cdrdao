@@ -18,6 +18,15 @@
  */
 /*
  * $Log: guiUpdate.h,v $
+ * Revision 1.4  2004/02/12 01:13:32  poolshark
+ * Merge from gnome2 branch
+ *
+ * Revision 1.3.6.1  2004/01/05 00:34:02  poolshark
+ * First checking of gnome2 port
+ *
+ * Revision 1.1.1.1  2003/12/09 05:32:28  denis
+ * Fooya
+ *
  * Revision 1.3  2001/08/04 00:25:59  llanero
  * add UPD_PLAY_STATUS
  *
@@ -52,6 +61,6 @@
 #define UPD_PLAY_STATUS      0x00000800
 
 extern void guiUpdate(unsigned long level = 0);
-extern int guiUpdatePeriodic();
+extern bool guiUpdatePeriodic();
 
 #endif

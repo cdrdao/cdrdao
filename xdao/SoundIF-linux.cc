@@ -18,8 +18,23 @@
  */
 /*
  * $Log: SoundIF-linux.cc,v $
- * Revision 1.1  2000/02/05 01:39:57  llanero
- * Initial revision
+ * Revision 1.2  2004/02/12 01:13:32  poolshark
+ * Merge from gnome2 branch
+ *
+ * Revision 1.1.1.1.6.3  2004/01/12 20:50:26  poolshark
+ * Added _( and N_( intl macros
+ *
+ * Revision 1.1.1.1.6.2  2004/01/06 19:03:36  poolshark
+ * Missing end in destructor
+ *
+ * Revision 1.1.1.1.6.1  2004/01/05 00:34:03  poolshark
+ * First checking of gnome2 port
+ *
+ * Revision 1.1.1.1  2003/12/09 05:32:28  denis
+ * Fooya
+ *
+ * Revision 1.1.1.1  2000/02/05 01:39:57  llanero
+ * Uploaded cdrdao 1.1.3 with pre10 patch applied.
  *
  * Revision 1.3  1999/08/07 16:27:28  mueller
  * Applied patch from Yves Bastide:
@@ -45,6 +60,8 @@
 #include <sys/ioctl.h>
 #include <sys/types.h>
 
+#include <gnome.h>
+
 #include "SoundIF.h"
 
 #include "Sample.h"
@@ -68,6 +85,7 @@ SoundIF::SoundIF()
 
 SoundIF::~SoundIF()
 {
+  end();
   delete impl_;
   impl_ = NULL;
 }
@@ -168,7 +186,7 @@ int SoundIFImpl::openDevice()
     return 0; // already open
 
   if ((dspFd_ = open("/dev/dsp", O_WRONLY | O_NONBLOCK)) < 0) {
-    message(-1, "Cannot open \"/dev/dsp\": %s", strerror(errno));
+    message(-1, _("Cannot open \"/dev/dsp\": %s"), strerror(errno));
     return 1;
   }
 
@@ -195,25 +213,25 @@ int SoundIFImpl::setupDevice()
   
   int val = 44100;
   if (ioctl(dspFd_, SNDCTL_DSP_SPEED, &val) < 0) {
-    message(-1, "Cannot set sample rate to 44100: %s", strerror(errno));
+    message(-1, _("Cannot set sample rate to 44100: %s"), strerror(errno));
     return 1;
   }
 
   val = 2;
   if (ioctl(dspFd_, SNDCTL_DSP_CHANNELS, &val) < 0) {
-    message(-1, "Cannot setup 2 channels: %s", strerror(errno));
+    message(-1, _("Cannot setup 2 channels: %s"), strerror(errno));
     return 1;
   }
 
   val = AFMT_S16_LE;
   if (ioctl(dspFd_, SNDCTL_DSP_SETFMT, &val) < 0) {
-    message(-1, "Cannot setup sound format: %s", strerror(errno));
+    message(-1, _("Cannot setup sound format: %s"), strerror(errno));
     return 1;
   }
 
   if (val != AFMT_S16_LE) {
-    message(-1, "Sound device does not support "
-	    "little endian signed 16 bit samples.");
+    message(-1, _("Sound device does not support "
+                  "little endian signed 16 bit samples."));
     return 1;
   }
   

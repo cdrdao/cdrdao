@@ -101,7 +101,7 @@ protected:
   virtual int setWriteParameters(unsigned long variant);
   int setSimulationMode(int showMessage);
   int performPowerCalibration();
-  int readBufferCapacity(long *capacity);
+  bool readBufferCapacity(long *capacity, long *available);
 
   unsigned char *createCueSheet(unsigned long variant, long *cueSheetLen);
   int sendCueSheet();

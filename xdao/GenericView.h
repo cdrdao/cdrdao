@@ -20,7 +20,7 @@
 #ifndef __GENERIC_VIEW_H__
 #define __GENERIC_VIEW_H__
 
-#include <gtk--.h>
+#include <gtkmm.h>
 
 class TocEditView;
 

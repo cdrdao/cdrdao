@@ -22,6 +22,7 @@
 #include <math.h>
 #include <assert.h>
 
+#include <gtkmm.h>
 #include <gnome.h>
 
 #include "RecordTocSource.h"
@@ -42,68 +43,49 @@ RecordTocSource::RecordTocSource(TocEdit *tocEdit)
   Gtk::Table *table;
   Gtk::Label *label;  
 
-  active_ = 0;
+  active_ = false;
   tocEdit_ = tocEdit;
 
   // device settings
-  Gtk::Frame *infoFrame = new Gtk::Frame("Project Information");
-  infoFrame->show();
+  Gtk::Frame *infoFrame = manage(new Gtk::Frame(_(" Project Information ")));
   
-  table = new Gtk::Table(5, 2, FALSE);
+  table = manage(new Gtk::Table(5, 2, FALSE));
   table->set_row_spacings(5);
   table->set_col_spacings(5);
   table->set_border_width(10);
-  table->show();
 
-  label = new Gtk::Label("Project name: ", 1);
-  label->show();
+  label = manage(new Gtk::Label(_("Project name: "), 1));
   table->attach(*label, 0, 1, 0, 1);
-  projectLabel_ = new Gtk::Label("", 0);
-  projectLabel_->show();
-  table->attach(*projectLabel_, 1, 2, 0, 1);
+  table->attach(projectLabel_, 1, 2, 0, 1);
 
-  label = new Gtk::Label("Toc Type: ", 1);
-  label->show();
+  label = manage(new Gtk::Label(_("Toc Type: "), 1));
   table->attach(*label, 0, 1, 1, 2);
-  tocTypeLabel_ = new Gtk::Label("", 0);
-  tocTypeLabel_->show();
-  table->attach(*tocTypeLabel_, 1, 2, 1, 2);
+  table->attach(tocTypeLabel_, 1, 2, 1, 2);
 
-  label = new Gtk::Label("Tracks: ", 1);
-  label->show();
+  label = manage(new Gtk::Label(_("Tracks: "), 1));
   table->attach(*label, 0, 1, 2, 3);
-  nofTracksLabel_ = new Gtk::Label("", 0);
-  nofTracksLabel_->show();
-  table->attach(*nofTracksLabel_, 1, 2, 2, 3);
+  table->attach(nofTracksLabel_, 1, 2, 2, 3);
 
-  label = new Gtk::Label("Length: ", 1);
-  label->show();
+  label = manage(new Gtk::Label(_("Length: "), 1));
   table->attach(*label, 0, 1, 3, 4);
-  tocLengthLabel_ = new Gtk::Label("", 0);
-  tocLengthLabel_->show();
-  table->attach(*tocLengthLabel_, 1, 2, 3, 4);
+  table->attach(tocLengthLabel_, 1, 2, 3, 4);
 
   infoFrame->add(*table);
-
-  pack_start(*infoFrame, FALSE, FALSE);
-
-//  show();
+  pack_start(*infoFrame, Gtk::PACK_SHRINK);
 }
 
 void RecordTocSource::start()
 {
-  active_ = 1;
-
+  active_ = true;
   update(UPD_ALL);
-
-  show();
+  show_all();
 }
 
 void RecordTocSource::stop()
 {
   if (active_) {
     hide();
-    active_ = 0;
+    active_ = false;
   }
 }
 
@@ -123,10 +105,10 @@ void RecordTocSource::update(unsigned long level, TocEdit *tedit)
   }
 
   if (tocEdit_ == NULL) {
-    projectLabel_->set("");
-    tocTypeLabel_->set("");
-    nofTracksLabel_->set("");
-    tocLengthLabel_->set("");
+    projectLabel_.set_text("");
+    tocTypeLabel_.set_text("");
+    nofTracksLabel_.set_text("");
+    tocLengthLabel_.set_text("");
   }
   else {
     if (level & UPD_TOC_DATA) {
@@ -134,16 +116,16 @@ void RecordTocSource::update(unsigned long level, TocEdit *tedit)
       char buf[50];
       const Toc *toc = tocEdit_->toc();
 
-      projectLabel_->set(tocEdit_->filename());
+      projectLabel_.set_text(tocEdit_->filename());
 
-      tocTypeLabel_->set(toc->tocType2String(toc->tocType()));
+      tocTypeLabel_.set_text(toc->tocType2String(toc->tocType()));
 
       sprintf(label, "%d", toc->nofTracks());
-      nofTracksLabel_->set(label);
+      nofTracksLabel_.set_text(label);
       
       sprintf(buf, "%d:%02d:%02d", toc->length().min(),
 	      toc->length().sec(), toc->length().frac());
-      tocLengthLabel_->set(buf);
+      tocLengthLabel_.set_text(buf);
     }
   }
 }

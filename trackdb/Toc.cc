@@ -24,7 +24,11 @@
 #include <errno.h>
 #include <string.h>
 #include <ctype.h>
+#include <unistd.h>
+
 #include <fstream>
+#include <iostream>
+#include <sstream>
 
 #include "Toc.h"
 #include "util.h"
@@ -174,6 +178,19 @@ int Toc::write(const char *filename) const
   print(out);
 
   return 0;
+}
+
+bool Toc::write(int fd) const
+{
+    assert(fd);
+
+    std::ostringstream oss(std::ostringstream::out);
+    print(oss);
+
+    const char* content = oss.str().c_str();
+    int written = ::write(fd, content, strlen(content));
+
+    return (written >= 0);
 }
 
 int Toc::check() const

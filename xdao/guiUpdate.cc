@@ -36,17 +36,17 @@ void guiUpdate(unsigned long level)
 
   gcdmaster->update(level);
 
-  if (DEVICE_CONF_DIALOG != NULL)
-    DEVICE_CONF_DIALOG->update(level);
+  if (deviceConfDialog != NULL)
+    deviceConfDialog->update(level);
 
   if (PROGRESS_POOL != NULL)
     PROGRESS_POOL->update(level);
 }
 
-int guiUpdatePeriodic()
+bool guiUpdatePeriodic()
 {
   if (CdDevice::updateDeviceStatus())
     guiUpdate(UPD_CD_DEVICE_STATUS);
 
-  return 1;
+  return true;
 }

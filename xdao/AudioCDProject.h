@@ -20,9 +20,9 @@
 #ifndef __AUDIOCDPROJECT_H__
 #define __AUDIOCDPROJECT_H__
 
-#include <gtk--.h>
+#include <gtkmm.h>
 #include <gtk/gtk.h>
-#include <gnome--.h>
+#include <libgnomeuimm.h>
 
 class Toc;
 class Track;
@@ -51,31 +51,53 @@ private:
   int playing_;
   int playAbort_;
 
-  int playCallback();
+  bool playCallback();
 
-  AudioCDChild *audioCDChild_;
-  TocInfoDialog *tocInfoDialog_;
-  CdTextDialog *cdTextDialog_;
+  Gtk::HBox      hbox_;
+  AudioCDChild*  audioCDChild_;
+  AudioCDView*   audioCDView_;
+  TocInfoDialog* tocInfoDialog_;
+  CdTextDialog*  cdTextDialog_;
   void recordToc2CD();
   void projectInfo();
   void cdTextDialog();
   void update(unsigned long level);
 
-  Gtk::Toolbar *playToolbar;
   enum PlayStatus playStatus_;
+
+ protected:
+  Gtk::Button* buttonPlay_;
+  Gtk::Button* buttonStop_;
+  Gtk::Button* buttonPause_;
+
+  virtual void createToolbar();
+  virtual void createToolbar2();
+  virtual void on_play_clicked();
+  virtual void on_stop_clicked();
+  virtual void on_pause_clicked();
+  virtual void on_select_clicked();
+  virtual void on_zoom_clicked();
+  virtual void on_zoom_in_clicked();
+  virtual void on_zoom_out_clicked();
+  virtual void on_zoom_fit_clicked();
  
 public:
   AudioCDProject(int number, const char *name, TocEdit *tocEdit);
-  void newAudioCDView(); 
-  bool closeProject();
-  Gtk::Toolbar *getPlayToolbar();
 
-  void playStart(unsigned long start, unsigned long end);
-  void playPause();
-  void playStop();
+  bool            closeProject();
+
+  void            playStart();
+  void            playStart(unsigned long start, unsigned long end);
+  void            playPause();
+  void            playStop();
   enum PlayStatus getPlayStatus();
-  unsigned long playPosition();
-  unsigned long getDelay();
+  unsigned long   playPosition();
+
+  unsigned long   getDelay();
+
+  bool            appendTracks(std::list<std::string>&);
+  bool            appendFiles(std::list<std::string>&);
+  bool            insertFiles(std::list<std::string>&);
 };
 #endif
 

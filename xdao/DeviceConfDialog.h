@@ -16,58 +16,17 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
-/*
- * $Log: DeviceConfDialog.h,v $
- * Revision 1.6  2002/01/20 20:43:37  andreasm
- * Added support for sub-channel reading and writing.
- * Adapted to autoconf-2.52.
- * Adapted to gcc-3.0.
- *
- * Revision 1.5  2000/10/01 16:39:10  llanero
- * applied Jason Lunz patch: "Close" instead of "Cancel" where appropiate.
- *
- * Revision 1.4  2000/09/21 02:07:06  llanero
- * MDI support:
- * Splitted AudioCDChild into same and AudioCDView
- * Move Selections from TocEdit to AudioCDView to allow
- *   multiple selections.
- * Cursor animation in all the views.
- * Can load more than one from from command line
- * Track info, Toc info, Append/Insert Silence, Append/Insert Track,
- *   they all are built for every child when needed.
- * ...
- *
- * Revision 1.3  2000/04/23 09:07:08  andreasm
- * * Fixed most problems marked with '//llanero'.
- * * Added audio CD edit menus to MDIWindow.
- * * Moved central storage of TocEdit object to MDIWindow.
- * * AudioCdChild is now handled like an ordinary non modal dialog, i.e.
- *   it has a normal 'update' member function now.
- * * Added CdTextTable modal dialog.
- * * Old functionality of xcdrdao is now available again.
- *
- * Revision 1.2  2000/02/20 23:34:53  llanero
- * fixed scsilib directory (files mising ?-()
- * ported xdao to 1.1.8 / gnome (MDI) app
- *
- * Revision 1.1.1.1  2000/02/05 01:38:46  llanero
- * Uploaded cdrdao 1.1.3 with pre10 patch applied.
- *
- * Revision 1.1  1999/09/06 09:09:37  mueller
- * Initial revision
- *
- */
 
 #ifndef __DEVICE_CONF_DIALOG_H
 #define __DEVICE_CONF_DIALOG_H
 
-#include <gtk--.h>
-#include <gtk/gtk.h>
+#include <gtkmm.h>
 
 class TocEdit;
 class CdDevice;
 
-class DeviceConfDialog : public Gtk::Dialog {
+class DeviceConfDialog : public Gtk::Window
+{
 public:
   DeviceConfDialog();
   ~DeviceConfDialog();
@@ -77,40 +36,54 @@ public:
 
   void update(unsigned long level);
 
-  gint delete_event_impl(GdkEventAny*);
-
 private:
-  int active_;
+  bool active_;
 
-  int selectedRow_;
+  Gtk::TreeIter selectedRow_;
 
   struct DeviceData {
-    int bus, id, lun;
+    std::string dev;
     int driverId;
     int deviceType;
     unsigned long options;
-    std::string specialDevice;
   };
 
-  Gtk::CList *list_;
-  Gtk::Button *applyButton_;
+  // ------------------------------------- Device TreeView
+
+  class ListColumns : public Gtk::TreeModel::ColumnRecord {
+  public:
+    ListColumns() {
+      add(dev); add(vendor); add(model); add(status); add(data);
+    };
+
+    Gtk::TreeModelColumn<std::string> dev;
+    Gtk::TreeModelColumn<std::string> vendor;
+    Gtk::TreeModelColumn<std::string> model;
+    Gtk::TreeModelColumn<std::string> status;
+    Gtk::TreeModelColumn<DeviceData*> data;
+  };
+  Gtk::TreeView list_;
+  Glib::RefPtr<Gtk::ListStore> listModel_;
+  ListColumns listColumns_;
+
+  Gtk::Frame listFrame_;
+  Gtk::Frame settingFrame_;
+  Gtk::Frame addDeviceFrame_;
 
   Gtk::OptionMenu *driverMenu_;
-
   Gtk::OptionMenu *devtypeMenu_;
 
-  Gtk::SpinButton *busEntry_, *idEntry_, *lunEntry_;
-  Gtk::Entry *vendorEntry_, *productEntry_;
-  Gtk::Entry *specialDeviceEntry_;
-  Gtk::Entry *driverOptionsEntry_;
+  Gtk::Entry devEntry_;
+  Gtk::Entry vendorEntry_;
+  Gtk::Entry productEntry_;
+  Gtk::Entry driverOptionsEntry_;
 
   const char *checkString(const std::string &str);
 
   void setDriverId(int);
   void setDeviceType(int);
 
-  void selectRow(gint, gint, GdkEvent *);
-  void unselectRow(gint, gint, GdkEvent *);
+  void selectionChanged();
 
   void closeAction();
   void resetAction();
@@ -119,13 +92,13 @@ private:
   void deleteDeviceAction();
   void rescanAction();
 
-  void appendTableEntry(CdDevice *);
+  Gtk::TreeIter appendTableEntry(CdDevice *);
   void import();
-  void importConfiguration(int);
+  void importConfiguration(Gtk::TreeIter);
   void importStatus();
 
   void exportData();
-  void exportConfiguration(int);
+  void exportConfiguration(Gtk::TreeIter);
 };
 
 #endif

@@ -30,6 +30,9 @@ public:
   ~DumpCDProject();
   bool closeProject();
 
+ protected:
+  virtual void createToolbar() {};
+
 private:
   RecordCDSource *CDSource;
   RecordHDTarget *HDTarget;

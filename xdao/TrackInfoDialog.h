@@ -20,7 +20,7 @@
 #ifndef __TRACK_INFO_DIALOG_H__
 #define __TRACK_INFO_DIALOG_H__
 
-#include <gtk--.h>
+#include <gtkmm.h>
 #include <gtk/gtk.h>
 #include <string>
 
@@ -34,7 +34,7 @@ public:
   TrackInfoDialog();
   ~TrackInfoDialog();
 
-  gint delete_event_impl(GdkEventAny*);
+  bool on_delete_event(GdkEventAny*);
 
   void update(unsigned long, TocEditView *);
 

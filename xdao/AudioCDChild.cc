@@ -17,6 +17,8 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+#include <gtkmm.h>
+#include <gnome.h>
 
 #include "xcdrdao.h"
 #include "guiUpdate.h"
@@ -35,69 +37,32 @@
 
 AudioCDChild::AudioCDChild(AudioCDProject *project)
 {
+  view_ = NULL;
   project_ = project;
   tocEdit_ = project->tocEdit();
-
-  // Menu Stuff
-  {
-    using namespace Gnome::UI;
-    vector<Info> menus, viewMenuTree;
-
-    viewMenuTree.push_back(Item(Icon(GNOME_STOCK_MENU_BLANK),
-			      N_("Add new track editor view"),
-			      slot(project, &AudioCDProject::newAudioCDView),
-			      N_("Add new view of current project")));
-
-    menus.push_back(Gnome::Menus::View(viewMenuTree));
-
-    project->insert_menus("Edit", menus);
-  }
-
-  zoomToolbar = new Gtk::Toolbar;
-  zoomToolbar->set_border_width(2);
-  zoomToolbar->set_button_relief(GTK_RELIEF_NONE);
-  zoomToolbar->show();
-  project->add_docked(*zoomToolbar, "zoomToolbar", GNOME_DOCK_ITEM_BEH_NORMAL,
-  		GNOME_DOCK_TOP, 1, 2, 0);
-  project->get_dock_item_by_name("zoomToolbar")->show();
-
 }
 
 AudioCDChild::~AudioCDChild()
 {
-  AudioCDView *view = 0;
-
-  for (std::list<AudioCDView *>::iterator i = views.begin();
-       i != views.end(); i++)
-  {
-    if (view != 0)
-      delete view;
-    view = *i;   
-  }
-  delete view;
-}
-
-Gtk::Toolbar *AudioCDChild::getZoomToolbar()
-{
-	return zoomToolbar;
+  if (view_)
+    delete view_;
 }
 
 bool AudioCDChild::closeProject()
 {
 
   if (!tocEdit_->editable()) {
-    project_->tocBlockedMsg("Close Project");
+    project_->tocBlockedMsg(_("Close Project"));
     return false;
   }
 
   if (tocEdit_->tocDirty()) {
-//FIXME: This should be Ask3Box: Save changes? "yes" "no" "cancel"
     gchar *message;
     
-    message = g_strdup_printf("Project %s not saved.", tocEdit_->filename());
+    message = g_strdup_printf(_("Project %s not saved."),
+                              tocEdit_->filename());
 
-    Ask2Box msg(project_, "Close", 0, 2, message, "",
-		"Continue?", NULL);
+    Ask2Box msg(project_, _("Close"), 0, 2, message, "", _("Continue?"), NULL);
     g_free(message);
 
     if (msg.run() != 1)
@@ -109,11 +74,7 @@ bool AudioCDChild::closeProject()
 
 void AudioCDChild::update(unsigned long level)
 {
-  for (std::list<AudioCDView *>::iterator i = views.begin();
-       i != views.end(); i++)
-  {
-    (*i)->update(level);
-  }
+  view_->update(level);
 }
 
 
@@ -159,10 +120,11 @@ unsigned long AudioCDChild::string2sample(const char *str)
   return Msf(m, s, f).samples() + n;
 }
 
-AudioCDView *AudioCDChild::newView()
+AudioCDView *AudioCDChild::view()
 {
-  AudioCDView *audioCDView = new AudioCDView(this, project_);
-  views.push_back(audioCDView);
-  return audioCDView;
+  if (!view_) {
+    view_ = new AudioCDView(this, project_);
+    return view_;
+  }
 }
 

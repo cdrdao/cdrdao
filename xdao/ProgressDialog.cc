@@ -21,7 +21,8 @@
 #include <stddef.h>
 #include <ctype.h>
 
-#include <gnome--.h>
+#include <gtkmm.h>
+#include <gnome.h>
 
 #include "ProgressDialog.h"
 #include "MessageBox.h"
@@ -35,7 +36,7 @@ ProgressDialog::ProgressDialog(ProgressDialogPool *father)
 {
   Gtk::Label *label;
   Gtk::HBox *hbox;
-  Gtk::VBox *contents = new Gtk::VBox;
+  Gtk::VBox *contents = manage(new Gtk::VBox);
   Gtk::Table *table;
   Gtk::Alignment *align;
 
@@ -46,118 +47,92 @@ ProgressDialog::ProgressDialog(ProgressDialogPool *father)
 
   contents->set_spacing(5);
 
-  statusMsg_ = new Gtk::Label("XXXXXXXXXXXXXXXXXXX");
-  trackProgress_ = new Gtk::ProgressBar;
-  trackProgress_->set_show_text(TRUE);
-  totalProgress_ = new Gtk::ProgressBar;
-  totalProgress_->set_show_text(TRUE);
-  bufferFillRate_ = new Gtk::ProgressBar;
-  bufferFillRate_->set_show_text(TRUE);
-  tocName_ = new Gtk::Label;
+  statusMsg_ = manage(new Gtk::Label());
+  trackProgress_ = manage(new Gtk::ProgressBar);
+  totalProgress_ = manage(new Gtk::ProgressBar);
+  bufferFillRate_ = manage(new Gtk::ProgressBar);
+  writerFillRate_ = manage(new Gtk::ProgressBar);
+  tocName_ = manage(new Gtk::Label);
 
-  hbox = new Gtk::HBox;
-  label = new Gtk::Label("Project: ");
-  hbox->pack_start(*label, FALSE);
-  label->show();
-  hbox->pack_start(*tocName_, FALSE);
-  tocName_->show();
-  contents->pack_start(*hbox, FALSE);
-  hbox->show();
+  hbox = manage(new Gtk::HBox);
+  label = manage(new Gtk::Label(_("Project: ")));
+  hbox->pack_start(*label, Gtk::PACK_SHRINK);
+  hbox->pack_start(*tocName_, Gtk::PACK_SHRINK);
+  contents->pack_start(*hbox, Gtk::PACK_SHRINK);
 
-  hbox = new Gtk::HBox;
-  hbox->pack_start(*statusMsg_, FALSE);
-  statusMsg_->show();
-  contents->pack_start(*hbox, FALSE);
-  hbox->show();
+  hbox = manage(new Gtk::HBox);
+  hbox->pack_start(*statusMsg_, Gtk::PACK_SHRINK);
+  contents->pack_start(*hbox, Gtk::PACK_SHRINK);
 
-  hbox = new Gtk::HBox(TRUE, TRUE);
-  label = new Gtk::Label("Elapsed Time: ", 1);
-  hbox->pack_start(*label, FALSE);
-  label->show();
-  currentTime_ = new Gtk::Label("", 0);
-  hbox->pack_start(*currentTime_, FALSE);
-  currentTime_->show();
-  label = new Gtk::Label("Remaining Time: ", 1);
-  hbox->pack_start(*label, FALSE);
-//  label->show();
-  remainingTime_ = new Gtk::Label("", 0);
-  hbox->pack_start(*remainingTime_, FALSE);
-//  remainingTime_->show();
-  contents->pack_start(*hbox, FALSE);
-  hbox->show();
+  hbox = manage(new Gtk::HBox(true, true));
+  label = manage(new Gtk::Label(_("Elapsed Time: "), 1));
+  hbox->pack_start(*label, Gtk::PACK_SHRINK);
+  currentTime_ = manage(new Gtk::Label());
+  hbox->pack_start(*currentTime_, Gtk::PACK_SHRINK);
+  label = manage(new Gtk::Label(_("Remaining Time: "), 1));
+  hbox->pack_start(*label, Gtk::PACK_SHRINK);
+  remainingTime_ = manage(new Gtk::Label("", 0));
+  hbox->pack_start(*remainingTime_, Gtk::PACK_SHRINK);
+  contents->pack_start(*hbox, Gtk::PACK_SHRINK);
 
-  table = new Gtk::Table(3, 2, FALSE);
+  table = manage(new Gtk::Table(4, 2, false));
   table->set_row_spacings(5);
   table->set_col_spacings(5);
-  contents->pack_start(*table, FALSE);
-  table->show();
+  contents->pack_start(*table, Gtk::PACK_SHRINK);
 
-  trackLabel_ = new Gtk::Label("Track:");
-  align = new Gtk::Alignment(1.0, 0.5, 0.0, 0.0);
+  trackLabel_ = manage(new Gtk::Label(_("Track:")));
+  align = manage(new Gtk::Alignment(1.0, 0.5, 0.0, 0.0));
   align->add(*trackLabel_);
-  trackLabel_->show();
-  table->attach(*align, 0, 1, 0, 1, GTK_FILL);
-  align->show();
+  table->attach(*align, 0, 1, 0, 1, Gtk::FILL);
 
-  hbox = new Gtk::HBox;
+  hbox = manage(new Gtk::HBox);
   hbox->pack_start(*trackProgress_);
-  trackProgress_->show();
   table->attach(*hbox, 1, 2, 0, 1);
-  hbox->show();
 
-  label = new Gtk::Label("Total:");
-  align = new Gtk::Alignment(1.0, 0.5, 0.0, 0.0);
+  label = manage(new Gtk::Label(_("Total:")));
+  align = manage(new Gtk::Alignment(1.0, 0.5, 0.0, 0.0));
   align->add(*label);
-  label->show();
-  table->attach(*align, 0, 1, 1, 2, GTK_FILL);
-  align->show();
+  table->attach(*align, 0, 1, 1, 2, Gtk::FILL);
 
-  hbox = new Gtk::HBox;
+  hbox = manage(new Gtk::HBox);
   hbox->pack_start(*totalProgress_);
-  totalProgress_->show();
   table->attach(*hbox, 1, 2, 1, 2);
-  hbox->show();
 
-  bufferFillRateLabel_ = new Gtk::Label("Buffer:");
-  align = new Gtk::Alignment(1.0, 0.5, 0.0, 0.0);
+  bufferFillRateLabel_ = manage(new Gtk::Label(_("Input Buffer:")));
+  align = manage(new Gtk::Alignment(1.0, 0.5, 0.0, 0.0));
   align->add(*bufferFillRateLabel_);
-  label->show();
-  table->attach(*align, 0, 1, 2, 3, GTK_FILL);
-  align->show();
+  table->attach(*align, 0, 1, 2, 3, Gtk::FILL);
   
-  hbox = new Gtk::HBox;
+  hbox = manage(new Gtk::HBox);
   hbox->pack_start(*bufferFillRate_);
-  bufferFillRate_->show();
   table->attach(*hbox, 1, 2, 2, 3);
-  hbox->show();
   
-  hbox = new Gtk::HBox;
-  hbox->pack_start(*contents, TRUE, TRUE, 10);
-  contents->show();
-  get_vbox()->pack_start(*hbox, FALSE, FALSE, 10);
-  hbox->show();
+  writerFillRateLabel_ = manage(new Gtk::Label(_("Write Buffer:")));
+  table->attach(*writerFillRateLabel_, 0, 1, 3, 4, Gtk::FILL);
+  table->attach(*writerFillRate_, 1, 2, 3, 4);
+  
+  hbox = manage(new Gtk::HBox);
+  hbox->pack_start(*contents, true, true, 10);
+  get_vbox()->pack_start(*hbox, false, false, 10);
 
-  get_vbox()->show();
+  Gtk::HButtonBox *bbox = manage(new Gtk::HButtonBox(Gtk::BUTTONBOX_SPREAD));
 
-  Gtk::HButtonBox *bbox = new Gtk::HButtonBox(GTK_BUTTONBOX_SPREAD);
-
-  cancelButton_ = new Gnome::StockButton(GNOME_STOCK_BUTTON_CANCEL);
+  cancelButton_ = manage(new Gtk::Button(Gtk::StockID(Gtk::Stock::CANCEL)));
   bbox->pack_start(*cancelButton_);
 
-  closeButton_ = new Gnome::StockButton(GNOME_STOCK_BUTTON_CLOSE);
+  closeButton_ = manage(new Gtk::Button(Gtk::StockID(Gtk::Stock::CLOSE)));
   bbox->pack_start(*closeButton_);
 
-  cancelButton_->show();
   actCloseButtonLabel_ = 2;
 
-  cancelButton_->clicked.connect(SigC::slot(this,&ProgressDialog::closeAction));
-  closeButton_->clicked.connect(SigC::slot(this,&ProgressDialog::closeAction));
+  cancelButton_->signal_clicked().
+    connect(SigC::slot(*this, &ProgressDialog::closeAction));
+  closeButton_->signal_clicked().
+    connect(SigC::slot(*this, &ProgressDialog::closeAction));
 
   get_action_area()->pack_start(*bbox);
-  bbox->show();
-  get_action_area()->show();
-
-  set_usize(400, 0);
+  set_size_request(400, -1);
+  show_all_children();
 }
 
 ProgressDialog::~ProgressDialog()
@@ -167,25 +142,23 @@ ProgressDialog::~ProgressDialog()
 void ProgressDialog::start(CdDevice *device, const char *tocFileName)
 {
   std::string s;
-  gint m_t_nr;
 
   if (device == NULL)
     return;
 
   if (active_) {
-    get_window().raise();
+    raise();
     return;
   }
 
-  active_ = 1;
+  active_ = true;
   device_ = device;
 
   clear();
 
-  SigC::Slot0<gint> my_slot = bind(slot(this,&ProgressDialog::time),m_t_nr);
-  Gtk::Connection conn = Gtk::Main::timeout.connect(my_slot, 1000);
+  Glib::signal_timeout().connect(slot(*this, &ProgressDialog::time), 1000);
 
-  statusMsg_->set_text("Initializing...");
+  statusMsg_->set_text(_("Initializing..."));
   tocName_->set_text(tocFileName);
 
   setCloseButtonLabel(1);
@@ -196,7 +169,7 @@ void ProgressDialog::start(CdDevice *device, const char *tocFileName)
   s += device->product();
 
   set_title(s);
-  
+  set_modal(true);
   show();
 }
 
@@ -204,84 +177,74 @@ void ProgressDialog::stop()
 {
   if (active_) {
     hide();
-    active_ = 0;
+    active_ = false;
     device_ = NULL;
   }
 }
 
-gint ProgressDialog::delete_event_impl(GdkEventAny*)
+bool ProgressDialog::on_delete_event(GdkEventAny*)
 {
   if (finished_) {
     poolFather_->stop(this);
   }
-  return 1;
+  return true;
 }
 
 void ProgressDialog::closeAction()
 {
   if (finished_) {
     poolFather_->stop(this);
+    return;
   }
-  else {
-    cancelButton_->set_sensitive(false);
-    switch (device_->action()) {
-    case CdDevice::A_RECORD:
-        {
-        Ask2Box msg(this, "Abort Recording", 0, 2,
-		  "Abort recording process?", NULL);
 
-  	  if (msg.run() == 1) {
-          if (device_ != NULL) 
-            device_->abortDaoRecording();
-          else
-            cancelButton_->set_sensitive(true);
-        }
-        }
-        break;
+  switch (device_->action()) {
+  case CdDevice::A_RECORD:
+    {
+      Ask2Box msg(this, _("Abort Recording"), 0, 2,
+                  _("Abort recording process?"), NULL);
 
-    case CdDevice::A_READ:
-        {        
-        Ask2Box msg(this, "Abort Reading", 0, 2,
-		    "Abort reading process?", NULL);
-
-        if (msg.run() == 1) {
-          if (device_ != NULL) 
-	        device_->abortDaoReading();
-	      else
-            cancelButton_->set_sensitive(true);
-        }
-        }
-		break;
-    case CdDevice::A_DUPLICATE:
-        {        
-        Ask2Box msg(this, "Abort Process", 0, 2,
-		    "Abort duplicating process?", NULL);
-
-        if (msg.run() == 1) {
-          if (device_ != NULL) 
-	        device_->abortDaoDuplication();
-          else
-            cancelButton_->set_sensitive(true);
-        }
-        }
-		break;
-    case CdDevice::A_BLANK:
-        {        
-        Ask2Box msg(this, "Abort Process", 0, 2,
-		    "Abort blanking process?", NULL);
-
-        if (msg.run() == 1) {
-          if (device_ != NULL) 
-	        device_->abortBlank();
-          else
-            cancelButton_->set_sensitive(true);
-        }
-        }
-		break;
-	default:
-        cancelButton_->set_sensitive(true);
-	    break;
+      if (msg.run() == 1 && device_ != NULL) {
+        cancelButton_->set_sensitive(false);
+        device_->abortDaoRecording();
+      }
     }
+    break;
+
+  case CdDevice::A_READ:
+    {        
+      Ask2Box msg(this, _("Abort Reading"), 0, 2, _("Abort reading process?"),
+                  NULL);
+
+      if (msg.run() == 1 && device_ != NULL) {
+        cancelButton_->set_sensitive(false);
+        device_->abortDaoReading();
+      }
+    }
+    break;
+
+  case CdDevice::A_DUPLICATE:
+    {        
+      Ask2Box msg(this, _("Abort Process"), 0, 2,
+                  _("Abort duplicating process?"), NULL);
+
+      if (msg.run() == 1 && device_ != NULL) {
+        cancelButton_->set_sensitive(false);
+        device_->abortDaoDuplication();
+      }
+    }
+    break;
+
+  case CdDevice::A_BLANK:
+    {        
+      Ask2Box msg(this, _("Abort Process"), 0, 2, _("Abort blanking process?"),
+                  NULL);
+
+      if (msg.run() == 1 && device_ != NULL) {
+        cancelButton_->set_sensitive(false);
+        device_->abortBlank();
+      }
+    }
+    break;
   }
 }
 
@@ -294,18 +257,17 @@ void ProgressDialog::clear()
   actTrackProgress_ = 0;
   actTotalProgress_ = 0;
   actBufferFill_ = 0;
+  actWriterFill_ = 0;
 
   gettimeofday(&time_, NULL);
-  currentTime_->set("0:00:00");
-  remainingTime_->set("");
-  leadTimeFilled_ = FALSE;
+  currentTime_->set_text("0:00:00");
+  remainingTime_->set_text("");
+  leadTimeFilled_ = false;
   statusMsg_->set_text("");
-  trackProgress_->set_percentage(0.0);
-  trackProgress_->set_format_string("");
-  totalProgress_->set_percentage(0.0);
-  totalProgress_->set_format_string("");
-  bufferFillRate_->set_percentage(0.0);
-  bufferFillRate_->set_format_string("");
+  trackProgress_->set_fraction(0.0);
+  totalProgress_->set_fraction(0.0);
+  bufferFillRate_->set_fraction(0.0);
+  writerFillRate_->set_fraction(0.0);
   
   set_title("");
 }
@@ -318,8 +280,8 @@ void ProgressDialog::update(unsigned long level)
   int trackProgress;
   int totalProgress;
   int bufferFill;
+  int writerFill;
   char buf[40];
-  char bufProgress[30];
   std::string s;
 
   if (!active_ || device_ == NULL)
@@ -331,7 +293,7 @@ void ProgressDialog::update(unsigned long level)
   
   if ((level & UPD_PROGRESS_STATUS) && device_->progressStatusChanged()) {
     device_->progress(&status, &totalTracks, &track, &trackProgress,
-		      &totalProgress, &bufferFill);
+		      &totalProgress, &bufferFill, &writerFill);
 
     if (status != actStatus_ || track != actTrack_) {
       actStatus_ = status;
@@ -341,7 +303,7 @@ void ProgressDialog::update(unsigned long level)
       case PGSMSG_RCD_ANALYZING:
       	actTrack_ = track;
 
-      	s = "Analyzing track ";
+      	s = _("Analyzing track ");
       	sprintf(buf, "%d of %d", track, totalTracks);
       	s += buf;
 
@@ -351,21 +313,22 @@ void ProgressDialog::update(unsigned long level)
       case PGSMSG_RCD_EXTRACTING:
       	actTrack_ = track;
 
-      	s = "Extracting track ";
-	sprintf(buf, "%d of %d", track, totalTracks);
+      	s = _("Extracting ");
+	sprintf(buf, "%d", totalTracks);
 	s += buf;
+        s += _(" tracks...");
 
       	statusMsg_->set_text(s);
 	break;
 
       case PGSMSG_WCD_LEADIN:
-	statusMsg_->set_text("Writing lead-in...");
+	statusMsg_->set_text(_("Writing lead-in..."));
 	break;
 
       case PGSMSG_WCD_DATA:
 	actTrack_ = track;
 
-	s = "Writing track ";
+	s = _("Writing track ");
 	sprintf(buf, "%d of %d", track, totalTracks);
 	s += buf;
 
@@ -373,11 +336,11 @@ void ProgressDialog::update(unsigned long level)
 	break;
 
       case PGSMSG_WCD_LEADOUT:
-	statusMsg_->set_text("Writing lead-out...");
+	statusMsg_->set_text(_("Writing lead-out..."));
 	break;
 
       case PGSMSG_BLK:
-	statusMsg_->set_text("Blanking...");
+	statusMsg_->set_text(_("Blanking..."));
 	break;
 
       }
@@ -385,26 +348,28 @@ void ProgressDialog::update(unsigned long level)
 
     if (trackProgress != actTrackProgress_) {
       actTrackProgress_ = trackProgress;
-
-      trackProgress_->set_percentage(gfloat(trackProgress) / 1000.0);
-      sprintf(bufProgress, "%.1f %%%%", gfloat(trackProgress/10.0));
-      trackProgress_->set_format_string(bufProgress);  
+      if (trackProgress <= 1000)
+        trackProgress_->set_fraction(trackProgress / 1000.0);
     }
 
     if (totalProgress != actTotalProgress_) {
+      if (actTotalProgress_ == 0)
+        gettimeofday(&time_, 0);
       actTotalProgress_ = totalProgress;
-      
-      totalProgress_->set_percentage(gfloat(totalProgress) / 1000.0);
-      sprintf(bufProgress, "%.1f %%%%", gfloat(totalProgress/10.0));
-      totalProgress_->set_format_string(bufProgress);
+      if (totalProgress <= 1000)
+        totalProgress_->set_fraction(totalProgress / 1000.0);
     }
 
     if (bufferFill != actBufferFill_) {
       actBufferFill_ = bufferFill;
-      
-      bufferFillRate_->set_percentage(gfloat(bufferFill) / 100.0);
-      sprintf(bufProgress, "%.1f %%%%", gfloat(bufferFill/1.0));
-      bufferFillRate_->set_format_string(bufProgress);
+      if (bufferFill <= 1000)
+        bufferFillRate_->set_fraction(bufferFill / 100.0);
+    }
+
+    if (writerFill != actWriterFill_) {
+      actWriterFill_ = writerFill;
+      if (writerFill <= 1000)
+        writerFillRate_->set_fraction(writerFill / 100.0);
     }
   }
   
@@ -413,15 +378,16 @@ void ProgressDialog::update(unsigned long level)
       if (device_->status() != CdDevice::DEV_RECORDING) {
 	switch (device_->exitStatus()) {
 	case 0:
-	  statusMsg_->set_text("Recording finished successfully.");
+	  statusMsg_->set_text(_("Recording finished successfully."));
 	  break;
 
 	case 255:
-	  statusMsg_->set_text("Cannot execute cdrdao. Please check your PATH.");
+	  statusMsg_->set_text(_("Cannot execute cdrdao. Please check "
+                                 "your PATH."));
 	  break;
 	  
 	default:
-	  statusMsg_->set_text("Recording aborted with error.");
+	  statusMsg_->set_text(_("Recording aborted with error."));
 	  break;
 	}
 
@@ -435,15 +401,16 @@ void ProgressDialog::update(unsigned long level)
     if (device_->status() != CdDevice::DEV_READING) {
       switch (device_->exitStatus()) {
       case 0:
-        statusMsg_->set_text("Reading finished successfully.");
+        statusMsg_->set_text(_("Reading finished successfully."));
         break;
 
       case 255:
-        statusMsg_->set_text("Cannot execute cdrdao. Please check your PATH.");
+        statusMsg_->set_text(_("Cannot execute cdrdao. Please check "
+                               "your PATH."));
         break;
 	
       default:
-        statusMsg_->set_text("Reading aborted with error.");
+        statusMsg_->set_text(_("Reading aborted."));
         break;
       }
       
@@ -458,15 +425,16 @@ void ProgressDialog::update(unsigned long level)
     if (device_->status() != CdDevice::DEV_RECORDING) {
       switch (device_->exitStatus()) {
       case 0:
-        statusMsg_->set_text("CD copying finished successfully.");
+        statusMsg_->set_text(_("CD copying finished successfully."));
         break;
 
       case 255:
-        statusMsg_->set_text("Cannot execute cdrdao. Please check your PATH.");
+        statusMsg_->set_text(_("Cannot execute cdrdao. Please check "
+                               "your PATH."));
         break;
 
       default:
-        statusMsg_->set_text("CD copying aborted with error.");
+        statusMsg_->set_text(_("CD copying aborted with error."));
         break;
       }
 
@@ -481,15 +449,16 @@ void ProgressDialog::update(unsigned long level)
     if (device_->status() != CdDevice::DEV_BLANKING) {
       switch (device_->exitStatus()) {
       case 0:
-        statusMsg_->set_text("Blanking finished successfully.");
+        statusMsg_->set_text(_("Blanking finished successfully."));
         break;
 
       case 255:
-        statusMsg_->set_text("Cannot execute cdrdao. Please check your PATH.");
+        statusMsg_->set_text(_("Cannot execute cdrdao. Please check "
+                               "your PATH."));
         break;
 	
       default:
-        statusMsg_->set_text("Blanking aborted with error.");
+        statusMsg_->set_text(_("Blanking aborted with error."));
         break;
       }
       
@@ -501,7 +470,7 @@ void ProgressDialog::update(unsigned long level)
     break;
 
   default:
-        statusMsg_->set_text("Unknow device action!");
+    statusMsg_->set_text(_("Unknow device action!"));
     break;
   }
 }
@@ -516,19 +485,19 @@ void ProgressDialog::setCloseButtonLabel(int l)
 
   switch (l) {
   case 1:
-	  closeButton_->hide();
-	  cancelButton_->show();
+    closeButton_->hide();
+    cancelButton_->show();
     break;
   case 2:
-	  cancelButton_->hide();
-	  closeButton_->show();
+    cancelButton_->hide();
+    closeButton_->show();
     break;
   }
 
   actCloseButtonLabel_ = l;
 }
 
-gint ProgressDialog::time(gint timer_nr)
+bool ProgressDialog::time()
 {
   char buf[50];
   struct timeval timenow;
@@ -543,67 +512,60 @@ gint ProgressDialog::time(gint timer_nr)
   secs = time - ((hours * 3600) + (mins * 60));
 
   sprintf(buf, "%ld:%02ld:%02ld", hours, mins, secs);
-  currentTime_->set(buf);
-
+  currentTime_->set_text(buf);
 
   if (actTotalProgress_ > 10)
   {
 //Hack!
+// Denis: no shit
     gfloat aux1, aux2, aux3;
 
     if (!leadTimeFilled_)
     {
       leadTime_ = time;
-      leadTimeFilled_ = TRUE;
+      leadTimeFilled_ = true;
     }
-//    time_remain = (long)((float)((float)(time + 5 - leadTime_) / actTotalProgress_) * (1000 - actTotalProgress_));
-//    time_remain = (time + 5 - leadTime_) * ((1000 - actTotalProgress_) / actTotalProgress_);
-    aux1 = (gfloat)actTotalProgress_;
-    aux2 = (1000 - aux1);
-    aux3 = (aux2 * (time + 20 - leadTime_)) / aux1;
-	time_remain = (long)aux3;
+
+    time_remain = (int)
+      (((double)time / ((double)actTotalProgress_ / 1000.0)) + 0.5);
+    time_remain -= time;
+    if (time_remain < 0) time_remain = 0;
 
     hours = time_remain / 3600;
     mins = (time_remain - (hours * 3600)) / 60;
     secs = time_remain - ((hours * 3600) + (mins * 60));
 
     sprintf(buf, "%ld:%02ld:%02ld", hours, mins, secs);
-    remainingTime_->set(buf);
+    remainingTime_->set_text(buf);
   }
 
   if (finished_) 
-  {
-    return 0;
-  }
+    return false;
   else
-  {
-    return 1;
-  }
+    return true;
 }
 
 void ProgressDialog::needBufferProgress(bool visible)
 {
-  if (visible)
-  {
+  if (visible) {
     bufferFillRate_->show();
     bufferFillRateLabel_->show();
-  }
-  else
-  {
+    writerFillRate_->show();
+    writerFillRateLabel_->show();
+  } else {
     bufferFillRate_->hide();
     bufferFillRateLabel_->hide();
+    writerFillRate_->hide();
+    writerFillRateLabel_->hide();
   }
 }
 
 void ProgressDialog::needTrackProgress(bool visible)
 {
-  if (visible)
-  {
+  if (visible) {
     trackProgress_->show();
     trackLabel_->show();
-  }
-  else
-  {
+  } else {
     trackProgress_->hide();
     trackLabel_->hide();
   }
@@ -618,7 +580,6 @@ ProgressDialogPool::ProgressDialogPool()
 
 ProgressDialogPool::~ProgressDialogPool()
 {
-
 }
 
 void ProgressDialogPool::update(unsigned long status)
@@ -629,32 +590,9 @@ void ProgressDialogPool::update(unsigned long status)
     run->update(status);
 }
   
-ProgressDialog *ProgressDialogPool::start(CdDevice *device, TocEdit *tocEdit,
-			bool showBuffer, bool showTrack)
-{
-  ProgressDialog *dialog;
-
-  if (pool_ == NULL) {
-    dialog = new ProgressDialog(this);
-  }
-  else {
-    dialog = pool_;
-    pool_ = pool_->poolNext_;
-  }
-
-  dialog->poolNext_ = activeDialogs_;
-  activeDialogs_ = dialog;
-
-  dialog->needBufferProgress(showBuffer);
-  dialog->needTrackProgress(showTrack);
-
-  dialog->start(device, tocEdit->filename());
-
-  return dialog;
-}
-
-ProgressDialog *ProgressDialogPool::start(CdDevice *device, const char *tocFileName,
-			bool showBuffer, bool showTrack)
+ProgressDialog *ProgressDialogPool::start(CdDevice *device,
+                                          const char *tocFileName,
+                                          bool showBuffer, bool showTrack)
 {
   ProgressDialog *dialog;
 
@@ -677,7 +615,16 @@ ProgressDialog *ProgressDialogPool::start(CdDevice *device, const char *tocFileN
   return dialog;
 }
 
-
+ProgressDialog *ProgressDialogPool::start(Gtk::Window& parent,
+                                          CdDevice *device,
+                                          const char *tocFileName,
+                                          bool showBuffer, bool showTrack)
+{
+  ProgressDialog* dialog = start(device, tocFileName, showBuffer, showTrack);
+  dialog->set_transient_for(parent);
+  return dialog;
+}
+  
 void ProgressDialogPool::stop(ProgressDialog *dialog)
 {
   ProgressDialog *run, *pred;

@@ -20,10 +20,8 @@
 #ifndef __AUDIO_CD_CHILD_H__
 #define __AUDIO_CD_CHILD_H__
 
-#include <gtk--.h>
-#include <gtk/gtk.h>
-
-#include <gnome--.h>
+#include <gtkmm.h>
+#include <libgnomeuimm.h>
 
 #include "Toc.h"
 #include "GenericChild.h"
@@ -43,25 +41,17 @@ public:
   AudioCDChild(AudioCDProject *project);
   ~AudioCDChild();
 
-  AudioCDView *newView();
+  AudioCDView* view();
   bool closeProject();
   void update(unsigned long level);
-
-  Gtk::Toolbar *getZoomToolbar();
 
   const char *sample2string(unsigned long sample);
   unsigned long string2sample(const char *s);
 
 private:
-  AudioCDProject *project_;
-
-  std::list<AudioCDView *> views;
-
-  void readTocCallback(int);
-  void saveAsTocCallback(int);
+  AudioCDProject* project_;
+  AudioCDView*    view_;
 
   void tocBlockedMsg(const char *);
-
-  Gtk::Toolbar *zoomToolbar;
 };
 #endif

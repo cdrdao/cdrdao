@@ -20,13 +20,14 @@
 #ifndef __RECORD_TOC_DIALOG_H
 #define __RECORD_TOC_DIALOG_H
 
-#include <gnome--.h>
+#include <libgnomeuimm.h>
 
 class TocEdit;
 class RecordTocSource;
 class RecordCDTarget;
 
-class RecordTocDialog : public Gtk::Window {
+class RecordTocDialog : public Gtk::Window
+{
 public:
   RecordTocDialog(TocEdit *);
   ~RecordTocDialog();
@@ -39,16 +40,16 @@ private:
   RecordCDTarget *CDTarget;
 
   TocEdit *tocEdit_;
-  int active_;
+  bool active_;
 
-  Gtk::RadioButton *simulate_rb;
-  Gtk::RadioButton *simulateBurn_rb;
-  Gtk::RadioButton *burn_rb;
+  Gtk::RadioButton* simulate_rb;
+  Gtk::RadioButton* simulateBurn_rb;
+  Gtk::RadioButton* burn_rb;
 
   void stop();
   void startAction();
 
-  gint delete_event_impl(GdkEventAny*);
+  bool on_delete_event(GdkEventAny*);
 };
 
 #endif

@@ -15,9 +15,27 @@ Cdrdao changes:
 
 - Fix for building on Mac OS X with gcc-3.1 (SF patch 611423).
 
-GCDMaster changes:
+- Support for ATAPI drives: device is now specified as [path:]<x,y,z>, such as
+  '--device 0,0,0' or '--device ATAPI:0,1,0'. (Denis Leroy)
 
-none
+GCDMaster changes (Denis Leroy)
+
+- gcdmaster was ported to Gnome2/Gtk+2 using the new C++ Gtk2 bindings
+  (gtkmm2 and gnomeuimm2).
+
+- ATAPI drives support: gcdmaster will also scan for ATAPI
+  devices. Devices are now specified as a '[path:]x,y,z' string.
+
+- The samples selection can now be cleared (i.e. unselected) by
+  single-clicking the Audio view during Select mode (not in Zoom
+  mode).
+
+- You can now select multiple files from the file selector when
+  appending or inserting tracks/files from the main Audio Project menu.
+
+- Some features have been removed (temporarily): the multiple views
+  feature, the 'zoom to selection' icon. Also the progress dialog is
+  gone during import: progress is shown on the main status bar.
 
 mp32dao changes:
 - FLAC support. mp32dao now handles mp3/ogg/flac files. (Giuseppe Corbelli)

@@ -20,22 +20,20 @@
 #ifndef __PROJECT_H__
 #define __PROJECT_H__
 
-#include <gnome--.h>
+#include <libgnomeuimm.h>
 
 class RecordTocDialog;
 class TocEdit;
-#include "ViewSwitcher.h"
 
-class Project : public Gnome::App
+class Project : public Gnome::UI::App
 {
 protected:
-  Gtk::Toolbar *toolbar;
-  Gtk::HBox *hbox;
-//  Gtk::Statusbar *statusbar_;  
-  Gnome::AppBar *statusbar_;  
-  Gtk::ProgressBar *progressbar_;  
-  Gtk::Button *progressButton_;  
-  ViewSwitcher *viewSwitcher_;
+  Gtk::HBox* hbox;
+  Gnome::UI::AppBar* statusbar_;  
+  Gtk::Frame frame_;
+  Gtk::ProgressBar* progressbar_;  
+  Gtk::Button* progressButton_;  
+  Gnome::UI::About* about_;  
   
   int projectNumber_;
   gint viewNumber;
@@ -48,12 +46,10 @@ protected:
   Gtk::Widget *miSaveAs_;
   Gtk::Widget *miEditTree_;
   Gtk::Widget *miRecord_;
-  Gtk::Widget *tiSave_;
-  Gtk::Widget *tiRecord_;
 
-  void createMenus();
-  void createToolbar();
-  void createStatusbar();
+  virtual void createMenus();
+  virtual void createToolbar() = 0;
+  virtual void createStatusbar();
   void updateWindowTitle();
   void saveProject();
   void saveAsProject();
@@ -61,7 +57,7 @@ protected:
   void saveFileSelectorOKCB();
   void saveFileSelectorCancelCB();
 
-  virtual int delete_event_impl(GdkEventAny *event);
+  virtual bool on_delete_event(GdkEventAny *event);
   virtual void recordToc2CD() = 0;
   virtual void projectInfo() = 0;
 
@@ -77,6 +73,8 @@ public:
   gint getViewNumber();
 
   virtual void update(unsigned long level) = 0;
+
+  void aboutDialog();
 };
 #endif
 

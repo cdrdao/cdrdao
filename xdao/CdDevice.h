@@ -22,12 +22,16 @@
 
 #include <sigc++/object.h>
 #include <gdk/gdk.h>
+#include <string>
+
+#include "Project.h"
 
 class TocEdit;
 class Process;
 class ScsiIf;
 
-class CdDevice : public SigC::Object {
+class CdDevice : public SigC::Object
+{
 public:
   enum Status { DEV_READY, DEV_RECORDING, DEV_READING, DEV_WAITING, DEV_BUSY,
 		DEV_NO_DISK, DEV_BLANKING, DEV_FAULT, DEV_UNKNOWN };
@@ -35,34 +39,30 @@ public:
 
   enum Action { A_RECORD, A_READ, A_DUPLICATE, A_BLANK, A_NONE };
 
-  CdDevice(int bus, int id, int lun, const char *vendor,
-	   const char *product);
+  CdDevice(const char* dev, const char *vendor, const char *product);
   ~CdDevice();
 
   char *settingString() const;
 
-  int bus() const; 
-  int id() const;
-  int lun() const;
+  const char *dev() const            { return dev_.c_str(); } 
+  const char *vendor() const         { return vendor_.c_str(); }
+  const char *product() const        { return product_.c_str(); }
 
-  const char *vendor() const;
-  const char *product() const;
-
-  Status status() const;
-  Process *process() const;
+  Status status() const              { return status_; }
+  Process *process() const           { return process_; }
 
   int exitStatus() const;
 
   void status(Status);
   int updateStatus();
 
-  Action action() const;
+  Action action() const              { return action_; }
 
-  void updateProgress(int fd, GdkInputCondition);
+  bool updateProgress(Glib::IOCondition, int fd);
 
   int autoSelectDriver();
 
-  int driverId() const;
+  int driverId() const                 { return driverId_; }
   void driverId(int);
 
   DeviceType deviceType() const;
@@ -71,31 +71,30 @@ public:
   unsigned long driverOptions() const;
   void driverOptions(unsigned long);
 
-  const char *specialDevice() const;
-  void specialDevice(const char *);
+  bool manuallyConfigured() const       { return manuallyConfigured_; }
+  void manuallyConfigured(bool b)       { manuallyConfigured_ = b; }
 
-  int manuallyConfigured() const;
-  void manuallyConfigured(int);
-
-  int recordDao(TocEdit *, int simulate, int multiSession, int speed,
-		int eject, int reload, int buffer, int overburn);
+  bool recordDao(Gtk::Window& parent, TocEdit *, int simulate,
+                 int multiSession, int speed, int eject, int reload,
+                 int buffer, int overburn);
   void abortDaoRecording();
 
-  int extractDao(const char *tocFileName, int correction, int readSubChanMode);
+  int extractDao(Project& parent, const char *tocFileName, int correction,
+                 int readSubChanMode);
   void abortDaoReading();
 
-  int duplicateDao(int simulate, int multiSession, int speed,
+  int duplicateDao(Project& parent, int simulate, int multiSession, int speed,
 		   int eject, int reload, int buffer, int onthefly,
 		   int correction, int readSubChanMode, CdDevice *readdev);
   void abortDaoDuplication();
 
-  int blank(int fast, int speed, int eject, int reload);
+  int blank(Project* parent, int fast, int speed, int eject, int reload);
   void abortBlank();
     
   int progressStatusChanged();
   void progress(int *status, int *totalTracks, int *track,
 		      int *trackProgress, int *totalProgress,
-		      int *bufferFill) const;
+                int *bufferFill, int *writerFill) const;
   
   static int maxDriverId();
   static const char *driverName(int id);
@@ -107,16 +106,16 @@ public:
   static void importSettings();
   static void exportSettings();
 
-  static CdDevice *add(int bus, int id, int lun, const char *vendor,
+  static CdDevice *add(const char* scsidev, const char *vendor,
 		       const char *product);
 
   static CdDevice *add(const char *setting);
 
-  static CdDevice *find(int bus, int id, int lun);
+  static CdDevice *find(const char* dev);
   
   static void scan();
 
-  static void remove(int bus, int id, int lun);
+  static void remove(const char* dev);
 
   static void clear();
 
@@ -134,26 +133,22 @@ public:
   static int count();
 
 private:
-  int bus_; // SCSI bus
-  int id_;  // SCSI id
-  int lun_; // SCSI logical unit
-
-  char *vendor_;
-  char *product_;
+  std::string dev_; // SCSI device
+  std::string vendor_;
+  std::string product_;
 
   DeviceType deviceType_;
 
   int driverId_;
   unsigned long options_;
-  char *specialDevice_;
 
-  int manuallyConfigured_;
+  bool manuallyConfigured_;
 
   ScsiIf *scsiIf_;
   int scsiIfInitFailed_;
   Status status_;
 
-  Action action_;
+  enum Action action_;
 
   int exitStatus_;
 
@@ -164,6 +159,7 @@ private:
   int progressTotal_;
   int progressTrackRelative_;
   int progressBufferFill_;
+  int progressWriterFill_;
 
   Process *process_;
 

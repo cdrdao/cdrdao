@@ -19,7 +19,7 @@
 
 #include "TrackInfoDialog.h"
 
-#include <gnome--.h>
+#include <gnome.h>
 
 #include <stdio.h>
 #include <stddef.h>
@@ -43,8 +43,8 @@ TrackInfoDialog::TrackInfoDialog()
   Gtk::Frame *frame;
   Gtk::Table *table;
   Gtk::Button *button;
-  Gtk::VBox *contents = new Gtk::VBox;
-  Gtk::HBox *topBox = new Gtk::HBox;
+  Gtk::VBox *contents = manage(new Gtk::VBox);
+  Gtk::HBox *topBox = manage(new Gtk::HBox);
 
   tocEditView_ = NULL;
   active_ = 0;
@@ -57,31 +57,32 @@ TrackInfoDialog::TrackInfoDialog()
   trackLen_ = new Gtk::Label("100:00:00");
   indexMarks_ = new Gtk::Label("99");
 
-  copyFlag_ = new Gtk::CheckButton("Copy");
-  preEmphasisFlag_ = new Gtk::CheckButton("Pre Emphasis");
+  copyFlag_ = new Gtk::CheckButton(_("Copy"));
+  preEmphasisFlag_ = new Gtk::CheckButton(_("Pre Emphasis"));
   
-  twoChannelAudio_ = new Gtk::RadioButton("Two Channel Audio");
-  fourChannelAudio_ = new Gtk::RadioButton("Four Channel Audio");
-  fourChannelAudio_->set_group(twoChannelAudio_->group());
+  twoChannelAudio_ = new Gtk::RadioButton(_("Two Channel Audio"));
+  fourChannelAudio_ = new Gtk::RadioButton(_("Four Channel Audio"));
+  Gtk::RadioButton::Group rbgroup = twoChannelAudio_->get_group();
+  fourChannelAudio_->set_group(rbgroup);
 
-  isrcCodeCountry_ = new TextEdit("XX");
+  isrcCodeCountry_ = manage(new TextEdit("XX"));
   isrcCodeCountry_->set_max_length(2);
   isrcCodeCountry_->lowerCase(0);
   isrcCodeCountry_->space(0);
   isrcCodeCountry_->digits(0);
 
-  isrcCodeOwner_ = new TextEdit("XXX");
+  isrcCodeOwner_ = manage(new TextEdit("XXX"));
   isrcCodeOwner_->set_max_length(3);
   isrcCodeOwner_->lowerCase(0);
   isrcCodeOwner_->space(0);
 
-  isrcCodeYear_ = new TextEdit("00");
+  isrcCodeYear_ = manage(new TextEdit("00"));
   isrcCodeYear_->set_max_length(2);
   isrcCodeYear_->lowerCase(0);
   isrcCodeYear_->upperCase(0);
   isrcCodeYear_->space(0);
 
-  isrcCodeSerial_ = new TextEdit("00000");
+  isrcCodeSerial_ = manage(new TextEdit("00000"));
   isrcCodeSerial_->set_max_length(5);
   isrcCodeSerial_->lowerCase(0);
   isrcCodeSerial_->upperCase(0);
@@ -90,212 +91,148 @@ TrackInfoDialog::TrackInfoDialog()
   topBox->set_spacing(5);
   contents->set_spacing(10);
 
-  hbox = new Gtk::HBox;
+  hbox = manage(new Gtk::HBox);
 
-  label = new Gtk::Label("Track: ");
+  label = new Gtk::Label(_("Track: "));
 
   hbox->pack_start(*label, FALSE, FALSE);
-  label->show();
   hbox->pack_start(*trackNr_, FALSE, FALSE);
-  trackNr_->show();
 
   contents->pack_start(*hbox, FALSE, FALSE);
-  hbox->show();
-
 
   // time data
-  frame = new Gtk::Frame("Summary");
+  frame = new Gtk::Frame(_(" Summary "));
 
   table = new Gtk::Table(5, 2, FALSE);
   table->set_row_spacings(5);
   table->set_col_spacings(5);
-  hbox = new Gtk::HBox;
+  hbox = manage(new Gtk::HBox);
   hbox->pack_start(*table, FALSE, FALSE, 5);
-  vbox = new Gtk::VBox;
+  vbox = manage(new Gtk::VBox);
   vbox->pack_start(*hbox, TRUE, TRUE, 5);
   frame->add(*vbox);
-  vbox->show();
-  hbox->show();
-  table->show();
   
-  label = new Gtk::Label("Pre-Gap:");
-  hbox = new Gtk::HBox;
+  label = new Gtk::Label(_("Pre-Gap:"));
+  hbox = manage(new Gtk::HBox);
   hbox->pack_end(*label, FALSE, FALSE);
   table->attach(*hbox, 0, 1, 0, 1);
-  label->show();
-  hbox->show();
-  hbox = new Gtk::HBox;
+  hbox = manage(new Gtk::HBox);
   hbox->pack_start(*pregapLen_, FALSE, FALSE);
   table->attach(*hbox, 1, 2, 0, 1);
-  pregapLen_->show();
-  hbox->show();
 
-  label = new Gtk::Label("Start:");
-  hbox = new Gtk::HBox;
+  label = new Gtk::Label(_("Start:"));
+  hbox = manage(new Gtk::HBox);
   hbox->pack_end(*label, FALSE, FALSE);
   table->attach(*hbox, 0, 1, 1, 2);
-  label->show();
-  hbox->show();
-  hbox = new Gtk::HBox;
+  hbox = manage(new Gtk::HBox);
   hbox->pack_start(*trackStart_, FALSE, FALSE);
   table->attach(*hbox, 1, 2, 1, 2);
-  trackStart_->show();
-  hbox->show();
 
-  label = new Gtk::Label("End:");
-  hbox = new Gtk::HBox;
+  label = new Gtk::Label(_("End:"));
+  hbox = manage(new Gtk::HBox);
   hbox->pack_end(*label, FALSE, FALSE);
   table->attach(*hbox, 0, 1, 2, 3);
-  label->show();
-  hbox->show();
-  hbox = new Gtk::HBox;
+  hbox = manage(new Gtk::HBox);
   hbox->pack_start(*trackEnd_, FALSE, FALSE);
   table->attach(*hbox, 1, 2, 2, 3);
-  trackEnd_->show();
-  hbox->show();
 
-  label = new Gtk::Label("Length:");
-  hbox = new Gtk::HBox;
+  label = new Gtk::Label(_("Length:"));
+  hbox = manage(new Gtk::HBox);
   hbox->pack_end(*label, FALSE, FALSE);
   table->attach(*hbox, 0, 1, 3, 4);
-  label->show();
-  hbox->show();
-  hbox = new Gtk::HBox;
+  hbox = manage(new Gtk::HBox);
   hbox->pack_start(*trackLen_, FALSE, FALSE);
   table->attach(*hbox, 1, 2, 3, 4);
-  trackLen_->show();
-  hbox->show();
 
-  label = new Gtk::Label("Index Marks:");
-  hbox = new Gtk::HBox;
+  label = new Gtk::Label(_("Index Marks:"));
+  hbox = manage(new Gtk::HBox);
   hbox->pack_end(*label, FALSE, FALSE);
   table->attach(*hbox, 0, 1, 4, 5);
-  label->show();
-  hbox->show();
-  hbox = new Gtk::HBox;
+  hbox = manage(new Gtk::HBox);
   hbox->pack_start(*indexMarks_, FALSE, FALSE);
   table->attach(*hbox, 1, 2, 4, 5);
-  indexMarks_->show();
-  hbox->show();
 
   topBox->pack_start(*frame, FALSE, FALSE);
-  frame->show();
-
-
 
   // sub-channel data
-  frame = new Gtk::Frame("Sub-Channel");
+  frame = new Gtk::Frame(_(" Sub-Channel "));
 
-  vbox = new Gtk::VBox;
+  vbox = manage(new Gtk::VBox);
   vbox->set_spacing(0);
-
   vbox->pack_start(*copyFlag_);
-  copyFlag_->show();
-
   vbox->pack_start(*preEmphasisFlag_);
-  preEmphasisFlag_->show();
-
   vbox->pack_start(*twoChannelAudio_);
-  twoChannelAudio_->show();
   twoChannelAudio_->set_active(TRUE);
-
   vbox->pack_start(*fourChannelAudio_);
-  fourChannelAudio_->show();
 
-  hbox = new Gtk::HBox;
+  hbox = manage(new Gtk::HBox);
   label = new Gtk::Label("ISRC: ");
-  hbox->pack_start(*label, FALSE);
+  hbox->pack_start(*label, Gtk::PACK_SHRINK);
 
-  hbox->pack_start(*isrcCodeCountry_, FALSE);
+  hbox->pack_start(*isrcCodeCountry_, Gtk::PACK_SHRINK);
   label1 = new Gtk::Label("-");
-  hbox->pack_start(*label1, FALSE);
-  isrcCodeCountry_->show();
-  label1->show();
+  hbox->pack_start(*label1, Gtk::PACK_SHRINK);
 
-  hbox->pack_start(*isrcCodeOwner_, FALSE);
+  hbox->pack_start(*isrcCodeOwner_, Gtk::PACK_SHRINK);
   label1 = new Gtk::Label("-");
-  hbox->pack_start(*label1, FALSE);
-  isrcCodeOwner_->show();
-  label1->show();
+  hbox->pack_start(*label1, Gtk::PACK_SHRINK);
 
-  hbox->pack_start(*isrcCodeYear_, FALSE);
+  hbox->pack_start(*isrcCodeYear_, Gtk::PACK_SHRINK);
   label1 = new Gtk::Label("-");
-  hbox->pack_start(*label1, FALSE);
-  isrcCodeYear_->show();
-  label1->show();
+  hbox->pack_start(*label1, Gtk::PACK_SHRINK);
 
-  hbox->pack_start(*isrcCodeSerial_, FALSE);
-  isrcCodeSerial_->show();
+  hbox->pack_start(*isrcCodeSerial_, Gtk::PACK_SHRINK);
 
   vbox->pack_start(*hbox);
-  label->show();
-  hbox->show();
   
-  vbox1 = new Gtk::VBox;
+  vbox1 = manage(new Gtk::VBox);
   vbox1->pack_start(*vbox, TRUE, TRUE, 5);
-  hbox = new Gtk::HBox;
+  hbox = manage(new Gtk::HBox);
   hbox->pack_start(*vbox1, TRUE, TRUE, 5);
   frame->add(*hbox);
-  vbox->show();
-  vbox1->show();
-  hbox->show();
 
-  topBox->pack_start(*frame, FALSE);
-  frame->show();
+  topBox->pack_start(*frame, Gtk::PACK_SHRINK);
 
-  contents->pack_start(*topBox, FALSE);
-  topBox->show();
-
+  contents->pack_start(*topBox, Gtk::PACK_SHRINK);
 
   // CD-TEXT data
-  frame = new Gtk::Frame("CD-TEXT");
+  frame = new Gtk::Frame(" CD-TEXT ");
 
   Gtk::Notebook *notebook = new Gtk::Notebook;
 
   for (i = 0; i < 8; i++) {
     vbox = createCdTextPage(i);
-    notebook->pages().push_back(Gtk::Notebook_Helpers::TabElem(*vbox, *(cdTextPages_[i].label)));
+    notebook->pages().
+        push_back(Gtk::Notebook_Helpers::TabElem(*vbox,
+                                                 *(cdTextPages_[i].label)));
   }
 
-  vbox1 = new Gtk::VBox;
+  vbox1 = manage(new Gtk::VBox);
   vbox1->pack_start(*notebook, TRUE, TRUE, 5);
-  hbox = new Gtk::HBox;
+  hbox = manage(new Gtk::HBox);
   hbox->pack_start(*vbox1, TRUE, TRUE, 5);
   frame->add(*hbox);
-  notebook->show();
-  vbox1->show();
-  hbox->show();
 
-  contents->pack_start(*frame, TRUE);
-  frame->show();
+  contents->pack_start(*frame);
 
-
-
-  hbox = new Gtk::HBox;
+  hbox = manage(new Gtk::HBox);
   hbox->pack_start(*contents, TRUE, TRUE, 10);
-  contents->show();
   get_vbox()->pack_start(*hbox, TRUE, TRUE, 10);
-  hbox->show();
 
-  get_vbox()->show();
+  Gtk::HButtonBox *bbox = new Gtk::HButtonBox(Gtk::BUTTONBOX_SPREAD);
 
-  Gtk::HButtonBox *bbox = new Gtk::HButtonBox(GTK_BUTTONBOX_SPREAD);
-
-  applyButton_ = new Gnome::StockButton(GNOME_STOCK_BUTTON_APPLY);
+  applyButton_ = new Gtk::Button(Gtk::StockID(Gtk::Stock::APPLY));
   bbox->pack_start(*applyButton_);
-  applyButton_->show();
-  applyButton_->clicked.connect(slot(this, &TrackInfoDialog::applyAction));
+  applyButton_->signal_clicked().connect(slot(*this, &TrackInfoDialog::applyAction));
 
-  button = new Gnome::StockButton(GNOME_STOCK_BUTTON_CLOSE);
+  button = new Gtk::Button(Gtk::StockID(Gtk::Stock::CLOSE));
   bbox->pack_start(*button);
-  button->show();
-  button->clicked.connect(slot(this, &TrackInfoDialog::closeAction));
+  button->signal_clicked().connect(slot(*this, &TrackInfoDialog::closeAction));
 
   get_action_area()->pack_start(*bbox);
-  bbox->show();
-  get_action_area()->show();
 
-  set_title("Track Info");
+  show_all_children();
+  set_title(_("Track Info"));
 }
 
 TrackInfoDialog::~TrackInfoDialog()
@@ -305,7 +242,7 @@ TrackInfoDialog::~TrackInfoDialog()
 void TrackInfoDialog::start(TocEditView *view)
 {
   if (active_) {
-    get_window().raise();
+    raise();
     return;
   }
 
@@ -328,98 +265,73 @@ Gtk::VBox *TrackInfoDialog::createCdTextPage(int n)
 {
   char buf[20];
   Gtk::Table *table = new Gtk::Table(7, 2, FALSE);
-  Gtk::VBox *vbox = new Gtk::VBox;
+  Gtk::VBox *vbox = manage(new Gtk::VBox);
   Gtk::HBox *hbox;
   Gtk::Label *label;
 
-  sprintf(buf, "%d", n);
+  sprintf(buf, " %d ", n);
   cdTextPages_[n].label = new Gtk::Label(buf);
-  cdTextPages_[n].label->show();
 
-  cdTextPages_[n].title = new Gtk::Entry;
-  cdTextPages_[n].performer = new Gtk::Entry;
-  cdTextPages_[n].songwriter = new Gtk::Entry;
-  cdTextPages_[n].composer = new Gtk::Entry;
-  cdTextPages_[n].arranger = new Gtk::Entry;
-  cdTextPages_[n].message = new Gtk::Entry;
-  cdTextPages_[n].isrc = new Gtk::Entry;
+  cdTextPages_[n].title = manage(new Gtk::Entry);
+  cdTextPages_[n].performer = manage(new Gtk::Entry);
+  cdTextPages_[n].songwriter = manage(new Gtk::Entry);
+  cdTextPages_[n].composer = manage(new Gtk::Entry);
+  cdTextPages_[n].arranger = manage(new Gtk::Entry);
+  cdTextPages_[n].message = manage(new Gtk::Entry);
+  cdTextPages_[n].isrc = manage(new Gtk::Entry);
 
-
+  table->set_border_width(5);
   table->set_row_spacings(5);
   table->set_col_spacings(5);
-  table->show();
 
-  label = new Gtk::Label("Title:");
-  hbox = new Gtk::HBox;
-  hbox->pack_end(*label, FALSE);
-  table->attach(*hbox, 0, 1, 0, 1, GTK_FILL);
-  hbox->show();
-  label->show();
+  label = new Gtk::Label(_("Title:"));
+  hbox = manage(new Gtk::HBox);
+  hbox->pack_end(*label, Gtk::PACK_SHRINK);
+  table->attach(*hbox, 0, 1, 0, 1, Gtk::FILL);
   table->attach(*(cdTextPages_[n].title), 1, 2, 0, 1);
-  cdTextPages_[n].title->show();
 
-  label = new Gtk::Label("Performer:");
-  hbox = new Gtk::HBox;
-  hbox->pack_end(*label, FALSE);
-  table->attach(*hbox, 0, 1, 1, 2, GTK_FILL);
-  hbox->show();
-  label->show();
+  label = new Gtk::Label(_("Performer:"));
+  hbox = manage(new Gtk::HBox);
+  hbox->pack_end(*label, Gtk::PACK_SHRINK);
+  table->attach(*hbox, 0, 1, 1, 2, Gtk::FILL);
   table->attach(*(cdTextPages_[n].performer), 1, 2, 1, 2);
-  cdTextPages_[n].performer->show();
 
-  label = new Gtk::Label("Songwriter:");
-  hbox = new Gtk::HBox;
-  hbox->pack_end(*label, FALSE);
-  table->attach(*hbox, 0, 1, 2, 3, GTK_FILL);
-  hbox->show();
-  label->show();
+  label = new Gtk::Label(_("Songwriter:"));
+  hbox = manage(new Gtk::HBox);
+  hbox->pack_end(*label, Gtk::PACK_SHRINK);
+  table->attach(*hbox, 0, 1, 2, 3, Gtk::FILL);
   table->attach(*(cdTextPages_[n].songwriter), 1, 2, 2, 3);
-  cdTextPages_[n].songwriter->show();
 
-  label = new Gtk::Label("Composer:");
-  hbox = new Gtk::HBox;
-  hbox->pack_end(*label, FALSE);
-  table->attach(*hbox, 0, 1, 3, 4, GTK_FILL);
-  hbox->show();
-  label->show();
+  label = new Gtk::Label(_("Composer:"));
+  hbox = manage(new Gtk::HBox);
+  hbox->pack_end(*label, Gtk::PACK_SHRINK);
+  table->attach(*hbox, 0, 1, 3, 4, Gtk::FILL);
   table->attach(*(cdTextPages_[n].composer), 1, 2, 3, 4);
-  cdTextPages_[n].composer->show();
 
-  label = new Gtk::Label("Arranger:");
-  hbox = new Gtk::HBox;
-  hbox->pack_end(*label, FALSE);
-  table->attach(*hbox, 0, 1, 4, 5, GTK_FILL);
-  hbox->show();
-  label->show();
+  label = new Gtk::Label(_("Arranger:"));
+  hbox = manage(new Gtk::HBox);
+  hbox->pack_end(*label, Gtk::PACK_SHRINK);
+  table->attach(*hbox, 0, 1, 4, 5, Gtk::FILL);
   table->attach(*(cdTextPages_[n].arranger), 1, 2, 4, 5);
-  cdTextPages_[n].arranger->show();
 
-  label = new Gtk::Label("Message:");
-  hbox = new Gtk::HBox;
-  hbox->pack_end(*label, FALSE);
-  table->attach(*hbox, 0, 1, 5, 6, GTK_FILL);
-  hbox->show();
-  label->show();
+  label = new Gtk::Label(_("Message:"));
+  hbox = manage(new Gtk::HBox);
+  hbox->pack_end(*label, Gtk::PACK_SHRINK);
+  table->attach(*hbox, 0, 1, 5, 6, Gtk::FILL);
   table->attach(*(cdTextPages_[n].message), 1, 2, 5, 6);
-  cdTextPages_[n].message->show();
 
   label = new Gtk::Label("ISRC:");
-  hbox = new Gtk::HBox;
-  hbox->pack_end(*label, FALSE);
-  table->attach(*hbox, 0, 1, 6, 7, GTK_FILL);
-  hbox->show();
-  label->show();
+  hbox = manage(new Gtk::HBox);
+  hbox->pack_end(*label, Gtk::PACK_SHRINK);
+  table->attach(*hbox, 0, 1, 6, 7, Gtk::FILL);
   table->attach(*(cdTextPages_[n].isrc), 1, 2, 6, 7);
-  cdTextPages_[n].isrc->show();
 
-
-  vbox->pack_start(*table, TRUE);
-  vbox->show();
+  vbox->pack_start(*table);
 
   return vbox;
 }
 
-gint TrackInfoDialog::delete_event_impl(GdkEventAny*)
+bool TrackInfoDialog::on_delete_event(GdkEventAny*)
 {
   stop();
   return 1;

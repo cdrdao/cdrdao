@@ -18,6 +18,21 @@
  */
 /*
  * $Log: SampleManager.cc,v $
+ * Revision 1.6  2004/02/12 01:13:32  poolshark
+ * Merge from gnome2 branch
+ *
+ * Revision 1.5.6.1  2004/01/05 00:34:03  poolshark
+ * First checking of gnome2 port
+ *
+ * Revision 1.3  2004/01/01 00:04:58  denis
+ * Made scan progress use the Gnome APP progressbar
+ *
+ * Revision 1.2  2003/12/29 09:31:48  denis
+ * fixed all dialogs
+ *
+ * Revision 1.1.1.1  2003/12/09 05:32:28  denis
+ * Fooya
+ *
  * Revision 1.5  2002/01/20 20:43:37  andreasm
  * Added support for sub-channel reading and writing.
  * Adapted to autoconf-2.52.
@@ -67,7 +82,7 @@
 #include <math.h>
 #include <assert.h>
 
-#include <gtk--.h>
+#include <gtkmm.h>
 #include <gtk/gtk.h>
 
 #include "SampleManager.h"
@@ -104,29 +119,30 @@ public:
   unsigned long length_;
   gfloat percent_;
   gfloat percentStep_;
-  int withGui_;
 
-  int aborted_;
+  bool withGui_;
+  bool aborted_;
 
-  Gtk::Window *progressWindow_;
-  Gtk::ProgressBar *progressBar_;
+  Gtk::ProgressBar* progressBar_;
+  Gtk::Button* abortButton_;
   
   void getPeak(unsigned long start, unsigned long end,
 	       short *leftNeg, short *leftPos,
 	       short *rightNeg, short *rightPos);
   int scanToc(unsigned long start, unsigned long end);
-  int readSamples();
+  bool readSamples();
   void abortAction();
   void reallocSamples(unsigned long maxSample);
   void removeSamples(unsigned long start, unsigned long end, TrackDataScrap *);
   void insertSamples(unsigned long pos, unsigned long len,
 		     const TrackDataScrap *);
+  void setProgressBar(Gtk::ProgressBar* bar) { progressBar_ = bar; }
+  void setAbortButton(Gtk::Button*);
 };
 
 SampleManager::SampleManager(unsigned long blocking)
 {
   impl_ = new SampleManagerImpl(blocking);
-  
 }
 
 SampleManager::~SampleManager()
@@ -173,6 +189,16 @@ void SampleManager::insertSamples(unsigned long pos, unsigned long len,
   impl_->insertSamples(pos, len, scrap);
 }
 
+void SampleManager::setProgressBar(Gtk::ProgressBar* b)
+{
+  impl_->setProgressBar(b);
+}
+
+void SampleManager::setAbortButton(Gtk::Button* b)
+{
+  impl_->setAbortButton(b);
+}
+
 SampleManagerImpl::SampleManagerImpl(unsigned long blocking) : tocReader_(NULL)
 {
   blocking_ = blocking;
@@ -187,36 +213,20 @@ SampleManagerImpl::SampleManagerImpl(unsigned long blocking) : tocReader_(NULL)
   block_ = new Sample[blocking_];
   actBlock_ = endBlock_ = burstBlock_ = 0;
   length_ = 0;
-  withGui_ = 0;
+  withGui_ = false;
 
   // allocate space in chunks of 40 minutes
   chunk_ = 40 * 60 * 75 * 588 / blocking;
 
-  // create progress window
-  Gtk::VBox *vbox = new Gtk::VBox();
-  Gtk::Label *label = new Gtk::Label("Scanning Audio Data...");
-  
-  vbox->pack_start(*label, FALSE, FALSE, 5);
-  label->show();
+  progressBar_ = NULL;
+  abortButton_ = NULL;
+}
 
-  progressBar_ = new Gtk::ProgressBar();
-  progressBar_->set_bar_style(GTK_PROGRESS_CONTINUOUS);
-  progressBar_->set_orientation(GTK_PROGRESS_LEFT_TO_RIGHT);
-  vbox->pack_start(*(progressBar_), FALSE, FALSE);
-  progressBar_->show();
-
-  Gtk::HBox *hbox = new Gtk::HBox();
-  Gtk::Button *button = new Gtk::Button(" Abort ");
-  hbox->pack_start(*button, TRUE, FALSE);
-  button->show();
-  button->clicked.connect(slot(this, &SampleManagerImpl::abortAction));
-  vbox->pack_start(*hbox, FALSE, FALSE, 5);
-  hbox->show();
-
-  progressWindow_ = new Gtk::Window(GTK_WINDOW_DIALOG);
-  progressWindow_->add(*vbox);
-  progressWindow_->set_usize(200, 0);
-  vbox->show();
+void SampleManagerImpl::setAbortButton(Gtk::Button* button)
+{
+  abortButton_ = button;
+  button->signal_clicked().connect(slot(*this,
+                                        &SampleManagerImpl::abortAction));
 }
 
 SampleManagerImpl::~SampleManagerImpl()
@@ -308,40 +318,38 @@ int SampleManagerImpl::scanToc(unsigned long start, unsigned long end)
   if (len < 2000) {
     burstBlock_ = len;
     percentStep_ = 1.0;
-    withGui_ = 0;
+    withGui_ = false;
   }
   else if (len < 10000) {
     burstBlock_ = len / 100;
     percentStep_ = 0.01;
-    withGui_ = 1;
+    withGui_ = true;
   }
   else {
     burstBlock_ = 75;
     percentStep_ = gfloat(burstBlock_) / gfloat(len);
-    withGui_ = 1;
+    withGui_ = true;
   }
 
   if (burstBlock_ == 0) 
     burstBlock_ = 1;
 
   percent_ = 0;
-  aborted_ = 0;
+  aborted_ = false;
 
   if (withGui_) {
-    progressWindow_->show();
-
-    Gtk::Main::idle.connect(slot(this, &SampleManagerImpl::readSamples));
-
+    if (progressBar_) progressBar_->set_fraction(0.0);
+    if (abortButton_) abortButton_->set_sensitive(true);
+    Glib::signal_idle().connect(slot(*this, &SampleManagerImpl::readSamples));
     tocEdit_->blockEdit();
-  }
-  else {
-    while (readSamples()) ;
+  } else {
+    while (readSamples());
   }
 
   return 0;
 }
 
-int SampleManagerImpl::readSamples()
+bool SampleManagerImpl::readSamples()
 {
   int j;
   long n;
@@ -351,7 +359,8 @@ int SampleManagerImpl::readSamples()
 
   if (withGui_ && aborted_) {
     tocReader_.closeData();
-    progressWindow_->hide();
+    if (abortButton_) abortButton_->set_sensitive(false);
+    if (progressBar_) progressBar_->set_fraction(0.0);
     tocEdit_->unblockEdit();
     guiUpdate(UPD_SAMPLES);
     return 0;
@@ -384,7 +393,8 @@ int SampleManagerImpl::readSamples()
       message(-2, "Cannot read audio data: %ld - %ld.", n, ret);
       tocReader_.closeData();
       if (withGui_) {
-	progressWindow_->hide();
+        if (abortButton_) abortButton_->set_sensitive(false);
+        if (progressBar_) progressBar_->set_fraction(0.0);
       }
       tocEdit_->unblockEdit();
       guiUpdate(UPD_SAMPLES);
@@ -397,7 +407,8 @@ int SampleManagerImpl::readSamples()
   if (actBlock_ >= endBlock_ && actBlock_ < burstEnd) {
     tocReader_.closeData();
     if (withGui_) {
-      progressWindow_->hide();
+      if (abortButton_) abortButton_->set_sensitive(false);
+      if (progressBar_) progressBar_->set_fraction(0.0);
     }
     tocEdit_->unblockEdit();
     guiUpdate(UPD_SAMPLES);
@@ -408,8 +419,8 @@ int SampleManagerImpl::readSamples()
   if (percent_ > 1.0) 
     percent_ = 1.0;
 
-  if (withGui_) {
-    progressBar_->set_percentage(percent_);
+  if (withGui_ && progressBar_) {
+    progressBar_->set_fraction(percent_);
   }
 
   return 1;
@@ -417,7 +428,7 @@ int SampleManagerImpl::readSamples()
 
 void SampleManagerImpl::abortAction()
 {
-  aborted_ = 1;
+  aborted_ = true;
 }
 
 void SampleManagerImpl::reallocSamples(unsigned long maxSample)

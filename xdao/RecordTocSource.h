@@ -20,7 +20,7 @@
 #ifndef __RECORD_TOC_SOURCE_H
 #define __RECORD_TOC_SOURCE_H
 
-#include <gtk--.h>
+#include <gtkmm.h>
 #include <gtk/gtk.h>
 
 class TocEdit;
@@ -29,8 +29,6 @@ class RecordTocSource : public Gtk::VBox {
 public:
   RecordTocSource(TocEdit *);
 
-  Gtk::Window *parent; // the dialog where the vbox is placed
-  
   void start();
   void stop();
 
@@ -38,13 +36,13 @@ public:
   void update(unsigned long level, TocEdit *);
 
 private:
-  TocEdit *tocEdit_;
-  int active_;
+  TocEdit* tocEdit_;
+  bool active_;
 
-  Gtk::Label *projectLabel_;
-  Gtk::Label *tocTypeLabel_;
-  Gtk::Label *nofTracksLabel_;
-  Gtk::Label *tocLengthLabel_;
+  Gtk::Label projectLabel_;
+  Gtk::Label tocTypeLabel_;
+  Gtk::Label nofTracksLabel_;
+  Gtk::Label tocLengthLabel_;
 
 };
 

@@ -30,6 +30,9 @@ public:
   ~DuplicateCDProject();
   bool closeProject();
 
+ protected:
+  virtual void createToolbar() {};
+
 private:
   RecordCDSource *CDSource;
   RecordCDTarget *CDTarget;

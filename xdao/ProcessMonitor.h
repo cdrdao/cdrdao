@@ -18,6 +18,15 @@
  */
 /*
  * $Log: ProcessMonitor.h,v $
+ * Revision 1.3  2004/02/12 01:13:31  poolshark
+ * Merge from gnome2 branch
+ *
+ * Revision 1.2.6.1  2004/01/05 00:34:02  poolshark
+ * First checking of gnome2 port
+ *
+ * Revision 1.1.1.1  2003/12/09 05:32:28  denis
+ * Fooya
+ *
  * Revision 1.2  2000/10/08 16:39:41  andreasm
  * Remote progress message now always contain the track relative and total
  * progress and the total number of processed tracks.

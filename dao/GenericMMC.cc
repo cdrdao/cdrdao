@@ -393,10 +393,11 @@ int GenericMMC::getSessionInfo()
   return 0;
 }
 
-int GenericMMC::readBufferCapacity(long *capacity)
+bool GenericMMC::readBufferCapacity(long *capacity, long *available)
 {
   unsigned char cmd[10];
   unsigned char data[12];
+  long bufsize;
 
   memset(cmd, 0, 10);
   memset(data, 0, 12);
@@ -406,12 +407,13 @@ int GenericMMC::readBufferCapacity(long *capacity)
 
   if (sendCmd(cmd, 10, NULL, 0, data, 12) != 0) {
     message(-2, "Read buffer capacity failed.");
-    return 1;
+    return false;
   }
 
-  *capacity = (data[8] << 24) | (data[9] << 16) | (data[10] << 8) | data[11];
+  *capacity = (data[4] << 24) | (data[5] << 16) | (data[6] << 8) | data[7];
+  *available = (data[8] << 24) | (data[9] << 16) | (data[10] << 8) | data[11];
 
-  return 0;
+  return true;
 }
 
 int GenericMMC::performPowerCalibration()
@@ -1244,9 +1246,10 @@ int GenericMMC::writeData(TrackData::Mode mode, TrackData::SubChannelMode sm,
 
 #if 0
     do {
+      long available
       waitForBuffer = 0;
 
-      if (readBufferCapacity(&bufferCapacity) == 0) {
+      if (readBufferCapacity(&bufferCapacity, &available) == 0) {
 	//message(0, "Buffer Capacity: %ld", bufferCapacity);
 	if (bufferCapacity < writeLen * blockLength) {
 	  long t = 1000 * writeLen;

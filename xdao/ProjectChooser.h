@@ -20,25 +20,21 @@
 #ifndef __PROJECT_CHOOSER_H__
 #define __PROJECT_CHOOSER_H__
 
-#include <gtk--.h>
-
-class GCDMaster;
+#include <gtkmm.h>
 
 class ProjectChooser : public Gtk::Window
 {
-public:
+ public:
   ProjectChooser();
 
-  virtual int delete_event_impl(GdkEventAny *event);
+ protected:
+  virtual bool on_delete_event(GdkEventAny *event);
 
-private:
-
-// FIXME: When we receive a file:
-//		if it is wav, mp3, ... open an AudioCD project
-//		else open a DataCD.
-//  void drag_data_received_cb(GdkDragContext *context, gint x, gint y,
-//         GtkSelectionData *selection_data, guint info, guint time);
-
+  Gtk::VBox   vbox;
+  Gtk::Button openButton;
+  Gtk::Button audioCDButton;
+  Gtk::Button dumpCDButton;
+  Gtk::Button copyCDButton;
 };
 #endif
 

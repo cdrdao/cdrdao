@@ -69,6 +69,7 @@ public:
 
   static Toc *read(const char *);
   int write(const char *) const;
+  bool write(int fd) const;
 
   int catalogValid() const { return catalogValid_; }
 

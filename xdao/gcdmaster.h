@@ -20,9 +20,9 @@
 #ifndef __GCDMASTER_H__
 #define __GCDMASTER_H__
 
-#include <gtk--.h>
+#include <gtkmm.h>
 #include <gtk/gtk.h>
-#include <gnome--.h>
+#include <libgnomeuimm.h>
 
 #include <list>
 
@@ -38,17 +38,14 @@ private:
 
   gint project_number;
 
-  Gnome::About *about_;  
   BlankCDDialog *blankCDDialog_;
 
   void add(Project *);
   void add(ProjectChooser *);
 
-  Gtk::FileSelection *readFileSelector_;
+  Gtk::FileSelection readFileSelector_;
   void readFileSelectorOKCB(ProjectChooser *projectChooser);
   void readFileSelectorCancelCB();
-
-  int aboutDestroy();
 
 public:
   GCDMaster();
@@ -69,9 +66,9 @@ public:
   void update(unsigned long level);
 
   void configureDevices();
-  void blankCDRW();
+  void blankCDRW(Project* parent);
 
-  void aboutDialog();
+  void registerStockIcons();
 };
 #endif
 

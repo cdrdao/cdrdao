@@ -20,7 +20,8 @@
 #include <stddef.h>
 #include <stdarg.h>
 
-#include <gnome--.h>
+#include <gtkmm.h>
+#include <gnome.h>
 
 #include "MessageBox.h"
 
@@ -31,10 +32,12 @@ MessageBoxBase::MessageBoxBase(Gtk::Window * win)
 
   dontShowAgain_ = NULL;
 
-  if (win != NULL)
+  if (win != NULL) {
     set_transient_for(*win);
+    set_modal(true);
+  }
 
-  set_position(GTK_WIN_POS_CENTER);
+  set_position(Gtk::WIN_POS_CENTER);
 }
 
 MessageBoxBase::~MessageBoxBase()
@@ -43,43 +46,14 @@ MessageBoxBase::~MessageBoxBase()
   dontShowAgain_ = NULL;
 }
 
-Gtk::Button *MessageBoxBase::createButton(const char *name)
+Gtk::Button *MessageBoxBase::createButton(const Gtk::BuiltinStockID id)
 {
-  Gnome::StockPixmap *pixmap = NULL;
-  const char *text;
-
-  if (strcmp(name, GNOME_STOCK_BUTTON_OK) == 0) {
-//    pixmap = manage(Gnome::StockPixmap::pixmap_widget(*this, name));
-    pixmap = new Gnome::StockPixmap(name);
-    text = "Ok";
-  }
-  else if (strcmp(name, GNOME_STOCK_BUTTON_CANCEL) == 0) {
-//    pixmap = manage(Gnome::StockPixmap::pixmap_widget(*this, name));
-    pixmap = new Gnome::StockPixmap(name);
-    text = "Cancel";
-  }
-  else if (strcmp(name, GNOME_STOCK_BUTTON_YES) == 0) {
-//    pixmap = manage(Gnome::StockPixmap::pixmap_widget(*this, name));
-    pixmap = new Gnome::StockPixmap(name);
-    text = "Yes";
-  }
-  else if (strcmp(name, GNOME_STOCK_BUTTON_NO) == 0) {
-//    pixmap = manage(Gnome::StockPixmap::pixmap_widget(*this, name));
-    pixmap = new Gnome::StockPixmap(name);
-    text = "No";
-  }
-
-  if (pixmap != NULL)
-//    return Gnome::StockPixmap::pixmap_button(*pixmap, text);
-//    return new Gnome::Stock::Buttons::Button(name);
-    return new Gnome::StockButton(name);
-  else 
-    return new Gtk::Button(name);
+  return new Gtk::Button(Gtk::StockID(id));
 }
 
 void MessageBoxBase::init(const char *type, const char *title, int askDontShow,
-			  int nButtons, int defaultButton, char *buttons[],
-			  va_list args)
+			  int nButtons, int defaultButton,
+                          Gtk::BuiltinStockID buttons[], va_list args)
 {
   int i;
   const char *s;
@@ -89,19 +63,18 @@ void MessageBoxBase::init(const char *type, const char *title, int askDontShow,
 
   set_title(title);
 
-  Gtk::HButtonBox* bbox = manage(new Gtk::HButtonBox(GTK_BUTTONBOX_SPREAD));
+  Gtk::HButtonBox* bbox = manage(new Gtk::HButtonBox(Gtk::BUTTONBOX_SPREAD));
   bbox->show();
 
   Gtk::VBox* contents = manage(new Gtk::VBox);
   contents->show();
-  //contents->set_spacing(5);
-
   
   for (i = 1; i <= nButtons; i++) {
-    //Gtk::Button* button = manage(new Gtk::Button(buttons[i - 1]));
     Gtk::Button* button = manage(createButton(buttons[i - 1]));
     button->show();
-    button->clicked.connect(bind(slot(this,&MessageBoxBase::buttonAction),i));
+    button->signal_clicked().connect(bind(slot(*this,
+                                               &MessageBoxBase::buttonAction),
+                                          i));
     bbox->add(*button);
   }
 
@@ -110,12 +83,12 @@ void MessageBoxBase::init(const char *type, const char *title, int askDontShow,
     lbox->show();
     Gtk::Label* label = manage(new Gtk::Label(s));
     label->show();
-    lbox->pack_start(*label, FALSE);
-    contents->pack_start(*lbox, FALSE);
+    lbox->pack_start(*label, Gtk::PACK_SHRINK);
+    contents->pack_start(*lbox, Gtk::PACK_SHRINK);
   }
 
   if (askDontShow) {
-    dontShowAgain_ = new Gtk::CheckButton("Don't show this message again");
+    dontShowAgain_ = new Gtk::CheckButton(_("Don't show this message again"));
     dontShowAgain_->set_active(FALSE);
     dontShowAgain_->show();
 
@@ -124,22 +97,14 @@ void MessageBoxBase::init(const char *type, const char *title, int askDontShow,
 
     label->show();
     box->show();
-    box->pack_end(*dontShowAgain_, FALSE);
-    contents->pack_start(*label, FALSE);
-    contents->pack_start(*box, FALSE);
+    box->pack_end(*dontShowAgain_, Gtk::PACK_SHRINK);
+    contents->pack_start(*label, Gtk::PACK_SHRINK);
+    contents->pack_start(*box, Gtk::PACK_SHRINK);
   }
 
 
   Gtk::HBox* hcontens = manage(new Gtk::HBox);
   hcontens->show();
-
-  /*
-  Gnome::Pixmap *typePixmap = manage(new Gnome::Pixmap("gnome-info.png"));
-  if (typePixmap != NULL) {
-    hcontens->pack_start(*typePixmap, FALSE, FALSE, 10);
-    typePixmap->show();
-  }
-  */
 
   hcontens->pack_start(*contents, TRUE, TRUE, 10);
   get_vbox()->pack_start(*hcontens, FALSE, FALSE, 10);
@@ -156,7 +121,7 @@ void MessageBoxBase::buttonAction(int act)
   done_ = act;
 }
 
-gint MessageBoxBase::delete_event_impl(GdkEventAny*)
+bool MessageBoxBase::on_delete_event(GdkEventAny*)
 {
   done_ = doneDefault_;
   return 1;
@@ -168,16 +133,11 @@ int MessageBoxBase::run()
 
   show();
 
-  app->grab_add(*this);
-
   do {
     app->iteration();
   }  while (done_ == 0);
 
-  app->grab_remove(*this);
-
   hide();
-
   return done_;
 }
 
@@ -194,13 +154,13 @@ MessageBox::MessageBox(Gtk::Window *win, const char *title,
 		       int askDontShow, ...) : MessageBoxBase(win)
 {
   va_list args;
-  char *buttons[1];
+  Gtk::BuiltinStockID buttons[1];
 
-  buttons[0] = GNOME_STOCK_BUTTON_OK;
+  buttons[0] = Gtk::Stock::OK;
 
   va_start(args, askDontShow);
 
-  init(GNOME_MESSAGE_BOX_INFO, title, askDontShow, 1, 1, buttons, args);
+  init("info", title, askDontShow, 1, 1, buttons, args);
 
   va_end(args);
 }
@@ -216,17 +176,17 @@ Ask2Box::Ask2Box(Gtk::Window *win, const char *title, int askDontShow,
 
 {
   va_list args;
-  char *buttons[2];
+  Gtk::BuiltinStockID buttons[2];
   
-  buttons[0] = GNOME_STOCK_BUTTON_YES;
-  buttons[1] = GNOME_STOCK_BUTTON_NO;
+  buttons[0] = Gtk::Stock::YES;
+  buttons[1] = Gtk::Stock::NO;
 
   if (defaultButton < 0 || defaultButton > 2)
     defaultButton = 0;
 
   va_start(args, defaultButton);
 
-  init(GNOME_MESSAGE_BOX_QUESTION, title, askDontShow, 2, defaultButton,
+  init("question", title, askDontShow, 2, defaultButton,
        buttons, args);
 
   va_end(args);
@@ -242,18 +202,18 @@ Ask3Box::Ask3Box(Gtk::Window *win, const char *title, int askDontShow,
   : MessageBoxBase(win)
 {
   va_list args;
-  char *buttons[3];
+  Gtk::BuiltinStockID buttons[3];
   
-  buttons[0] = GNOME_STOCK_BUTTON_YES;
-  buttons[1] = GNOME_STOCK_BUTTON_NO;
-  buttons[2] = GNOME_STOCK_BUTTON_CANCEL;
+  buttons[0] = Gtk::Stock::YES;
+  buttons[1] = Gtk::Stock::NO;
+  buttons[2] = Gtk::Stock::CANCEL;
 
   if (defaultButton < 0 || defaultButton > 3)
     defaultButton = 0;
 
   va_start(args, defaultButton);
 
-  init(GNOME_MESSAGE_BOX_QUESTION, title, askDontShow, 3, defaultButton, buttons, args);
+  init("question", title, askDontShow, 3, defaultButton, buttons, args);
 
   va_end(args);
   

@@ -1,0 +1,5 @@
+Makefile
+Makefile.in
+.deps
+toc2cue
+toc2mp3

@@ -21,7 +21,9 @@
 #include <limits.h>
 #include <math.h>
 #include <assert.h>
+#include <string>
 
+#include <gtkmm.h>
 #include <gnome.h>
 
 #include "DeviceList.h"
@@ -41,33 +43,11 @@ DeviceList::DeviceList(CdDevice::DeviceType filterType)
 
   filterType_ = filterType;
 
-  list_ = new Gtk::CList(6);
-
-  list_->set_column_title(0, "Bus");
-  list_->set_column_justification(0, GTK_JUSTIFY_CENTER);
-
-  list_->set_column_title(1, "Id");
-  list_->set_column_justification(1, GTK_JUSTIFY_CENTER);
-
-  list_->set_column_title(2, "Lun");
-  list_->set_column_justification(2, GTK_JUSTIFY_CENTER);
-
-  list_->set_column_title(3, "Vendor");
-  list_->set_column_justification(3, GTK_JUSTIFY_LEFT);
-
-  list_->set_column_title(4, "Model");
-  list_->set_column_justification(4, GTK_JUSTIFY_LEFT);
-
-  list_->set_column_title(5, "Status");
-  list_->set_column_justification(5, GTK_JUSTIFY_LEFT);
-
-  list_->column_titles_show();
-  list_->column_titles_passive();
-
-  list_->set_usize(0, 80);
-
-  list_->select_row.connect(slot(this, &DeviceList::selection_changed_emit));
-
+  listModel_ = Gtk::ListStore::create(listColumns_);
+  list_.set_model(listModel_);
+  list_.append_column(_("Vendor"), listColumns_.vendor);
+  list_.append_column(_("Model"), listColumns_.model);
+  list_.append_column(_("Status"), listColumns_.status);
 
   Gtk::VBox *contents = new Gtk::VBox;
   contents->set_spacing(10);
@@ -77,241 +57,151 @@ DeviceList::DeviceList(CdDevice::DeviceType filterType)
   Gtk::VBox *listVBox = new Gtk::VBox;
 
   hbox = new Gtk::HBox;
-
-  hbox->pack_start(*list_, TRUE, TRUE);
-  list_->show();
+  hbox->pack_start(list_, TRUE, TRUE);
 
   Gtk::Adjustment *adjust = new Gtk::Adjustment(0.0, 0.0, 0.0);
 
   Gtk::VScrollbar *scrollBar = new Gtk::VScrollbar(*adjust);
   hbox->pack_start(*scrollBar, FALSE, FALSE);
-  scrollBar->show();
 
-  list_->set_vadjustment(*adjust);
+  list_.set_vadjustment(*adjust);
 
   listHBox->pack_start(*hbox, TRUE, TRUE, 5);
-  hbox->show();
   listVBox->pack_start(*listHBox, TRUE, TRUE, 5);
-  listHBox->show();
 
-  switch (filterType_)
-  {
-    case CdDevice::CD_ROM:
-                 set_label("Available Reader Devices");
-                 list_->set_selection_mode(GTK_SELECTION_SINGLE);
-                 break;
-    case CdDevice::CD_R:
-                 set_label("Available Recorder Devices");
-                 list_->set_selection_mode(GTK_SELECTION_MULTIPLE);
-                 break;
-    case CdDevice::CD_RW:
-                 set_label("Available Recorder (RW) Devices");
-                 list_->set_selection_mode(GTK_SELECTION_MULTIPLE);
-                 break;
+  switch (filterType_) {
+  case CdDevice::CD_ROM:
+    set_label(_(" Available Reader Devices "));
+    break;
+  case CdDevice::CD_R:
+    set_label(_(" Available Recorder Devices "));
+    break;
+  case CdDevice::CD_RW:
+    set_label(_(" Available Recorder (RW) Devices "));
+    break;
   }
 
   add(*listVBox);
-  listVBox->show();
-
-  show();
-
 }
 
-DeviceList::~DeviceList()
+std::string DeviceList::selection()
 {
-  DeviceData *data;
+  Gtk::TreeIter i = list_.get_selection()->get_selected();
 
-  while (list_->rows().size() > 0) {
-    data = (DeviceData*)list_->row(0).get_data();
-    delete data;
-    list_->rows().remove(list_->row(0));
-  }
-
-  delete list_;
-  list_ = NULL;
-}
-
-Gtk::CList_Helpers::SelectionList DeviceList::selection()
-{
-  return list_->selection();
+  if (i) {
+    return ((std::string)((*i)[listColumns_.dev])).c_str();
+  } else
+    return NULL;
 }
 
 void DeviceList::appendTableEntry(CdDevice *dev)
 {
-  DeviceData *data;
-  char buf[50];
-  std::string idStr;
-  std::string busStr;
-  std::string lunStr;
-  const gchar *rowStr[6];
-
-  data = new DeviceData;
-  data->bus = dev->bus();
-  data->id = dev->id();
-  data->lun = dev->lun();
-
-  sprintf(buf, "%d", data->bus);
-  busStr = buf;
-  rowStr[0] = busStr.c_str();
-
-  sprintf(buf, "%d", data->id);
-  idStr = buf;
-  rowStr[1] = idStr.c_str();
-
-  sprintf(buf, "%d", data->lun);
-  lunStr = buf;
-  rowStr[2] = lunStr.c_str();
-
-  rowStr[3] = dev->vendor();
-  rowStr[4] = dev->product();
-  
-  rowStr[5] = CdDevice::status2string(dev->status());
-
-  list_->rows().push_back(rowStr);
-  list_->row(list_->rows().size() - 1).set_data(data);
+  Gtk::TreeIter newiter = listModel_->append();
+  Gtk::TreeModel::Row row = *newiter;
+  row[listColumns_.dev] = dev->dev();
+  row[listColumns_.vendor] = dev->vendor();
+  row[listColumns_.model] = dev->product();
+  row[listColumns_.status] = CdDevice::status2string(dev->status());
 
   if (dev->status() == CdDevice::DEV_READY)
-    list_->row(list_->rows().size() - 1).set_selectable(true);
-  else
-    list_->row(list_->rows().size() - 1).set_selectable(false);
+    list_.get_selection()->select(newiter);
 }
 
 void DeviceList::import()
 {
   CdDevice *drun;
-  DeviceData *data;
   unsigned int i;
 
-  list_->freeze();
-
-  while (list_->rows().size() > 0) {
-    data = (DeviceData*)list_->row(0).get_data();
-    delete data;
-    list_->rows().remove(list_->row(0));
-  }
+  listModel_->clear();
 
   for (drun = CdDevice::first(); drun != NULL; drun = CdDevice::next(drun)) {
-    switch (filterType_)
-    {
-      case CdDevice::CD_ROM:
-                   if (drun->driverId() > 0 &&
-	               (drun->deviceType() == CdDevice::CD_ROM ||
-	                drun->deviceType() == CdDevice::CD_R ||
-	                drun->deviceType() == CdDevice::CD_RW)) {
-                     appendTableEntry(drun);
-                   }
-                   break;
-      case CdDevice::CD_R:
-                   if (drun->driverId() > 0 &&
-	               (drun->deviceType() == CdDevice::CD_R ||
-	                drun->deviceType() == CdDevice::CD_RW)) {
-                     appendTableEntry(drun);
-                   }
-                   break;
-      case CdDevice::CD_RW:
-                   if (drun->driverId() > 0 &&
-	               (drun->deviceType() == CdDevice::CD_RW)) {
-                     appendTableEntry(drun);
-                   }
-                   break;
+    switch (filterType_) {
+    case CdDevice::CD_ROM:
+      if (drun->driverId() > 0 &&
+          (drun->deviceType() == CdDevice::CD_ROM ||
+           drun->deviceType() == CdDevice::CD_R ||
+           drun->deviceType() == CdDevice::CD_RW)) {
+        appendTableEntry(drun);
+      }
+      break;
+    case CdDevice::CD_R:
+      if (drun->driverId() > 0 &&
+          (drun->deviceType() == CdDevice::CD_R ||
+           drun->deviceType() == CdDevice::CD_RW)) {
+        appendTableEntry(drun);
+      }
+      break;
+    case CdDevice::CD_RW:
+      if (drun->driverId() > 0 &&
+          (drun->deviceType() == CdDevice::CD_RW)) {
+        appendTableEntry(drun);
+      }
+      break;
     }
   }
 
-  list_->thaw();
-
-  if (list_->rows().size() > 0) {
-    list_->columns_autosize();
-    list_->moveto(0, 0, 0.0, 0.0);
-
-    // select first selectable device
-    for (i = 0; i < list_->rows().size(); i++) {
-      if (list_->row(i).get_selectable()) {
-	list_->row(i).select();
-	break;
-      }
-    }
+  if (listModel_->children().size() > 0) {
+    list_.columns_autosize();
+    list_.get_selection()->select(Gtk::TreeModel::Path((unsigned)1));
   }
 }
 
 void DeviceList::importStatus()
 {
-  unsigned int i;
-  DeviceData *data;
-  CdDevice *dev;
+  std::string data;
+  CdDevice *cddev;
 
-  for (i = 0; i < list_->rows().size(); i++) {
-    if ((data = (DeviceData*)list_->row(i).get_data()) != NULL &&
-	(dev = CdDevice::find(data->bus, data->id, data->lun)) != NULL) {
-      if (dev->status() == CdDevice::DEV_READY) {
-	list_->row(i).set_selectable(true);
-      }
-      else {
-	list_->row(i).unselect();
-	list_->row(i).set_selectable(false);
-      }
+  Gtk::TreeNodeChildren ch = listModel_->children();
+  for (int i = 0; i < ch.size(); i++) {
+    Gtk::TreeRow row = ch[i];
+    data = row[listColumns_.dev];
 
-      list_->cell(i, 5).set_text(CdDevice::status2string(dev->status()));
+    if (cddev = CdDevice::find(data.c_str())) {
+      if (cddev->status() == CdDevice::DEV_READY)
+        list_.get_column(i)->set_clickable(true);
+      else
+        list_.get_column(i)->set_clickable(false);
+
+      row[listColumns_.status] = CdDevice::status2string(cddev->status());
     }
   }
 
-  list_->columns_autosize();
-
+  list_.columns_autosize();
 }
 
 void DeviceList::selectOne()
 {
-  if (list_->selection().empty()) {
-    for (int i = 0; i < list_->get_rows(); i++)
-    {
-      list_->row(i).select();
-      if (list_->selection().empty())
+  if (list_.get_selection()->count_selected_rows() > 0)
+    return;
+
+  for (int i = 0; i < listModel_->children().size(); i++) {
+    list_.get_selection()->select(Gtk::TreePath((unsigned)1, i));
+    if (list_.get_selection()->count_selected_rows() > 0)
+      break;
+  }
+}
+
+void DeviceList::selectOneBut(const char *targetData)
+{
+  if (!targetData)
+    return selectOne();
+
+  if (list_.get_selection()->count_selected_rows() == 0) {
+
+    Gtk::TreeNodeChildren ch = listModel_->children();
+
+    for (int i = 0; i < ch.size(); i++) {
+
+      std::string sourceData = (ch[i])[listColumns_.dev];
+
+      if (sourceData != targetData) {
+        list_.get_selection()->select(ch[i]);
         break;
-    }
-  }
-}
-
-void DeviceList::selectOneBut(Gtk::CList_Helpers::SelectionList &targetSelection)
-{
-  if (list_->selection().empty()) {
-    for (int i = 0; i < list_->get_rows(); i++)
-    {
-      bool targetSelected = false;
-      DeviceList::DeviceData *sourceData =
-          (DeviceList::DeviceData*)list_->row(i).get_data();
-
-      for (int j = 0; j < targetSelection.size(); j++) {
-        DeviceList::DeviceData *targetData =
-            (DeviceList::DeviceData*)targetSelection[j].get_data();
-    
-        if (targetData == NULL)
-          break;
-
-        if ((targetData->bus == sourceData->bus)
-         && (targetData->id == sourceData->id)
-         && (targetData->lun == sourceData->lun))
-        {
-          targetSelected = true;
-          break;
-        }
-      }
-
-      if (!targetSelected)
-      {
-        list_->row(i).select();
-        if (!list_->selection().empty())
-          break;
       }
     }
+
+    if (list_.get_selection()->count_selected_rows() == 0) {
+      selectOne();
+    }
   }
-
-  // Try selectOne in case we don't selected any device.
-  selectOne();
-}
-
-void DeviceList::selection_changed_emit(gint p0, gint p1, GdkEvent* p2)
-{
-//Emited when the selection ends.
-
-// g_print("row select emited!!\n");
-
 }

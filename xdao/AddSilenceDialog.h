@@ -20,12 +20,13 @@
 #ifndef __ADD_SILENCE_DIALOG_H__
 #define __ADD_SILENCE_DIALOG_H__
 
-#include <gtk--.h>
+#include <gtkmm.h>
 #include <gtk/gtk.h>
 
 class TocEditView;
 
-class AddSilenceDialog : public Gtk::Dialog {
+class AddSilenceDialog : public Gtk::Dialog
+{
 public:
   enum Mode { M_APPEND, M_INSERT };
 
@@ -38,24 +39,23 @@ public:
   void mode(Mode);
   void update(unsigned long level, TocEditView *);
 
-  gint delete_event_impl(GdkEventAny*);
+  bool on_delete_event(GdkEventAny*);
 
 private:
   TocEditView *tocEditView_;
-  int active_;
+  bool active_;
   Mode mode_;
 
   Gtk::Button *applyButton_;
 
-  Gtk::Entry *minutes_;
-  Gtk::Entry *seconds_;
-  Gtk::Entry *frames_;
-  Gtk::Entry *samples_;
+  Gtk::Entry minutes_;
+  Gtk::Entry seconds_;
+  Gtk::Entry frames_;
+  Gtk::Entry samples_;
 
   void clearAction();
   void closeAction();
   void applyAction();
-    
 };
 
 #endif

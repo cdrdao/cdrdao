@@ -18,6 +18,10 @@
  */
 
 #include <errno.h>
+#include <gtkmm.h>
+#include <gnome.h>
+
+#include "config.h"
 
 #include "Project.h"
 #include "util.h"
@@ -31,143 +35,162 @@
 #include "TocEditView.h"
 #include "RecordTocDialog.h"
 
-Project::Project() : Gnome::App("gcdmaster", APP_NAME)
+Project::Project() : Gnome::UI::App("gcdmaster", APP_NAME)
 {
   new_ = true;
   saveFileSelector_ = 0;  
   viewNumber = 0;
+  about_ = NULL;
   recordTocDialog_ = 0;
   enable_layout_config(true);
-//  set_usize(630, 440);
-//  set_policy(false, true, false);
-  set_wmclass("GCDMaster", "GCDMaster");
+
+  set_resizable();
+  set_wmclass("gcdmaster", "GCDMaster");
+  frame_.set_shadow_type(Gtk::SHADOW_IN);
+  set_contents(frame_);
 
   createMenus();
-  createToolbar();
   createStatusbar();
 }
 
 void Project::createMenus()
 {
-  std::vector<Gnome::UI::SubTree> menus;
-  std::vector<Gnome::UI::Info> fileMenuTree, newMenuTree, editMenuTree, actionsMenuTree;
-  std::vector<Gnome::UI::Info> settingsMenuTree, helpMenuTree, windowsMenuTree;
+  std::vector<Gnome::UI::Items::SubTree> menus;
+  std::vector<Gnome::UI::Items::Info> fileMenuTree, newMenuTree;
+  std::vector<Gnome::UI::Items::Info> editMenuTree, actionsMenuTree;
+  std::vector<Gnome::UI::Items::Info> settingsMenuTree, helpMenuTree;
+  std::vector<Gnome::UI::Items::Info> windowsMenuTree;
 
   {
-    using namespace Gnome::UI;
-    fileMenuTree.push_back(Item(Icon(GNOME_STOCK_MENU_NEW),
-						N_("New..."),
-						slot(gcdmaster, &GCDMaster::newChooserWindow),
-						N_("New Project")));
+    using namespace Gnome::UI::Items;
+    using namespace Gnome::UI::MenuItems;
+    fileMenuTree.push_back(New(_("New..."), _("Create a new project"),
+                               slot(*gcdmaster,
+                                    &GCDMaster::newChooserWindow)));
 
     // File->New menu
-    newMenuTree.push_back(Item(Icon(GNOME_STOCK_MENU_NEW),
-						N_("_Audio CD"),
-						bind(slot(gcdmaster, &GCDMaster::newAudioCDProject2), (ProjectChooser *)NULL),
-						N_("New Audio CD")));
+    newMenuTree.push_back(Item(Icon(Gtk::StockID(Gtk::Stock::NEW)),
+                               _("_Audio CD"),
+                               bind(slot(*gcdmaster,
+                                         &GCDMaster::newAudioCDProject2),
+                                    (ProjectChooser *)NULL),
+                               _("New Audio CD")));
 
-    newMenuTree.push_back(Item(Icon(GNOME_STOCK_MENU_NEW),
-						N_("_Duplicate CD"),
-						bind(slot(gcdmaster, &GCDMaster::newDuplicateCDProject), (ProjectChooser *)NULL),
-						N_("Make a copy of a CD")));
+    newMenuTree.push_back(Item(Icon(Gtk::StockID(Gtk::Stock::NEW)),
+                               _("_Duplicate CD"),
+                               bind(slot(*gcdmaster,
+                                         &GCDMaster::newDuplicateCDProject),
+                                    (ProjectChooser *)NULL),
+                               _("Make a copy of a CD")));
 
-    newMenuTree.push_back(Item(Icon(GNOME_STOCK_MENU_NEW),
-						N_("_Copy CD to disk"),
-						bind(slot(gcdmaster, &GCDMaster::newDumpCDProject), (ProjectChooser *)NULL),
-						N_("Dump CD to disk")));
+    newMenuTree.push_back(Item(Icon(Gtk::StockID(Gtk::Stock::NEW)),
+                               _("_Copy CD to disk"),
+                               bind(slot(*gcdmaster,
+                                         &GCDMaster::newDumpCDProject),
+                                    (ProjectChooser *)NULL),
+                               _("Dump CD to disk")));
 
     // File menu
-    fileMenuTree.push_back(SubTree(Icon(GNOME_STOCK_MENU_NEW),
-					    N_("New"),
-					    newMenuTree,
-					    "Create a new project"));
+    fileMenuTree.push_back(SubTree(Icon(Gtk::StockID(Gtk::Stock::NEW)),
+                                   _("New"),
+                                   newMenuTree,
+                                   _("Create a new project")));
   }
 
   guint posFileSave;
   guint posFileSaveAs;
   {
-    using namespace Gnome::MenuItems;
-    fileMenuTree.push_back(Open(bind(slot(gcdmaster, &GCDMaster::openProject), (ProjectChooser *)0)));
-    fileMenuTree.push_back(Save(slot(this, &Project::saveProject)));
+    using namespace Gnome::UI::MenuItems;
+    fileMenuTree.push_back(Open(bind(slot(*gcdmaster,
+                                          &GCDMaster::openProject),
+                                     (ProjectChooser *)0)));
+    fileMenuTree.push_back(Save(slot(*this, &Project::saveProject)));
     posFileSave = fileMenuTree.size() - 1;
-    fileMenuTree.push_back(SaveAs(slot(this, &Project::saveAsProject)));
+    fileMenuTree.push_back(SaveAs(slot(*this, &Project::saveAsProject)));
     posFileSaveAs = fileMenuTree.size() - 1;
 
-    fileMenuTree.push_back(Gnome::UI::Separator());
+    fileMenuTree.push_back(Gnome::UI::Items::Separator());
 
-//    fileMenuTree.push_back(PrintSetup(slot(this, &Project::nothing_cb)));
+//    fileMenuTree.push_back(PrintSetup(slot(*this, &Project::nothing_cb)));
 //
 //    fileMenuTree.push_back(Gnome::UI::Item(Gnome::UI::Icon(GNOME_STOCK_MENU_PRINT),
-//								 N_("Print Cover..."),
-//								 slot(this, &Project::nothing_cb),
-//								 N_("Print Cover")));
+//								 "Print Cover...",
+//								 slot(*this, &Project::nothing_cb),
+//								 "Print Cover"));
 //
-//    fileMenuTree.push_back(Gnome::UI::Separator());
+//    fileMenuTree.push_back(Gnome::UI::Items::Separator());
 
     // Close the current child (project);
-    fileMenuTree.push_back(Close(bind(slot(gcdmaster, &GCDMaster::closeProject), this)));
-    fileMenuTree.push_back(Exit(bind(slot(gcdmaster, &GCDMaster::appClose), this)));
+    fileMenuTree.push_back(Close(bind(slot(*gcdmaster, &GCDMaster::closeProject), this)));
+    fileMenuTree.push_back(Exit(bind(slot(*gcdmaster, &GCDMaster::appClose), this)));
   }
 
   guint posActionsRecord;
   {
-    using namespace Gnome::UI;
+      using namespace Gnome::UI::Items;
     // Edit menu
-    editMenuTree.push_back(Item(Icon(GNOME_STOCK_MENU_PROP),
-    				 N_("Project Info..."),
-			      slot(this, &Project::projectInfo),
-			      N_("Edit global project data")));
+    editMenuTree.push_back(Item(Icon(Gtk::StockID(Gtk::Stock::PROPERTIES)),
+                                _("Project Info..."),
+
+                                slot(*this, &Project::projectInfo),
+                                _("Edit global project data")));
 
     // Actions menu
-    actionsMenuTree.push_back(Item(Icon(GNOME_STOCK_MENU_CDROM),
-								N_("_Record"),
-								slot(this, &Project::recordToc2CD),
-								N_("Record")));
+    actionsMenuTree.push_back(Item(Icon(Gtk::StockID(Gtk::Stock::CDROM)),
+                                   _("_Record"),
+                                   slot(*this, &Project::recordToc2CD),
+                                   _("Record")));
     posActionsRecord = actionsMenuTree.size() - 1;
 
-    actionsMenuTree.push_back(Item(Icon(GNOME_STOCK_MENU_CDROM),
-								N_("Blank CD-RW"),
-								slot(gcdmaster, &GCDMaster::blankCDRW),
-								N_("Erase a CD-RW")));
+    actionsMenuTree.push_back(Item(Icon(Gtk::StockID(Gtk::Stock::CDROM)),
+                                   _("Blank CD-RW"),
+                                   bind(slot(*gcdmaster,
+                                             &GCDMaster::blankCDRW),
+                                        this),
+                                   _("Erase a CD-RW")));
 
-//    actionsMenuTree.push_back(Gnome::UI::Item(N_("Fixate CD"),
-//					    slot(this, &Project::nothing_cb)));
-//    actionsMenuTree.push_back(Gnome::UI::Item(N_("Get Info"),
-//					    slot(this, &Project::nothing_cb)));
+//    actionsMenuTree.push_back(Gnome::UI::Item("Fixate CD",
+//					    slot(*this, &Project::nothing_cb)));
+//    actionsMenuTree.push_back(Gnome::UI::Item("Get Info",
+//					    slot(*this, &Project::nothing_cb)));
 
     // Settings menu
-    settingsMenuTree.push_back(Item(Icon(GNOME_STOCK_MENU_PREF),
-								N_("Configure Devices..."),
-								slot(gcdmaster, &GCDMaster::configureDevices)));
+    settingsMenuTree.push_back(Item(Icon(Gtk::StockID(Gtk::Stock::PREFERENCES)),
+                                    _("Configure Devices..."),
+                                    slot(*gcdmaster, &GCDMaster::configureDevices)));
   }
 
-//    settingsMenuTree.push_back(Gnome::MenuItems::Preferences
-//  				(slot(this, &Project::nothing_cb)));
+//    settingsMenuTree.push_back(Gnome::UI::MenuItems::Preferences
+//  				(slot(*this, &Project::nothing_cb)));
 
 
   // Help menu
   //helpMenuTree.push_back(Gnome::UI::Help("Quick Start"));
 
-  helpMenuTree.push_back(Gnome::MenuItems::About
-  				(slot(gcdmaster, &GCDMaster::aboutDialog)));
+  helpMenuTree.push_back(Gnome::UI::MenuItems::About
+  				(slot(*this, &Project::aboutDialog)));
 
   {
-    using namespace Gnome::Menus;
+    using namespace Gnome::UI::Menus;
     menus.push_back(File(fileMenuTree));
-    menus.push_back(Gnome::Menus::Edit(editMenuTree));
-    menus.push_back(Gnome::UI::Menu(N_("_Actions"), actionsMenuTree));
+    menus.push_back(Gnome::UI::Menus::Edit(editMenuTree));
+    menus.push_back(Gnome::UI::Items::Menu(_("_Actions"), actionsMenuTree));
     menus.push_back(Settings(settingsMenuTree));
 //    menus.push_back(Windows(windowsMenuTree));
     menus.push_back(Help(helpMenuTree));
   }
 
-  Gnome::UI::Array<Gnome::UI::SubTree>& arrayInfo = create_menus(menus);
-  Gnome::UI::SubTree& subtreeFile = arrayInfo[0];
-  Gnome::UI::SubTree& subtreeEdit = arrayInfo[1];
-  Gnome::UI::SubTree& subtreeAction = arrayInfo[2];
-  Gnome::UI::Array<Gnome::UI::Info>& arrayInfoFile = subtreeFile.get_uitree();
-  Gnome::UI::Array<Gnome::UI::Info>& arrayInfoEdit = subtreeEdit.get_uitree();
-  Gnome::UI::Array<Gnome::UI::Info>& arrayInfoAction = subtreeAction.get_uitree();
+  Gnome::UI::Items::Array<Gnome::UI::Items::SubTree>& arrayInfo =
+      create_menus(menus);
+  Gnome::UI::Items::SubTree& subtreeFile = arrayInfo[0];
+  Gnome::UI::Items::SubTree& subtreeEdit = arrayInfo[1];
+  Gnome::UI::Items::SubTree& subtreeAction = arrayInfo[2];
+  Gnome::UI::Items::Array<Gnome::UI::Items::Info>& arrayInfoFile =
+      subtreeFile.get_uitree();
+  Gnome::UI::Items::Array<Gnome::UI::Items::Info>& arrayInfoEdit =
+      subtreeEdit.get_uitree();
+  Gnome::UI::Items::Array<Gnome::UI::Items::Info>& arrayInfoAction =
+      subtreeAction.get_uitree();
   
   // Get widget of created menuitems
   miSave_ = arrayInfoFile[posFileSave].get_widget();
@@ -176,67 +199,26 @@ void Project::createMenus()
   miRecord_ = arrayInfoAction[posActionsRecord].get_widget();
 }
 
-void Project::createToolbar()
-{
-  toolbar = new Gtk::Toolbar;
-  Gtk::AccelGroup *accel_group = Gtk::AccelGroup::create();
-  std::vector<Gnome::UI::Info> toolbarTree;
-
-  {
-    using namespace Gnome::UI;
-    toolbarTree.push_back(Item(Icon(GNOME_STOCK_PIXMAP_NEW),
-								N_("New"),
-								slot(gcdmaster, &GCDMaster::newChooserWindow),
-								N_("New Project")));
-    toolbarTree.push_back(Item(Icon(GNOME_STOCK_PIXMAP_OPEN),
-								N_("Open"),
-								bind(slot(gcdmaster, &GCDMaster::openProject), (ProjectChooser *)0),
-								N_("Open a project")));
-    toolbarTree.push_back(Item(Icon(GNOME_STOCK_PIXMAP_CLOSE),
-								N_("Close"),
-								bind(slot(gcdmaster, &GCDMaster::closeProject), this),
-								N_("Close current project")));
-  }
-
-  fill(*toolbar, toolbarTree, *accel_group);
-
-  toolbar->show();
-  toolbar->set_border_width(2);
-
-  Gnome::StockPixmap *pixmap =
-  	manage(new Gnome::StockPixmap(GNOME_STOCK_PIXMAP_SAVE));
-  toolbar->tools().push_back(Gtk::Toolbar_Helpers::ButtonElem(N_("Save"), *pixmap,
-  		slot(this, &Project::saveProject), N_("Save current project"), ""));
-  tiSave_ = toolbar->tools().back()->get_widget();
-
-  pixmap = manage(new Gnome::StockPixmap(GNOME_STOCK_PIXMAP_CDROM));
-  toolbar->tools().push_back(Gtk::Toolbar_Helpers::ButtonElem(N_("Record"), *pixmap,
-  		slot(this, &Project::recordToc2CD), N_("Record to CD"), ""));
-  tiRecord_ = toolbar->tools().back()->get_widget();
-
-  add_docked(*toolbar, "main_toolbar", GNOME_DOCK_ITEM_BEH_NORMAL, GNOME_DOCK_TOP, 1, 1, 0);
-}
-
 void Project::createStatusbar()
 {
   Gtk::HBox *container = new Gtk::HBox;
-//  statusbar_ = new Gtk::Statusbar;
-  statusbar_ = new Gnome::AppBar(FALSE, TRUE, GNOME_PREFERENCES_NEVER);
+  statusbar_ = new Gnome::UI::AppBar(false, true,
+                                     Gnome::UI::PREFERENCES_NEVER);
   progressbar_ = new Gtk::ProgressBar;
-  progressButton_ = new Gtk::Button("Cancel");
+  progressButton_ = new Gtk::Button(_("Cancel"));
   progressButton_->set_sensitive(false);
 
-  progressbar_->set_usize(150, 0);
-  container->pack_start(*statusbar_, TRUE, TRUE); 
-  container->pack_start(*progressbar_, FALSE, FALSE); 
-  container->pack_start(*progressButton_, FALSE, FALSE); 
+  progressbar_->set_size_request(150, -1);
+  container->pack_start(*statusbar_, true, true); 
+  container->pack_start(*progressbar_, false, false); 
+  container->pack_start(*progressButton_, false, false); 
   set_statusbar_custom(*container, *statusbar_);
   container->set_spacing(2);
   container->set_border_width(2);
   container->show_all();
 }
 
-gint Project::delete_event_impl(GdkEventAny* e)
+bool Project::on_delete_event(GdkEventAny* e)
 {
   gcdmaster->closeProject(this);
   return true;  // Do not close window, we will delete it if necessary
@@ -254,51 +236,43 @@ void Project::updateWindowTitle()
 
 void Project::saveProject()
 {
-  if (new_)
-  {
+  if (new_) {
     saveAsProject();
     return;
   }
-  if (tocEdit_->saveToc() == 0)
-  {
-    statusMessage("Project saved to ", tocEdit_->filename());
-//FIXME    guiUpdate();
-  }
-  else {
-    std::string s("Cannot save toc to \"");
+
+  if (tocEdit_->saveToc() == 0) {
+    statusMessage(_("Project saved to \"%s\"."), tocEdit_->filename());
+    guiUpdate(UPD_TOC_DIRTY);
+
+  } else {
+    std::string s(_("Cannot save toc to \""));
     s += tocEdit_->filename();
     s+= "\":";
     
-    MessageBox msg(this, "Save Project", 0, s.c_str(), strerror(errno), NULL);
+    MessageBox msg(this, _("Save Project"), 0, s.c_str(), strerror(errno),
+                   NULL);
     msg.run();
   }
 }
 
 void Project::saveAsProject()
 {
-  if (saveFileSelector_)
-  {
-    Gdk_Window selector_win = saveFileSelector_->get_window();
-    selector_win.show();
-    selector_win.raise();
-  }
-  else
-  {
-    saveFileSelector_ = new Gtk::FileSelection("Save Project");
-    saveFileSelector_->get_ok_button()->clicked.connect(
-				slot(this, &Project::saveFileSelectorOKCB));
-    saveFileSelector_->get_cancel_button()->clicked.connect(
-				slot(this, &Project::saveFileSelectorCancelCB));
+  if (!saveFileSelector_) {
+    saveFileSelector_ = new Gtk::FileSelection(_("Save Project"));
+    saveFileSelector_->get_ok_button()->signal_clicked().
+      connect(slot(*this, &Project::saveFileSelectorOKCB));
+    saveFileSelector_->get_cancel_button()->signal_clicked().
+      connect(slot(*this, &Project::saveFileSelectorCancelCB));
     saveFileSelector_->set_transient_for(*this);
   }
-  saveFileSelector_->show();
+
+  saveFileSelector_->present();
 }
 
 void Project::saveFileSelectorCancelCB()
 {
   saveFileSelector_->hide();
-  saveFileSelector_->destroy();
-  saveFileSelector_ = 0;
 }
 
 void Project::saveFileSelectorOKCB()
@@ -306,30 +280,31 @@ void Project::saveFileSelectorOKCB()
   char *s = g_strdup(saveFileSelector_->get_filename().c_str());
 
   if (s != NULL && *s != 0 && s[strlen(s) - 1] != '/') {
-    if (tocEdit_->saveAsToc(stripCwd(s)) == 0) {
-      statusMessage("Project saved to \"%s\".", tocEdit_->filename());
-//FIXME  	guiUpdate();
 
+    if (tocEdit_->saveAsToc(stripCwd(s)) == 0) {
+      statusMessage(_("Project saved to \"%s\"."), tocEdit_->filename());
       new_ = false; // The project is now saved
-      //cout << tocEdit_->filename() << endl;
       updateWindowTitle();
       saveFileSelectorCancelCB();
+      guiUpdate(UPD_TOC_DIRTY);
+
+    } else {
+
+      std::string m(_("Cannot save toc to \""));
+      m += tocEdit_->filename();
+      m += "\":";
+      MessageBox msg(saveFileSelector_, _("Save Project"), 0, m.c_str(),
+                     strerror(errno), NULL);
+      msg.run();
     }
-    else {
-  	std::string m("Cannot save toc to \"");
-  	m += tocEdit_->filename();
-  	m += "\":";
-    
-  	MessageBox msg(saveFileSelector_, "Save Project", 0, m.c_str(), strerror(errno), NULL);
-  	msg.run();
-    }
-    g_free(s);
   }
+
+  if (s) g_free(s);
 }
 
 gint Project::getViewNumber()
 {
-  return(viewNumber++);
+  return viewNumber++;
 }
 
 void Project::statusMessage(const char *fmt, ...)
@@ -339,7 +314,7 @@ void Project::statusMessage(const char *fmt, ...)
 
   char *s = g_strdup_vprintf(fmt, args);
 
-  flash(s);
+  statusbar_->push(s);
 
   free(s);
 
@@ -359,8 +334,30 @@ TocEdit *Project::tocEdit()
 void Project::tocBlockedMsg(const char *op)
 {
   MessageBox msg(this, op, 0,
-		 "Cannot perform requested operation because", 
-		 "project is in read-only state.", NULL);
+		 _("Cannot perform requested operation because " 
+                   "project is in read-only state."), NULL);
   msg.run();
 }
 
+void Project::aboutDialog()
+{
+  if (about_) {
+      // "About" dialog hasn't been closed, so just raise it
+      about_->present();
+
+  } else {
+
+    std::vector<std::string> authors;
+    authors.push_back("Andreas Mueller <mueller@daneb.ping.de>");
+    authors.push_back("Manuel Clos <llanero@jazzfree.com>");
+    authors.push_back("Denis Leroy <denis@poolshark.org>");
+    std::vector<std::string> comments;
+
+    about_ = new Gnome::UI::About("gcdmaster", VERSION,
+                                  "(C) Andreas Mueller",
+                                  authors, comments);
+
+    about_->set_transient_for(*this);
+    about_->show();
+  }
+}

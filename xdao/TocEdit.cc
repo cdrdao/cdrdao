@@ -136,9 +136,9 @@ void TocEdit::unblockEdit()
   }
 }
 
-int TocEdit::editable() const
+bool TocEdit::editable() const
 {
-  return (editBlocked_ == 0) ? 1 : 0;
+  return (editBlocked_ == 0);
 }
 
 int TocEdit::modifyAllowed() const
@@ -323,53 +323,98 @@ int TocEdit::createAudioData(const char *filename, TrackData **data)
   return 0;
 }
 
-int TocEdit::appendTrack(const char *fname)
+int TocEdit::appendTrack(const char* filename)
 {
-  long start, end;
-  TrackData *data;
-  int ret;
-
-  if (!modifyAllowed())
-    return 0;
-
-  if ((ret = createAudioData(fname, &data)) == 0) {
-    TrackDataList list;
-    list.append(data);
-
-    toc_->appendTrack(&list, &start, &end);
-
-    sampleManager_->scanToc(Msf(start).samples(), Msf(end).samples() - 1);
-
-    tocDirty(1);
-    updateLevel_ |= UPD_TOC_DATA | UPD_TRACK_DATA;
-  }
-
-  return ret;
+  std::list<std::string> flist;
+  flist.push_front(filename);
+  return appendTracks(flist);
 }
 
-int TocEdit::appendFile(const char *fname)
+int TocEdit::appendTracks(std::list<std::string>& tracks)
 {
-  long start, end;
-  int ret;
-  TrackData *data;
+  long glstart = 0, glend = 0;
 
   if (!modifyAllowed())
     return 0;
 
-  if ((ret = createAudioData(fname, &data)) == 0) {
-    TrackDataList list;
-    list.append(data);
+  for (std::list<std::string>::iterator i = tracks.begin(); i != tracks.end();
+       i++) {
 
-    if (toc_->appendTrackData(&list, &start, &end) == 0) {
+    TrackData *data;
+    int ret;
 
-      sampleManager_->scanToc(Msf(start).samples(), Msf(end).samples() - 1);
-      
+    if ((ret = createAudioData((*i).c_str(), &data)) == 0) {
+      TrackDataList list;
+      long start, end;
+      list.append(data);
+
+      toc_->appendTrack(&list, &start, &end);
+      if (!glend) {
+        glstart = start;
+        glend = end;
+      } else {
+        glstart = (start < glstart ? start : glstart);
+        glend = (end > glend ? end : glend);
+      }
       tocDirty(1);
-      updateLevel_ |= UPD_TOC_DATA | UPD_TRACK_DATA;
+
+    } else {
+      return ret;
     }
   }
 
-  return ret;
+  sampleManager_->scanToc(Msf(glstart).samples(), Msf(glend).samples() - 1);
+  updateLevel_ |= UPD_TOC_DATA | UPD_TRACK_DATA;
+
+  return 0;
+}
+
+int TocEdit::appendFile(const char* filename)
+{
+  using namespace std;
+  list<string> flist;
+  flist.push_front(filename);
+  return appendFiles(flist);
+}
+
+int TocEdit::appendFiles(std::list<std::string>& tracks)
+{
+  long glstart = 0, glend = 0;
+
+  if (!modifyAllowed())
+    return 0;
+
+  for (std::list<std::string>::iterator i = tracks.begin(); i != tracks.end();
+       i++) {
+
+    TrackData *data;
+    int ret;
+
+    if ((ret = createAudioData((*i).c_str(), &data)) == 0) {
+      TrackDataList list;
+      long start, end;
+      list.append(data);
+
+      if (toc_->appendTrackData(&list, &start, &end) != 0)
+        break;
+
+      if (!glend) {
+        glstart = start;
+        glend = end;
+      } else {
+        glstart = (start < glstart ? start : glstart);
+        glend = (end > glend ? end : glend);
+      }
+
+    } else {
+      return ret;
+    }
+  }
+
+  sampleManager_->scanToc(Msf(glstart).samples(), Msf(glend).samples() - 1);
+  tocDirty(1);
+  updateLevel_ |= UPD_TOC_DATA | UPD_TRACK_DATA;
+  return 0;
 }
 
 // Inserts contents of specified file at given position.
@@ -398,6 +443,50 @@ int TocEdit::insertFile(const char *fname, unsigned long pos, unsigned long *len
       tocDirty(1);
       updateLevel_ |= UPD_TOC_DATA | UPD_TRACK_DATA | UPD_SAMPLE_SEL;
     }
+  }
+
+  return ret;
+}
+
+int TocEdit::insertFiles(std::list<std::string>& tracks, unsigned long pos,
+                         unsigned long *len)
+{
+  if (!modifyAllowed())
+    return 0;
+
+  using namespace std;
+
+  int ret;
+  int ipos = pos;
+  *len = 0;
+
+  for (list<string>::iterator i = tracks.begin(); i != tracks.end(); i++) {
+
+    int ilen;
+    TrackData* data;
+    ret = createAudioData((*i).c_str(), &data);
+    if (ret == 0) {
+      TrackDataList list;
+      list.append(data);
+
+      if (toc_->insertTrackData(ipos, &list) == 0) {
+        ilen = list.length();
+
+        sampleManager_->insertSamples(ipos, ilen, NULL);
+        ipos = ipos + ilen;
+        *len += ilen;
+      } else {
+        break;
+      }
+    } else {
+      break;
+    }
+  }
+
+  if (*len > 0) {
+    sampleManager_->scanToc(pos, pos + *len);
+    tocDirty(1);
+    updateLevel_ |= UPD_TOC_DATA | UPD_TRACK_DATA | UPD_SAMPLE_SEL;
   }
 
   return ret;

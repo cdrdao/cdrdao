@@ -216,7 +216,7 @@ static void printUsage()
     message(0, "\nUsage: %s simulate [options] toc-file", PRGNAME);
     message(0,
 "options:\n"
-"  --device <x,y,z>        - sets SCSI device of CD-writer\n"
+"  --device [path:]<x,y,z>        - sets SCSI device of CD-writer\n"
 "                            (default: %s)\n"
 "  --driver <id>           - force usage of specified driver\n"
 "  --speed <writing-speed> - selects writing speed\n"
@@ -236,7 +236,7 @@ static void printUsage()
     message(0, "\nUsage: %s write [options] toc-file", PRGNAME);
     message(0,
 "options:\n"
-"  --device <x,y,z>        - sets SCSI device of CD-writer\n"
+"  --device [path:]<x,y,z>        - sets SCSI device of CD-writer\n"
 "                            (default: %s)\n"
 "  --driver <id>           - force usage of specified driver\n"
 "  --simulate              - just perform a write simulation\n"
@@ -262,7 +262,7 @@ static void printUsage()
     message(0, "\nUsage: %s read-toc [options] toc-file", PRGNAME);
     message(0,
 "options:\n"
-"  --device <x,y,z> - sets SCSI device of CD-ROM reader\n"
+"  --device [path:]<x,y,z> - sets SCSI device of CD-ROM reader\n"
 "  --driver <id>    - force usage of specified driver for source device\n"
 "  --datafile <filename>   - name of data file placed in toc-file\n"
 "  --session #             - select session\n"
@@ -285,7 +285,7 @@ static void printUsage()
     message(0, "\nUsage: %s disk-info [options]", PRGNAME);
     message(0,
 "options:\n"
-"  --device <x,y,z>        - sets SCSI device of CD-writer\n"
+"  --device [path:]<x,y,z>        - sets SCSI device of CD-writer\n"
 "                            (default: %s)\n"
 "  --driver <id>           - force usage of specified driver\n"
 "  -v #                    - sets verbose level\n",
@@ -296,7 +296,7 @@ static void printUsage()
     message(0, "\nUsage: %s read-cd [options] toc-file", PRGNAME);
     message(0,
 "options:\n"
-"  --device <x,y,z> - sets SCSI device of CD-ROM reader\n"
+"  --device [path:]<x,y,z> - sets SCSI device of CD-ROM reader\n"
 "  --driver <id>    - force usage of specified driver for source device\n"
 "  --datafile <filename>   - name of data file placed in toc-file\n"
 "  --session #             - select session\n"
@@ -327,7 +327,7 @@ static void printUsage()
     message(0, "\nUsage: %s blank [options]", PRGNAME);
     message(0,
 "options:\n"
-"  --device <x,y,z>        - sets SCSI device of CD-writer\n"
+"  --device [path:]<x,y,z>        - sets SCSI device of CD-writer\n"
 "                            (default: %s)\n"
 "  --driver <id>           - force usage of specified driver\n"
 "  --speed <writing-speed> - selects writing speed\n"
@@ -345,7 +345,7 @@ static void printUsage()
     message(0, "\nUsage: %s unlock [options]", PRGNAME);
     message(0,
 "options:\n"
-"  --device <x,y,z>        - sets SCSI device of CD-writer\n"
+"  --device [path:]<x,y,z>        - sets SCSI device of CD-writer\n"
 "                            (default: %s)\n"
 "  --driver <id>           - force usage of specified driver\n"
 "  --reload                - reload the disk if necessary for writing\n"
@@ -357,7 +357,7 @@ static void printUsage()
     message(0, "\nUsage: %s copy [options]", PRGNAME);
     message(0,
 "options:\n"
-"  --device <x,y,z>        - sets SCSI device of CD-writer\n"
+"  --device [path:]<x,y,z>        - sets SCSI device of CD-writer\n"
 "                            (default: %s)\n"
 "  --source-device <x,y,z> - sets SCSI device of CD-ROM reader\n"
 "  --driver <id>           - force usage of specified driver\n"
@@ -411,7 +411,7 @@ static void printUsage()
     message(0, "\nUsage: %s msinfo [options]", PRGNAME);
     message(0,
 "options:\n"
-"  --device <x,y,z>        - sets SCSI device of CD-writer\n"
+"  --device [path:]<x,y,z>        - sets SCSI device of CD-writer\n"
 "                            (default: %s)\n"
 "  --driver <id>           - force usage of specified driver\n"
 "  --reload                - reload the disk if necessary for writing\n"
@@ -1058,7 +1058,8 @@ static CdrDriver *setupDevice(Command cmd, const char *scsiDevice,
 
   switch (scsiIf->init()) {
   case 1:
-    message(-2, "Please use option '--device bus,id,lun', e.g. --device 0,6,0");
+    message(-2, "Please use option '--device [path:]bus,id,lun', e.g. "
+            "--device 0,6,0 or --device ATAPI:0,0,0");
     delete scsiIf;
     return NULL;
     break;
@@ -1573,9 +1574,8 @@ static void scanBus()
     return;
 
   for (i = 0; i < len; i++) {
-    message(0, "%d,%d,%d: %s, %s, %s", sdata[i].bus, sdata[i].id,
-	    sdata[i].lun, sdata[i].vendor, sdata[i].product,
-	    sdata[i].revision);
+      message(0, "%s: %s, %s, %s", sdata[i].dev.c_str(), sdata[i].vendor,
+              sdata[i].product, sdata[i].revision);
   }
 
   delete[] sdata;

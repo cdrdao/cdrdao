@@ -17,7 +17,10 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+#include <gtkmm.h>
 #include <gnome.h>
+
+#include "config.h"
 
 #include "xcdrdao.h"
 #include "DeviceConfDialog.h"
@@ -29,29 +32,27 @@
 #include "DuplicateCDProject.h"
 #include "BlankCDDialog.h"
 #include "DumpCDProject.h"
+#include "Icons.h"
 
 GCDMaster::GCDMaster()
 {
   project_number = 0;
-  about_ = 0;
-  readFileSelector_ = 0;
   blankCDDialog_ = 0;
+
+  readFileSelector_.get_cancel_button()->signal_clicked().
+    connect(slot(*this, &GCDMaster::readFileSelectorCancelCB));
+
+  Icons::registerStockIcons();
 }
 
 void GCDMaster::add(Project *project)
 {
   projects.push_back(project);
-
-  //cout << "Number of projects = " << projects.size() << endl;
-  //cout << "Number of choosers = " << choosers.size() << endl;
 }
 
 void GCDMaster::add(ProjectChooser *projectChooser)
 {
   choosers.push_back(projectChooser);
-
-  //cout << "Number of projects = " << projects.size() << endl;
-  //cout << "Number of choosers = " << choosers.size() << endl;
 }
 
 bool GCDMaster::openNewProject(const char* s)
@@ -77,35 +78,23 @@ bool GCDMaster::openNewProject(const char* s)
 
 void GCDMaster::openProject(ProjectChooser *projectChooser)
 {
-  if (readFileSelector_)
-  {
-    Gdk_Window selector_win = readFileSelector_->get_window();
-    selector_win.show();
-    selector_win.raise();
-  }
-  else
-  {
-    readFileSelector_ = new Gtk::FileSelection("Open project");
-    readFileSelector_->get_ok_button()->clicked.connect(
-				bind(slot(this, &GCDMaster::readFileSelectorOKCB), projectChooser));
-    readFileSelector_->get_cancel_button()->clicked.connect(
-				slot(this, &GCDMaster::readFileSelectorCancelCB));
-  }
+  readFileSelector_.get_ok_button()->signal_clicked().
+    connect(bind(slot(*this, &GCDMaster::readFileSelectorOKCB),
+                 projectChooser));
 
-  readFileSelector_->show();
+  readFileSelector_.show();
+  readFileSelector_.raise();
 }
 
 void GCDMaster::readFileSelectorCancelCB()
 {
-  readFileSelector_->hide();
-  readFileSelector_->destroy();
-  readFileSelector_ = 0;
+  readFileSelector_.hide();
 }
 
 void GCDMaster::readFileSelectorOKCB(ProjectChooser *projectChooser)
 {
   TocEdit *tocEdit = new TocEdit(NULL, NULL);
-  char *s = g_strdup(readFileSelector_->get_filename().c_str());
+  char *s = g_strdup(readFileSelector_.get_filename().c_str());
 
   if (s != NULL && *s != 0 && s[strlen(s) - 1] != '/')
   {
@@ -122,9 +111,9 @@ void GCDMaster::readFileSelectorOKCB(ProjectChooser *projectChooser)
     }
     else
     {
-      std::string message("Error loading ");
+      Glib::ustring message(_("Error loading "));
       message += s;
-      Gnome::Dialogs::error(message); 
+      Gtk::MessageDialog(message, Gtk::MESSAGE_ERROR); 
     }
   }
   g_free(s);
@@ -214,9 +203,9 @@ void GCDMaster::newAudioCDProject2(ProjectChooser *projectChooser)
 {
   AudioCDProject *project = new AudioCDProject(project_number++, "", NULL);
   add(project);
-// NOTE: We can't show the Gnome::App here, because it also shows all the DockItems
-// it contains, and the viewSwitcher will take care of this.
-//  project->show();
+  // NOTE: We can't show the Gnome::UI::App here, because it also
+  // shows all the DockItems it contains, and the viewSwitcher will
+  // take care of this.  project->show();
   if (projectChooser)
     closeChooser(projectChooser);
 }
@@ -253,60 +242,13 @@ void GCDMaster::update(unsigned long level)
 
 void GCDMaster::configureDevices()
 {
-  DEVICE_CONF_DIALOG->start();
+  deviceConfDialog->start();
 }
 
-void GCDMaster::blankCDRW()
+void GCDMaster::blankCDRW(Project* project)
 {
-  if (blankCDDialog_ == 0)
+  if (!blankCDDialog_)
     blankCDDialog_ = new BlankCDDialog;
 
-  blankCDDialog_->start();
-}
-
-void GCDMaster::aboutDialog()
-{
-
-  if (about_) // "About" dialog hasn't been closed, so just raise it
-  {
-      Gdk_Window about_win = about_->get_window();
-      about_win.show();
-      about_win.raise();
-  }
-  else
-  {
-    gchar *logo_char;
-    std::string logo;
-    std::vector<std::string> authors;
-    authors.push_back("Andreas Mueller <mueller@daneb.ping.de>");
-    authors.push_back("Manuel Clos <llanero@jazzfree.com>");
-
-//FIXME: not yet wrapped
-    logo_char = gnome_pixmap_file("gcdmaster/gcdmaster.png");
-
-    if (logo_char != NULL)
-      logo = logo_char;
-
-    about_ = new Gnome::About(_("gcdmaster"), VERSION,
-                               "(C) Andreas Mueller",
-                               authors,
-                               _("A CD Mastering app for Gnome."),
-                               logo);
-
-//    about_->set_parent(*this);
-//    about_->destroy.connect(slot(this, &GCDMaster::aboutDestroy));
-    // We attach to the close signal because default behaviour is
-    // close_hides = true, as in a normal dialog
-    about_->close.connect(slot(this, &GCDMaster::aboutDestroy));
-    about_->show();
-  }
-}
-
-int GCDMaster::aboutDestroy()
-{
-  //cout << "about closed" << endl;
-
-  delete about_;
-  about_ = 0;
-  return true; // Do not close, as we have already deleted it.
+  blankCDDialog_->start(*project);
 }

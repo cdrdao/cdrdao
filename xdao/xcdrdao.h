@@ -18,6 +18,18 @@
  */
 /*
  * $Log: xcdrdao.h,v $
+ * Revision 1.13  2004/02/12 01:13:32  poolshark
+ * Merge from gnome2 branch
+ *
+ * Revision 1.12.6.1  2004/01/05 00:34:03  poolshark
+ * First checking of gnome2 port
+ *
+ * Revision 1.2  2003/12/13 02:29:44  denis
+ * Fixed font issues with sample display
+ *
+ * Revision 1.1.1.1  2003/12/09 05:32:28  denis
+ * Fooya
+ *
  * Revision 1.12  2001/08/18 19:11:03  llanero
  * removed RECORD_GENERIC_DIALOG declaration
  *
@@ -85,7 +97,7 @@
 #define __XCDRDAO_H__
 
 extern class GCDMaster *gcdmaster;
-extern class DeviceConfDialog *DEVICE_CONF_DIALOG;
+extern class DeviceConfDialog *deviceConfDialog;
 extern class ProcessMonitor *PROCESS_MONITOR;
 extern class ProgressDialogPool *PROGRESS_POOL;
 

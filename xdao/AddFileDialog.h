@@ -18,6 +18,21 @@
  */
 /*
  * $Log: AddFileDialog.h,v $
+ * Revision 1.7  2004/02/12 01:13:31  poolshark
+ * Merge from gnome2 branch
+ *
+ * Revision 1.6.6.1  2004/01/05 00:34:02  poolshark
+ * First checking of gnome2 port
+ *
+ * Revision 1.3  2003/12/12 02:49:36  denis
+ * AudioCDProject and AudioCDView cleanup.
+ *
+ * Revision 1.2  2003/12/09 20:08:04  denis
+ * Now using on_delete_event
+ *
+ * Revision 1.1.1.1  2003/12/09 05:32:28  denis
+ * Fooya
+ *
  * Revision 1.6  2001/04/17 23:10:30  llanero
  * More Fixes and cleanup
  *
@@ -56,30 +71,29 @@
 #ifndef __ADD_FILE_DIALOG_H__
 #define __ADD_FILE_DIALOG_H__
 
-#include <gtk--.h>
+#include <gtkmm.h>
 
-class TocEditView;
 class AudioCDProject;
 
-class AddFileDialog : public Gtk::FileSelection {
+class AddFileDialog : public Gtk::FileSelection
+{
 public:
   enum Mode { M_APPEND_TRACK, M_APPEND_FILE, M_INSERT_FILE };
 
   AddFileDialog(AudioCDProject *);
   ~AddFileDialog();
 
-  void start(TocEditView *);
+  void start();
   void stop();
 
   void mode(Mode);
-  void update(unsigned long level, TocEditView *);
+  void update(unsigned long level);
 
-  gint delete_event_impl(GdkEventAny*);
+  bool on_delete_event(GdkEventAny*);
 
 private:
   AudioCDProject *project_;
-  TocEditView *tocEditView_;
-  int active_;
+  bool active_;
   Mode mode_;
 
   void closeAction();

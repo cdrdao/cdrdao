@@ -45,7 +45,8 @@ Msf::Msf(int min, int sec, int frac)
 
 Msf::Msf(long lba)
 {
-  assert(lba >= 0);
+  if (lba < 0)
+    lba = 0;
 
   lba_ = lba;
   lba2Msf();

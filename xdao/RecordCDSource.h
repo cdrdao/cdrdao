@@ -20,7 +20,7 @@
 #ifndef __RECORD_CD_SOURCE_H
 #define __RECORD_CD_SOURCE_H
 
-#include <gnome--.h>
+#include <libgnomeuimm.h>
 
 class CdDevice;
 class DeviceList;
@@ -63,7 +63,7 @@ private:
 //  bool onTheFly_;
 
   Gtk::Window *parent_;
-  Gnome::Dialog *moreOptionsDialog_;
+  Gtk::MessageDialog *moreOptionsDialog_;
 
   Gtk::SpinButton *speedSpinButton_;
   Gtk::CheckButton *speedButton_;

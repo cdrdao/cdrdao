@@ -22,6 +22,9 @@
 #include <math.h>
 #include <assert.h>
 
+#include <gtkmm.h>
+#include <gnome.h>
+
 #include "AddSilenceDialog.h"
 
 #include "TocEdit.h"
@@ -38,82 +41,57 @@ AddSilenceDialog::AddSilenceDialog()
   Gtk::HBox *hbox;
 
   tocEditView_ = NULL;
-  active_ = 0;
+  active_ = false;
   mode_ = M_APPEND;
 
-  minutes_ = new Gtk::Entry;
-  seconds_ = new Gtk::Entry;
-  frames_ = new Gtk::Entry;
-  samples_ = new Gtk::Entry;
+  Gtk::Frame *frame = new Gtk::Frame(_(" Length of Silence "));
 
-  Gtk::Frame *frame = new Gtk::Frame("Length of Silence");
-
-  Gtk::Table *table = new Gtk::Table(4, 2, FALSE);
+  Gtk::Table *table = new Gtk::Table(4, 2, false);
   table->set_row_spacings(5);
   table->set_col_spacings(5);
   hbox = new Gtk::HBox;
-  hbox->pack_start(*table, TRUE, TRUE, 5);
-  table->show();
+  hbox->pack_start(*table, true, true, 5);
   vbox = new Gtk::VBox;
-  vbox->pack_start(*hbox, FALSE, FALSE, 5);
-  hbox->show();
+  vbox->pack_start(*hbox, false, false, 5);
   frame->add(*vbox);
-  vbox->show();
   
-  Gtk::Label *label = new Gtk::Label("Minutes:");
-  table->attach(*label, 0, 1, 0, 1, GTK_SHRINK);
-  label->show();
-  table->attach(*minutes_, 1, 2, 0, 1);
-  minutes_->show();
+  Gtk::Label *label = new Gtk::Label(_("Minutes:"));
+  table->attach(*label, 0, 1, 0, 1, Gtk::SHRINK);
+  table->attach(minutes_, 1, 2, 0, 1);
 
-  label = new Gtk::Label("Seconds:");
-  table->attach(*label, 0, 1, 1, 2, GTK_SHRINK);
-  label->show();
-  table->attach(*seconds_, 1, 2, 1, 2);
-  seconds_->show();
+  label = new Gtk::Label(_("Seconds:"));
+  table->attach(*label, 0, 1, 1, 2, Gtk::SHRINK);
+  table->attach(seconds_, 1, 2, 1, 2);
 
-  label = new Gtk::Label("Frames:");
-  table->attach(*label, 0, 1, 2, 3, GTK_SHRINK);
-  label->show();
-  table->attach(*frames_, 1, 2, 2, 3);
-  frames_->show();
+  label = new Gtk::Label(_("Frames:"));
+  table->attach(*label, 0, 1, 2, 3, Gtk::SHRINK);
+  table->attach(frames_, 1, 2, 2, 3);
 
-  label = new Gtk::Label("Samples:");
-  table->attach(*label, 0, 1, 3, 4, GTK_SHRINK);
-  label->show();
-  table->attach(*samples_, 1, 2, 3, 4);
-  samples_->show();
+  label = new Gtk::Label(_("Samples:"));
+  table->attach(*label, 0, 1, 3, 4, Gtk::SHRINK);
+  table->attach(samples_, 1, 2, 3, 4);
 
   hbox = new Gtk::HBox;
-  hbox->pack_start(*frame, TRUE, TRUE, 10);
-  frame->show();
+  hbox->pack_start(*frame, true, true, 10);
 
-  get_vbox()->pack_start(*hbox, FALSE, FALSE, 10);
-  hbox->show();
+  get_vbox()->pack_start(*hbox, false, false, 10);
 
-  get_vbox()->show();
+  Gtk::HButtonBox *bbox = new Gtk::HButtonBox(Gtk::BUTTONBOX_SPREAD);
 
-  Gtk::HButtonBox *bbox = new Gtk::HButtonBox(GTK_BUTTONBOX_SPREAD);
-
-  applyButton_ = new Gtk::Button(" Apply ");
+  applyButton_ = new Gtk::Button(Gtk::StockID(Gtk::Stock::APPLY));
   bbox->pack_start(*applyButton_);
-  applyButton_->show();
-  applyButton_->clicked.connect(slot(this, &AddSilenceDialog::applyAction));
+  applyButton_->signal_clicked().connect(slot(*this, &AddSilenceDialog::applyAction));
 
-  button = new Gtk::Button(" Clear ");
+  button = new Gtk::Button(Gtk::StockID(Gtk::Stock::CLEAR));
   bbox->pack_start(*button);
-  button->show();
-  button->clicked.connect(slot(this, &AddSilenceDialog::clearAction));
+  button->signal_clicked().connect(slot(*this, &AddSilenceDialog::clearAction));
 
-  button = new Gtk::Button(" Close ");
+  button = new Gtk::Button(Gtk::StockID(Gtk::Stock::CLOSE));
   bbox->pack_start(*button);
-  button->show();
-  button->clicked.connect(slot(this, &AddSilenceDialog::closeAction));
+  button->signal_clicked().connect(slot(*this, &AddSilenceDialog::closeAction));
 
   get_action_area()->pack_start(*bbox);
-  bbox->show();
-  get_action_area()->show();
-
+  show_all_children();
 }
 
 AddSilenceDialog::~AddSilenceDialog()
@@ -126,33 +104,25 @@ void AddSilenceDialog::mode(Mode m)
 
   switch (mode_) {
   case M_APPEND:
-    set_title("Append Silence");
+    set_title(_("Append Silence"));
     break;
   case M_INSERT:
-    set_title("Insert Silence");
+    set_title(_("Insert Silence"));
     break;
   }
 }
 
 void AddSilenceDialog::start(TocEditView *view)
 {
-  if (active_) {
-    get_window().raise();
-    return;
-  }
-
-  active_ = 1;
-
+  active_ = true;
   update(UPD_ALL, view);
-  show();
+  present();
 }
 
 void AddSilenceDialog::stop()
 {
-  if (active_) {
-    hide();
-    active_ = 0;
-  }
+  hide();
+  active_ = false;
 }
 
 void AddSilenceDialog::update(unsigned long level, TocEditView *view)
@@ -161,7 +131,7 @@ void AddSilenceDialog::update(unsigned long level, TocEditView *view)
     return;
 
   if (view == NULL) {
-    applyButton_->set_sensitive(FALSE);
+    applyButton_->set_sensitive(false);
     tocEditView_ = NULL;
     return;
   }
@@ -174,14 +144,14 @@ void AddSilenceDialog::update(unsigned long level, TocEditView *view)
   set_title(s);
 
   if ((level & UPD_EDITABLE_STATE) || tocEditView_ == NULL) {
-    applyButton_->set_sensitive(view->tocEdit()->editable() ? TRUE : FALSE);
+    applyButton_->set_sensitive(view->tocEdit()->editable() ? true : false);
   }
 
   tocEditView_ = view;
 }
 
 
-gint AddSilenceDialog::delete_event_impl(GdkEventAny*)
+bool AddSilenceDialog::on_delete_event(GdkEventAny*)
 {
   stop();
   return 1;
@@ -194,10 +164,10 @@ void AddSilenceDialog::closeAction()
 
 void AddSilenceDialog::clearAction()
 {
-  minutes_->set_text("");
-  seconds_->set_text("");
-  frames_->set_text("");
-  samples_->set_text("");
+  minutes_.set_text("");
+  seconds_.set_text("");
+  frames_.set_text("");
+  samples_.set_text("");
 }
 
 void AddSilenceDialog::applyAction()
@@ -215,36 +185,36 @@ void AddSilenceDialog::applyAction()
   if (!tocEdit->editable())
     return;
 
-  const char *s = minutes_->get_text().c_str();
+  const char *s = minutes_.get_text().c_str();
   if (s != NULL && *s != 0) {
     val = atol(s);
     length += val * 60 * 75 * SAMPLES_PER_BLOCK;
     sprintf(buf, "%ld", val);
-    minutes_->set_text(buf);
+    minutes_.set_text(buf);
   }
 
-  s = seconds_->get_text().c_str();
+  s = seconds_.get_text().c_str();
   if (s != NULL && *s != 0) {
     val = atol(s);
     length += val * 75 * SAMPLES_PER_BLOCK;
     sprintf(buf, "%ld", val);
-    seconds_->set_text(buf);
+    seconds_.set_text(buf);
   }
 
-  s = frames_->get_text().c_str();
+  s = frames_.get_text().c_str();
   if (s != NULL && *s != 0) {
     val = atol(s);
     length += val * SAMPLES_PER_BLOCK;
     sprintf(buf, "%ld", val);
-    frames_->set_text(buf);
+    frames_.set_text(buf);
   }
   
-  s = samples_->get_text().c_str();
+  s = samples_.get_text().c_str();
   if (s != NULL && *s != 0) {
     val = atol(s);
     length += val;
     sprintf(buf, "%ld", val);
-    samples_->set_text(buf);
+    samples_.set_text(buf);
   }
   
   if (length > 0) {

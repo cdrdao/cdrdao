@@ -18,6 +18,12 @@
  */
 /*
  * $Log: remote.h,v $
+ * Revision 1.6  2004/02/12 01:13:31  poolshark
+ * Merge from gnome2 branch
+ *
+ * Revision 1.5.4.1  2004/01/12 20:53:33  poolshark
+ * Added writer buffer fill in Progress Message structure
+ *
  * Revision 1.5  2001/10/01 18:08:41  andreasm
  * Enabled remote progress messages for blanking.
  *
@@ -51,6 +57,8 @@
 #define PGSMSG_BLK             6
 #define PGSMSG_MAX PGSMSG_BLK
 
+#define PSGMSG_MINSIZE 24
+
 struct ProgressMsg {
   int status;         // see PGSMSG_* constants
   int totalTracks;    // total number of tracks
@@ -58,6 +66,7 @@ struct ProgressMsg {
   int trackProgress;  // progress for current track 0..1000
   int totalProgress;  // total writing progress 0..1000
   int bufferFillRate; // buffer fill rate 0..100
+  int writerFillRate; // device write buffer fill rate 0..100
 };
 
 #endif

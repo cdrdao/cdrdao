@@ -18,6 +18,18 @@
  */
 /*
  * $Log: TextEdit.h,v $
+ * Revision 1.3  2004/02/12 01:13:32  poolshark
+ * Merge from gnome2 branch
+ *
+ * Revision 1.2.6.1  2004/01/05 00:34:03  poolshark
+ * First checking of gnome2 port
+ *
+ * Revision 1.2  2003/12/29 09:31:48  denis
+ * fixed all dialogs
+ *
+ * Revision 1.1.1.1  2003/12/09 05:32:28  denis
+ * Fooya
+ *
  * Revision 1.2  2000/02/20 23:34:54  llanero
  * fixed scsilib directory (files mising ?-()
  * ported xdao to 1.1.8 / gnome (MDI) app
@@ -33,10 +45,11 @@
 #ifndef __TEXT_EDIT_H__
 #define __TEXT_EDIT_H__
 
-#include <gtk--.h>
+#include <gtkmm.h>
 #include <gtk/gtk.h>
 
-class TextEdit : public Gtk::Entry {
+class TextEdit : public Gtk::Entry
+{
 public:
   TextEdit(const char *sample);
   ~TextEdit();

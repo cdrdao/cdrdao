@@ -20,7 +20,7 @@
 #ifndef __RECORD_CD_TARGET_H
 #define __RECORD_CD_TARGET_H
 
-#include <gtk--.h>
+#include <gtkmm.h>
 #include <gtk/gtk.h>
 
 class TocEdit;
@@ -57,7 +57,7 @@ private:
   int speed_;
 
   Gtk::Window *parent_;
-  Gnome::Dialog *moreOptionsDialog_;
+  Gtk::MessageDialog *moreOptionsDialog_;
 
   Gtk::CheckButton *closeSessionButton_;
   Gtk::CheckButton *ejectButton_;

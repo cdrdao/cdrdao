@@ -20,13 +20,14 @@
 #ifndef __RECORD_HD_TARGET_H
 #define __RECORD_HD_TARGET_H
 
-#include <gnome--.h>
+#include <libgnomeuimm.h>
 
 class TocEdit;
 class CdDevice;
 class DeviceList;
 
-class RecordHDTarget : public Gtk::VBox {
+class RecordHDTarget : public Gtk::VBox
+{
 public:
   RecordHDTarget();
 
@@ -38,15 +39,15 @@ public:
   void update(unsigned long level);
   void cancelAction();
 
-  Gtk::string getFilename();
-  Gtk::string getPath();
+  std::string getFilename();
+  std::string getPath();
 
 private:
-  int active_;
+  bool active_;
 
   int speed_;
 
-  Gnome::FileEntry *dirEntry_;
+  Gnome::UI::FileEntry *dirEntry_;
   Gtk::Entry *fileNameEntry_;
 
 };
