@@ -18,6 +18,9 @@
  */
 /*
  * $Log: CdDevice.h,v $
+ * Revision 1.4  2000/04/29 14:46:38  llanero
+ * added the "buffers" option to the Record Dialog.
+ *
  * Revision 1.3  2000/04/28 19:08:10  llanero
  * modified glade files.
  * modified toolbar a little.
@@ -94,7 +97,7 @@ public:
   void manuallyConfigured(int);
 
   int recordDao(TocEdit *, int simulate, int multiSession, int speed,
-		int eject, int reload);
+		int eject, int reload, int buffer);
   void abortDaoRecording();
 
   int extractDao(char *tocFileName, int correction);
