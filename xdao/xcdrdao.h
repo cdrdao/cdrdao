@@ -18,6 +18,11 @@
  */
 /*
  * $Log: xcdrdao.h,v $
+ * Revision 1.3  2000/05/01 18:15:00  andreasm
+ * Switch to gnome-config settings.
+ * Adapted Message Box to Gnome look, unfortunately the Gnome::MessageBox is
+ * not implemented in gnome--, yet.
+ *
  * Revision 1.2  2000/04/23 09:07:08  andreasm
  * * Fixed most problems marked with '//llanero'.
  * * Added audio CD edit menus to MDIWindow.
@@ -49,7 +54,6 @@ extern class ExtractProgressDialogPool *EXTRACT_PROGRESS_POOL;
 extern class RecordDialog *RECORD_DIALOG;
 extern class ProcessMonitor *PROCESS_MONITOR;
 extern class RecordProgressDialogPool *RECORD_PROGRESS_POOL;
-extern class Settings *SETTINGS;
 
 void blockProcessMonitorSignals();
 void unblockProcessMonitorSignals();

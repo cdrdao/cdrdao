@@ -18,6 +18,11 @@
  */
 /*
  * $Log: CdDevice.cc,v $
+ * Revision 1.5  2000/05/01 18:15:00  andreasm
+ * Switch to gnome-config settings.
+ * Adapted Message Box to Gnome look, unfortunately the Gnome::MessageBox is
+ * not implemented in gnome--, yet.
+ *
  * Revision 1.4  2000/04/29 14:46:38  llanero
  * added the "buffers" option to the Record Dialog.
  *
@@ -41,7 +46,7 @@
  *
  */
 
-static char rcsid[] = "$Id: CdDevice.cc,v 1.4 2000/04/29 14:46:38 llanero Exp $";
+static char rcsid[] = "$Id: CdDevice.cc,v 1.5 2000/05/01 18:15:00 andreasm Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -53,6 +58,8 @@ static char rcsid[] = "$Id: CdDevice.cc,v 1.4 2000/04/29 14:46:38 llanero Exp $"
 #include <string.h>
 #include <ctype.h>
 #include <assert.h>
+
+#include <gnome.h>
 
 #include "TocEdit.h"
 #include "CdDevice.h"
@@ -501,7 +508,7 @@ int CdDevice::recordDao(TocEdit *tocEdit, int simulate, int multiSession,
     return 1;
   }
 
-  if ((s = SETTINGS->getString(SET_CDRDAO_PATH)) != NULL)
+  if ((s = gnome_config_get_string(SET_CDRDAO_PATH)) != NULL)
     execName = strdupCC(s);
   else
     execName = strdupCC("cdrdao");
@@ -642,7 +649,7 @@ int CdDevice::extractDao(char *tocFileName, int correction)
   if (status_ != DEV_READY || process_ != NULL)
     return 1;
 
-  if ((s = SETTINGS->getString(SET_CDRDAO_PATH)) != NULL)
+  if ((s = gnome_config_get_string(SET_CDRDAO_PATH)) != NULL)
     execName = strdupCC(s);
   else
     execName = strdupCC("cdrdao");
@@ -841,6 +848,73 @@ const char *CdDevice::deviceType2string(DeviceType t)
   }
 
   return ret;
+}
+
+
+/* reads configured devices from gnome settings
+ */
+void CdDevice::importSettings()
+{
+  int i, n;
+  char *s;
+  char buf[20];
+  CdDevice *dev;
+
+  n = gnome_config_get_int(SET_DEVICES_NUM);
+
+  if (n > 0) {
+    gnome_config_push_prefix(SET_SECTION_DEVICES);
+    
+    for (i = 0; i < n; i++) {
+      sprintf(buf, "%d", i);
+      s = gnome_config_get_string(buf);
+
+      if (s != NULL) {
+	if ((dev = CdDevice::add(s)) != NULL)
+	  dev->manuallyConfigured(1);
+      }
+    }
+
+    gnome_config_pop_prefix();
+  }
+}
+
+
+/* saves manually configured devices as gnome settings
+ */
+void CdDevice::exportSettings()
+{
+  int i, n;
+  char *s;
+  char buf[20];
+  CdDevice *drun;
+
+  gnome_config_clean_section(SET_SECTION_DEVICES);
+
+  for (drun = first(), n = 0; drun != NULL; drun = next(drun)) {
+    if (drun->manuallyConfigured()) {
+      n++;
+    }
+  }
+
+  if (n > 0) {
+    gnome_config_set_int(SET_DEVICES_NUM, n);
+
+    gnome_config_push_prefix(SET_SECTION_DEVICES);
+
+    for (drun = first(), i = 0; drun != NULL; drun = next(drun)) {
+      if (drun->manuallyConfigured()) {
+	sprintf(buf, "%d", i);
+	s = drun->settingString();
+	gnome_config_set_string(buf, s);
+	delete[] s;
+
+	i++;
+      }
+    }
+
+    gnome_config_pop_prefix();
+  }
 }
 
 CdDevice *CdDevice::add(int bus, int id, int lun, const char *vendor,

@@ -570,5 +570,7 @@ void MDIWindow::readWriteFileSelectorOKCB()
       }
     }
   }
+
+  readSaveFileSelector_.hide();
 }
 

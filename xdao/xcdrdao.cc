@@ -18,6 +18,11 @@
  */
 /*
  * $Log: xcdrdao.cc,v $
+ * Revision 1.8  2000/05/01 18:15:00  andreasm
+ * Switch to gnome-config settings.
+ * Adapted Message Box to Gnome look, unfortunately the Gnome::MessageBox is
+ * not implemented in gnome--, yet.
+ *
  * Revision 1.7  2000/04/23 09:07:08  andreasm
  * * Fixed most problems marked with '//llanero'.
  * * Added audio CD edit menus to MDIWindow.
@@ -57,6 +62,8 @@
 #include <signal.h>
 #include <stdlib.h>
 
+#include <gnome.h>
+
 #include <gtk--.h>
 #include <gtk/gtk.h>
 
@@ -81,7 +88,6 @@
 #include "guiUpdate.h"
 #include "CdDevice.h"
 #include "ProcessMonitor.h"
-#include "Settings.h"
 
 #include "port.h"
 
@@ -96,7 +102,6 @@ RecordDialog *RECORD_DIALOG = NULL;
 ProcessMonitor *PROCESS_MONITOR = NULL;
 RecordProgressDialogPool *RECORD_PROGRESS_POOL = NULL;
 ExtractProgressDialogPool *EXTRACT_PROGRESS_POOL = NULL;
-Settings *SETTINGS = NULL;
 
 static int VERBOSE = 0;
 static int PROCESS_MONITOR_SIGNAL_BLOCKED = 0;
@@ -171,9 +176,6 @@ static RETSIGTYPE signalHandler(int sig)
 //llanero int main (int argc, char **argv)
 int main (int argc, char* argv[])
 {
-  const char *s;
-  string settingsPath;
-
   Gnome::Main application("StillNoName", "0.0", argc, argv);
    
   Gtk::ButtonBox::set_child_size_default(50, 10);
@@ -182,14 +184,7 @@ int main (int argc, char* argv[])
   //glade_gnome_init ();
 
   // settings
-  SETTINGS = new Settings;
-
-  if ((s = getenv("HOME")) != NULL) {
-    settingsPath = s;
-    settingsPath += "/.xcdrdao";
-
-    SETTINGS->read(settingsPath.c_str());
-  }
+  CdDevice::importSettings();
 
   // setup process monitor
   PROCESS_MONITOR = new ProcessMonitor;
@@ -244,10 +239,9 @@ int main (int argc, char* argv[])
 	
   application.run();
 
-  s = settingsPath.c_str();
-
-  if (s != NULL && *s != 0) 
-    SETTINGS->write(s);
+  // save settings
+  CdDevice::exportSettings();
+  gnome_config_sync();
 
   return 0;
 }

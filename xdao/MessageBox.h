@@ -18,6 +18,11 @@
  */
 /*
  * $Log: MessageBox.h,v $
+ * Revision 1.3  2000/05/01 18:15:00  andreasm
+ * Switch to gnome-config settings.
+ * Adapted Message Box to Gnome look, unfortunately the Gnome::MessageBox is
+ * not implemented in gnome--, yet.
+ *
  * Revision 1.2  2000/02/20 23:34:54  llanero
  * fixed scsilib directory (files mising ?-()
  * ported xdao to 1.1.8 / gnome (MDI) app
@@ -32,7 +37,6 @@
 
 #include <gtk--.h>
 #include <gtk/gtk.h>
-
 #include <stdarg.h>
 
 class MessageBoxBase : public Gtk::Dialog {
@@ -40,7 +44,7 @@ public:
   MessageBoxBase(Gtk::Window *);
   virtual ~MessageBoxBase();
 
-  void init(const char *titel, int askDontShow, int nButtons,
+  void init(const char *type, const char *titel, int askDontShow, int nButtons,
 	    int defaultButton, char *buttons[], va_list);
 
   int run();
@@ -53,6 +57,7 @@ protected:
 
   Gtk::CheckButton *dontShowAgain_;
 
+  Gtk::Button *createButton(const char *name);
   gint delete_event_impl(GdkEventAny*);
   void buttonAction(int);
 };

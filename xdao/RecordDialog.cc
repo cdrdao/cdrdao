@@ -18,6 +18,11 @@
  */
 /*
  * $Log: RecordDialog.cc,v $
+ * Revision 1.7  2000/05/01 18:15:00  andreasm
+ * Switch to gnome-config settings.
+ * Adapted Message Box to Gnome look, unfortunately the Gnome::MessageBox is
+ * not implemented in gnome--, yet.
+ *
  * Revision 1.6  2000/04/29 14:46:38  llanero
  * added the "buffers" option to the Record Dialog.
  *
@@ -49,12 +54,14 @@
  *
  */
 
-static char rcsid[] = "$Id: RecordDialog.cc,v 1.6 2000/04/29 14:46:38 llanero Exp $";
+static char rcsid[] = "$Id: RecordDialog.cc,v 1.7 2000/05/01 18:15:00 andreasm Exp $";
 
 #include <stdio.h>
 #include <limits.h>
 #include <math.h>
 #include <assert.h>
+
+#include <gnome.h>
 
 #include "RecordDialog.h"
 #include "MessageBox.h"
@@ -414,7 +421,7 @@ void RecordDialog::startAction()
 
   // If ejecting the CD after recording is requested issue a warning message
   // because buffer under runs may occur for other devices that are recording.
-  if (eject && SETTINGS->getInteger(SET_RECORD_EJECT_WARNING) != 0) {
+  if (eject && gnome_config_get_bool(SET_RECORD_EJECT_WARNING)) {
     Ask3Box msg(this, "Record", 1, 2, 
 		"Ejecting a CD may block the SCSI bus and",
 		"cause buffer under runs when other devices",
@@ -424,7 +431,7 @@ void RecordDialog::startAction()
     switch (msg.run()) {
     case 1: // keep eject setting
       if (msg.dontShowAgain())
-	SETTINGS->set(SET_RECORD_EJECT_WARNING, 0);
+	gnome_config_set_bool(SET_RECORD_EJECT_WARNING, FALSE);
       break;
     case 2: // don't keep eject setting
       eject = 0;
@@ -437,7 +444,7 @@ void RecordDialog::startAction()
   }
 
   // The same is true for reloading the disk.
-  if (reload && SETTINGS->getInteger(SET_RECORD_RELOAD_WARNING) != 0) {
+  if (reload && gnome_config_get_bool(SET_RECORD_RELOAD_WARNING)) {
     Ask3Box msg(this, "Record", 1, 2, 
 		"Reloading a CD may block the SCSI bus and",
 		"cause buffer under runs when other devices",
@@ -447,7 +454,7 @@ void RecordDialog::startAction()
     switch (msg.run()) {
     case 1: // keep eject setting
       if (msg.dontShowAgain())
-	SETTINGS->set(SET_RECORD_RELOAD_WARNING, 0);
+	gnome_config_set_bool(SET_RECORD_RELOAD_WARNING, FALSE);
       break;
     case 2: // don't keep eject setting
       reload = 0;

@@ -18,6 +18,11 @@
  */
 /*
  * $Log: CdDevice.h,v $
+ * Revision 1.5  2000/05/01 18:15:00  andreasm
+ * Switch to gnome-config settings.
+ * Adapted Message Box to Gnome look, unfortunately the Gnome::MessageBox is
+ * not implemented in gnome--, yet.
+ *
  * Revision 1.4  2000/04/29 14:46:38  llanero
  * added the "buffers" option to the Record Dialog.
  *
@@ -115,6 +120,9 @@ public:
 
   static const char *status2string(Status);
   static const char *deviceType2string(DeviceType);
+
+  static void importSettings();
+  static void exportSettings();
 
   static CdDevice *add(int bus, int id, int lun, const char *vendor,
 		       const char *product);
