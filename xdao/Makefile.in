@@ -33,9 +33,9 @@ VERSION = @cdrdao_version@
 #
 CXX = @CXX@
 CXXFLAGS = @CXXFLAGS@ 
-ALL_CXXFLAGS = @DEFS@ @mydefs@ -DVERSION=\"$(VERSION)\" -I.. -I$(srcdir) -I$(srcdir)/../dao -I$(srcdir)/../trackdb $(CXXFLAGS) @GTKMM_CFLAGS@
+ALL_CXXFLAGS = @DEFS@ @mydefs@ -DVERSION=\"$(VERSION)\" -I.. -I$(srcdir) -I$(srcdir)/../dao -I$(srcdir)/../trackdb $(CXXFLAGS) @GTKMM_CFLAGS@ @GNOME_CFLAGS@
 LDFLAGS = @LDFLAGS@ 
-LIBS =  @scsilib_libs@ `gnome-config --libs gnomemm` `gnome-config --libs libglade` @GTKMM_LIBS@ @thread_libs@ @extra_libs@ @LIBS@ 
+LIBS =  @scsilib_libs@ @GNOME_LIBS@ @GTKMM_LIBS@ @thread_libs@ @LIBS@ 
 RANLIB = @RANLIB@
 AR = ar
 #

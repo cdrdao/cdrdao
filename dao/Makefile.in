@@ -42,7 +42,7 @@ CXXFLAGS = @CXXFLAGS@
 ALL_CXXFLAGS = @DEFS@ @mydefs@ -DVERSION=\"$(VERSION)\" -DDRIVER_TABLE_FILE=\"$(DRIVER_TABLE_FILE)\" -I$(srcdir)/.. -I$(srcdir) -I$(srcdir)/../trackdb @scsilib_incl@ $(CXXFLAGS)
 LDFLAGS = 
 ALL_LDFLAGS = @LDFLAGS@ $(LDFLAGS)
-LIBS = @scsilib_libs@ @thread_libs@ @extra_libs@ @LIBS@
+LIBS = @scsilib_libs@ @thread_libs@ @LIBS@
 RANLIB = @RANLIB@
 AR = ar
 #
