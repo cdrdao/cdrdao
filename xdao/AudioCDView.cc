@@ -154,16 +154,25 @@ AudioCDView::AudioCDView(AudioCDChild *child, AudioCDProject *project)
   		slot(this, &AudioCDView::playStart), "Play", ""));
   playStartButton_ = static_cast <Gtk::RadioButton *>(playToolbar->tools().back()->get_widget());
   playStartButton_->hide();
-  // Note: setting stop this way prevents the toggle signal to the emited.
-  playStartButton_->set_active(false);
   widgetList->push_back(playStartButton_);
+
+  pixmap = manage(new Gnome::Pixmap(Gnome::Pixmap::find_file("gcdmaster/pixmap_play-pause.xpm")));
+  playToolbar->tools().push_back(Gtk::Toolbar_Helpers::RadioElem(playGroup, "Pause", *pixmap,
+  		slot(this, &AudioCDView::playPause), "Pause", ""));
+  playPauseButton_ = static_cast <Gtk::RadioButton *>(playToolbar->tools().back()->get_widget());
+  playPauseButton_->hide();
+  widgetList->push_back(playPauseButton_);
 
   pixmap = manage(new Gnome::Pixmap(Gnome::Pixmap::find_file("gcdmaster/pixmap_play-stop.xpm")));
   playToolbar->tools().push_back(Gtk::Toolbar_Helpers::RadioElem(playGroup, "Stop", *pixmap,
-  		slot(this, &AudioCDView::playStop), "Stop", ""));
+  		NULL, "Stop", ""));
   playStopButton_ = static_cast <Gtk::RadioButton *>(playToolbar->tools().back()->get_widget());
+  playStopButton_->set_active(true);
+  // We need to connect the signal after we set it, so no signal is emitted.
+  playStopButton_->toggled.connect(slot(this, &AudioCDView::playStop));
   playStopButton_->hide();
   widgetList->push_back(playStopButton_);
+
 
   setMode(SELECT);
 
@@ -368,6 +377,12 @@ void AudioCDView::update(unsigned long level)
 // FIXME: What about using a separate cursor for playing?
         cursorPos_->set_text(string(cdchild->sample2string(project_->playPosition() - project_->getDelay())));
         break;
+      case AudioCDProject::PAUSED:
+        playPauseButton_->set_active(true);
+        sampleDisplay_->setCursor(1, project_->playPosition() - project_->getDelay());
+// FIXME: What about using a separate cursor for playing?
+        cursorPos_->set_text(string(cdchild->sample2string(project_->playPosition() - project_->getDelay())));
+        break;
       case AudioCDProject::STOPPED:
         playStopButton_->set_active(true);
         sampleDisplay_->setCursor(0, 0);
@@ -453,10 +468,30 @@ void AudioCDView::playStart()
   if (project_->getPlayStatus() == AudioCDProject::PLAYING)
     return;
 
-  if (!tocEditView_->sampleSelection(&start, &end))
-    tocEditView_->sampleView(&start, &end);
+  if (!(project_->getPlayStatus() == AudioCDProject::PAUSED))
+  {
+    if (!tocEditView_->sampleSelection(&start, &end))
+      tocEditView_->sampleView(&start, &end);
+  }
 
   project_->playStart(start, end);
+}
+
+void AudioCDView::playPause()
+{
+  if (!playPauseButton_->get_active())
+    return;
+
+  if (project_->getPlayStatus() == AudioCDProject::PAUSED)
+    return;
+
+  if (project_->getPlayStatus() == AudioCDProject::STOPPED)
+  {
+    playStopButton_->set_active(true);
+    return;
+  }
+
+  project_->playPause();
 }
 
 void AudioCDView::playStop()
@@ -576,6 +611,8 @@ void AudioCDView::drag_data_received_cb(GdkDragContext *context,
 	      break;
 	    }
 	    names = g_list_remove(names, names->data);
+	    if (names == NULL)
+	      break;
       }
 //	tocEdit_->unblockEdit();
     break;
