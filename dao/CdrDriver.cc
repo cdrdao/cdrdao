@@ -530,6 +530,8 @@ static unsigned long string2DriverOption(const char *s)
     return OPT_MMC_NO_RW_PACKED;
   else if (strcmp(s, "OPT_MMC_USE_RAW_RW") == 0)
     return OPT_MMC_USE_RAW_RW;
+  else if (strcmp(s, "OPT_MMC_YAMAHA_FORCE_SPEED") == 0)
+    return OPT_MMC_YAMAHA_FORCE_SPEED;
   else if (strcmp(s, "OPT_PLEX_USE_PARANOIA") == 0)
     return OPT_PLEX_USE_PARANOIA;
   else if (strcmp(s, "OPT_PLEX_DAE_READ10") == 0)
