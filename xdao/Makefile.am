@@ -108,4 +108,10 @@ INCLUDES =					\
 AM_CXXFLAGS = @GTKMM2_CFLAGS@ @LIBGUIMM2_CFLAGS@
 
 man1_MANS = gcdmaster.man
-EXTRA_DIST = $(man1_MANS)
+EXTRA_DIST = $(man1_MANS) gcdmaster.desktop BUGS TASKS gcdmaster.png
+
+desktopdir = $(datadir)/applications
+desktop_DATA = gcdmaster.desktop
+
+icondir = $(datadir)/pixmaps
+icon_DATA = gcdmaster.png
