@@ -25,7 +25,6 @@
 #include <string.h>
 
 #include "TocEdit.h"
-#include "TocEditView.h"
 #include "Toc.h"
 #include "util.h"
 
@@ -38,7 +37,7 @@ CdTextDialog::CdTextDialog()
   char buf[20];
 
   active_ = 0;
-  tocEditView_ = NULL;
+  tocEdit_ = NULL;
   trackEntries_ = 0;
 
   languages_ = new Gtk::Notebook;
@@ -145,7 +144,7 @@ gint CdTextDialog::delete_event_impl(GdkEventAny*)
 
 void CdTextDialog::updateTabLabels()
 {
-  const Toc *toc = tocEditView_->tocEdit()->toc();
+  const Toc *toc = tocEdit_->toc();
   int l;
 
   for (l = 0; l < 8; l++) {
@@ -214,10 +213,10 @@ void CdTextDialog::adjustTableEntries(int n)
   trackEntries_ = n;
 }
 
-void CdTextDialog::update(unsigned long level, TocEditView *view)
+void CdTextDialog::update(unsigned long level, TocEdit *view)
 {
-  if (view != tocEditView_) {
-    tocEditView_ = view;
+  if (view != tocEdit_) {
+    tocEdit_ = view;
     level = UPD_ALL;
   }
 
@@ -231,11 +230,11 @@ void CdTextDialog::update(unsigned long level, TocEditView *view)
   }
 
   if (level & UPD_EDITABLE_STATE) {
-    applyButton_->set_sensitive(view->tocEdit()->editable() ? TRUE : FALSE);
+    applyButton_->set_sensitive(tocEdit_->editable() ? TRUE : FALSE);
   }
 }
 
-void CdTextDialog::start(TocEditView *view)
+void CdTextDialog::start(TocEdit *view)
 {
   if (active_) {
     get_window().raise();
@@ -258,7 +257,7 @@ void CdTextDialog::stop()
 
 void CdTextDialog::applyAction()
 {
-  if (tocEditView_ == NULL || !tocEditView_->tocEdit()->editable())
+  if (tocEdit_ == NULL || !tocEdit_->editable())
     return;
 
   exportData();
@@ -301,7 +300,7 @@ void CdTextDialog::activatePerformerAction(int l)
 void CdTextDialog::importData()
 {
   const CdTextItem *item; 
-  const Toc *toc = tocEditView_->tocEdit()->toc();
+  const Toc *toc = tocEdit_->toc();
   int i, l;
   int n = toc->nofTracks();
 
@@ -358,7 +357,7 @@ void CdTextDialog::setCdTextItem(CdTextItem::PackType type, int trackNr,
 				 int l, const char *s)
 {
   const CdTextItem *item; 
-  TocEdit *tocEdit = tocEditView_->tocEdit();
+  TocEdit *tocEdit = tocEdit_;
   const Toc *toc = tocEdit->toc();
   CdTextItem *newItem;
   

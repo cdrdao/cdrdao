@@ -34,7 +34,6 @@ class SoundIF;
 class Sample;
 class TrackData;
 class TocEdit;
-class CdTextDialog;
 class AddFileDialog;
 class AddSilenceDialog;
 class AudioCDView;
@@ -48,7 +47,6 @@ public:
 private: //related windows
   AddFileDialog *addFileDialog_;
   AddSilenceDialog *addSilenceDialog_;
-  CdTextDialog *cdTextDialog_;
 
 private:
   friend class AudioCDView;
@@ -69,31 +67,19 @@ private:
 
   GList *views;
 
-  void addTrackMark();
-  void addIndexMark();
-
-  void trackMarkMovedCallback(const Track *, int trackNr, int indexNr,
-			      unsigned long sample);
-
   const char *sample2string(unsigned long sample);
   unsigned long string2sample(const char *s);
 
-  int snapSampleToBlock(unsigned long sample, long *block);
   void readTocCallback(int);
   void saveAsTocCallback(int);
 
   void tocBlockedMsg(const char *);
-
-  void cdTextDialog();
 
 public:
 
   void update(unsigned long level);
   bool closeProject();
   void record_to_cd();
-
-  void addPregap();
-  void removeTrackMark();
 
   void appendSilence();
   void insertSilence();

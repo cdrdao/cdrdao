@@ -185,8 +185,8 @@ AudioCDView::AudioCDView(AudioCDChild *child, AudioCDProject *project)
   			&AudioCDView::cursorMovedCallback));
   sampleDisplay_->trackMarkSelected.connect(slot(this,
   			&AudioCDView::trackMarkSelectedCallback));
-  sampleDisplay_->trackMarkMoved.connect(slot(cdchild,
-  			&AudioCDChild::trackMarkMovedCallback));
+  sampleDisplay_->trackMarkMoved.connect(slot(this,
+  			&AudioCDView::trackMarkMovedCallback));
   sampleDisplay_->viewModified.connect(slot(this,
 		        &AudioCDView::viewModifiedCallback));
 
@@ -218,9 +218,27 @@ AudioCDView::AudioCDView(AudioCDChild *child, AudioCDProject *project)
   			      N_("Paste"),
   			      slot(this, &AudioCDView::pasteTrackData),
   			      N_("Paste previously cut samples")));
-  
-    Array<Info>& arrayInfo = project->insert_menus("Edit/Project Info...", menus);
-    for (i = 0; i < 4; i ++)
+
+    menus.push_back(Separator());
+
+    menus.push_back(Item(N_("Add Track Mark"),
+			      slot(this, &AudioCDView::addTrackMark),
+			      N_("Add track marker at current marker position")));
+
+    menus.push_back(Item(N_("Add Index Mark"),
+			      slot(this, &AudioCDView::addIndexMark),
+			      N_("Add index marker at current marker position")));
+
+    menus.push_back(Item(N_("Add Pre-Gap"),
+			      slot(this, &AudioCDView::addPregap),
+			      N_("Add pre-gap at current marker position")));
+
+    menus.push_back(Item(N_("Remove Track Mark"),
+			      slot(this, &AudioCDView::removeTrackMark),
+			      N_("Remove selected track/index marker or pre-gap")));
+ 
+    Array<Info>& arrayInfo = project->insert_menus("Edit/CD-TEXT...", menus);
+    for (i = 0; i < 9; i ++)
     {
       Gtk::Widget *menuitem = arrayInfo[i].get_widget();
       menuitem->hide();
@@ -342,7 +360,7 @@ int AudioCDView::getMarker(unsigned long *sample)
     return 0;
 
   if (sampleDisplay_->getMarker(sample) == 0) {
-//FIXME    MDI_WINDOW->statusMessage("Please set marker.");
+    project_->statusMessage("Please set marker.");
     return 0;
   }
 
@@ -410,15 +428,6 @@ void AudioCDView::selectionSet()
   guiUpdate();
 }
 
-void AudioCDChild::tocBlockedMsg(const char *op)
-{
-//FIXME  MessageBox msg(MDI_WINDOW->get_active_window(), op, 0,
-//  MessageBox msg(MDI_WINDOW, op, 0,
-//FIXME		 "Cannot perform requested operation because", 
-//FIXME		 "project is in read-only state.", NULL);
-//FIXME  msg.run();
-}
-
 void AudioCDView::drag_data_received_cb(GdkDragContext *context,
   gint x, gint y, GtkSelectionData *selection_data, guint info, guint time)
 {
@@ -438,13 +447,13 @@ void AudioCDView::drag_data_received_cb(GdkDragContext *context,
         switch (tocEditView_->tocEdit()->appendTrack(file)) {
         case 0:
 	      guiUpdate();
-//FIXME	      MDI_WINDOW->statusMessage("Appended track with audio data from \"%s\".", file);
+	      project_->statusMessage("Appended track with audio data from \"%s\".", file);
 	      break;
         case 1:
-//FIXME	      MDI_WINDOW->statusMessage("Cannot open audio file \"%s\".", file);
+	      project_->statusMessage("Cannot open audio file \"%s\".", file);
 	      break;
         case 2:
-//FIXME	      MDI_WINDOW->statusMessage("Audio file \"%s\" has wrong format.", file);
+	      project_->statusMessage("Audio file \"%s\" has wrong format.", file);
 	      break;
 	    }
 	    names = g_list_remove(names, names->data);
@@ -481,7 +490,6 @@ void AudioCDView::cutTrackData()
     project_->statusMessage("Selected sample range crosses track boundaries.");
     break;
   }
-
 }
 
 void AudioCDView::pasteTrackData()
@@ -501,3 +509,206 @@ void AudioCDView::pasteTrackData()
     break;
   }
 }
+
+void AudioCDView::addTrackMark()
+{
+  unsigned long sample;
+
+  if (!project_->tocEdit()->editable()) {
+    project_->tocBlockedMsg("Add Track Mark");
+    return;
+  }
+
+  if (getMarker(&sample)) {
+    long lba;
+    int snapped = snapSampleToBlock(sample, &lba);
+
+    switch (project_->tocEdit()->addTrackMarker(lba)) {
+    case 0:
+      project_->statusMessage("Added track mark at %s%s.", Msf(lba).str(),
+				snapped ? " (snapped to next block)" : "");
+      guiUpdate();
+      break;
+
+    case 2:
+      project_->statusMessage("Cannot add track at this point.");
+      break;
+
+    case 3:
+    case 4:
+      project_->statusMessage("Resulting track would be shorter than 4 seconds.");
+      break;
+
+    case 5:
+      project_->statusMessage("Cannot modify a data track.");
+      break;
+
+    default:
+      project_->statusMessage("Internal error in addTrackMark(), please report.");
+      break;
+    }
+  }
+}
+
+void AudioCDView::addIndexMark()
+{
+  unsigned long sample;
+
+  if (!project_->tocEdit()->editable()) {
+    project_->tocBlockedMsg("Add Index Mark");
+    return;
+  }
+
+  if (getMarker(&sample)) {
+    long lba;
+    int snapped = snapSampleToBlock(sample, &lba);
+
+    switch (project_->tocEdit()->addIndexMarker(lba)) {
+    case 0:
+      project_->statusMessage("Added index mark at %s%s.", Msf(lba).str(),
+				snapped ? " (snapped to next block)" : "");
+      guiUpdate();
+      break;
+
+    case 2:
+      project_->statusMessage("Cannot add index at this point.");
+      break;
+
+    case 3:
+      project_->statusMessage("Track has already 98 index marks.");
+      break;
+
+    default:
+      project_->statusMessage("Internal error in addIndexMark(), please report.");
+      break;
+    }
+  }
+}
+
+void AudioCDView::addPregap()
+{
+//FIXME
+/*
+  unsigned long sample;
+  AudioCDView *view = static_cast <AudioCDView *>(get_active());
+
+  if (!tocEdit_->editable()) {
+    tocBlockedMsg("Add Pre-Gap");
+    return;
+  }
+
+  if (view->getMarker(&sample)) {
+    long lba;
+    int snapped = snapSampleToBlock(sample, &lba);
+
+    switch (tocEdit_->addPregap(lba)) {
+    case 0:
+      MDI_WINDOW->statusMessage("Added pre-gap mark at %s%s.", Msf(lba).str(),
+				snapped ? " (snapped to next block)" : "");
+      guiUpdate();
+      break;
+
+    case 2:
+      MDI_WINDOW->statusMessage("Cannot add pre-gap at this point.");
+      break;
+
+    case 3:
+      MDI_WINDOW->statusMessage("Track would be shorter than 4 seconds.");
+      break;
+
+    case 4:
+      MDI_WINDOW->statusMessage("Cannot modify a data track.");
+      break;
+
+    default:
+      MDI_WINDOW->statusMessage("Internal error in addPregap(), please report.");
+      break;
+    }
+  }
+*/
+}
+
+void AudioCDView::removeTrackMark()
+{
+//FIXME
+/*
+  AudioCDView *view = static_cast <AudioCDView *>(get_active());
+
+  int trackNr;
+  int indexNr;
+
+  if (!tocEdit_->editable()) {
+    tocBlockedMsg("Remove Track Mark");
+    return;
+  }
+
+  if (view->tocEditView()->trackSelection(&trackNr) &&
+      view->tocEditView()->indexSelection(&indexNr)) {
+    switch (tocEdit_->removeTrackMarker(trackNr, indexNr)) {
+    case 0:
+      MDI_WINDOW->statusMessage("Removed track/index marker.");
+      guiUpdate();
+      break;
+    case 1:
+      MDI_WINDOW->statusMessage("Cannot remove first track.");
+      break;
+    case 3:
+      MDI_WINDOW->statusMessage("Cannot modify a data track.");
+      break;
+    default:
+      MDI_WINDOW->statusMessage("Internal error in removeTrackMark(), please report.");
+      break; 
+    }
+  }
+  else {
+    MDI_WINDOW->statusMessage("Please select a track/index mark.");
+  }
+*/
+}
+
+int AudioCDView::snapSampleToBlock(unsigned long sample, long *block)
+{
+  unsigned long rest = sample % SAMPLES_PER_BLOCK;
+
+  *block = sample / SAMPLES_PER_BLOCK;
+
+  if (rest == 0) 
+    return 0;
+
+  if (rest > SAMPLES_PER_BLOCK / 2)
+    *block += 1;
+
+  return 1;
+}
+
+void AudioCDView::trackMarkMovedCallback(const Track *, int trackNr,
+					int indexNr, unsigned long sample)
+{
+  if (!project_->tocEdit()->editable()) {
+    project_->tocBlockedMsg("Move Track Marker");
+    return;
+  }
+
+  long lba;
+  int snapped = snapSampleToBlock(sample, &lba);
+
+  switch (project_->tocEdit()->moveTrackMarker(trackNr, indexNr, lba)) {
+  case 0:
+    project_->statusMessage("Moved track marker to %s%s.", Msf(lba).str(),
+			      snapped ? " (snapped to next block)" : "");
+    break;
+
+  case 6:
+    project_->statusMessage("Cannot modify a data track.");
+    break;
+  default:
+    project_->statusMessage("Illegal track marker position.");
+    break;
+  }
+
+  tocEditView_->trackSelection(trackNr);
+  tocEditView_->indexSelection(indexNr);
+
+  guiUpdate();
+}
+

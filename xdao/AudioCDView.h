@@ -74,7 +74,10 @@ private:
   void cursorMovedCallback(unsigned long);
   void selectionSetCallback(unsigned long, unsigned long);
   void trackMarkSelectedCallback(const Track *, int trackNr, int indexNr);
+  void trackMarkMovedCallback(const Track *, int trackNr, int indexNr,
+			      unsigned long sample);
   void viewModifiedCallback(unsigned long, unsigned long);
+  int snapSampleToBlock(unsigned long sample, long *block);
 
   void zoomIn();
   void zoomOut();
@@ -87,6 +90,8 @@ private:
 
   void addTrackMark();
   void addIndexMark();
+  void addPregap();
+  void removeTrackMark();
 
   int getMarker(unsigned long *sample);
   void markerSet();

@@ -27,6 +27,7 @@
 class AudioCDChild;
 class AudioCDView;
 class TocInfoDialog;
+class CdTextDialog;
 class TocEdit;
 #include "Project.h"
 
@@ -35,8 +36,10 @@ class AudioCDProject : public Project
 private:
   AudioCDChild *audioCDChild_;
   TocInfoDialog *tocInfoDialog_;
+  CdTextDialog *cdTextDialog_;
   void recordToc2CD();
   void projectInfo();
+  void cdTextDialog();
  
 public:
   AudioCDProject(int number, const char *name, TocEdit *tocEdit);

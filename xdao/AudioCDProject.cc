@@ -23,12 +23,14 @@
 #include "TocEdit.h"
 #include "TocEditView.h"
 #include "TocInfoDialog.h"
+#include "CdTextDialog.h"
 
 AudioCDProject::AudioCDProject(int number, const char *name, TocEdit *tocEdit)
 {
   projectNumber_ = number;
 
   tocInfoDialog_ = 0;
+  cdTextDialog_ = 0;
 
   if (tocEdit == NULL)
     tocEdit_ = new TocEdit(NULL, NULL);
@@ -49,6 +51,19 @@ AudioCDProject::AudioCDProject(int number, const char *name, TocEdit *tocEdit)
 
   createMenus();
   createStatusbar();
+
+  // Menu Stuff
+  {
+    using namespace Gnome::UI;
+    vector<Info> menus;
+
+    menus.push_back(Item(Icon(GNOME_STOCK_MENU_PROP),
+    				 N_("CD-TEXT..."),
+			      slot(this, &AudioCDProject::cdTextDialog),
+			      N_("Edit CD-TEXT data")));
+    insert_menus("Edit/Project Info...", menus);
+  }
+  
   install_menu_hints();
 
 // Note: We must show before adding DockItems, because showing a Gnome::App
@@ -102,5 +117,13 @@ void AudioCDProject::projectInfo()
     tocInfoDialog_ = new TocInfoDialog();
 
   tocInfoDialog_->start(tocEdit_);
+}
+
+void AudioCDProject::cdTextDialog()
+{
+  if (cdTextDialog_ == 0)
+    cdTextDialog_ = new CdTextDialog();
+
+  cdTextDialog_->start(tocEdit_);
 }
 

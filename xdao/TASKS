@@ -1,6 +1,7 @@
 Status  Who	Description
 ======  ======  ==============================================================
 
+-	-	Test for enough free disk space before some operations
 -	-	Device Listing class needs "Load" and "Eject" buttons
 
 -	-	Detect CD Drive driver automagically.
