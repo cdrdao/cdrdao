@@ -18,6 +18,9 @@
  */
 /*
  * $Log: dao.cc,v $
+ * Revision 1.5  2000/11/12 16:50:44  andreasm
+ * Fixes for compilation under Win32.
+ *
  * Revision 1.4  2000/10/08 16:39:41  andreasm
  * Remote progress message now always contain the track relative and total
  * progress and the total number of processed tracks.
@@ -68,7 +71,7 @@
  *
  */
 
-static char rcsid[] = "$Id: dao.cc,v 1.4 2000/10/08 16:39:41 andreasm Exp $";
+static char rcsid[] = "$Id: dao.cc,v 1.5 2000/11/12 16:50:44 andreasm Exp $";
 
 #include <config.h>
 
@@ -95,15 +98,20 @@ static char rcsid[] = "$Id: dao.cc,v 1.4 2000/10/08 16:39:41 andreasm Exp $";
 
 #ifdef USE_POSIX_THREADS
 #include <pthread.h>
-#include <sched.h>
 #else
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #endif
 
+#include "dao.h"
+
 #include "port.h"
+#include "util.h"
+
 
 #define DEBUG_WRITE 0
+
+
 
 #if defined(__FreeBSD__)
 #define IPC_ARG_T void
@@ -111,38 +119,6 @@ static char rcsid[] = "$Id: dao.cc,v 1.4 2000/10/08 16:39:41 andreasm Exp $";
 #define IPC_ARG_T msgbuf
 #endif
 
-
-/* Select POSIX scheduler interface for real time scheduling if possible */
-#if (defined HAVE_SCHED_GETPARAM) && (defined HAVE_SCHED_GET_PRIORITY_MAX) && (defined HAVE_SCHED_SETSCHEDULER) && (!defined LINUX_QNX_SCHEDULING)
-#define POSIX_SCHEDULING
-#endif
-
-#ifdef LINUX_QNX_SCHEDULING
-
-#define SCHED_OTHER     0
-#define SCHED_FIFO      1
-#define SCHED_RR        2
-
-struct sched_param {
-  unsigned int priority;
-  int fork_penalty_threshold;
-  unsigned int starvation_threshold;
-  unsigned int ts_max;
-  unsigned int run_q, run_q_min, run_q_max;
-};
-extern "C" int sched_setparam __P((pid_t __pid, const struct sched_param *__param));
-extern "C" int sched_getparam __P((pid_t __pid, struct sched_param *__param));
-extern "C" int sched_setscheduler __P((pid_t __pid, int __policy, const struct sched_param *__param));
-extern "C" int sched_getscheduler __P((pid_t __pid));
-
-#elif defined POSIX_SCHEDULING
-
-#include <sched.h>
-
-#endif
-
-#include "dao.h"
-#include "util.h"
 
 struct ShmSegment {
   int id;
@@ -510,6 +486,8 @@ static void *reader(void *args)
   long tact; // number of blocks already read from current track
   long tprogress;
 
+  setRealTimeScheduling(4);
+
   if (cdr != NULL) {
     if (cdr->bigEndianSamples() == 0) {
       // swap samples for little endian recorders
@@ -662,11 +640,6 @@ int writeDiskAtOnce(const Toc *toc, CdrDriver *cdr, int nofBuffers, int swap,
   ShmSegment *shmSegments = NULL;
   long startLba = 0;
 
-#if defined(POSIX_SCHEDULING) || defined(LINUX_QNX_SCHEDULING) || \
-    defined(USE_POSIX_THREADS)
-  struct sched_param schedp;
-#endif
-
 #ifdef USE_POSIX_THREADS
   pthread_t readerThread;
   pthread_attr_t readerThreadAttr;
@@ -725,29 +698,6 @@ int writeDiskAtOnce(const Toc *toc, CdrDriver *cdr, int nofBuffers, int swap,
     err = 1; goto fail;
   }
   
-
-#if defined(POSIX_SCHEDULING) && defined(HAVE_PTHREAD_ATTR_SETSCHEDPOLICY) && \
-  defined(HAVE_PTHREAD_ATTR_SETSCHEDPARAM)
-
-  if (geteuid() == 0) {
-    if (pthread_attr_setschedpolicy(&readerThreadAttr, SCHED_RR) == 0) {
-      struct sched_param schedParam;
-
-      if (pthread_attr_getschedparam(&readerThreadAttr, &schedParam) == 0) {
-	schedParam.sched_priority = sched_get_priority_max(SCHED_RR) - 4;
-	if (pthread_attr_setschedparam(&readerThreadAttr, &schedParam) != 0) {
-	  message(-1, "pthread_attr_setschedparam failed: %s",
-		  strerror(errno));
-	}
-      }
-    }
-  }
-#else
-
-  message(-1, "Real time scheduling is not available for reader thread.");
-
-#endif
-
   ReaderArgs rargs;
 
   rargs.toc = toc;
@@ -763,8 +713,6 @@ int writeDiskAtOnce(const Toc *toc, CdrDriver *cdr, int nofBuffers, int swap,
   }
   else {
     threadStarted = 1;
-
-    
   }
 
 #else /* USE_POSIX_THREADS */
@@ -773,28 +721,6 @@ int writeDiskAtOnce(const Toc *toc, CdrDriver *cdr, int nofBuffers, int swap,
     // we are the new process
 
     setsid(); // detach from controlling terminal
-
-#ifdef LINUX_QNX_SCHEDULING
-
-    if (geteuid() == 0) {
-      sched_getparam (0, &schedp);
-      schedp.run_q_min = schedp.run_q_max = 1;
-      if (sched_setscheduler (0, SCHED_RR, &schedp) != 0) {
-	message(-1, "Cannot setup real time scheduling: %s", strerror(errno));
-      }
-    }
-
-#elif defined POSIX_SCHEDULING
-
-    if (geteuid() == 0) {
-      sched_getparam (0, &schedp);
-      schedp.sched_priority = sched_get_priority_max (SCHED_RR) - 4;
-      if (sched_setscheduler (0, SCHED_RR, &schedp) != 0) {
-	message(-1, "Cannot setup real time scheduling: %s", strerror(errno));
-      }
-    }
-
-#endif
 
 #ifdef HAVE_MLOCKALL
     if (geteuid() == 0) {
@@ -821,63 +747,14 @@ int writeDiskAtOnce(const Toc *toc, CdrDriver *cdr, int nofBuffers, int swap,
   }
 #endif /* USE_POSIX_THREADS */
 
-  // setup scheduler for writing process/thread
-#if defined(USE_POSIX_THREADS)
-
-#if defined(HAVE_PTHREAD_GETSCHEDPARAM) && defined(HAVE_PTHREAD_SETSCHEDPARAM)
-  if (geteuid() == 0) {
-    int schedPolicy;
-
-    pthread_getschedparam(pthread_self(), &schedPolicy, &schedp);
-    schedp.sched_priority = sched_get_priority_max(SCHED_RR) - 5;
-
-    if (pthread_setschedparam(pthread_self(), SCHED_RR, &schedp) != 0) {
-      message(-1, "Cannot setup real time scheduling: %s", strerror(errno));
-    }
-    else {
-      message(1, "Using POSIX real time scheduling.");
-    }
+  switch (setRealTimeScheduling(5)) {
+  case 1:
+    message(-1, "No super user permission to setup real time scheduling.");
+    break;
+  case 2:
+    message(1, "Real time scheduling not available.");
+    break;
   }
-  else {
-    message(-1, "No root permissions for real time scheduling.");
-  }
-#else
-  message(-1, "Real time scheduling is not available.");
-#endif
-
-#elif defined(LINUX_QNX_SCHEDULING)
-  
-  if (geteuid() == 0) {
-    sched_getparam (0, &schedp);
-    schedp.run_q_min = schedp.run_q_max = 2;
-    if (sched_setscheduler (0, SCHED_RR, &schedp) != 0) {
-      message(-1, "Cannot setup real time scheduling: %s", strerror(errno));
-    }
-    else {
-      message(1, "Using Linux QNX real time scheduling.");
-    }
-  }
-  else {
-    message(-1, "No root permissions for real time scheduling.");
-  }
-
-#elif defined POSIX_SCHEDULING
-  
-  if (geteuid() == 0) {
-    sched_getparam (0, &schedp);
-    schedp.sched_priority = sched_get_priority_max (SCHED_RR) - 5;
-    if (sched_setscheduler (0, SCHED_RR, &schedp) != 0) {
-      message(-1, "Cannot setup real time scheduling: %s", strerror(errno));
-    }
-    else {
-      message(1, "Using POSIX real time scheduling.");
-    }
-  }
-  else {
-    message(-1, "No root permissions for real time scheduling.");
-  }
-  
-#endif
 
 #ifdef HAVE_MLOCKALL
   if (geteuid() == 0) {

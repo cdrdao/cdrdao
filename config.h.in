@@ -27,6 +27,7 @@
 #undef HAVE_UNISTD_H
 
 /* real time scheduling defines */
+#undef HAVE_SCHED_H
 #undef LINUX_QNX_SCHEDULING
 #undef HAVE_SCHED_GETPARAM
 #undef HAVE_SCHED_GET_PRIORITY_MAX

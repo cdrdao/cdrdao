@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_REVISION($Revision: 1.10 $)dnl
+AC_REVISION($Revision: 1.11 $)dnl
 
 cdrdao_version=1.1.5-pre1
 
@@ -29,7 +29,7 @@ AC_PROG_MAKE_SET
 dnl Checks for header files.
 AC_HEADER_STDC
 AC_HEADER_SYS_WAIT
-AC_CHECK_HEADERS(fcntl.h malloc.h unistd.h sys/mman.h)
+AC_CHECK_HEADERS(fcntl.h malloc.h unistd.h sys/mman.h sched.h)
 
 dnl Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
@@ -98,32 +98,51 @@ if test "$use_pthreads" = default; then
 fi
 
 if test "$use_pthreads" = yes; then
-  AC_CHECK_LIB(pthread,pthread_create,have_pthread=yes,have_pthread=no)
-  AC_CHECK_LIB(pthread32,pthread_create,have_pthread32=yes,have_pthread32=no)
-  AC_CHECK_LIB(c_r,pthread_create,have_c_r=yes,have_c_r=no)
+  AC_CHECK_FUNC(pthread_create,have_pthread_std=yes,have_pthread_std=no)
 
-  if test "$have_pthread" = yes; then
+  if test "$have_pthread_std" = yes; then
     AC_DEFINE(USE_POSIX_THREADS)
-    thread_libs="-lpthread"
-    thread_test_lib="pthread"
-  elif test "$have_pthread32" = yes; then
-    AC_DEFINE(USE_POSIX_THREADS)
-    thread_libs="-lpthread32"
-    thread_test_lib="pthread32"
-  elif test "$have_c_r" = yes; then
-    AC_DEFINE(USE_POSIX_THREADS)
-    thread_libs="-lc_r"
-    thread_test_lib="c_r"
+    thread_libs=""
+    thread_test_lib=""
   else
-    use_pthreads=no
+    AC_CHECK_LIB(pthread,pthread_create,have_pthread=yes,have_pthread=no)
+
+    if test "$have_pthread" = yes; then
+      AC_DEFINE(USE_POSIX_THREADS)
+      thread_libs="-lpthread"
+      thread_test_lib="pthread"
+    else
+      AC_CHECK_LIB(pthread32,pthread_create,have_pthread32=yes,have_pthread32=no)
+      if test "$have_pthread32" = yes; then
+        AC_DEFINE(USE_POSIX_THREADS)
+        thread_libs="-lpthread32"
+        thread_test_lib="pthread32"
+      else
+        AC_CHECK_LIB(c_r,pthread_create,have_c_r=yes,have_c_r=no)
+      
+        if test "$have_c_r" = yes; then
+          AC_DEFINE(USE_POSIX_THREADS)
+          thread_libs="-lc_r"
+          thread_test_lib="c_r"
+        else
+          use_pthreads=no
+	fi
+      fi
+    fi
   fi
 
   if test "$use_pthreads" = yes; then
-    AC_CHECK_LIB($thread_test_lib,pthread_sigmask,AC_DEFINE(HAVE_PTHREAD_SIGMASK))
-    AC_CHECK_LIB($thread_test_lib,pthread_attr_setschedpolicy,AC_DEFINE(HAVE_PTHREAD_ATTR_SETSCHEDPOLICY))
-    AC_CHECK_LIB($thread_test_lib,pthread_attr_setschedparam,AC_DEFINE(HAVE_PTHREAD_ATTR_SETSCHEDPARAM))
-    AC_CHECK_LIB($thread_test_lib,pthread_getschedparam,AC_DEFINE(HAVE_PTHREAD_GETSCHEDPARAM))
-    AC_CHECK_LIB($thread_test_lib,pthread_setschedparam,AC_DEFINE(HAVE_PTHREAD_SETSCHEDPARAM))
+    if test "$have_pthread_std" = yes; then
+      AC_CHECK_FUNCS(pthread_sigmask pthread_attr_setschedpolicy)
+      AC_CHECK_FUNCS(pthread_attr_setschedparam pthread_getschedparam)
+      AC_CHECK_FUNCS(pthread_setschedparam)
+    else
+      AC_CHECK_LIB($thread_test_lib,pthread_sigmask,AC_DEFINE(HAVE_PTHREAD_SIGMASK))
+      AC_CHECK_LIB($thread_test_lib,pthread_attr_setschedpolicy,AC_DEFINE(HAVE_PTHREAD_ATTR_SETSCHEDPOLICY))
+      AC_CHECK_LIB($thread_test_lib,pthread_attr_setschedparam,AC_DEFINE(HAVE_PTHREAD_ATTR_SETSCHEDPARAM))
+      AC_CHECK_LIB($thread_test_lib,pthread_getschedparam,AC_DEFINE(HAVE_PTHREAD_GETSCHEDPARAM))
+      AC_CHECK_LIB($thread_test_lib,pthread_setschedparam,AC_DEFINE(HAVE_PTHREAD_SETSCHEDPARAM))
+    fi
   fi
 fi  
 
@@ -150,7 +169,7 @@ if test $dlg_path = "no" ; then
 fi
 
 if test "$pcctsinc" = default; then
-  dnl we'll look in /usr/local and /usr for debian
+  dnl we will look in /usr/local and /usr for debian
   AC_MSG_CHECKING([checking for pccts includes])
   if test -r /usr/local/include/pccts/pcctscfg.h; then
     pcctsinc=/usr/local/include/pccts
@@ -165,7 +184,10 @@ fi
 
 xdao=xdao
 AC_PATH_GTKMM(1.2.0,,[xdao=no; echo Disabled building of xcdrdao.])
-AC_PATH_GNOMEMM(1.0.55,, [xdao=no; echo Disabled building of xcdrdao.])
+
+if test $xdao = xdao; then
+  AC_PATH_GNOMEMM(1.0.55,, [xdao=no; echo Disabled building of xcdrdao.])
+fi
 
 if test $xdao != xdao; then
   xdao=
