@@ -1021,7 +1021,7 @@ static CdrDriver *selectDriver(Command cmd, ScsiIf *scsiIf,
     if (id == NULL && (cmd == DISK_INFO || cmd == MSINFO))
       id = CdrDriver::selectDriver(0, scsiIf->vendor(), scsiIf->product(),
 				   &options);
-      
+
     if (id != NULL) {
       ret = CdrDriver::createDriver(id, options, scsiIf);
     }
@@ -1570,15 +1570,24 @@ static void scanBus()
   int i, len;
   ScsiIf::ScanData *sdata = ScsiIf::scan(&len);
 
-  if (sdata == NULL)
-    return;
-
-  for (i = 0; i < len; i++) {
+  if (sdata) {
+    for (i = 0; i < len; i++) {
       message(0, "%s: %s, %s, %s", sdata[i].dev.c_str(), sdata[i].vendor,
               sdata[i].product, sdata[i].revision);
+    }
+    delete[] sdata;
   }
 
-  delete[] sdata;
+#ifdef SCSI_ATAPI
+  sdata = ScsiIf::scan(&len, "ATAPI");
+  if (sdata) {
+    for (i = 0; i < len; i++) {
+      message(0, "%s: %s, %s, %s", sdata[i].dev.c_str(), sdata[i].vendor,
+              sdata[i].product, sdata[i].revision);
+    }
+    delete[] sdata;
+  }
+#endif
 }
 
 static int checkToc(const Toc *toc)
