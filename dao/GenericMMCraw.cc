@@ -564,7 +564,7 @@ int GenericMMCraw::finishDao()
     return 1;
   }
 
-  while ((ret = testUnitReady(0)) == 2)
+  while ((ret = checkDriveReady()) == 2)
     mSleep(2000);
 
   if (ret != 0)
