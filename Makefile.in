@@ -41,7 +41,7 @@ DISTDIR = cdrdao-$(VERSION)
 #
 #
 #
-SUBDIRS = @pccts_target@ @scsilib_dir@ edc_ecc trackdb paranoia dao utils @xdao@
+SUBDIRS = @pccts_target@ @scsilib_dir@ trackdb paranoia dao utils @xdao@
 SUBDIRSINST = trackdb dao utils @xdao@
 
 all:
@@ -67,7 +67,6 @@ distclean:
 
 dist:
 	mkdir $(DISTDIR)
-	mkdir $(DISTDIR)/edc_ecc
 	mkdir $(DISTDIR)/trackdb
 	mkdir $(DISTDIR)/dao
 	mkdir $(DISTDIR)/xdao
@@ -79,9 +78,6 @@ dist:
 	cp Makefile.in CREDITS README* cdrdao.lsm config.guess config.sub \
            configure.in configure config.h.in aclocal.m4 install-sh       \
            mkinstalldirs INSTALL COPYING aclocal.m4 Release-* $(DISTDIR)
-	cp edc_ecc/Makefile.in edc_ecc/*.c edc_ecc/*.h $(DISTDIR)/edc_ecc
-	cp edc_ecc/*.ecc edc_ecc/README edc_ecc/crc.txt $(DISTDIR)/edc_ecc
-	rm -f $(DISTDIR)/edc_ecc/Makefile
 	cp trackdb/Makefile.in trackdb/*.h trackdb/*.cc trackdb/*.g \
            $(DISTDIR)/trackdb
 	cp paranoia/Makefile.in paranoia/README paranoia/overlapdef.txt \

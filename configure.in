@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_REVISION($Revision: 1.25 $)dnl
+AC_REVISION($Revision: 1.26 $)dnl
 AC_INIT(cdrdao.lsm)
 
 cdrdao_version=1.1.7
@@ -323,4 +323,4 @@ AC_SUBST(mydefs)
 AC_SUBST(utils_targets)
 AC_SUBST(utils_sources)
 
-AC_OUTPUT(edc_ecc/Makefile trackdb/Makefile dao/Makefile utils/Makefile xdao/Makefile Makefile)
+AC_OUTPUT(trackdb/Makefile dao/Makefile utils/Makefile xdao/Makefile Makefile)
