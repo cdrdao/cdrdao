@@ -231,9 +231,6 @@ void DumpCDProject::update(unsigned long level)
 
   DeviceList *sourceList = CDSource->getDeviceList();
 
-  if (sourceList->selection().empty()) {
-    CDSource->selectOne();
-    return;
-  }
+  CDSource->selectOne();
 }
 

@@ -46,6 +46,8 @@ public:
   int checkReloadWarning(Gtk::Window *);
   int getBuffer();
 
+  void selectOne();
+
   void cancelAction();
 private:
   int active_;

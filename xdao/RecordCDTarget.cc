@@ -357,3 +357,17 @@ void RecordCDTarget::speedChanged()
   }
   speed_ = new_speed;
 }
+
+void RecordCDTarget::selectOne()
+{
+  if (DEVICES->selection().empty()) {
+    Gtk::CList *clist = DEVICES->getCList();
+    for (int i = 0; i < clist->get_rows(); i++)
+    {
+      clist->row(i).select();
+      if (!DEVICES->selection().empty())
+        break;
+    }
+  }
+}
+

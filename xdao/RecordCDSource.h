@@ -42,6 +42,7 @@ public:
   void onTheFlyOption(bool);
 
   void selectOne();
+  void selectOneBut(Gtk::CList_Helpers::SelectionList &);
 
 private:
   DeviceList *DEVICES;

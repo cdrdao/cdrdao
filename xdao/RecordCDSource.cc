@@ -273,7 +273,45 @@ void RecordCDSource::selectOne()
       if (!DEVICES->selection().empty())
         break;
     }
-    return;
   }
+}
+
+void RecordCDSource::selectOneBut(Gtk::CList_Helpers::SelectionList &targetSelection)
+{
+  if (DEVICES->selection().empty()) {
+    Gtk::CList *clist = DEVICES->getCList();
+    for (int i = 0; i < clist->get_rows(); i++)
+    {
+      bool targetSelected = false;
+      DeviceList::DeviceData *sourceData =
+          (DeviceList::DeviceData*)clist->row(i).get_data();
+
+      for (int j = 0; j < targetSelection.size(); j++) {
+        DeviceList::DeviceData *targetData =
+            (DeviceList::DeviceData*)targetSelection[j].get_data();
+    
+        if (targetData == NULL)
+          break;
+
+        if ((targetData->bus == sourceData->bus)
+         && (targetData->id == sourceData->id)
+         && (targetData->lun == sourceData->lun))
+        {
+          targetSelected = true;
+          break;
+        }
+      }
+
+      if (!targetSelected)
+      {
+        clist->row(i).select();
+        if (!DEVICES->selection().empty())
+          break;
+      }
+    }
+  }
+
+  // Try selectOne in case we don't selected any device.
+  selectOne();
 }
 
