@@ -164,7 +164,7 @@ AudioCDChild::AudioCDChild(Gnome::App *app, TocEdit *tocEdit, gint number)
   menus.push_back(Gnome::Menus::Edit(audioEditMenuTree));
   menus.push_back(Gnome::Menus::View(viewMenuTree));
 
-//FIXME  app_->insert_menus("Edit", menus);
+  app_->insert_menus("File", menus);
 }
 
 void AudioCDChild::play(unsigned long start, unsigned long end)
@@ -314,9 +314,7 @@ void AudioCDChild::projectInfo()
   if (tocInfoDialog_ == 0)
     tocInfoDialog_ = new TocInfoDialog();
 
-//FIXME  GenericView *view = static_cast <GenericView *>(get_active());
-
-//FIXME  tocInfoDialog_->start(view->tocEditView());
+  tocInfoDialog_->start(tocEdit_);
 }
 
 void AudioCDChild::cdTextDialog()

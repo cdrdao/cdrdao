@@ -26,7 +26,7 @@
 #include "Toc.h"
 
 class TocEdit;
-class TocEditView;
+//class TocEditView;
 class TextEdit;
 
 class TocInfoDialog : public Gtk::Dialog {
@@ -36,13 +36,13 @@ public:
 
   gint delete_event_impl(GdkEventAny*);
 
-  void update(unsigned long, TocEditView *);
+  void update(unsigned long, TocEdit *);
 
-  void start(TocEditView *);
+  void start(TocEdit *);
   void stop();
 
 private:
-  TocEditView *tocEditView_;
+  TocEdit *tocEdit_;
   int active_;
 
   Gtk::Button *applyButton_;

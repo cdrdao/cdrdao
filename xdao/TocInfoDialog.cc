@@ -27,7 +27,7 @@
 #include <ctype.h>
 
 #include "TocEdit.h"
-#include "TocEditView.h"
+//#include "TocEditView.h"
 #include "guiUpdate.h"
 #include "Toc.h"
 #include "CdTextItem.h"
@@ -115,7 +115,7 @@ TocInfoDialog::TocInfoDialog()
   Gtk::Button *button;
   Gtk::VBox *contents = new Gtk::VBox;
 
-  tocEditView_ = NULL;
+  tocEdit_ = NULL;
   active_ = 0;
   selectedTocType_ = Toc::CD_DA;
 
@@ -297,7 +297,7 @@ TocInfoDialog::~TocInfoDialog()
 {
 }
 
-void TocInfoDialog::start(TocEditView *view)
+void TocInfoDialog::start(TocEdit *view)
 {
   if (active_) {
     get_window().raise();
@@ -593,14 +593,14 @@ void TocInfoDialog::clear()
   clearCdText();
 }
 
-void TocInfoDialog::update(unsigned long level, TocEditView *view)
+void TocInfoDialog::update(unsigned long level, TocEdit *view)
 {
   const Toc *toc;
 
   if (!active_)
     return;
 
-  tocEditView_ = view;
+  tocEdit_ = view;
 
   if (view == NULL) {
     clear();
@@ -608,12 +608,12 @@ void TocInfoDialog::update(unsigned long level, TocEditView *view)
   }
 
   if (level & UPD_TOC_DATA) {
-    toc = view->tocEdit()->toc();
+    toc = tocEdit_->toc();
     importData(toc);
   }
 
   if (level & UPD_EDITABLE_STATE) {
-    applyButton_->set_sensitive(view->tocEdit()->editable() ? TRUE : FALSE);
+    applyButton_->set_sensitive(tocEdit_->editable() ? TRUE : FALSE);
   }
 }
 
@@ -658,10 +658,10 @@ void TocInfoDialog::clearCdText()
 
 void TocInfoDialog::applyAction()
 {
-  if (tocEditView_ == NULL || !tocEditView_->tocEdit()->editable())
+  if (tocEdit_ == NULL || !tocEdit_->editable())
     return;
 
-  exportData(tocEditView_->tocEdit());
+  exportData(tocEdit_);
 
   guiUpdate(UPD_TOC_DATA);
 }

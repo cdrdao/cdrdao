@@ -57,7 +57,6 @@ void Project::createMenus()
   vector<Gnome::UI::SubTree> menus;
   vector<Gnome::UI::Info> fileMenuTree, newMenuTree, actionsMenuTree;
   vector<Gnome::UI::Info> settingsMenuTree, helpMenuTree, windowsMenuTree;
-  
 
   {
     using namespace Gnome::UI;
@@ -183,6 +182,7 @@ bool Project::busy()
     return false;
   return true;
 }
+
 void Project::readToc(char *name)
 {
   if (strlen(name))
@@ -366,6 +366,11 @@ bool Project::closeProject()
     case P_AUDIOCD: if (audioCDChild_->closeProject())
                     {
                       delete audioCDChild_;
+//FIXME: We should close also the Project Info Dialog, ...
+//       Something like:
+//  if (tocInfoDialog_)
+//    delete TocInfoDialog();
+// or perhaps better in audioCDChild->closeProject()
                       return true;
                     }
                     break;
