@@ -28,16 +28,22 @@
 #include "CdTextDialog.h"
 #include "guiUpdate.h"
 #include "util.h"
+#include "RecordTocDialog.h"
 
 AudioCDProject::AudioCDProject(int number, const char *name, TocEdit *tocEdit)
 {
+  hbox = new Gtk::HBox;
+  hbox->show();
+  set_contents(*hbox);
+  viewSwitcher_ = new ViewSwitcher(hbox);
+  viewSwitcher_->show();
+
   projectNumber_ = number;
 
   tocInfoDialog_ = 0;
   cdTextDialog_ = 0;
   playStatus_ = STOPPED;
   playBurst_ = 588 * 10;
-  soundInterface_ = new SoundIF;
   playBuffer_ = new Sample[playBurst_];
   soundInterface_ = NULL;
 
@@ -118,11 +124,16 @@ bool AudioCDProject::closeProject()
   {
     delete audioCDChild_;
     audioCDChild_ = 0;
-//FIXME: We should close also the Project Info Dialog, ...
-//       Something like:
-//  if (tocInfoDialog_)
-//    delete TocInfoDialog();
-// or perhaps better in audioCDChild->closeProject()
+
+    if (tocInfoDialog_)
+      delete tocInfoDialog_;
+
+    if (cdTextDialog_)
+      delete cdTextDialog_;
+
+    if (recordTocDialog_)
+      delete recordTocDialog_;
+
     return true;
   }
   return false;  // Do not close the project
@@ -130,7 +141,10 @@ bool AudioCDProject::closeProject()
 
 void AudioCDProject::recordToc2CD()
 {
-  audioCDChild_->record_to_cd();
+  if (recordTocDialog_ == 0)
+    recordTocDialog_ = new RecordTocDialog(tocEdit_);
+
+  recordTocDialog_->start(this);
 }
 
 void AudioCDProject::projectInfo()
@@ -167,6 +181,8 @@ void AudioCDProject::update(unsigned long level)
 
   if (cdTextDialog_ != 0)
     cdTextDialog_->update(level, tocEdit_);
+  if (recordTocDialog_ != 0)
+    recordTocDialog_->update(level);
 }
 
 void AudioCDProject::playStart(unsigned long start, unsigned long end)
