@@ -167,16 +167,6 @@ AudioCDChild::AudioCDChild(Gnome::App *app, TocEdit *tocEdit, gint number)
 //FIXME  app_->insert_menus("Edit", menus);
 }
 
-
-AudioCDChildLabel::AudioCDChildLabel(const string &name) :
-  label(name)
-{
-  pixmap = manage(new Gnome::StockPixmap(GNOME_STOCK_MENU_NEW));
-  pack_start(*pixmap);
-  pack_start(label);
-  show_all();
-}
-
 void AudioCDChild::play(unsigned long start, unsigned long end)
 {
   if (playing_) {

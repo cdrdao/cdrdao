@@ -40,17 +40,11 @@ class CdTextDialog;
 class AddFileDialog;
 class AddSilenceDialog;
 class AudioCDView;
-class AudioCDChildLabel;
 
 class AudioCDChild : public GenericChild
 {
 public:
   AudioCDChild(Gnome::App *app, TocEdit *tocEdit, gint number);
-
-protected:
-  virtual Gtk::Widget *create_view_impl();
-  virtual Gtk::Widget* create_title_impl();
-  virtual Gtk::Widget* update_title_impl(Gtk::Widget *old_label);
 
 private: //related windows
   Gnome::App *app_;
@@ -117,15 +111,4 @@ public:
   void insertFile();
 
 };
-
-class AudioCDChildLabel : public Gtk::HBox
-{
-public:
-  AudioCDChildLabel(const string &name);
-  void set_name(const string &name) { label.set_text(name); }
-protected:
-  Gnome::Pixmap *pixmap;
-  Gtk::Label label;
-};
-
 #endif
