@@ -553,6 +553,58 @@ int Cddb::connectDb(const char *userName, const char *hostName,
   return 0;
 }
 
+ 
+/* Print query for current toc
+ */
+void Cddb::printDbQuery()
+{
+  const char *cddbId;
+  int ntracks;
+  const Track *t;
+  Msf start, end;
+  long diskLength;
+
+  ntracks = toc_->nofTracks();
+
+  cddbId = calcCddbId();
+
+  printf("%s ", cddbId);
+
+  printf("%d ", ntracks);
+
+  TrackIterator itr(toc_);
+
+  for (t = itr.first(start, end); t != NULL; t = itr.next(start, end)) {
+    long trackStart = start.lba() + 150;
+
+    printf("%ld ", trackStart);
+  }
+
+  diskLength = toc_->length().min() * 60 + toc_->length().sec() + 2;
+  printf("%ld\n", diskLength);
+}
+
+bool Cddb::printDbEntry()
+{
+    if (!cddbEntry_)
+        return false;
+
+    if (cddbEntry_->diskArtist)
+        printf("Artist: %s\n", cddbEntry_->diskArtist);
+    if (cddbEntry_->diskTitle)
+        printf("Title: %s\n", cddbEntry_->diskTitle);
+    if (cddbEntry_->diskExt)
+        printf("Ext: %s\n", cddbEntry_->diskExt);
+    for (int i = 0; i < cddbEntry_->ntracks; i++) {
+        printf("Track %02d: %s\n", i+1, cddbEntry_->trackTitles[i]);
+        if (cddbEntry_->trackExt &&
+            cddbEntry_->trackExt[i])
+            printf("Trach %02d ext: %s\n", i+1, cddbEntry_->trackExt[i]);
+    }
+
+    return true;
+}
+
 /* Queries for entries that match the current 'toc_'.
  * 'results' will be filled with a list of matching diskIds/category/title
  * triples. 'results' will be NULL if no matching entry is found.

@@ -61,6 +61,12 @@ public:
   int readDb(const char *category, const char *diskId, CddbEntry **);
 
   int addAsCdText(Toc *toc);
+
+  void printDbQuery();
+
+  // Print the found CDDB entry to stdout. Returns false if no entry
+  // available.
+  bool printDbEntry();
     
 private:
   struct ServerList {
