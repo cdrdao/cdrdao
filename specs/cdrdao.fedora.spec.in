@@ -7,9 +7,6 @@ Group:		Applications/Multimedia
 BuildRoot:      %{_builddir}/%{name}-buildroot
 Source:		%{name}-%{version}.tar.gz
 
-Requires:	lame >= 3
-
-BuildRequires:	lame-devel >= 3
 BuildRequires:	gtkmm2-devel >= 2.2.0
 BuildRequires:	libgnomeuimm2-devel >= 2.0
 BuildRequires:  libsigc++-devel
@@ -58,10 +55,8 @@ make %{?_smp_mflags}
 %doc AUTHORS COPYING CREDITS ChangeLog INSTALL README NEWS README.PlexDAE README.Win32
 %{_bindir}/cdrdao
 %{_datadir}/cdrdao/*
-%{_bindir}/toc2cddb
-%{_bindir}/toc2cue
+%{_bindir}/toc2*
 %{_bindir}/cue2toc
-%{_bindir}/toc2mp3
 %{_mandir}/man1/cdrdao.1
 %{_mandir}/man1/cue2toc.1
 
