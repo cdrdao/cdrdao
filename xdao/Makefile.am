@@ -88,6 +88,7 @@ EXTRA_gcdmaster_SOURCES =	\
 
 gcdmaster_LDADD =					\
 	@sound_if_obj@					\
+	@scsilib_objs@					\
 	-L$(top_builddir)/dao -ldao			\
 	-L$(top_builddir)/paranoia -lcdda_paranoia	\
 	-L$(top_builddir)/trackdb -ltrackdb		\
