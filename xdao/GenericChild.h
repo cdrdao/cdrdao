@@ -40,7 +40,6 @@ public:
 //  virtual void saveProject() = 0;
 //  virtual void saveAsProject() = 0;
   virtual bool closeProject() = 0;
-  virtual void record_to_cd() = 0;
 
 protected:
   TocEdit *tocEdit_;
