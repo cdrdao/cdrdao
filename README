@@ -286,7 +286,9 @@ Recorders:
 
   Model                    Firmware Rev.          Driver           Notes
   ----------------------------------------------------------------------
+  ACER 8X4X32              5.GV                   generic-mmc-raw
   ACER CD-R/RW 4X4X32      3.LS                   generic-mmc-raw
+  AOPEN CRW620             2.40                   ricoh-mp6200   
   AOPEN CRW9624            1.70                   generic-mmc    
   ATAPI CD-R/RW 4X4X32     3.GS                   generic-mmc-raw  7
   ATAPI CD-R/RW CRW6206A   1.3A                   generic-mmc-raw
@@ -307,20 +309,22 @@ Recorders:
   HP CD-Writer+ 9300       1.0b                   generic-mmc      5
   HP CD-Writer+ 9600       1.0a                   generic-mmc      5
   IDE-CD R/RW 2x2x24       1.4                    generic-mmc-raw
-  IDE-CD R/RW 4x4x32       1.3B                   generic-mmc-raw
+  IDE-CD R/RW 4x4x32       1.3B,1.4B              generic-mmc-raw
   IDE-CD ReWritable-2x2x6  3.09                   generic-mmc-raw
+  IMS 522                  1.05                   cdd2600        
   IMS CDD2000              1.25,1.26              cdd2600        
   IOMEGA ZIPCD 4x650       1.04                   generic-mmc-raw
   JVC R2626                1.10                   teac-cdr55     
   JVC XR-W2010             1.51                   teac-cdr55     
   KODAK PCD-225            1.06                   cdd2600        
-  LG CD-RW CED-8080B       1.05                   generic-mmc    
+  LG CD-RW CED-8080B       1.05,1.06              generic-mmc    
   LITE-ON LTR-0841         MS10, MS84             generic-mmc    
   LITE-ON LTR-12101B       LS15                   generic-mmc-raw
   MATSHITA CD-R   CW-7502  X.14, X.17             generic-mmc      5
   MATSHITA CD-R   CW-7503  1.04, 1.8              generic-mmc    
   MATSHITA CD-R   CW-7582  1.00, 1.05, 1.10       generic-mmc    
   MATSHITA CD-R   CW-7585  1.04                   generic-mmc    
+  MATSHITA CD-R   CW-7586  1.01                   generic-mmc    
   MATSHITA CDRRW01         1.34                   generic-mmc    
   MEMOREX CD-RW4224        1.17                   generic-mmc    
   MEMOREX CDRW-2216        1.0b                   generic-mmc-raw
@@ -331,16 +335,20 @@ Recorders:
   MITSUMI CR-4802          1.2B, 1.4D             generic-mmc-raw  4
   MITSUMI CR-4804          2.4C                   generic-mmc-raw
   MITSUMI CR-48X5          1.2A                   generic-mmc    
+  OLYMPIC RWD RW4224       ?                      generic-mmc    
   PANASONIC CD-R   CW-7582 1.05                   generic-mmc    
+  PHILIPS CD D4801         C1.3                   generic-mmc-raw
+  PHILIPS CDD 3801/31      ?                      generic-mmc-raw
   PHILIPS CDD2000          1.25, 1.26             cdd2600        
   PHILIPS CDD2600          1.07                   cdd2600        
   PHILIPS CDD3600          2.00                   generic-mmc-raw
   PHILIPS CDD3610          2.02, 3.01, 3.09       generic-mmc-raw
   PHILIPS CDD522           ?                      cdd2600        
+  PHILIPS CDRW400          ?                      generic-mmc-raw
   PHILIPS OMNIWRITER26     1.20                   ricoh-mp6200   
-  PHILIPS PCA460RW         1.0e                   generic-mmc    
-  PHILIPS PCRW404          1.06                   generic-mmc-raw
-  PHILIPS PCRW804          1.5, 2.0               generic-mmc    
+  PHILIPS PCA460RW         1.0e,1.0g              generic-mmc    
+  PHILIPS PCRW404          1.06,1.4b              generic-mmc-raw
+  PHILIPS PCRW804          1.5, 2.0               generic-mmc-raw
   PLEXTOR CD-R   PX-R412   1.04, 1.06, 1.07       generic-mmc    
   PLEXTOR CD-R   PX-R820   1.03, 1.07             generic-mmc    
   PLEXTOR CD-R   PX-W1210  1.02, 1.04             generic-mmc    
@@ -362,18 +370,23 @@ Recorders:
   SAMSUNG CD-R/RW SW-206   1.40                   generic-mmc    
   SAMSUNG CD-R/RW SW-208B  BS01, BS02             generic-mmc-raw
   SAMSUNG CD-R/RW SW-408B  BS02                   generic-mmc    
+  SANYO CRD-BP3            1.03                   generic-mmc    
   SONY CD-R   CDU920       ?                      sony-cdu920    
   SONY CD-R   CDU924       1.1d                   sony-cdu920    
   SONY CD-R   CDU948       1.0j                   sony-cdu948      5
   SONY CRX100              1.0m                   generic-mmc      5
   SONY CRX120              1.0j                   generic-mmc      5
   SONY CRX140              ?                      generic-mmc      5
+  SONY CRX145              ?                      generic-mmc      5
   T.YUDEN CD-WO EW-50      2.15, 2.16, 2.18       taiyo-yuden    
+  TDK CDRW121032           1.02                   generic-mmc    
   TEAC CD-R50              ?                      teac-cdr55     
   TEAC CD-R55              1.0k, 1.0n             teac-cdr55     
   TEAC CD-R56              ?                      generic-mmc    
   TEAC CD-R58              1.0J, 1.0H             generic-mmc    
+  TEAC CD-W512EB           2.0B                   generic-mmc    
   TEAC CD-W54E             1.1B                   generic-mmc    
+  TEAC CD-W58E             1.0A                   generic-mmc-raw
   TOSHIBA DVD-ROM SD-R1002 1030                   generic-mmc    
   TRAXDATA CDR4120         5.0G, 5.0J, 5.0N       teac-cdr55     
   TRAXDATA CDRW2260+       3.01                   generic-mmc-raw
@@ -401,17 +414,22 @@ Readers (command 'read-toc', 'read-cd'):
   ----------------------------------------------------------------------
   ASUS CD-S340             1.60                   generic-mmc    
   ASUS CD-S400             2.40                   generic-mmc    
+  ASUS CD-S500/A           1.0K                   generic-mmc    
   ASUS DVD-ROM E608        1.10                   generic-mmc    
+  E-IDE CD-950E/TKU        A41                    generic-mmc    
   E-IDE CD-ROM 36X/AKU     U23                    generic-mmc      3
+  FUNAI E295X              1.01                   generic-mmc    
   HITACHI CDR-7730         ?                      generic-mmc    
   HITACHI CDR-8435         0010                   generic-mmc    
   HITACHI DVD-ROM GD-2500  A011                   plextor        
   LG CD-ROM CRD-8480C      1.04                   generic-mmc    
   LG CD-ROM CRD-8482B      1.00                   generic-mmc    
+  LG DVD-ROM DRN8080B      LAB8                   generic-mmc    
   LITEON CD-ROM            ?                      generic-mmc    
   MATSHITA CD-ROM CR-506   8S04                   plextor        
   MATSHITA CD-ROM CR-588   LS15                   generic-mmc    
   MATSHITA CD-ROM CR-589   GS0H                   generic-mmc    
+  MATSHITA CR-8008         8.0e                   plextor        
   MEMOREX CD-233E          U10A                   generic-mmc      6
   MITSUMI CD-ROM FX4820    D02A                   generic-mmc    
   NAKAMICH MJ-5.16S        1.07                   plextor        
@@ -430,6 +448,8 @@ Readers (command 'read-toc', 'read-cd'):
   PIONEER DVD-105          1.11                   generic-mmc    
   PIONEER DVD-303          1.09                   plextor        
   PLEXTOR CD-ROM           ?                      plextor-scan   
+  PLEXTOR PX-40TS          1.11                   plextor-scan   
+  PLEXTOR PX-63            ?                      plextor-scan   
   SONY CD-ROM              ?                      plextor        
   SONY CD-ROM CDU-76       1.1c                   plextor        
   SONY CD-ROM CDU31A-02    ?                      generic-mmc    
@@ -438,13 +458,18 @@ Readers (command 'read-toc', 'read-cd'):
   TEAC CD-532E             1.0A                   generic-mmc    
   TEAC CD-540E             1.0A                   generic-mmc    
   TEAC CD-ROM CD-532S      1.0A                   plextor-scan   
+  TOSHIBA 1504             1008                   toshiba        
   TOSHIBA CD-ROM XM-3206B  ?                      generic-mmc    
   TOSHIBA CD-ROM XM-3601B  1885                   toshiba        
   TOSHIBA CD-ROM XM-5701TA 0167                   toshiba        
+  TOSHIBA CD-ROM XM-6102B  1112                   generic-mmc    
   TOSHIBA CD-ROM XM-6201TA 1037                   toshiba        
   TOSHIBA CD-ROM XM-6302B  1012                   generic-mmc    
   TOSHIBA CD-ROM XM-6401TA 1009                   toshiba        
   TOSHIBA CD-ROM XM-6402B  1008                   generic-mmc    
+  TOSHIBA DVD-ROM SD-C2202 1021                   generic-mmc    
+  TOSHIBA DVD-ROM SD-C2302 1021                   generic-mmc    
+  TOSHIBA DVD-ROM SD-C2402 1317                   generic-mmc    
   TOSHIBA DVD-ROM SD-M1102 1426                   generic-mmc    
   TOSHIBA XM-5401          1036                   plextor        
 

@@ -16,7 +16,7 @@ VPATH =        @srcdir@
 # Installation directories for binaries and manual pages
 #
 bindir   =     @bindir@
-sharedir =     @datadir@
+datadir  =     @datadir@
 mandir   =     @mandir@
 man1dir  =     $(mandir)/man1
 #
@@ -32,7 +32,7 @@ VERSION = @cdrdao_version@
 #
 # Data files
 #
-CDRDAO_DATA_DIR = $(sharedir)/cdrdao
+CDRDAO_DATA_DIR = $(datadir)/cdrdao
 DRIVER_TABLE_FILE = $(CDRDAO_DATA_DIR)/drivers
 #
 # compiler and library stuff

@@ -80,6 +80,7 @@ static int ON_THE_FLY = 0;
 static int WRITE_SIMULATE = 0;
 static int SAVE_SETTINGS = 0;
 static int CDDB_TIMEOUT = 60;
+static int WITH_CDDB = 0;
 static int TAO_SOURCE = 0;
 static int TAO_SOURCE_ADJUST = -1;
 static int KEEPIMAGE = 0;
@@ -239,8 +240,6 @@ options:\n\
   --overburn              - allow to overburn a medium\n\
   --eject                 - ejects cd after writing or simulation\n\
   --swap                  - swap byte order of audio files\n\
-  --on-the-fly            - perform on-the-fly copy, no image file is created\n\
-  --datafile <filename>   - name of data file placed in toc-file\n\
   --buffers #             - sets fifo buffer size (min. 10)\n\
   --reload                - reload the disk if necessary for writing\n\
   --force                 - force execution of operation\n\
@@ -253,8 +252,8 @@ options:\n\
     message(0, "\nUsage: %s read-toc [options] toc-file", PRGNAME);
     message(0, "
 options:\n\
-  --source-device <x,y,z> - sets SCSI device of CD-ROM reader\n\
-  --source-driver <id>    - force usage of specified driver for source device\n\
+  --device <x,y,z> - sets SCSI device of CD-ROM reader\n\
+  --driver <id>    - force usage of specified driver for source device\n\
   --datafile <filename>   - name of data file placed in toc-file\n\
   --session #             - select session\n\
   --fast-toc              - do not extract pre-gaps and index marks\n\
@@ -279,9 +278,8 @@ options:\n\
     message(0, "\nUsage: %s read-cd [options] toc-file", PRGNAME);
     message(0, "
 options:\n\
-  --source-device <x,y,z> - sets SCSI device of CD-ROM reader\n\
-  --source-driver <id>    - force usage of specified driver for source device\n\
-  --swap                  - swap byte order of audio files\n\
+  --device <x,y,z> - sets SCSI device of CD-ROM reader\n\
+  --driver <id>    - force usage of specified driver for source device\n\
   --datafile <filename>   - name of data file placed in toc-file\n\
   --session #             - select session\n\
   --fast-toc              - do not extract pre-gaps and index marks\n\
@@ -357,6 +355,11 @@ options:\n\
   --paranoia-mode #       - DAE paranoia mode (0..3)\n\
   --reload                - reload the disk if necessary for writing\n\
   --force                 - force execution of operation\n\
+  --with-cddb             - retrieve CDDB CD-TEXT data while copying\n\
+  --cddb-servers <list>   - sets space separated list of CDDB servers\n\
+  --cddb-timeout #        - timeout in seconds for CDDB server communication\n\
+  --cddb-directory <path> - path to local CDDB directory where fetched\n\
+                            CDDB records will be stored\n\
   -v #                    - sets verbose level\n\
   -n                      - no pause before writing\n",
 	  SCSI_DEVICE);
@@ -457,7 +460,8 @@ static void importSettings(Command cmd)
     }
   }
 
-  if (cmd == READ_CDDB) {
+  if (cmd == READ_CDDB ||
+      (WITH_CDDB && (cmd == COPY_CD || cmd == READ_TOC || cmd == READ_CD))) {
     if ((sval = SETTINGS->getString(SET_CDDB_SERVER_LIST)) != NULL) {
       CDDB_SERVER_LIST = strdupCC(sval);
     }
@@ -519,7 +523,8 @@ static void exportSettings(Command cmd)
       SETTINGS->set(SET_WRITE_DEVICE, SCSI_DEVICE);
   }
 
-  if (cmd == READ_CDDB) {
+  if (cmd == READ_CDDB ||
+      (WITH_CDDB && (cmd == COPY_CD || cmd == READ_TOC || cmd == READ_CD))) {
     if (CDDB_SERVER_LIST != NULL) {
       SETTINGS->set(SET_CDDB_SERVER_LIST, CDDB_SERVER_LIST);
     }
@@ -755,6 +760,9 @@ static int parseCmdline(int argc, char **argv)
       }
       else if (strcmp((*argv) + 2, "overburn") == 0) {
 	OVERBURN = 1;
+      }
+      else if (strcmp((*argv) + 2, "with-cddb") == 0) {
+        WITH_CDDB = 1;
       }
       else if (strcmp((*argv) + 2, "driver") == 0) {
 	if (argc < 2) {
@@ -1510,12 +1518,19 @@ static int copyCd(CdrDriver *src, CdrDriver *dst, int session,
     return 1;
   }
 
+  if (WITH_CDDB) {
+    if (readCddb(toc) == 0)
+      message(2, "CD-TEXT data was added to toc-file.");
+    else
+      message(2, "Reading of CD-TEXT data failed - continuing without CD-TEXT data.");
+  }
+
   if (keepimage) {
     char tocFilename[50];
 
     sprintf(tocFilename, "cd%ld.toc", pid);
     
-    message(2, "Keeping created image file \"%s\".", dataFilenameBuf);
+    message(2, "Keeping created image file \"%s\".", dataFilename);
     message(2, "Corresponding toc-file is written to \"%s\".", tocFilename);
 
     toc->write(tocFilename);
@@ -1656,6 +1671,16 @@ static int copyCdOnTheFly(CdrDriver *src, CdrDriver *dst, int session,
     goto fail;
   }
 
+  if (WITH_CDDB) {
+    if (readCddb(toc) != 0) {
+      ret = 1;
+      goto fail;
+    }
+    else {
+      message(2, "CD-TEXT data was added to toc.");
+    }
+  }
+  
   if (checkToc(toc) != 0) {
     message(-3, "Toc created from source CD image is inconsistent - please report.");
     toc->print(cout);
@@ -2013,6 +2038,12 @@ int main(int argc, char **argv)
       setegid(getgid());
 #endif
 
+      if (WITH_CDDB) {
+	if (readCddb(toc) == 0) {
+	  message(2, "CD-TEXT data was added to toc-file.");
+	}
+      }
+
       ofstream out(TOC_FILE);
       if (!out) {
 	message(-2, "Cannot open \"%s\" for writing: %s", TOC_FILE,
@@ -2059,6 +2090,12 @@ int main(int argc, char **argv)
       seteuid(getuid());
       setegid(getgid());
 #endif
+
+      if (WITH_CDDB) {
+	if (readCddb(toc) == 0) {
+	  message(2, "CD-TEXT data was added to toc-file.");
+	}
+      }
 
       ofstream out(TOC_FILE);
       if (!out) {
