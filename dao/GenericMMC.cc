@@ -19,6 +19,12 @@
 
 /*
  * $Log: GenericMMC.cc,v $
+ * Revision 1.4  2000/06/06 22:26:13  andreasm
+ * Updated list of supported drives.
+ * Added saving of some command line settings to $HOME/.cdrdao.
+ * Added test for multi session support in raw writing mode to GenericMMC.cc.
+ * Updated manual page.
+ *
  * Revision 1.3  2000/05/01 18:13:18  andreasm
  * Fixed too small mode page buffer.
  *
@@ -75,7 +81,7 @@
  *
  */
 
-static char rcsid[] = "$Id: GenericMMC.cc,v 1.3 2000/05/01 18:13:18 andreasm Exp $";
+static char rcsid[] = "$Id: GenericMMC.cc,v 1.4 2000/06/06 22:26:13 andreasm Exp $";
 
 #include <config.h>
 
@@ -1064,6 +1070,10 @@ DiskInfo *GenericMMC::diskInfo()
   unsigned char data[34];
   char spd;
 
+  DriveInfo info;
+
+  driveInfo(&info, 1);
+
   memset(&diskInfo_, 0, sizeof(DiskInfo));
 
   // perform READ DISK INFORMATION
@@ -1426,9 +1436,88 @@ int GenericMMC::readSubChannels(long lba, long len, SubChannel ***chans,
   return 0;
 }
 
+
+// Tries to retrieve configuration feature 'feature' and fills data to
+// provided buffer 'buf' with maximum length 'bufLen'.
+// Return: 0: OK
+//         1: feature not available
+//         2: SCSI error
+int GenericMMC::getFeature(unsigned int feature, unsigned char *buf,
+			   unsigned long bufLen, int showMsg)
+{
+  unsigned char header[8];
+  unsigned char *data;
+  unsigned char cmd[10];
+  unsigned long len;
+
+  memset(cmd, 0, 10);
+  memset(header, 0, 8);
+
+  cmd[0] = 0x46; // GET CONFIGURATION
+  cmd[1] = 0x02; // return single feature descriptor
+  cmd[2] = feature >> 8;
+  cmd[3] = feature;
+  cmd[8] = 8; // allocation length
+
+  if (sendCmd(cmd, 10, NULL, 0, header, 8, showMsg) != 0) {
+    if (showMsg)
+      message(-2, "Cannot get feature 0x%x.", feature);
+    return 2;
+  }
+
+  len = (header[0] << 24) | (header[1] << 16) | (header[2] << 8) | header[3];
+
+  message(3, "getFeature: data len: %lu", len);
+
+  if (len < 8)
+    return 1; // feature not defined
+
+  if (bufLen == 0)
+    return 0;
+
+  len -= 4; 
+
+  if (len > bufLen)
+    len = bufLen;
+
+  data = new (unsigned char)[len + 8];
+
+  cmd[7] = (len + 8) >> 8;
+  cmd[8] = (len + 8);
+
+  if (sendCmd(cmd, 10, NULL, 0, data, len + 8, showMsg) != 0) {
+    if (showMsg)
+      message(-2, "Cannot get data for feature 0x%x.", feature);
+    
+    delete[] data;
+    return 2;
+  }
+  
+  len = (header[0] << 24) | (header[1] << 16) | (header[2] << 8) | header[3];
+  
+  message(3, "getFeature: data len: %lu", len);
+
+  if (len < 8) {
+    delete[] data;
+    return 1; // feature not defined
+  }
+
+  len -= 4;
+
+  if (len > bufLen)
+    len = bufLen;
+
+  memcpy(buf, data + 8, len);
+
+  delete[] data;
+  
+  return 0;
+}
+
 int GenericMMC::driveInfo(DriveInfo *info, int showErrorMsg)
 {
   unsigned char mp[32];
+  unsigned char cdMasteringFeature[8];
 
   if (getModePage(0x2a, mp, 32, NULL, NULL, showErrorMsg) != 0) {
     if (showErrorMsg) {
@@ -1444,6 +1533,14 @@ int GenericMMC::driveInfo(DriveInfo *info, int showErrorMsg)
 
   info->maxWriteSpeed = (mp[18] << 8) | mp[19];
   info->currentWriteSpeed = (mp[20] << 8) | mp[21];
+
+  if (getFeature(0x2e, cdMasteringFeature, 8, 1) == 0) {
+    message(0, "Feature: %x %x %x %x %x %x %x %x", cdMasteringFeature[0],
+	    cdMasteringFeature[1], cdMasteringFeature[2],
+	    cdMasteringFeature[3], cdMasteringFeature[4],
+	    cdMasteringFeature[5], cdMasteringFeature[6],
+	    cdMasteringFeature[7]);
+  }
 
   return 0;
 }

@@ -19,8 +19,14 @@
 
 /*
  * $Log: GenericMMC.h,v $
- * Revision 1.1  2000/02/05 01:35:04  llanero
- * Initial revision
+ * Revision 1.2  2000/06/06 22:26:13  andreasm
+ * Updated list of supported drives.
+ * Added saving of some command line settings to $HOME/.cdrdao.
+ * Added test for multi session support in raw writing mode to GenericMMC.cc.
+ * Updated manual page.
+ *
+ * Revision 1.1.1.1  2000/02/05 01:35:04  llanero
+ * Uploaded cdrdao 1.1.3 with pre10 patch applied.
  *
  * Revision 1.8  1999/04/05 18:47:40  mueller
  * Added driver options.
@@ -114,6 +120,9 @@ protected:
   virtual int getSessionInfo();
   virtual int getNWA(long *);
   virtual int getStartOfSession(long *);
+
+  virtual int getFeature(unsigned int feature, unsigned char *buf,
+			 unsigned long bufLen, int showMsg);
 
   int readCatalog(Toc *, long startLba, long endLba);
   int readIsrc(int, char *);

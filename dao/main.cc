@@ -19,6 +19,12 @@
 
 /*
  * $Log: main.cc,v $
+ * Revision 1.4  2000/06/06 22:26:13  andreasm
+ * Updated list of supported drives.
+ * Added saving of some command line settings to $HOME/.cdrdao.
+ * Added test for multi session support in raw writing mode to GenericMMC.cc.
+ * Updated manual page.
+ *
  * Revision 1.3  2000/04/24 12:47:57  andreasm
  * Fixed unit attention problem after writing is finished.
  * Added cddb disk id calculation.
@@ -106,7 +112,7 @@
  *
  */
 
-static char rcsid[] = "$Id: main.cc,v 1.3 2000/04/24 12:47:57 andreasm Exp $";
+static char rcsid[] = "$Id: main.cc,v 1.4 2000/06/06 22:26:13 andreasm Exp $";
 
 #include <config.h>
 
@@ -127,6 +133,7 @@ static char rcsid[] = "$Id: main.cc,v 1.3 2000/04/24 12:47:57 andreasm Exp $";
 #include "ScsiIf.h"
 #include "CdrDriver.h"
 #include "dao.h"
+#include "Settings.h"
 
 
 enum Command { SHOW_TOC, SHOW_DATA, READ_TEST, SIMULATE, WRITE, READ_TOC,
@@ -155,6 +162,9 @@ static int FORCE = 0;
 static int PARANOIA_MODE = 3;
 static int ON_THE_FLY = 0;
 static int WRITE_SIMULATE = 0;
+static int SAVE_SETTINGS = 0;
+
+static Settings *SETTINGS = NULL; // settings read from $HOME/.cdrdao
 
 #if defined(__FreeBSD__)
 
@@ -276,13 +286,119 @@ static void printUsage()
   --paranoia-mode #       - DAE paranoia mode (0..3)\n\
   --reload                - reload the disk if necessary for writing\n\
   --force                 - force execution of operation\n\
+  --save                  - save settings in $HOME/.cdrdao\n\
   -v #                    - sets verbose level\n\
   -n                      - no pause before writing",
 	  SCSI_DEVICE);
 
 }
 
-int parseCmdline(int argc, char **argv)
+static void importSettings(Command cmd)
+{
+  const char *sval;
+  const int *ival;
+
+  if (cmd == SIMULATE || cmd == WRITE || cmd == COPY_CD) {
+    if ((sval = SETTINGS->getString(SET_WRITE_DRIVER)) != NULL) {
+      DRIVER_ID = strdupCC(sval);
+    }
+
+    if ((sval = SETTINGS->getString(SET_WRITE_DEVICE)) != NULL) {
+      SCSI_DEVICE = strdupCC(sval);
+    }
+    
+    if ((ival = SETTINGS->getInteger(SET_WRITE_SPEED)) != NULL &&
+	*ival >= 0) {
+      WRITING_SPEED = *ival;
+    }
+  }
+
+  if (cmd == READ_CD) {
+    if ((sval = SETTINGS->getString(SET_READ_DRIVER)) != NULL) {
+      DRIVER_ID = strdupCC(sval);
+    }
+
+    if ((sval = SETTINGS->getString(SET_READ_DEVICE)) != NULL) {
+      SCSI_DEVICE = strdupCC(sval);
+    }
+
+    if ((ival = SETTINGS->getInteger(SET_READ_PARANOIA_MODE)) != NULL &&
+	*ival >= 0) {
+      PARANOIA_MODE = *ival;
+    }
+  }
+
+  if (cmd == COPY_CD) {
+    if ((sval = SETTINGS->getString(SET_READ_DRIVER)) != NULL) {
+      SOURCE_DRIVER_ID = strdupCC(sval);
+    }
+
+    if ((sval = SETTINGS->getString(SET_READ_DEVICE)) != NULL) {
+      SOURCE_SCSI_DEVICE = strdupCC(sval);
+    }
+    
+    if ((ival = SETTINGS->getInteger(SET_READ_PARANOIA_MODE)) != NULL &&
+	*ival >= 0) {
+      PARANOIA_MODE = *ival;
+    }
+  }
+
+  if (cmd == BLANK || cmd == DISK_INFO || cmd == UNLOCK) {
+    if ((sval = SETTINGS->getString(SET_WRITE_DRIVER)) != NULL) {
+      DRIVER_ID = strdupCC(sval);
+    }
+
+    if ((sval = SETTINGS->getString(SET_WRITE_DEVICE)) != NULL) {
+      SCSI_DEVICE = strdupCC(sval);
+    }
+  }
+
+}
+
+static void exportSettings(Command cmd)
+{
+  if (cmd == SIMULATE || cmd == WRITE || cmd == COPY_CD) {
+    if (DRIVER_ID != NULL)
+      SETTINGS->set(SET_WRITE_DRIVER, DRIVER_ID);
+    
+    if (SCSI_DEVICE != NULL)
+      SETTINGS->set(SET_WRITE_DEVICE, SCSI_DEVICE);
+
+    if (WRITING_SPEED >= 0) {
+      SETTINGS->set(SET_WRITE_SPEED, WRITING_SPEED);
+    }
+  }
+
+  if (cmd == READ_CD) {
+    if (DRIVER_ID != NULL)
+      SETTINGS->set(SET_READ_DRIVER, DRIVER_ID);
+
+    if (SCSI_DEVICE != NULL)
+      SETTINGS->set(SET_READ_DEVICE, SCSI_DEVICE);
+
+    SETTINGS->set(SET_READ_PARANOIA_MODE, PARANOIA_MODE);
+  }
+
+  if (cmd == COPY_CD) {
+    if (SOURCE_DRIVER_ID != NULL)
+      SETTINGS->set(SET_READ_DRIVER, SOURCE_DRIVER_ID);
+
+    if (SOURCE_SCSI_DEVICE != NULL)
+      SETTINGS->set(SET_READ_DEVICE, SOURCE_SCSI_DEVICE);
+
+    SETTINGS->set(SET_READ_PARANOIA_MODE, PARANOIA_MODE);
+  }
+
+  if (cmd == BLANK || cmd == DISK_INFO || cmd == UNLOCK) {
+    if (DRIVER_ID != NULL)
+      SETTINGS->set(SET_WRITE_DRIVER, DRIVER_ID);
+    
+    if (SCSI_DEVICE != NULL)
+      SETTINGS->set(SET_WRITE_DEVICE, SCSI_DEVICE);
+  }
+}
+
+static int parseCmdline(int argc, char **argv)
 {
   if (argc < 1) {
     return 1;
@@ -337,6 +453,9 @@ int parseCmdline(int argc, char **argv)
     message(-2, "Illegal command: %s", *argv);
     return 1;
   }
+
+  // retrieve settings from $HOME/.cdrdao for given command
+  importSettings(COMMAND);
 
   argc--, argv++;
 
@@ -447,6 +566,9 @@ int parseCmdline(int argc, char **argv)
       }
       else if (strcmp((*argv) + 2, "on-the-fly") == 0) {
 	ON_THE_FLY = 1;
+      }
+      else if (strcmp((*argv) + 2, "save") == 0) {
+	SAVE_SETTINGS = 1;
       }
       else if (strcmp((*argv) + 2, "driver") == 0) {
 	if (argc < 2) {
@@ -1254,8 +1376,23 @@ int main(int argc, char **argv)
   CdrDriver *srcCdr = NULL;
   DiskInfo *di = NULL;
   DiskInfo *srcDi = NULL;
+  const char *homeDir;
+  char *settingsPath = NULL;
 
   PRGNAME = *argv;
+
+  SETTINGS = new Settings;
+
+  if ((homeDir = getenv("HOME")) != NULL) {
+    settingsPath = strdup3CC(homeDir, "/.cdrdao", NULL);
+
+    SETTINGS->read(settingsPath);
+  }
+  else {
+    message(-1,
+	    "Environment variable 'HOME' not defined - cannot read .cdrdao.");
+  }
+
 
   if (parseCmdline(argc - 1, argv + 1) != 0) {
     VERBOSE = 1;
@@ -1266,6 +1403,11 @@ int main(int argc, char **argv)
   }
 
   printVersion();
+
+  if (SAVE_SETTINGS && settingsPath != NULL) {
+    exportSettings(COMMAND);
+    SETTINGS->write(settingsPath);
+  }
 
   if (COMMAND != READ_TOC && COMMAND != DISK_INFO && COMMAND != READ_CD &&
       COMMAND != BLANK && COMMAND != SCAN_BUS && COMMAND != UNLOCK &&

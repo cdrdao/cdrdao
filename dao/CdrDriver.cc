@@ -18,6 +18,12 @@
  */
 /*
  * $Log: CdrDriver.cc,v $
+ * Revision 1.3  2000/06/06 22:26:13  andreasm
+ * Updated list of supported drives.
+ * Added saving of some command line settings to $HOME/.cdrdao.
+ * Added test for multi session support in raw writing mode to GenericMMC.cc.
+ * Updated manual page.
+ *
  * Revision 1.2  2000/04/23 16:29:49  andreasm
  * Updated to state of my private development environment.
  *
@@ -76,7 +82,7 @@
  *
  */
 
-static char rcsid[] = "$Id: CdrDriver.cc,v 1.2 2000/04/23 16:29:49 andreasm Exp $";
+static char rcsid[] = "$Id: CdrDriver.cc,v 1.3 2000/06/06 22:26:13 andreasm Exp $";
 
 #include <config.h>
 
@@ -135,18 +141,23 @@ static DriverSelectTable READ_DRIVER_TABLE[] = {
 { "generic-mmc", "ASUS", "CD-S400", 0 },
 { "generic-mmc", "E-IDE", "CD-ROM 36X/AKU", 0 },
 { "generic-mmc", "HITACHI", "CDR-8435", OPT_MMC_NO_SUBCHAN },
+{ "generic-mmc", "KENWOOD", "CD-ROM UCR-415", OPT_DRV_GET_TOC_GENERIC },
 { "generic-mmc", "LG", "CD-ROM CRD-8480C", OPT_MMC_NO_SUBCHAN },
 { "generic-mmc", "LITEON", "CD-ROM", OPT_DRV_GET_TOC_GENERIC },
 { "generic-mmc", "MATSHITA", "CD-ROM CR-588", 0 },
 { "generic-mmc", "MEMOREX", "CD-233E", 0 },
+{ "generic-mmc", "PHILIPS", "CD-ROM PCCD052", 0 },
+{ "generic-mmc", "PHILIPS", "E-IDE CD-ROM 36X", 0 },
 { "generic-mmc", "PIONEER", "DVD-103", OPT_MMC_USE_PQ|OPT_MMC_PQ_BCD },
 { "generic-mmc", "SONY", "CD-ROM CDU31A-02", 0 },
+{ "generic-mmc", "TEAC", "CD-524E", OPT_DRV_GET_TOC_GENERIC },
 { "generic-mmc", "TEAC", "CD-532E", OPT_MMC_USE_PQ|OPT_MMC_PQ_BCD },
 { "generic-mmc", "TOSHIBA", "CD-ROM XM-3206B", 0 },
 { "generic-mmc", "TOSHIBA", "CD-ROM XM-6302B", 0 },
 { "plextor", "HITACHI", "DVD-ROM GD-2500", 0 },
 { "plextor", "MATSHITA", "CD-ROM CR-506", OPT_PLEX_DAE_D4_12 },
 { "plextor", "NAKAMICH", "MJ-5.16S", 0 },
+{ "plextor", "PIONEER", "CD-ROM DR-U03", OPT_DRV_GET_TOC_GENERIC },
 { "plextor", "PIONEER", "CD-ROM DR-U06", OPT_DRV_GET_TOC_GENERIC },
 { "plextor", "PIONEER", "CD-ROM DR-U10", OPT_DRV_GET_TOC_GENERIC },
 { "plextor", "PIONEER", "CD-ROM DR-U12", OPT_DRV_GET_TOC_GENERIC },
@@ -166,28 +177,40 @@ static DriverSelectTable WRITE_DRIVER_TABLE[] = {
 { "cdd2600", "HP", "CD-Writer 4020", 0 },
 { "cdd2600", "HP", "CD-Writer 6020", 0 },
 { "cdd2600", "IMS", "CDD2000", 0 },
+{ "cdd2600", "KODAK", "PCD-225", 0 },
 { "cdd2600", "PHILIPS", "CDD2000", 0 },
 { "cdd2600", "PHILIPS", "CDD2600", 0 },
 { "cdd2600", "PHILIPS", "CDD522", 0 },
+{ "generic-mmc", "AOPEN", "CRW9624", 0 },
+{ "generic-mmc", "GENERIC", "CRD-RW2", 0 },
 { "generic-mmc", "HP", "CD-Writer+ 7570", OPT_MMC_CD_TEXT },
 { "generic-mmc", "HP", "CD-Writer+ 8100", OPT_MMC_CD_TEXT },
 { "generic-mmc", "HP", "CD-Writer+ 8200", OPT_MMC_CD_TEXT },
+{ "generic-mmc", "HP", "CD-Writer+ 9100", OPT_MMC_CD_TEXT },
+{ "generic-mmc", "HP", "CD-Writer+ 9200", OPT_MMC_CD_TEXT },
 { "generic-mmc", "MATSHITA", "CD-R   CW-7502", 0 },
 { "generic-mmc", "MATSHITA", "CD-R   CW-7503", 0 },
 { "generic-mmc", "MATSHITA", "CD-R   CW-7582", 0 },
+{ "generic-mmc", "MATSHITA", "CDRRW01", 0 },
 { "generic-mmc", "MEMOREX", "CD-RW4224", 0 },
 { "generic-mmc", "MITSUMI", "CR-4801", 0 },
 { "generic-mmc", "PANASONIC", "CD-R   CW-7582", 0 },
 { "generic-mmc", "PHILIPS", "PCA460RW", 0 },
 { "generic-mmc", "PLEXTOR", "CD-R   PX-R412", OPT_MMC_USE_PQ|OPT_MMC_READ_ISRC },
 { "generic-mmc", "PLEXTOR", "CD-R   PX-R820", 0 },
+{ "generic-mmc", "PLEXTOR", "CD-R   PX-W124", 0 },
 { "generic-mmc", "PLEXTOR", "CD-R   PX-W4220", OPT_MMC_CD_TEXT },
 { "generic-mmc", "PLEXTOR", "CD-R   PX-W8220", OPT_MMC_CD_TEXT },
 { "generic-mmc", "PLEXTOR", "CD-R   PX-W8432", OPT_MMC_CD_TEXT },
 { "generic-mmc", "RICOH", "CD-R/RW MP7060", OPT_MMC_CD_TEXT },
+{ "generic-mmc", "SAF", "CD-R 8020", 0 },
+{ "generic-mmc", "SAF", "CD-RW6424", 0 },
 { "generic-mmc", "SONY", "CRX100", OPT_MMC_CD_TEXT },
+{ "generic-mmc", "SONY", "CRX120", OPT_MMC_CD_TEXT },
+{ "generic-mmc", "SONY", "CRX140", OPT_MMC_CD_TEXT },
 { "generic-mmc", "TEAC", "CD-R56", OPT_MMC_USE_PQ|OPT_MMC_CD_TEXT },
 { "generic-mmc", "TEAC", "CD-R58", OPT_MMC_USE_PQ|OPT_MMC_CD_TEXT },
+{ "generic-mmc", "TEAC", "CD-W54E", 0 },
 { "generic-mmc", "TRAXDATA", "CDRW4260", 0 },
 { "generic-mmc", "WAITEC", "WT624", 0 },
 { "generic-mmc", "YAMAHA", "CDR200", 0 },
@@ -197,18 +220,21 @@ static DriverSelectTable WRITE_DRIVER_TABLE[] = {
 { "generic-mmc", "YAMAHA", "CRW4260", 0 },
 { "generic-mmc", "YAMAHA", "CRW4416", 0 },
 { "generic-mmc", "YAMAHA", "CRW6416", 0 },
+{ "generic-mmc", "YAMAHA", "CRW8424", 0 },
 { "generic-mmc-raw", "ATAPI", "CD-R/RW 4X4X32", 0 },
 { "generic-mmc-raw", "ATAPI", "CD-R/RW CRW6206A", 0 },
 { "generic-mmc-raw", "BTC", "BCE621E", 0 },
 { "generic-mmc-raw", "HP", "CD-Writer+ 7100", 0 },
 { "generic-mmc-raw", "HP", "CD-Writer+ 7200", 0 },
 { "generic-mmc-raw", "IDE-CD", "R/RW 2x2x24", 0 },
+{ "generic-mmc-raw", "IOMEGA", "ZIPCD 4x650", 0 },
 { "generic-mmc-raw", "MEMOREX", "CDRW-2216", 0 },
 { "generic-mmc-raw", "MEMOREX", "CR-622", 0 },
 { "generic-mmc-raw", "MEMOREX", "CRW-1662", 0 },
 { "generic-mmc-raw", "MITSUMI", "CR-4802", 0 },
 { "generic-mmc-raw", "PHILIPS", "CDD3600", 0 },
 { "generic-mmc-raw", "PHILIPS", "CDD3610", 0 },
+{ "generic-mmc-raw", "PHILIPS", "PCRW404", 0 },
 { "generic-mmc-raw", "TRAXDATA", "CDRW2260+", 0 },
 { "generic-mmc-raw", "TRAXDATA", "CRW2260 PRO", 0 },
 { "generic-mmc-raw", "WAITEC", "WT4424", 0 },
@@ -219,6 +245,7 @@ static DriverSelectTable WRITE_DRIVER_TABLE[] = {
 { "sony-cdu920", "SONY", "CD-R   CDU924", 0 },
 { "sony-cdu948", "SONY", "CD-R   CDU948", 0 },
 { "taiyo-yuden", "T.YUDEN", "CD-WO EW-50", 0 },
+{ "teac-cdr55", "JVC", "R2626", 0 },
 { "teac-cdr55", "SAF", "CD-R2006PLUS", 0 },
 { "teac-cdr55", "SAF", "CD-R4012", 0 },
 { "teac-cdr55", "SAF", "CD-RW 226", 0 },
@@ -857,16 +884,12 @@ int CdrDriver::getModePage(int pageCode, unsigned char *buf, long bufLen,
     unsigned char *modePage = data + blockDescLen + 8;
     long modePageLen = modePage[1] + 2;
 
-    if (modePageLen > bufLen) {
-      message(-2, "Requested mode page exceeds provided buffer size.");
-      delete[] data;
-      return 2;
-    }
-    else {
-      memcpy(buf, modePage, modePageLen);
-      delete[] data;
-      return 0;
-    }
+    if (modePageLen > bufLen)
+      modePageLen = bufLen;
+
+    memcpy(buf, modePage, modePageLen);
+    delete[] data;
+    return 0;
   }
   else {
     message(-2, "No mode page data received.");
@@ -983,16 +1006,12 @@ int CdrDriver::getModePage6(int pageCode, unsigned char *buf, long bufLen,
     unsigned char *modePage = data + blockDescLen + 4;
     long modePageLen = modePage[1] + 2;
 
-    if (modePageLen > bufLen) {
-      message(-2, "Requested mode page exceeds provided buffer size.");
-      delete[] data;
-      return 2;
-    }
-    else {
-      memcpy(buf, modePage, modePageLen);
-      delete[] data;
-      return 0;
-    }
+    if (modePageLen > bufLen)
+      modePageLen = bufLen;
+
+    memcpy(buf, modePage, modePageLen);
+    delete[] data;
+    return 0;
   }
   else {
     message(-2, "No mode page data received.");

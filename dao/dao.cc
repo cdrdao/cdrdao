@@ -18,6 +18,12 @@
  */
 /*
  * $Log: dao.cc,v $
+ * Revision 1.3  2000/06/06 22:26:13  andreasm
+ * Updated list of supported drives.
+ * Added saving of some command line settings to $HOME/.cdrdao.
+ * Added test for multi session support in raw writing mode to GenericMMC.cc.
+ * Updated manual page.
+ *
  * Revision 1.2  2000/05/01 18:13:18  andreasm
  * Fixed too small mode page buffer.
  *
@@ -58,7 +64,7 @@
  *
  */
 
-static char rcsid[] = "$Id: dao.cc,v 1.2 2000/05/01 18:13:18 andreasm Exp $";
+static char rcsid[] = "$Id: dao.cc,v 1.3 2000/06/06 22:26:13 andreasm Exp $";
 
 #include <config.h>
 
@@ -1001,8 +1007,8 @@ static int getSharedMemory(long nofBuffers,
   (*shmSegment)->id = -1;
 
   (*shmSegment)->buffer = new char[sizeof(BufferHeader) +
-				   nofBuffers * sizeof(Buffer) +
-				   nofBuffers * bufferSize];
+				  nofBuffers * sizeof(Buffer) +
+				  nofBuffers * bufferSize];
 
   if ( (*shmSegment)->buffer == NULL) {
     message(-2, "Cannot allocated memory for ring buffer.");
