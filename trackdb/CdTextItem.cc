@@ -21,6 +21,7 @@
 #include <assert.h>
 #include <string.h>
 #include <ctype.h>
+#include <stdio.h>
 
 #include "CdTextItem.h"
 
@@ -118,18 +119,22 @@ CdTextItem::~CdTextItem()
 void CdTextItem::print(int isTrack, ostream &out) const
 {
   int i;
-
+  char buf[20];
   out << packType2String(isTrack, packType_);
 
   if (dataType() == SBCC) {
     out << " \"";
     for (i = 0; i < dataLen_ - 1; i++) {
-      if (data_[i] == '"')
+      if (data_[i] == '"') {
 	out << "\\\"";
-      else if (isprint(data_[i]))
+      }
+      else if (isprint(data_[i])) {
 	out << data_[i];
-      else
-	out.form("\\%03o", (unsigned int)data_[i]);
+      }
+      else {
+	sprintf(buf, "\\%03o", (unsigned int)data_[i]);
+	out << buf;
+      }
     }
 
     out << "\"";
@@ -140,7 +145,8 @@ void CdTextItem::print(int isTrack, ostream &out) const
     out << " {";
     for (i = 0; i < dataLen_; i++) {
       if (i == 0) {
-	out.form("%2d", (unsigned int)data_[i]);
+	sprintf(buf, "%2d", (unsigned int)data_[i]);
+	out << buf;
       }
       else {
 	if (i % 12 == 0) 
@@ -148,7 +154,8 @@ void CdTextItem::print(int isTrack, ostream &out) const
 	else
 	  out << ", ";
 
-	out.form("%2d", (unsigned int)data_[i]);
+	sprintf(buf, "%2d", (unsigned int)data_[i]);
+	out << buf;
       }
     }
 
