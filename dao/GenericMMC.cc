@@ -1142,6 +1142,10 @@ int GenericMMC::finishDao()
 {
   int ret;
 
+  flushCache(); /* Some drives never return to a ready state after writing
+		 * the lead-out. This is a try to solve this problem.
+		 */
+
   while ((ret = checkDriveReady()) == 2) {
     mSleep(2000);
   }

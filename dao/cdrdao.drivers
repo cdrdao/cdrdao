@@ -1,5 +1,5 @@
 # Driver table for cdrdao-1.1.6
-# Generated Sat Sep 14 23:24:03 2002 by mueller
+# Generated Sun Sep 15 16:51:59 2002 by mueller
 
 # Drivers for read operations
 R|ASUS|CD-S340|generic-mmc
@@ -66,6 +66,7 @@ R|SONY|CD-ROM CDU-76|plextor
 R|TOSHIBA|XM-5401|plextor
 R|PLEXTOR|CD-ROM|plextor-scan
 R|PLEXTOR|PX-40TS|plextor-scan
+R|PLEXTOR|PX-40TW|plextor-scan
 R|PLEXTOR|PX-63|plextor-scan
 R|TEAC|CD-ROM CD-532S|plextor-scan|OPT_PLEX_USE_PQ|OPT_PLEX_PQ_BCD
 R|TEAC|CD-532S|teac-cdr55
@@ -167,7 +168,7 @@ W|RICOH|CD-R/RW MP7060|generic-mmc|OPT_MMC_CD_TEXT
 W|RICOH|CD-R/RW MP7063A|generic-mmc|OPT_MMC_CD_TEXT
 W|RICOH|CD-R/RW MP7080|generic-mmc|OPT_MMC_CD_TEXT
 W|RICOH|DVD/CDRW MP9060|generic-mmc|OPT_MMC_CD_TEXT
-W|SAF|CD-R 8020|generic-mmc
+W|SAF|CD-R8020|generic-mmc
 W|SAF|CD-RW4224A|generic-mmc
 W|SAF|CD-RW6424|generic-mmc
 W|SAMSUNG|CD-R/RW SW-206|generic-mmc

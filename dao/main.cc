@@ -1771,6 +1771,26 @@ static int copyCdOnTheFly(CdrDriver *src, CdrDriver *dst, int session,
 
     VERBOSE = 0;
 
+#ifdef __CYGWIN__
+    /* Close the SCSI interface and open it again. This will re-init the
+     * ASPI layer which is required for the child process
+     */
+
+    delete src->scsiIf();
+
+    src->scsiIf(new ScsiIf(SOURCE_SCSI_DEVICE));
+    
+    if (src->scsiIf()->init() != 0) {
+      message(-2, "Re-init of SCSI interace failed.");
+
+      // indicate end of data
+      close(pipeFds[1]);
+
+      while (1)
+	sleep(10);
+    }    
+#endif
+
     if (src->readDisk(session, "-") != NULL)
       message(1, "CD image reading finished successfully.");
     else
@@ -2333,11 +2353,6 @@ int main(int argc, char **argv)
     }
 
     if (ON_THE_FLY) {
-#ifdef __CYGWIN__
-      message(-2,
-	      "Sorry, on the fly copying is not supported for Win32, yet.");
-      exitCode = 1; goto fail;
-#else
       if (srcCdr == cdr) {
 	message(-2, "Two different device are required for on-the-fly copying.");
 	message(-2, "Please use option '--source-device x,y,z'.");
@@ -2352,7 +2367,6 @@ int main(int argc, char **argv)
 	message(-2, "On-the-fly CD copying failed.");
 	exitCode = 1; goto fail;
       }
-#endif
     }
     else {
       if (srcCdr != cdr)

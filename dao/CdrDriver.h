@@ -140,6 +140,9 @@ public:
   // returns stored SCSI interface object
   virtual ScsiIf *scsiIf() const { return scsiIf_; }
 
+  // sets SCSI interface object
+  void scsiIf(ScsiIf *i) { scsiIf_ = i; }
+
   // returns name of driver
   virtual const char *driverName() const { return driverName_; }
 
