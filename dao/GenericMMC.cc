@@ -128,10 +128,13 @@ int GenericMMC::subChannelEncodingMode(TrackData::SubChannelMode sm) const
     break;
 
   case TrackData::SUBCHAN_RW:
+#if 0
     if (options_ & OPT_MMC_NO_RW_PACKED) 
       ret = 1; // have to encode the R-W sub-channel data
     else 
       ret = 0;
+#endif
+    ret = 0;
     break;
 
   case TrackData::SUBCHAN_RW_RAW:

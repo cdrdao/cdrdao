@@ -43,7 +43,7 @@ RANLIB = @RANLIB@
 LIB = libtrackdb.a
 
 SRC = util.cc TrackData.cc TrackDataList.cc Msf.cc SubTrack.cc Track.cc \
-      Toc.cc CdTextItem.cc CdTextContainer.cc Cddb.cc
+      Toc.cc CdTextItem.cc CdTextContainer.cc Cddb.cc lec.cc
 
 PARSER_OBJ = TocParser.o TocParserGram.o TocLexerBase.o \
              CueParser.o CueParserGram.o CueLexerBase.o \
@@ -73,6 +73,9 @@ distclean:
                   CueParserGram.h \
                   $(LIB) Makefile depend.list
 	rm -f *.d
+
+lec_main: lec.cc
+	$(CXX) $(ALL_CXXFLAGS) lec.cc -o lec_main
 
 depend:
 	rm -f depend.list

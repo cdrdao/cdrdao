@@ -28,8 +28,7 @@
 #include "util.h"
 #include "TrackDataList.h"
 #include "CdTextItem.h"
-
-#include "edc_ecc/ecc.h"
+#include "lec.h"
 
 Track::Track(TrackData::Mode t, TrackData::SubChannelMode st) 
   : length_(0), start_(0), end_(0)
@@ -1276,7 +1275,7 @@ SubTrack *Track::removeSubTrack(SubTrack *subTrack)
 
 void Track::encodeZeroData(int encMode, TrackData::Mode mode,
 			   TrackData::SubChannelMode smode,
-			   long lba, char *buf)
+			   long lba, unsigned char *buf)
 {
   long subChanLen = TrackData::subChannelSize(smode);
   
@@ -1290,30 +1289,30 @@ void Track::encodeZeroData(int encMode, TrackData::Mode mode,
     case TrackData::AUDIO:
       break;
     case TrackData::MODE0:
-      do_encode_L2((unsigned char *)buf, MODE_0, lba);
-      scramble_L2((unsigned char *)buf);
+      lec_encode_mode0_sector(lba, buf);
+      lec_scramble(buf);
       break;
     case TrackData::MODE1:
     case TrackData::MODE1_RAW:
-      do_encode_L2((unsigned char *)buf, MODE_1, lba);
-      scramble_L2((unsigned char *)buf);
+      lec_encode_mode1_sector(lba, (u_int8_t *)buf);
+      lec_scramble(buf);
       break;
     case TrackData::MODE2:
     case TrackData::MODE2_RAW:
-      do_encode_L2((unsigned char *)buf, MODE_2, lba);
-      scramble_L2((unsigned char *)buf);
+      lec_encode_mode2_sector(lba, (u_int8_t *)buf);
+      lec_scramble(buf);
       break;
     case TrackData::MODE2_FORM1:
     case TrackData::MODE2_FORM_MIX: // encode as form 1
-      do_encode_L2((unsigned char *)buf, MODE_2_FORM_1, lba);
-      scramble_L2((unsigned char *)buf);
+      lec_encode_mode2_form1_sector(lba, (u_int8_t *)buf);
+      lec_scramble(buf);
       break;
     case TrackData::MODE2_FORM2:
       // setup sub header
       buf[16+2] = 0x20;
       buf[16+6] = 0x20;
-      do_encode_L2((unsigned char *)buf, MODE_2_FORM_2, lba);
-      scramble_L2((unsigned char *)buf);
+      lec_encode_mode2_form2_sector(lba, (u_int8_t *)buf);
+      lec_scramble(buf);
       break;
     }
   }
@@ -1372,6 +1371,8 @@ TrackReader::TrackReader(const Track *t) : reader(NULL)
   open_ = 0;
   
   subChanDelayLineIndex_ = 0;
+
+  lec_init();
 }
 
 TrackReader::~TrackReader()
@@ -1404,7 +1405,7 @@ int TrackReader::openData()
   assert(track_ != NULL);
 
   int ret = 0;
-  int i;
+  //int i;
 
   open_ = 1;
   readPos_ = 0;
@@ -1415,9 +1416,10 @@ int TrackReader::openData()
   reader.init(readSubTrack_);
 
   subChanDelayLineIndex_ = 0;
+  /*
   for(i = 0; i < MAX_SUB_DEL; i++)
     memset(subChanDelayLine_[i], 0, 24);
-
+  */
 
   if (readSubTrack_ != NULL) {
     ret = reader.openData();
@@ -1631,12 +1633,12 @@ int TrackReader::readBlock(int encodingMode, int subChanEncodingMode,
     case TrackData::AUDIO:
       break;
     case TrackData::MODE0:
-      do_encode_L2(encBuf, MODE_0, lba);
-      scramble_L2(encBuf);
+      lec_encode_mode0_sector(lba, encBuf);
+      lec_scramble(encBuf);
       break;
     case TrackData::MODE1:
-      do_encode_L2(encBuf, MODE_1, lba);
-      scramble_L2(encBuf);
+      lec_encode_mode1_sector(lba, encBuf);
+      lec_scramble(encBuf);
       break;
     case TrackData::MODE1_RAW:
       {
@@ -1646,31 +1648,31 @@ int TrackReader::readBlock(int encodingMode, int subChanEncodingMode,
 	    int2bcd(m.sec()) != encBuf[13] ||
 	    int2bcd(m.frac()) != encBuf[14]) {
 	  // sector address mismatch -> rebuild L-EC since it covers the header
-	  do_encode_L2(encBuf, MODE_1, lba);
+	  lec_encode_mode1_sector(lba, encBuf);
 	}
 
-	scramble_L2(encBuf);
+	lec_scramble(encBuf);
       }
       break;
     case TrackData::MODE2:
-      do_encode_L2(encBuf, MODE_2, lba);
-      scramble_L2(encBuf);
+      lec_encode_mode2_sector(lba, encBuf);
+      lec_scramble(encBuf);
       break;
     case TrackData::MODE2_FORM1:
-      do_encode_L2(encBuf, MODE_2_FORM_1, lba);
-      scramble_L2(encBuf);
+      lec_encode_mode2_form1_sector(lba, encBuf);
+      lec_scramble(encBuf);
       break;
     case TrackData::MODE2_FORM2:
-      do_encode_L2(encBuf, MODE_2_FORM_2, lba);
-      scramble_L2(encBuf);
+      lec_encode_mode2_form2_sector(lba, encBuf);
+      lec_scramble(encBuf);
       break;
     case TrackData::MODE2_FORM_MIX:
       if ((encBuf[16+2] & 0x20) != 0)
-	do_encode_L2(encBuf, MODE_2_FORM_2, lba);
+	lec_encode_mode2_form2_sector(lba, encBuf);
       else
-	do_encode_L2(encBuf, MODE_2_FORM_1, lba);
+	lec_encode_mode2_form1_sector(lba, encBuf);
 
-      scramble_L2(encBuf);
+      lec_scramble(encBuf);
       break;
     case TrackData::MODE2_RAW:
       {
@@ -1682,7 +1684,7 @@ int TrackReader::readBlock(int encodingMode, int subChanEncodingMode,
 	encBuf[13] = int2bcd(m.sec());
 	encBuf[14] = int2bcd(m.frac());
 
-	scramble_L2(encBuf);
+	lec_scramble(encBuf);
       }
       break;
     }
@@ -1714,8 +1716,9 @@ int TrackReader::readBlock(int encodingMode, int subChanEncodingMode,
     break;
   case TrackData::SUBCHAN_RW:
     if (subChanEncodingMode == 1) {
-      do_encode_sub((unsigned char*)subChanData, 1, 1,
+      /*do_encode_sub((unsigned char*)subChanData, 1, 1,
 		    &subChanDelayLineIndex_, subChanDelayLine_);
+      */
     }
     break;
 

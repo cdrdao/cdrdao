@@ -79,7 +79,8 @@ public:
   // fills provided buffer with an audio block that contains zero data
   // encoded with given mode
   static void encodeZeroData(int encMode, TrackData::Mode, 
-			     TrackData::SubChannelMode, long lba, char *);
+			     TrackData::SubChannelMode, long lba,
+			     unsigned char *);
 
   int check(int trackNr) const;
 

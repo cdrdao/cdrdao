@@ -1266,7 +1266,7 @@ int CdrDriver::writeZeros(TrackData::Mode m, TrackData::SubChannelMode sm,
   long cntMb;
   long lastMb = 0;
   long blockLen;
-  char *buf;
+  unsigned char *buf;
 
   blockLen = blockSize(m, sm);
 
@@ -1282,7 +1282,7 @@ int CdrDriver::writeZeros(TrackData::Mode m, TrackData::SubChannelMode sm,
   while (count > 0) {
     n = (count > blocksPerWrite_ ? blocksPerWrite_ : count);
 
-    buf = zeroBuffer_;
+    buf = (unsigned char *)zeroBuffer_;
 
     for (i = 0; i < n; i++) {
       Track::encodeZeroData(encodingMode_, m, sm, encLba++, buf);

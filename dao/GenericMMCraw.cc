@@ -107,7 +107,8 @@ int GenericMMCraw::subChannelEncodingMode(TrackData::SubChannelMode sm) const
       ret = 0; // plain
       break;
     case 3:
-      ret = 1; // have to create parity and perform interleaving
+      ret = -1; // currently not supported
+      //ret = 1; // have to create parity and perform interleaving
       break;
     default:
       ret = -1; // not supported

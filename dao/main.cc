@@ -162,7 +162,6 @@ static void printVersion()
 #ifdef USE_SCGLIB
   message(2, "  SCSI interface library - (C) Joerg Schilling");
 #endif
-  message(2, "  L-EC encoding library - (C) Heiko Eissfeldt");
   message(2, "  Paranoia DAE library - (C) Monty");
   message(2, "");
   message(2, "Check http://cdrdao.sourceforge.net/drives.html#dt for current driver tables.");
