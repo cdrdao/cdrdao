@@ -438,7 +438,7 @@ static void *reader(void *args)
   int trackNr = 1;
   TrackData::Mode dataMode;
   TrackData::SubChannelMode subChanMode;
-  int encodingMode = 1;
+  int encodingMode = 0;
   int subChanEncodingMode = 1;
   int newTrack;
   long tact; // number of blocks already read from current track
