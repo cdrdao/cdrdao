@@ -308,7 +308,7 @@ track > [ Track *tr, int lineNr ]
 
     (  subTrack [ trackType, subChanType ] > [ st, lineNr ] 
        << 
-          if ($tr->append(*st) == 2) {
+          if (st != NULL && $tr->append(*st) == 2) {
 	    message(-2,
 		    "%s:%d: Mixing of FILE/AUDIOFILE/SILENCE and DATAFILE/ZERO statements not allowed.", filename_, lineNr);
 	    message(-2,
