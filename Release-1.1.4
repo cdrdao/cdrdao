@@ -1,0 +1,49 @@
+Hi,
+
+cdrdao-1.1.4 is available from:
+
+  http://cdrdao.sourceforge.net/download.html
+
+
+Cdrdao changes:
+
+ o Created new 'toshiba' driver for 'read-toc'/'read-cd' with Toshiba
+   CD-ROM drives.
+
+ o Added full multi session support to the 'cdd2600' driver.
+
+ o CD-TEXT is written without any copy protection flags now.
+
+ o Added CDDB access to add title and artist data as CD-TEXT to an
+   existing toc-file. The direct cddbp and the http encapsulated protocol
+   is supported.
+
+ o Fixed 'unit not ready' problems after writing with the 'generic-mmc'
+   and 'generic-mmc-raw' driver.
+
+ o Toc-files with tracks that are shorter than 4 seconds will be recorded
+   if option '--force' is given.
+
+ o Some of the command line options are now saved to a settings file
+   "$HOME/.cdrdao" if option '--save' is given.
+
+ o The driver database is now kept in an external file so it is possible
+   to update the database between the cdrdao releases. Actual driver 
+   database files will be available from
+
+     http://cdrdao.sourceforge.net/drives.html
+
+ o Fixed bug in CD-TEXT reading code: CD-TEXT fields with empty strings were
+   only read for the first track.
+
+ 
+Xcdrdao changes:
+ 
+ o Xcdrdao is now a Gnome application and will be called "Gnome CD Master"
+   (gcdmaster) in future.
+   
+ o Added table wise entry of CD-TEXT title/performer data.
+
+
+
+Andreas
