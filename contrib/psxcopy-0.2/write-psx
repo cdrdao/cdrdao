@@ -1,0 +1,7 @@
+#!/bin/sh
+echo write-psx - v.0.4
+writer='/dev/sg2'
+driver='generic-mmc'
+cdrdao write --device $writer --speed 4 --buffers 128 -v 1 $1.toc
+cp -f $1.toc.backup $1.toc 2> /dev/null
+rm -f $1.toc.backup 2> /dev/null
