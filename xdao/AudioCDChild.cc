@@ -757,6 +757,7 @@ void AudioCDChild::selectionSet()
 
 void AudioCDChild::tocBlockedMsg(const char *op)
 {
+//  MessageBox msg(MDI_WINDOW->get_active_window(), op, 0,
   MessageBox msg(MDI_WINDOW, op, 0,
 		 "Cannot perform requested operation because", 
 		 "project is in read-only state.", NULL);

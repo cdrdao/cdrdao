@@ -18,6 +18,9 @@
  */
 /*
  * $Log: xcdrdao.cc,v $
+ * Revision 1.13  2000/07/30 02:41:03  llanero
+ * started CD to CD copy. Still not functional.
+ *
  * Revision 1.12  2000/07/17 22:08:33  llanero
  * DeviceList is now a class
  * RecordGenericDialog and RecordCDTarget first implemented.
@@ -234,8 +237,9 @@ int main (int argc, char* argv[])
   }
   
   MDI_WINDOW = new MDIWindow(tocEdit);
-//FIXME: MDI STUFF  MDI_WINDOW->open_toplevel();
-
+//  MDI_WINDOW->add_child(*AUDIOCD_CHILD);
+//  MDI_WINDOW->add_view(*AUDIOCD_CHILD);
+//  MDI_WINDOW->open_toplevel();
   MDI_WINDOW->show();
 
   guiUpdate();

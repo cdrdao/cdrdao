@@ -39,6 +39,20 @@ RecordGenericDialog::RecordGenericDialog()
   Gtk::Button *closeButton;
   Gtk::Button *helpButton;
 
+/*  Gnome::Dialog *testDialog;
+  vector <string> buttons;
+  Gtk::Button *button1;
+
+//  button1 = new Gnome::Stock::Buttons::Button(GNOME_STOCK_BUTTON_OK);
+//  buttons.push_back(button1);
+//  button1->show();
+  buttons.push_back("GNOME_STOCK_BUTTON_OK");
+
+  testDialog = new Gnome::Dialog("title ...", buttons);
+
+  testDialog->show();
+*/
+
   active_ = 0;
 
   TOCSOURCE = new RecordTocSource;
@@ -181,7 +195,7 @@ void RecordGenericDialog::start(TocEdit *tocEdit, enum RecordSourceType SourceTy
     switch (TargetType)
     {
       case T_CD:
-                  CDTARGET->start(tocEdit);
+                  CDTARGET->start(tocEdit, SourceType);
                   break;
       case T_HD:
                   HDTARGET->start(tocEdit);
@@ -194,7 +208,7 @@ void RecordGenericDialog::start(TocEdit *tocEdit, enum RecordSourceType SourceTy
     switch (target_) 
     {
 	  case T_CD:
-                  CDTARGET->update(UPD_ALL, tocEdit);
+                  CDTARGET->update(UPD_ALL, tocEdit, SourceType);
                   break;
       case T_HD:
                   HDTARGET->update(UPD_ALL, tocEdit);
@@ -253,7 +267,7 @@ void RecordGenericDialog::update(unsigned long level, TocEdit *tocEdit)
   switch (target_) 
   {
     case T_CD:
-                CDTARGET->update(level, tocEdit);
+                CDTARGET->update(level, tocEdit, source_);
                 break;
     case T_HD:
                 HDTARGET->update(level, tocEdit);

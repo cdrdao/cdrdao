@@ -18,6 +18,9 @@
  */
 /*
  * $Log: CdDevice.cc,v $
+ * Revision 1.6  2000/07/30 02:41:03  llanero
+ * started CD to CD copy. Still not functional.
+ *
  * Revision 1.5  2000/05/01 18:15:00  andreasm
  * Switch to gnome-config settings.
  * Adapted Message Box to Gnome look, unfortunately the Gnome::MessageBox is
@@ -46,7 +49,7 @@
  *
  */
 
-static char rcsid[] = "$Id: CdDevice.cc,v 1.5 2000/05/01 18:15:00 andreasm Exp $";
+static char rcsid[] = "$Id: CdDevice.cc,v 1.6 2000/07/30 02:41:03 llanero Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -264,6 +267,11 @@ void CdDevice::manuallyConfigured(int f)
 CdDevice::Status CdDevice::status() const
 {
   return status_;
+}
+
+Process *CdDevice::process() const
+{
+  return process_;
 }
 
 void CdDevice::status(Status s)
@@ -742,6 +750,153 @@ void CdDevice::readProgress(int *status, int *track, int *trackProgress) const
   *status = progressStatus_;
   *track = progressTrack_;
   *trackProgress = progressTrackRelative_;
+}
+
+// Starts a 'cdrdao' for duplicating a CD.
+// Return: 0: OK, process succesfully launched
+//         1: error occured
+int CdDevice::duplicateDao(int simulate, int multiSession, int speed,
+		int eject, int reload, int buffer, int onthefly, CdDevice *readdev)
+{
+  char *tocFileName;
+  char *args[20];
+  int n = 0;
+  char devname[30];
+  char drivername[50];
+  char speedbuf[20];
+  char *execName;
+  const char *s;
+  char bufferbuf[20];
+
+
+  if (readdev->status() != DEV_READY || readdev->process() != NULL)
+    return 1;
+
+  if (status_ != DEV_READY || process_ != NULL)
+    return 1;
+
+  if ((s = gnome_config_get_string(SET_CDRDAO_PATH)) != NULL)
+    execName = strdupCC(s);
+  else
+    execName = strdupCC("cdrdao");
+
+  args[n++] = execName;
+
+  args[n++] = "copy";
+
+  if (simulate)
+    args[n++] = "--simulate";
+
+  args[n++] = "--remote";
+
+  args[n++] = "-v0";
+
+  if (multiSession)
+    args[n++] = "--multi";
+
+  if (speed > 0) {
+    sprintf(speedbuf, "%d", speed);
+    args[n++] = "--speed";
+    args[n++] = speedbuf;
+  }
+
+  if (eject)
+    args[n++] = "--eject";
+
+  if (reload)
+    args[n++] = "--reload";
+
+  if (onthefly)
+    args[n++] = "--on-the-fly";
+
+  args[n++] = "--device";
+
+  if (specialDevice_ != NULL && *specialDevice_ != 0) {
+    args[n++] = specialDevice_;
+  }
+  else {
+    sprintf(devname, "%d,%d,%d", bus_, id_, lun_);
+    args[n++] = devname;
+  }
+
+  if (driverId_ > 0) {
+    sprintf(drivername, "%s:0x%lx", driverName(driverId_), options_);
+    args[n++] = "--driver";
+    args[n++] = drivername;
+  }
+
+  args[n++] = "--source-device";
+
+  if (readdev->specialDevice() != NULL && *(readdev->specialDevice()) != 0) {
+    args[n++] = readdev->specialDevice();
+  }
+  else {
+    sprintf(devname, "%d,%d,%d", readdev->bus(), readdev->id(), readdev->lun());
+    args[n++] = devname;
+  }
+
+  if (readdev->driverId() > 0) {
+    sprintf(drivername, "%s:0x%lx", driverName(readdev->driverId()),
+    			 readdev->driverOptions());
+    args[n++] = "--source-driver";
+    args[n++] = drivername;
+  }
+
+  if (buffer >= 10) {
+    sprintf(bufferbuf, "%i", buffer);
+    args[n++] = "--buffers";
+    args[n++] = bufferbuf;
+  }
+
+
+  args[n++] = NULL;
+  
+  assert(n <= 20);
+  
+  int i;
+
+  message(0, "Starting: ");
+  for (i = 0; i < n - 1; i++)
+    message(0, "%s ", args[i]);
+  message(0, "");
+
+//FIXME: !!!
+
+//  RECORD_PROGRESS_POOL->start(this, NULL);
+
+  // Remove the SCSI interface of this device to avoid problems with double
+  // usage of device nodes.
+  delete scsiIf_;
+  scsiIf_ = NULL;
+
+  process_ = PROCESS_MONITOR->start(execName, args);
+
+  delete[] execName;
+
+/*
+  if (process_ != NULL) {
+    status_ = DEV_RECORDING;
+
+    if (process_->commFd() >= 0) {
+      Gtk::Main::instance()->input.connect(slot(this,
+						&CdDevice::updateProgress),
+					   process_->commFd(),
+					   (GdkInputCondition)(GDK_INPUT_READ|GDK_INPUT_EXCEPTION));
+    }
+
+    return 0;
+  }
+  else {
+    return 1;
+  }
+*/
+}
+
+void CdDevice::abortDaoDuplication()
+{
+  if (process_ != NULL && !process_->exited()) {
+    PROCESS_MONITOR->stop(process_);
+  }
 }
 
 void CdDevice::createScsiIf()

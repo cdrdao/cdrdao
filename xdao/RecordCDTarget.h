@@ -36,10 +36,10 @@ public:
 
   Gtk::Window *parent; // the dialog where the vbox is placed
   
-  void start(TocEdit *);
+  void start(TocEdit *, RecordSourceType source);
   void stop();
 
-  void update(unsigned long level, TocEdit *);
+  void update(unsigned long level, TocEdit *, RecordSourceType source);
 
 private:
   TocEdit *tocEdit_;
@@ -49,19 +49,14 @@ private:
 
   int speed_;
 
-//  struct SpeedTable {
-//    int speed;
-//    const char *name;
-//  };
-
-  Gtk::RadioButton *writeButton_;
-  Gtk::RadioButton *simulateButton_;
+//  Gtk::RadioButton *writeButton_;
+  Gtk::CheckButton *simulateButton_;
   
   Gtk::CheckButton *closeSessionButton_;
+  Gtk::CheckButton *ontheflyButton_;
   Gtk::CheckButton *ejectButton_;
   Gtk::CheckButton *reloadButton_;
 
-//  Gtk::OptionMenu *speedMenu_;
   Gtk::SpinButton *speedSpinButton_;
   Gtk::CheckButton *speedButton_;
 
@@ -75,7 +70,6 @@ public:
    void startAction(RecordSourceType source, RecordTocSource *TOC, RecordCDSource *CD);
 
 private:
-//  void setSpeed(int);
   void speedButtonChanged();
   void speedChanged();
 };

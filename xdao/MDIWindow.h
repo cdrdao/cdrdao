@@ -72,8 +72,6 @@ private:
   void projectInfo();
   void trackInfo();
 
-//llanero perhaps record must be a per child menu? and extract??
-
 public:
   TocEdit *tocEdit() const { return tocEdit_; }
 

@@ -18,6 +18,9 @@
  */
 /*
  * $Log: CdDevice.h,v $
+ * Revision 1.6  2000/07/30 02:41:03  llanero
+ * started CD to CD copy. Still not functional.
+ *
  * Revision 1.5  2000/05/01 18:15:00  andreasm
  * Switch to gnome-config settings.
  * Adapted Message Box to Gnome look, unfortunately the Gnome::MessageBox is
@@ -76,6 +79,7 @@ public:
   const char *product() const;
 
   Status status() const;
+  Process *process() const;
 
   int exitStatus() const;
 
@@ -107,6 +111,10 @@ public:
 
   int extractDao(char *tocFileName, int correction);
   void abortDaoReading();
+
+  int duplicateDao(int simulate, int multiSession, int speed,
+		int eject, int reload, int buffer, int onthefly, CdDevice *readdev);
+  void abortDaoDuplication();
     
   int progressStatusChanged();
   void recordProgress(int *status, int *track, int *totalProgress,

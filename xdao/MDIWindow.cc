@@ -51,6 +51,7 @@ MDIWindow::install_menus_and_toolbar()
 {
   vector<Gnome::UI::Info> menus, newMenuTree, fileMenuTree, audioEditMenuTree;
   vector<Gnome::UI::Info> actionsMenuTree, settingsMenuTree, helpMenuTree;
+
   // File->New menu
   //
 
@@ -233,7 +234,7 @@ MDIWindow::install_menus_and_toolbar()
   menus.push_back(Gnome::Menus::Help(helpMenuTree));
 
 
-//FIXME: MDI STUFF  set_menubar_template(*menus);
+//  set_menubar_template(menus);
   create_menus(menus);
   
   // Toolbar
@@ -291,14 +292,14 @@ MDIWindow::install_menus_and_toolbar()
 					slot(this, &MDIWindow::app_close),
 					N_("Quit application")));
 
-//FIXME: MDI STUFF  set_toolbar_template(*toolbarTree);
+//  set_toolbar_template(toolbarTree);
   create_toolbar(toolbarTree);
 
   install_menu_hints();
 }
 
 MDIWindow::MDIWindow(TocEdit *tedit)
-//FIXME: MDI STUFF  : Gnome::MDI("GnomeCDMaster", "Gnome CD Master")
+//  : Gnome::MDI("GnomeCDMaster", "Gnome CD Master"),
   : Gnome::App("GnomeCDMaster", "Gnome CD Master"),
     readSaveFileSelector_("")
 {
@@ -322,8 +323,7 @@ MDIWindow::MDIWindow(TocEdit *tedit)
   
   install_menus_and_toolbar();
 
-  //FIXME: MDI STUFF  MDI_WINDOW->add_child(*AUDIOCD_CHILD);
-  //FIXME: MDI STUFF  MDI_WINDOW->add_view(*AUDIOCD_CHILD);
+
   set_contents(*audioCdChild_->vbox_);
 
   //delete_event.connect(slot(this, &MDIWindow::delete_event_cb));
@@ -333,6 +333,7 @@ MDIWindow::MDIWindow(TocEdit *tedit)
 void MDIWindow::app_close()
 {
   if (tocEdit_->tocDirty()) {
+//    Ask2Box msg(this->get_active_window(), "Quit", 0, 2, "Current work not saved.", "",
     Ask2Box msg(this, "Quit", 0, 2, "Current work not saved.", "",
 		"Really Quit?", NULL);
     if (msg.run() != 1)
@@ -368,6 +369,7 @@ void MDIWindow::update(unsigned long level)
     if (tocEdit_->tocDirty())
       s += "(*)";
     
+//    get_active_window()->set_title(s);
     set_title(s);
   }
 
@@ -397,6 +399,7 @@ void MDIWindow::statusMessage(const char *fmt, ...)
 
 void MDIWindow::tocBlockedMsg(const char *op)
 {
+//  MessageBox msg(this->get_active_window(), op, 0,
   MessageBox msg(this, op, 0,
 		 "Cannot perform requested operation because", 
 		 "project is in read-only state.", NULL);
@@ -483,6 +486,7 @@ void MDIWindow::newProject()
   }
 
   if (tocEdit_->tocDirty()) {
+//    Ask2Box msg(this->get_active_window(), "New", 0, 2, "Current project not saved.", "",
     Ask2Box msg(this, "New", 0, 2, "Current project not saved.", "",
 		"Continue?", NULL);
     if (msg.run() != 1)
@@ -516,6 +520,7 @@ void MDIWindow::saveProject()
     s += tocEdit_->filename();
     s+= "\":";
     
+//    MessageBox msg(this->get_active_window(), "Save Project", 0, s.c_str(), strerror(errno), NULL);
     MessageBox msg(this, "Save Project", 0, s.c_str(), strerror(errno), NULL);
     msg.run();
   }
@@ -543,6 +548,7 @@ void MDIWindow::readWriteFileSelectorOKCB()
     }
 
     if (tocEdit_->tocDirty()) {
+//      Ask2Box msg(this->get_active_window(), "Read Project", 0, 2, "Current work not saved.", "",
       Ask2Box msg(this, "Read Project", 0, 2, "Current work not saved.", "",
 		  "Continue?", NULL);
       if (msg.run() != 1)
@@ -571,6 +577,7 @@ void MDIWindow::readWriteFileSelectorOKCB()
 	m += tocEdit_->filename();
 	m += "\":";
     
+//	MessageBox msg(this->get_active_window(), "Save Project", 0, m.c_str(), strerror(errno), NULL);
 	MessageBox msg(this, "Save Project", 0, m.c_str(), strerror(errno), NULL);
 	msg.run();
       }
