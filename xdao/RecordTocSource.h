@@ -17,59 +17,32 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#ifndef __RECORD_GENERIC_DIALOG_H
-#define __RECORD_GENERIC_DIALOG_H
+#ifndef __RECORD_TOC_SOURCE_H
+#define __RECORD_TOC_SOURCE_H
 
 #include <gtk--.h>
 #include <gtk/gtk.h>
 
-#include <gnome--.h>
-
 class TocEdit;
 //class CdDevice;
-class RecordTocSource;
-class RecordCDSource;
-class RecordCDTarget;
-class RecordHDTarget;
 
-typedef enum {
-	S_NONE,
-	S_TOC,
-	S_CD
-}RecordSourceType;
-
-typedef enum {
-	T_NONE,
-	T_CD,
-	T_HD
-}RecordTargetType;
-
-class RecordGenericDialog : public Gtk::Window {
+class RecordTocSource : public Gtk::VBox {
 public:
-  RecordGenericDialog();
-  ~RecordGenericDialog();
+  RecordTocSource();
+  ~RecordTocSource();
 
-  void start(TocEdit *, enum RecordSourceType SourceType, enum RecordTargetType TargetType);
+  Gtk::Window *parent; // the dialog where the vbox is placed
+  
+  void start(TocEdit *);
   void stop();
 
   void update(unsigned long level, TocEdit *);
 
-  void cancelAction();
-  void startAction();
-  void help();
-
-  gint delete_event_impl(GdkEventAny*);
-
 private:
+  TocEdit *tocEdit_;
   int active_;
 
-  RecordTocSource *TOCSOURCE;
-  RecordCDSource *CDSOURCE;
-  RecordCDTarget *CDTARGET;
-  RecordHDTarget *HDTARGET;
-
-  enum RecordSourceType source_;
-  enum RecordTargetType target_;
+  Gtk::Label *projectLabel_;
 
 };
 

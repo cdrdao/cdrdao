@@ -20,6 +20,11 @@
 #include <gnome--.h>
 
 #include "RecordGenericDialog.h"
+#include "RecordTocSource.h"
+#include "RecordCDSource.h"
+#include "RecordCDTarget.h"
+#include "RecordHDTarget.h"
+#include "guiUpdate.h"
 
 RecordGenericDialog::RecordGenericDialog()
 {
@@ -36,19 +41,29 @@ RecordGenericDialog::RecordGenericDialog()
 
   active_ = 0;
 
+  TOCSOURCE = new RecordTocSource;
+  CDSOURCE = new RecordCDSource;
   CDTARGET = new RecordCDTarget;
+  HDTARGET = new RecordHDTarget;
+
+//  TOCSOURCE->parent = this;
+//  CDSOURCE->parent = this;
+  CDTARGET->parent = this;
+  HDTARGET->parent = this;
 
   set_title(string("Record Project, CD duplication, etc ..."));
 //  set_usize(0, 400);
-  set_border_width(5);
+  set_border_width(10);
 
 //  main_vbox = get_vbox();
   main_vbox = new Gtk::VBox;
   add (*main_vbox);
+  main_vbox->set_spacing(5);
   main_vbox->show();
 
   main_hbox = new Gtk::HBox;
-  main_vbox->pack_start(*main_hbox);
+  main_vbox->pack_start(*main_hbox, TRUE, TRUE, 5);
+  main_hbox->set_spacing(8);
   main_hbox->show();
 
   left_vbox = new Gtk::VBox;
@@ -67,7 +82,7 @@ RecordGenericDialog::RecordGenericDialog()
   main_vbox->pack_start(*hseparator, FALSE, FALSE);
   hseparator->show();
   
-  buttonbox = new Gtk::HButtonBox(GTK_BUTTONBOX_SPREAD);
+  buttonbox = new Gtk::HButtonBox(GTK_BUTTONBOX_END);
   main_vbox->pack_start(*buttonbox, FALSE, FALSE, 5);
   buttonbox->show();
 
@@ -89,8 +104,13 @@ RecordGenericDialog::RecordGenericDialog()
 
   main_vbox->show();
 
+  left_vbox->pack_start(*TOCSOURCE, TRUE, TRUE);
+  left_vbox->pack_start(*CDSOURCE, TRUE, TRUE);
+  source_ = S_NONE;
+
   right_vbox->pack_start(*CDTARGET, TRUE, TRUE);
-  CDTARGET->show();
+  right_vbox->pack_start(*HDTARGET, TRUE, TRUE);
+  target_ = T_NONE;
 
   startButton->clicked.connect(SigC::slot(this,&RecordGenericDialog::startAction));
   closeButton->clicked.connect(SigC::slot(this,&RecordGenericDialog::cancelAction));
@@ -103,17 +123,84 @@ RecordGenericDialog::~RecordGenericDialog()
 }
 
 
-void RecordGenericDialog::start(TocEdit *tocEdit, enum RecordTargetType TargetType)
+void RecordGenericDialog::start(TocEdit *tocEdit, enum RecordSourceType SourceType, enum RecordTargetType TargetType)
 {
   if (active_) {
     get_window().raise();
-    return;
+//    return;
   }
 
   active_ = 1;
 
-// case or if stament
-  CDTARGET->start(tocEdit);
+  if (SourceType != source_)
+  {
+    switch (source_) 
+    {
+	  case S_TOC:
+                  TOCSOURCE->stop();
+                  break;
+      case S_CD:
+                  CDSOURCE->stop();
+                  break;
+    }
+    switch (SourceType)
+    {
+      case S_TOC:
+                  TOCSOURCE->start(tocEdit);
+                  break;
+      case S_CD:
+                  CDSOURCE->start(tocEdit);
+                  break;                  
+    }
+    source_ = SourceType;
+  }
+  else
+  {
+    switch (source_) 
+    {
+	  case S_TOC:
+                  TOCSOURCE->update(UPD_ALL, tocEdit);
+                  break;
+      case S_CD:
+                  CDSOURCE->update(UPD_ALL, tocEdit);
+                  break;
+    }
+  }
+
+  if (TargetType != target_)
+  {
+    switch (target_) 
+    {
+	  case T_CD:
+                  CDTARGET->stop();
+                  break;
+      case T_HD:
+                  HDTARGET->stop();
+                  break;
+    }
+    switch (TargetType)
+    {
+      case T_CD:
+                  CDTARGET->start(tocEdit);
+                  break;
+      case T_HD:
+                  HDTARGET->start(tocEdit);
+                  break;                  
+    }
+    target_ = TargetType;
+  }
+  else
+  {
+    switch (target_) 
+    {
+	  case T_CD:
+                  CDTARGET->update(UPD_ALL, tocEdit);
+                  break;
+      case T_HD:
+                  HDTARGET->update(UPD_ALL, tocEdit);
+                  break;
+    }
+  }
 
   show();
 }
@@ -124,8 +211,28 @@ void RecordGenericDialog::stop()
     hide();
     active_ = 0;
   }
-// case or if stament
-  CDTARGET->stop();
+
+  switch (source_) 
+  {
+    case S_TOC:
+                TOCSOURCE->stop();
+                break;
+    case S_CD:
+                CDSOURCE->stop();
+                break;
+  }
+  source_ = S_NONE;
+
+  switch (target_) 
+  {
+    case T_CD:
+                CDTARGET->stop();
+                break;
+    case T_HD:
+                HDTARGET->stop();
+                break;
+  }
+  target_ = T_NONE;
 }
 
 void RecordGenericDialog::update(unsigned long level, TocEdit *tocEdit)
@@ -133,8 +240,25 @@ void RecordGenericDialog::update(unsigned long level, TocEdit *tocEdit)
   if (!active_)
     return;
 
-// case or if stament
-  CDTARGET->update(level, tocEdit);
+  switch (source_) 
+  {
+	case S_TOC:
+                TOCSOURCE->update(level, tocEdit);
+                break;
+    case S_CD:
+                CDSOURCE->update(level, tocEdit);
+                break;
+  }
+
+  switch (target_) 
+  {
+    case T_CD:
+                CDTARGET->update(level, tocEdit);
+                break;
+    case T_HD:
+                HDTARGET->update(level, tocEdit);
+                break;
+  }
 }
 
 
@@ -151,10 +275,19 @@ void RecordGenericDialog::cancelAction()
 
 void RecordGenericDialog::startAction()
 {
-// case or if stament
-  CDTARGET->startAction();
+  switch (target_) 
+  {
+    case T_CD:
+                CDTARGET->startAction(source_, TOCSOURCE, CDSOURCE);
+                break;
+    case T_HD:
+                HDTARGET->startAction(source_, TOCSOURCE, CDSOURCE);
+                break;
+  }
 }
 
 void RecordGenericDialog::help()
 {
+//FIXME: Show help (gnome help browser??) depending of
+// source_ and target_ values...
 }

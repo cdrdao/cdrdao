@@ -27,6 +27,8 @@ class TocEdit;
 class CdDevice;
 class DeviceList;
 
+#include "RecordGenericDialog.h"
+
 class RecordCDTarget : public Gtk::VBox {
 public:
   RecordCDTarget();
@@ -47,10 +49,10 @@ private:
 
   int speed_;
 
-  struct SpeedTable {
-    int speed;
-    const char *name;
-  };
+//  struct SpeedTable {
+//    int speed;
+//    const char *name;
+//  };
 
   Gtk::RadioButton *writeButton_;
   Gtk::RadioButton *simulateButton_;
@@ -59,20 +61,23 @@ private:
   Gtk::CheckButton *ejectButton_;
   Gtk::CheckButton *reloadButton_;
 
-  Gtk::OptionMenu *speedMenu_;
+//  Gtk::OptionMenu *speedMenu_;
+  Gtk::SpinButton *speedSpinButton_;
+  Gtk::CheckButton *speedButton_;
 
   Gtk::SpinButton *bufferSpinButton_;
   Gtk::Label *bufferRAMLabel_;
 
   void updateBufferRAMLabel();
 
-public:  // to allow binding to the clicked signal
+public:
    void cancelAction();
-   void startAction();
+   void startAction(RecordSourceType source, RecordTocSource *TOC, RecordCDSource *CD);
 
 private:
-  void setSpeed(int);
-
+//  void setSpeed(int);
+  void speedButtonChanged();
+  void speedChanged();
 };
 
 #endif

@@ -37,23 +37,22 @@
 
 #include "util.h"
 
-#define MAX_SPEED_ID 7
+//#define MAX_SPEED_ID 7
 
-static RecordCDTarget::SpeedTable SPEED_TABLE[MAX_SPEED_ID + 1] = {
-  { 0, "Max" },
-  { 1, "1x" },
-  { 2, "2x" },
-  { 4, "4x" },
-  { 6, "6x" },
-  { 8, "8x" },
-  { 10, "10x" },
-  { 12, "12x" }
-};
-
+//static RecordCDTarget::SpeedTable SPEED_TABLE[MAX_SPEED_ID + 1] = {
+//  { 0, "Max" },
+//  { 1, "1x" },
+//  { 2, "2x" },
+//  { 4, "4x" },
+//  { 6, "6x" },
+//  { 8, "8x" },
+//  { 10, "10x" },
+//  { 12, "12x" }
+//};
 
 RecordCDTarget::RecordCDTarget()
 {
-  int i;
+//  int i;
   Gtk::HBox *hbox;
   Gtk::VBox *vbox;
   Gtk::Table *table;
@@ -66,21 +65,21 @@ RecordCDTarget::RecordCDTarget()
 //  set_title(string("Record"));
 //  set_usize(0, 300);
 
-  Gtk::Menu *menu = manage(new Gtk::Menu);
-  Gtk::MenuItem *mi;
+//  Gtk::Menu *menu = manage(new Gtk::Menu);
+//  Gtk::MenuItem *mi;
 
-  for (i = 0; i <= MAX_SPEED_ID; i++) {
-    mi = manage(new Gtk::MenuItem(SPEED_TABLE[i].name));
-    mi->activate.connect(bind(slot(this, &RecordCDTarget::setSpeed), i));
-    mi->show();
-    menu->append(*mi);
-  }
+//  for (i = 0; i <= MAX_SPEED_ID; i++) {
+//    mi = manage(new Gtk::MenuItem(SPEED_TABLE[i].name));
+//    mi->activate.connect(bind(slot(this, &RecordCDTarget::setSpeed), i));
+//    mi->show();
+//    menu->append(*mi);
+//  }
 
-  speedMenu_ = new Gtk::OptionMenu;
-  speedMenu_->set_menu(menu);
+//  speedMenu_ = new Gtk::OptionMenu;
+//  speedMenu_->set_menu(menu);
 
-  speed_ = 0;
-  speedMenu_->set_history(speed_);
+  speed_ = 1;
+//  speedMenu_->set_history(speed_);
 
 //  startButton_ = new Gtk::Button(string(" Start "));
 
@@ -98,7 +97,10 @@ RecordCDTarget::RecordCDTarget()
   reloadButton_ = new Gtk::CheckButton(string("Reload"));
   reloadButton_->set_active(false);
 
-  DEVICES = new DeviceList();
+  speedButton_ = new Gtk::CheckButton(string("Use max."));
+  speedButton_->set_active(true);
+
+  DEVICES = new DeviceList(CD_R);
 
   Gtk::VBox *contents = new Gtk::VBox;
   contents->set_spacing(10);
@@ -141,22 +143,31 @@ RecordCDTarget::RecordCDTarget()
   hbox = new Gtk::HBox;
   hbox->pack_start(*ejectButton_, FALSE, FALSE);
   ejectButton_->show();
-  table->attach(*hbox, 1, 2, 1, 2);
+  table->attach(*hbox, 2, 3, 0, 1);
   hbox->show();
 
   hbox = new Gtk::HBox;
   hbox->pack_start(*reloadButton_, FALSE);
   reloadButton_->show();
-  table->attach(*hbox, 1, 2, 2, 3);
+  table->attach(*hbox, 2, 3, 1, 2);
   hbox->show();
 
   hbox = new Gtk::HBox;
   label = new Gtk::Label(string("Speed: "));
   hbox->pack_start(*label, FALSE);
   label->show();
-  hbox->pack_start(*speedMenu_, FALSE);
-  speedMenu_->show();
-  table->attach(*hbox, 0, 1, 2, 3);
+  adjustment = new Gtk::Adjustment(1, 1, 20);
+  speedSpinButton_ = new Gtk::SpinButton(*adjustment);
+  hbox->pack_start(*speedSpinButton_, FALSE);
+  speedSpinButton_->show();
+  speedSpinButton_->set_sensitive(false);
+  adjustment->value_changed.connect(SigC::slot(this, &RecordCDTarget::speedChanged));
+  hbox->pack_start(*speedButton_, FALSE);
+  speedButton_->show();
+  speedButton_->toggled.connect(SigC::slot(this, &RecordCDTarget::speedButtonChanged));
+//  hbox->pack_start(*speedMenu_, FALSE);
+//  speedMenu_->show();
+  table->attach(*hbox, 0, 3, 2, 3);
   hbox->show();
 
   hbox = new Gtk::HBox;
@@ -174,7 +185,7 @@ RecordCDTarget::RecordCDTarget()
   hbox->pack_start(*bufferRAMLabel_, FALSE);
   bufferRAMLabel_->show();
   adjustment->value_changed.connect(SigC::slot(this, &RecordCDTarget::updateBufferRAMLabel));
-  table->attach(*hbox, 0, 2, 3, 4);
+  table->attach(*hbox, 0, 3, 3, 4);
   hbox->show();
   
   contents->pack_start(*recordOptionsFrame, FALSE, FALSE);
@@ -182,14 +193,13 @@ RecordCDTarget::RecordCDTarget()
 
   Gtk::HBox *contentsHBox = new Gtk::HBox;
 
-  contentsHBox->pack_start(*contents, TRUE, TRUE, 10);
+  contentsHBox->pack_start(*contents);
   contents->show();
 
-  pack_start(*contentsHBox, TRUE, TRUE, 10);
+  pack_start(*contentsHBox);
   contentsHBox->show();
 
-  show();
-
+//  show();
 }
 
 RecordCDTarget::~RecordCDTarget()
@@ -232,7 +242,7 @@ void RecordCDTarget::cancelAction()
   stop();
 }
 
-void RecordCDTarget::startAction()
+void RecordCDTarget::startAction(RecordSourceType source, RecordTocSource *TOC, RecordCDSource *CD)
 {
   int eject, simulate, speed, multiSession, reload;
   int started = 0;
@@ -289,7 +299,11 @@ void RecordCDTarget::startAction()
 
   simulate = writeButton_->get_active() ? 0 : 1;
   multiSession = closeSessionButton_->get_active() ? 0 : 1;
-  speed = SPEED_TABLE[speed_].speed;
+//  speed = SPEED_TABLE[speed_].speed;
+  if (speedButton_->get_active())
+    speed = 0;
+  else
+    speed = speed_;
   eject = ejectButton_->get_active() ? 1 : 0;
   reload = reloadButton_->get_active() ? 1 : 0;
   buffer = bufferSpinButton_->get_value_as_int();
@@ -365,11 +379,13 @@ void RecordCDTarget::startAction()
     guiUpdate(UPD_CD_DEVICE_STATUS);
 }
 
+/*
 void RecordCDTarget::setSpeed(int s)
 {
   if (s >= 0 && s <= MAX_SPEED_ID)
     speed_ = s;
 }
+*/
 
 void RecordCDTarget::updateBufferRAMLabel()
 {
@@ -377,4 +393,42 @@ void RecordCDTarget::updateBufferRAMLabel()
   
   sprintf(label, "= %0.2f Mb buffer.", bufferSpinButton_->get_value_as_float() * 0.171875);
   bufferRAMLabel_->set(string(label));
+}
+
+void RecordCDTarget::speedButtonChanged()
+{
+  if (speedButton_->get_active())
+  {
+    speedSpinButton_->set_sensitive(false);
+  }
+  else
+  {
+    speedSpinButton_->set_sensitive(true);
+  }
+}
+
+void RecordCDTarget::speedChanged()
+{
+//FIXME: Should only allow 1, 2, 4, 6, 8, 10, 12, 14, ...
+//FIXME: Can someone come with a cleaner solution???
+  gint new_speed;
+
+  new_speed = speedSpinButton_->get_value_as_int();
+
+  if ((new_speed % 2) == 1)
+  {
+    if (new_speed > 2)
+    {
+      if (new_speed > speed_)
+      {
+        new_speed = new_speed + 1;
+      }
+      else
+      {
+        new_speed = new_speed - 1;
+      }
+    }
+    speedSpinButton_->set_value(new_speed);
+  }
+  speed_ = new_speed;
 }

@@ -26,14 +26,16 @@
 class TocEdit;
 class CdDevice;
 
+//FIXME: Should modify CdDevice.h ???
+typedef enum { CD_R, CD_RW, CD_ROM } DeviceType;
+
 class DeviceList : public Gtk::Frame {
 public:
-  DeviceList();
+//  DeviceList(enum CdDevice::DeviceType filterType);
+  DeviceList(enum DeviceType filterType);
   ~DeviceList();
 
   Gtk::CList_Helpers::SelectionList selection();
-
-//  Gtk::Window *parent; // the dialog where the vbox is placed
 
   struct DeviceData {
     int bus, id, lun;
@@ -43,6 +45,8 @@ private:
   TocEdit *tocEdit_;
 
   int speed_;
+//  enum CdDevice::DeviceType filterType_;
+  enum DeviceType filterType_;
 
   Gtk::CList *list_;
 

@@ -17,59 +17,49 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#ifndef __RECORD_GENERIC_DIALOG_H
-#define __RECORD_GENERIC_DIALOG_H
+#ifndef __RECORD_CD_SOURCE_H
+#define __RECORD_CD_SOURCE_H
 
 #include <gtk--.h>
 #include <gtk/gtk.h>
 
-#include <gnome--.h>
-
 class TocEdit;
-//class CdDevice;
-class RecordTocSource;
-class RecordCDSource;
-class RecordCDTarget;
-class RecordHDTarget;
+class CdDevice;
+class DeviceList;
 
-typedef enum {
-	S_NONE,
-	S_TOC,
-	S_CD
-}RecordSourceType;
-
-typedef enum {
-	T_NONE,
-	T_CD,
-	T_HD
-}RecordTargetType;
-
-class RecordGenericDialog : public Gtk::Window {
+class RecordCDSource : public Gtk::VBox {
 public:
-  RecordGenericDialog();
-  ~RecordGenericDialog();
+  RecordCDSource();
+  ~RecordCDSource();
 
-  void start(TocEdit *, enum RecordSourceType SourceType, enum RecordTargetType TargetType);
+  void start(TocEdit *);
   void stop();
 
   void update(unsigned long level, TocEdit *);
 
-  void cancelAction();
-  void startAction();
-  void help();
+  DeviceList *DEVICES;
 
-  gint delete_event_impl(GdkEventAny*);
+  int getCorrection();
 
 private:
+  TocEdit *tocEdit_;
   int active_;
+  int correction_;
 
-  RecordTocSource *TOCSOURCE;
-  RecordCDSource *CDSOURCE;
-  RecordCDTarget *CDTARGET;
-  RecordHDTarget *HDTARGET;
+  int speed_;
 
-  enum RecordSourceType source_;
-  enum RecordTargetType target_;
+  struct CorrectionTable {
+    int correction;
+    const char *name;
+  };
+
+  Gtk::OptionMenu *correctionMenu_;
+//  Gtk::CheckButton *onTheFlyButton_;
+  Gtk::CheckButton *continueOnErrorButton_;
+  Gtk::CheckButton *ignoreIncorrectTOCButton_;
+
+//  void setSpeed(int);
+  void setCorrection(int);
 
 };
 

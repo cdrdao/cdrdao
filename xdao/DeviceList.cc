@@ -35,9 +35,11 @@
 
 #include "util.h"
 
-DeviceList::DeviceList()
+DeviceList::DeviceList(enum DeviceType filterType)
 {
   Gtk::HBox *hbox;
+
+  filterType_ = filterType;
 
   list_ = new Gtk::CList(6);
 
@@ -61,7 +63,8 @@ DeviceList::DeviceList()
 
   list_->column_titles_show();
   list_->column_titles_passive();
-  list_->set_selection_mode(GTK_SELECTION_MULTIPLE);
+
+  list_->set_usize(0, 80);
 
   Gtk::VBox *contents = new Gtk::VBox;
   contents->set_spacing(10);
@@ -88,7 +91,22 @@ DeviceList::DeviceList()
   listVBox->pack_start(*listHBox, TRUE, TRUE, 5);
   listHBox->show();
 
-  set_label(string("Available Recorder Devices"));
+  switch (filterType_)
+  {
+    case CD_ROM:
+                 set_label(string("Available Reader Devices"));
+                 list_->set_selection_mode(GTK_SELECTION_SINGLE);
+                 break;
+    case CD_R:
+                 set_label(string("Available Recorder Devices"));
+                 list_->set_selection_mode(GTK_SELECTION_MULTIPLE);
+                 break;
+    case CD_RW:
+                 set_label(string("Available Recorder (RW) Devices"));
+                 list_->set_selection_mode(GTK_SELECTION_MULTIPLE);
+                 break;
+  }
+
   add(*listVBox);
   listVBox->show();
 
@@ -170,10 +188,29 @@ void DeviceList::import()
   }
 
   for (drun = CdDevice::first(); drun != NULL; drun = CdDevice::next(drun)) {
-    if (drun->driverId() > 0 &&
-	(drun->deviceType() == CdDevice::CD_R ||
-	 drun->deviceType() == CdDevice::CD_RW)) {
-      appendTableEntry(drun);
+    switch (filterType_)
+    {
+      case CD_ROM:
+                   if (drun->driverId() > 0 &&
+	               (drun->deviceType() == CdDevice::CD_ROM ||
+	                drun->deviceType() == CdDevice::CD_R ||
+	                drun->deviceType() == CdDevice::CD_RW)) {
+                     appendTableEntry(drun);
+                   }
+                   break;
+      case CD_R:
+                   if (drun->driverId() > 0 &&
+	               (drun->deviceType() == CdDevice::CD_R ||
+	                drun->deviceType() == CdDevice::CD_RW)) {
+                     appendTableEntry(drun);
+                   }
+                   break;
+      case CD_RW:
+                   if (drun->driverId() > 0 &&
+	               (drun->deviceType() == CdDevice::CD_RW)) {
+                     appendTableEntry(drun);
+                   }
+                   break;
     }
   }
 

@@ -66,7 +66,9 @@ private:
 
   void extract();
   void record();
-  void recordgeneric();
+  void recordToc2CD();
+  void recordCD2HD();
+  void recordCD2CD();
   void projectInfo();
   void trackInfo();
 

@@ -48,7 +48,8 @@ SRC = xcdrdao.cc SampleDisplay.cc SampleManager.cc \
       ProcessMonitor.cc RecordProgressDialog.cc Settings.cc MessageBox.cc \
       ExtractDialog.cc ExtractProgressDialog.cc CdTextTable.cc MDIWindow.cc \
       AudioCDChild.cc RecordGenericDialog.cc RecordCDTarget.cc \
-      DeviceList.cc @sound_if_src@
+      DeviceList.cc RecordTocSource.cc RecordCDSource.cc \
+      RecordHDTarget.cc @sound_if_src@
 
 OBJ = $(SRC:%.cc=%.o)
 

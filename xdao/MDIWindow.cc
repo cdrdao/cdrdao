@@ -192,13 +192,15 @@ MDIWindow::install_menus_and_toolbar()
   // Actions menu
   //
   actionsMenuTree.push_back(Gnome::UI::Item(N_("Record"),
-					    slot(this, &MDIWindow::recordgeneric)));
+					    slot(this, &MDIWindow::recordToc2CD)));
   actionsMenuTree.push_back(Gnome::UI::Item(N_("CD to CD copy"),
-					    slot(this, &MDIWindow::extract)));
+					    slot(this, &MDIWindow::recordCD2CD)));
   actionsMenuTree.push_back(Gnome::UI::Item(N_("Dump CD to disk"),
-					    slot(this, &MDIWindow::extract)));
+					    slot(this, &MDIWindow::recordCD2HD)));
   actionsMenuTree.push_back(Gnome::UI::Item(N_("Record (old)"),
 					    slot(this, &MDIWindow::record)));
+  actionsMenuTree.push_back(Gnome::UI::Item(N_("Extract (old)"),
+					    slot(this, &MDIWindow::extract)));
   actionsMenuTree.push_back(Gnome::UI::Item(N_("Fixate CD"),
 					    slot(this, &MDIWindow::nothing_cb)));
   actionsMenuTree.push_back(Gnome::UI::Item(N_("Blank CD-RW"),
@@ -257,17 +259,17 @@ MDIWindow::install_menus_and_toolbar()
 
   toolbarTree.push_back(Gnome::UI::Item(Gnome::UI::Icon(GNOME_STOCK_PIXMAP_CDROM),
   					N_("Record"),
-					  slot(this, &MDIWindow::recordgeneric),
+					  slot(this, &MDIWindow::recordToc2CD),
 					  N_("Record to CD")));
 
   toolbarTree.push_back(Gnome::UI::Item(Gnome::UI::Icon(GNOME_STOCK_PIXMAP_HELP),
   					N_("CD to CD"),
-  					slot(this, &MDIWindow::extract),
-  					N_("Dump CD to disk")));
+  					slot(this, &MDIWindow::recordCD2CD),
+  					N_("CD duplication")));
 
   toolbarTree.push_back(Gnome::UI::Item(Gnome::UI::Icon(GNOME_STOCK_PIXMAP_HELP),
   					N_("Dump CD"),
-  					slot(this, &MDIWindow::extract),
+  					slot(this, &MDIWindow::recordCD2HD),
   					N_("Dump CD to disk")));
 
   toolbarTree.push_back(Gnome::UI::Separator());
@@ -448,9 +450,19 @@ void MDIWindow::record()
   RECORD_DIALOG->start(tocEdit_);
 }
 
-void MDIWindow::recordgeneric()
+void MDIWindow::recordToc2CD()
 {
-  RECORD_GENERIC_DIALOG->start(tocEdit_, CD);
+  RECORD_GENERIC_DIALOG->start(tocEdit_, S_TOC, T_CD);
+}
+
+void MDIWindow::recordCD2HD()
+{
+  RECORD_GENERIC_DIALOG->start(NULL, S_CD, T_HD);
+}
+
+void MDIWindow::recordCD2CD()
+{
+  RECORD_GENERIC_DIALOG->start(NULL, S_CD, T_CD);
 }
 
 void MDIWindow::trackInfo()
