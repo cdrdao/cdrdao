@@ -124,11 +124,13 @@ static void printUsage()
   message(0, "Usage: %s [-v #] [-d target-dir ] [-c] { -V | toc-file }", PRGNAME);
   message(0, "\nConverts an audio CD disk image (.toc file) to mp3 files.");
   message(0, "Each track will be written to a separate mp3 file.");
-  message(0, "CD-TEXT information is used to set ID3 (v2) tags and to");
+  message(0, "Special care is taken that the mp3 files can be played in sequence");
+  message(0, "without having unwanted noise at the transition points.");
+  message(0, "CD-TEXT information (if available) is used to set ID3 (v2) tags and to");
   message(0, "construct the name of the mp3 files.\n");
   message(0, "Options:");
   message(0, "  -h               Shows this help.");
-  message(0, "  -v <n>           Sets verbose level to <n> (<n> = 0..2).");
+  message(0, "  -v <n>           Sets verbose level to <n> (0..2).");
   message(0, "  -d <target-dir>  Specifies directory the mp3 files will be");
   message(0, "                   written to.");
   message(0, "  -c               Adds a sub-directory composed out of CD title");
@@ -262,6 +264,19 @@ lame_global_flags *init_encoder(int bitrate)
   lame_set_mode(lf, STEREO);
 
   lame_set_brate(lf, bitrate);
+  
+  //lame_set_VBR(lf, vbr_abr);
+
+  //lame_set_VBR(lf, vbr_mtrh);
+  //lame_set_VBR_q(lf, 2);
+
+  //lame_set_VBR_mean_bitrate_kbps(lf, bitrate);
+  //lame_set_VBR_min_bitrate_kbps(lf, 112);
+  //lame_set_VBR_hard_min(lf, 1);
+
+  //lame_set_bWriteVbrTag(lf, 1);
+
+  //lame_set_asm_optimizations(lf, AMD_3DNOW, 1);
 
   return lf;
 }
@@ -365,6 +380,20 @@ int encode_track(lame_global_flags *lf, const Toc *toc,
   if (close(fd) != 0) {
     message(-2, "Failed to close encoded data file: %s", strerror(errno));
     ret = 0;
+  }
+
+  if (ret != 0) {
+    FILE *fp = fopen(fileName.c_str(), "a+");
+
+    if (fp != NULL) {
+      lame_mp3_tags_fid(lf, fp);
+      fclose(fp);
+    }
+    else {
+      message(-2, "Cannot reopen output file for adding headers: %s",
+	      strerror(errno));
+      ret = 0;
+    }
   }
 
   return ret;
@@ -538,7 +567,7 @@ int main(int argc, char **argv)
       // build mp3 file name
       std::string mp3FileName;
       
-      sprintf(sbuf, "[%02d]", trackNr);
+      sprintf(sbuf, "%02d_", trackNr);
       
       mp3FileName += sbuf;
       
@@ -573,10 +602,11 @@ int main(int argc, char **argv)
 	  }
 	  message(1, "Lame encoder settings:");
 	  lame_print_config(lf);
+	  message(1, "Selected bit rate: %d kbit/s", bitrate);
+
 	  if (VERBOSE >= 2)
 	    lame_print_internals(lf);
-	  else
-	    message(1, "Selected bit rate: %d kbit/s", bitrate);
+
 	  message(1, "");
 
 

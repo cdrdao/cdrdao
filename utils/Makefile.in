@@ -52,12 +52,13 @@ DEP = $(SRC:%.cc=%.d)
 #
 all: @utils_targets@
 
-install: all 
+install: all installdirs
+	$(INSTALL_PROGRAM) @utils_targets@ $(bindir)
 
 installdirs:
 	$(srcdir)/../mkinstalldirs $(bindir)
-	$(srcdir)/../mkinstalldirs $(man1dir)
-	$(srcdir)/../mkinstalldirs $(CDRDAO_DATA_DIR)
+#	$(srcdir)/../mkinstalldirs $(man1dir)
+#	$(srcdir)/../mkinstalldirs $(CDRDAO_DATA_DIR)
 
 clean:
 	rm -f *.o toc2cue toc2mp3
