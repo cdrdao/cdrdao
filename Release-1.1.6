@@ -1,19 +1,74 @@
-- fixed cue sheet setup for CD-TEXT writing 
+Hi,
 
-- added sub-channel writing for 'generic-mmc' and 'generic-mmc-raw' driver
+cdrdao-1.1.6 is available from:
 
-- fixed crash in usage printing
+  http://sf.net/projects/cdrdao
 
-- fixed cue sheet setup for ISRC codes for the HP8100 recorder
 
-- new mp32dao version from Giuseppe Corbelli with these new features:
+Cdrdao changes:
+
+- Fixed cue sheet setup for CD-TEXT writing. Some older drives did not like
+  the cue sheet format as specified in the latest SCSI-3/mmc specification.
+
+- Added sub-channel writing for the 'generic-mmc' and 'generic-mmc-raw' driver.
+  Currently only the R-W sub-channels can be written. The track image files
+  may contain packed or raw R-W sub-channel data. For packed sub-channel data
+  the L-EC data will be calculated and interleaving will be performed
+  if required by the recording hardware.
+
+- Added sub-channel reading support. Currently packed and raw R-W sub-channel
+  reading is supported (option -read-subchan).
+
+- Added automatic check for support sub-channel reading modes to the
+  'generic-mmc(-raw)' driver. The driver options (0x1, 0x2 and 0x20) should
+  be obsolete now, but are still available.
+
+- The data track extraction with the generic-mmc(-raw) driver is more
+  robust against read errors now. The --tao-source/--tao-source-adjust option
+  should be obsolete now - but is still available.
+
+- Updated paranoia libraries to version of cdparanoia-III-alpha9.8.
+ 
+- Fixed crash in cdrdao usage printing.
+
+- Fixed cue sheet setup for ISRC codes for the HP8100 recorder model.
+
+- New mp32dao version from Giuseppe Corbelli with these new features:
   - Ogg support
   - MP3/Ogg decoding supported only with external programs
   - Code modularization and bugfixes
+  - cdrecord's .inf file support for CD-TEXT data
 
-- cue parser accepts spaces and \ characters in file name now
+- Cue parser accepts spaces and '\' characters in file name now.
 
-- gcdmaster hotkeys are now back. (SourceForge bug 470864).
+- Default blanking mode is now 'minimal' (SF feature request 425321)
 
-- gcdmaster can now copy cds with just one drive, thanks to Das Poelzi for
+- The PCCTS package is now a part of the cdrdao source code distribution
+  which should avoid some compilation hassle.
+
+- Updated scsilib version.
+
+- Created new utility 'toc2mp3' that converts an audio CD image to a set
+  of mp3 files using the LAME encoder. The encoded mp3 files have no gap at
+  the end so that they play in sequence without noise at the transition 
+  points.
+
+
+GCDMaster changes:
+
+- Gcdmaster hotkeys are now back. (SourceForge bug 470864).
+
+- Gcdmaster can now copy cds with just one drive, thanks to Das Poelzi for
   the patch. (SourceForge bug 566948).
+
+- Added switch to enable the overburn mode to the recording options box.
+
+- Added selection of the sub-channel reading mode the CD extraction options
+  box.
+
+- Fixed the 'Cancel' button staying disabled in the Recording/Reading progress
+  window.
+
+
+Andreas Mueller
+Manuel Clos
