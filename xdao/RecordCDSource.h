@@ -40,16 +40,17 @@ public:
 
   int getCorrection();
 
+  struct CorrectionTable {
+    int correction;
+    const char *name;
+  };
+
 private:
   int active_;
   int correction_;
 
   int speed_;
 
-  struct CorrectionTable {
-    int correction;
-    const char *name;
-  };
 
   Gtk::SpinButton *speedSpinButton_;
   Gtk::CheckButton *speedButton_;
