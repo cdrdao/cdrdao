@@ -18,6 +18,10 @@
  */
 /*
  * $Log: RecordDialog.cc,v $
+ * Revision 1.8  2000/05/01 22:16:49  llanero
+ * added a label to the RecordDialog that will show the Mb that the
+ * buffer represents.
+ *
  * Revision 1.7  2000/05/01 18:15:00  andreasm
  * Switch to gnome-config settings.
  * Adapted Message Box to Gnome look, unfortunately the Gnome::MessageBox is
@@ -54,7 +58,7 @@
  *
  */
 
-static char rcsid[] = "$Id: RecordDialog.cc,v 1.7 2000/05/01 18:15:00 andreasm Exp $";
+static char rcsid[] = "$Id: RecordDialog.cc,v 1.8 2000/05/01 22:16:49 llanero Exp $";
 
 #include <stdio.h>
 #include <limits.h>
@@ -255,9 +259,13 @@ RecordDialog::RecordDialog()
   bufferSpinButton_ = new Gtk::SpinButton(*adjustment);
   hbox->pack_start(*bufferSpinButton_, FALSE);
   bufferSpinButton_->show();
-  label = new Gtk::Label(string("audio seconds. (buffer/speed = real buffer time!)"));
+  label = new Gtk::Label(string("audio seconds "));
   hbox->pack_start(*label, FALSE);
   label->show();
+  bufferRAMLabel_ = new Gtk::Label(string("= 1.72 Mb buffer."));
+  hbox->pack_start(*bufferRAMLabel_, FALSE);
+  bufferRAMLabel_->show();
+  adjustment->value_changed.connect(SigC::slot(this, &RecordDialog::updateBufferRAMLabel));
   table->attach(*hbox, 0, 3, 2, 3);
   hbox->show();
   
@@ -598,4 +606,12 @@ void RecordDialog::setSpeed(int s)
 {
   if (s >= 0 && s <= MAX_SPEED_ID)
     speed_ = s;
+}
+
+void RecordDialog::updateBufferRAMLabel()
+{
+  char label[20];
+  
+  sprintf(label, "= %0.2f Mb buffer.", bufferSpinButton_->get_value_as_float() * 0.171875);
+  bufferRAMLabel_->set(string(label));
 }

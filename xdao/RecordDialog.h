@@ -18,6 +18,10 @@
  */
 /*
  * $Log: RecordDialog.h,v $
+ * Revision 1.5  2000/05/01 22:16:49  llanero
+ * added a label to the RecordDialog that will show the Mb that the
+ * buffer represents.
+ *
  * Revision 1.4  2000/04/29 14:46:38  llanero
  * added the "buffers" option to the Record Dialog.
  *
@@ -91,6 +95,9 @@ private:
   Gtk::OptionMenu *speedMenu_;
 
   Gtk::SpinButton *bufferSpinButton_;
+  Gtk::Label *bufferRAMLabel_;
+
+  void updateBufferRAMLabel();
 
   void cancelAction();
   void startAction();
