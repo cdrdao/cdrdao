@@ -96,7 +96,8 @@ CDRDAO_DATA_DIR = $(datadir)/cdrdao
 DRIVER_TABLE_FILE = $(CDRDAO_DATA_DIR)/drivers
 
 install-data-hook:
-	mv $(CDRDAO_DATA_DIR)/cdrdao.drivers $(DRIVER_TABLE_FILE)
+	cd $(DESTDIR)$(datadir)/cdrdao && \
+	mv cdrdao.drivers drivers
 
 INCLUDES =						\
 	-I$(srcdir)/../trackdb				\
