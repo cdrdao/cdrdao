@@ -18,15 +18,19 @@
  */
 /*
  * $Log: DeviceConfDialog.cc,v $
- * Revision 1.1  2000/02/05 01:39:13  llanero
- * Initial revision
+ * Revision 1.2  2000/02/20 23:34:53  llanero
+ * fixed scsilib directory (files mising ?-()
+ * ported xdao to 1.1.8 / gnome (MDI) app
+ *
+ * Revision 1.1.1.1  2000/02/05 01:39:13  llanero
+ * Uploaded cdrdao 1.1.3 with pre10 patch applied.
  *
  * Revision 1.1  1999/09/06 09:09:37  mueller
  * Initial revision
  *
  */
 
-static char rcsid[] = "$Id: DeviceConfDialog.cc,v 1.1 2000/02/05 01:39:13 llanero Exp $";
+static char rcsid[] = "$Id: DeviceConfDialog.cc,v 1.2 2000/02/20 23:34:53 llanero Exp $";
 
 #include <stdio.h>
 #include <limits.h>
@@ -52,11 +56,11 @@ static CdDevice::DeviceType ID2DEVICE_TYPE[MAX_DEVICE_TYPE_ID + 1] = {
 DeviceConfDialog::DeviceConfDialog()
 {
   int i;
-  Gtk_Label *label;
-  Gtk_Table *table;
-  Gtk_HBox *hbox;
-  Gtk_VBox *vbox;
-  Gtk_Button *button;
+  Gtk::Label *label;
+  Gtk::Table *table;
+  Gtk::HBox *hbox;
+  Gtk::VBox *vbox;
+  Gtk::Button *button;
 
   active_ = 0;
   selectedRow_ = -1;
@@ -65,8 +69,8 @@ DeviceConfDialog::DeviceConfDialog()
   set_usize(0, 500);
 
 
-  list_ = new Gtk_CList(6);
-  applyButton_ = new Gtk_Button(string(" Apply "));
+  list_ = new Gtk::CList(6);
+  applyButton_ = new Gtk::Button(string(" Apply "));
 
   list_->set_column_title(0, string("Bus"));
   list_->set_column_justification(0, GTK_JUSTIFY_CENTER);
@@ -90,15 +94,13 @@ DeviceConfDialog::DeviceConfDialog()
   list_->column_titles_passive();
   list_->set_selection_mode(GTK_SELECTION_BROWSE);
 
-  connect_to_method(list_->select_row, this,
-		    &DeviceConfDialog::selectRow);
+  list_->select_row.connect(SigC::slot(this,&DeviceConfDialog::selectRow));
 
-  connect_to_method(list_->unselect_row, this,
-		    &DeviceConfDialog::unselectRow);
+  list_->unselect_row.connect(SigC::slot(this,&DeviceConfDialog::unselectRow));
 
 
-
-  driverMenuFactory_ = new Gtk_ItemFactory_Menu("<Main>");
+/*llanero
+  driverMenuFactory_ = new Gtk::ItemFactory_Menu("<Main>");
 
   for (i = 0; i <= CdDevice::maxDriverId(); i++) {
     string s("/");
@@ -107,11 +109,11 @@ DeviceConfDialog::DeviceConfDialog()
     driverMenuFactory_->create_item(s, 0, "<Item>", ItemFactoryConnector<DeviceConfDialog, int>(this, &DeviceConfDialog::setDriverId, i));
   }
 
-  driverMenu_ = new Gtk_OptionMenu;
+  driverMenu_ = new Gtk::OptionMenu;
   driverMenu_->set_menu(driverMenuFactory_->get_menu_widget(string("")));
 
 
-  devtypeMenuFactory_ = new Gtk_ItemFactory_Menu("<Main>");
+  devtypeMenuFactory_ = new Gtk::ItemFactory_Menu("<Main>");
 
   for (i = 0; i <= MAX_DEVICE_TYPE_ID; i++) {
     string s("/");
@@ -120,46 +122,46 @@ DeviceConfDialog::DeviceConfDialog()
 				     ItemFactoryConnector<DeviceConfDialog, int>(this, &DeviceConfDialog::setDeviceType, i));
   }
 
-  devtypeMenu_ = new Gtk_OptionMenu;
+  devtypeMenu_ = new Gtk::OptionMenu;
   devtypeMenu_->set_menu(devtypeMenuFactory_->get_menu_widget(string("")));
+*/
 
-
-  Gtk_Adjustment *adjust = new Gtk_Adjustment(0.0, 0.0, 16.0);
-  busEntry_ = new Gtk_SpinButton(*adjust, 1.0, 1);
+  Gtk::Adjustment *adjust = new Gtk::Adjustment(0.0, 0.0, 16.0);
+  busEntry_ = new Gtk::SpinButton(*adjust, 1.0, 1);
   busEntry_->set_numeric(true);
 
-  adjust = new Gtk_Adjustment(0.0, 0.0, 15.0);
-  idEntry_ = new Gtk_SpinButton(*adjust, 1.0, 1);
+  adjust = new Gtk::Adjustment(0.0, 0.0, 15.0);
+  idEntry_ = new Gtk::SpinButton(*adjust, 1.0, 1);
   idEntry_->set_numeric(true);
 
-  adjust = new Gtk_Adjustment(0.0, 0.0, 8.0);
-  lunEntry_ = new Gtk_SpinButton(*adjust, 1.0, 1);
+  adjust = new Gtk::Adjustment(0.0, 0.0, 8.0);
+  lunEntry_ = new Gtk::SpinButton(*adjust, 1.0, 1);
   lunEntry_->set_numeric(true);
 
-  vendorEntry_ = new Gtk_Entry(8);
-  productEntry_ = new Gtk_Entry(16);
+  vendorEntry_ = new Gtk::Entry(8);
+  productEntry_ = new Gtk::Entry(16);
 
-  specialDeviceEntry_ = new Gtk_Entry;
-  driverOptionsEntry_ = new Gtk_Entry;
+  specialDeviceEntry_ = new Gtk::Entry;
+  driverOptionsEntry_ = new Gtk::Entry;
 
-  Gtk_VBox *contents = new Gtk_VBox;
+  Gtk::VBox *contents = new Gtk::VBox;
   contents->set_spacing(10);
 
 
   // device list
-  Gtk_HBox *listHBox = new Gtk_HBox;
-  Gtk_VBox *listVBox = new Gtk_VBox;
-  Gtk_VBox *listBox = new Gtk_VBox;
+  Gtk::HBox *listHBox = new Gtk::HBox;
+  Gtk::VBox *listVBox = new Gtk::VBox;
+  Gtk::VBox *listBox = new Gtk::VBox;
   listBox->set_spacing(5);
 
-  hbox = new Gtk_HBox;
+  hbox = new Gtk::HBox;
 
   hbox->pack_start(*list_, TRUE, TRUE);
   list_->show();
 
-  adjust = new Gtk_Adjustment(0.0, 0.0, 0.0);
+  adjust = new Gtk::Adjustment(0.0, 0.0, 0.0);
 
-  Gtk_VScrollbar *scrollBar = new Gtk_VScrollbar(*adjust);
+  Gtk::VScrollbar *scrollBar = new Gtk::VScrollbar(*adjust);
   hbox->pack_start(*scrollBar, FALSE, FALSE);
   scrollBar->show();
 
@@ -168,17 +170,17 @@ DeviceConfDialog::DeviceConfDialog()
   listBox->pack_start(*hbox, TRUE, TRUE);
   hbox->show();
 
-  Gtk_ButtonBox *bbox = new Gtk_HButtonBox(GTK_BUTTONBOX_SPREAD);  //, 5);
+  Gtk::ButtonBox *bbox = new Gtk::HButtonBox(GTK_BUTTONBOX_SPREAD);  //, 5);
 
-  button = new Gtk_Button(string("Rescan"));
+  button = new Gtk::Button(string("Rescan"));
   bbox->pack_start(*button);
   button->show();
-  connect_to_method(button->clicked, this, &DeviceConfDialog::rescanAction);
+  button->clicked.connect(SigC::slot(this,&DeviceConfDialog::rescanAction));
 
-  button = new Gtk_Button(string("Delete"));
+  button = new Gtk::Button(string("Delete"));
   bbox->pack_start(*button);
   button->show();
-  connect_to_method(button->clicked, this, &DeviceConfDialog::deleteDeviceAction);
+  button->clicked.connect(SigC::slot(this,&DeviceConfDialog::deleteDeviceAction));
 
   listBox->pack_start(*bbox, FALSE);
   bbox->show();
@@ -188,69 +190,69 @@ DeviceConfDialog::DeviceConfDialog()
   listVBox->pack_start(*listHBox, TRUE, TRUE, 5);
   listHBox->show();
 
-  Gtk_Frame *listFrame = new Gtk_Frame(string("Devices"));
+  Gtk::Frame *listFrame = new Gtk::Frame(string("Devices"));
   listFrame->add(*listVBox);
   listVBox->show();
   contents->pack_start(*listFrame, TRUE, TRUE);
   listFrame->show();
 
   // device settings
-  Gtk_Frame *settingFrame = new Gtk_Frame(string("Device Settings"));
-  table = new Gtk_Table(2, 4, FALSE);
+  Gtk::Frame *settingFrame = new Gtk::Frame(string("Device Settings"));
+  table = new Gtk::Table(2, 4, FALSE);
   table->set_row_spacings(5);
   table->set_col_spacings(5);
-  hbox = new Gtk_HBox;
+  hbox = new Gtk::HBox;
   hbox->pack_start(*table, FALSE, FALSE, 5);
-  vbox = new Gtk_VBox;
+  vbox = new Gtk::VBox;
   vbox->pack_start(*hbox, FALSE, FALSE, 5);
-  settingFrame->add(vbox);
+  settingFrame->add(*vbox);
   vbox->show();
   hbox->show();
   table->show();
   
-  label = new Gtk_Label(string("Device Type:"));
-  hbox = new Gtk_HBox;
+  label = new Gtk::Label(string("Device Type:"));
+  hbox = new Gtk::HBox;
   hbox->pack_end(*label, FALSE, FALSE);
   table->attach(*hbox, 0, 1, 0, 1);
   label->show();
   hbox->show();
-  hbox = new Gtk_HBox;
-  hbox->pack_start(*devtypeMenu_, FALSE, FALSE);
+  hbox = new Gtk::HBox;
+//llanero  hbox->pack_start(*devtypeMenu_, FALSE, FALSE);
   table->attach(*hbox, 1, 2, 0, 1);
   devtypeMenu_->show();
   hbox->show();
 
-  label = new Gtk_Label(string("Driver:"));
-  hbox = new Gtk_HBox;
+  label = new Gtk::Label(string("Driver:"));
+  hbox = new Gtk::HBox;
   hbox->pack_end(*label, FALSE, FALSE);
   table->attach(*hbox, 0, 1, 1, 2);
   label->show();
   hbox->show();
-  hbox = new Gtk_HBox;
+  hbox = new Gtk::HBox;
   hbox->pack_start(*driverMenu_, FALSE, FALSE);
   table->attach(*hbox, 1, 2, 1, 2);
   driverMenu_->show();
   hbox->show();
 
-  label = new Gtk_Label(string("Driver Options:"));
-  hbox = new Gtk_HBox;
+  label = new Gtk::Label(string("Driver Options:"));
+  hbox = new Gtk::HBox;
   hbox->pack_end(*label, FALSE, FALSE);
   table->attach(*hbox, 0, 1, 2, 3);
   label->show();
   hbox->show();
-  hbox = new Gtk_HBox;
+  hbox = new Gtk::HBox;
   hbox->pack_start(*driverOptionsEntry_, FALSE, FALSE);
   table->attach(*hbox, 1, 2, 2, 3);
   driverOptionsEntry_->show();
   hbox->show();
 
-  label = new Gtk_Label(string("Device Node:"));
-  hbox = new Gtk_HBox;
+  label = new Gtk::Label(string("Device Node:"));
+  hbox = new Gtk::HBox;
   hbox->pack_end(*label, FALSE, FALSE);
   table->attach(*hbox, 0, 1, 3, 4);
   label->show();
   hbox->show();
-  hbox = new Gtk_HBox;
+  hbox = new Gtk::HBox;
   hbox->pack_start(*specialDeviceEntry_, FALSE, FALSE);
   table->attach(*hbox, 1, 2, 3, 4);
   specialDeviceEntry_->show();
@@ -262,26 +264,26 @@ DeviceConfDialog::DeviceConfDialog()
 
 
   // add device
-  Gtk_Frame *addDeviceFrame = new Gtk_Frame(string("Add Device"));
-  Gtk_VBox *addDeviceBox = new Gtk_VBox;
+  Gtk::Frame *addDeviceFrame = new Gtk::Frame(string("Add Device"));
+  Gtk::VBox *addDeviceBox = new Gtk::VBox;
   addDeviceBox->set_spacing(5);
 
-  hbox = new Gtk_HBox;
+  hbox = new Gtk::HBox;
   hbox->set_spacing(5);
 
-  label = new Gtk_Label(string("Bus:"));
+  label = new Gtk::Label(string("Bus:"));
   hbox->pack_start(*label, FALSE);
   hbox->pack_start(*busEntry_, FALSE);
   label->show();
   busEntry_->show();
 
-  label = new Gtk_Label(string("Id:"));
+  label = new Gtk::Label(string("Id:"));
   hbox->pack_start(*label, FALSE);
   hbox->pack_start(*idEntry_, FALSE);
   label->show();
   idEntry_->show();
 
-  label = new Gtk_Label(string("Lun:"));
+  label = new Gtk::Label(string("Lun:"));
   hbox->pack_start(*label, FALSE);
   hbox->pack_start(*lunEntry_, FALSE);
   label->show();
@@ -291,50 +293,50 @@ DeviceConfDialog::DeviceConfDialog()
   hbox->show();
 
 
-  table = new Gtk_Table(2, 2, FALSE);
+  table = new Gtk::Table(2, 2, FALSE);
   table->set_row_spacings(5);
   table->set_col_spacings(5);
   addDeviceBox->pack_start(*table, FALSE);
   table->show();
 
-  label = new Gtk_Label(string("Vendor:"));
-  hbox = new Gtk_HBox;
+  label = new Gtk::Label(string("Vendor:"));
+  hbox = new Gtk::HBox;
   hbox->pack_end(*label, FALSE, FALSE);
   table->attach(*hbox, 0, 1, 0, 1);
   label->show();
   hbox->show();
-  hbox = new Gtk_HBox;
+  hbox = new Gtk::HBox;
   hbox->pack_start(*vendorEntry_, TRUE, TRUE);
   table->attach(*hbox, 1, 2, 0, 1);
   vendorEntry_->show();
   hbox->show();
 
-  label = new Gtk_Label(string("Product:"));
-  hbox = new Gtk_HBox;
+  label = new Gtk::Label(string("Product:"));
+  hbox = new Gtk::HBox;
   hbox->pack_end(*label, FALSE, FALSE);
   table->attach(*hbox, 0, 1, 1, 2);
   label->show();
   hbox->show();
-  hbox = new Gtk_HBox;
+  hbox = new Gtk::HBox;
   hbox->pack_start(*productEntry_, TRUE, TRUE);
   table->attach(*hbox, 1, 2, 1, 2);
   productEntry_->show();
   hbox->show();
 
-  bbox = new Gtk_HButtonBox(GTK_BUTTONBOX_START);
-  Gtk_Button *addButton = new Gtk_Button(string(" Add "));
+  bbox = new Gtk::HButtonBox(GTK_BUTTONBOX_START);
+  Gtk::Button *addButton = new Gtk::Button(string(" Add "));
   bbox->pack_start(*addButton);
   addButton->show();
-  connect_to_method(addButton->clicked, this, &DeviceConfDialog::addDeviceAction);
+  addButton->clicked.connect(SigC::slot(this,&DeviceConfDialog::addDeviceAction));
   addDeviceBox->pack_start(*bbox, FALSE);
   bbox->show();
 
-  hbox = new Gtk_HBox;
+  hbox = new Gtk::HBox;
   hbox->pack_start(*addDeviceBox, FALSE, FALSE, 5);
   addDeviceBox->show();
-  vbox = new Gtk_VBox;
+  vbox = new Gtk::VBox;
   vbox->pack_start(*hbox, FALSE, FALSE, 5);
-  addDeviceFrame->add(vbox);
+  addDeviceFrame->add(*vbox);
   vbox->show();
   hbox->show();
   
@@ -342,7 +344,7 @@ DeviceConfDialog::DeviceConfDialog()
   addDeviceFrame->show();
   
 
-  Gtk_HBox *contentsHBox = new Gtk_HBox;
+  Gtk::HBox *contentsHBox = new Gtk::HBox;
 
   contentsHBox->pack_start(*contents, TRUE, TRUE, 10);
   contents->show();
@@ -353,22 +355,21 @@ DeviceConfDialog::DeviceConfDialog()
   get_vbox()->show();
 
 
-  bbox = new Gtk_HButtonBox(GTK_BUTTONBOX_SPREAD);
+  bbox = new Gtk::HButtonBox(GTK_BUTTONBOX_SPREAD);
 
   bbox->pack_start(*applyButton_);
   applyButton_->show();
-  connect_to_method(applyButton_->clicked, this, &DeviceConfDialog::applyAction);
+  applyButton_->clicked.connect(SigC::slot(this,&DeviceConfDialog::applyAction));
   
-  Gtk_Button *resetButton = new Gtk_Button(string(" Reset "));
+  Gtk::Button *resetButton = new Gtk::Button(string(" Reset "));
   bbox->pack_start(*resetButton);
   resetButton->show();
-  connect_to_method(resetButton->clicked, this, &DeviceConfDialog::resetAction);
+  resetButton->clicked.connect(SigC::slot(this,&DeviceConfDialog::resetAction));
 
-  Gtk_Button *cancelButton = new Gtk_Button(string(" Cancel "));
+  Gtk::Button *cancelButton = new Gtk::Button(string(" Cancel "));
   bbox->pack_start(*cancelButton);
   cancelButton->show();
-  connect_to_method(cancelButton->clicked, this,
-		    &DeviceConfDialog::cancelAction);
+  cancelButton->clicked.connect(SigC::slot(this,&DeviceConfDialog::cancelAction));
 
   get_action_area()->pack_start(*bbox);
   bbox->show();

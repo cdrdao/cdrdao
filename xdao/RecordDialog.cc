@@ -18,15 +18,19 @@
  */
 /*
  * $Log: RecordDialog.cc,v $
- * Revision 1.1  2000/02/05 01:39:33  llanero
- * Initial revision
+ * Revision 1.2  2000/02/20 23:34:54  llanero
+ * fixed scsilib directory (files mising ?-()
+ * ported xdao to 1.1.8 / gnome (MDI) app
+ *
+ * Revision 1.1.1.1  2000/02/05 01:39:33  llanero
+ * Uploaded cdrdao 1.1.3 with pre10 patch applied.
  *
  * Revision 1.1  1999/09/07 11:16:16  mueller
  * Initial revision
  *
  */
 
-static char rcsid[] = "$Id: RecordDialog.cc,v 1.1 2000/02/05 01:39:33 llanero Exp $";
+static char rcsid[] = "$Id: RecordDialog.cc,v 1.2 2000/02/20 23:34:54 llanero Exp $";
 
 #include <stdio.h>
 #include <limits.h>
@@ -59,10 +63,10 @@ static RecordDialog::SpeedTable SPEED_TABLE[MAX_SPEED_ID + 1] = {
 RecordDialog::RecordDialog()
 {
   int i;
-  Gtk_HBox *hbox;
-  Gtk_VBox *vbox;
-  Gtk_Table *table;
-  Gtk_Label *label;
+  Gtk::HBox *hbox;
+  Gtk::VBox *vbox;
+  Gtk::Table *table;
+  Gtk::Label *label;
 
   active_ = 0;
   tocEdit_ = NULL;
@@ -70,7 +74,8 @@ RecordDialog::RecordDialog()
   set_title(string("Record"));
   set_usize(0, 300);
 
-  speedMenuFactory_ = new Gtk_ItemFactory_Menu("<Main>");
+/*llanero
+  speedMenuFactory_ = new Gtk::ItemFactory_Menu("<Main>");
 
   for (i = 0; i <= MAX_SPEED_ID; i++) {
     string s("/");
@@ -79,28 +84,28 @@ RecordDialog::RecordDialog()
     speedMenuFactory_->create_item(s, 0, "<Item>", ItemFactoryConnector<RecordDialog, int>(this, &RecordDialog::setSpeed, i));
   }
 
-  speedMenu_ = new Gtk_OptionMenu;
+  speedMenu_ = new Gtk::OptionMenu;
   speedMenu_->set_menu(speedMenuFactory_->get_menu_widget(string("")));
 
   speed_ = 0;
   speedMenu_->set_history(speed_);
 
-  startButton_ = new Gtk_Button(string(" Start "));
-
-  simulateButton_ = new Gtk_RadioButton(NULL, string("Simulate"));
-  writeButton_ = new Gtk_RadioButton(simulateButton_->group(),
+  startButton_ = new Gtk::Button(string(" Start "));
+*/
+  simulateButton_ = new Gtk::RadioButton(NULL, string("Simulate"));
+  writeButton_ = new Gtk::RadioButton(simulateButton_->group(),
 				     string("Write"));
   
-  closeSessionButton_ = new Gtk_CheckButton(string("Close Disk"));
+  closeSessionButton_ = new Gtk::CheckButton(string("Close Disk"));
   closeSessionButton_->set_active(true);
 
-  ejectButton_ = new Gtk_CheckButton(string("Eject"));
+  ejectButton_ = new Gtk::CheckButton(string("Eject"));
   ejectButton_->set_active(false);
 
-  reloadButton_ = new Gtk_CheckButton(string("Reload"));
+  reloadButton_ = new Gtk::CheckButton(string("Reload"));
   reloadButton_->set_active(false);
 
-  list_ = new Gtk_CList(6);
+  list_ = new Gtk::CList(6);
 
   list_->set_column_title(0, string("Bus"));
   list_->set_column_justification(0, GTK_JUSTIFY_CENTER);
@@ -125,22 +130,22 @@ RecordDialog::RecordDialog()
   list_->set_selection_mode(GTK_SELECTION_MULTIPLE);
 
 
-  Gtk_VBox *contents = new Gtk_VBox;
+  Gtk::VBox *contents = new Gtk::VBox;
   contents->set_spacing(10);
 
 
   // available device list
-  Gtk_HBox *listHBox = new Gtk_HBox;
-  Gtk_VBox *listVBox = new Gtk_VBox;
+  Gtk::HBox *listHBox = new Gtk::HBox;
+  Gtk::VBox *listVBox = new Gtk::VBox;
 
-  hbox = new Gtk_HBox;
+  hbox = new Gtk::HBox;
 
   hbox->pack_start(*list_, TRUE, TRUE);
   list_->show();
 
-  Gtk_Adjustment *adjust = new Gtk_Adjustment(0.0, 0.0, 0.0);
+  Gtk::Adjustment *adjust = new Gtk::Adjustment(0.0, 0.0, 0.0);
 
-  Gtk_VScrollbar *scrollBar = new Gtk_VScrollbar(*adjust);
+  Gtk::VScrollbar *scrollBar = new Gtk::VScrollbar(*adjust);
   hbox->pack_start(*scrollBar, FALSE, FALSE);
   scrollBar->show();
 
@@ -152,61 +157,61 @@ RecordDialog::RecordDialog()
   listVBox->pack_start(*listHBox, TRUE, TRUE, 5);
   listHBox->show();
 
-  Gtk_Frame *listFrame = new Gtk_Frame(string("Available Recorder Devices"));
+  Gtk::Frame *listFrame = new Gtk::Frame(string("Available Recorder Devices"));
   listFrame->add(*listVBox);
   listVBox->show();
   contents->pack_start(*listFrame, TRUE, TRUE);
   listFrame->show();
 
   // device settings
-  Gtk_Frame *recordOptionsFrame = new Gtk_Frame(string("Record Options"));
+  Gtk::Frame *recordOptionsFrame = new Gtk::Frame(string("Record Options"));
 
-  table = new Gtk_Table(3, 2, FALSE);
+  table = new Gtk::Table(3, 2, FALSE);
   table->set_row_spacings(2);
   table->set_col_spacings(30);
-  hbox = new Gtk_HBox;
+  hbox = new Gtk::HBox;
   hbox->pack_start(*table, FALSE, FALSE, 5);
-  vbox = new Gtk_VBox;
+  vbox = new Gtk::VBox;
   vbox->pack_start(*hbox, FALSE, FALSE, 5);
-  recordOptionsFrame->add(vbox);
+  recordOptionsFrame->add(*vbox);
   vbox->show();
   hbox->show();
   table->show();
   
-  hbox = new Gtk_HBox;
+  hbox = new Gtk::HBox;
   hbox->pack_start(*simulateButton_, FALSE, FALSE);
   simulateButton_->show();
   table->attach(*hbox, 0, 1, 0, 1);
   hbox->show();
 
-  hbox = new Gtk_HBox;
+  hbox = new Gtk::HBox;
   hbox->pack_start(*writeButton_, FALSE, FALSE);
   writeButton_->show();
   table->attach(*hbox, 0, 1, 1, 2);
   hbox->show();
 
-  hbox = new Gtk_HBox;
+  hbox = new Gtk::HBox;
   hbox->pack_start(*closeSessionButton_, FALSE, FALSE);
   closeSessionButton_->show();
   table->attach(*hbox, 1, 2, 0, 1);
   hbox->show();
 
-  hbox = new Gtk_HBox;
+  hbox = new Gtk::HBox;
   hbox->pack_start(*ejectButton_, FALSE, FALSE);
   ejectButton_->show();
   table->attach(*hbox, 2, 3, 0, 1);
   hbox->show();
 
-  hbox = new Gtk_HBox;
-  label = new Gtk_Label(string("Recording Speed: "));
+  hbox = new Gtk::HBox;
+  label = new Gtk::Label(string("Recording Speed: "));
   hbox->pack_start(*label, FALSE);
   label->show();
-  hbox->pack_start(*speedMenu_, FALSE);
+//llanero  hbox->pack_start(*speedMenu_, FALSE);
   speedMenu_->show();
   table->attach(*hbox, 1, 2, 1, 2);
   hbox->show();
 
-  hbox = new Gtk_HBox;
+  hbox = new Gtk::HBox;
   hbox->pack_start(*reloadButton_, FALSE);
   reloadButton_->show();
   table->attach(*hbox, 2, 3, 1, 2);
@@ -217,7 +222,7 @@ RecordDialog::RecordDialog()
   recordOptionsFrame->show();
 
 
-  Gtk_HBox *contentsHBox = new Gtk_HBox;
+  Gtk::HBox *contentsHBox = new Gtk::HBox;
 
   contentsHBox->pack_start(*contents, TRUE, TRUE, 10);
   contents->show();
@@ -228,16 +233,16 @@ RecordDialog::RecordDialog()
   get_vbox()->show();
 
 
-  Gtk_HButtonBox *bbox = new Gtk_HButtonBox(GTK_BUTTONBOX_SPREAD);
+  Gtk::HButtonBox *bbox = new Gtk::HButtonBox(GTK_BUTTONBOX_SPREAD);
 
   bbox->pack_start(*startButton_);
   startButton_->show();
-  connect_to_method(startButton_->clicked, this, &RecordDialog::startAction);
+  startButton_->clicked.connect(SigC::slot(this,&RecordDialog::startAction));
   
-  Gtk_Button *cancelButton = new Gtk_Button(string(" Cancel "));
+  Gtk::Button *cancelButton = new Gtk::Button(string(" Cancel "));
   bbox->pack_start(*cancelButton);
   cancelButton->show();
-  connect_to_method(cancelButton->clicked, this, &RecordDialog::cancelAction);
+  cancelButton->clicked.connect(SigC::slot(this,&RecordDialog::cancelAction));
 
   get_action_area()->pack_start(*bbox);
   bbox->show();
@@ -416,7 +421,7 @@ void RecordDialog::startAction()
   }
   
 
-  Gtk_CList::seliterator itr;
+  Gtk::CList::seliterator itr;
 
   for (itr = list_->selbegin(); itr != list_->selend(); itr++) {
     DeviceData *data = (DeviceData*)list_->get_row_data(*itr);

@@ -18,8 +18,12 @@
  */
 /*
  * $Log: RecordProgressDialog.h,v $
- * Revision 1.1  2000/02/05 01:38:46  llanero
- * Initial revision
+ * Revision 1.2  2000/02/20 23:34:54  llanero
+ * fixed scsilib directory (files mising ?-()
+ * ported xdao to 1.1.8 / gnome (MDI) app
+ *
+ * Revision 1.1.1.1  2000/02/05 01:38:46  llanero
+ * Uploaded cdrdao 1.1.3 with pre10 patch applied.
  *
  */
 
@@ -34,7 +38,7 @@ class CdDevice;
 
 class RecordProgressDialogPool;
 
-class RecordProgressDialog : public Gtk_Dialog {
+class RecordProgressDialog : public Gtk::Dialog {
 public:
   RecordProgressDialog(RecordProgressDialogPool *father);
   ~RecordProgressDialog();
@@ -57,14 +61,14 @@ private:
 
   int actCloseButtonLabel_;
 
-  Gtk_Button *closeButton_;
-  Gtk_Label *abortLabel_;
-  Gtk_Label *closeLabel_;
-  Gtk_Label *tocName_;
+  Gtk::Button *closeButton_;
+  Gtk::Label *abortLabel_;
+  Gtk::Label *closeLabel_;
+  Gtk::Label *tocName_;
 
-  Gtk_Label *statusMsg_;;
-  Gtk_ProgressBar *totalProgress_;
-  Gtk_ProgressBar *bufferFillRate_;
+  Gtk::Label *statusMsg_;;
+  Gtk::ProgressBar *totalProgress_;
+  Gtk::ProgressBar *bufferFillRate_;
 
   RecordProgressDialog *poolNext_;
 

@@ -18,8 +18,12 @@
  */
 /*
  * $Log: xcdrdao.cc,v $
- * Revision 1.1  2000/02/05 01:40:33  llanero
- * Initial revision
+ * Revision 1.2  2000/02/20 23:34:54  llanero
+ * fixed scsilib directory (files mising ?-()
+ * ported xdao to 1.1.8 / gnome (MDI) app
+ *
+ * Revision 1.1.1.1  2000/02/05 01:40:33  llanero
+ * Uploaded cdrdao 1.1.3 with pre10 patch applied.
  *
  * Revision 1.1  1998/11/20 18:53:45  mueller
  * Initial revision
@@ -34,9 +38,12 @@
 #include <gtk--.h>
 #include <gtk/gtk.h>
 
+#include <gnome--.h>
+
 #include "config.h"
 
 #include "xcdrdao.h"
+#include "MDIWindow.h"
 #include "TocEdit.h"
 #include "MainWindow.h"
 #include "TrackInfoDialog.h"
@@ -55,6 +62,7 @@
 
 #include "port.h"
 
+MDIWindow *MDI_WINDOW = NULL;
 MainWindow *MAIN_WINDOW = NULL;
 TrackInfoDialog *TRACK_INFO_DIALOG = NULL;
 TocInfoDialog *TOC_INFO_DIALOG = NULL;
@@ -138,13 +146,15 @@ static RETSIGTYPE signalHandler(int sig)
 }
 
 
-int main (int argc, char **argv)
+//llanero int main (int argc, char **argv)
+int main (int argc, char* argv[])
 {
   const char *s;
   string settingsPath;
-  Gtk_Main application(&argc, &argv);
-
-  Gtk_ButtonBox::set_child_size_default(50, 10);
+//llanero  Gtk::Main application(&argc, &argv);
+  Gnome::Main application("StillNoName", "0.0", argc, argv);
+   
+  Gtk::ButtonBox::set_child_size_default(50, 10);
 
   // settings
   SETTINGS = new Settings;
@@ -161,22 +171,26 @@ int main (int argc, char **argv)
   installSignalHandler(SIGCHLD, signalHandler);
 
   // setup periodic GUI updates
-  connect_to_function(application.timeout(2000), &guiUpdatePeriodic);
-
-
+//llanero  connect_to_function(application.timeout(2000), &guiUpdatePeriodic);
+// this seems to be no longer valid!
+// and I can't make it work as application.timeout.connect(...) :(
+// perhaps the declaration os guiUpdatePeriodic must be changed in some way?
+// In C I would do it this way: (it works ;)
+  gtk_timeout_add(2000, (GtkFunction)guiUpdatePeriodic, NULL);
+  
   installSignalHandler(SIGPIPE, SIG_IGN);
 
   // scan for SCSI devices
   CdDevice::scan();
 
   TRACK_INFO_DIALOG = new TrackInfoDialog;
-  TOC_INFO_DIALOG = new TocInfoDialog;
+//llanero  TOC_INFO_DIALOG = new TocInfoDialog;
   ADD_SILENCE_DIALOG = new AddSilenceDialog;
   ADD_FILE_DIALOG = new AddFileDialog;
-  DEVICE_CONF_DIALOG = new DeviceConfDialog;
+//llanero  DEVICE_CONF_DIALOG = new DeviceConfDialog;
   EXTRACT_DIALOG = new ExtractDialog;
   EXTRACT_PROGRESS_POOL = new ExtractProgressDialogPool;
-  RECORD_DIALOG = new RecordDialog;
+//llanero  RECORD_DIALOG = new RecordDialog;
   RECORD_PROGRESS_POOL = new RecordProgressDialogPool;
 
   // create TocEdit object
@@ -187,11 +201,26 @@ int main (int argc, char **argv)
       exit(1);
   }
   
-  MAIN_WINDOW = new MainWindow(tocEdit);
-  MAIN_WINDOW->show();
+//llanero  MAIN_WINDOW = new MainWindow(tocEdit);
+//llanero  MAIN_WINDOW->show();
+  MDI_WINDOW = new MDIWindow();
+  MDI_WINDOW->open_toplevel();
 
-  guiUpdate();
+//llanero  guiUpdate();
 
+{
+/*
+  GtkWidget *message_box;
+  GtkWidget *boton;
+  message_box = gnome_message_box_new("This is a test!",
+    GNOME_MESSAGE_BOX_WARNING, GNOME_STOCK_BUTTON_CLOSE, NULL);
+  gtk_widget_show(message_box);
+  boton = gtk_button_new();
+  gtk_container_add(GTK_CONTAINER(message_box), boton);
+  gtk_widget_show(boton);
+*/    
+}
+	
   application.run();
 
   s = settingsPath.c_str();
@@ -201,3 +230,4 @@ int main (int argc, char **argv)
 
   return 0;
 }
+

@@ -18,8 +18,12 @@
  */
 /*
  * $Log: AddFileDialog.h,v $
- * Revision 1.1  2000/02/05 01:38:46  llanero
- * Initial revision
+ * Revision 1.2  2000/02/20 23:34:53  llanero
+ * fixed scsilib directory (files mising ?-()
+ * ported xdao to 1.1.8 / gnome (MDI) app
+ *
+ * Revision 1.1.1.1  2000/02/05 01:38:46  llanero
+ * Uploaded cdrdao 1.1.3 with pre10 patch applied.
  *
  * Revision 1.1  1999/09/07 11:17:32  mueller
  * Initial revision
@@ -34,7 +38,7 @@
 
 class TocEdit;
 
-class AddFileDialog : public Gtk_FileSelection {
+class AddFileDialog : public Gtk::FileSelection {
 public:
   enum Mode { M_APPEND_TRACK, M_APPEND_FILE, M_INSERT_FILE };
 

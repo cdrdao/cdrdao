@@ -18,12 +18,16 @@
  */
 /*
  * $Log: RecordProgressDialog.cc,v $
- * Revision 1.1  2000/02/05 01:39:36  llanero
- * Initial revision
+ * Revision 1.2  2000/02/20 23:34:54  llanero
+ * fixed scsilib directory (files mising ?-()
+ * ported xdao to 1.1.8 / gnome (MDI) app
+ *
+ * Revision 1.1.1.1  2000/02/05 01:39:36  llanero
+ * Uploaded cdrdao 1.1.3 with pre10 patch applied.
  *
  */
 
-static char rcsid[] = "$Id: RecordProgressDialog.cc,v 1.1 2000/02/05 01:39:36 llanero Exp $";
+static char rcsid[] = "$Id: RecordProgressDialog.cc,v 1.2 2000/02/20 23:34:54 llanero Exp $";
 
 #include <stddef.h>
 #include <string.h>
@@ -39,11 +43,11 @@ static char rcsid[] = "$Id: RecordProgressDialog.cc,v 1.1 2000/02/05 01:39:36 ll
 
 RecordProgressDialog::RecordProgressDialog(RecordProgressDialogPool *father)
 {
-  Gtk_Label *label;
-  Gtk_HBox *hbox;
-  Gtk_VBox *contents = new Gtk_VBox;
-  Gtk_Table *table;
-  Gtk_Alignment *align;
+  Gtk::Label *label;
+  Gtk::HBox *hbox;
+  Gtk::VBox *contents = new Gtk::VBox;
+  Gtk::Table *table;
+  Gtk::Alignment *align;
 
   poolFather_ = father;
   active_ = 0;
@@ -52,20 +56,20 @@ RecordProgressDialog::RecordProgressDialog(RecordProgressDialogPool *father)
 
   contents->set_spacing(5);
 
-  statusMsg_ = new Gtk_Label(string("XXXXXXXXXXXXXXXXXXX"));
-  totalProgress_ = new Gtk_ProgressBar;
-  bufferFillRate_ = new Gtk_ProgressBar;
-  tocName_ = new Gtk_Label;
-  abortLabel_ = new Gtk_Label(string(" Abort "));
-  closeLabel_ = new Gtk_Label(string(" Dismiss "));
-  closeButton_ = new Gtk_Button;
+  statusMsg_ = new Gtk::Label(string("XXXXXXXXXXXXXXXXXXX"));
+  totalProgress_ = new Gtk::ProgressBar;
+  bufferFillRate_ = new Gtk::ProgressBar;
+  tocName_ = new Gtk::Label;
+  abortLabel_ = new Gtk::Label(string(" Abort "));
+  closeLabel_ = new Gtk::Label(string(" Dismiss "));
+  closeButton_ = new Gtk::Button;
   closeButton_->add(*closeLabel_);
   closeLabel_->show();
   abortLabel_->show();
   actCloseButtonLabel_ = 2;
 
-  hbox = new Gtk_HBox;
-  label = new Gtk_Label(string("Project: "));
+  hbox = new Gtk::HBox;
+  label = new Gtk::Label(string("Project: "));
   hbox->pack_start(*label, FALSE);
   label->show();
   hbox->pack_start(*tocName_, FALSE);
@@ -73,45 +77,45 @@ RecordProgressDialog::RecordProgressDialog(RecordProgressDialogPool *father)
   contents->pack_start(*hbox, FALSE);
   hbox->show();
 
-  hbox = new Gtk_HBox;
+  hbox = new Gtk::HBox;
   hbox->pack_start(*statusMsg_, FALSE);
   statusMsg_->show();
   contents->pack_start(*hbox, FALSE);
   hbox->show();
 
-  table = new Gtk_Table(2, 2, FALSE);
+  table = new Gtk::Table(2, 2, FALSE);
   table->set_row_spacings(5);
   table->set_col_spacings(5);
   contents->pack_start(*table, FALSE);
   table->show();
 
-  label = new Gtk_Label(string("Progress:"));
-  align = new Gtk_Alignment(1.0, 0.0, 0.0, 0.0);
+  label = new Gtk::Label(string("Progress:"));
+  align = new Gtk::Alignment(1.0, 0.0, 0.0, 0.0);
   align->add(*label);
   label->show();
   table->attach(*align, 0, 1, 0, 1, GTK_FILL);
   align->show();
 
-  hbox = new Gtk_HBox;
+  hbox = new Gtk::HBox;
   hbox->pack_start(*totalProgress_);
   totalProgress_->show();
   table->attach(*hbox, 1, 2, 0, 1);
   hbox->show();
 
-  label = new Gtk_Label(string("Buffer:"));
-  align = new Gtk_Alignment(1.0, 0.0, 0.0, 0.0);
+  label = new Gtk::Label(string("Buffer:"));
+  align = new Gtk::Alignment(1.0, 0.0, 0.0, 0.0);
   align->add(*label);
   label->show();
   table->attach(*align, 0, 1, 1, 2, GTK_FILL);
   align->show();
   
-  hbox = new Gtk_HBox;
+  hbox = new Gtk::HBox;
   hbox->pack_start(*bufferFillRate_);
   bufferFillRate_->show();
   table->attach(*hbox, 1, 2, 1, 2);
   hbox->show();
   
-  hbox = new Gtk_HBox;
+  hbox = new Gtk::HBox;
   hbox->pack_start(*contents, TRUE, TRUE, 10);
   contents->show();
   get_vbox()->pack_start(*hbox, FALSE, FALSE, 10);
@@ -119,11 +123,11 @@ RecordProgressDialog::RecordProgressDialog(RecordProgressDialogPool *father)
 
   get_vbox()->show();
 
-  Gtk_HButtonBox *bbox = new Gtk_HButtonBox(GTK_BUTTONBOX_SPREAD);
+  Gtk::HButtonBox *bbox = new Gtk::HButtonBox(GTK_BUTTONBOX_SPREAD);
 
   bbox->pack_start(*closeButton_);
   closeButton_->show();
-  connect_to_method(closeButton_->clicked, this, &RecordProgressDialog::closeAction);
+  closeButton_->clicked.connect(SigC::slot(this,&RecordProgressDialog::closeAction));
 
   get_action_area()->pack_start(*bbox);
   bbox->show();
@@ -312,10 +316,12 @@ void RecordProgressDialog::setCloseButtonLabel(int l)
 
   switch (actCloseButtonLabel_) {
   case 1:
-    closeButton_->remove(abortLabel_);
+//llanero    closeButton_->remove(abortLabel_);
+    closeButton_->remove();
     break;
   case 2:
-    closeButton_->remove(closeLabel_);
+//llanero    closeButton_->remove(closeLabel_);
+    closeButton_->remove();
     break;
   }
 

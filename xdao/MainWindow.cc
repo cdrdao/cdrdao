@@ -18,8 +18,12 @@
  */
 /*
  * $Log: MainWindow.cc,v $
- * Revision 1.1  2000/02/05 01:39:32  llanero
- * Initial revision
+ * Revision 1.2  2000/02/20 23:34:54  llanero
+ * fixed scsilib directory (files mising ?-()
+ * ported xdao to 1.1.8 / gnome (MDI) app
+ *
+ * Revision 1.1.1.1  2000/02/05 01:39:32  llanero
+ * Uploaded cdrdao 1.1.3 with pre10 patch applied.
  *
  * Revision 1.6  1999/05/24 18:10:25  mueller
  * Adapted to new reading interface of 'trackdb'.
@@ -38,7 +42,7 @@
  *
  */
 
-static char rcsid[] = "$Id: MainWindow.cc,v 1.1 2000/02/05 01:39:32 llanero Exp $";
+static char rcsid[] = "$Id: MainWindow.cc,v 1.2 2000/02/20 23:34:54 llanero Exp $";
 
 #include <stdio.h>
 #include <fstream.h>
@@ -76,15 +80,16 @@ MainWindow::MainWindow(TocEdit *tedit) : vbox_(false, 5), tocReader(NULL)
   playBuffer_ = new Sample[playBurst_];
   soundInterface_ = NULL;
 
-  fileSelector_ = new Gtk_FileSelection("");
+  fileSelector_ = new Gtk::FileSelection("");
   fileSelector_->complete(string("*.toc"));
 
   createMenuBar();
 
   set_usize(600,400);
 
-  vbox_.pack_start(*menuBar_, FALSE, FALSE);
-  menuBar_->show();
+//llanero: will use GNOME
+//  vbox_.pack_start(*menuBar_, FALSE, FALSE);
+//  menuBar_->show();
 
   sampleDisplay_ = new SampleDisplay;
   sampleDisplay_->setTocEdit(tocEdit_);
@@ -92,50 +97,53 @@ MainWindow::MainWindow(TocEdit *tedit) : vbox_(false, 5), tocReader(NULL)
   vbox_.pack_start(*sampleDisplay_, TRUE, TRUE);
   sampleDisplay_->show();
 
-  Gtk_HScrollbar *scrollBar =
-    new Gtk_HScrollbar(*(sampleDisplay_->getAdjustment()));
+  Gtk::HScrollbar *scrollBar =
+    new Gtk::HScrollbar(*(sampleDisplay_->getAdjustment()));
   vbox_.pack_start(*scrollBar, FALSE, FALSE);
   scrollBar->show();
   
-  Gtk_Label *label;
-  Gtk_HBox *selectionInfoBox = new Gtk_HBox;
+  Gtk::Label *label;
+  Gtk::HBox *selectionInfoBox = new Gtk::HBox;
 
-  markerPos_ = new Gtk_Entry;
+  markerPos_ = new Gtk::Entry;
   markerPos_->set_editable(true);
-  connect_to_method(markerPos_->activate, this, &MainWindow::markerSet);
+//llanero  connect_to_method(markerPos_->activate, this, &MainWindow::markerSet);
+  markerPos_->activate.connect(slot(this, &MainWindow::markerSet));
 
-  cursorPos_ = new Gtk_Entry;
+  cursorPos_ = new Gtk::Entry;
   cursorPos_->set_editable(false);
 
-  selectionStartPos_ = new Gtk_Entry;
+  selectionStartPos_ = new Gtk::Entry;
   selectionStartPos_->set_editable(true);
-  connect_to_method(selectionStartPos_->activate, this,
-		    &MainWindow::selectionSet);
+//llanero  connect_to_method(selectionStartPos_->activate, this,
+//		    &MainWindow::selectionSet);
+  selectionStartPos_->activate.connect(slot(this, &MainWindow::selectionSet));
 
-  selectionEndPos_ = new Gtk_Entry;
+  selectionEndPos_ = new Gtk::Entry;
   selectionEndPos_->set_editable(true);
-  connect_to_method(selectionEndPos_->activate, this,
-		    &MainWindow::selectionSet);
+//llanero  connect_to_method(selectionEndPos_->activate, this,
+//		    &MainWindow::selectionSet);
+  selectionEndPos_->activate.connect(slot(this, &MainWindow::selectionSet));
 
-  label = new Gtk_Label(string("Cursor: "));
+  label = new Gtk::Label(string("Cursor: "));
   selectionInfoBox->pack_start(*label, FALSE, FALSE);
   selectionInfoBox->pack_start(*cursorPos_);
   label->show();
   cursorPos_->show();
 
-  label = new Gtk_Label(string("Marker: "));
+  label = new Gtk::Label(string("Marker: "));
   selectionInfoBox->pack_start(*label, FALSE, FALSE);
   selectionInfoBox->pack_start(*markerPos_);
   label->show();
   markerPos_->show();
 
-  label = new Gtk_Label(string("Selection: "));
+  label = new Gtk::Label(string("Selection: "));
   selectionInfoBox->pack_start(*label, FALSE, FALSE);
   selectionInfoBox->pack_start(*selectionStartPos_);
   label->show();
   selectionStartPos_->show();
 
-  label = new Gtk_Label(string(" - "));
+  label = new Gtk::Label(string(" - "));
   selectionInfoBox->pack_start(*label, FALSE, FALSE);
   selectionInfoBox->pack_start(*selectionEndPos_);
   label->show();
@@ -144,10 +152,14 @@ MainWindow::MainWindow(TocEdit *tedit) : vbox_(false, 5), tocReader(NULL)
   vbox_.pack_start(*selectionInfoBox, FALSE, FALSE);
   selectionInfoBox->show();
 
-  Gtk_HButtonBox *buttonBox = new Gtk_HButtonBox(GTK_BUTTONBOX_START, 5);
-  zoomButton_ = new Gtk_RadioButton(NULL, string("Zoom"));
-  selectButton_ = new Gtk_RadioButton(zoomButton_->group(), string("Select"));
-  playButton_ = new Gtk_Button(string("Play"));
+  Gtk::HButtonBox *buttonBox = new Gtk::HButtonBox(GTK_BUTTONBOX_START, 5);
+//llanero  zoomButton_ = new Gtk::RadioButton(NULL, string("Zoom"));
+  zoomButton_ = new Gtk::RadioButton(string("Zoom"));
+//llanero  selectButton_ = new Gtk::RadioButton(zoomButton_->group(), string("Select"));
+  selectButton_ = new Gtk::RadioButton(string("Select"));
+  selectButton_->set_group(zoomButton_->group());
+
+  playButton_ = new Gtk::Button(string("Play"));
 
   buttonBox->pack_start(*zoomButton_);
   zoomButton_->show();
@@ -161,17 +173,18 @@ MainWindow::MainWindow(TocEdit *tedit) : vbox_(false, 5), tocReader(NULL)
   vbox_.pack_start(*buttonBox, FALSE, FALSE);
   buttonBox->show();
 
-  statusBar_ = new Gtk_Statusbar;
+  statusBar_ = new Gtk::Statusbar;
   vbox_.pack_start(*statusBar_, FALSE, FALSE);
   lastMessageId_ = statusBar_->push(1, string(""));
   statusBar_->show();
 
   statusMessage("xcdrdao %s", VERSION);
 
-  add(&vbox_);
+//llanero  add(&vbox_);
   vbox_.show();
 
-  connect_to_method(sampleDisplay_->markerSet, this,
+//llanero:
+/*  connect_to_method(sampleDisplay_->markerSet, this,
                     &MainWindow::markerSetCallback);
   connect_to_method(sampleDisplay_->selectionSet, this,
 		    &MainWindow::selectionSetCallback);
@@ -181,20 +194,42 @@ MainWindow::MainWindow(TocEdit *tedit) : vbox_(false, 5), tocReader(NULL)
 		    &MainWindow::trackMarkSelectedCallback);
   connect_to_method(sampleDisplay_->trackMarkMoved, this,
 		    &MainWindow::trackMarkMovedCallback);
+*/
+  sampleDisplay_->markerSet.connect(slot(this,
+  			&MainWindow::markerSetCallback));
+  sampleDisplay_->selectionSet.connect(slot(this,
+  			&MainWindow::selectionSetCallback));
+  sampleDisplay_->cursorMoved.connect(slot(this,
+  			&MainWindow::cursorMovedCallback));
+  sampleDisplay_->trackMarkSelected.connect(slot(this,
+  			&MainWindow::trackMarkSelectedCallback));
+  sampleDisplay_->trackMarkMoved.connect(slot(this,
+  			&MainWindow::trackMarkMovedCallback));
 
-  connect_to_method(zoomButton_->toggled, this, &MainWindow::setMode, ZOOM);
+//llanero:
+/*  connect_to_method(zoomButton_->toggled, this, &MainWindow::setMode, ZOOM);
   connect_to_method(selectButton_->toggled, this, &MainWindow::setMode, SELECT);
   connect_to_method(playButton_->clicked, this, &MainWindow::play);
+*/
+  zoomButton_->toggled.connect(bind(slot(this, &MainWindow::setMode), ZOOM));
+  selectButton_->toggled.connect(bind(slot(this, &MainWindow::setMode), SELECT));
+  playButton_->clicked.connect(slot(this, &MainWindow::play));
 
 }
 
 void MainWindow::createMenuBar()
 {
-  Gtk_AccelGroup accelGroup;
+//llanero: ???  Gtk::AccelGroup accelGroup;
 
-  itemFactory_ = new Gtk_ItemFactory_MenuBar("<Main>", accelGroup);
-  Gtk_ItemFactory &f = *itemFactory_;
+//llanero  itemFactory_ = new Gtk::ItemFactory_MenuBar("<Main>", accelGroup);
+//llanero: accelGroup!!! or -> use GNOME menus (will solve this)
+//  itemFactory_ = new Gtk::ItemFactory_MenuBar("<Main>");
+//  Gtk::ItemFactory &f = *itemFactory_;
 
+// NOTE : Comented all menu stuff. This has changed so better than rewriting
+//        it twice, I will use easier GNOME menus.
+
+/*
   f.create_item("/File", NULL, "<Branch>", 0);
 
   f.create_item("/File/New", 0, "<Item>",
@@ -295,6 +330,7 @@ void MainWindow::createMenuBar()
   add_accel_group(accelGroup);
 
   menuBar_ = f.get_menubar_widget("");
+*/
 }
 
 gint MainWindow::delete_event_impl(GdkEventAny*)
@@ -314,7 +350,8 @@ void MainWindow::quit()
   }
 
   hide();
-  Gtk_Main::instance()->quit();
+//llanero  Gtk::Main::instance()->quit();
+  Gtk::Main::quit();
 }
 
 void MainWindow::update(unsigned long level)
@@ -423,13 +460,18 @@ void MainWindow::readToc()
   }
 
   fileSelector_->set_title("Read Toc-File");
-  fileSelectorC1_ = connect_to_method(fileSelector_->get_ok_button()->clicked,
-				      this, &MainWindow::readTocCallback, 1);
-  fileSelectorC2_ =
-    connect_to_method(fileSelector_->get_cancel_button()->clicked,
-		      this, &MainWindow::readTocCallback, 0);
+//llanero  fileSelectorC1_ = connect_to_method(fileSelector_->get_ok_button()->clicked,
+//				      this, &MainWindow::readTocCallback, 1);
+//  fileSelectorC2_ =
+//    connect_to_method(fileSelector_->get_cancel_button()->clicked,
+//		      this, &MainWindow::readTocCallback, 0);
 
-  Gtk_Main::instance()->grab_add(*fileSelector_);
+  fileSelectorC1_ = fileSelector_->get_ok_button()->clicked.connect(
+  				bind(slot(this, &MainWindow::readTocCallback), 1));
+  fileSelectorC2_ = fileSelector_->get_cancel_button()->clicked.connect(
+  				bind(slot(this, &MainWindow::readTocCallback), 0));
+
+  Gtk::Main::instance()->grab_add(*fileSelector_);
   fileSelector_->show();
 }
 
@@ -448,13 +490,18 @@ void MainWindow::saveToc()
 void MainWindow::saveAsToc()
 {
   fileSelector_->set_title("Save Toc-File");
-  fileSelectorC1_ = connect_to_method(fileSelector_->get_ok_button()->clicked,
-				      this, &MainWindow::saveAsTocCallback, 1);
-  fileSelectorC2_ =
-    connect_to_method(fileSelector_->get_cancel_button()->clicked,
-		      this, &MainWindow::saveAsTocCallback, 0);
+//llanero  fileSelectorC1_ = connect_to_method(fileSelector_->get_ok_button()->clicked,
+//				      this, &MainWindow::saveAsTocCallback, 1);
+//  fileSelectorC2_ =
+//    connect_to_method(fileSelector_->get_cancel_button()->clicked,
+//		      this, &MainWindow::saveAsTocCallback, 0);
 
-  Gtk_Main::instance()->grab_add(*fileSelector_);
+  fileSelectorC1_ = fileSelector_->get_ok_button()->clicked.connect(
+  				bind(slot(this, &MainWindow::saveAsTocCallback), 1));
+  fileSelectorC2_ = fileSelector_->get_cancel_button()->clicked.connect(
+  				bind(slot(this, &MainWindow::saveAsTocCallback), 0));
+
+  Gtk::Main::instance()->grab_add(*fileSelector_);
   fileSelector_->show();
 }
 
@@ -463,7 +510,7 @@ void MainWindow::readTocCallback(int action)
   if (action == 0) {
     fileSelectorC1_.disconnect();
     fileSelectorC2_.disconnect();
-    Gtk_Main::instance()->grab_remove(*fileSelector_);
+    Gtk::Main::instance()->grab_remove(*fileSelector_);
     fileSelector_->hide();
     
   }
@@ -473,7 +520,7 @@ void MainWindow::readTocCallback(int action)
     if (s != NULL && *s != 0 && s[strlen(s) - 1] != '/') {
       fileSelectorC1_.disconnect();
       fileSelectorC2_.disconnect();
-      Gtk_Main::instance()->grab_remove(*fileSelector_);
+      Gtk::Main::instance()->grab_remove(*fileSelector_);
       fileSelector_->hide();
 
       if (tocEdit_->readToc(stripCwd(s)) == 0) {
@@ -490,7 +537,7 @@ void MainWindow::saveAsTocCallback(int action)
   if (action == 0) {
     fileSelectorC1_.disconnect();
     fileSelectorC2_.disconnect();
-    Gtk_Main::instance()->grab_remove(*fileSelector_);
+    Gtk::Main::instance()->grab_remove(*fileSelector_);
     fileSelector_->hide();
   }
   else {
@@ -499,7 +546,7 @@ void MainWindow::saveAsTocCallback(int action)
     if (s != NULL && *s != 0 && s[strlen(s) - 1] != '/') {
       fileSelectorC1_.disconnect();
       fileSelectorC2_.disconnect();
-      Gtk_Main::instance()->grab_remove(*fileSelector_);
+      Gtk::Main::instance()->grab_remove(*fileSelector_);
       fileSelector_->hide();
 
       if (tocEdit_->saveAsToc(stripCwd(s)) == 0) {
@@ -753,7 +800,8 @@ void MainWindow::play()
   tocEdit_->blockEdit();
   guiUpdate();
 
-  connect_to_method(Gtk_Main::idle(), this, &MainWindow::playCallback);
+//llanero  connect_to_method(Gtk::Main::idle(), this, &MainWindow::playCallback);
+  Gtk::Main::idle.connect(slot(this, &MainWindow::playCallback));
 }
 
 int MainWindow::playCallback()

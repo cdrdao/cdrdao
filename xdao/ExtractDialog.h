@@ -26,7 +26,7 @@
 class TocEdit;
 class CdDevice;
 
-class ExtractDialog : public Gtk_Dialog {
+class ExtractDialog : public Gtk::Dialog {
 public:
   ExtractDialog();
   ~ExtractDialog();
@@ -53,13 +53,13 @@ private:
     int bus, id, lun;
   };
 
-  Gtk_CList *list_;
-  Gtk_Button *startButton_;
+  Gtk::CList *list_;
+  Gtk::Button *startButton_;
 
-  Gtk_ItemFactory_Menu *speedMenuFactory_;
-  Gtk_OptionMenu *speedMenu_;
+//llanero  Gtk::ItemFactory::Menu *speedMenuFactory_;
+  Gtk::OptionMenu *speedMenu_;
 
-  Gtk_Entry *fileNameEntry_;
+  Gtk::Entry *fileNameEntry_;
 
   void cancelAction();
   void startAction();

@@ -18,8 +18,12 @@
  */
 /*
  * $Log: AddSilenceDialog.h,v $
- * Revision 1.1  2000/02/05 01:38:46  llanero
- * Initial revision
+ * Revision 1.2  2000/02/20 23:34:53  llanero
+ * fixed scsilib directory (files mising ?-()
+ * ported xdao to 1.1.8 / gnome (MDI) app
+ *
+ * Revision 1.1.1.1  2000/02/05 01:38:46  llanero
+ * Uploaded cdrdao 1.1.3 with pre10 patch applied.
  *
  * Revision 1.1  1999/01/30 15:11:13  mueller
  * Initial revision
@@ -34,7 +38,7 @@
 
 class TocEdit;
 
-class AddSilenceDialog : public Gtk_Dialog {
+class AddSilenceDialog : public Gtk::Dialog {
 public:
   enum Mode { M_APPEND, M_INSERT };
 
@@ -54,12 +58,12 @@ private:
   int active_;
   Mode mode_;
 
-  Gtk_Button *applyButton_;
+  Gtk::Button *applyButton_;
 
-  Gtk_Entry *minutes_;
-  Gtk_Entry *seconds_;
-  Gtk_Entry *frames_;
-  Gtk_Entry *samples_;
+  Gtk::Entry *minutes_;
+  Gtk::Entry *seconds_;
+  Gtk::Entry *frames_;
+  Gtk::Entry *samples_;
 
   void clearAction();
   void cancelAction();

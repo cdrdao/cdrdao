@@ -28,7 +28,7 @@ class CdDevice;
 
 class ExtractProgressDialogPool;
 
-class ExtractProgressDialog : public Gtk_Dialog {
+class ExtractProgressDialog : public Gtk::Dialog {
 public:
   ExtractProgressDialog(ExtractProgressDialogPool *father);
   ~ExtractProgressDialog();
@@ -51,14 +51,14 @@ private:
 
   int actCloseButtonLabel_;
 
-  Gtk_Button *closeButton_;
-  Gtk_Label *abortLabel_;
-  Gtk_Label *closeLabel_;
-  Gtk_Label *tocName_;
+  Gtk::Button *closeButton_;
+  Gtk::Label *abortLabel_;
+  Gtk::Label *closeLabel_;
+  Gtk::Label *tocName_;
 
-  Gtk_Label *statusMsg_;;
-  Gtk_ProgressBar *totalProgress_;
-  Gtk_ProgressBar *bufferFillRate_;
+  Gtk::Label *statusMsg_;;
+  Gtk::ProgressBar *totalProgress_;
+  Gtk::ProgressBar *bufferFillRate_;
 
   ExtractProgressDialog *poolNext_;
 

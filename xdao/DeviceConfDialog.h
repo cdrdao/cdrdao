@@ -18,8 +18,12 @@
  */
 /*
  * $Log: DeviceConfDialog.h,v $
- * Revision 1.1  2000/02/05 01:38:46  llanero
- * Initial revision
+ * Revision 1.2  2000/02/20 23:34:53  llanero
+ * fixed scsilib directory (files mising ?-()
+ * ported xdao to 1.1.8 / gnome (MDI) app
+ *
+ * Revision 1.1.1.1  2000/02/05 01:38:46  llanero
+ * Uploaded cdrdao 1.1.3 with pre10 patch applied.
  *
  * Revision 1.1  1999/09/06 09:09:37  mueller
  * Initial revision
@@ -35,7 +39,7 @@
 class TocEdit;
 class CdDevice;
 
-class DeviceConfDialog : public Gtk_Dialog {
+class DeviceConfDialog : public Gtk::Dialog {
 public:
   DeviceConfDialog();
   ~DeviceConfDialog();
@@ -60,19 +64,19 @@ private:
     string specialDevice;
   };
 
-  Gtk_CList *list_;
-  Gtk_Button *applyButton_;
+  Gtk::CList *list_;
+  Gtk::Button *applyButton_;
 
-  Gtk_ItemFactory_Menu *driverMenuFactory_;
-  Gtk_OptionMenu *driverMenu_;
+//llanero  Gtk::ItemFactory::Menu *driverMenuFactory_;
+  Gtk::OptionMenu *driverMenu_;
 
-  Gtk_ItemFactory_Menu *devtypeMenuFactory_;
-  Gtk_OptionMenu *devtypeMenu_;
+//llanero  Gtk::ItemFactory::Menu *devtypeMenuFactory_;
+  Gtk::OptionMenu *devtypeMenu_;
 
-  Gtk_SpinButton *busEntry_, *idEntry_, *lunEntry_;
-  Gtk_Entry *vendorEntry_, *productEntry_;
-  Gtk_Entry *specialDeviceEntry_;
-  Gtk_Entry *driverOptionsEntry_;
+  Gtk::SpinButton *busEntry_, *idEntry_, *lunEntry_;
+  Gtk::Entry *vendorEntry_, *productEntry_;
+  Gtk::Entry *specialDeviceEntry_;
+  Gtk::Entry *driverOptionsEntry_;
 
   const char *checkString(const string &str);
 

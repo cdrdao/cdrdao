@@ -18,15 +18,19 @@
  */
 /*
  * $Log: TrackInfoDialog.cc,v $
- * Revision 1.1  2000/02/05 01:40:28  llanero
- * Initial revision
+ * Revision 1.2  2000/02/20 23:34:54  llanero
+ * fixed scsilib directory (files mising ?-()
+ * ported xdao to 1.1.8 / gnome (MDI) app
+ *
+ * Revision 1.1.1.1  2000/02/05 01:40:28  llanero
+ * Uploaded cdrdao 1.1.3 with pre10 patch applied.
  *
  * Revision 1.1  1999/08/19 20:27:16  mueller
  * Initial revision
  *
  */
 
-static char rcsid[] = "$Id: TrackInfoDialog.cc,v 1.1 2000/02/05 01:40:28 llanero Exp $";
+static char rcsid[] = "$Id: TrackInfoDialog.cc,v 1.2 2000/02/20 23:34:54 llanero Exp $";
 
 #include "TrackInfoDialog.h"
 
@@ -44,32 +48,32 @@ static char rcsid[] = "$Id: TrackInfoDialog.cc,v 1.1 2000/02/05 01:40:28 llanero
 TrackInfoDialog::TrackInfoDialog()
 {
   int i;
-  Gtk_Label *label, *label1;
-  Gtk_HBox *hbox;
-  Gtk_VBox *vbox, *vbox1;
-  Gtk_Frame *frame;
-  Gtk_Table *table;
-  Gtk_Button *button;
-  Gtk_VBox *contents = new Gtk_VBox;
-  Gtk_HBox *topBox = new Gtk_HBox;
+  Gtk::Label *label, *label1;
+  Gtk::HBox *hbox;
+  Gtk::VBox *vbox, *vbox1;
+  Gtk::Frame *frame;
+  Gtk::Table *table;
+  Gtk::Button *button;
+  Gtk::VBox *contents = new Gtk::VBox;
+  Gtk::HBox *topBox = new Gtk::HBox;
 
   tocEdit_ = NULL;
   active_ = 0;
   trackNr_ = 0;
 
-  trackNr_ = new Gtk_Label(string("99"));
-  pregapLen_ = new Gtk_Label(string("100:00:00"));
-  trackStart_ = new Gtk_Label(string("100:00:00"));
-  trackEnd_ = new Gtk_Label(string("100:00:00"));
-  trackLen_ = new Gtk_Label(string("100:00:00"));
-  indexMarks_ = new Gtk_Label(string("99"));
+  trackNr_ = new Gtk::Label(string("99"));
+  pregapLen_ = new Gtk::Label(string("100:00:00"));
+  trackStart_ = new Gtk::Label(string("100:00:00"));
+  trackEnd_ = new Gtk::Label(string("100:00:00"));
+  trackLen_ = new Gtk::Label(string("100:00:00"));
+  indexMarks_ = new Gtk::Label(string("99"));
 
-  copyFlag_ = new Gtk_CheckButton(string("Copy"));
-  preEmphasisFlag_ = new Gtk_CheckButton(string("Pre Emphasis"));
+  copyFlag_ = new Gtk::CheckButton(string("Copy"));
+  preEmphasisFlag_ = new Gtk::CheckButton(string("Pre Emphasis"));
   
-  twoChannelAudio_ = new Gtk_RadioButton(NULL, string("Two Channel Audio"));
-  fourChannelAudio_ = new Gtk_RadioButton(twoChannelAudio_->group(),
-					  string("Four Channel Audio"));
+  twoChannelAudio_ = new Gtk::RadioButton(string("Two Channel Audio"));
+  fourChannelAudio_ = new Gtk::RadioButton(string("Four Channel Audio"));
+  fourChannelAudio_->set_group(twoChannelAudio_->group());
 
   isrcCodeCountry_ = new TextEdit("XX");
   isrcCodeCountry_->set_max_length(2);
@@ -97,9 +101,9 @@ TrackInfoDialog::TrackInfoDialog()
   topBox->set_spacing(5);
   contents->set_spacing(10);
 
-  hbox = new Gtk_HBox;
+  hbox = new Gtk::HBox;
 
-  label = new Gtk_Label(string("Track: "));
+  label = new Gtk::Label(string("Track: "));
 
   hbox->pack_start(*label, FALSE, FALSE);
   label->show();
@@ -111,75 +115,75 @@ TrackInfoDialog::TrackInfoDialog()
 
 
   // time data
-  frame = new Gtk_Frame(string("Summary"));
+  frame = new Gtk::Frame(string("Summary"));
 
-  table = new Gtk_Table(5, 2, FALSE);
+  table = new Gtk::Table(5, 2, FALSE);
   table->set_row_spacings(5);
   table->set_col_spacings(5);
-  hbox = new Gtk_HBox;
+  hbox = new Gtk::HBox;
   hbox->pack_start(*table, FALSE, FALSE, 5);
-  vbox = new Gtk_VBox;
+  vbox = new Gtk::VBox;
   vbox->pack_start(*hbox, TRUE, TRUE, 5);
-  frame->add(vbox);
+  frame->add(*vbox);
   vbox->show();
   hbox->show();
   table->show();
   
-  label = new Gtk_Label(string("Pre-Gap:"));
-  hbox = new Gtk_HBox;
+  label = new Gtk::Label(string("Pre-Gap:"));
+  hbox = new Gtk::HBox;
   hbox->pack_end(*label, FALSE, FALSE);
   table->attach(*hbox, 0, 1, 0, 1);
   label->show();
   hbox->show();
-  hbox = new Gtk_HBox;
+  hbox = new Gtk::HBox;
   hbox->pack_start(*pregapLen_, FALSE, FALSE);
   table->attach(*hbox, 1, 2, 0, 1);
   pregapLen_->show();
   hbox->show();
 
-  label = new Gtk_Label(string("Start:"));
-  hbox = new Gtk_HBox;
+  label = new Gtk::Label(string("Start:"));
+  hbox = new Gtk::HBox;
   hbox->pack_end(*label, FALSE, FALSE);
   table->attach(*hbox, 0, 1, 1, 2);
   label->show();
   hbox->show();
-  hbox = new Gtk_HBox;
+  hbox = new Gtk::HBox;
   hbox->pack_start(*trackStart_, FALSE, FALSE);
   table->attach(*hbox, 1, 2, 1, 2);
   trackStart_->show();
   hbox->show();
 
-  label = new Gtk_Label(string("End:"));
-  hbox = new Gtk_HBox;
+  label = new Gtk::Label(string("End:"));
+  hbox = new Gtk::HBox;
   hbox->pack_end(*label, FALSE, FALSE);
   table->attach(*hbox, 0, 1, 2, 3);
   label->show();
   hbox->show();
-  hbox = new Gtk_HBox;
+  hbox = new Gtk::HBox;
   hbox->pack_start(*trackEnd_, FALSE, FALSE);
   table->attach(*hbox, 1, 2, 2, 3);
   trackEnd_->show();
   hbox->show();
 
-  label = new Gtk_Label(string("Length:"));
-  hbox = new Gtk_HBox;
+  label = new Gtk::Label(string("Length:"));
+  hbox = new Gtk::HBox;
   hbox->pack_end(*label, FALSE, FALSE);
   table->attach(*hbox, 0, 1, 3, 4);
   label->show();
   hbox->show();
-  hbox = new Gtk_HBox;
+  hbox = new Gtk::HBox;
   hbox->pack_start(*trackLen_, FALSE, FALSE);
   table->attach(*hbox, 1, 2, 3, 4);
   trackLen_->show();
   hbox->show();
 
-  label = new Gtk_Label(string("Index Marks:"));
-  hbox = new Gtk_HBox;
+  label = new Gtk::Label(string("Index Marks:"));
+  hbox = new Gtk::HBox;
   hbox->pack_end(*label, FALSE, FALSE);
   table->attach(*hbox, 0, 1, 4, 5);
   label->show();
   hbox->show();
-  hbox = new Gtk_HBox;
+  hbox = new Gtk::HBox;
   hbox->pack_start(*indexMarks_, FALSE, FALSE);
   table->attach(*hbox, 1, 2, 4, 5);
   indexMarks_->show();
@@ -191,9 +195,9 @@ TrackInfoDialog::TrackInfoDialog()
 
 
   // sub-channel data
-  frame = new Gtk_Frame(string("Sub-Channel"));
+  frame = new Gtk::Frame(string("Sub-Channel"));
 
-  vbox = new Gtk_VBox;
+  vbox = new Gtk::VBox;
   vbox->set_spacing(0);
 
   vbox->pack_start(*copyFlag_);
@@ -209,24 +213,24 @@ TrackInfoDialog::TrackInfoDialog()
   vbox->pack_start(*fourChannelAudio_);
   fourChannelAudio_->show();
 
-  hbox = new Gtk_HBox;
-  label = new Gtk_Label(string("ISRC: "));
+  hbox = new Gtk::HBox;
+  label = new Gtk::Label(string("ISRC: "));
   hbox->pack_start(*label, FALSE);
 
   hbox->pack_start(*isrcCodeCountry_, FALSE);
-  label1 = new Gtk_Label(string("-"));
+  label1 = new Gtk::Label(string("-"));
   hbox->pack_start(*label1, FALSE);
   isrcCodeCountry_->show();
   label1->show();
 
   hbox->pack_start(*isrcCodeOwner_, FALSE);
-  label1 = new Gtk_Label(string("-"));
+  label1 = new Gtk::Label(string("-"));
   hbox->pack_start(*label1, FALSE);
   isrcCodeOwner_->show();
   label1->show();
 
   hbox->pack_start(*isrcCodeYear_, FALSE);
-  label1 = new Gtk_Label(string("-"));
+  label1 = new Gtk::Label(string("-"));
   hbox->pack_start(*label1, FALSE);
   isrcCodeYear_->show();
   label1->show();
@@ -238,11 +242,11 @@ TrackInfoDialog::TrackInfoDialog()
   label->show();
   hbox->show();
   
-  vbox1 = new Gtk_VBox;
+  vbox1 = new Gtk::VBox;
   vbox1->pack_start(*vbox, TRUE, TRUE, 5);
-  hbox = new Gtk_HBox;
+  hbox = new Gtk::HBox;
   hbox->pack_start(*vbox1, TRUE, TRUE, 5);
-  frame->add(hbox);
+  frame->add(*hbox);
   vbox->show();
   vbox1->show();
   hbox->show();
@@ -255,20 +259,20 @@ TrackInfoDialog::TrackInfoDialog()
 
 
   // CD-TEXT data
-  frame = new Gtk_Frame(string("CD-TEXT"));
+  frame = new Gtk::Frame(string("CD-TEXT"));
 
-  Gtk_Notebook *notebook = new Gtk_Notebook;
+  Gtk::Notebook *notebook = new Gtk::Notebook;
 
   for (i = 0; i < 8; i++) {
     vbox = createCdTextPage(i);
-    notebook->append_page(*vbox, *(cdTextPages_[i].label));
+    notebook->pages().push_back(Gtk::Notebook_Helpers::TabElem(*vbox, *(cdTextPages_[i].label)));
   }
 
-  vbox1 = new Gtk_VBox;
+  vbox1 = new Gtk::VBox;
   vbox1->pack_start(*notebook, TRUE, TRUE, 5);
-  hbox = new Gtk_HBox;
+  hbox = new Gtk::HBox;
   hbox->pack_start(*vbox1, TRUE, TRUE, 5);
-  frame->add(hbox);
+  frame->add(*hbox);
   notebook->show();
   vbox1->show();
   hbox->show();
@@ -278,7 +282,7 @@ TrackInfoDialog::TrackInfoDialog()
 
 
 
-  hbox = new Gtk_HBox;
+  hbox = new Gtk::HBox;
   hbox->pack_start(*contents, TRUE, TRUE, 10);
   contents->show();
   get_vbox()->pack_start(*hbox, TRUE, TRUE, 10);
@@ -286,17 +290,17 @@ TrackInfoDialog::TrackInfoDialog()
 
   get_vbox()->show();
 
-  Gtk_HButtonBox *bbox = new Gtk_HButtonBox(GTK_BUTTONBOX_SPREAD);
+  Gtk::HButtonBox *bbox = new Gtk::HButtonBox(GTK_BUTTONBOX_SPREAD);
 
-  applyButton_ = new Gtk_Button(string(" Apply "));
+  applyButton_ = new Gtk::Button(string(" Apply "));
   bbox->pack_start(*applyButton_);
   applyButton_->show();
-  connect_to_method(applyButton_->clicked, this, &TrackInfoDialog::applyAction);
+  applyButton_->clicked.connect(slot(this, &TrackInfoDialog::applyAction));
 
-  button = new Gtk_Button(string(" Cancel "));
+  button = new Gtk::Button(string(" Cancel "));
   bbox->pack_start(*button);
   button->show();
-  connect_to_method(button->clicked, this, &TrackInfoDialog::cancelAction);
+  button->clicked.connect(slot(this, &TrackInfoDialog::cancelAction));
 
   get_action_area()->pack_start(*bbox);
   bbox->show();
@@ -331,33 +335,33 @@ void TrackInfoDialog::stop()
 }
 
 
-Gtk_VBox *TrackInfoDialog::createCdTextPage(int n)
+Gtk::VBox *TrackInfoDialog::createCdTextPage(int n)
 {
   char buf[20];
-  Gtk_Table *table = new Gtk_Table(7, 2, FALSE);
-  Gtk_VBox *vbox = new Gtk_VBox;
-  Gtk_HBox *hbox;
-  Gtk_Label *label;
+  Gtk::Table *table = new Gtk::Table(7, 2, FALSE);
+  Gtk::VBox *vbox = new Gtk::VBox;
+  Gtk::HBox *hbox;
+  Gtk::Label *label;
 
   sprintf(buf, "%d", n);
-  cdTextPages_[n].label = new Gtk_Label(string(buf));
+  cdTextPages_[n].label = new Gtk::Label(string(buf));
   cdTextPages_[n].label->show();
 
-  cdTextPages_[n].title = new Gtk_Entry;
-  cdTextPages_[n].performer = new Gtk_Entry;
-  cdTextPages_[n].songwriter = new Gtk_Entry;
-  cdTextPages_[n].composer = new Gtk_Entry;
-  cdTextPages_[n].arranger = new Gtk_Entry;
-  cdTextPages_[n].message = new Gtk_Entry;
-  cdTextPages_[n].isrc = new Gtk_Entry;
+  cdTextPages_[n].title = new Gtk::Entry;
+  cdTextPages_[n].performer = new Gtk::Entry;
+  cdTextPages_[n].songwriter = new Gtk::Entry;
+  cdTextPages_[n].composer = new Gtk::Entry;
+  cdTextPages_[n].arranger = new Gtk::Entry;
+  cdTextPages_[n].message = new Gtk::Entry;
+  cdTextPages_[n].isrc = new Gtk::Entry;
 
 
   table->set_row_spacings(5);
   table->set_col_spacings(5);
   table->show();
 
-  label = new Gtk_Label(string("Title:"));
-  hbox = new Gtk_HBox;
+  label = new Gtk::Label(string("Title:"));
+  hbox = new Gtk::HBox;
   hbox->pack_end(*label, FALSE);
   table->attach(*hbox, 0, 1, 0, 1, GTK_FILL);
   hbox->show();
@@ -365,8 +369,8 @@ Gtk_VBox *TrackInfoDialog::createCdTextPage(int n)
   table->attach(*(cdTextPages_[n].title), 1, 2, 0, 1);
   cdTextPages_[n].title->show();
 
-  label = new Gtk_Label(string("Performer:"));
-  hbox = new Gtk_HBox;
+  label = new Gtk::Label(string("Performer:"));
+  hbox = new Gtk::HBox;
   hbox->pack_end(*label, FALSE);
   table->attach(*hbox, 0, 1, 1, 2, GTK_FILL);
   hbox->show();
@@ -374,8 +378,8 @@ Gtk_VBox *TrackInfoDialog::createCdTextPage(int n)
   table->attach(*(cdTextPages_[n].performer), 1, 2, 1, 2);
   cdTextPages_[n].performer->show();
 
-  label = new Gtk_Label(string("Songwriter:"));
-  hbox = new Gtk_HBox;
+  label = new Gtk::Label(string("Songwriter:"));
+  hbox = new Gtk::HBox;
   hbox->pack_end(*label, FALSE);
   table->attach(*hbox, 0, 1, 2, 3, GTK_FILL);
   hbox->show();
@@ -383,8 +387,8 @@ Gtk_VBox *TrackInfoDialog::createCdTextPage(int n)
   table->attach(*(cdTextPages_[n].songwriter), 1, 2, 2, 3);
   cdTextPages_[n].songwriter->show();
 
-  label = new Gtk_Label(string("Composer:"));
-  hbox = new Gtk_HBox;
+  label = new Gtk::Label(string("Composer:"));
+  hbox = new Gtk::HBox;
   hbox->pack_end(*label, FALSE);
   table->attach(*hbox, 0, 1, 3, 4, GTK_FILL);
   hbox->show();
@@ -392,8 +396,8 @@ Gtk_VBox *TrackInfoDialog::createCdTextPage(int n)
   table->attach(*(cdTextPages_[n].composer), 1, 2, 3, 4);
   cdTextPages_[n].composer->show();
 
-  label = new Gtk_Label(string("Arranger:"));
-  hbox = new Gtk_HBox;
+  label = new Gtk::Label(string("Arranger:"));
+  hbox = new Gtk::HBox;
   hbox->pack_end(*label, FALSE);
   table->attach(*hbox, 0, 1, 4, 5, GTK_FILL);
   hbox->show();
@@ -401,8 +405,8 @@ Gtk_VBox *TrackInfoDialog::createCdTextPage(int n)
   table->attach(*(cdTextPages_[n].arranger), 1, 2, 4, 5);
   cdTextPages_[n].arranger->show();
 
-  label = new Gtk_Label(string("Message:"));
-  hbox = new Gtk_HBox;
+  label = new Gtk::Label(string("Message:"));
+  hbox = new Gtk::HBox;
   hbox->pack_end(*label, FALSE);
   table->attach(*hbox, 0, 1, 5, 6, GTK_FILL);
   hbox->show();
@@ -410,8 +414,8 @@ Gtk_VBox *TrackInfoDialog::createCdTextPage(int n)
   table->attach(*(cdTextPages_[n].message), 1, 2, 5, 6);
   cdTextPages_[n].message->show();
 
-  label = new Gtk_Label(string("ISRC:"));
-  hbox = new Gtk_HBox;
+  label = new Gtk::Label(string("ISRC:"));
+  hbox = new Gtk::HBox;
   hbox->pack_end(*label, FALSE);
   table->attach(*hbox, 0, 1, 6, 7, GTK_FILL);
   hbox->show();

@@ -18,8 +18,12 @@
  */
 /*
  * $Log: MessageBox.h,v $
- * Revision 1.1  2000/02/05 01:38:46  llanero
- * Initial revision
+ * Revision 1.2  2000/02/20 23:34:54  llanero
+ * fixed scsilib directory (files mising ?-()
+ * ported xdao to 1.1.8 / gnome (MDI) app
+ *
+ * Revision 1.1.1.1  2000/02/05 01:38:46  llanero
+ * Uploaded cdrdao 1.1.3 with pre10 patch applied.
  *
  */
 
@@ -31,9 +35,9 @@
 
 #include <stdarg.h>
 
-class MessageBoxBase : public Gtk_Dialog {
+class MessageBoxBase : public Gtk::Dialog {
 public:
-  MessageBoxBase(Gtk_Window *);
+  MessageBoxBase(Gtk::Window *);
   virtual ~MessageBoxBase();
 
   void init(const char *titel, int askDontShow, int nButtons,
@@ -47,7 +51,7 @@ protected:
   int done_;
   int doneDefault_;
 
-  Gtk_CheckButton *dontShowAgain_;
+  Gtk::CheckButton *dontShowAgain_;
 
   gint delete_event_impl(GdkEventAny*);
   void buttonAction(int);
@@ -55,20 +59,20 @@ protected:
 
 class MessageBox : public MessageBoxBase {
 public:
-  MessageBox(Gtk_Window *, const char *titel, int askDontShow, ...);
+  MessageBox(Gtk::Window *, const char *titel, int askDontShow, ...);
   ~MessageBox();
 };
 
 class Ask2Box : public MessageBoxBase {
 public:
-  Ask2Box(Gtk_Window *, const char *titel, int askDontShow,
+  Ask2Box(Gtk::Window *, const char *titel, int askDontShow,
 	  int defaultButton, ...);
   ~Ask2Box();
 };
 
 class Ask3Box : public MessageBoxBase {
 public:
-  Ask3Box(Gtk_Window *, const char *titel, int askDontShow,
+  Ask3Box(Gtk::Window *, const char *titel, int askDontShow,
 	  int defaultButton, ...);
   ~Ask3Box();
 };

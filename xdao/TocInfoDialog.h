@@ -18,8 +18,12 @@
  */
 /*
  * $Log: TocInfoDialog.h,v $
- * Revision 1.1  2000/02/05 01:38:52  llanero
- * Initial revision
+ * Revision 1.2  2000/02/20 23:34:54  llanero
+ * fixed scsilib directory (files mising ?-()
+ * ported xdao to 1.1.8 / gnome (MDI) app
+ *
+ * Revision 1.1.1.1  2000/02/05 01:38:52  llanero
+ * Uploaded cdrdao 1.1.3 with pre10 patch applied.
  *
  * Revision 1.1  1999/08/21 14:17:39  mueller
  * Initial revision
@@ -37,7 +41,7 @@
 class TocEdit;
 class TextEdit;
 
-class TocInfoDialog : public Gtk_Dialog {
+class TocInfoDialog : public Gtk::Dialog {
 public:
   TocInfoDialog();
   ~TocInfoDialog();
@@ -53,14 +57,14 @@ private:
   TocEdit *tocEdit_;
   int active_;
 
-  Gtk_Button *applyButton_;
-  Gtk_Label *tocLength_;
-  Gtk_Label *nofTracks_;
+  Gtk::Button *applyButton_;
+  Gtk::Label *tocLength_;
+  Gtk::Label *nofTracks_;
 
   TextEdit *catalog_;
 
-  Gtk_ItemFactory_Menu *tocTypeMenuFactory_;
-  Gtk_OptionMenu *tocType_;
+//llanero  Gtk::ItemFactory_Menu *tocTypeMenuFactory_;
+//llanero  Gtk::OptionMenu *tocType_;
   Toc::TocType selectedTocType_;
 
   struct BlockValue {
@@ -69,24 +73,24 @@ private:
   };
 
   struct CdTextPage {
-    Gtk_ItemFactory_Menu *languageMenuFactory;
-    Gtk_OptionMenu *language;
+//llanero    Gtk::ItemFactory_Menu *languageMenuFactory;
+    Gtk::OptionMenu *language;
     int selectedLanguage;
 
-    Gtk_ItemFactory_Menu *genreMenuFactory;
-    Gtk_OptionMenu *genre;
+//llanero    Gtk::ItemFactory_Menu *genreMenuFactory;
+    Gtk::OptionMenu *genre;
     int selectedGenre;
     
-    Gtk_Label *label;
-    Gtk_Entry *title;
-    Gtk_Entry *performer;
-    Gtk_Entry *songwriter;
-    Gtk_Entry *composer;
-    Gtk_Entry *arranger;
-    Gtk_Entry *message;
-    Gtk_Entry *catalog;
-    Gtk_Entry *upcEan;
-    Gtk_Entry *genreInfo;
+    Gtk::Label *label;
+    Gtk::Entry *title;
+    Gtk::Entry *performer;
+    Gtk::Entry *songwriter;
+    Gtk::Entry *composer;
+    Gtk::Entry *arranger;
+    Gtk::Entry *message;
+    Gtk::Entry *catalog;
+    Gtk::Entry *upcEan;
+    Gtk::Entry *genreInfo;
   };
 
   CdTextPage cdTextPages_[8];
@@ -96,7 +100,7 @@ private:
 
   void createCdTextLanguageMenu(int);
   void createCdTextGenreMenu(int n);
-  Gtk_VBox *createCdTextPage(int);
+  Gtk::VBox *createCdTextPage(int);
 
   void clear();
   void clearCdText();

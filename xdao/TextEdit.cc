@@ -18,22 +18,26 @@
  */
 /*
  * $Log: TextEdit.cc,v $
- * Revision 1.1  2000/02/05 01:40:01  llanero
- * Initial revision
+ * Revision 1.2  2000/02/20 23:34:54  llanero
+ * fixed scsilib directory (files mising ?-()
+ * ported xdao to 1.1.8 / gnome (MDI) app
+ *
+ * Revision 1.1.1.1  2000/02/05 01:40:01  llanero
+ * Uploaded cdrdao 1.1.3 with pre10 patch applied.
  *
  * Revision 1.1  1999/08/19 20:28:12  mueller
  * Initial revision
  *
  */
 
-static char rcsid[] = "$Id: TextEdit.cc,v 1.1 2000/02/05 01:40:01 llanero Exp $";
+static char rcsid[] = "$Id: TextEdit.cc,v 1.2 2000/02/20 23:34:54 llanero Exp $";
 
 #include "TextEdit.h"
 
 #include <stddef.h>
 #include <ctype.h>
 
-TextEdit::TextEdit(const char *sample) : Gtk_Entry()
+TextEdit::TextEdit(const char *sample) : Gtk::Entry()
 {
   upper_ = 1;
   lower_ = 1;
@@ -104,14 +108,14 @@ void TextEdit::insert_text_impl(const gchar *c, gint p2, gint *p3)
 
   *p = 0;
 
-  Gtk_Entry::insert_text_impl(s, p2, p3);
+  Gtk::Entry::insert_text_impl(s, p2, p3);
 
   delete[] s;
 }
 
 void TextEdit::setSize(const char *sample)
 {
-  const Gtk_Style *style = get_style();
+  const Gtk::Style *style = get_style();
   const GtkStyle *s = style->gtkobj();
 
   Gdk_Font font(s->font);

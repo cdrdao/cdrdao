@@ -18,8 +18,12 @@
  */
 /*
  * $Log: SampleManager.cc,v $
- * Revision 1.1  2000/02/05 01:39:52  llanero
- * Initial revision
+ * Revision 1.2  2000/02/20 23:34:54  llanero
+ * fixed scsilib directory (files mising ?-()
+ * ported xdao to 1.1.8 / gnome (MDI) app
+ *
+ * Revision 1.1.1.1  2000/02/05 01:39:52  llanero
+ * Uploaded cdrdao 1.1.3 with pre10 patch applied.
  *
  * Revision 1.6  1999/08/07 16:27:28  mueller
  * Applied patch from Yves Bastide:
@@ -57,7 +61,8 @@
 
 #include "TrackDataScrap.h"
 
-class SampleManagerImpl : public Gtk_Signal_Base {
+//llanero: class SampleManagerImpl : public Gtk_Signal_Base {
+class SampleManagerImpl : public SigC::Object {
 public:
   SampleManagerImpl(unsigned long);
   ~SampleManagerImpl();
@@ -86,8 +91,8 @@ public:
 
   int aborted_;
 
-  Gtk_Window *progressWindow_;
-  Gtk_ProgressBar *progressBar_;
+  Gtk::Window *progressWindow_;
+  Gtk::ProgressBar *progressBar_;
   
   void getPeak(unsigned long start, unsigned long end,
 	       short *leftNeg, short *leftPos,
@@ -125,6 +130,7 @@ void SampleManager::setTocEdit(TocEdit *t)
 
   impl_->blocks_ = 0;
 }
+
 
 int SampleManager::scanToc(unsigned long start, unsigned long end)
 {
@@ -170,28 +176,30 @@ SampleManagerImpl::SampleManagerImpl(unsigned long blocking) : tocReader_(NULL)
   chunk_ = 40 * 60 * 75 * 588 / blocking;
 
   // create progress window
-  Gtk_VBox *vbox = new Gtk_VBox();
-  Gtk_Label *label = new Gtk_Label(string("Scanning Audio Data..."));
+  Gtk::VBox *vbox = new Gtk::VBox();
+  Gtk::Label *label = new Gtk::Label(string("Scanning Audio Data..."));
   
   vbox->pack_start(*label, FALSE, FALSE, 5);
   label->show();
 
-  progressBar_ = new Gtk_ProgressBar();
+  progressBar_ = new Gtk::ProgressBar();
   progressBar_->set_bar_style(GTK_PROGRESS_CONTINUOUS);
   progressBar_->set_orientation(GTK_PROGRESS_LEFT_TO_RIGHT);
   vbox->pack_start(*(progressBar_), FALSE, FALSE);
   progressBar_->show();
 
-  Gtk_HBox *hbox = new Gtk_HBox();
-  Gtk_Button *button = new Gtk_Button(string(" Abort "));
+  Gtk::HBox *hbox = new Gtk::HBox();
+  Gtk::Button *button = new Gtk::Button(string(" Abort "));
   hbox->pack_start(*button, TRUE, FALSE);
   button->show();
-  connect_to_method(button->clicked, this, &SampleManagerImpl::abortAction);
+//llanero  connect_to_method(button->clicked, this, &SampleManagerImpl::abortAction);
+  button->clicked.connect(slot(this, &SampleManagerImpl::abortAction));
   vbox->pack_start(*hbox, FALSE, FALSE, 5);
   hbox->show();
 
-  progressWindow_ = new Gtk_Window(GTK_WINDOW_DIALOG);
-  progressWindow_->add(vbox);
+  progressWindow_ = new Gtk::Window(GTK_WINDOW_DIALOG);
+//llanero  progressWindow_->add(vbox);
+  progressWindow_->add(*vbox);
   progressWindow_->set_usize(200, 0);
   vbox->show();
 }
@@ -307,7 +315,8 @@ int SampleManagerImpl::scanToc(unsigned long start, unsigned long end)
   if (withGui_) {
     progressWindow_->show();
 
-    connect_to_method(Gtk_Main::idle(), this, &SampleManagerImpl::readSamples);
+//llanero:    connect_to_method(Gtk_Main::idle(), this, &SampleManagerImpl::readSamples);
+    Gtk::Main::idle.connect(slot(this, &SampleManagerImpl::readSamples));
 
     tocEdit_->blockEdit();
   }

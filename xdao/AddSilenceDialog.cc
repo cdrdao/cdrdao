@@ -18,8 +18,12 @@
  */
 /*
  * $Log: AddSilenceDialog.cc,v $
- * Revision 1.1  2000/02/05 01:39:00  llanero
- * Initial revision
+ * Revision 1.2  2000/02/20 23:34:53  llanero
+ * fixed scsilib directory (files mising ?-()
+ * ported xdao to 1.1.8 / gnome (MDI) app
+ *
+ * Revision 1.1.1.1  2000/02/05 01:39:00  llanero
+ * Uploaded cdrdao 1.1.3 with pre10 patch applied.
  *
  * Revision 1.4  1999/08/07 16:27:28  mueller
  * Applied patch from Yves Bastide:
@@ -34,7 +38,7 @@
  *
  */
 
-static char rcsid[] = "$Id: AddSilenceDialog.cc,v 1.1 2000/02/05 01:39:00 llanero Exp $";
+static char rcsid[] = "$Id: AddSilenceDialog.cc,v 1.2 2000/02/20 23:34:53 llanero Exp $";
 
 #include <stdio.h>
 #include <limits.h>
@@ -52,58 +56,58 @@ static char rcsid[] = "$Id: AddSilenceDialog.cc,v 1.1 2000/02/05 01:39:00 llaner
 
 AddSilenceDialog::AddSilenceDialog()
 {
-  Gtk_Button *button;
-  Gtk_VBox *vbox;
-  Gtk_HBox *hbox;
+  Gtk::Button *button;
+  Gtk::VBox *vbox;
+  Gtk::HBox *hbox;
 
   tocEdit_ = NULL;
   active_ = 0;
   mode_ = M_APPEND;
 
-  minutes_ = new Gtk_Entry;
-  seconds_ = new Gtk_Entry;
-  frames_ = new Gtk_Entry;
-  samples_ = new Gtk_Entry;
+  minutes_ = new Gtk::Entry;
+  seconds_ = new Gtk::Entry;
+  frames_ = new Gtk::Entry;
+  samples_ = new Gtk::Entry;
 
-  Gtk_Frame *frame = new Gtk_Frame(string("Length of Silence"));
+  Gtk::Frame *frame = new Gtk::Frame(string("Length of Silence"));
 
-  Gtk_Table *table = new Gtk_Table(4, 2, FALSE);
+  Gtk::Table *table = new Gtk::Table(4, 2, FALSE);
   table->set_row_spacings(5);
   table->set_col_spacings(5);
-  hbox = new Gtk_HBox;
+  hbox = new Gtk::HBox;
   hbox->pack_start(*table, TRUE, TRUE, 5);
   table->show();
-  vbox = new Gtk_VBox;
+  vbox = new Gtk::VBox;
   vbox->pack_start(*hbox, FALSE, FALSE, 5);
   hbox->show();
-  frame->add(vbox);
+  frame->add(*vbox);
   vbox->show();
   
-  Gtk_Label *label = new Gtk_Label(string("Minutes:"));
+  Gtk::Label *label = new Gtk::Label(string("Minutes:"));
   table->attach(*label, 0, 1, 0, 1, GTK_SHRINK);
   label->show();
   table->attach(*minutes_, 1, 2, 0, 1);
   minutes_->show();
 
-  label = new Gtk_Label(string("Seconds:"));
+  label = new Gtk::Label(string("Seconds:"));
   table->attach(*label, 0, 1, 1, 2, GTK_SHRINK);
   label->show();
   table->attach(*seconds_, 1, 2, 1, 2);
   seconds_->show();
 
-  label = new Gtk_Label(string("Frames:"));
+  label = new Gtk::Label(string("Frames:"));
   table->attach(*label, 0, 1, 2, 3, GTK_SHRINK);
   label->show();
   table->attach(*frames_, 1, 2, 2, 3);
   frames_->show();
 
-  label = new Gtk_Label(string("Samples:"));
+  label = new Gtk::Label(string("Samples:"));
   table->attach(*label, 0, 1, 3, 4, GTK_SHRINK);
   label->show();
   table->attach(*samples_, 1, 2, 3, 4);
   samples_->show();
 
-  hbox = new Gtk_HBox;
+  hbox = new Gtk::HBox;
   hbox->pack_start(*frame, TRUE, TRUE, 10);
   frame->show();
 
@@ -112,23 +116,24 @@ AddSilenceDialog::AddSilenceDialog()
 
   get_vbox()->show();
 
-  Gtk_HButtonBox *bbox = new Gtk_HButtonBox(GTK_BUTTONBOX_SPREAD);
+  Gtk::HButtonBox *bbox = new Gtk::HButtonBox(GTK_BUTTONBOX_SPREAD);
 
-  applyButton_ = new Gtk_Button(string(" Apply "));
+  applyButton_ = new Gtk::Button(string(" Apply "));
   bbox->pack_start(*applyButton_);
   applyButton_->show();
-  connect_to_method(applyButton_->clicked, this,
-		    &AddSilenceDialog::applyAction);
+//llanero  connect_to_method(applyButton_->clicked, this,
+//		    &AddSilenceDialog::applyAction);
+  applyButton_->clicked.connect(slot(this, &AddSilenceDialog::applyAction));
 
-  button = new Gtk_Button(string(" Clear "));
+  button = new Gtk::Button(string(" Clear "));
   bbox->pack_start(*button);
   button->show();
-  connect_to_method(button->clicked, this, &AddSilenceDialog::clearAction);
+  button->clicked.connect(slot(this, &AddSilenceDialog::clearAction));
 
-  button = new Gtk_Button(string(" Cancel "));
+  button = new Gtk::Button(string(" Cancel "));
   bbox->pack_start(*button);
   button->show();
-  connect_to_method(button->clicked, this, &AddSilenceDialog::cancelAction);
+  button->clicked.connect(slot(this, &AddSilenceDialog::cancelAction));
 
   get_action_area()->pack_start(*bbox);
   bbox->show();

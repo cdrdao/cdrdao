@@ -18,8 +18,12 @@
  */
 /*
  * $Log: RecordDialog.h,v $
- * Revision 1.1  2000/02/05 01:38:46  llanero
- * Initial revision
+ * Revision 1.2  2000/02/20 23:34:54  llanero
+ * fixed scsilib directory (files mising ?-()
+ * ported xdao to 1.1.8 / gnome (MDI) app
+ *
+ * Revision 1.1.1.1  2000/02/05 01:38:46  llanero
+ * Uploaded cdrdao 1.1.3 with pre10 patch applied.
  *
  * Revision 1.1  1999/09/07 11:16:16  mueller
  * Initial revision
@@ -35,7 +39,7 @@
 class TocEdit;
 class CdDevice;
 
-class RecordDialog : public Gtk_Dialog {
+class RecordDialog : public Gtk::Dialog {
 public:
   RecordDialog();
   ~RecordDialog();
@@ -62,18 +66,18 @@ private:
     int bus, id, lun;
   };
 
-  Gtk_CList *list_;
-  Gtk_Button *startButton_;
+  Gtk::CList *list_;
+  Gtk::Button *startButton_;
 
-  Gtk_RadioButton *writeButton_;
-  Gtk_RadioButton *simulateButton_;
+  Gtk::RadioButton *writeButton_;
+  Gtk::RadioButton *simulateButton_;
   
-  Gtk_CheckButton *closeSessionButton_;
-  Gtk_CheckButton *ejectButton_;
-  Gtk_CheckButton *reloadButton_;
+  Gtk::CheckButton *closeSessionButton_;
+  Gtk::CheckButton *ejectButton_;
+  Gtk::CheckButton *reloadButton_;
 
-  Gtk_ItemFactory_Menu *speedMenuFactory_;
-  Gtk_OptionMenu *speedMenu_;
+//llanero  Gtk::ItemFactory::Menu *speedMenuFactory_;
+  Gtk::OptionMenu *speedMenu_;
 
   void cancelAction();
   void startAction();

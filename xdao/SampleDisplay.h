@@ -18,8 +18,12 @@
  */
 /*
  * $Log: SampleDisplay.h,v $
- * Revision 1.1  2000/02/05 01:38:48  llanero
- * Initial revision
+ * Revision 1.2  2000/02/20 23:34:54  llanero
+ * fixed scsilib directory (files mising ?-()
+ * ported xdao to 1.1.8 / gnome (MDI) app
+ *
+ * Revision 1.1.1.1  2000/02/05 01:38:48  llanero
+ * Uploaded cdrdao 1.1.3 with pre10 patch applied.
  *
  * Revision 1.2  1999/01/30 15:11:13  mueller
  * First released version. Compiles with Gtk-- 0.9.14.
@@ -41,11 +45,11 @@ class Toc;
 class Sample;
 class TocEdit;
 
-class SampleDisplay : public Gtk_DrawingArea {
+class SampleDisplay : public Gtk::DrawingArea {
 private:
   enum DragMode { DRAG_NONE, DRAG_SAMPLE_MARKER, DRAG_TRACK_MARKER };
 
-  Gtk_Adjustment *adjustment_;
+  Gtk::Adjustment *adjustment_;
 
   Gdk_Pixmap *pixmap_;
   Gdk_Pixmap *trackMarkerPixmap_;
@@ -150,17 +154,24 @@ public:
   void getView(unsigned long *start, unsigned long *end);
   void setRegion(unsigned long start, unsigned long end);
   int getRegion(unsigned long *start, unsigned long *end);
-  Gtk_Adjustment *getAdjustment() { return adjustment_; }
+  Gtk::Adjustment *getAdjustment() { return adjustment_; }
   void updateTrackMarks();
   void setCursor(int, unsigned long);
 
   void updateToc();
 
-  Signal1<unsigned long> markerSet;
-  Signal1<unsigned long> cursorMoved;
-  Signal2<unsigned long, unsigned long> selectionSet;
-  Signal3<const Track *, int, int> trackMarkSelected;
-  Signal4<const Track *, int, int, unsigned long> trackMarkMoved;
+//llanero: Should be removed if works
+//  Signal1<unsigned long> markerSet;
+//  Signal1<unsigned long> cursorMoved;
+//  Signal2<unsigned long, unsigned long> selectionSet;
+//  Signal3<const Track *, int, int> trackMarkSelected;
+//  Signal4<const Track *, int, int, unsigned long> trackMarkMoved;
+// the first "parameter" is the return type
+  SigC::Signal1 <void, unsigned long> markerSet;
+  SigC::Signal1 <void, unsigned long> cursorMoved;
+  SigC::Signal2 <void, unsigned long, unsigned long> selectionSet;
+  SigC::Signal3 <void, const Track *, int, int> trackMarkSelected;
+  SigC::Signal4 <void, const Track *, int, int, unsigned long> trackMarkMoved;
   
 protected:
   int handle_configure_event (GdkEventConfigure *);

@@ -18,8 +18,12 @@
  */
 /*
  * $Log: TextEdit.h,v $
- * Revision 1.1  2000/02/05 01:38:51  llanero
- * Initial revision
+ * Revision 1.2  2000/02/20 23:34:54  llanero
+ * fixed scsilib directory (files mising ?-()
+ * ported xdao to 1.1.8 / gnome (MDI) app
+ *
+ * Revision 1.1.1.1  2000/02/05 01:38:51  llanero
+ * Uploaded cdrdao 1.1.3 with pre10 patch applied.
  *
  * Revision 1.1  1999/08/19 20:28:12  mueller
  * Initial revision
@@ -32,7 +36,7 @@
 #include <gtk--.h>
 #include <gtk/gtk.h>
 
-class TextEdit : public Gtk_Entry {
+class TextEdit : public Gtk::Entry {
 public:
   TextEdit(const char *sample);
   ~TextEdit();

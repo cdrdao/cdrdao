@@ -18,8 +18,12 @@
  */
 /*
  * $Log: SampleDisplay.cc,v $
- * Revision 1.1  2000/02/05 01:39:50  llanero
- * Initial revision
+ * Revision 1.2  2000/02/20 23:34:54  llanero
+ * fixed scsilib directory (files mising ?-()
+ * ported xdao to 1.1.8 / gnome (MDI) app
+ *
+ * Revision 1.1.1.1  2000/02/05 01:39:50  llanero
+ * Uploaded cdrdao 1.1.3 with pre10 patch applied.
  *
  * Revision 1.5  1999/08/07 16:27:28  mueller
  * Applied patch from Yves Bastide:
@@ -37,7 +41,7 @@
  *
  */
 
-static char rcsid[] = "$Id: SampleDisplay.cc,v 1.1 2000/02/05 01:39:50 llanero Exp $";
+static char rcsid[] = "$Id: SampleDisplay.cc,v 1.2 2000/02/20 23:34:54 llanero Exp $";
 
 #include <stdio.h>
 #include <limits.h>
@@ -134,9 +138,8 @@ static gchar *INDEX_EXTEND_XPM_DATA[] = {
 
 SampleDisplay::SampleDisplay()
 {
-  adjustment_ = new Gtk_Adjustment(0.0, 0.0, 1.0);
-  connect_to_method(adjustment_->value_changed, this,
-		    &SampleDisplay::scrollTo);
+  adjustment_ = new Gtk::Adjustment(0.0, 0.0, 1.0);
+  adjustment_->value_changed.connect(slot(this, &SampleDisplay::scrollTo));
 
   trackManager_ = NULL;
 
@@ -171,21 +174,16 @@ SampleDisplay::SampleDisplay()
   selectedTrack_ = 0;
   selectedIndex_ = 0;
 
-  connect_to_method(expose_event, this,
-                    &SampleDisplay::handle_expose_event);
-  connect_to_method(configure_event, this,
-                    &SampleDisplay::handle_configure_event);
-  connect_to_method(motion_notify_event, this,
-                    &SampleDisplay::handle_motion_notify_event);
-  connect_to_method(button_press_event, this,
-                    &SampleDisplay::handleButtonPressEvent);
-  connect_to_method(button_release_event, this,
-                    &SampleDisplay::handleButtonReleaseEvent);
-  connect_to_method(enter_notify_event, this,
-                    &SampleDisplay::handleEnterEvent);
-  connect_to_method(leave_notify_event, this,
-                    &SampleDisplay::handleLeaveEvent);
-  
+  expose_event.connect(slot(this, &SampleDisplay::handle_expose_event));
+  configure_event.connect(slot(this, &SampleDisplay::handle_configure_event));
+  motion_notify_event.connect(slot(this,
+  		&SampleDisplay::handle_motion_notify_event));
+  button_press_event.connect(slot(this, &SampleDisplay::handleButtonPressEvent));
+  button_release_event.connect(slot(this,
+  		&SampleDisplay::handleButtonReleaseEvent));
+  enter_notify_event.connect(slot(this, &SampleDisplay::handleEnterEvent));
+  leave_notify_event.connect(slot(this, &SampleDisplay::handleLeaveEvent));
+
   //connect_to_method (motion_notify_event, this, &handle_motion_notify_event);
   //connect_to_method (button_press_event, this, &handle_button_press_event);
 
@@ -465,42 +463,56 @@ int SampleDisplay::handle_configure_event (GdkEventConfigure *event)
     Gdk_Bitmap mask;
     Gdk_Window window(get_window());
 
-    drawGc_ = new Gdk_GC(window);
+//llanero: IMPORTANT
+//original was:    drawGc_ = new Gdk_GC(window);
+//new    *drawGc_ = get_style()->gtkobj()->white_gc;
+    *drawGc_ = Gdk_GC(window);
+        
     getColor("darkslateblue", &sampleColor_);
     getColor("red3", &middleLineColor_);
     getColor("gold2", &cursorColor_);
     getColor("red", &markerColor_);
     getColor("#ffc0e0", &selectionBackgroundColor_);
 
-    timeTickFont_ = new Gdk_Font("fixed");
+//llanero: IMPORTANT
+//was:    timeTickFont_ = new Gdk_Font("fixed");
+//was:    drawGc_->set_font(*timeTickFont_);
+    *timeTickFont_ = Gdk_Font("fixed");
     drawGc_->set_font(*timeTickFont_);
+//remove if above works!    drawGc_->set_font(Gdk_Font("fixed"));
 
     trackMarkerFont_ = timeTickFont_;
 
     timeLineHeight_ = timeTickFont_->char_height('0') + 6;
     trackLineHeight_ = timeTickFont_->char_height('0') + 10;
 
-    trackMarkerPixmap_ = new Gdk_Pixmap;
+//llanero: IMPORTANT
+//was:    trackMarkerPixmap_ = new Gdk_Pixmap;
     trackMarkerPixmap_->create_from_xpm_d(window, mask,
 					  get_colormap().white(),
 					  TRACK_MARKER_XPM_DATA);
-    indexMarkerPixmap_ = new Gdk_Pixmap;
+//llanero: IMPORTANT
+//was:    indexMarkerPixmap_ = new Gdk_Pixmap;
     indexMarkerPixmap_->create_from_xpm_d(window, mask,
 					  get_colormap().white(),
 					  INDEX_MARKER_XPM_DATA);
-    trackMarkerSelectedPixmap_ = new Gdk_Pixmap;
+//llanero: IMPORTANT
+//was:    trackMarkerSelectedPixmap_ = new Gdk_Pixmap;
     trackMarkerSelectedPixmap_->create_from_xpm_d(window, mask,
 						  markerColor_,
 						  TRACK_MARKER_XPM_DATA);
-    indexMarkerSelectedPixmap_ = new Gdk_Pixmap;
+//llanero: IMPORTANT
+//was:    indexMarkerSelectedPixmap_ = new Gdk_Pixmap;
     indexMarkerSelectedPixmap_->create_from_xpm_d(window, mask,
 						  markerColor_,
 						  INDEX_MARKER_XPM_DATA);
-    trackExtendPixmap_ = new Gdk_Pixmap;
+//llanero: IMPORTANT
+//was:    trackExtendPixmap_ = new Gdk_Pixmap;
     trackExtendPixmap_->create_from_xpm_d(window, mask,
 					  get_colormap().white(),
 					  TRACK_EXTEND_XPM_DATA);
-    indexExtendPixmap_ = new Gdk_Pixmap;
+//llanero: IMPORTANT
+//was:    indexExtendPixmap_ = new Gdk_Pixmap;
     indexExtendPixmap_->create_from_xpm_d(window, mask,
 					  get_colormap().white(),
 					  INDEX_EXTEND_XPM_DATA);
@@ -528,7 +540,10 @@ int SampleDisplay::handle_configure_event (GdkEventConfigure *event)
   if (pixmap_ != NULL)
     delete pixmap_;
 
-  pixmap_ = new Gdk_Pixmap(get_window(), width(), height(), -1);
+//llanero: IMPORTANT
+//was:  pixmap_ = new Gdk_Pixmap(get_window(), width(), height(), -1);
+//new  pixmap_->create(get_window(), width(), height(), -1);
+  *pixmap_ = Gdk_Pixmap(get_window(), width(), height(), -1);
 
   //message(0, "handle_configure_event: %d\n", width_);
 
@@ -1200,6 +1215,10 @@ gint SampleDisplay::trackMarkerWidth()
 void SampleDisplay::drawTrackMarker(int mode, gint x, int trackNr,
 				    int indexNr, int selected, int extend)
 {
+//llanero: VERY IMPORTANT!!!
+/* Removed to allow compilation!!! :(
+   Don't know how to solve the compiler error :(
+
   if (mode < 2) {
     char buf[20];
 
@@ -1217,7 +1236,6 @@ void SampleDisplay::drawTrackMarker(int mode, gint x, int trackNr,
       else
 	marker = indexNr == 1 ? trackMarkerPixmap_ : indexMarkerPixmap_;
     }
-
 
 
     Gdk_Drawable dr(get_window());
@@ -1248,6 +1266,7 @@ void SampleDisplay::drawTrackMarker(int mode, gint x, int trackNr,
     redraw(x - 4, trackLineY_ - trackLineHeight_, trackMarkerWidth_,
 	   trackLineHeight_, 0x03);
   }
+*/
 }
 
 void SampleDisplay::drawTrackLine()

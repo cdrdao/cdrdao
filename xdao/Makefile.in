@@ -34,7 +34,7 @@ VERSION = @cdrdao_version@
 CXX = @CXX@
 CXXFLAGS = @CXXFLAGS@ 
 ALL_CXXFLAGS = @DEFS@ @mydefs@ -DVERSION=\"$(VERSION)\" -I.. -I$(srcdir) -I$(srcdir)/../dao -I$(srcdir)/../trackdb $(CXXFLAGS) @GTKMM_CFLAGS@
-LDFLAGS = @LDFLAGS@ 
+LDFLAGS = @LDFLAGS@ -lgnomemm
 LIBS = @scsilib_libs@ @thread_libs@ @extra_libs@ @LIBS@
 RANLIB = @RANLIB@
 AR = ar
@@ -46,7 +46,7 @@ SRC = xcdrdao.cc MainWindow.cc SampleDisplay.cc SampleManager.cc \
       TextEdit.cc TocInfoDialog.cc guiUpdate.cc TrackDataScrap.cc \
       AddFileDialog.cc CdDevice.cc DeviceConfDialog.cc RecordDialog.cc \
       ProcessMonitor.cc RecordProgressDialog.cc Settings.cc MessageBox.cc \
-      ExtractDialog.cc ExtractProgressDialog.cc @sound_if_src@
+      ExtractDialog.cc ExtractProgressDialog.cc MDIWindow.cc @sound_if_src@
 
 OBJ = $(SRC:%.cc=%.o)
 

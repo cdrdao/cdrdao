@@ -18,19 +18,23 @@
  */
 /*
  * $Log: MessageBox.cc,v $
- * Revision 1.1  2000/02/05 01:39:32  llanero
- * Initial revision
+ * Revision 1.2  2000/02/20 23:34:54  llanero
+ * fixed scsilib directory (files mising ?-()
+ * ported xdao to 1.1.8 / gnome (MDI) app
+ *
+ * Revision 1.1.1.1  2000/02/05 01:39:32  llanero
+ * Uploaded cdrdao 1.1.3 with pre10 patch applied.
  *
  */
 
-static char rcsid[] = "$Id: MessageBox.cc,v 1.1 2000/02/05 01:39:32 llanero Exp $";
+static char rcsid[] = "$Id: MessageBox.cc,v 1.2 2000/02/20 23:34:54 llanero Exp $";
 
 #include <stddef.h>
 #include <stdarg.h>
 
 #include "MessageBox.h"
 
-MessageBoxBase::MessageBoxBase(Gtk_Window * win)
+MessageBoxBase::MessageBoxBase(Gtk::Window * win)
 {
   done_ = 0;
   doneDefault_ = 0;
@@ -61,53 +65,62 @@ void MessageBoxBase::init(const char *title, int askDontShow,
 
   set_title(title);
 
-  Gtk_ObjectHandle<Gtk_HButtonBox> bbox(new Gtk_HButtonBox(GTK_BUTTONBOX_SPREAD));
+#warning "handle to pointer conversion (Gtk_HButtonBox)"
+  Gtk::HButtonBox* bbox(new Gtk::HButtonBox(GTK_BUTTONBOX_SPREAD));
   bbox->show();
 
-  Gtk_ObjectHandle<Gtk_VBox> contents(new Gtk_VBox);
+#warning "handle to pointer conversion (Gtk_VBox)"
+  Gtk::VBox* contents(new Gtk::VBox);
   contents->show();
   //contents->set_spacing(5);
 
   
   for (i = 1; i <= nButtons; i++) {
-    Gtk_ObjectHandle<Gtk_Button> button(new Gtk_Button(string(buttons[i - 1])));
+#warning "handle to pointer conversion (Gtk_Button)"
+    Gtk::Button* button(new Gtk::Button(string(buttons[i - 1])));
     button->show();
-    connect_to_method(button->clicked, this, &MessageBoxBase::buttonAction, i);
-    bbox->pack_start(button);
+    button->clicked.connect(SigC::bind(SigC::slot(this,&MessageBoxBase::buttonAction),i));
+    bbox->add(*button);
   }
 
   while ((s = va_arg(args, const char *)) != NULL) {
-    Gtk_ObjectHandle<Gtk_HBox> lbox(new Gtk_HBox);
+#warning "handle to pointer conversion (Gtk_HBox)"
+    Gtk::HBox* lbox(new Gtk::HBox);
     lbox->show();
-    Gtk_ObjectHandle<Gtk_Label> label(new Gtk_Label(s));
+#warning "handle to pointer conversion (Gtk_Label)"
+    Gtk::Label* label(new Gtk::Label(s));
     label->show();
-    lbox->pack_start(label, FALSE);
-    contents->pack_start(lbox, FALSE);
+//llanero    lbox->pack_start(label, FALSE);
+    lbox->pack_start(*label, FALSE);
+    contents->pack_start(*lbox, FALSE);
   }
 
   if (askDontShow) {
-    dontShowAgain_ = new Gtk_CheckButton(string("Don't show this message again"));
+    dontShowAgain_ = new Gtk::CheckButton(string("Don't show this message again"));
     dontShowAgain_->set_active(FALSE);
     dontShowAgain_->show();
-    Gtk_ObjectHandle<Gtk_HBox> box(new Gtk_HBox);
-    Gtk_ObjectHandle<Gtk_Label> label(new Gtk_Label(string("")));
+#warning "handle to pointer conversion (Gtk_HBox)"
+    Gtk::HBox* box(new Gtk::HBox);
+#warning "handle to pointer conversion (Gtk_Label)"
+    Gtk::Label* label(new Gtk::Label(string("")));
 
     label->show();
     box->show();
     box->pack_end(*dontShowAgain_, FALSE);
-    contents->pack_start(label, FALSE);
-    contents->pack_start(box, FALSE);
+    contents->pack_start(*label, FALSE);
+    contents->pack_start(*box, FALSE);
   }
 
-  Gtk_ObjectHandle<Gtk_HBox> hcontens(new Gtk_HBox);
+#warning "handle to pointer conversion (Gtk_HBox)"
+  Gtk::HBox* hcontens(new Gtk::HBox);
   hcontens->show();
 
-  hcontens->pack_start(contents, TRUE, TRUE, 10);
-  get_vbox()->pack_start(hcontens, FALSE, FALSE, 10);
+  hcontens->pack_start(*contents, TRUE, TRUE, 10);
+  get_vbox()->pack_start(*hcontens, FALSE, FALSE, 10);
   get_vbox()->show();
 
   
-  get_action_area()->pack_start(bbox);
+  get_action_area()->pack_start(*bbox);
   get_action_area()->show();
     
 }
@@ -125,7 +138,7 @@ gint MessageBoxBase::delete_event_impl(GdkEventAny*)
 
 int MessageBoxBase::run()
 {
-  Gtk_Main *app = Gtk_Main::instance();
+  Gtk::Main *app = Gtk::Main::instance();
 
   show();
 
@@ -151,7 +164,7 @@ int MessageBoxBase::dontShowAgain() const
 }
 
 
-MessageBox::MessageBox(Gtk_Window *win, const char *title,
+MessageBox::MessageBox(Gtk::Window *win, const char *title,
 		       int askDontShow, ...) : MessageBoxBase(win)
 {
   va_list args;
@@ -171,7 +184,7 @@ MessageBox::~MessageBox()
 {
 }
 
-Ask2Box::Ask2Box(Gtk_Window *win, const char *title, int askDontShow,
+Ask2Box::Ask2Box(Gtk::Window *win, const char *title, int askDontShow,
 		 int defaultButton, ...)
   : MessageBoxBase(win)
 
@@ -197,7 +210,7 @@ Ask2Box::~Ask2Box()
 {
 }
 
-Ask3Box::Ask3Box(Gtk_Window *win, const char *title, int askDontShow,
+Ask3Box::Ask3Box(Gtk::Window *win, const char *title, int askDontShow,
 		 int defaultButton, ...)
   : MessageBoxBase(win)
 {

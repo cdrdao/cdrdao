@@ -21,6 +21,7 @@
 #include <limits.h>
 #include <math.h>
 #include <assert.h>
+#include <unistd.h>
 
 #include "ExtractDialog.h"
 #include "MessageBox.h"
@@ -48,10 +49,10 @@ static ExtractDialog::SpeedTable SPEED_TABLE[MAX_SPEED_ID + 1] = {
 ExtractDialog::ExtractDialog()
 {
   int i;
-  Gtk_HBox *hbox;
-  Gtk_VBox *vbox;
-  Gtk_Table *table;
-  Gtk_Label *label;
+  Gtk::HBox *hbox;
+  Gtk::VBox *vbox;
+  Gtk::Table *table;
+  Gtk::Label *label;
 
   active_ = 0;
   tocEdit_ = NULL;
@@ -59,7 +60,8 @@ ExtractDialog::ExtractDialog()
   set_title(string("Extract"));
   set_usize(0, 300);
 
-  speedMenuFactory_ = new Gtk_ItemFactory_Menu("<Main>");
+/*llanero
+  speedMenuFactory_ = new Gtk::ItemFactory_Menu("<Main>");
 
   for (i = 0; i <= MAX_SPEED_ID; i++) {
     string s("/");
@@ -68,17 +70,17 @@ ExtractDialog::ExtractDialog()
     speedMenuFactory_->create_item(s, 0, "<Item>", ItemFactoryConnector<ExtractDialog, int>(this, &ExtractDialog::setSpeed, i));
   }
 
-  speedMenu_ = new Gtk_OptionMenu;
+  speedMenu_ = new Gtk::OptionMenu;
   speedMenu_->set_menu(speedMenuFactory_->get_menu_widget(string("")));
 
   speed_ = 0;
   speedMenu_->set_history(speed_);
+*/
+  fileNameEntry_ = new Gtk::Entry;
 
-  fileNameEntry_ = new Gtk_Entry;
+  startButton_ = new Gtk::Button(string(" Start "));
 
-  startButton_ = new Gtk_Button(string(" Start "));
-
-  list_ = new Gtk_CList(6);
+  list_ = new Gtk::CList(6);
 
   list_->set_column_title(0, string("Bus"));
   list_->set_column_justification(0, GTK_JUSTIFY_CENTER);
@@ -103,22 +105,22 @@ ExtractDialog::ExtractDialog()
   list_->set_selection_mode(GTK_SELECTION_SINGLE);
 
 
-  Gtk_VBox *contents = new Gtk_VBox;
+  Gtk::VBox *contents = new Gtk::VBox;
   contents->set_spacing(10);
 
 
   // available device list
-  Gtk_HBox *listHBox = new Gtk_HBox;
-  Gtk_VBox *listVBox = new Gtk_VBox;
+  Gtk::HBox *listHBox = new Gtk::HBox;
+  Gtk::VBox *listVBox = new Gtk::VBox;
 
-  hbox = new Gtk_HBox;
+  hbox = new Gtk::HBox;
 
   hbox->pack_start(*list_, TRUE, TRUE);
   list_->show();
 
-  Gtk_Adjustment *adjust = new Gtk_Adjustment(0.0, 0.0, 0.0);
+  Gtk::Adjustment *adjust = new Gtk::Adjustment(0.0, 0.0, 0.0);
 
-  Gtk_VScrollbar *scrollBar = new Gtk_VScrollbar(*adjust);
+  Gtk::VScrollbar *scrollBar = new Gtk::VScrollbar(*adjust);
   hbox->pack_start(*scrollBar, FALSE, FALSE);
   scrollBar->show();
 
@@ -130,43 +132,43 @@ ExtractDialog::ExtractDialog()
   listVBox->pack_start(*listHBox, TRUE, TRUE, 5);
   listHBox->show();
 
-  Gtk_Frame *listFrame = new Gtk_Frame(string("Available Reader Devices"));
+  Gtk::Frame *listFrame = new Gtk::Frame(string("Available Reader Devices"));
   listFrame->add(*listVBox);
   listVBox->show();
   contents->pack_start(*listFrame, TRUE, TRUE);
   listFrame->show();
 
   // device settings
-  Gtk_Frame *extractOptionsFrame = new Gtk_Frame(string("Read Options"));
+  Gtk::Frame *extractOptionsFrame = new Gtk::Frame(string("Read Options"));
 
-  table = new Gtk_Table(3, 2, FALSE);
+  table = new Gtk::Table(3, 2, FALSE);
   table->set_row_spacings(2);
   table->set_col_spacings(30);
-  hbox = new Gtk_HBox;
+  hbox = new Gtk::HBox;
   hbox->pack_start(*table, FALSE, FALSE, 5);
-  vbox = new Gtk_VBox;
+  vbox = new Gtk::VBox;
   vbox->pack_start(*hbox, FALSE, FALSE, 5);
-  extractOptionsFrame->add(vbox);
+  extractOptionsFrame->add(*vbox);
   vbox->show();
   hbox->show();
   table->show();
 
-  hbox = new Gtk_HBox;
-  label = new Gtk_Label(string("Reading Speed: "));
+  hbox = new Gtk::HBox;
+  label = new Gtk::Label(string("Reading Speed: "));
   hbox->pack_start(*label, FALSE);
 //  label->show();
-  hbox->pack_start(*speedMenu_, FALSE);
+//llanero  hbox->pack_start(*speedMenu_, FALSE);
 //  speedMenu_->show();
   table->attach(*hbox, 2, 3, 0, 1);
   hbox->show();
 
-  label = new Gtk_Label(string("Name:"));
-  hbox = new Gtk_HBox;
+  label = new Gtk::Label(string("Name:"));
+  hbox = new Gtk::HBox;
   hbox->pack_end(*label, FALSE, FALSE);
   table->attach(*hbox, 0, 1, 0, 1);
   label->show();
   hbox->show();
-  hbox = new Gtk_HBox;
+  hbox = new Gtk::HBox;
   hbox->pack_start(*fileNameEntry_, FALSE, FALSE);
   fileNameEntry_->show();
   table->attach(*hbox, 1, 2, 0, 1);
@@ -176,7 +178,7 @@ ExtractDialog::ExtractDialog()
   extractOptionsFrame->show();
 
 
-  Gtk_HBox *contentsHBox = new Gtk_HBox;
+  Gtk::HBox *contentsHBox = new Gtk::HBox;
 
   contentsHBox->pack_start(*contents, TRUE, TRUE, 10);
   contents->show();
@@ -187,16 +189,16 @@ ExtractDialog::ExtractDialog()
   get_vbox()->show();
 
 
-  Gtk_HButtonBox *bbox = new Gtk_HButtonBox(GTK_BUTTONBOX_SPREAD);
+  Gtk::HButtonBox *bbox = new Gtk::HButtonBox(GTK_BUTTONBOX_SPREAD);
 
   bbox->pack_start(*startButton_);
   startButton_->show();
-  connect_to_method(startButton_->clicked, this, &ExtractDialog::startAction);
+  startButton_->clicked.connect(SigC::slot(this,&ExtractDialog::startAction));
   
-  Gtk_Button *cancelButton = new Gtk_Button(string(" Cancel "));
+  Gtk::Button *cancelButton = new Gtk::Button(string(" Cancel "));
   bbox->pack_start(*cancelButton);
   cancelButton->show();
-  connect_to_method(cancelButton->clicked, this, &ExtractDialog::cancelAction);
+  cancelButton->clicked.connect(SigC::slot(this,&ExtractDialog::cancelAction));
 
   get_action_area()->pack_start(*bbox);
   bbox->show();
@@ -332,7 +334,7 @@ void ExtractDialog::startAction()
 
   speed = SPEED_TABLE[speed_].speed;
 
-  Gtk_CList::seliterator itr;
+  Gtk::CList::seliterator itr;
 
   for (itr = list_->selbegin(); itr != list_->selend(); itr++) {
     DeviceData *data = (DeviceData*)list_->get_row_data(*itr);
