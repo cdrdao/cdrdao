@@ -7,6 +7,12 @@ cdrdao-1.1.5 is available from:
 
 Cdrdao changes:
 
+o Fixed bug in CD-TEXT writing code that caused the problems with the
+  unreliable read back of the written CD-TEXT data
+
+o Fixed bug in generic-mmc-raw driver: the TOC type was not written correctly
+  and some flags for data tracks were missing in the lead-in
+
 o Updated to libscg-0.4 from cdrtools-1.10
 
 o BURN Proof support added by ITOH Yasufumi/Martin Buck
@@ -31,13 +37,17 @@ o Overburning is now prevented by default and must be explicitly requested
 o Fixed error in cdrdao's manual page (Debian bug #82816,
   http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=82816&repeatmerged=yes)
 
+o cdrdao's help screen was reworked by Michael Reinelt
+
+
 
 GCDMaster changes:
 
-- added missing 'toshiba' driver to the device configuration dialog
-  (bug 128633).
+- Added missing 'toshiba' driver to the device configuration dialog
+  (SourceForge bug 128633)
 
-- 
+- Removed the CD-TEXT table entry dialog from the 'Project Info' dialog;
+  it is now a non modal dialog on its own
 
 
 Andreas

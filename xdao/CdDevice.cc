@@ -1,6 +1,6 @@
 /*  cdrdao - write audio CD-Rs in disc-at-once mode
  *
- *  Copyright (C) 1998-2000 Andreas Mueller <mueller@daneb.ping.de>
+ *  Copyright (C) 1998-2001 Andreas Mueller <mueller@daneb.ping.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -602,7 +602,7 @@ void CdDevice::progress(int *status, int *totalTracks, int *track,
 // Starts a 'cdrdao' for reading whole cd.
 // Return: 0: OK, process succesfully launched
 //         1: error occured
-int CdDevice::extractDao(char *tocFileName, int correction)
+int CdDevice::extractDao(const char *tocFileName, int correction)
 {
   char *args[20];
   int n = 0;

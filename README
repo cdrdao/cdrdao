@@ -63,6 +63,20 @@ by logical 'or' and appended to the '--driver' option, e.g.
                     messages in this case which should vanish if this option
                     is used.
 
+        0x00080000: Suppresses the automatic data type detection for the
+                    raw TOC data and assumes that the drive sends BCD data.
+                    Use this or the following option if cdrdao reports that
+                    it cannot "determine if raw toc data is BCD or HEX".
+
+        0x00100000: Suppresses the automatic data type detection for the
+                    raw TOC data and assumes that the drive sends HEX data.
+                    Use this or the previous option if cdrdao reports that
+                    it cannot "determine if raw toc data is BCD or HEX".
+
+        0x00200000: Do not try to read CD-TEXT data with command 'read-toc',
+                    'read-cd' or 'copy'. Some drives lock up or send junk
+                    data when asked for the CD-TEXT data. 
+
   Available Drivers:
 
   plextor
@@ -149,7 +163,16 @@ by logical 'or' and appended to the '--driver' option, e.g.
                        not very reliable and not worth the additional time.
                        
         writing related:
-           0x00000010: Drive supports CD-TEXT writing.
+           0x00000010: Enable CD-TEXT writing. This must be done explicitly
+                       because there is no way to detect if a recorder supports
+                       CD-TEXT writing. Trying to write CD-TEXT data with
+                       recorders that do not support this feature usually
+                       results in an error message at the beginning of the
+                       recording process and in real write mode the medium
+                       will be unusable.
+
+           0x00000040: Suppresses the activation of the BURN Proof feature.
+                       
 
   generic-mmc-raw
      This is an alternate driver for SCSI-3/mmc compatible CD-recorders.
@@ -247,6 +270,12 @@ It is also possible to create the CD-TEXT data manually by editing the
 toc-file or by using the xcdrdao GUI.
 If you want to create your own CD-TEXT data be sure to add the fields
 'TITLE' and 'PERFORMER' to all tracks. 
+
+IMPORTANT: The CD-TEXT writing feature must be explicitly enabled with the
+driver option 0x10 (see section Drivers). If the driver is automatically
+selected for your recorder model the driver options should be already set
+if your recorder is known to write CD-TEXT data. Please report if the
+driver database is not up to date or contains incorrect data.
 
 The directory "testtocs" contains a template toc-file "cdtext.toc".
 

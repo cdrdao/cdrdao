@@ -34,6 +34,7 @@ class Track;
 #define OPT_DRV_NO_PREGAP_READ    0x00040000
 #define OPT_DRV_RAW_TOC_BCD       0x00080000
 #define OPT_DRV_RAW_TOC_HEX       0x00100000
+#define OPT_DRV_NO_CDTEXT_READ    0x00200000
 
 struct DiskInfo {
   long capacity;          // recordable capacity of medium

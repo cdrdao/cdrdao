@@ -1,6 +1,6 @@
 /*  cdrdao - write audio CD-Rs in disc-at-once mode
  *
- *  Copyright (C) 1998-2000  Andreas Mueller <mueller@daneb.ping.de>
+ *  Copyright (C) 1998-2001  Andreas Mueller <mueller@daneb.ping.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -15,55 +15,6 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- */
-/*
- * $Log: CdDevice.h,v $
- * Revision 1.11  2000/11/05 19:20:59  andreasm
- * Unified progress messages sent from cdrdao to gcdmaster.
- *
- * Revision 1.10  2000/10/08 16:39:41  andreasm
- * Remote progress message now always contain the track relative and total
- * progress and the total number of processed tracks.
- *
- * Revision 1.9  2000/08/01 01:27:50  llanero
- * CD to CD copy works now.
- *
- * Revision 1.8  2000/07/31 01:55:49  llanero
- * got rid of old Extract dialog and Record dialog.
- * both are using RecordProgressDialog now.
- *
- * Revision 1.7  2000/07/30 14:25:53  llanero
- * fixed bug with --device not receiving the right device
- *
- * Revision 1.6  2000/07/30 02:41:03  llanero
- * started CD to CD copy. Still not functional.
- *
- * Revision 1.5  2000/05/01 18:15:00  andreasm
- * Switch to gnome-config settings.
- * Adapted Message Box to Gnome look, unfortunately the Gnome::MessageBox is
- * not implemented in gnome--, yet.
- *
- * Revision 1.4  2000/04/29 14:46:38  llanero
- * added the "buffers" option to the Record Dialog.
- *
- * Revision 1.3  2000/04/28 19:08:10  llanero
- * modified glade files.
- * modified toolbar a little.
- * extract dialog has more option, and now you can specify the paranoia mode.
- *
- * Revision 1.2  2000/04/24 12:49:06  andreasm
- * Changed handling or message from remote processes to use the
- * Gtk::Main::input mechanism.
- *
- * Revision 1.3  1999/12/15 20:34:18  mueller
- * CD image extraction added by Manuel Clos.
- *
- * Revision 1.2  1999/11/07 09:18:45  mueller
- * Release 1.1.3
- *
- * Revision 1.1  1999/09/03 16:05:14  mueller
- * Initial revision
- *
  */
 
 #ifndef __CD_DEVICE_H__
@@ -130,7 +81,7 @@ public:
 		int eject, int reload, int buffer);
   void abortDaoRecording();
 
-  int extractDao(char *tocFileName, int correction);
+  int extractDao(const char *tocFileName, int correction);
   void abortDaoReading();
 
   int duplicateDao(int simulate, int multiSession, int speed,

@@ -1,6 +1,6 @@
 /*  cdrdao - write audio CD-Rs in disc-at-once mode
  *
- *  Copyright (C) 1998-2000  Andreas Mueller <mueller@daneb.ping.de>
+ *  Copyright (C) 1998-2001  Andreas Mueller <mueller@daneb.ping.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -75,7 +75,7 @@ private:
 
   void update(unsigned long);
   void start(CdDevice *, TocEdit *);
-  void start(CdDevice *, char *tocFileName);
+  void start(CdDevice *, const char *tocFileName);
   void stop();
   void closeAction();
   void clear();
@@ -91,7 +91,7 @@ public:
   void update(unsigned long);
   
   ProgressDialog *start(CdDevice *, TocEdit *);
-  ProgressDialog *start(CdDevice *, char *tocFileName);
+  ProgressDialog *start(CdDevice *, const char *tocFileName);
   void stop(ProgressDialog *);
 
 private:

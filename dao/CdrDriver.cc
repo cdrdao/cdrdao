@@ -1700,8 +1700,9 @@ CdToc *CdrDriver::getToc(int sessionNr, int *cdTocLen)
     if (isBcd == -1) {
       message(-1, "Could not determine if raw toc data is BCD or HEX. Please report!");
       message(-1, "Using TOC data retrieved with generic method (no multi session support).");
-      message(-1, "Use driver option 0x%lx to suppress this message.",
-	      OPT_DRV_GET_TOC_GENERIC);
+      message(-1,
+	      "Use driver option 0x%lx or 0x%lx to assume BCD or HEX data.",
+	      OPT_DRV_RAW_TOC_BCD, OPT_DRV_RAW_TOC_HEX);
       
       delete[] rawToc;
       *cdTocLen = completeTocLen;
@@ -2104,11 +2105,11 @@ Toc *CdrDriver::readDiskToc(int session, const char *dataFilename)
   Toc *toc = buildToc(trackInfos, nofTracks + 1, padFirstPregap);
 
   if (toc != NULL) {
-    readCdTextData(toc);
+    if ((options_ & OPT_DRV_NO_CDTEXT_READ) == 0) 
+      readCdTextData(toc);
 
-    if (readCatalog(toc, trackInfos[0].start, trackInfos[nofTracks].start)) {
+    if (readCatalog(toc, trackInfos[0].start, trackInfos[nofTracks].start))
       message(2, "Found disk catalogue number.");
-    }
   }
 
   // overwrite last time message

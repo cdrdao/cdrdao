@@ -22,6 +22,7 @@
 
 #include <gtk--.h>
 #include <gtk/gtk.h>
+#include <gnome--.h>
 
 class TocEdit;
 class CdDevice;
@@ -44,6 +45,8 @@ public:
 private:
   TocEdit *tocEdit_;
   int active_;
+
+  Gnome::FileEntry *dirEntry_;
 
   Gtk::Entry *fileNameEntry_;
 

@@ -46,7 +46,6 @@ RecordHDTarget::RecordHDTarget()
   Gtk::VBox *vbox;
   Gtk::Table *table;
   Gtk::Label *label;
-  Gtk::Adjustment *adjustment;
 
   active_ = 0;
   tocEdit_ = NULL;
@@ -57,7 +56,7 @@ RecordHDTarget::RecordHDTarget()
   // device settings
   Gtk::Frame *recordOptionsFrame = new Gtk::Frame(string("Record Options"));
 
-  table = new Gtk::Table(5, 3, FALSE);
+  table = new Gtk::Table(2, 2, FALSE);
   table->set_row_spacings(2);
   table->set_col_spacings(10);
   table->set_border_width(5);
@@ -74,13 +73,25 @@ RecordHDTarget::RecordHDTarget()
   contents->pack_start(*recordOptionsFrame, FALSE, FALSE);
   recordOptionsFrame->show();
 
-  label = new Gtk::Label(string("Name: "));
+  label = new Gtk::Label(string("Directory: "));
   label->show();
   table->attach(*label, 0, 1, 0, 1);
 
+  dirEntry_ = new Gnome::FileEntry("record_hd_target_dir_entry",
+				   "Select Directory for Image");
+  dirEntry_->set_directory(TRUE);
+  dirEntry_->show();
+
+  table->attach(*dirEntry_, 1, 2, 0, 1);
+
+
+  label = new Gtk::Label(string("Name: "));
+  label->show();
+  table->attach(*label, 0, 1, 1, 2);
+
   fileNameEntry_ = new Gtk::Entry;
   fileNameEntry_->show();
-  table->attach(*fileNameEntry_, 1, 3, 0, 1);
+  table->attach(*fileNameEntry_, 1, 2, 1, 2);
 
   Gtk::HBox *contentsHBox = new Gtk::HBox;
 
@@ -137,58 +148,101 @@ void RecordHDTarget::cancelAction()
 void RecordHDTarget::startAction(RecordGenericDialog::RecordSourceType source,
 				 RecordTocSource *TOC, RecordCDSource *CD)
 {
-  int eject, simulate, speed, multiSession, reload;
   int started = 0;
-  Toc *toc;
-  string temp;
-  char *fileName;
-  char *buffer;
+  Gtk::string imageName;
+  Gtk::string imagePath;
+  Gtk::string binPath;
+  Gtk::string tocPath;
+  char *tmp, *p;
   int correction;
   unsigned int i;
 
-  /*
-  if (tocEdit_ == NULL)
-    return;
-  */
-
   if (CD->DEVICES->selection().empty()) {
     MessageBox msg(parent, "Dump CD", 0, 
-		   "Please select one reader device.", NULL);
+		   "Please select a reader device.", NULL);
     msg.run();
     return;
   }
 
-  temp = fileNameEntry_->get_text();
-  if (temp == "")
+  imageName = fileNameEntry_->get_text();
+
+  if (imageName == "")
   {
     MessageBox msg(parent, "Dump CD", 0, 
-		   "Please write a name for the image.", NULL);
+		   "Please specify a name for the image.", NULL);
     msg.run();
     return;
   }
-  else
-    fileName = strdup(temp.c_str());
 
-//FIXME: This only tests current directory, user should be able to select
-//       the directory from a gtk_file_selection dialog, so this should test
-//       in the specified directory.
+  tmp = strdupCC(imageName.c_str());
 
-  buffer = g_strdup_printf("%s%s.toc", "./", fileName);
+  if ((p = strrchr(tmp, '.')) != NULL && strcmp(p, ".toc") == 0)
+    *p = 0;
 
-  if (access(buffer, R_OK) != -1) 
+  if (*tmp == 0 || strcmp(tmp, ".") == 0 || strcmp(tmp, "..") == 0) {
+    MessageBox msg(parent, "Dump CD", 0, 
+		   "The specified image name is invalid.", NULL);
+    msg.run();
+
+    delete[] tmp;
+    return;
+  }
+
+  imageName = tmp;
+  delete[] tmp;
+
+  {  
+    Gtk::Entry *entry = static_cast<Gtk::Entry *>(dirEntry_->gtk_entry());
+    Gtk::string path = entry->get_text();
+    const char *s = path.c_str();
+    long len = strlen(s);
+
+    if (len == 0) {
+      imagePath = imageName;
+    }
+    else {
+      imagePath = path;
+
+      if (s[len - 1] != '/')
+	imagePath += "/";
+
+      imagePath += imageName;
+    }
+  }
+  
+  binPath = imagePath;
+  binPath += ".bin";
+
+  tocPath = imagePath;
+  tocPath += ".toc";
+
+  if (access(binPath.c_str(), R_OK) == 0) {
+    Gtk::string s = "The image file \"";
+    s += binPath;
+    s += "\" already exists.";
+
+    Ask2Box msg(parent, "Dump CD", 0, 1, s.c_str(),
+    		"Do you want to overwrite it?", "", NULL);
+
+    if (msg.run() != 1) 
+      return;
+  }
+
+  if (access(tocPath.c_str(), R_OK) == 0) 
   {
+    Gtk::string s = "The toc-file \"";
+    s += tocPath;
+    s += "\" already exists.";
 
-    Ask2Box msg(parent, "Dump CD", 0, 1,
-    		g_strdup_printf("The filename %s.toc already exists.",
-    		fileName), "Do you want to OVERWRITE it?", "", NULL);
+    Ask2Box msg(parent, "Dump CD", 0, 1, s.c_str(),
+    		"Do you want to overwrite it?", "", NULL);
 
     switch (msg.run()) {
     case 1: // remove the file an continue
-      if (unlink(buffer) == -1)
+      if (unlink(tocPath.c_str()) != -0)
       {
         MessageBox msg(parent, "Dump CD", 0,
-        	g_strdup_printf("Error deleting the file %s.toc", fileName),
-		       NULL);
+		       "Cannot delete toc-file", tocPath.c_str(), NULL);
         msg.run();
         return;
       }
@@ -198,8 +252,6 @@ void RecordHDTarget::startAction(RecordGenericDialog::RecordSourceType source,
       break;
     }
   }
-  free(buffer);
-
 
   correction = CD->getCorrection();
 
@@ -212,7 +264,7 @@ void RecordHDTarget::startAction(RecordGenericDialog::RecordSourceType source,
       CdDevice *dev = CdDevice::find(data->bus, data->id, data->lun);
 
       if (dev != NULL) {
-	if (dev->extractDao(fileName, correction) != 0) {
+	if (dev->extractDao(imagePath.c_str(), correction) != 0) {
 	  message(-2, "Cannot start reading.");
 	}
 	else {
