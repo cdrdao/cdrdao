@@ -1,6 +1,6 @@
 /*  cdrdao - write audio CD-Rs in disc-at-once mode
  *
- *  Copyright (C) 1998-2001 Andreas Mueller <andreas@daneb.de>
+ *  Copyright (C) 1998-2002 Andreas Mueller <andreas@daneb.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -1565,20 +1565,23 @@ int GenericMMC::analyzeTrack(TrackData::Mode mode, int trackNr, long startLba,
 			     char *isrcCode, unsigned char *ctl)
 {
   int ret;
+  int noScan = 0;
 
   selectSpeed(0);
 
-  if (options_ & OPT_MMC_NO_SUBCHAN)
+  if ((readCapabilities_ & CDR_AUDIO_SCAN_CAP) == 0) {
     ret = analyzeTrackSearch(mode, trackNr, startLba, endLba, indexIncrements,
 			     indexIncrementCnt, pregap, isrcCode, ctl);
-  else
+    noScan = 1;
+  }
+  else {
     ret = analyzeTrackScan(mode, trackNr, startLba, endLba,
 			   indexIncrements, indexIncrementCnt, pregap,
 			   isrcCode, ctl);
+  }
 
-  if ((options_ & OPT_MMC_NO_SUBCHAN) ||
-      (options_ & OPT_MMC_READ_ISRC) ||
-      ((options_ & OPT_MMC_USE_PQ) && !(options_ & OPT_MMC_PQ_BCD))) {
+  if (noScan || (options_ & OPT_MMC_READ_ISRC) != 0 ||
+      (readCapabilities_ & CDR_READ_CAP_AUDIO_PQ_HEX) != 0) {
     // The ISRC code is usually not usable if the PQ channel data is
     // converted to hex numbers by the drive. Read them with the
     // appropriate command in this case
@@ -1599,6 +1602,7 @@ int GenericMMC::readSubChannels(TrackData::SubChannelMode sm,
   unsigned char cmd[12];
   int i;
   long blockLen;
+  unsigned long subChanMode = 0;
 
   cmd[0] = 0xbe;  // READ CD
   cmd[1] = 0;
@@ -1615,19 +1619,31 @@ int GenericMMC::readSubChannels(TrackData::SubChannelMode sm,
   switch (sm) {
   case TrackData::SUBCHAN_NONE:
     // no sub-channel data selected choose what is available
-    if (options_ & OPT_MMC_NO_SUBCHAN) {
-      blockLen = AUDIO_BLOCK_LEN;
-      cmd[10] = 0;
+
+    if ((readCapabilities_ & CDR_READ_CAP_AUDIO_PW_RAW) != 0) {
+      // reading of raw P-W sub-channel data is supported
+      blockLen = AUDIO_BLOCK_LEN + 96;
+      cmd[10] = 0x01;  // raw P-W sub-channel data
+
+      subChanMode = CDR_READ_CAP_AUDIO_PW_RAW;
+    }
+    else if ((readCapabilities_ & 
+	      (CDR_READ_CAP_AUDIO_PQ_BCD|CDR_READ_CAP_AUDIO_PQ_HEX)) != 0) {
+      // reading of PQ sub-channel data is supported
+      blockLen = AUDIO_BLOCK_LEN + 16;
+      cmd[10] = 0x02;  // PQ sub-channel data
+
+      if ((readCapabilities_ & CDR_READ_CAP_AUDIO_PQ_BCD) != 0)
+	subChanMode = CDR_READ_CAP_AUDIO_PQ_BCD;
+      else
+	subChanMode = CDR_READ_CAP_AUDIO_PQ_HEX;
     }
     else {
-      if (options_ & OPT_MMC_USE_PQ) {
-	blockLen = AUDIO_BLOCK_LEN + 16;
-	cmd[10] = 0x02;  // PQ sub-channel data
-      }
-      else {
-	blockLen = AUDIO_BLOCK_LEN + 96;
-	cmd[10] = 0x01;  // raw PW sub-channel data
-      }
+      // no usable sub-channel reading mode is supported
+      blockLen = AUDIO_BLOCK_LEN;
+      cmd[10] = 0;
+
+      subChanMode = 0;
     }
     break;
 
@@ -1665,37 +1681,42 @@ int GenericMMC::readSubChannels(TrackData::SubChannelMode sm,
   }
 #endif
 
-  if ((options_ & OPT_MMC_NO_SUBCHAN) == 0) {
+  if (subChanMode != 0) {
     unsigned char *buf = transferBuffer_ + AUDIO_BLOCK_LEN;
 
     for (i = 0; i < len; i++) {
-      if (options_ & OPT_MMC_USE_PQ) {
-	if (!(options_ & OPT_MMC_PQ_BCD)) {
-	  // All numbers in sub-channel data are hex conforming to the
-	  // MMC standard. We have to convert them back to BCD for the
-	  // 'SubChannel' class.
-	  buf[1] = SubChannel::bcd(buf[1]);
-	  buf[2] = SubChannel::bcd(buf[2]);
-	  buf[3] = SubChannel::bcd(buf[3]);
-	  buf[4] = SubChannel::bcd(buf[4]);
-	  buf[5] = SubChannel::bcd(buf[5]);
-	  buf[6] = SubChannel::bcd(buf[6]);
-	  buf[7] = SubChannel::bcd(buf[7]);
-	  buf[8] = SubChannel::bcd(buf[8]);
-	  buf[9] = SubChannel::bcd(buf[9]);
-	}
-	
+      switch (subChanMode) {
+      case CDR_READ_CAP_AUDIO_PQ_HEX:
+	// All numbers in sub-channel data are hex conforming to the
+	// MMC standard. We have to convert them back to BCD for the
+	// 'SubChannel' class.
+	buf[1] = SubChannel::bcd(buf[1]);
+	buf[2] = SubChannel::bcd(buf[2]);
+	buf[3] = SubChannel::bcd(buf[3]);
+	buf[4] = SubChannel::bcd(buf[4]);
+	buf[5] = SubChannel::bcd(buf[5]);
+	buf[6] = SubChannel::bcd(buf[6]);
+	buf[7] = SubChannel::bcd(buf[7]);
+	buf[8] = SubChannel::bcd(buf[8]);
+	buf[9] = SubChannel::bcd(buf[9]);
+	// fall through
+
+      case CDR_READ_CAP_AUDIO_PQ_BCD:
 	((PQSubChannel16*)scannedSubChannels_[i])->init(buf);
 	if (scannedSubChannels_[i]->type() != SubChannel::QMODE_ILLEGAL) {
 	  // the CRC of the sub-channel data is usually invalid -> mark the
 	  // sub-channel object that it should not try to verify the CRC
 	  scannedSubChannels_[i]->crcInvalid();
 	}
-      }
-      else {
+	break;
+      
+      case CDR_READ_CAP_AUDIO_PW_RAW:
 	((PWSubChannel96*)scannedSubChannels_[i])->init(buf);
+	break;
+      }
 
 #if 0
+      if (subChanMode == CDR_READ_CAP_AUDIO_PW_RAW) {
 	// xxam!
 	int j, k;
 	
@@ -1707,9 +1728,8 @@ int GenericMMC::readSubChannels(TrackData::SubChannelMode sm,
 	  }
 	  message(0, "");
 	}
-#endif
-
       }
+#endif
 
       buf += blockLen;
     }
@@ -1738,7 +1758,7 @@ int GenericMMC::readSubChannels(TrackData::SubChannelMode sm,
     }
   }
 
-  if (options_ & OPT_MMC_NO_SUBCHAN)
+  if (subChanMode == 0)
     *chans = NULL;
   else
     *chans = scannedSubChannels_;
@@ -2171,9 +2191,9 @@ int GenericMMC::readAudioRange(ReadDiskInfo *rinfo, int fd, long start,
 			       int endTrack, TrackInfo *info)
 {
   if (!onTheFly_) {
-    if ((options_ & OPT_MMC_NO_SUBCHAN) ||
-	(options_ & OPT_MMC_READ_ISRC) ||
-	((options_ & OPT_MMC_USE_PQ) && !(options_ & OPT_MMC_PQ_BCD))) {
+    if (((readCapabilities_ & CDR_READ_CAP_AUDIO_PQ_BCD) == 0 &&
+	 (readCapabilities_ & CDR_READ_CAP_AUDIO_PW_RAW) == 0) ||
+	(options_ & OPT_MMC_READ_ISRC) != 0) {
       int t;
       long pregap = 0;
 
@@ -2194,7 +2214,7 @@ int GenericMMC::readAudioRange(ReadDiskInfo *rinfo, int fd, long start,
 	sendReadCdProgressMsg(RCD_ANALYZING, rinfo->tracks, t + 1, 0,
 			      totalProgress);
 
-	if (options_ & OPT_MMC_NO_SUBCHAN) {
+	if ((readCapabilities_ & CDR_AUDIO_SCAN_CAP) == 0) {
 	  // we have to use the binary search method to find pre-gap and
 	  // index marks if the drive cannot read sub-channel data
 	  if (!fastTocReading_) {
@@ -2378,8 +2398,9 @@ int GenericMMC::readCdTest(long lba, long len, int subChanMode) const
     blockLen += PQ_SUBCHANNEL_LEN;
     cmd[10] = 0x02;
     if (len > 150)
-      len = 150; // we have to check many sub-channels here to determine the
-                // data mode (BCD or HEX)
+      len = 150; /* we have to check many sub-channels here to determine the
+		  * data mode (BCD or HEX)
+		  */
     break;
 
   case 2: // PW_RAW
@@ -2434,15 +2455,17 @@ int GenericMMC::readCdTest(long lba, long len, int subChanMode) const
 	    pqSubChanBcdOk++;
 	}
 	else {
-	  long pqlba = Msf(buf[7], buf[8], buf[9]).lba() - 150;
+	  if (buf[7] < 100 && buf[8] < 60 && buf[9] < 75) {
+	    long pqlba = Msf(buf[7], buf[8], buf[9]).lba() - 150;
 
-	  //message(0, "readCdTest: pqlba: %ld", pqlba);
-	  long diff = pqlba - lba;
-	  if (diff < 0)
-	    diff = -diff;
+	    //message(0, "readCdTest: pqlba: %ld", pqlba);
+	    long diff = pqlba - lba;
+	    if (diff < 0)
+	      diff = -diff;
 	  
-	  if (diff < 75) {
-	    pqSubChanHexOk++;
+	    if (diff < 75) {
+	      pqSubChanHexOk++;
+	    }
 	  }
 	}
       }
@@ -2498,6 +2521,15 @@ unsigned long GenericMMC::getReadCapabilities(const CdToc *toc,
       caps |= CDR_READ_CAP_AUDIO_PQ_BCD;
     else
       caps |= CDR_READ_CAP_AUDIO_PQ_HEX;
+  }
+  else if ((options_ & OPT_MMC_USE_RAW_RW) != 0) {
+    // driver options indicated that raw PW sub-channel reading is supported
+    // audio tracks and raw PW sub-channel reading is not supported, skip
+    // the corresponding checks and set the capabilities appropriately
+    audioPQChecked = 1;
+    audioRawPWChecked = 1;
+
+    caps |= CDR_READ_CAP_DATA_PW_RAW;
   }
 
   for (t = 0; t < nofTracks; t++) {
@@ -2571,14 +2603,11 @@ unsigned long GenericMMC::getReadCapabilities(const CdToc *toc,
 	case 1:
 	  message(2, "PQ sub-channel reading (audio track) is supported, data format is BCD.");
 	  caps |= CDR_READ_CAP_AUDIO_PQ_BCD;
-	  //options_ |= OPT_MMC_USE_PQ | OPT_MMC_PQ_BCD;
 	  break;
 
 	case 2:
 	  message(2, "PQ sub-channel reading (audio track) is supported, data format is HEX.");
 	  caps |= CDR_READ_CAP_AUDIO_PQ_HEX;
-	  //options_ |= OPT_MMC_USE_PQ;
-	  //options_ &= ~OPT_MMC_PQ_BCD;
 	  break;
 
 	case 3:
@@ -2595,7 +2624,6 @@ unsigned long GenericMMC::getReadCapabilities(const CdToc *toc,
 	if (readCdTest(toc[t].start, tlen, 2)) {
 	  message(2, "Raw P-W sub-channel reading (audio track) is supported.");
 	  caps |= CDR_READ_CAP_AUDIO_PW_RAW;
-	  //options_ &= ~(OPT_MMC_USE_PQ | OPT_MMC_PQ_BCD);
 	}
 	else {
 	  message(3, "Raw P-W sub-channel reading (audio track) is not supported.");
@@ -2616,14 +2644,6 @@ unsigned long GenericMMC::getReadCapabilities(const CdToc *toc,
       }
     }
   }
-
-  /*
-  if ((caps & (CDR_READ_CAP_AUDIO_RW_RAW |
-	       CDR_READ_CAP_AUDIO_PQ_BCD |
-	       CDR_READ_CAP_AUDIO_PQ_HEX)) == 0) {
-    options_ |= OPT_MMC_NO_SUBCHAN;
-  }
-  */
 
   return caps;
 }
