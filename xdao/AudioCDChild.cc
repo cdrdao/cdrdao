@@ -37,8 +37,6 @@
 #include "TocEditView.h"
 #include "util.h"
 #include "MDIWindow.h"
-#include "AddFileDialog.h"
-#include "AddSilenceDialog.h"
 #include "RecordGenericDialog.h"
 
 #include "SampleDisplay.h"
@@ -54,47 +52,8 @@ AudioCDChild::AudioCDChild(AudioCDProject *project)
   playBuffer_ = new Sample[playBurst_];
   soundInterface_ = NULL;
 
-// These are not created until first needed, for faster startup
-// and less memory usage.
-  addFileDialog_ = 0;
-  addSilenceDialog_ = 0;
-
-  views = g_list_alloc();
-
   vector<Gnome::UI::Info> menus, viewMenuTree;
 
-/*
-
-
-  audioEditMenuTree.push_back(Gnome::UI::Separator());
-
-  audioEditMenuTree.
-    push_back(Gnome::UI::Item(N_("Append Track"),
-			      slot(this, &AudioCDChild::appendTrack),
-			      N_("Append track with data from audio file")));
-
-  audioEditMenuTree.
-    push_back(Gnome::UI::Item(N_("Append File"),
-			      slot(this, &AudioCDChild::appendFile),
-			      N_("Append data from audio file to last track")));
-  
-  audioEditMenuTree.
-    push_back(Gnome::UI::Item(N_("Insert File"),
-			      slot(this, &AudioCDChild::insertFile),
-			      N_("Insert data from audio file at current marker position")));
-
-  audioEditMenuTree.push_back(Gnome::UI::Separator());
-
-  audioEditMenuTree.
-    push_back(Gnome::UI::Item(N_("Append Silence"),
-			      slot(this, &AudioCDChild::appendSilence),
-			      N_("Append silence to last track")));
-
-  audioEditMenuTree.
-    push_back(Gnome::UI::Item(N_("Insert Silence"),
-			      slot(this, &AudioCDChild::insertSilence),
-			      N_("Insert silence at current marker position")));
-*/
 /*
 //FIXME
   viewMenuTree.
@@ -152,16 +111,12 @@ void AudioCDChild::play(unsigned long start, unsigned long end)
   playing_ = 1;
   playAbort_ = 0;
 
-//FIXME: propagating here, but it should use the UPD_XX thing
-//       so the child can modify whatever...
-  views = g_list_first(views);
-//FIXME: g_list_foreach in C++ ?
-  while (views->data)
-  {
-    AudioCDView *view = static_cast <AudioCDView *>(views->data);
-    view->playLabel_->set_text("Stop");
-    views = views->next;
-  }
+// FIXME: Need this one?:
+//  tocEdit_->updateLevel_ |= UPD_CURSOR_POS;
+
+//FIXME: Need a UPD_PLAYING and a UPD_PAUSE
+//  while (views)
+//    view->playLabel_->set_text("Stop");
 
 //FIXME: Selection / Zooming does not depend
 //       on the Child, but the View.
@@ -183,18 +138,9 @@ int AudioCDChild::playCallback()
     soundInterface_->end();
     tocReader.init(NULL);
     playing_ = 0;
-//FIXME: propagating here, but it should use the UPD_XX thing
-//       so the child can modify whatever...
-    views = g_list_first(views);
-//FIXME: g_list_foreach in C++ ?
-    while (views->data)
-    {
-      AudioCDView *view = static_cast <AudioCDView *>(views->data);
-      view->playLabel_->set_text("Play");
-//      view->sampleDisplay_->setCursor(0, 0);
-      views = views->next;
-    }
-
+//FIXME: Need a UPD_PLAYING and a UPD_PAUSE
+//  while (views)
+//    view->playLabel_->set_text("Play");
     tocEdit_->unblockEdit();
     guiUpdate();
     return 0; // remove idle handler
@@ -206,34 +152,22 @@ int AudioCDChild::playCallback()
   unsigned long delay = soundInterface_->getDelay();
 
   if (delay <= playPosition_) {
-//FIXME: propagating here, but it should use the UPD_XX thing
-//       so the child can modify whatever...
-    views = g_list_first(views);
-//FIMXE: g_list_foreach in C++ ?
-    while (views->data)
-    {
-      AudioCDView *view = static_cast <AudioCDView *>(views->data);
-      view->sampleDisplay_->setCursor(1, playPosition_ - delay);
-      view->cursorPos_->set_text(string(sample2string(playPosition_ - delay)));
-      views = views->next;
-    }
+//FIXME: is private    tocEdit_->updateLevel_ |= UPD_SAMPLE_MARKER;
+
+//FIXME     tocEdit_->updateLevel_ |= UPD_CURSOR_POS;
+//      view->sampleDisplay_->setCursor(1, playPosition_ - delay);
+//      view->cursorPos_->set_text(string(sample2string(playPosition_ - delay)));
   }
 
   if (len == 0 || playAbort_ != 0) {
     soundInterface_->end();
     tocReader.init(NULL);
     playing_ = 0;
-//FIXME: propagating here, but it should use the UPD_XX thing
-//       so the child can modify whatever...
-    views = g_list_first(views);
 //FIXME: g_list_foreach in C++ ?
-    while (views->data)
-    {
-      AudioCDView *view = static_cast <AudioCDView *>(views->data);
-      view->playLabel_->set_text("Play");
-      view->sampleDisplay_->setCursor(0, 0);
-      views = views->next;
-    }
+//FIXME: Need a UPD_PLAYING and a UPD_PAUSE
+//  while (views)
+//    view->sampleDisplay_->setCursor(0, 0);
+//    view->playLabel_->set_text("Play");
 
     tocEdit_->unblockEdit();
     guiUpdate();
@@ -263,15 +197,13 @@ bool AudioCDChild::closeProject()
     gchar *message;
     
     message = g_strdup_printf("Project %s not saved.", tocEdit_->filename());
-    
-    // Ask2Box msg(this, "New", 0, 2, "Current project not saved.", "",
-//FIXME    Ask2Box msg(MDI_WINDOW->get_active_window(), "Close", 0, 2, message, "",
-//FIXME		"Continue?", NULL);
 
+    Ask2Box msg(project_, "Close", 0, 2, message, "",
+		"Continue?", NULL);
     g_free(message);
 
-//FIXME    if (msg.run() != 1)
-//FIXME      return false;
+    if (msg.run() != 1)
+      return false;
   }
 
   return true;
@@ -356,74 +288,10 @@ unsigned long AudioCDChild::string2sample(const char *str)
   return Msf(m, s, f).samples() + n;
 }
 
-void AudioCDChild::appendTrack()
+AudioCDView *AudioCDChild::newView()
 {
-//FIXME
-/*
-  if (addFileDialog_ == 0)
-    addFileDialog_ = new AddFileDialog();
-
-  GenericView *view = static_cast <GenericView *>(get_active());
-
-
-  addFileDialog_->mode(AddFileDialog::M_APPEND_TRACK);
-  addFileDialog_->start(view->tocEditView());
-*/
-}
-
-void AudioCDChild::appendFile()
-{
-//FIXME
-/*
-  if (addFileDialog_ == 0)
-    addFileDialog_ = new AddFileDialog();
-
-  GenericView *view = static_cast <GenericView *>(get_active());
-
-  addFileDialog_->mode(AddFileDialog::M_APPEND_FILE);
-  addFileDialog_->start(view->tocEditView());
-*/
-}
-
-void AudioCDChild::insertFile()
-{
-//FIXME
-/*
-  if (addFileDialog_ == 0)
-    addFileDialog_ = new AddFileDialog();
-
-  GenericView *view = static_cast <GenericView *>(get_active());
-
-  addFileDialog_->mode(AddFileDialog::M_INSERT_FILE);
-  addFileDialog_->start(view->tocEditView());
-*/
-}
-
-void AudioCDChild::appendSilence()
-{
-//FIXME
-/*
-  if (addSilenceDialog_ == 0)
-    addSilenceDialog_ = new AddSilenceDialog();
-
-  GenericView *view = static_cast <GenericView *>(get_active());
-
-  addSilenceDialog_->mode(AddSilenceDialog::M_APPEND);
-  addSilenceDialog_->start(view->tocEditView());
-*/
-}
-
-void AudioCDChild::insertSilence()
-{
-//FIXME
-/*
-  if (addSilenceDialog_ == 0)
-    addSilenceDialog_ = new AddSilenceDialog();
-
-  GenericView *view = static_cast <GenericView *>(get_active());
-
-  addSilenceDialog_->mode(AddSilenceDialog::M_INSERT);
-  addSilenceDialog_->start(view->tocEditView());
-*/
+  AudioCDView *audioCDView = new AudioCDView(this, project_);
+  views.push_back(audioCDView);
+  return audioCDView;
 }
 

@@ -28,7 +28,6 @@
 
 class TocEdit;
 
-//FIXMEclass GenericChild : public Gnome::MDIChild
 class GenericChild : public Gtk::Widget
 {
 public:

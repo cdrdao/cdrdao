@@ -33,14 +33,14 @@
 #include "MDIWindow.h"
 #include "util.h"
 
-#include "TrackInfoDialog.h"
 #include "AudioCDProject.h"
 #include "AudioCDChild.h"
 #include "AudioCDView.h"
 #include "Project.h"
+#include "TrackInfoDialog.h"
+#include "AddFileDialog.h"
+#include "AddSilenceDialog.h"
 #include <gnome.h>
-
-
 
 AudioCDView::AudioCDView(AudioCDChild *child, AudioCDProject *project) 
 {
@@ -53,7 +53,11 @@ AudioCDView::AudioCDView(AudioCDChild *child, AudioCDProject *project)
   widgetList = new list<Gtk::Widget *>;
   widgetList->push_back(this);
 
+// These are not created until first needed, for faster startup
+// and less memory usage.
   trackInfoDialog_ = 0;
+  addFileDialog_ = 0;
+  addSilenceDialog_ = 0;
 
   Gtk::VBox *vbox = this;
   
@@ -237,8 +241,32 @@ AudioCDView::AudioCDView(AudioCDChild *child, AudioCDProject *project)
 			      slot(this, &AudioCDView::removeTrackMark),
 			      N_("Remove selected track/index marker or pre-gap")));
  
+    menus.push_back(Separator());
+
+    menus.push_back(Item(N_("Append Track"),
+			      slot(this, &AudioCDView::appendTrack),
+			      N_("Append track with data from audio file")));
+
+    menus.push_back(Item(N_("Append File"),
+			      slot(this, &AudioCDView::appendFile),
+			      N_("Append data from audio file to last track")));
+  
+    menus.push_back(Item(N_("Insert File"),
+			      slot(this, &AudioCDView::insertFile),
+			      N_("Insert data from audio file at current marker position")));
+
+    menus.push_back(Separator());
+
+    menus.push_back(Item(N_("Append Silence"),
+			      slot(this, &AudioCDView::appendSilence),
+			      N_("Append silence to last track")));
+
+    menus.push_back(Item(N_("Insert Silence"),
+			      slot(this, &AudioCDView::insertSilence),
+			      N_("Insert silence at current marker position")));
+
     Array<Info>& arrayInfo = project->insert_menus("Edit/CD-TEXT...", menus);
-    for (i = 0; i < 9; i ++)
+    for (i = 0; i < menus.size(); i ++)
     {
       Gtk::Widget *menuitem = arrayInfo[i].get_widget();
       menuitem->hide();
@@ -587,83 +615,74 @@ void AudioCDView::addIndexMark()
 
 void AudioCDView::addPregap()
 {
-//FIXME
-/*
   unsigned long sample;
-  AudioCDView *view = static_cast <AudioCDView *>(get_active());
 
-  if (!tocEdit_->editable()) {
-    tocBlockedMsg("Add Pre-Gap");
+  if (!project_->tocEdit()->editable()) {
+    project_->tocBlockedMsg("Add Pre-Gap");
     return;
   }
 
-  if (view->getMarker(&sample)) {
+  if (getMarker(&sample)) {
     long lba;
     int snapped = snapSampleToBlock(sample, &lba);
 
-    switch (tocEdit_->addPregap(lba)) {
+    switch (project_->tocEdit()->addPregap(lba)) {
     case 0:
-      MDI_WINDOW->statusMessage("Added pre-gap mark at %s%s.", Msf(lba).str(),
+      project_->statusMessage("Added pre-gap mark at %s%s.", Msf(lba).str(),
 				snapped ? " (snapped to next block)" : "");
       guiUpdate();
       break;
 
     case 2:
-      MDI_WINDOW->statusMessage("Cannot add pre-gap at this point.");
+      project_->statusMessage("Cannot add pre-gap at this point.");
       break;
 
     case 3:
-      MDI_WINDOW->statusMessage("Track would be shorter than 4 seconds.");
+      project_->statusMessage("Track would be shorter than 4 seconds.");
       break;
 
     case 4:
-      MDI_WINDOW->statusMessage("Cannot modify a data track.");
+      project_->statusMessage("Cannot modify a data track.");
       break;
 
     default:
-      MDI_WINDOW->statusMessage("Internal error in addPregap(), please report.");
+      project_->statusMessage("Internal error in addPregap(), please report.");
       break;
     }
   }
-*/
 }
 
 void AudioCDView::removeTrackMark()
 {
-//FIXME
-/*
-  AudioCDView *view = static_cast <AudioCDView *>(get_active());
-
   int trackNr;
   int indexNr;
 
-  if (!tocEdit_->editable()) {
-    tocBlockedMsg("Remove Track Mark");
+  if (!project_->tocEdit()->editable()) {
+    project_->tocBlockedMsg("Remove Track Mark");
     return;
   }
 
-  if (view->tocEditView()->trackSelection(&trackNr) &&
-      view->tocEditView()->indexSelection(&indexNr)) {
-    switch (tocEdit_->removeTrackMarker(trackNr, indexNr)) {
+  if (tocEditView_->trackSelection(&trackNr) &&
+      tocEditView_->indexSelection(&indexNr)) {
+    switch (project_->tocEdit()->removeTrackMarker(trackNr, indexNr)) {
     case 0:
-      MDI_WINDOW->statusMessage("Removed track/index marker.");
+      project_->statusMessage("Removed track/index marker.");
       guiUpdate();
       break;
     case 1:
-      MDI_WINDOW->statusMessage("Cannot remove first track.");
+      project_->statusMessage("Cannot remove first track.");
       break;
     case 3:
-      MDI_WINDOW->statusMessage("Cannot modify a data track.");
+      project_->statusMessage("Cannot modify a data track.");
       break;
     default:
-      MDI_WINDOW->statusMessage("Internal error in removeTrackMark(), please report.");
+      project_->statusMessage("Internal error in removeTrackMark(), please report.");
       break; 
     }
   }
   else {
-    MDI_WINDOW->statusMessage("Please select a track/index mark.");
+    project_->statusMessage("Please select a track/index mark.");
   }
-*/
 }
 
 int AudioCDView::snapSampleToBlock(unsigned long sample, long *block)
@@ -712,3 +731,47 @@ void AudioCDView::trackMarkMovedCallback(const Track *, int trackNr,
   guiUpdate();
 }
 
+void AudioCDView::appendTrack()
+{
+  if (addFileDialog_ == 0)
+    addFileDialog_ = new AddFileDialog(project_);
+
+  addFileDialog_->mode(AddFileDialog::M_APPEND_TRACK);
+  addFileDialog_->start(tocEditView_);
+}
+
+void AudioCDView::appendFile()
+{
+  if (addFileDialog_ == 0)
+    addFileDialog_ = new AddFileDialog(project_);
+
+  addFileDialog_->mode(AddFileDialog::M_APPEND_FILE);
+  addFileDialog_->start(tocEditView_);
+}
+
+void AudioCDView::insertFile()
+{
+  if (addFileDialog_ == 0)
+    addFileDialog_ = new AddFileDialog(project_);
+
+  addFileDialog_->mode(AddFileDialog::M_INSERT_FILE);
+  addFileDialog_->start(tocEditView_);
+}
+
+void AudioCDView::appendSilence()
+{
+  if (addSilenceDialog_ == 0)
+    addSilenceDialog_ = new AddSilenceDialog();
+
+  addSilenceDialog_->mode(AddSilenceDialog::M_APPEND);
+  addSilenceDialog_->start(tocEditView_);
+}
+
+void AudioCDView::insertSilence()
+{
+  if (addSilenceDialog_ == 0)
+    addSilenceDialog_ = new AddSilenceDialog();
+
+  addSilenceDialog_->mode(AddSilenceDialog::M_INSERT);
+  addSilenceDialog_->start(tocEditView_);
+}

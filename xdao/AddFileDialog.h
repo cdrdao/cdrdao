@@ -18,6 +18,9 @@
  */
 /*
  * $Log: AddFileDialog.h,v $
+ * Revision 1.6  2001/04/17 23:10:30  llanero
+ * More Fixes and cleanup
+ *
  * Revision 1.5  2000/11/05 12:24:41  andreasm
  * Improved handling of TocEdit views. Introduced a new class TocEditView that
  * holds all view data (displayed sample range, selected sample range,
@@ -54,15 +57,15 @@
 #define __ADD_FILE_DIALOG_H__
 
 #include <gtk--.h>
-#include <gtk/gtk.h>
 
 class TocEditView;
+class AudioCDProject;
 
 class AddFileDialog : public Gtk::FileSelection {
 public:
   enum Mode { M_APPEND_TRACK, M_APPEND_FILE, M_INSERT_FILE };
 
-  AddFileDialog();
+  AddFileDialog(AudioCDProject *);
   ~AddFileDialog();
 
   void start(TocEditView *);
@@ -74,6 +77,7 @@ public:
   gint delete_event_impl(GdkEventAny*);
 
 private:
+  AudioCDProject *project_;
   TocEditView *tocEditView_;
   int active_;
   Mode mode_;

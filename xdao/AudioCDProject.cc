@@ -78,14 +78,7 @@ AudioCDProject::AudioCDProject(int number, const char *name, TocEdit *tocEdit)
   Gnome::StockPixmap *pixmap = new Gnome::StockPixmap(GNOME_STOCK_MENU_CDROM);
   Gtk::Label *label = new Gtk::Label("Track Editor");
   audioCDChild_ = new AudioCDChild(this);
-  AudioCDView *audioCDView = new AudioCDView(audioCDChild_, this);
-  hbox->pack_start(*audioCDView, TRUE, TRUE);
-  audioCDView->tocEditView()->sampleViewFull();
-  viewSwitcher_->addView(audioCDView->widgetList, pixmap, label);
-
-  pixmap = new Gnome::StockPixmap(GNOME_STOCK_MENU_CDROM);
-  label = new Gtk::Label("Track Editor");
-  audioCDView = new AudioCDView(audioCDChild_, this);
+  AudioCDView *audioCDView = audioCDChild_->newView();
   hbox->pack_start(*audioCDView, TRUE, TRUE);
   audioCDView->tocEditView()->sampleViewFull();
   viewSwitcher_->addView(audioCDView->widgetList, pixmap, label);

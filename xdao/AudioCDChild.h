@@ -34,8 +34,6 @@ class SoundIF;
 class Sample;
 class TrackData;
 class TocEdit;
-class AddFileDialog;
-class AddSilenceDialog;
 class AudioCDView;
 class AudioCDProject;
 
@@ -43,10 +41,6 @@ class AudioCDChild : public GenericChild
 {
 public:
   AudioCDChild(AudioCDProject *project);
-
-private: //related windows
-  AddFileDialog *addFileDialog_;
-  AddSilenceDialog *addSilenceDialog_;
 
 private:
   friend class AudioCDView;
@@ -65,7 +59,7 @@ private:
   void play(unsigned long start, unsigned long end);
   int playCallback();
 
-  GList *views;
+  list<AudioCDView *> views;
 
   const char *sample2string(unsigned long sample);
   unsigned long string2sample(const char *s);
@@ -80,13 +74,6 @@ public:
   void update(unsigned long level);
   bool closeProject();
   void record_to_cd();
-
-  void appendSilence();
-  void insertSilence();
-
-  void appendTrack();
-  void appendFile();
-  void insertFile();
-
+  AudioCDView *newView();
 };
 #endif

@@ -30,6 +30,8 @@
 class SampleDisplay;
 class Project;
 class TrackInfoDialog;
+class AddFileDialog;
+class AddSilenceDialog;
 
 enum {
   TARGET_URI_LIST,
@@ -49,6 +51,8 @@ private:
   AudioCDProject *project_;
 
   TrackInfoDialog *trackInfoDialog_;
+  AddFileDialog *addFileDialog_;
+  AddSilenceDialog *addSilenceDialog_;
 
   enum Mode { ZOOM, SELECT };
 
@@ -92,6 +96,13 @@ private:
   void addIndexMark();
   void addPregap();
   void removeTrackMark();
+
+  void appendSilence();
+  void insertSilence();
+
+  void appendTrack();
+  void appendFile();
+  void insertFile();
 
   int getMarker(unsigned long *sample);
   void markerSet();

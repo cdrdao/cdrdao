@@ -31,14 +31,15 @@
 
 #include "Sample.h"
 #include "util.h"
-#include "MDIWindow.h"
+#include "AudioCDProject.h"
 #include "xcdrdao.h"
 
-AddFileDialog::AddFileDialog() : Gtk::FileSelection(string(""))
+AddFileDialog::AddFileDialog(AudioCDProject *project) : Gtk::FileSelection(string(""))
 {
   tocEditView_ = NULL;
   active_ = 0;
-
+  project_ = project;
+  
   mode(M_APPEND_TRACK);
 
   hide_fileop_buttons();
@@ -139,13 +140,13 @@ void AddFileDialog::applyAction()
       switch (tocEditView_->tocEdit()->appendTrack(s)) {
       case 0:
 	guiUpdate();
-//FIXME	MDI_WINDOW->statusMessage("Appended track with audio data from \"%s\".", s);
+	project_->statusMessage("Appended track with audio data from \"%s\".", s);
 	break;
       case 1:
-//FIXME	MDI_WINDOW->statusMessage("Cannot open audio file \"%s\".", s);
+	project_->statusMessage("Cannot open audio file \"%s\".", s);
 	break;
       case 2:
-//FIXME	MDI_WINDOW->statusMessage("Audio file \"%s\" has wrong format.", s);
+	project_->statusMessage("Audio file \"%s\" has wrong format.", s);
 	break;
       }
       break;
@@ -154,13 +155,13 @@ void AddFileDialog::applyAction()
       switch (tocEditView_->tocEdit()->appendFile(s)) {
       case 0:
 	guiUpdate();
-//FIXME	MDI_WINDOW->statusMessage("Appended audio data from \"%s\".", s);
+	project_->statusMessage("Appended audio data from \"%s\".", s);
       break;
       case 1:
-//FIXME	MDI_WINDOW->statusMessage("Cannot open audio file \"%s\".", s);
+	project_->statusMessage("Cannot open audio file \"%s\".", s);
 	break;
       case 2:
-//FIXME	MDI_WINDOW->statusMessage("Audio file \"%s\" has wrong format.", s);
+	project_->statusMessage("Audio file \"%s\" has wrong format.", s);
 	break;
       }
       break;
@@ -171,13 +172,13 @@ void AddFileDialog::applyAction()
 	case 0:
 	  tocEditView_->sampleSelection(pos, pos + len - 1);
 	  guiUpdate();
-//FIXME	  MDI_WINDOW->statusMessage("Inserted audio data from \"%s\".", s);
+	  project_->statusMessage("Inserted audio data from \"%s\".", s);
 	  break;
 	case 1:
-//FIXME	  MDI_WINDOW->statusMessage("Cannot open audio file \"%s\".", s);
+	  project_->statusMessage("Cannot open audio file \"%s\".", s);
 	  break;
 	case 2:
-//FIXME	  MDI_WINDOW->statusMessage("Audio file \"%s\" has wrong format.", s);
+	  project_->statusMessage("Audio file \"%s\" has wrong format.", s);
 	  break;
 	}
       }
