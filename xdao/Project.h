@@ -22,8 +22,7 @@
 
 #include <gnome--.h>
 
-class AudioCDChild;
-class AudioCDView;
+class RecordTocDialog;
 class TocEdit;
 #include "ViewSwitcher.h"
 
@@ -43,6 +42,14 @@ protected:
   bool new_; // If it is a new project (not saved)
 
   TocEdit *tocEdit_;
+  RecordTocDialog *recordTocDialog_;
+
+  Gtk::Widget *miSave_;
+  Gtk::Widget *miSaveAs_;
+  Gtk::Widget *miEditTree_;
+  Gtk::Widget *miRecord_;
+  Gtk::Widget *tiSave_;
+  Gtk::Widget *tiRecord_;
 
   void createMenus();
   void createToolbar();

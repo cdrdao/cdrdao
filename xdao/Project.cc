@@ -26,24 +26,22 @@
 #include "guiUpdate.h"
 #include "gcdmaster.h"
 #include "MessageBox.h"
-#include "RecordGenericDialog.h"
 #include "AudioCDChild.h"
 #include "AudioCDView.h"
 #include "TocEdit.h"
 #include "TocEditView.h"
+#include "RecordTocDialog.h"
 
 Project::Project() : Gnome::App("gcdmaster", APP_NAME)
 {
-  hbox = new Gtk::HBox;
-  hbox->show();
-  set_contents(*hbox);
   new_ = true;
   saveFileSelector_ = 0;  
   viewNumber = 0;
-  viewSwitcher_ = new ViewSwitcher(hbox);
-  viewSwitcher_->show();
-  set_usize(630, 440);
+  recordTocDialog_ = 0;
   enable_layout_config(true);
+//  set_usize(630, 440);
+//  set_policy(false, true, false);
+  set_wmclass("GCDMaster", "GCDMaster");
 
   createMenus();
   createToolbar();
@@ -53,7 +51,7 @@ Project::Project() : Gnome::App("gcdmaster", APP_NAME)
 void Project::createMenus()
 {
   vector<Gnome::UI::SubTree> menus;
-  vector<Gnome::UI::Info> fileMenuTree, newMenuTree, audioEditMenuTree, actionsMenuTree;
+  vector<Gnome::UI::Info> fileMenuTree, newMenuTree, editMenuTree, actionsMenuTree;
   vector<Gnome::UI::Info> settingsMenuTree, helpMenuTree, windowsMenuTree;
 
   {
@@ -65,9 +63,19 @@ void Project::createMenus()
 
     // File->New menu
     newMenuTree.push_back(Item(Icon(GNOME_STOCK_MENU_NEW),
-						N_("Audio CD"),
+						N_("_Audio CD"),
 						bind(slot(gcdmaster, &GCDMaster::newAudioCDProject2), (ProjectChooser *)NULL),
 						N_("New Audio CD")));
+
+    newMenuTree.push_back(Item(Icon(GNOME_STOCK_MENU_NEW),
+						N_("_Duplicate CD"),
+						bind(slot(gcdmaster, &GCDMaster::newDuplicateCDProject), (ProjectChooser *)NULL),
+						N_("Make a copy of a CD")));
+
+    newMenuTree.push_back(Item(Icon(GNOME_STOCK_MENU_NEW),
+						N_("_Copy CD to disk"),
+						bind(slot(gcdmaster, &GCDMaster::newDumpCDProject), (ProjectChooser *)NULL),
+						N_("Dump CD to disk")));
 
     // File menu
     fileMenuTree.push_back(SubTree(Icon(GNOME_STOCK_MENU_NEW),
@@ -76,11 +84,15 @@ void Project::createMenus()
 					    "Create a new project"));
   }
 
+  guint posFileSave;
+  guint posFileSaveAs;
   {
     using namespace Gnome::MenuItems;
     fileMenuTree.push_back(Open(bind(slot(gcdmaster, &GCDMaster::openProject), (ProjectChooser *)0)));
     fileMenuTree.push_back(Save(slot(this, &Project::saveProject)));
+    posFileSave = fileMenuTree.size() - 1;
     fileMenuTree.push_back(SaveAs(slot(this, &Project::saveAsProject)));
+    posFileSaveAs = fileMenuTree.size() - 1;
 
     fileMenuTree.push_back(Gnome::UI::Separator());
 
@@ -98,10 +110,11 @@ void Project::createMenus()
     fileMenuTree.push_back(Exit(bind(slot(gcdmaster, &GCDMaster::appClose), this)));
   }
 
+  guint posActionsRecord;
   {
     using namespace Gnome::UI;
     // Edit menu
-    audioEditMenuTree.push_back(Item(Icon(GNOME_STOCK_MENU_PROP),
+    editMenuTree.push_back(Item(Icon(GNOME_STOCK_MENU_PROP),
     				 N_("Project Info..."),
 			      slot(this, &Project::projectInfo),
 			      N_("Edit global project data")));
@@ -111,18 +124,14 @@ void Project::createMenus()
 								N_("_Record"),
 								slot(this, &Project::recordToc2CD),
 								N_("Record")));
+    posActionsRecord = actionsMenuTree.size() - 1;
+
     actionsMenuTree.push_back(Item(Icon(GNOME_STOCK_MENU_CDROM),
-								N_("_CD to CD copy"),
-								slot(gcdmaster, &GCDMaster::recordCD2CD),
-								N_("CD to CD copy")));
-    actionsMenuTree.push_back(Item(Icon(GNOME_STOCK_MENU_CDROM),
-								N_("_Dump CD to disk"),
-								slot(gcdmaster, &GCDMaster::recordCD2HD),
-								N_("Dump CD to disk")));
+								N_("Blank CD-RW"),
+								slot(gcdmaster, &GCDMaster::blankCDRW),
+								N_("Erase a CD-RW")));
 
 //    actionsMenuTree.push_back(Gnome::UI::Item(N_("Fixate CD"),
-//					    slot(this, &Project::nothing_cb)));
-//    actionsMenuTree.push_back(Gnome::UI::Item(N_("Blank CD-RW"),
 //					    slot(this, &Project::nothing_cb)));
 //    actionsMenuTree.push_back(Gnome::UI::Item(N_("Get Info"),
 //					    slot(this, &Project::nothing_cb)));
@@ -146,14 +155,26 @@ void Project::createMenus()
   {
     using namespace Gnome::Menus;
     menus.push_back(File(fileMenuTree));
-    menus.push_back(Gnome::Menus::Edit(audioEditMenuTree));
+    menus.push_back(Gnome::Menus::Edit(editMenuTree));
     menus.push_back(Gnome::UI::Menu(N_("_Actions"), actionsMenuTree));
     menus.push_back(Settings(settingsMenuTree));
 //    menus.push_back(Windows(windowsMenuTree));
     menus.push_back(Help(helpMenuTree));
   }
 
-  create_menus(menus);
+  Gnome::UI::Array<Gnome::UI::SubTree>& arrayInfo = create_menus(menus);
+  Gnome::UI::SubTree& subtreeFile = arrayInfo[0];
+  Gnome::UI::SubTree& subtreeEdit = arrayInfo[1];
+  Gnome::UI::SubTree& subtreeAction = arrayInfo[2];
+  Gnome::UI::Array<Gnome::UI::Info>& arrayInfoFile = subtreeFile.get_uitree();
+  Gnome::UI::Array<Gnome::UI::Info>& arrayInfoEdit = subtreeEdit.get_uitree();
+  Gnome::UI::Array<Gnome::UI::Info>& arrayInfoAction = subtreeAction.get_uitree();
+  
+  // Get widget of created menuitems
+  miSave_ = arrayInfoFile[posFileSave].get_widget();
+  miSaveAs_ = arrayInfoFile[posFileSaveAs].get_widget();
+  miEditTree_ = subtreeEdit.get_widget();
+  miRecord_ = arrayInfoAction[posActionsRecord].get_widget();
 }
 
 void Project::createToolbar()
@@ -176,15 +197,6 @@ void Project::createToolbar()
 								N_("Close"),
 								bind(slot(gcdmaster, &GCDMaster::closeProject), this),
 								N_("Close current project")));
-    toolbarTree.push_back(Item(Icon(GNOME_STOCK_PIXMAP_SAVE),
-								N_("Save"),
-								slot(this, &Project::saveProject),
-								N_("Save current project")));
-
-    toolbarTree.push_back(Item(Icon(GNOME_STOCK_PIXMAP_CDROM),
-								N_("Record"),
-								slot(this, &Project::recordToc2CD),
-								N_("Record to CD")));
   }
 
   fill(*toolbar, toolbarTree, *accel_group);
@@ -192,8 +204,18 @@ void Project::createToolbar()
   toolbar->show();
   toolbar->set_border_width(2);
 
-  add_docked(*toolbar, "main_toolbar", GNOME_DOCK_ITEM_BEH_NORMAL, GNOME_DOCK_TOP, 1, 1, 0);
+  Gnome::StockPixmap *pixmap =
+  	manage(new Gnome::StockPixmap(GNOME_STOCK_PIXMAP_SAVE));
+  toolbar->tools().push_back(Gtk::Toolbar_Helpers::ButtonElem(N_("Save"), *pixmap,
+  		slot(this, &Project::saveProject), N_("Save current project"), ""));
+  tiSave_ = toolbar->tools().back()->get_widget();
 
+  pixmap = manage(new Gnome::StockPixmap(GNOME_STOCK_PIXMAP_CDROM));
+  toolbar->tools().push_back(Gtk::Toolbar_Helpers::ButtonElem(N_("Record"), *pixmap,
+  		slot(this, &Project::recordToc2CD), N_("Record to CD"), ""));
+  tiRecord_ = toolbar->tools().back()->get_widget();
+
+  add_docked(*toolbar, "main_toolbar", GNOME_DOCK_ITEM_BEH_NORMAL, GNOME_DOCK_TOP, 1, 1, 0);
 }
 
 void Project::createStatusbar()
