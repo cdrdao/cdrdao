@@ -22,9 +22,9 @@ sort_info *sort_alloc(long size){
   ret->size=-1;
   ret->maxsize=size;
 
-  ret->head=calloc(65536,sizeof(sort_link **));
+  ret->head=calloc(65536,sizeof(sort_link *));
   ret->bucketusage=malloc(65536*sizeof(long));
-  ret->revindex=calloc(size,sizeof(sort_link *));
+  ret->revindex=calloc(size,sizeof(sort_link));
   ret->lastbucket=0;
 
   return(ret);
