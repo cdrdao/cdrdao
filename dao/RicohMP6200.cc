@@ -18,6 +18,12 @@
  */
 /*
  * $Log: RicohMP6200.cc,v $
+ * Revision 1.3  2000/12/17 10:51:22  andreasm
+ * Default verbose level is now 2. Adaopted message levels to have finer
+ * grained control about the amount of messages printed by cdrdao.
+ * Added CD-TEXT writing support to the GenericMMCraw driver.
+ * Fixed CD-TEXT cue sheet creating for the GenericMMC driver.
+ *
  * Revision 1.2  2000/04/23 16:29:50  andreasm
  * Updated to state of my private development environment.
  *
@@ -46,7 +52,7 @@
  * disk-at-once writing is done with the Philips CDD2x00 commands.
  */
 
-static char rcsid[] = "$Id: RicohMP6200.cc,v 1.2 2000/04/23 16:29:50 andreasm Exp $";
+static char rcsid[] = "$Id: RicohMP6200.cc,v 1.3 2000/12/17 10:51:22 andreasm Exp $";
 
 #include <config.h>
 
@@ -161,7 +167,7 @@ int RicohMP6200::startDao()
     return 1;
   }
 
-  message(1, "Writing lead-in and gap...");
+  message(2, "Writing lead-in and gap...");
 
   // write lead-in
   if (writeZeros(toc_->leadInMode(), lba, 0, leadInLen_) != 0) {
@@ -175,7 +181,7 @@ int RicohMP6200::startDao()
     return 1;
   }
 
-  message(1, "");
+  message(2, "");
 
   return 0;
 }
@@ -184,7 +190,7 @@ int RicohMP6200::finishDao()
 {
   long lba = toc_->length().lba();
 
-  message(1, "Writing lead-out...");
+  message(2, "Writing lead-out...");
 
   // write lead-out
   if (writeZeros(toc_->leadOutMode(), lba, lba + 150, leadOutLen_) != 0) {
@@ -192,13 +198,13 @@ int RicohMP6200::finishDao()
     return 1;
   }
 
-  message(1, "\nFlushing cache...");
+  message(2, "\nFlushing cache...");
   
   if (flushCache() != 0) {
     return 1;
   }
 
-  message(1, "");
+  message(2, "");
 
   delete[] zeroBuffer_, zeroBuffer_ = NULL;
 

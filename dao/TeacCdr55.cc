@@ -18,6 +18,12 @@
  */
 /*
  * $Log: TeacCdr55.cc,v $
+ * Revision 1.4  2000/12/17 10:51:23  andreasm
+ * Default verbose level is now 2. Adaopted message levels to have finer
+ * grained control about the amount of messages printed by cdrdao.
+ * Added CD-TEXT writing support to the GenericMMCraw driver.
+ * Fixed CD-TEXT cue sheet creating for the GenericMMC driver.
+ *
  * Revision 1.3  2000/10/08 16:39:41  andreasm
  * Remote progress message now always contain the track relative and total
  * progress and the total number of processed tracks.
@@ -42,7 +48,7 @@
  *
  */
 
-static char rcsid[] = "$Id: TeacCdr55.cc,v 1.3 2000/10/08 16:39:41 andreasm Exp $";
+static char rcsid[] = "$Id: TeacCdr55.cc,v 1.4 2000/12/17 10:51:23 andreasm Exp $";
 
 #include <config.h>
 
@@ -292,7 +298,7 @@ int TeacCdr55::setWriteDensity(TrackData::Mode mode)
   data[10] = blockLength >> 8;
   data[11] = blockLength;
 
-  message(2, "Changing write density to 0x%02x/0x%02x%02x.", data[4], data[10],
+  message(3, "Changing write density to 0x%02x/0x%02x%02x.", data[4], data[10],
 	  data[11]);
 
   if (sendCmd(cmd, 6, data, 12, NULL, 0, 1) != 0) {
@@ -322,7 +328,7 @@ int TeacCdr55::executeOPC(int judge)
   if (judge) {
     cmd[1] = 1; // judge current disc
 
-    message(1, "Judging disk...");
+    message(2, "Judging disk...");
     switch (sendCmd(cmd, 12, NULL, 0, NULL, 0, 0)) {
     case 0: // OK, disc can be written at selected speed
       break;
@@ -357,13 +363,13 @@ int TeacCdr55::executeOPC(int judge)
   }
 
   if (simulate()) {
-    message(1, "Skipping optimum power calibration in simulation mode.");
+    message(2, "Skipping optimum power calibration in simulation mode.");
     return 0;
   }
 
   cmd[1] = 0;
 
-  message(1, "Performing optimum power calibration...");
+  message(2, "Performing optimum power calibration...");
   if (sendCmd(cmd, 12, NULL, 0, NULL, 0, 1) != 0) {
     message(-2, "Optimum power calibration failed.");
     return 2;
@@ -409,7 +415,7 @@ int TeacCdr55::setSubcode(long start, long end, unsigned char ctl, int trackNr,
 
   long len = end - start;
 
-  message(3,
+  message(4,
 	  "Setting subcode: start: %6ld, end: %6ld, len: %6ld, CTL: %02x P: %d, T: %2d I: %2d",
 	  start, end, len, ctl, pflag, trackNr, indexNr);
 
@@ -698,10 +704,10 @@ int TeacCdr55::setToc()
   long dataLen = p - data;
 
 #if 1
-  message(3, "TOC data:");
+  message(4, "TOC data:");
   long i;
   for (i = 3; i < dataLen; i += 5) {
-    message(3, "%02x %02x %02x:%02x:%02x", 
+    message(4, "%02x %02x %02x:%02x:%02x", 
 	    data[i], data[i+1], data[i+2], data[i+3], data[i+4]);
   }
 #endif
@@ -831,7 +837,7 @@ int TeacCdr55::writeData(TrackData::Mode mode, long &lba, const char *buf,
 
   if (mode != actMode_) {
     actMode_ = mode;
-    message(2, "Changed write density at LBA %ld.", lba);
+    message(3, "Changed write density at LBA %ld.", lba);
 
     if (setWriteDensity(actMode_) != 0) {
       return 1;
@@ -854,7 +860,7 @@ int TeacCdr55::writeData(TrackData::Mode mode, long &lba, const char *buf,
 
     if (lba + writeLen >= writeEndLba_) {
       // last write command
-      message(3, "Last write command at LBA: %ld", lba);
+      message(4, "Last write command at LBA: %ld", lba);
       cmd[9] = 0;
     }
     else {
@@ -1018,14 +1024,14 @@ DiskInfo *TeacCdr55::diskInfo()
     diskInfo_.empty = 1;
     diskInfo_.valid.empty = 1;
     nwa = (data[0] << 24) | (data[1] << 16) | (data[2] << 8) | data[3];
-    message(3, "Next writable address: %ld", nwa);
+    message(4, "Next writable address: %ld", nwa);
     break;
   case 1: // SCSI command failed, no sense data -> cannot tell anything
     message(-1, "Get next writable address failed.");
     break;
   case 2: // SCSI command failed, sense data available
     // assume that disk is not writable
-    message(3, "Cannot get next writable address.");
+    message(4, "Cannot get next writable address.");
     diskInfo_.empty = 0;
     diskInfo_.valid.empty = 1;
     break;
@@ -1043,11 +1049,11 @@ DiskInfo *TeacCdr55::diskInfo()
   cmd[8] = 4;
 
   if (sendCmd(cmd, 10, NULL, 0, data, 4, 0) == 0) {
-    message(3, "First track %u, last track %u", data[2], data[3]);
+    message(4, "First track %u, last track %u", data[2], data[3]);
     diskInfo_.lastTrackNr = data[3];
   }
   else {
-    message(3, "READ TOC (format 0) failed.");
+    message(4, "READ TOC (format 0) failed.");
   }
 
   if (diskInfo_.lastTrackNr > 0) {
@@ -1067,11 +1073,11 @@ DiskInfo *TeacCdr55::diskInfo()
       diskInfo_.lastSessionLba = (data[8] << 24) | (data[9] << 16) |
                                  (data[10] << 8) | data[11];
 
-      message(3, "First session %u, last session %u, last session start %ld",
+      message(4, "First session %u, last session %u, last session start %ld",
 	      data[2], data[3], diskInfo_.lastSessionLba);
     }
     else {
-      message(3, "READ TOC (format 1) failed.");
+      message(4, "READ TOC (format 1) failed.");
     }
 
     if (diskInfo_.sessionCnt > 0) {
@@ -1102,14 +1108,14 @@ DiskInfo *TeacCdr55::diskInfo()
 	    diskInfo_.append = 1;
 	}
 	else {
-	  message(3, "Did not find BO pointer in session %d.",
+	  message(4, "Did not find BO pointer in session %d.",
 		  diskInfo_.sessionCnt);
 	}
 
 	delete[] toc;
       }
       else {
-	message(3, "getRawToc failed.");
+	message(4, "getRawToc failed.");
       }
     }
   }
@@ -1311,7 +1317,7 @@ CdRawToc *TeacCdr55::getRawToc(int sessionNr, int *len)
 
   dataLen = ((reqData[0] << 8) | reqData[1]) + 2;
 
-  message(3, "Raw toc data len: %d", dataLen);
+  message(4, "Raw toc data len: %d", dataLen);
 
   if (dataLen == 4)
     return NULL;
@@ -1525,7 +1531,7 @@ int TeacCdr55::readAudioRange(ReadDiskInfo *rinfo, int fd, long start,
       info[t].isrcCode[0] = 0;
       readIsrc(t + 1, info[t].isrcCode);
       if (info[t].isrcCode[0] != 0)
-	message(1, "Found ISRC code.");
+	message(2, "Found ISRC code.");
 
       totalProgress = (t + 1) * 1000;
       totalProgress /= rinfo->tracks;

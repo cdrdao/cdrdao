@@ -18,6 +18,12 @@
  */
 /*
  * $Log: PlextorReaderScan.cc,v $
+ * Revision 1.4  2000/12/17 10:51:22  andreasm
+ * Default verbose level is now 2. Adaopted message levels to have finer
+ * grained control about the amount of messages printed by cdrdao.
+ * Added CD-TEXT writing support to the GenericMMCraw driver.
+ * Fixed CD-TEXT cue sheet creating for the GenericMMC driver.
+ *
  * Revision 1.3  2000/10/08 16:39:40  andreasm
  * Remote progress message now always contain the track relative and total
  * progress and the total number of processed tracks.
@@ -48,7 +54,7 @@
  *
  */
 
-static char rcsid[] = "$Id: PlextorReaderScan.cc,v 1.3 2000/10/08 16:39:40 andreasm Exp $";
+static char rcsid[] = "$Id: PlextorReaderScan.cc,v 1.4 2000/12/17 10:51:22 andreasm Exp $";
 
 #include <config.h>
 
@@ -252,7 +258,7 @@ int PlextorReaderScan::readAudioRange(ReadDiskInfo *info, int fd, long start,
 	trackInfo[t].isrcCode[0] = 0;
 	readIsrc(t + 1, trackInfo[t].isrcCode);
 	if (trackInfo[t].isrcCode[0] != 0)
-	  message(1, "Found ISRC code.");
+	  message(2, "Found ISRC code.");
 
 	totalProgress = (t + 1) * 1000;
 	totalProgress /= info->tracks;

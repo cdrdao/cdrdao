@@ -1,5 +1,5 @@
 # Driver table for cdrdao-1.1.4
-# Generated Mon Oct 23 21:59:56 2000 by mueller
+# Generated Mon Dec  4 20:45:02 2000 by mueller
 
 # Drivers for read operations
 R|ASUS|CD-S340|generic-mmc
@@ -71,17 +71,18 @@ W|PANASONIC|CD-R   CW-7582|generic-mmc
 W|PHILIPS|PCA460RW|generic-mmc
 W|PLEXTOR|CD-R   PX-R412|generic-mmc|OPT_MMC_USE_PQ|OPT_MMC_READ_ISRC
 W|PLEXTOR|CD-R   PX-R820|generic-mmc
+W|PLEXTOR|CD-R   PX-W1210|generic-mmc|OPT_MMC_CD_TEXT
 W|PLEXTOR|CD-R   PX-W124|generic-mmc
 W|PLEXTOR|CD-R   PX-W4220|generic-mmc|OPT_MMC_CD_TEXT
 W|PLEXTOR|CD-R   PX-W8220|generic-mmc|OPT_MMC_CD_TEXT
 W|PLEXTOR|CD-R   PX-W8432|generic-mmc|OPT_MMC_CD_TEXT
-W|PLEXTOR|PX-W1210A|generic-mmc|OPT_MMC_CD_TEXT
 W|RICOH|CD-R/RW MP7060|generic-mmc|OPT_MMC_CD_TEXT
 W|RICOH|CD-R/RW MP7080|generic-mmc|OPT_MMC_CD_TEXT
 W|RICOH|DVD/CDRW MP9060|generic-mmc|OPT_MMC_CD_TEXT
 W|SAF|CD-R 8020|generic-mmc
 W|SAF|CD-RW6424|generic-mmc
 W|SAMSUNG|CD-R/RW SW-206|generic-mmc
+W|SAMSUNG|CD-R/RW SW-408B|generic-mmc|OPT_MMC_CD_TEXT
 W|SONY|CRX100|generic-mmc|OPT_MMC_CD_TEXT
 W|SONY|CRX120|generic-mmc|OPT_MMC_CD_TEXT
 W|SONY|CRX140|generic-mmc|OPT_MMC_CD_TEXT
@@ -112,6 +113,7 @@ W|MEMOREX|CR-622|generic-mmc-raw
 W|MEMOREX|CRW-1662|generic-mmc-raw
 W|MITSUMI|2801|generic-mmc-raw
 W|MITSUMI|CR-4802|generic-mmc-raw
+W|MITSUMI|CR-4804|generic-mmc-raw
 W|PHILIPS|CDD3600|generic-mmc-raw
 W|PHILIPS|CDD3610|generic-mmc-raw
 W|PHILIPS|PCRW404|generic-mmc-raw

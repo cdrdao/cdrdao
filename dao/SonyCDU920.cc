@@ -19,6 +19,12 @@
 
 /*
  * $Log: SonyCDU920.cc,v $
+ * Revision 1.3  2000/12/17 10:51:23  andreasm
+ * Default verbose level is now 2. Adaopted message levels to have finer
+ * grained control about the amount of messages printed by cdrdao.
+ * Added CD-TEXT writing support to the GenericMMCraw driver.
+ * Fixed CD-TEXT cue sheet creating for the GenericMMC driver.
+ *
  * Revision 1.2  2000/10/08 16:39:40  andreasm
  * Remote progress message now always contain the track relative and total
  * progress and the total number of processed tracks.
@@ -34,7 +40,7 @@
  *
  */
 
-static char rcsid[] = "$Id: SonyCDU920.cc,v 1.2 2000/10/08 16:39:40 andreasm Exp $";
+static char rcsid[] = "$Id: SonyCDU920.cc,v 1.3 2000/12/17 10:51:23 andreasm Exp $";
 
 #include <config.h>
 
@@ -187,7 +193,7 @@ int SonyCDU920::getSessionInfo()
   else
     leadInLen_ = 0;
 
-  message(3, "Lead-in start: %s length: %ld", leadInStart_.str(),
+  message(4, "Lead-in start: %s length: %ld", leadInStart_.str(),
 	  leadInLen_);
 
   return 0;
@@ -400,11 +406,11 @@ unsigned char *SonyCDU920::createCueSheet(unsigned char leadInDataForm,
   cueSheet[n*8+6] = SubChannel::bcd(lostart.sec());
   cueSheet[n*8+7] = SubChannel::bcd(lostart.frac());
 
-  message(3, "\nCue Sheet:");
-  message(3, "CTL/  TNO  INDEX  DATA  SCMS  MIN  SEC  FRAME");
-  message(3, "ADR               FORM        BCD  BCD  BCD");
+  message(4, "\nCue Sheet:");
+  message(4, "CTL/  TNO  INDEX  DATA  SCMS  MIN  SEC  FRAME");
+  message(4, "ADR               FORM        BCD  BCD  BCD");
   for (n = 0; n < len; n++) {
-    message(3, "%02x    %02x    %02x     %02x    %02x   %02x   %02x   %02x",
+    message(4, "%02x    %02x    %02x     %02x    %02x   %02x   %02x   %02x",
 	   cueSheet[n*8],
 	   cueSheet[n*8+1], cueSheet[n*8+2], cueSheet[n*8+3], cueSheet[n*8+4],
 	   cueSheet[n*8+5], cueSheet[n*8+6], cueSheet[n*8+7]);
@@ -817,7 +823,7 @@ CdRawToc *SonyCDU920::getRawToc(int sessionNr, int *len)
 
   dataLen = ((reqData[0] << 8) | reqData[1]) + 2;
   
-  message(3, "Raw toc data len: %d", dataLen);
+  message(4, "Raw toc data len: %d", dataLen);
 
   data = new (unsigned char)[dataLen];
   
@@ -943,7 +949,7 @@ long SonyCDU920::readTrackData(TrackData::Mode mode, long lba, long len,
 	   (actMode == TrackData::MODE2 ||
 	    actMode == TrackData::MODE2_FORM1 ||
 	    actMode == TrackData::MODE2_FORM2)))) {
-      message(3, "Stopped because sector with not matching mode %s found.",
+      message(4, "Stopped because sector with not matching mode %s found.",
 	      TrackData::mode2String(actMode));
       return i;
     }

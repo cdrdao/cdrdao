@@ -18,6 +18,12 @@
  */
 /*
  * $Log: ScsiIf-lib.cc,v $
+ * Revision 1.3  2000/12/17 10:51:23  andreasm
+ * Default verbose level is now 2. Adaopted message levels to have finer
+ * grained control about the amount of messages printed by cdrdao.
+ * Added CD-TEXT writing support to the GenericMMCraw driver.
+ * Fixed CD-TEXT cue sheet creating for the GenericMMC driver.
+ *
  * Revision 1.2  2000/10/29 08:11:11  andreasm
  * Updated CD-R vendor table.
  * Loading defaults now from "/etc/defaults/cdrdao" and then from "$HOME/.cdrdao".
@@ -35,7 +41,7 @@
  *
  */
 
-static char rcsid[] = "$Id: ScsiIf-lib.cc,v 1.2 2000/10/29 08:11:11 andreasm Exp $";
+static char rcsid[] = "$Id: ScsiIf-lib.cc,v 1.3 2000/12/17 10:51:23 andreasm Exp $";
 
 #include <config.h>
 
@@ -166,7 +172,7 @@ int ScsiIf::init()
 
   maxDataLen_ = scg_bufsize(impl_->scgp_, MAX_DATALEN_LIMIT);
 
-  message(4, "SCSI: max DMA: %ld", maxDataLen_);
+  message(5, "SCSI: max DMA: %ld", maxDataLen_);
 
   if (maxDataLen_ > MAX_DATALEN_LIMIT)
     maxDataLen_ = MAX_DATALEN_LIMIT;
@@ -257,7 +263,7 @@ int ScsiIf::sendCmd(const unsigned char *cmd, int cmdLen,
   scmd->sense_len = CCS_SENSE_LEN;
   //scmd->target = impl_->scgp_->target;
 	
-  impl_->scgp_->cmdname = "";
+  impl_->scgp_->cmdname = " ";
   impl_->scgp_->verbose = 0;
   impl_->scgp_->silent = showMessage ? 0 : 1;
   
@@ -428,21 +434,21 @@ static void printVersionInfo(SCSI *scgp)
 
     const char *vers = scg_version(0, SCG_VERSION);
     const char *auth = scg_version(0, SCG_AUTHOR);
-    message(1, "Using libscg version '%s-%s'", auth, vers);
+    message(2, "Using libscg version '%s-%s'", auth, vers);
   
     vers = scg_version(scgp, SCG_VERSION);
     auth = scg_version(scgp, SCG_AUTHOR);
   
-    message(2, "Using libscg transport code version '%s-%s'", auth, vers);
+    message(3, "Using libscg transport code version '%s-%s'", auth, vers);
 
     vers = scg_version(scgp, SCG_RVERSION);
     auth = scg_version(scgp, SCG_RAUTHOR);
 
     if (vers != NULL && auth != NULL) {
-      message(2, "Using remote transport code version '%s-%s'", auth, vers);
+      message(3, "Using remote transport code version '%s-%s'", auth, vers);
     }
 
-    message(1, "");
+    message(2, "");
   }
 }
 
@@ -560,7 +566,7 @@ const char *ScsiIfImpl::openScsiDevAsSg(const char *devname)
 	   ((mm_idlun.mux4 >> 8) & 0xff)) &&
 	  (((m_idlun.mux4 >> 16) & 0xff) == 
 	   ((mm_idlun.mux4 >> 16) & 0xff))) {
-	message(3, "Mapping %s to sg device: %s", devname, fname);
+	message(4, "Mapping %s to sg device: %s", devname, fname);
 	break;
       }
       else {

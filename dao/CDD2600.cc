@@ -18,6 +18,12 @@
  */
 /*
  * $Log: CDD2600.cc,v $
+ * Revision 1.5  2000/12/17 10:51:22  andreasm
+ * Default verbose level is now 2. Adaopted message levels to have finer
+ * grained control about the amount of messages printed by cdrdao.
+ * Added CD-TEXT writing support to the GenericMMCraw driver.
+ * Fixed CD-TEXT cue sheet creating for the GenericMMC driver.
+ *
  * Revision 1.4  2000/11/12 18:47:59  andreasm
  * Updated 'msinfo' command.
  *
@@ -73,7 +79,7 @@
  *
  */
 
-static char rcsid[] = "$Id: CDD2600.cc,v 1.4 2000/11/12 18:47:59 andreasm Exp $";
+static char rcsid[] = "$Id: CDD2600.cc,v 1.5 2000/12/17 10:51:22 andreasm Exp $";
 
 #include <config.h>
 
@@ -233,7 +239,7 @@ int CDD2600::startDao()
     return 1;
   }
 
-  message(1, "Writing lead-in and gap...");
+  message(2, "Writing lead-in and gap...");
 
   lba = diskInfo_.thisSessionLba - 150 - leadInLength_;
 
@@ -243,7 +249,7 @@ int CDD2600::startDao()
     return 1;
   }
 
-  message(0, "Lba after lead-in: %ld", lba);
+  message(2, "Lba after lead-in: %ld", lba);
 
   // write gap (2 seconds)
   if (writeZeros(toc_->leadInMode(), lba, lba + 150, 150) != 0) {
@@ -251,7 +257,7 @@ int CDD2600::startDao()
     return 1;
   }
 
-  message(1, "");
+  message(2, "");
 
   return 0;
 }
@@ -260,7 +266,7 @@ int CDD2600::finishDao()
 {
   long lba = diskInfo_.thisSessionLba + toc_->length().lba();
 
-  message(1, "Writing lead-out...");
+  message(2, "Writing lead-out...");
 
   // write lead-out
   if (writeZeros(toc_->leadOutMode(), lba, lba + 150, leadOutLength_) != 0) {
@@ -268,13 +274,13 @@ int CDD2600::finishDao()
     return 1;
   }
 
-  message(1, "\nFlushing cache...");
+  message(2, "\nFlushing cache...");
   
   if (flushCache() != 0) {
     return 1;
   }
 
-  message(1, "");
+  message(2, "");
 
   blockLength_ = MODE1_BLOCK_LEN;
   modeSelectBlockSize(blockLength_, 1);
@@ -583,11 +589,11 @@ DiskInfo *CDD2600::diskInfo()
   cmd[8] = 4;
 
   if (sendCmd(cmd, 10, NULL, 0, data, 4, 0) == 0) {
-    message(3, "First track %u, last track %u", data[2], data[3]);
+    message(5, "First track %u, last track %u", data[2], data[3]);
     diskInfo_.lastTrackNr = data[3];
   }
   else {
-    message(3, "READ TOC (format 0) failed.");
+    message(5, "READ TOC (format 0) failed.");
   }
 
   if (diskInfo_.lastTrackNr > 0) {
@@ -598,7 +604,7 @@ DiskInfo *CDD2600::diskInfo()
     diskInfo_.diskTocType = 0xff; // undefined
 
     if (diskInfo_.lastTrackNr < 99 && nextWritableAddress(&nwa, 0) == 0) {
-      message(0, "NWA: %ld", nwa);
+      message(5, "NWA: %ld", nwa);
       diskInfo_.thisSessionLba = nwa;
       diskInfo_.append = 1;
     }
@@ -620,11 +626,11 @@ DiskInfo *CDD2600::diskInfo()
       diskInfo_.lastSessionLba = (data[8] << 24) | (data[9] << 16) |
                                  (data[10] << 8) | data[11];
 
-      message(3, "First session %u, last session %u, last session start %ld",
+      message(5, "First session %u, last session %u, last session start %ld",
 	      data[2], data[3], diskInfo_.lastSessionLba);
     }
     else {
-      message(3, "READ TOC (format 1) failed.");
+      message(5, "READ TOC (format 1) failed.");
     }
 
     if (diskInfo_.sessionCnt > 0) {
@@ -668,7 +674,7 @@ DiskInfo *CDD2600::diskInfo()
 	    diskInfo_.append = 1;
 	}
 	else {
-	  message(3, "Did not find BO pointer in session %d.",
+	  message(4, "Did not find BO pointer in session %d.",
 		  diskInfo_.sessionCnt);
 	  
 	}
@@ -677,7 +683,7 @@ DiskInfo *CDD2600::diskInfo()
 	delete[] toc;
       }
       else {
-	message(3, "getRawToc failed.");
+	message(5, "getRawToc failed.");
       }
     }
   }
@@ -719,7 +725,7 @@ CdRawToc *CDD2600::getRawToc(int sessionNr, int *len)
 
   dataLen = ((reqData[0] << 8) | reqData[1]) + 2;
 
-  message(3, "Raw toc data len: %d", dataLen);
+  message(5, "Raw toc data len: %d", dataLen);
 
   data = new (unsigned char)[dataLen];
   
@@ -950,12 +956,12 @@ int CDD2600::readAudioRange(ReadDiskInfo *rinfo, int fd, long start, long end,
       sendReadCdProgressMsg(RCD_ANALYZING, rinfo->tracks, t + 1, 0,
 			    totalProgress);
 
-      message(1, "Track %d...", t + 1);
+      message(2, "Track %d...", t + 1);
       info[t].isrcCode[0] = 0;
       readIsrc(t + 1, info[t].isrcCode);
 
       if (info[t].isrcCode[0] != 0)
-	message(1, "Found ISRC code.");
+	message(2, "Found ISRC code.");
 
       totalProgress = (t + 1) * 1000;
       totalProgress /= rinfo->tracks;

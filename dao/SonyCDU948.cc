@@ -19,8 +19,14 @@
 
 /*
  * $Log: SonyCDU948.cc,v $
- * Revision 1.1  2000/02/05 01:37:27  llanero
- * Initial revision
+ * Revision 1.2  2000/12/17 10:51:23  andreasm
+ * Default verbose level is now 2. Adaopted message levels to have finer
+ * grained control about the amount of messages printed by cdrdao.
+ * Added CD-TEXT writing support to the GenericMMCraw driver.
+ * Fixed CD-TEXT cue sheet creating for the GenericMMC driver.
+ *
+ * Revision 1.1.1.1  2000/02/05 01:37:27  llanero
+ * Uploaded cdrdao 1.1.3 with pre10 patch applied.
  *
  * Revision 1.3  1999/05/24 17:32:59  mueller
  * Added CD-TEXT writing.
@@ -33,7 +39,7 @@
  *
  */
 
-static char rcsid[] = "$Id: SonyCDU948.cc,v 1.1 2000/02/05 01:37:27 llanero Exp $";
+static char rcsid[] = "$Id: SonyCDU948.cc,v 1.2 2000/12/17 10:51:23 andreasm Exp $";
 
 #include <config.h>
 
@@ -240,7 +246,7 @@ int SonyCDU948::writeCdTextLeadIn()
   assert(cdTextSubChannels != NULL);
   assert(cdTextSubChannelCount > 0);
 
-  message(1, "Writing CD-TEXT lead-in...");
+  message(2, "Writing CD-TEXT lead-in...");
 
   memset(cmd, 0, 10);
   cmd[0] = 0xe1; // WRITE CONTINUE

@@ -18,8 +18,14 @@
  */
 /*
  * $Log: GenericMMCraw.h,v $
- * Revision 1.1  2000/02/05 01:35:04  llanero
- * Initial revision
+ * Revision 1.2  2000/12/17 10:51:22  andreasm
+ * Default verbose level is now 2. Adaopted message levels to have finer
+ * grained control about the amount of messages printed by cdrdao.
+ * Added CD-TEXT writing support to the GenericMMCraw driver.
+ * Fixed CD-TEXT cue sheet creating for the GenericMMC driver.
+ *
+ * Revision 1.1.1.1  2000/02/05 01:35:04  llanero
+ * Uploaded cdrdao 1.1.3 with pre10 patch applied.
  *
  * Revision 1.7  1999/04/05 11:04:10  mueller
  * Added driver option flags.
@@ -52,6 +58,7 @@
 
 #include "GenericMMC.h"
 #include "PQChannelEncoder.h"
+#include "PWSubChannel96.h"
 
 class GenericMMCraw : public GenericMMC, private PQChannelEncoder {
 public:
@@ -78,7 +85,14 @@ private:
 
   SubChannel *subChannel_; // sub channel template
 
+  long cdTextStartLba_;
+  long cdTextEndLba_;
+  const PWSubChannel96 **cdTextSubChannels_;
+  long cdTextSubChannelCount_;
+  long cdTextSubChannelAct_;
+
   long nextWritableAddress();
+  int getMultiSessionInfo(int sessionNr, int multi, SessionInfo *info);
 };
 
 #endif

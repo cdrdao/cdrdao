@@ -18,8 +18,14 @@
  */
 /*
  * $Log: ScsiIf-linux.cc,v $
- * Revision 1.1  2000/02/05 01:37:07  llanero
- * Initial revision
+ * Revision 1.2  2000/12/17 10:51:23  andreasm
+ * Default verbose level is now 2. Adaopted message levels to have finer
+ * grained control about the amount of messages printed by cdrdao.
+ * Added CD-TEXT writing support to the GenericMMCraw driver.
+ * Fixed CD-TEXT cue sheet creating for the GenericMMC driver.
+ *
+ * Revision 1.1.1.1  2000/02/05 01:37:07  llanero
+ * Uploaded cdrdao 1.1.3 with pre10 patch applied.
  *
  * Revision 1.8  1999/04/02 16:44:30  mueller
  * Removed 'revisionDate' because it is not available in general.
@@ -41,7 +47,7 @@
  *
  */
 
-static char rcsid[] = "$Id: ScsiIf-linux.cc,v 1.1 2000/02/05 01:37:07 llanero Exp $";
+static char rcsid[] = "$Id: ScsiIf-linux.cc,v 1.2 2000/12/17 10:51:23 andreasm Exp $";
 
 #include <config.h>
 
@@ -444,15 +450,15 @@ void ScsiIfImpl::determineDriverVersion()
   /* Run time selection code follows */
   if (ioctl(fd_, SG_GET_RESERVED_SIZE, &reserved_size) < 0) {
     driverVersion_ = SG_RT_ORIG;
-    message(1, "Detected old SG driver version.");
+    message(2, "Detected old SG driver version.");
   }
   else if (ioctl(fd_, SG_GET_VERSION_NUM, &sg_version) < 0) {
     driverVersion_ = SG_RT_NEW32;
-    message(1, "Detected SG driver version: 2.1.32");
+    message(2, "Detected SG driver version: 2.1.32");
   }
   else {
     driverVersion_ = SG_RT_NEW34;
-    message(1, "Detected SG driver version: %d.%d.%d", sg_version / 10000,
+    message(2, "Detected SG driver version: %d.%d.%d", sg_version / 10000,
 	    (sg_version / 100) % 100, sg_version % 100);
   }
 }
@@ -556,7 +562,7 @@ int ScsiIfImpl::openScsiDevAsSg(const char *devname)
 	   ((mm_idlun.mux4 >> 8) & 0xff)) &&
 	  (((m_idlun.mux4 >> 16) & 0xff) == 
 	   ((mm_idlun.mux4 >> 16) & 0xff))) {
-	message(3, "Mapping %s to sg device: %s", devname, fname);
+	message(4, "Mapping %s to sg device: %s", devname, fname);
 	break;
       }
       else {
@@ -603,7 +609,7 @@ int ScsiIfImpl::adjustReservedBuffer(int requestedSize)
     break;
   }
     
-  message(3, "SG: Maximum transfer length: %ld", maxTransferLength);
+  message(4, "SG: Maximum transfer length: %ld", maxTransferLength);
 
   return maxTransferLength;
 }

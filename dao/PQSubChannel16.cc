@@ -18,8 +18,14 @@
  */
 /*
  * $Log: PQSubChannel16.cc,v $
- * Revision 1.1  2000/02/05 01:36:37  llanero
- * Initial revision
+ * Revision 1.2  2000/12/17 10:51:22  andreasm
+ * Default verbose level is now 2. Adaopted message levels to have finer
+ * grained control about the amount of messages printed by cdrdao.
+ * Added CD-TEXT writing support to the GenericMMCraw driver.
+ * Fixed CD-TEXT cue sheet creating for the GenericMMC driver.
+ *
+ * Revision 1.1.1.1  2000/02/05 01:36:37  llanero
+ * Uploaded cdrdao 1.1.3 with pre10 patch applied.
  *
  * Revision 1.5  1999/04/05 11:04:48  mueller
  * Added decoding of media catalog number and ISRC code.
@@ -78,6 +84,10 @@ SubChannel *PQSubChannel16::makeSubChannel(Type t)
     chan->data_[0] = 0x03;
     break;
 
+  case QMODE5TOC:
+    chan->data_[0] = 0x05;
+    break;
+
   case QMODE_ILLEGAL:
     chan->data_[0] = 0x00;
     break;
@@ -101,6 +111,10 @@ void PQSubChannel16::init(unsigned char *buf)
     
   case 3:
     type_ = QMODE3;
+    break;
+
+  case 5:
+    type_ = QMODE5TOC;
     break;
 
   default:
@@ -178,6 +192,10 @@ void PQSubChannel16::type(unsigned char type)
     type_ = QMODE3;
     break;
 
+  case 5:
+    type_ = QMODE5TOC;
+    break;
+
   default:
     type_ = QMODE_ILLEGAL;
     break;
@@ -235,44 +253,50 @@ int PQSubChannel16::indexNr() const
 
 void PQSubChannel16::point(int p)
 {
-  assert(type_ == QMODE1TOC);
+  assert(type_ == QMODE1TOC || type_ == QMODE5TOC);
   data_[2] = bcd(p);
 }
 
 void PQSubChannel16::min(int m)
 {
-  assert(type_ == QMODE1TOC || type_ == QMODE1DATA);
+  assert(type_ == QMODE1TOC || type_ == QMODE1DATA || type_ == QMODE5TOC);
   data_[3] = bcd(m);
 }
 
 int PQSubChannel16::min() const
 {
-  assert(type_ == QMODE1TOC || type_ == QMODE1DATA);
+  assert(type_ == QMODE1TOC || type_ == QMODE1DATA || type_ == QMODE5TOC);
   return bcd2int(data_[3]);
 }
 
 void PQSubChannel16::sec(int s)
 {
-  assert(type_ == QMODE1TOC || type_ == QMODE1DATA);
+  assert(type_ == QMODE1TOC || type_ == QMODE1DATA || type_ == QMODE5TOC);
   data_[4] = bcd(s);
 }
 
 int PQSubChannel16::sec() const
 {
-  assert(type_ == QMODE1TOC || type_ == QMODE1DATA);
+  assert(type_ == QMODE1TOC || type_ == QMODE1DATA || type_ == QMODE5TOC);
   return bcd2int(data_[4]);
 }
 
 void PQSubChannel16::frame(int f)
 {
-  assert(type_ == QMODE1TOC || type_ == QMODE1DATA);
+  assert(type_ == QMODE1TOC || type_ == QMODE1DATA || type_ == QMODE5TOC);
   data_[5] = bcd(f);
 }
 
 int PQSubChannel16::frame() const
 {
-  assert(type_ == QMODE1TOC || type_ == QMODE1DATA);
+  assert(type_ == QMODE1TOC || type_ == QMODE1DATA || type_ == QMODE5TOC);
   return bcd2int(data_[5]);
+}
+
+void PQSubChannel16::zero(int z)
+{
+  assert(type_ == QMODE5TOC);
+  data_[6] = bcd(z);
 }
 
 void PQSubChannel16::amin(int am)
@@ -313,19 +337,19 @@ int PQSubChannel16::aframe() const
 
 void PQSubChannel16::pmin(int pm)
 {
-  assert(type_ == QMODE1TOC);
+  assert(type_ == QMODE1TOC || type_ == QMODE5TOC);
   data_[7] = bcd(pm);
 }
 
 void PQSubChannel16::psec(int ps)
 {
-  assert(type_ == QMODE1TOC);
+  assert(type_ == QMODE1TOC || type_ == QMODE5TOC);
   data_[8] = bcd(ps);
 }
 
 void PQSubChannel16::pframe(int pf)
 {
-  assert(type_ == QMODE1TOC);
+  assert(type_ == QMODE1TOC || type_ == QMODE5TOC);
   data_[9] = bcd(pf);
 }
 
@@ -388,6 +412,7 @@ void PQSubChannel16::print() const
   switch (type_) {
   case QMODE1TOC:
   case QMODE1DATA:
+  case QMODE5TOC:
     message(0, "Q: (%02x) %02x,%02x %02x:%02x:%02x %02x %02x:%02x:%02x ", 
 	   data_[0], data_[1], data_[2], data_[3], data_[4], data_[5], 
 	   data_[6], data_[7], data_[8], data_[9]);

@@ -18,8 +18,14 @@
  */
 /*
  * $Log: SubChannel.h,v $
- * Revision 1.1  2000/02/05 01:35:13  llanero
- * Initial revision
+ * Revision 1.2  2000/12/17 10:51:23  andreasm
+ * Default verbose level is now 2. Adaopted message levels to have finer
+ * grained control about the amount of messages printed by cdrdao.
+ * Added CD-TEXT writing support to the GenericMMCraw driver.
+ * Fixed CD-TEXT cue sheet creating for the GenericMMC driver.
+ *
+ * Revision 1.1.1.1  2000/02/05 01:35:13  llanero
+ * Uploaded cdrdao 1.1.3 with pre10 patch applied.
  *
  * Revision 1.5  1999/04/05 11:04:48  mueller
  * Added decoding of media catalog number and ISRC code.
@@ -48,6 +54,7 @@ public:
 	      QMODE1DATA, // current position in data
 	      QMODE2,     // Catalog number
 	      QMODE3,     // ISRC code
+	      QMODE5TOC,  // toc data 
 	      QMODE_ILLEGAL // indicates illegal adr field
   };
 
@@ -80,15 +87,15 @@ public:
   virtual void indexNr(int) = 0;   // sets index number (QMODE1DATA)
   virtual int indexNr() const = 0; // returns index number (QMODE1DATA)
 
-  virtual void point(int) = 0;   // sets point filed (QMODE1TOC)
+  virtual void point(int) = 0;   // sets point filed (QMODE1TOC, QMODE5TOC)
 
-  virtual void min(int) = 0;     // track relative time (QMODE1TOC, QMODE1DATA)
+  virtual void min(int) = 0;     // track relative time (QMODE1TOC, QMODE1DATA, QMODE5TOC)
   virtual int min() const = 0;
 
-  virtual void sec(int) = 0;     // track relative time (QMODE1TOC, QMODE1DATA)
+  virtual void sec(int) = 0;     // track relative time (QMODE1TOC, QMODE1DATA, QMODE5TOC)
   virtual int sec() const = 0;
 
-  virtual void frame(int) = 0;   // track relative time (QMODE1TOC, QMODE1DATA)
+  virtual void frame(int) = 0;   // track relative time (QMODE1TOC, QMODE1DATA, QMODE5TOC)
   virtual int frame() const = 0;
 
   virtual void amin(int) = 0;    // absolute time (QMODE1DATA)
@@ -100,9 +107,11 @@ public:
   virtual void aframe(int) = 0;  // absolute time (QMODE1DATA, QMODE2, QMODE3)
   virtual int aframe() const = 0;
 
-  virtual void pmin(int) = 0;    // track start time (QMODE1TOC)
-  virtual void psec(int) = 0;    // track start time (QMODE1TOC)
-  virtual void pframe(int) = 0;  // track start time (QMODE1TOC)
+  virtual void pmin(int) = 0;    // track start time (QMODE1TOC, QMODE5TOC)
+  virtual void psec(int) = 0;    // track start time (QMODE1TOC, QMODE5TOC)
+  virtual void pframe(int) = 0;  // track start time (QMODE1TOC, QMODE5TOC)
+
+  virtual void zero(int) = 0; // zero field (QMODE5TOC)
 
   // set catalog number (QMODE2)
   virtual void catalog(char, char, char, char, char, char, char, char, char,

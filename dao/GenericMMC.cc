@@ -19,6 +19,12 @@
 
 /*
  * $Log: GenericMMC.cc,v $
+ * Revision 1.11  2000/12/17 10:51:22  andreasm
+ * Default verbose level is now 2. Adaopted message levels to have finer
+ * grained control about the amount of messages printed by cdrdao.
+ * Added CD-TEXT writing support to the GenericMMCraw driver.
+ * Fixed CD-TEXT cue sheet creating for the GenericMMC driver.
+ *
  * Revision 1.10  2000/10/29 08:11:11  andreasm
  * Updated CD-R vendor table.
  * Loading defaults now from "/etc/defaults/cdrdao" and then from "$HOME/.cdrdao".
@@ -110,7 +116,7 @@
  *
  */
 
-static char rcsid[] = "$Id: GenericMMC.cc,v 1.10 2000/10/29 08:11:11 andreasm Exp $";
+static char rcsid[] = "$Id: GenericMMC.cc,v 1.11 2000/12/17 10:51:22 andreasm Exp $";
 
 #include <config.h>
 
@@ -246,7 +252,8 @@ int GenericMMC::blankDisk()
   memset(cmd, 0, 12);
 
   cmd[0] = 0xa1; // BLANK
-  cmd[1] = 1 << 4; // erase complete disk, immediate return
+  cmd[1] = 0x0;
+  cmd[1] |= 1 << 4; // erase complete disk, immediate return
 
   if (sendCmd(cmd, 12, NULL, 0, NULL, 0, 1) != 0) {
     message(-2, "Cannot erase CD-RW.");
@@ -331,9 +338,9 @@ int GenericMMC::getSessionInfo()
   }
 
 
-  message(3, "Lead-in start: %s length: %ld", leadInStart_.str(),
+  message(4, "Lead-in start: %s length: %ld", leadInStart_.str(),
 	  leadInLen_);
-  message(3, "Lead-out length: %ld", leadOutLen_);
+  message(4, "Lead-out length: %ld", leadOutLen_);
 
   return 0;
 }
@@ -369,7 +376,7 @@ int GenericMMC::performPowerCalibration()
   cmd[0] = 0x54; // SEND OPC INFORMATION
   cmd[1] = 1;
 
-  message(1, "Executing power calibration...");
+  message(2, "Executing power calibration...");
 
   if ((ret = sendCmd(cmd, 10, NULL, 0, NULL, 0)) != 0) {
     if (ret == 2) {
@@ -380,7 +387,7 @@ int GenericMMC::performPowerCalibration()
 
       if(senseLen >= 14 && (sense[2] & 0x0f) == 0x5 && sense[7] >= 6 &&
 	   sense[12] == 0x20 && sense[13] == 0x0) {
-	message(1, "Power calibration not supported.");
+	message(2, "Power calibration not supported.");
 	return 0;
       }
       else {
@@ -394,7 +401,7 @@ int GenericMMC::performPowerCalibration()
     return 1;
   }
   
-  message(1, "Power calibration successful.");
+  message(2, "Power calibration successful.");
 
   return 0;
 }
@@ -427,10 +434,10 @@ int GenericMMC::setWriteParameters()
     // This drive has BURN-Proof function.
     // Enable it unless explicitly disabled.
     if (options_ & OPT_MMC_NO_BURNPROOF) {
-      message(1, "Turning BURN-Proof off");
+      message(2, "Turning BURN-Proof off");
       mp[2] &= ~0x40;
     } else {
-      message(1, "Turning BURN-Proof on");
+      message(2, "Turning BURN-Proof on");
       mp[2] |= 0x40;
     }
   }
@@ -443,10 +450,19 @@ int GenericMMC::setWriteParameters()
     mp[3] |= 0x01 << 6; // use B0=FF:FF:FF when closing last session of a
                         // multi session CD-R
 
-  message(3, "Multi session mode: %d", mp[3] >> 6);
+  message(4, "Multi session mode: %d", mp[3] >> 6);
 
   mp[4] &= 0xf0; // Data Block Type: raw data, block size: 2352 (I think not
                  // used for session at once writing)
+
+  if (cdTextEncoder_ != NULL) {
+    mp[4] |= 3; /* Data Block Type: raw data with raw P-W sub-channel data,
+		   block size 2448, required for CD-TEXT lead-in writing
+		   according to the SCSI/MMC-3 manual
+		*/
+  }
+
+  message(4, "Data block type: %u",  mp[4] & 0x0f);
 
   mp[8] = sessionFormat();
 
@@ -461,7 +477,7 @@ int GenericMMC::setWriteParameters()
     }
   }
 
-  message(3, "Toc type: 0x%x", mp[8]);
+  message(4, "Toc type: 0x%x", mp[8]);
 
   if (setModePage(mp, mpHeader, NULL, 1) != 0) {
     message(-2, "Cannot set write parameters mode page.");
@@ -495,20 +511,20 @@ int GenericMMC::getNWA(long *nwa)
   }
 
 #if 0
-  message(2,"Track Information Block");
-  for (int i=0;i<infoblocklen;i++) message(2,"byte %02x : %02x",i,info[i]);
+  message(3,"Track Information Block");
+  for (int i=0;i<infoblocklen;i++) message(3,"byte %02x : %02x",i,info[i]);
 #endif
 
   if ((info[6] & 0x40) && (info[7] & 0x01) && !(info[6] & 0xb0))
   {
-      message(3,"Track is Blank, Next Writable Address is valid");
+      message(4,"Track is Blank, Next Writable Address is valid");
       lba |= info[12] << 24; // MSB of LBA
       lba |= info[13] << 16;
       lba |= info[14] << 8;
       lba |= info[15];       // LSB of LBA
   }
 
-  message(3, "NWA: %ld", lba);
+  message(4, "NWA: %ld", lba);
 
   if (nwa != NULL) 
     *nwa = lba;
@@ -662,9 +678,18 @@ unsigned char *GenericMMC::createCueSheet(long *cueSheetLen)
   }
 
   cueSheet[n*8+4] = 0;    // Serial Copy Management System
-  cueSheet[n*8+5] = 0;    // MIN
-  cueSheet[n*8+6] = 0;    // SEC
-  cueSheet[n*8+7] = 0;    // FRAME
+
+  if (cdTextEncoder_ != NULL) {
+    cueSheet[n*8+5] = leadInStart_.min();
+    cueSheet[n*8+6] = leadInStart_.sec();
+    cueSheet[n*8+7] = leadInStart_.frac();
+  }
+  else {
+    cueSheet[n*8+5] = 0;    // MIN
+    cueSheet[n*8+6] = 0;    // SEC
+    cueSheet[n*8+7] = 0;    // FRAME
+  }
+
   n++;
 
   int firstTrack = 1;
@@ -814,11 +839,11 @@ unsigned char *GenericMMC::createCueSheet(long *cueSheetLen)
   cueSheet[n*8+6] = lostart.sec();
   cueSheet[n*8+7] = lostart.frac();
 
-  message(2, "\nCue Sheet:");
-  message(2, "CTL/  TNO  INDEX  DATA  SCMS  MIN  SEC  FRAME");
-  message(2, "ADR               FORM");
+  message(3, "\nCue Sheet:");
+  message(3, "CTL/  TNO  INDEX  DATA  SCMS  MIN  SEC  FRAME");
+  message(3, "ADR               FORM");
   for (n = 0; n < len; n++) {
-    message(2, "%02x    %02x    %02x     %02x    %02x   %02d   %02d   %02d",
+    message(3, "%02x    %02x    %02x     %02x    %02x   %02d   %02d   %02d",
 	   cueSheet[n*8],
 	   cueSheet[n*8+1], cueSheet[n*8+2], cueSheet[n*8+3], cueSheet[n*8+4],
 	   cueSheet[n*8+5], cueSheet[n*8+6], cueSheet[n*8+7]);
@@ -937,7 +962,7 @@ int GenericMMC::startDao()
   if (sendCueSheet() != 0)
     return 1;
 
-  //message(1, "Writing lead-in and gap...");
+  //message(2, "Writing lead-in and gap...");
 
   if (writeCdTextLeadIn() != 0) {
     return 1;
@@ -956,7 +981,7 @@ int GenericMMC::finishDao()
 {
   int ret;
 
-  //message(1, "Writing lead-out...");
+  //message(2, "Writing lead-out...");
 
   while ((ret = testUnitReady(0)) == 2)
     mSleep(2000);
@@ -964,7 +989,7 @@ int GenericMMC::finishDao()
   if (ret != 0)
     message(-1, "TEST UNIT READY failed after recording.");
   
-  message(1, "Flushing cache...");
+  message(2, "Flushing cache...");
   
   if (flushCache() != 0) {
     return 1;
@@ -1107,7 +1132,7 @@ int GenericMMC::writeCdTextLeadIn()
   unsigned char cmd[10];
   const PWSubChannel96 **cdTextSubChannels;
   long cdTextSubChannelCount;
-  long channelsPerCmd = scsiIf_->maxDataLen() / 96;
+  long channelsPerCmd;
   long scp = 0;
   long lba = -150 - leadInLen_;
   long len = leadInLen_;
@@ -1118,15 +1143,17 @@ int GenericMMC::writeCdTextLeadIn()
   if (cdTextEncoder_ == NULL)
     return 0;
 
+  channelsPerCmd = scsiIf_->maxDataLen() / 96;
+
   cdTextSubChannels = cdTextEncoder_->getSubChannels(&cdTextSubChannelCount);
 
   assert(channelsPerCmd > 0);
   assert(cdTextSubChannels != NULL);
   assert(cdTextSubChannelCount > 0);
 
-  message(1, "Writing CD-TEXT lead-in...");
+  message(2, "Writing CD-TEXT lead-in...");
 
-  message(2, "Start LBA: %ld, length: %ld", lba, len);
+  message(3, "Start LBA: %ld, length: %ld", lba, len);
 
   memset(cmd, 0, 10);
   cmd[0] = 0x2a; // WRITE1
@@ -1153,7 +1180,7 @@ int GenericMMC::writeCdTextLeadIn()
 	scp = 0;
     }
 
-    message(4, "Writing %ld CD-TEXT sub-channels at LBA %ld.", n, lba);
+    message(5, "Writing %ld CD-TEXT sub-channels at LBA %ld.", n, lba);
 
     if (sendCmd(cmd, 10, transferBuffer_, n * 96, NULL, 0) != 0) {
       message(-2, "Writing of CD-TEXT data failed.");
@@ -1164,7 +1191,7 @@ int GenericMMC::writeCdTextLeadIn()
     len -= n;
     lba += n;
   }
-    
+
   return 0;
 }
 
@@ -1573,7 +1600,7 @@ int GenericMMC::getFeature(unsigned int feature, unsigned char *buf,
 
   len = (header[0] << 24) | (header[1] << 16) | (header[2] << 8) | header[3];
 
-  message(3, "getFeature: data len: %lu", len);
+  message(4, "getFeature: data len: %lu", len);
 
   if (len < 8)
     return 1; // feature not defined
@@ -1601,7 +1628,7 @@ int GenericMMC::getFeature(unsigned int feature, unsigned char *buf,
   
   len = (header[0] << 24) | (header[1] << 16) | (header[2] << 8) | header[3];
   
-  message(3, "getFeature: data len: %lu", len);
+  message(4, "getFeature: data len: %lu", len);
 
   if (len < 8) {
     delete[] data;
@@ -1631,7 +1658,7 @@ int GenericMMC::driveInfo(DriveInfo *info, int showErrorMsg)
     return 1;
   }
 
-  info->burnProof = mp[4] & 0x80 ? 1 : 0;
+  info->burnProof = (mp[4] & 0x80) ? 1 : 0;
   info->accurateAudioStream = mp[5] & 0x02 ? 1 : 0;
 
   info->maxReadSpeed = (mp[8] << 8) | mp[9];
@@ -1717,7 +1744,7 @@ CdRawToc *GenericMMC::getRawToc(int sessionNr, int *len)
 
   dataLen = ((reqData[0] << 8) | reqData[1]) + 2;
   
-  message(3, "Raw toc data len: %d", dataLen);
+  message(4, "Raw toc data len: %d", dataLen);
 
   data = new (unsigned char)[dataLen];
   
@@ -1736,7 +1763,7 @@ CdRawToc *GenericMMC::getRawToc(int sessionNr, int *len)
   rawToc = new CdRawToc[entries];
 
   for (i = 0, p = data + 4; i < entries; i++, p += 11 ) {
-#if 0
+#if 1
     message(0, "%d %02x %02d %2x %02d:%02d:%02d %02d %02d:%02d:%02d",
 	    p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7], p[8], p[9], p[10]);
 #endif
@@ -1835,8 +1862,8 @@ long GenericMMC::readTrackData(TrackData::Mode mode, long lba, long len,
 
     if (memcmp(CdrDriver::syncPattern, sector, 12) != 0) {
       // can't be a data block
-      message(3, "Stopped because no sync pattern found.");
-      message(3, "%d %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x", i, 
+      message(4, "Stopped because no sync pattern found.");
+      message(4, "%d %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x", i, 
 	      sector[0], sector[1], sector[2], sector[3], sector[4], sector[5],
 	      sector[6], sector[7], sector[8], sector[9], sector[10],
 	      sector[11]);
@@ -1856,9 +1883,9 @@ long GenericMMC::readTrackData(TrackData::Mode mode, long lba, long len,
 	   (actMode == TrackData::MODE2 ||
 	    actMode == TrackData::MODE2_FORM1 ||
 	    actMode == TrackData::MODE2_FORM2)))) {
-      message(3, "Sector with not matching mode %s found.",
+      message(4, "Sector with not matching mode %s found.",
 	      TrackData::mode2String(actMode));
-      message(3, "%02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x",
+      message(4, "%02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x",
 	      sector[12], sector[13], sector[14], sector[15], sector[16],
 	      sector[17], sector[18], sector[19], sector[20], sector[21],
 	      sector[22], sector[23]);
@@ -1944,7 +1971,7 @@ int GenericMMC::readAudioRange(ReadDiskInfo *rinfo, int fd, long start,
 	    unsigned char ctl;
 
 	    if (pregap > 0)
-	      message(1, "Found pre-gap: %s", Msf(pregap).str());
+	      message(2, "Found pre-gap: %s", Msf(pregap).str());
 
 	    slba = info[t].start;
 	    if (info[t].mode == info[t + 1].mode)
@@ -1976,7 +2003,7 @@ int GenericMMC::readAudioRange(ReadDiskInfo *rinfo, int fd, long start,
 	info[t].isrcCode[0] = 0;
 	readIsrc(t + 1, info[t].isrcCode);
 	if (info[t].isrcCode[0] != 0)
-	  message(1, "Found ISRC code.");
+	  message(2, "Found ISRC code.");
 
 	totalProgress = (t + 1) * 1000;
 	totalProgress /= rinfo->tracks;

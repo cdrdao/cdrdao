@@ -19,6 +19,12 @@
 
 /*
  * $Log: CdTextEncoder.cc,v $
+ * Revision 1.3  2000/12/17 10:51:22  andreasm
+ * Default verbose level is now 2. Adaopted message levels to have finer
+ * grained control about the amount of messages printed by cdrdao.
+ * Added CD-TEXT writing support to the GenericMMCraw driver.
+ * Fixed CD-TEXT cue sheet creating for the GenericMMC driver.
+ *
  * Revision 1.2  2000/04/23 16:29:49  andreasm
  * Updated to state of my private development environment.
  *
@@ -44,7 +50,7 @@
 #include "CdTextItem.h"
 #include "PWSubChannel96.h"
 
-static char rcsid[] = "$Id: CdTextEncoder.cc,v 1.2 2000/04/23 16:29:49 andreasm Exp $";
+static char rcsid[] = "$Id: CdTextEncoder.cc,v 1.3 2000/12/17 10:51:22 andreasm Exp $";
 
 unsigned short CdTextEncoder::CRCTAB_[256] = {
   0x0000, 0x1021, 0x2042, 0x3063, 0x4084, 0x50A5, 0x60C6, 0x70E7, 0x8108,
@@ -183,10 +189,10 @@ int CdTextEncoder::encode()
   calcCrcs();
 
   if (packs_ != NULL) {
-    message(3, "\nCD-TEXT packs:");
+    message(4, "\nCD-TEXT packs:");
     CdTextPackEntry *prun;
     for (prun = packs_; prun != NULL; prun = prun->next_) {
-      message(3, "%02x %02x %02x %02x: %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x  CRC: %02x %02x", prun->pack.packType,
+      message(4, "%02x %02x %02x %02x: %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x  CRC: %02x %02x", prun->pack.packType,
 	      prun->pack.trackNumber, prun->pack.sequenceNumber,
 	      prun->pack.blockCharacter, prun->pack.data[0],
 	      prun->pack.data[1], prun->pack.data[2], prun->pack.data[3],

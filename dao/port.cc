@@ -18,6 +18,12 @@
  */
 /*
  * $Log: port.cc,v $
+ * Revision 1.3  2000/12/17 10:51:23  andreasm
+ * Default verbose level is now 2. Adaopted message levels to have finer
+ * grained control about the amount of messages printed by cdrdao.
+ * Added CD-TEXT writing support to the GenericMMCraw driver.
+ * Fixed CD-TEXT cue sheet creating for the GenericMMC driver.
+ *
  * Revision 1.2  2000/11/12 16:50:44  andreasm
  * Fixes for compilation under Win32.
  *
@@ -29,7 +35,7 @@
  *
  */
 
-static char rcsid[] = "$Id: port.cc,v 1.2 2000/11/12 16:50:44 andreasm Exp $";
+static char rcsid[] = "$Id: port.cc,v 1.3 2000/12/17 10:51:23 andreasm Exp $";
 
 #include <config.h>
 
@@ -202,7 +208,7 @@ int setRealTimeScheduling(int priority)
     return 3;
   }
 
-  message(4, "Using WIN32 real time scheduling.");
+  message(5, "Using WIN32 real time scheduling.");
 
 #elif defined(USE_POSIX_THREADS) && defined(POSIX_SCHEDULING)
   struct sched_param schedp;
@@ -220,7 +226,7 @@ int setRealTimeScheduling(int priority)
     return 3;
   }
   else {
-    message(4, "Using pthread POSIX real time scheduling.");
+    message(5, "Using pthread POSIX real time scheduling.");
   }
 
 #elif defined(LINUX_QNX_SCHEDULING)
@@ -237,7 +243,7 @@ int setRealTimeScheduling(int priority)
     return 3;
   }
   else {
-    message(4, "Using Linux QNX real time scheduling.");
+    message(5, "Using Linux QNX real time scheduling.");
   }
 
 #elif defined POSIX_SCHEDULING
@@ -254,7 +260,7 @@ int setRealTimeScheduling(int priority)
     return 3;
   }
   else {
-    message(4, "Using POSIX real time scheduling.");
+    message(5, "Using POSIX real time scheduling.");
   }
 #else
   return 2;

@@ -18,6 +18,12 @@
  */
 /*
  * $Log: CDD2600Base.cc,v $
+ * Revision 1.3  2000/12/17 10:51:22  andreasm
+ * Default verbose level is now 2. Adaopted message levels to have finer
+ * grained control about the amount of messages printed by cdrdao.
+ * Added CD-TEXT writing support to the GenericMMCraw driver.
+ * Fixed CD-TEXT cue sheet creating for the GenericMMC driver.
+ *
  * Revision 1.2  2000/04/23 16:29:49  andreasm
  * Updated to state of my private development environment.
  *
@@ -32,7 +38,7 @@
  *
  */
 
-static char rcsid[] = "$Id: CDD2600Base.cc,v 1.2 2000/04/23 16:29:49 andreasm Exp $";
+static char rcsid[] = "$Id: CDD2600Base.cc,v 1.3 2000/12/17 10:51:22 andreasm Exp $";
 
 #include <config.h>
 
@@ -169,7 +175,7 @@ int CDD2600Base::readSessionInfo(long *leadInLen, long *leadOutLen,
   *leadInLen = (data[0] << 8) | data[1];
   *leadOutLen = (data[2] << 8) | data[3];
 
-  message(3, "Lead-in length: %ld, lead-out length: %ld", *leadInLen,
+  message(4, "Lead-in length: %ld, lead-out length: %ld", *leadInLen,
 	  *leadOutLen);
 
   return 0;
@@ -301,7 +307,7 @@ int CDD2600Base::writeSession(const Toc *toc, int multiSession, long lbaOffset)
       tp[2] |= 0x04;
     }
 
-    message(3, "Track start: %s(0x%06lx)", start.str(), start.lba());
+    message(4, "Track start: %s(0x%06lx)", start.str(), start.lba());
     tp[12] = start.lba() >> 24;
     tp[13] = start.lba() >> 16;
     tp[14] = start.lba() >> 8;
@@ -309,7 +315,7 @@ int CDD2600Base::writeSession(const Toc *toc, int multiSession, long lbaOffset)
 
     for (i = 0; i < n; i++) {
       index = start + t->getIndex(i);
-      message(3, "      index: %s(0x%06lx)", index.str(), index.lba());
+      message(4, "      index: %s(0x%06lx)", index.str(), index.lba());
       
       tp[16 + i * 4] = index.lba() >> 24;
       tp[17 + i * 4] = index.lba() >> 16;
@@ -317,7 +323,7 @@ int CDD2600Base::writeSession(const Toc *toc, int multiSession, long lbaOffset)
       tp[19 + i * 4] = index.lba();
     }
 
-    message(3, "      end  : %s(0x%06lx)", end.str(), end.lba());
+    message(4, "      end  : %s(0x%06lx)", end.str(), end.lba());
     
     tp[16 + n * 4] = end.lba() >> 24;
     tp[17 + n * 4] = end.lba() >> 16;

@@ -18,8 +18,14 @@
  */
 /*
  * $Log: PWSubChannel96.cc,v $
- * Revision 1.1  2000/02/05 01:36:39  llanero
- * Initial revision
+ * Revision 1.2  2000/12/17 10:51:22  andreasm
+ * Default verbose level is now 2. Adaopted message levels to have finer
+ * grained control about the amount of messages printed by cdrdao.
+ * Added CD-TEXT writing support to the GenericMMCraw driver.
+ * Fixed CD-TEXT cue sheet creating for the GenericMMC driver.
+ *
+ * Revision 1.1.1.1  2000/02/05 01:36:39  llanero
+ * Uploaded cdrdao 1.1.3 with pre10 patch applied.
  *
  * Revision 1.6  1999/04/05 11:04:48  mueller
  * Added decoding of media catalog number and ISRC code.
@@ -78,6 +84,10 @@ void PWSubChannel96::init(unsigned char *buf)
     type_ = QMODE3;
     break;
 
+  case 5:
+    type_ = QMODE5TOC;
+    break;
+
   default:
     type_ = QMODE_ILLEGAL;
     break;
@@ -106,6 +116,10 @@ SubChannel *PWSubChannel96::makeSubChannel(Type t)
 
   case QMODE3:
     chan->setChannelByte(Q_CHAN, 0, 0x03);
+    break;
+
+  case QMODE5TOC:
+    chan->setChannelByte(Q_CHAN, 0, 0x05);
     break;
 
   case QMODE_ILLEGAL:
@@ -254,6 +268,10 @@ void PWSubChannel96::type(unsigned char type)
     type_ = QMODE3;
     break;
 
+  case 5:
+    type_ = QMODE5TOC;
+    break;
+
   default:
     type_ = QMODE_ILLEGAL;
     break;
@@ -314,44 +332,51 @@ int PWSubChannel96::indexNr() const
 
 void PWSubChannel96::point(int p)
 {
-  assert(type_ == QMODE1TOC);
+  assert(type_ == QMODE1TOC || type_ == QMODE5TOC);
   setChannelByte(Q_CHAN, 2, bcd(p));
 }
 
 void PWSubChannel96::min(int m)
 {
-  assert(type_ == QMODE1TOC || type_ == QMODE1DATA);
+  assert(type_ == QMODE1TOC || type_ == QMODE1DATA || type_ == QMODE5TOC);
   setChannelByte(Q_CHAN, 3, bcd(m));
 }
 
 int PWSubChannel96::min() const
 {
-  assert(type_ == QMODE1TOC || type_ == QMODE1DATA);
+  assert(type_ == QMODE1TOC || type_ == QMODE1DATA || type_ == QMODE5TOC);
   return bcd2int(getChannelByte(Q_CHAN, 3));
 }
 
 void PWSubChannel96::sec(int s)
 {
-  assert(type_ == QMODE1TOC || type_ == QMODE1DATA);
+  assert(type_ == QMODE1TOC || type_ == QMODE1DATA || type_ == QMODE5TOC);
   setChannelByte(Q_CHAN, 4, bcd(s));
 }
 
 int PWSubChannel96::sec() const
 {
-  assert(type_ == QMODE1TOC || type_ == QMODE1DATA);
+  assert(type_ == QMODE1TOC || type_ == QMODE1DATA || type_ == QMODE5TOC);
   return bcd2int(getChannelByte(Q_CHAN, 4));
 }
 
 void PWSubChannel96::frame(int f)
 {
-  assert(type_ == QMODE1TOC || type_ == QMODE1DATA);
+  assert(type_ == QMODE1TOC || type_ == QMODE1DATA || type_ == QMODE5TOC);
   setChannelByte(Q_CHAN, 5, bcd(f));
 }
 
 int PWSubChannel96::frame() const
 {
-  assert(type_ == QMODE1TOC || type_ == QMODE1DATA);
+  assert(type_ == QMODE1TOC || type_ == QMODE1DATA || type_ == QMODE5TOC);
   return bcd2int(getChannelByte(Q_CHAN, 5));
+}
+
+void PWSubChannel96::zero(int z)
+{
+  assert(type_ == QMODE5TOC);
+
+  setChannelByte(Q_CHAN, 6, bcd(z));
 }
 
 void PWSubChannel96::amin(int am)
@@ -392,19 +417,19 @@ int PWSubChannel96::aframe() const
 
 void PWSubChannel96::pmin(int pm)
 {
-  assert(type_ == QMODE1TOC);
+  assert(type_ == QMODE1TOC || type_ == QMODE5TOC);
   setChannelByte(Q_CHAN, 7, bcd(pm));
 }
 
 void PWSubChannel96::psec(int ps)
 {
-  assert(type_ == QMODE1TOC);
+  assert(type_ == QMODE1TOC || type_ == QMODE5TOC);
   setChannelByte(Q_CHAN, 8, bcd(ps));
 }
 
 void PWSubChannel96::pframe(int pf)
 {
-  assert(type_ == QMODE1TOC);
+  assert(type_ == QMODE1TOC || type_ == QMODE5TOC);
   setChannelByte(Q_CHAN, 9, bcd(pf));
 }
 
@@ -486,6 +511,7 @@ void PWSubChannel96::print() const
   switch (type_) {
   case QMODE1TOC:
   case QMODE1DATA:
+  case QMODE5TOC:
     message(0, "Q: (%02x) %02x,%02x %02x:%02x:%02x %02x %02x:%02x:%02x ", 
 	   getChannelByte(Q_CHAN, 0), getChannelByte(Q_CHAN, 1),
 	   getChannelByte(Q_CHAN, 2), getChannelByte(Q_CHAN, 3),

@@ -18,8 +18,14 @@
  */
 /*
  * $Log: PWSubChannel96.h,v $
- * Revision 1.1  2000/02/05 01:35:05  llanero
- * Initial revision
+ * Revision 1.2  2000/12/17 10:51:22  andreasm
+ * Default verbose level is now 2. Adaopted message levels to have finer
+ * grained control about the amount of messages printed by cdrdao.
+ * Added CD-TEXT writing support to the GenericMMCraw driver.
+ * Fixed CD-TEXT cue sheet creating for the GenericMMC driver.
+ *
+ * Revision 1.1.1.1  2000/02/05 01:35:05  llanero
+ * Uploaded cdrdao 1.1.3 with pre10 patch applied.
  *
  * Revision 1.5  1999/04/05 11:04:48  mueller
  * Added decoding of media catalog number and ISRC code.
@@ -99,6 +105,7 @@ public:
   void pmin(int);    // track start time (QMODE1TOC)
   void psec(int);    // track start time (QMODE1TOC)
   void pframe(int);  // track start time (QMODE1TOC)
+  void zero(int);    // zero field (QMODE5TOC)
 
   // sets raw R-W channels from 72 byte buffer
   void setRawRWdata(const unsigned char *); 
