@@ -11,6 +11,8 @@ Cdrdao changes:
   cdrdao will try to autodetect an MMC-compliant device and use the
   generic-mmc driver by default. (Denis Leroy)
 
+- Included scsilib upgraded from cdrtools 2.01a31 (Denis Leroy)
+
 - Added --eject option to the unlock command to eject the cd after
   unlocking. (Eric Benson)
 
@@ -20,6 +22,14 @@ Cdrdao changes:
 - Fixed scsilib compiling problems with Linux kernel 2.6 (Jim Gifford)
 
 - Fixed compiling problems with gcc 3.4 (Jim Gifford, Denis Leroy)
+
+GCDMaster changes (Denis Leroy) :
+
+- Device configuration dialog now scans both ATA and ATAPI
+  interfaces.
+
+- Some bug fixes (manual driver configurations were not being saved
+  correctly).
 
 cue2toc changes:
 

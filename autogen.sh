@@ -13,6 +13,8 @@ if test -e scsilib.tar.gz ; then
   rm -rf scsilib
   echo "Unpacking scsilib.tar.gz"
   tar xzf scsilib.tar.gz
+  echo "Patching scsilib"
+  patch -s -d scsilib -p1 < scsilib.patch
 fi
 
 # Minimum version

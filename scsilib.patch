@@ -1,0 +1,139 @@
+diff -ru --unidirectional-new-file /home/denis/packages/cdrtools-2.01a25/.cvsignore scsilib/.cvsignore
+--- scsilib.orig/.cvsignore	1969-12-31 16:00:00.000000000 -0800
++++ scsilib/.cvsignore	2004-04-05 12:00:08.000000000 -0700
+@@ -0,0 +1,3 @@
++Gmake.linux
++Makefile
++rc.pp
+diff -ru --unidirectional-new-file /home/denis/packages/cdrtools-2.01a25/DEFAULTS/Defaults.linux scsilib/DEFAULTS/Defaults.linux
+--- scsilib.orig/DEFAULTS/Defaults.linux	2003-02-15 16:01:48.000000000 -0800
++++ scsilib/DEFAULTS/Defaults.linux	2004-05-17 15:46:33.000000000 -0700
+@@ -18,7 +18,7 @@
+ ###########################################################################
+ CWARNOPTS=
+ 
+-DEFINCDIRS=	$(SRCROOT)/include /usr/src/linux/include
++DEFINCDIRS=	$(SRCROOT)/include
+ LDPATH=		-L/opt/schily/lib
+ RUNPATH=	-R $(INS_BASE)/lib -R /opt/schily/lib -R $(OLIBSDIR)
+ 
+diff -ru --unidirectional-new-file /home/denis/packages/cdrtools-2.01a25/export/Makefile scsilib/export/Makefile
+--- scsilib.orig/export/Makefile	1969-12-31 16:00:00.000000000 -0800
++++ scsilib/export/Makefile	2004-04-12 19:03:25.000000000 -0700
+@@ -0,0 +1,46 @@
++#ident %W% %E% %Q%
++###########################################################################
++# Written 1999 by Andreas Mueller
++###########################################################################
++# Makefile for local dynamic configuration
++###########################################################################
++# This program is free software; you can redistribute it and/or modify
++# it under the terms of the GNU General Public License as published by
++# the Free Software Foundation; either version 2, or (at your option)
++# any later version.
++#
++# This program is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; see the file COPYING.  If not, write to
++# the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
++###########################################################################
++SRCROOT=	..
++RULESDIR=	RULES
++include		$(SRCROOT)/$(RULESDIR)/rules.top
++###########################################################################
++
++all: clobber
++	$(LN) -s $(SRCROOT)/include libschily
++	$(LN) -s $(SRCROOT)/libscg/scg scg
++	$(LN) -s $(SRCROOT)/incs/$(OARCH)/xconfig.h xconfig.h
++	$(LN) -s $(SRCROOT)/libs/$(OARCH)/libschily.a libschily.a
++	$(LN) -s $(SRCROOT)/libs/$(OARCH)/libscg.a libscg.a 
++	$(LN) -s $(SRCROOT)/libs/$(OARCH)/librscg.a librscg.a
++
++clobber:
++	$(RM_F) -r libschily scg xconfig.h libschily.a libscg.a librscg.a
++
++distclean: clobber
++
++clean: clobber
++
++OTHERTARGETS=	install ibins depend rmdep \
++		TAGS tags rmtarget relink
++
++$(OTHERTARGETS):
++	@echo "$@: nothing to make"
++
+diff -ru --unidirectional-new-file /home/denis/packages/cdrtools-2.01a25/libscg/scsi-linux-sg.c scsilib/libscg/scsi-linux-sg.c
+--- scsilib.orig/libscg/scsi-linux-sg.c	2004-01-14 09:54:01.000000000 -0800
++++ scsilib/libscg/scsi-linux-sg.c	2004-04-29 11:17:22.000000000 -0700
+@@ -65,6 +65,14 @@
+ 
+ #if LINUX_VERSION_CODE >= 0x01031a /* <linux/scsi.h> introduced in 1.3.26 */
+ #if LINUX_VERSION_CODE >= 0x020000 /* <scsi/scsi.h> introduced somewhere. */
++
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
++	#define __KERNEL__
++	#include <asm/types.h>
++	#include <asm/byteorder.h>
++	#undef __KERNEL__
++#endif
++
+ /* Need to fine tune the ifdef so we get the transition point right. */
+ #include <scsi/scsi.h>
+ #else
+diff -ru --unidirectional-new-file /home/denis/packages/cdrtools-2.01a25/Makefile scsilib/Makefile
+--- scsilib.orig/Makefile	1998-09-20 15:58:30.000000000 -0700
++++ scsilib/Makefile	2004-04-12 18:56:23.000000000 -0700
+@@ -13,3 +13,10 @@
+ #
+ include		$(SRCROOT)/$(RULESDIR)/rules.rdi
+ ###########################################################################
++
++install:
++	@
++
++check:
++
++distclean: clean
+diff -ru --unidirectional-new-file /home/denis/packages/cdrtools-2.01a31/README.cdrdao scsilib/README.cdrdao
+--- scsilib.orig/README.cdrdao 1969-12-31 16:00:00.000000000 -0800
++++ scsilib/README.cdrdao       2004-06-03 18:51:10.000000000 -0700
+@@ -0,0 +1,7 @@
++This is a snapshot of Joerg Schilling's SCSI library from cdrtools-2.01a31.
++
++The additional directory 'export' is used to hold some links to include
++files and built libraries for easy access by the remaining cdrdao package.
++
++It is also possible to use an installed SCSI library. See "INSTALL" in the
++main directory for more information.
+diff -ru --unidirectional-new-file /home/denis/packages/cdrtools-2.01a25/RULES/rules1.dir scsilib/RULES/rules1.dir
+--- scsilib.orig/RULES/rules1.dir	2002-10-23 10:48:08.000000000 -0700
++++ scsilib/RULES/rules1.dir	2004-04-29 17:10:44.000000000 -0700
+@@ -29,14 +29,12 @@
+ 		list=`echo TARGETS/[0-9][0-9]* | sed -e 's;TARGETS/[0-9][0-9];;g' | sed -e 's;!@!;/;g'`;\
+ 	for DIR in $${list} ;							\
+ 	do									\
+-		(								\
+-		echo "	==> MAKING \"$@\" ON SUBDIRECTORY \"$(CURDIR)/$$DIR\"";\
+-		if [ -d ./$$DIR -a -r ./$$DIR/Makefile ] ; then			\
+-			cd ./$$DIR;"$(MAKE)" $(MAKEMACS) XARCH=$(XARCH) DIRNAME=$(CURDIR)/$$DIR $@;		\
++		echo "	==> MAKING \"$@\" ON SUBDIRECTORY \"$(CURDIR)/$$DIR\""; \
++		if [ -d ./$$DIR -a -r ./$$DIR/Makefile ] ; then		\
++			"$(MAKE)" -C ./$$DIR $(MAKEMACS) XARCH=$(XARCH) DIRNAME=$(CURDIR)/$$DIR $@ || exit -1 ; \
+ 		else								\
+ 			echo "NOTICE: Partial source ($(CURDIR)/$$DIR) missing";\
+-		fi								\
+-		);								\
++		fi ;								\
+ 	done
+ 
+ tinfo:
+diff -ru --unidirectional-new-file /home/denis/packages/cdrtools-2.01a25/TARGETS/99export scsilib/TARGETS/99export
+--- scsilib.orig/TARGETS/99export	1969-12-31 16:00:00.000000000 -0800
++++ scsilib/TARGETS/99export	2003-03-01 10:53:25.000000000 -0800
+@@ -0,0 +1 @@
++Export
