@@ -80,6 +80,7 @@ R|TOSHIBA|CD-ROM XM-6401TA|toshiba
 R|TOSHIBA|DVD-ROM SD-2102|toshiba
 
 # Drivers for write operations
+W|CDWRITER|IDE5224|generic-mmc|OPT_MMC_CD_TEXT
 W|GRUNDIG|CDR100IPW|cdd2600
 W|HP|CD-Writer 4020|cdd2600
 W|HP|CD-Writer 6020|cdd2600
@@ -158,6 +159,7 @@ W|PLEXTOR|CD-R   PX-R820|generic-mmc
 W|PLEXTOR|CD-R   PX-W1210|generic-mmc|OPT_MMC_CD_TEXT
 W|PLEXTOR|CD-R   PX-W124|generic-mmc
 W|PLEXTOR|CD-R   PX-W1610|generic-mmc|OPT_MMC_CD_TEXT
+W|PLEXTOR|CD-R   PX-W2410|generic-mmc|OPT_MMC_CD_TEXT
 W|PLEXTOR|CD-R   PX-W4220|generic-mmc|OPT_MMC_CD_TEXT
 W|PLEXTOR|CD-R   PX-W8220|generic-mmc|OPT_MMC_CD_TEXT
 W|PLEXTOR|CD-R   PX-W8432|generic-mmc|OPT_MMC_CD_TEXT
@@ -286,6 +288,7 @@ W|SAMSUNG|CD-R/RW SW-212B|generic-mmc-raw
 W|SAMSUNG|CD-R/RW SW-224|generic-mmc-raw
 W|SAMSUNG|SW-232|generic-mmc-raw
 W|SONY|CRX195E1|generic-mmc-raw
+W|TEAC|CD-W512E|generic-mmc|OPT_MMC_CD_TEXT
 W|TEAC|CD-W58E|generic-mmc-raw|OPT_MMC_USE_PQ|OPT_MMC_PQ_BCD
 W|TOSHIBA|R/RW 4x4x24|generic-mmc-raw
 W|TRAXDATA|2832|generic-mmc-raw
