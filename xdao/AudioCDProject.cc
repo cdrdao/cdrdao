@@ -51,9 +51,6 @@ AudioCDProject::AudioCDProject(int number, const char *name, TocEdit *tocEdit)
   
   updateWindowTitle();
 
-  createMenus();
-  createStatusbar();
-
   // Menu Stuff
   {
     using namespace Gnome::UI;
@@ -73,10 +70,9 @@ AudioCDProject::AudioCDProject(int number, const char *name, TocEdit *tocEdit)
   show();
 
   add_docked(*viewSwitcher_, "viewSwitcher", GNOME_DOCK_ITEM_BEH_NORMAL,
-  		GNOME_DOCK_TOP, 1, 1, 0);
-  
+  		GNOME_DOCK_TOP, 2, 1, 0);
+ 
   get_dock_item_by_name("viewSwitcher")->show();
-
 
   audioCDChild_ = new AudioCDChild(this);
 
