@@ -53,7 +53,8 @@ extern "C" {
 
 enum Command { UNKNOWN, SHOW_TOC, SHOW_DATA, READ_TEST, SIMULATE, WRITE,
 	       READ_TOC, DISK_INFO, READ_CD, TOC_INFO, TOC_SIZE, BLANK,
-	       SCAN_BUS, UNLOCK, COPY_CD, READ_CDDB, MSINFO, DRIVE_INFO };
+	       SCAN_BUS, UNLOCK, COPY_CD, READ_CDDB, MSINFO, DRIVE_INFO,
+               DISCID };
 
 static const char *PRGNAME = NULL;
 static const char *TOC_FILE = NULL;
@@ -89,6 +90,7 @@ static int KEEPIMAGE = 0;
 static int OVERBURN = 0;
 static int BUFFER_UNDER_RUN_PROTECTION = 1;
 static int WRITE_SPEED_CONTROL = 1;
+static bool PRINT_QUERY = false;
 
 static CdrDriver::BlankingMode BLANKING_MODE = CdrDriver::BLANK_MINIMAL;
 static TrackData::SubChannelMode READ_SUBCHAN_MODE = TrackData::SUBCHAN_NONE;
@@ -189,6 +191,7 @@ static void printUsage()
 "  show-data - prints out audio data and exits\n"
 "  read-test - reads all audio files and exits\n"
 "  disk-info - shows information about inserted medium\n"
+"  discid    - prints out CDDB information\n"
 "  msinfo    - shows multi session info, output is suited for scripts\n"
 "  unlock    - unlock drive after failed writing\n"
 "  blank     - blank a CD-RW\n"
@@ -216,7 +219,7 @@ static void printUsage()
     message(0, "\nUsage: %s simulate [options] toc-file", PRGNAME);
     message(0,
 "options:\n"
-"  --device [path:]<x,y,z>        - sets SCSI device of CD-writer\n"
+"  --device [proto:]{<x,y,z>|device} - sets SCSI device of CD-writer\n"
 "                            (default: %s)\n"
 "  --driver <id>           - force usage of specified driver\n"
 "  --speed <writing-speed> - selects writing speed\n"
@@ -236,7 +239,7 @@ static void printUsage()
     message(0, "\nUsage: %s write [options] toc-file", PRGNAME);
     message(0,
 "options:\n"
-"  --device [path:]<x,y,z>        - sets SCSI device of CD-writer\n"
+"  --device [proto:]{<x,y,z>|device} - sets SCSI device of CD-writer\n"
 "                            (default: %s)\n"
 "  --driver <id>           - force usage of specified driver\n"
 "  --simulate              - just perform a write simulation\n"
@@ -262,7 +265,7 @@ static void printUsage()
     message(0, "\nUsage: %s read-toc [options] toc-file", PRGNAME);
     message(0,
 "options:\n"
-"  --device [path:]<x,y,z> - sets SCSI device of CD-ROM reader\n"
+"  --device [proto:]{<x,y,z>|device} - sets SCSI device of CD-ROM reader\n"
 "  --driver <id>    - force usage of specified driver for source device\n"
 "  --datafile <filename>   - name of data file placed in toc-file\n"
 "  --session #             - select session\n"
@@ -285,18 +288,34 @@ static void printUsage()
     message(0, "\nUsage: %s disk-info [options]", PRGNAME);
     message(0,
 "options:\n"
-"  --device [path:]<x,y,z>        - sets SCSI device of CD-writer\n"
+"  --device [proto:]{<x,y,z>|device} - sets SCSI device of CD-writer\n"
 "                            (default: %s)\n"
 "  --driver <id>           - force usage of specified driver\n"
 "  -v #                    - sets verbose level\n",
 	    SCSI_DEVICE);
     break;
     
+  case DISCID:
+    message(0, "\nUsage: %s discid [options]", PRGNAME);
+    message(0,
+"options:\n"
+"  --device [proto:]{<x,y,z>|device} - sets SCSI device of CD-writer\n"
+"                            (default: %s)\n"
+"  --driver <id>           - force usage of specified driver\n"
+"  --cddb-servers <list>   - sets space separated list of CDDB servers\n"
+"  --cddb-timeout #        - timeout in seconds for CDDB server communication\n"
+"  --cddb-directory <path> - path to local CDDB directory where fetched\n"
+"                            CDDB records will be stored\n"
+"  --query                 - prints out CDDB query only\n"
+"  -v #                    - sets verbose level\n",
+        SCSI_DEVICE);
+    break;
+   
   case READ_CD:
     message(0, "\nUsage: %s read-cd [options] toc-file", PRGNAME);
     message(0,
 "options:\n"
-"  --device [path:]<x,y,z> - sets SCSI device of CD-ROM reader\n"
+"  --device [proto:]{<x,y,z>|device} - sets SCSI device of CD-ROM reader\n"
 "  --driver <id>    - force usage of specified driver for source device\n"
 "  --datafile <filename>   - name of data file placed in toc-file\n"
 "  --session #             - select session\n"
@@ -327,7 +346,7 @@ static void printUsage()
     message(0, "\nUsage: %s blank [options]", PRGNAME);
     message(0,
 "options:\n"
-"  --device [path:]<x,y,z>        - sets SCSI device of CD-writer\n"
+"  --device [proto:]{<x,y,z>|device} - sets SCSI device of CD-writer\n"
 "                            (default: %s)\n"
 "  --driver <id>           - force usage of specified driver\n"
 "  --speed <writing-speed> - selects writing speed\n"
@@ -345,10 +364,11 @@ static void printUsage()
     message(0, "\nUsage: %s unlock [options]", PRGNAME);
     message(0,
 "options:\n"
-"  --device [path:]<x,y,z>        - sets SCSI device of CD-writer\n"
+"  --device [proto:]{<x,y,z>|device} - sets SCSI device of CD-writer\n"
 "                            (default: %s)\n"
 "  --driver <id>           - force usage of specified driver\n"
 "  --reload                - reload the disk if necessary for writing\n"
+"  --eject                 - ejects cd after unlocking\n"
 "  -v #                    - sets verbose level\n",
 	    SCSI_DEVICE);
     break;
@@ -357,9 +377,9 @@ static void printUsage()
     message(0, "\nUsage: %s copy [options]", PRGNAME);
     message(0,
 "options:\n"
-"  --device [path:]<x,y,z>        - sets SCSI device of CD-writer\n"
+"  --device [proto:]{<x,y,z>|device} - sets SCSI device of CD-writer\n"
 "                            (default: %s)\n"
-"  --source-device <x,y,z> - sets SCSI device of CD-ROM reader\n"
+"  --source-device {<x,y,z>|device} - sets SCSI device of CD-ROM reader\n"
 "  --driver <id>           - force usage of specified driver\n"
 "  --source-driver <id>    - force usage of specified driver for source device\n"
 "  --simulate              - just perform a copy simulation\n"
@@ -411,7 +431,7 @@ static void printUsage()
     message(0, "\nUsage: %s msinfo [options]", PRGNAME);
     message(0,
 "options:\n"
-"  --device [path:]<x,y,z>        - sets SCSI device of CD-writer\n"
+"  --device [proto:]{<x,y,z>|device} - sets SCSI device of CD-writer\n"
 "                            (default: %s)\n"
 "  --driver <id>           - force usage of specified driver\n"
 "  --reload                - reload the disk if necessary for writing\n"
@@ -481,7 +501,8 @@ static void importSettings(Command cmd)
     }
   }
 
-  if (cmd == BLANK || cmd == DISK_INFO || cmd == MSINFO || cmd == UNLOCK) {
+  if (cmd == BLANK || cmd == DISK_INFO || cmd == MSINFO || cmd == UNLOCK ||
+      cmd == DISCID) {
     if ((sval = SETTINGS->getString(SET_WRITE_DRIVER)) != NULL) {
       DRIVER_ID = strdupCC(sval);
     }
@@ -492,7 +513,7 @@ static void importSettings(Command cmd)
   }
 
   if (cmd == READ_CDDB || cmd == COPY_CD || cmd == READ_TOC ||
-      cmd == READ_CD) {
+      cmd == READ_CD || cmd == DISCID) {
     if ((sval = SETTINGS->getString(SET_CDDB_SERVER_LIST)) != NULL) {
       CDDB_SERVER_LIST = strdupCC(sval);
     }
@@ -546,7 +567,8 @@ static void exportSettings(Command cmd)
     SETTINGS->set(SET_READ_PARANOIA_MODE, PARANOIA_MODE);
   }
 
-  if (cmd == BLANK || cmd == DISK_INFO || cmd == MSINFO || cmd == UNLOCK) {
+  if (cmd == BLANK || cmd == DISK_INFO || cmd == MSINFO || cmd == UNLOCK ||
+      cmd == DISCID) {
     if (DRIVER_ID != NULL)
       SETTINGS->set(SET_WRITE_DRIVER, DRIVER_ID);
     
@@ -555,7 +577,8 @@ static void exportSettings(Command cmd)
   }
 
   if (cmd == READ_CDDB ||
-      (WITH_CDDB && (cmd == COPY_CD || cmd == READ_TOC || cmd == READ_CD))) {
+      (WITH_CDDB && (cmd == COPY_CD || cmd == READ_TOC || cmd == READ_CD ||
+                     cmd == DISCID))) {
     if (CDDB_SERVER_LIST != NULL) {
       SETTINGS->set(SET_CDDB_SERVER_LIST, CDDB_SERVER_LIST);
     }
@@ -596,6 +619,9 @@ static int parseCmdline(int argc, char **argv)
   }
   else if (strcmp(*argv, "disk-info") == 0) {
     COMMAND = DISK_INFO;
+  }
+  else if (strcmp(*argv, "discid") == 0) {
+    COMMAND = DISCID;
   }
   else if (strcmp(*argv, "read-cd") == 0) {
     COMMAND = READ_CD;
@@ -761,6 +787,9 @@ static int parseCmdline(int argc, char **argv)
       }
       else if (strcmp((*argv) + 2, "swap") == 0) {
 	SWAP = 1;
+      }
+      else if (strcmp((*argv) + 2, "query") == 0) {
+        PRINT_QUERY = true;
       }
       else if (strcmp((*argv) + 2, "multi") == 0) {
 	MULTI_SESSION = 1;
@@ -963,6 +992,7 @@ static int parseCmdline(int argc, char **argv)
 
   if (COMMAND != DISK_INFO && COMMAND != BLANK && COMMAND != SCAN_BUS &&
       COMMAND != UNLOCK && COMMAND != COPY_CD && COMMAND != MSINFO &&
+      COMMAND != DISCID &&
       COMMAND != DRIVE_INFO) {
     if (argc < 1) {
       message(-2, "Missing toc-file.");
@@ -1018,7 +1048,7 @@ static CdrDriver *selectDriver(Command cmd, ScsiIf *scsiIf,
 				   &options);
     // if no driver is selected, yet, try to select a read driver for
     // disk-info
-    if (id == NULL && (cmd == DISK_INFO || cmd == MSINFO))
+    if (id == NULL && (cmd == DISK_INFO || cmd == MSINFO || cmd == DISCID))
       id = CdrDriver::selectDriver(0, scsiIf->vendor(), scsiIf->product(),
 				   &options);
     // Still no driver, try to autodetect one
@@ -1061,7 +1091,7 @@ static CdrDriver *setupDevice(Command cmd, const char *scsiDevice,
 
   switch (scsiIf->init()) {
   case 1:
-    message(-2, "Please use option '--device [path:]bus,id,lun', e.g. "
+    message(-2, "Please use option '--device [proto:]bus,id,lun', e.g. "
             "--device 0,6,0 or --device ATAPI:0,0,0");
     delete scsiIf;
     return NULL;
@@ -1435,7 +1465,14 @@ static int showMultiSessionInfo(DiskInfo *di)
   return 2;
 }
 
-static int readCddb(Toc *toc)
+static void printCddbQuery(Toc *toc)
+{
+  Cddb cddb(toc);
+
+  cddb.printDbQuery();
+}
+
+static int readCddb(Toc *toc, bool showEntry = false)
 {
   int err = 0;
   char *servers = strdupCC(CDDB_SERVER_LIST);
@@ -1558,6 +1595,9 @@ static int readCddb(Toc *toc)
     err = 2; goto fail;
   }
 
+  if (showEntry)
+      cddb.printDbEntry();
+
   if (!cddb.addAsCdText(toc))
     err = 1;
 
@@ -1575,7 +1615,7 @@ static void scanBus()
 
   if (sdata) {
     for (i = 0; i < len; i++) {
-      message(0, "%s: %s, %s, %s", sdata[i].dev.c_str(), sdata[i].vendor,
+      message(0, "%s : %s, %s, %s", sdata[i].dev.c_str(), sdata[i].vendor,
               sdata[i].product, sdata[i].revision);
     }
     delete[] sdata;
@@ -1585,7 +1625,16 @@ static void scanBus()
   sdata = ScsiIf::scan(&len, "ATAPI");
   if (sdata) {
     for (i = 0; i < len; i++) {
-      message(0, "%s: %s, %s, %s", sdata[i].dev.c_str(), sdata[i].vendor,
+      message(0, "%-20s %s, %s, %s", sdata[i].dev.c_str(), sdata[i].vendor,
+              sdata[i].product, sdata[i].revision);
+    }
+    delete[] sdata;
+  }
+
+  sdata = ScsiIf::scan(&len, "ATA");
+  if (sdata) {
+    for (i = 0; i < len; i++) {
+      message(0, "%-20s %s, %s, %s", sdata[i].dev.c_str(), sdata[i].vendor,
               sdata[i].product, sdata[i].revision);
     }
     delete[] sdata;
@@ -2012,6 +2061,7 @@ int main(int argc, char **argv)
 
   if (COMMAND != READ_TOC && COMMAND != DISK_INFO && COMMAND != READ_CD &&
       COMMAND != BLANK && COMMAND != SCAN_BUS && COMMAND != UNLOCK &&
+      COMMAND != DISCID &&
       COMMAND != COPY_CD && COMMAND != MSINFO && COMMAND != DRIVE_INFO) {
     toc = Toc::read(TOC_FILE);
 
@@ -2035,12 +2085,14 @@ int main(int argc, char **argv)
   if (COMMAND == SIMULATE || COMMAND == WRITE || COMMAND == READ_TOC ||
       COMMAND == DISK_INFO || COMMAND == READ_CD || COMMAND == BLANK ||
       COMMAND == UNLOCK || COMMAND == COPY_CD || COMMAND == MSINFO ||
+      COMMAND == DISCID ||
       COMMAND == DRIVE_INFO) {
     cdr = setupDevice(COMMAND, SCSI_DEVICE, DRIVER_ID, 
 		      /* init device? */
 		      (COMMAND == UNLOCK) ? 0 : 1,
 		      /* check for ready status? */
-		      (COMMAND == BLANK || COMMAND == DRIVE_INFO) ? 0 : 1,
+              (COMMAND == BLANK || COMMAND == DRIVE_INFO ||
+               COMMAND == DISCID) ? 0 : 1,
 		      /* reset status of medium if not empty? */
 		      (COMMAND == SIMULATE || COMMAND == WRITE) ? 1 : 0,
 		      REMOTE_MODE, RELOAD);
@@ -2140,6 +2192,36 @@ int main(int argc, char **argv)
     showDiskInfo(di);
     break;
 
+  case DISCID:
+    if (di->valid.empty && di->empty) {
+      message(-2, "Inserted disk is empty.");
+      exitCode = 1; goto fail;
+    }
+    cdr->subChanReadMode(READ_SUBCHAN_MODE);
+    cdr->rawDataReading(READ_RAW);
+    cdr->fastTocReading(1);
+    cdr->taoSource(TAO_SOURCE);
+    if (TAO_SOURCE_ADJUST >= 0)
+      cdr->taoSourceAdjust(TAO_SOURCE_ADJUST);
+
+    cdr->force(FORCE);
+
+    if ((toc = cdr->readDiskToc(SESSION,
+                                (DATA_FILENAME == NULL) ?
+                                "data.wav" : DATA_FILENAME)) == NULL) {
+      cdr->rezeroUnit(0);
+      exitCode = 1; goto fail;
+    }
+    else {
+      cdr->rezeroUnit(0);
+
+      if (PRINT_QUERY)
+          printCddbQuery(toc);
+      else
+          readCddb(toc, true);
+    }
+    break;
+   
   case MSINFO:
     switch (showMultiSessionInfo(di)) {
     case 0:
@@ -2496,9 +2578,13 @@ int main(int argc, char **argv)
     message(1, "Trying to unlock drive...");
 
     cdr->abortDao();
+
     if (cdr->preventMediumRemoval(0) != 0) {
       exitCode = 1; goto fail;
     }
+
+    if (EJECT)
+      cdr->loadUnload(1);
     break;
 
   case UNKNOWN:
