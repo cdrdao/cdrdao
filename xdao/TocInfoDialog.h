@@ -18,6 +18,9 @@
  */
 /*
  * $Log: TocInfoDialog.h,v $
+ * Revision 1.5  2000/10/01 16:39:10  llanero
+ * applied Jason Lunz patch: "Close" instead of "Cancel" where appropiate.
+ *
  * Revision 1.4  2000/09/21 02:07:07  llanero
  * MDI support:
  * Splitted AudioCDChild into same and AudioCDView
@@ -115,7 +118,7 @@ private:
 
   CdTextPage cdTextPages_[8];
 
-  void cancelAction();
+  void closeAction();
   void applyAction();
 
   void createCdTextLanguageMenu(int);

@@ -18,6 +18,9 @@
  */
 /*
  * $Log: TocInfoDialog.cc,v $
+ * Revision 1.6  2000/10/01 16:39:10  llanero
+ * applied Jason Lunz patch: "Close" instead of "Cancel" where appropiate.
+ *
  * Revision 1.5  2000/09/21 02:07:07  llanero
  * MDI support:
  * Splitted AudioCDChild into same and AudioCDView
@@ -53,7 +56,7 @@
  *
  */
 
-static char rcsid[] = "$Id: TocInfoDialog.cc,v 1.5 2000/09/21 02:07:07 llanero Exp $";
+static char rcsid[] = "$Id: TocInfoDialog.cc,v 1.6 2000/10/01 16:39:10 llanero Exp $";
 
 #include "TocInfoDialog.h"
 
@@ -320,10 +323,10 @@ TocInfoDialog::TocInfoDialog(AudioCDChild *child)
   applyButton_->show();
   applyButton_->clicked.connect(SigC::slot(this,&TocInfoDialog::applyAction));
 
-  button = new Gtk::Button(string(" Cancel "));
+  button = new Gtk::Button(string(" Close "));
   bbox->pack_start(*button);
   button->show();
-  button->clicked.connect(SigC::slot(this,&TocInfoDialog::cancelAction));
+  button->clicked.connect(SigC::slot(this,&TocInfoDialog::closeAction));
 
   get_action_area()->pack_start(*bbox);
   bbox->show();
@@ -637,7 +640,7 @@ gint TocInfoDialog::delete_event_impl(GdkEventAny*)
   return 1;
 }
 
-void TocInfoDialog::cancelAction()
+void TocInfoDialog::closeAction()
 {
   stop();
 }

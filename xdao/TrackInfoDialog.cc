@@ -18,6 +18,9 @@
  */
 /*
  * $Log: TrackInfoDialog.cc,v $
+ * Revision 1.5  2000/10/01 16:39:10  llanero
+ * applied Jason Lunz patch: "Close" instead of "Cancel" where appropiate.
+ *
  * Revision 1.4  2000/09/21 02:07:07  llanero
  * MDI support:
  * Splitted AudioCDChild into same and AudioCDView
@@ -44,7 +47,7 @@
  *
  */
 
-static char rcsid[] = "$Id: TrackInfoDialog.cc,v 1.4 2000/09/21 02:07:07 llanero Exp $";
+static char rcsid[] = "$Id: TrackInfoDialog.cc,v 1.5 2000/10/01 16:39:10 llanero Exp $";
 
 #include "TrackInfoDialog.h"
 
@@ -316,10 +319,10 @@ TrackInfoDialog::TrackInfoDialog(AudioCDChild *child)
   applyButton_->show();
   applyButton_->clicked.connect(slot(this, &TrackInfoDialog::applyAction));
 
-  button = new Gtk::Button(string(" Cancel "));
+  button = new Gtk::Button(string(" Close "));
   bbox->pack_start(*button);
   button->show();
-  button->clicked.connect(slot(this, &TrackInfoDialog::cancelAction));
+  button->clicked.connect(slot(this, &TrackInfoDialog::closeAction));
 
   get_action_area()->pack_start(*bbox);
   bbox->show();
@@ -455,7 +458,7 @@ gint TrackInfoDialog::delete_event_impl(GdkEventAny*)
   return 1;
 }
 
-void TrackInfoDialog::cancelAction()
+void TrackInfoDialog::closeAction()
 {
   stop();
 }
