@@ -18,6 +18,9 @@
  */
 /*
  * $Log: CdDevice.h,v $
+ * Revision 1.7  2000/07/30 14:25:53  llanero
+ * fixed bug with --device not receiving the right device
+ *
  * Revision 1.6  2000/07/30 02:41:03  llanero
  * started CD to CD copy. Still not functional.
  *
@@ -61,7 +64,7 @@ class ScsiIf;
 
 class CdDevice : public SigC::Object {
 public:
-  enum Status { DEV_READY, DEV_RECORDING, DEV_READING, DEV_BUSY,
+  enum Status { DEV_READY, DEV_RECORDING, DEV_READING, DEV_WAITING, DEV_BUSY,
 		DEV_NO_DISK, DEV_BLANKING, DEV_FAULT, DEV_UNKNOWN };
   enum DeviceType { CD_R, CD_RW, CD_ROM };
 
@@ -113,7 +116,7 @@ public:
   void abortDaoReading();
 
   int duplicateDao(int simulate, int multiSession, int speed,
-		int eject, int reload, int buffer, int onthefly, CdDevice *readdev);
+		int eject, int reload, int buffer, int onthefly, int correction, CdDevice *readdev);
   void abortDaoDuplication();
     
   int progressStatusChanged();

@@ -135,7 +135,8 @@ void RecordHDTarget::cancelAction()
   stop();
 }
 
-void RecordHDTarget::startAction(RecordSourceType source, RecordTocSource *TOC, RecordCDSource *CD)
+void RecordHDTarget::startAction(RecordSourceType source,
+		RecordTocSource *TOC, RecordCDSource *CD)
 {
   int eject, simulate, speed, multiSession, reload;
   int started = 0;
@@ -199,7 +200,6 @@ void RecordHDTarget::startAction(RecordSourceType source, RecordTocSource *TOC, 
   free(buffer);
 
 
-//  speed = SPEED_TABLE[speed_].speed;
   correction = CD->getCorrection();
 
   Gtk::CList_Helpers::SelectionList selection = CD->DEVICES->selection();

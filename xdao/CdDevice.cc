@@ -18,6 +18,9 @@
  */
 /*
  * $Log: CdDevice.cc,v $
+ * Revision 1.7  2000/07/30 14:25:53  llanero
+ * fixed bug with --device not receiving the right device
+ *
  * Revision 1.6  2000/07/30 02:41:03  llanero
  * started CD to CD copy. Still not functional.
  *
@@ -49,7 +52,7 @@
  *
  */
 
-static char rcsid[] = "$Id: CdDevice.cc,v 1.6 2000/07/30 02:41:03 llanero Exp $";
+static char rcsid[] = "$Id: CdDevice.cc,v 1.7 2000/07/30 14:25:53 llanero Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -756,17 +759,21 @@ void CdDevice::readProgress(int *status, int *track, int *trackProgress) const
 // Return: 0: OK, process succesfully launched
 //         1: error occured
 int CdDevice::duplicateDao(int simulate, int multiSession, int speed,
-		int eject, int reload, int buffer, int onthefly, CdDevice *readdev)
+		int eject, int reload, int buffer, int onthefly, int correction, CdDevice *readdev)
 {
   char *tocFileName;
-  char *args[20];
+  char *args[25];
   int n = 0;
   char devname[30];
+  char r_devname[30];
   char drivername[50];
+  char r_drivername[50];
   char speedbuf[20];
+  char correctionbuf[20];
   char *execName;
   const char *s;
   char bufferbuf[20];
+
 
 
   if (readdev->status() != DEV_READY || readdev->process() != NULL)
@@ -793,6 +800,10 @@ int CdDevice::duplicateDao(int simulate, int multiSession, int speed,
 
   if (multiSession)
     args[n++] = "--multi";
+
+  sprintf(correctionbuf, "%d", correction);
+  args[n++] = "--paranoia-mode";
+  args[n++] = correctionbuf;
 
   if (speed > 0) {
     sprintf(speedbuf, "%d", speed);
@@ -831,15 +842,15 @@ int CdDevice::duplicateDao(int simulate, int multiSession, int speed,
     args[n++] = readdev->specialDevice();
   }
   else {
-    sprintf(devname, "%d,%d,%d", readdev->bus(), readdev->id(), readdev->lun());
-    args[n++] = devname;
+    sprintf(r_devname, "%d,%d,%d", readdev->bus(), readdev->id(), readdev->lun());
+    args[n++] = r_devname;
   }
 
   if (readdev->driverId() > 0) {
-    sprintf(drivername, "%s:0x%lx", driverName(readdev->driverId()),
+    sprintf(r_drivername, "%s:0x%lx", driverName(readdev->driverId()),
     			 readdev->driverOptions());
     args[n++] = "--source-driver";
-    args[n++] = drivername;
+    args[n++] = r_drivername;
   }
 
   if (buffer >= 10) {
@@ -851,7 +862,7 @@ int CdDevice::duplicateDao(int simulate, int multiSession, int speed,
 
   args[n++] = NULL;
   
-  assert(n <= 20);
+  assert(n <= 25);
   
   int i;
 
@@ -875,8 +886,11 @@ int CdDevice::duplicateDao(int simulate, int multiSession, int speed,
 
 /*
   if (process_ != NULL) {
-    status_ = DEV_RECORDING;
-
+    readdev->status(DEV_READING)
+    if (onthefly)
+      status_ = DEV_RECORDING;
+    else
+      status_ = DEV_WAITING;
     if (process_->commFd() >= 0) {
       Gtk::Main::instance()->input.connect(slot(this,
 						&CdDevice::updateProgress),
@@ -963,6 +977,9 @@ const char *CdDevice::status2string(Status s)
     break;
   case DEV_READING:
     ret = "Reading";
+    break;
+  case DEV_WAITING:
+    ret = "Waiting";
     break;
   case DEV_BLANKING:
     ret = "Blanking";
@@ -1335,6 +1352,7 @@ int CdDevice::updateDeviceStatus()
 
   return newStatus;
 }
+
 
 #if 0
 /* not used anymore since Gtk::Main::input signal will call

@@ -224,6 +224,7 @@ void RecordCDTarget::startAction(RecordSourceType source,
 	RecordTocSource *TOC, RecordCDSource *CD)
 {
   int eject, simulate, speed, multiSession, reload, onthefly;
+  int correction;
   int started = 0;
   Toc *toc;
   int buffer;
@@ -374,6 +375,10 @@ void RecordCDTarget::startAction(RecordSourceType source,
       return;
     }
 
+    //Read options
+    correction = CD->getCorrection();
+
+    //Record options
     simulate = simulateButton_->get_active() ? 1 : 0;
     multiSession = closeSessionButton_->get_active() ? 0 : 1;
     onthefly = ontheflyButton_->get_active() ? 1 : 0;
@@ -384,6 +389,7 @@ void RecordCDTarget::startAction(RecordSourceType source,
     eject = ejectButton_->get_active() ? 1 : 0;
     reload = reloadButton_->get_active() ? 1 : 0;
     buffer = bufferSpinButton_->get_value_as_int();
+
 
     // If ejecting the CD after recording is requested issue a warning message
     // because buffer under runs may occur for other devices that are recording.
@@ -436,25 +442,29 @@ void RecordCDTarget::startAction(RecordSourceType source,
     Gtk::CList_Helpers::SelectionList r_selection = CD->DEVICES->selection();
     DeviceList::DeviceData *r_data =
 			(DeviceList::DeviceData*)r_selection[0].get_data();
-    CdDevice *readdev = CdDevice::find(r_data->bus, r_data->id, r_data->lun);
-  
-    Gtk::CList_Helpers::SelectionList selection = DEVICES->selection();
+    if (r_data != NULL) {
+      CdDevice *readdev = CdDevice::find(r_data->bus, r_data->id, r_data->lun);
+    if (readdev != NULL) {
 
-    for (i = 0; i < selection.size(); i++) {
-      DeviceList::DeviceData *data = (DeviceList::DeviceData*)selection[i].get_data();
+      Gtk::CList_Helpers::SelectionList selection = DEVICES->selection();
 
-      if (data != NULL) {
-        CdDevice *dev = CdDevice::find(data->bus, data->id, data->lun);
+      for (i = 0; i < selection.size(); i++) {
+        DeviceList::DeviceData *data = (DeviceList::DeviceData*)selection[i].get_data();
 
-      if (dev != NULL) {
-    	if (dev->duplicateDao(simulate, multiSession, speed,
-			     eject, reload, buffer, onthefly, readdev) != 0) {
-	    message(-2, "Cannot start disk-at-once duplication.");
-  	}
-	  else {
-	    started = 1;
-	  }
+        if (data != NULL) {
+          CdDevice *dev = CdDevice::find(data->bus, data->id, data->lun);
+
+        if (dev != NULL) {
+      	if (dev->duplicateDao(simulate, multiSession, speed,
+			       eject, reload, buffer, onthefly, correction, readdev) != 0) {
+	      message(-2, "Cannot start disk-at-once duplication.");
+  	  }
+  	  else {
+  	    started = 1;
+	    }
         }
+      }
+      }
       }
     }
 
