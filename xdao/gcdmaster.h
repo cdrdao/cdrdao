@@ -45,7 +45,7 @@ public:
   void appClose();
   void closeProject(Project *);
   void newChooserWindow();
-  void newAudioCDProject(char *name);
+  void newAudioCDProject(const char *name);
 
   void recordCD2CD();
   void recordCD2HD();

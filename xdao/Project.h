@@ -58,7 +58,7 @@ public:
   Project(int);
 
   void newChooserWindow();
-  void newAudioCDProject(char *name = 0);
+  void newAudioCDProject(const char *name = 0);
   void openProject();
   void readFileSelectorOKCB();
   void readFileSelectorCancelCB();

@@ -60,7 +60,7 @@ void GCDMaster::newChooserWindow()
   add(project);
 }
 
-void GCDMaster::newAudioCDProject(char *name)
+void GCDMaster::newAudioCDProject(const char *name)
 {
   Project *project = new Project(project_number);
   project->newAudioCDProject(name);

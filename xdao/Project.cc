@@ -173,7 +173,7 @@ void Project::newChooserWindow()
   show();
 }
 
-void Project::newAudioCDProject(char *name)
+void Project::newAudioCDProject(const char *name)
 {
   if (projectType == P_CHOOSER)
     delete (projectChooser_);
