@@ -1,0 +1,402 @@
+<HTML
+><HEAD
+><TITLE
+>Installation</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.54"><LINK
+REL="HOME"
+TITLE="mp32dao documentation"
+HREF="book1.html"><LINK
+REL="PREVIOUS"
+TITLE="Features"
+HREF="features.html"><LINK
+REL="NEXT"
+TITLE="Compiling and installing"
+HREF="x91.html"></HEAD
+><BODY
+CLASS="CHAPTER"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>mp32dao documentation</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="features.html"
+>Prev</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+></TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="x91.html"
+>Next</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="CHAPTER"
+><H1
+><A
+NAME="INSTALLATION"
+>Chapter 3. Installation</A
+></H1
+><DIV
+CLASS="TOC"
+><DL
+><DT
+><B
+>Table of Contents</B
+></DT
+><DT
+><A
+HREF="installation.html#AEN39"
+>Requirements</A
+></DT
+><DT
+><A
+HREF="x91.html"
+>Compiling and installing</A
+></DT
+></DL
+></DIV
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="AEN39"
+>Requirements</A
+></H1
+><P
+>In order to be able to use <SPAN
+CLASS="PRODUCTNAME"
+>mp32dao</SPAN
+> you must have,
+installed and working, on your system the following software:
+<P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+>Perl interpreter</DT
+><DD
+><P
+>	I currently use:
+	<TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="90%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>[cowo@braveheart mp32dao]$ perl -V
+Summary of my perl5 (revision 5.0 version 6 subversion 0) configuration:
+  Platform:
+    osname=linux, osvers=2.2.18, archname=i686-linux
+    uname='linux braveheart 2.2.18 #3 
+      tue feb 6 08:32:20 cet 2001 i686 unknown '
+    config_args=''
+    hint=previous, useposix=true, d_sigaction=define
+    usethreads=undef use5005threads=undef 
+      useithreads=undef usemultiplicity=undef 
+      useperlio=undef d_sfio=undef uselargefiles=undef 
+      use64bitint=undef use64bitall=undef 
+      uselongdouble=undef usesocks=undef
+  Compiler:
+    cc='cc', optimize='-O3 -fomit-frame-pointer 
+      -mpentiumpro -march=pentiumpro -malign-functions=4 
+      -funroll-loops -fexpensive-optimizations -malign-double 
+      -fschedule-insns2 -mwide-multiply', 
+      gccversion=2.95.3 19991030 (prerelease)
+    cppflags='-fno-strict-aliasing -I/usr/local/include'
+    ccflags ='-fno-strict-aliasing -I/usr/local/include'
+    stdchar='char', d_stdstdio=define, usevfork=false
+    intsize=4, longsize=4, ptrsize=4, doublesize=8
+    d_longlong=define, longlongsize=8, d_longdbl=define, 
+      longdblsize=12
+    ivtype='long', ivsize=4, nvtype='double', nvsize=8, 
+      Off_t='off_t', lseeksize=4
+    alignbytes=4, usemymalloc=n, prototype=define
+  Linker and Libraries:
+    ld='cc', ldflags =' -L/usr/local/lib'
+    libpth=/usr/local/lib /lib /usr/lib
+    libs=-lnsl -lgdbm -lpthread -ldl -lm -lc -lcrypt
+    libc=/lib/libc-2.1.92.so, so=so, useshrplib=true,
+      libperl=libperl.so
+  Dynamic Linking:
+    dlsrc=dl_dlopen.xs, dlext=so, d_dlsymun=undef, 
+      ccdlflags='-rdynamic -Wl,-rpath,
+      /usr/lib/perl5/5.6.0/i686-linux/CORE'
+    cccdlflags='-fpic', lddlflags='-shared -L/usr/local/lib'
+
+
+Characteristics of this binary (from libperl): 
+  Compile-time options:
+  Built under linux
+  Compiled at Feb  7 2001 14:50:21
+  @INC:
+    /usr/lib/perl5/5.6.0/i686-linux
+    /usr/lib/perl5/5.6.0
+    /usr/lib/perl5/site_perl/5.6.0/i686-linux
+    /usr/lib/perl5/site_perl/5.6.0
+    /usr/lib/perl5/site_perl
+    .</PRE
+></TD
+></TR
+></TABLE
+> 
+		and it works for me. Please note I compiled Perl myself, disabling thread support.
+		You may get into trouble if you want to use internal mp3 decoding coupled with a threaded Perl
+		distribution. This will be made clear later.
+	</P
+></DD
+><DT
+>MP3::Info Perl Module</DT
+><DD
+><P
+>	It is used to access MP3 informations such as playing length, ID3 tags and more.</P
+></DD
+><DT
+>Audio::Wav Perl Module</DT
+><DD
+><P
+>	It is used to access Wav file information such as length.</P
+></DD
+><DT
+>Audio::Tools::Time Perl Module</DT
+><DD
+><P
+>	Almost the same as above.</P
+></DD
+><DT
+>mp3handler Perl Module</DT
+><DD
+><P
+>	Contains the object I use for MP3 handling. You may find it useful yourself.
+	You can find it along with mp32dao. If you plan to install mp32dao system-wide you
+	must put it somewhere in the perl search path. Or leave it in the same directory
+	where you unpacked mp32dao.</P
+></DD
+><DT
+>mp3dec Perl Module</DT
+><DD
+><P
+>	This module will be used to handle mp3 decoding internally, using libmpeg3 and libsndfile. It
+	is not absolutely necessary; an external decoding program can be used such as lame or madplay.
+	It will be used only if available.
+	You can create this module yourself by using <A
+HREF="http://www.swig.org"
+TARGET="_top"
+>SWIG</A
+>,
+	following these steps:
+	<P
+></P
+><OL
+TYPE="1"
+><LI
+><P
+>		compile <TT
+CLASS="FILENAME"
+>mp3dec.c</TT
+>, for example using 
+			<TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="90%"
+><TR
+><TD
+><PRE
+CLASS="SCREEN"
+>gcc -fPIC -D_REENTRANT -c mp3dec.c
+			</PRE
+></TD
+></TR
+></TABLE
+>
+		You will obtain <TT
+CLASS="FILENAME"
+>mp3dec.o</TT
+>. This is a stupid console program
+		which exports a function used to decode mp3 files to wav files.
+	</P
+></LI
+><LI
+><P
+>		generate perl wrapper using SWIG:
+		 <TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="90%"
+><TR
+><TD
+><PRE
+CLASS="SCREEN"
+>swig -perl5 mp3dec.i</PRE
+></TD
+></TR
+></TABLE
+>
+		You will obtain files <TT
+CLASS="FILENAME"
+>mp3dec_wrap.c</TT
+> and <TT
+CLASS="FILENAME"
+>mp3dec.pm</TT
+>. The first will
+		be used by perl to access function exported by mp3dec.c, the second is the one to include in perl code.
+		<DIV
+CLASS="NOTE"
+><BLOCKQUOTE
+CLASS="NOTE"
+><P
+><B
+>Note: </B
+>If you are using threaded perl SWIG won't work! (at least for me). Please use a no-threads
+			perl build.
+		</P
+></BLOCKQUOTE
+></DIV
+>
+	</P
+></LI
+><LI
+><P
+>		compile SWIG-generated wrapper:
+		<TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="90%"
+><TR
+><TD
+><PRE
+CLASS="SCREEN"
+>			gcc -fPIC -c -Dbool=char -I /usr/lib/perl5/5.6.0/i686-linux mp3dec_wrap.c
+		</PRE
+></TD
+></TR
+></TABLE
+>
+		Of course the include option should match the right one for your system. On Redhat Linux systems
+		it is usually <TT
+CLASS="FILENAME"
+>/usr/lib/perl5/5.6.0/i386-linux</TT
+> on Intel machines.
+	</P
+></LI
+><LI
+><P
+>		create the shared library that will be loaded by Dynaloader:
+		<TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="90%"
+><TR
+><TD
+><PRE
+CLASS="SCREEN"
+>			gcc -shared mp3dec_wrap.o mp3dec.o -o mp3dec.so -lm -lpthread -lmpeg3 -lsndfile
+		</PRE
+></TD
+></TR
+></TABLE
+>
+		Ok, as you can see there are some external libraries needed; libmpeg3 and libsndfile which
+		you'll find on freshmeat.net. libm and libpthread are standard on glibc2 systems, I don't
+		have access to others, sorry. Then you must copy the resulting <TT
+CLASS="FILENAME"
+>mp3dec.so</TT
+> somewhere
+		in the perl search path.
+	</P
+></LI
+></OL
+></P
+></DD
+></DL
+></DIV
+></P
+></DIV
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="features.html"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="book1.html"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="x91.html"
+>Next</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Features</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+>&nbsp;</TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>Compiling and installing</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

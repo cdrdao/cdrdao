@@ -1,0 +1,186 @@
+<HTML
+><HEAD
+><TITLE
+>Compiling and installing</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.54"><LINK
+REL="HOME"
+TITLE="mp32dao documentation"
+HREF="book1.html"><LINK
+REL="UP"
+TITLE="Installation"
+HREF="installation.html"><LINK
+REL="PREVIOUS"
+TITLE="Installation"
+HREF="installation.html"><LINK
+REL="NEXT"
+TITLE="Usage"
+HREF="usage.html"></HEAD
+><BODY
+CLASS="SECT1"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>mp32dao documentation</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="installation.html"
+>Prev</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+>Chapter 3. Installation</TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="usage.html"
+>Next</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="AEN91"
+>Compiling and installing</A
+></H1
+><P
+>If you have SWIG, libpthread, libmpeg3 and libsndfile already installed you may use internal
+mp3 decoding module. Otherwise you must have an external mp3 decoding software available.
+There are no particular differences, but internal decoding gives a better feeling :-)).</P
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN94"
+>Internal Decoding</A
+></H2
+><P
+>		Edit the supplied <TT
+CLASS="FILENAME"
+>Makefile</TT
+> to fit your system's configuration. Then type
+		<TT
+CLASS="COMPUTEROUTPUT"
+>make</TT
+> and <TT
+CLASS="COMPUTEROUTPUT"
+>make install</TT
+>.
+	</P
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN100"
+>External Decoding</A
+></H2
+><P
+>		You must have an external command-line mp3 decoder installed. Then edit <TT
+CLASS="FILENAME"
+>mp32dao.pl</TT
+>,
+		find the line <TT
+CLASS="COMPUTEROUTPUT"
+>my $external_mp3decoder = 'lame --decode --mp3input';</TT
+> and
+		change the programname and options to suit your needs. Please note that the external program
+		must take a command-line like this <TT
+CLASS="COMPUTEROUTPUT"
+>programname [OPTIONS] input.mp3 output.wav</TT
+>
+		to work with mp32dao.
+		You can leave mp32dao anywhere you like but take care that <TT
+CLASS="FILENAME"
+>mp3handler.pm</TT
+> is in its
+		same directory or somewhere in the perl search path.
+	</P
+></DIV
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="installation.html"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="book1.html"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="usage.html"
+>Next</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Installation</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="installation.html"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>Usage</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

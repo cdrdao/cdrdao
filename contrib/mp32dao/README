@@ -1,8 +1,18 @@
-This perl script converts a set of mp3 files to wave files and creates
-a suitable toc-file for recording them to a CD-R. The clue of this script
-is that a track is padded with samples of the following track's data instead
-of using zero samples to match the CD block size.
+This Perl script automates the process of making CDs from MP3 files.
+It will scan the current directory for MP3 files, parse the ID3 tags (if present),
+decode all MP3files to wav and produce a suitable TOC file (with cd-text 
+info if possible).
+Some of the code is taken from Joe Steward's mp32dao, using to pad one track with the next.
+Decoding is done by a routine in mp3dec.c, interfaced using SWIG.
+There is a package called mp3handler.pm used to decode mp3files to wav and print
+some info.
 
-The documentation is located at the end of the perl script.
+In order to compile all the stuff you need:
 
-Please send comments/bug reports to Joe Stewart <mp32dao@httptech.com>.
+-MP3::Info Perl module
+-libmpeg3
+-POSIX pthread library (usually found in libc on GNU systems)
+-libsndfile
+-libm (should be already present on your system)
+
+Please send comments/bug reports to Giuseppe Corbelli <cowo@lugbs.linux.it>
