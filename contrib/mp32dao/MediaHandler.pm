@@ -17,19 +17,21 @@
 #builds a list of handlers for all mediafiles in a directory
 
 package MediaHandler;
+require mp3handler;
+require ogghandler;
+@ISA = qw(mp3handler ogghandler);
 use strict; 
-#use Data::Dumper;
-use ogghandler;
-use mp3handler;
-use Audio::Wav;
 use vars qw ( @ext $AUTOLOAD );
 
-@ext = ('.ogg', '.mp3');
+#These are supported media files. Each time a new one is added
+#its extension is put here and appropriate handler is instantiated in
+#MediaHandler constructor.
+@ext = ('.mp3', '.ogg');
 
-#3 args: directory name, extension, reference to array
-#returns number of files found or -1 if error
-#reads all filenames (*.extension) in given directory, sorts them
-#and puts in array.
+#2 args: self name and directory name
+#returns blessed reference
+#reads all filenames (extensions in @ext) in given directory,
+#creates an handler for each one and puts istances in $self->{'LIST'}
 sub new	{
 	my ($proto, $dirname) = @_;
 	my ($class) = ref($proto)||$proto;
@@ -55,20 +57,14 @@ sub new	{
 		if ($filename =~ m/.ogg/i)	{
 			push (@{$self->{'LIST'}}, ogghandler->new("$dirname/$filename"));
 		}
-#		if ($filename =~ m/.wav/i)	{
-#		}
+		if ($filename =~ m/.wav/i)	{
+		}
 		if ($filename =~ m/.mp3/i)	{
 			push (@{$self->{'LIST'}}, mp3handler->new("$dirname/$filename"));
 		}
 	}
 	bless ($self, $class);
 	return $self;
-}
-
-sub info	{
-	my ($self) = shift;
-	printf ("\nCurrently working on %d files in dir:\n\t%s\n", $self->total, $self->dir);
-	foreach $_ (@{$self->list}) { $_->print_file_info };
 }
 
 sub AUTOLOAD    {

@@ -14,136 +14,115 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 #
 #Copyright 2001 Giuseppe Corbelli - cowo@lugbs.linux.it
-#simple package to decode and print info of ogg files
+# Please look at mp3handler.pm for comments. This is almost the same,
+# only difference is Ogg::Vorbis backend
 
 package ogghandler;
+require BaseInfo;
+@ISA = qw(BaseInfo);
 use strict;
 #use Data::Dumper;
-use vars qw( $AUTOLOAD  );
+use vars qw($AUTOLOAD);
 use Ogg::Vorbis;
+use File::Basename;
 
 # 1 Arg, scalar containing filename
 sub new {
-	my ($proto) = shift; my ($class) = ref($proto)||$proto;
-	my ($Inputfile) = shift; my ($self);
+	my ($proto) = shift; 
+	my ($class) = ref($proto)||$proto;
+	my $self = $class->SUPER::new();
+
+	$self->Filename(shift);
+	if (! $self->Filename)	{
+		$self->Error("No input file defined.");
+		return -1;
+	}
+	if (! -r $self->Filename)	{
+		$self->Error("Input file is not readable");
+		return -1;
+	}
+	if (-z $self->Filename)	{
+		$self->Error("Input file has 0 size");
+		return -1;
+	}
 	
 	#Identify available ogg decoder
 	foreach my $dir (split (/\:/, $ENV{'PATH'}))	{
 		if ( (-x "$dir/ogg123") && (-s "$dir/ogg123") )	{
-			$self->{'decoder_type'} = 'ogg123';
-			$self->{'decoder'} = "$dir/ogg123";
+			$self->decoder_type('ogg123');
+			$self->decoder("$dir/ogg123");
 			last;
 		}
 	}
-	die ("Cannot find any of the supported ogg decoders in \$PATH.") if ( !defined ($self->{'decoder'}));
-	open (my ($fh), "< $Inputfile");
-	$self->{'Filename'} = $Inputfile;
-	$self->{'handle'} = Ogg::Vorbis->new;
-	$self->{'handle'}->open ($fh);
-	$self->{'Outfile'} = undef;
-	$self->{'comments'} = $self->{'handle'}->comment;
-	$self->{'ogginfo'} = $self->{'handle'}->info;
-	$self->{'bitrate'} = $self->{'handle'}->bitrate;
-	$self->{'streams'} = $self->{'handle'}->streams;
-	$self->{'serialnumber'} = $self->{'handle'}->serialnumber;
-	$self->{'raw_total'} = $self->{'handle'}->raw_total;
-	$self->{'pcm_total'} = $self->{'handle'}->pcm_total;
-	$self->{'time_total'} = $self->{'handle'}->time_total;
-	$self->{'debug'} = 0;
-	$self->{'external_oggdecoder'} = undef;
+	if ( !$self->decoder )	{
+		$self->Error("Cannot find any of the supported ogg decoders in \$PATH.");
+		return -1;
+	}
+
+	open (my ($fh), "<".$self->Filename);
+	my $handle = Ogg::Vorbis->new;
+	$handle->open ($fh);
+	
+	$self->Artist($handle->comment->{"artist"});
+	$self->Album($handle->comment->{"album"});
+	$self->Title($handle->comment->{"title"});
+	$self->Avgbr($handle->bitrate);
+	$self->Year($handle->comment->{'date'});
+	$self->Comment($handle->comment->{'comment'});
+	$self->Genre($handle->comment->{'genre'});
+	$self->durationMM($handle->time_total/60);
+	$self->durationSS($handle->time_total%60);
+	$self->duration($handle->time_total);
+	$self->channels($handle->info->channels);
+	$self->frequency($handle->info->rate);
+	$self->debug(1);
 	bless ($self, $class);
 	return $self;
 }
 
+sub type	{
+	return 'ogg';
+}
+
 sub print_file_info	{
 	my ($self) = @_;
-	printf ("\nFilename : %s\n", $self->Filename);
-	printf ("Artist name: %s\t", $self->comments->{'artist'});
-	printf ("Album name: %s\t", $self->comments->{'album'});
-	printf ("Song title: %s\n", $self->comments->{'title'});
-	printf ("Year: %s\t", $self->comments->{'date'});
+	printf ("\nFilename : %s, type %s\n", $self->Filename, $self->type);
+	printf ("\tArtist name: %s\t", $self->artist);
+	printf ("Album name: %s\t", $self->album);
+	printf ("Song title: %s\n", $self->title);
+	printf ("\tYear: %s\t", $self->year);
 	printf ("Song comment: %s\t", $self->comment);
-	printf ("Genre: %s\n", $self->comments->{'genre'});
-	printf ("Duration: %d min and %d sec\t", $self->time_total/60, $self->time_total%60);
-	printf ("Average Bitrate: %d Kb/s\n", $self->bitrate/1024);
-	printf ("Version: %d\t", $self->ogginfo->version);
-	printf ("%d channels, %d HZ\n", $self->ogginfo->channels, $self->ogginfo->rate);
+	printf ("Genre: %s\n", $self->genre);
+	printf ("\tDuration: %d min and %d sec\t", $self->durationMM, $self->durationSS);
+	printf ("Average Bitrate: %d kb/s\n", $self->Avgbr/1024);
+	printf ("\t%d channel(s), %d HZ", $self->channels, $self->frequency);
 	return 0;
 }
 
 sub to_wav	{
 	my ($self) = shift;
-	my ($cmdline);
-	printf ("\nDecoding file %s", $self->Filename);
+	my (@temp, $cmdline);
+	if (! -w dirname($self->Filename) )	{
+		$self->Error("Output directory is not writable");
+		return -1;
+	}
+	printf ("\nDecoding file %s", $self->Filename) if ($self->debug);
 	if (!$self->Outfile)	{
 		$_ = $self->Filename; s/\.ogg/\.wav/i;
 		$self->Outfile ($_);
-		print ("\n\tNo outputfile defined. Used ".$self->Outfile."\n");
+		print ("\n\tNo outputfile defined. Used ".$self->Outfile."\n") if ($self->debug);
 	} else	{
-		printf (" to file %s\n", $self->Outfile);
+		printf (" to file %s\n", $self->Outfile) if ($self->debug);
 	}
-	if ( (-e $self->Outfile) && (-s $self->Outfile) )	{
-		print $self->Outfile." exists, skipping ogg decode\n";
+	if ( (-e $self->Outfile) && (-s $self->Outfile) && ($self->debug) )	{
+		print $self->Outfile." exists, skipping mp3 decode\n" if ($self->debug);
 		return 0;
 	}
-	if ($self->{'decoder_type'} =~ /ogg123/i)	{
-		$cmdline = $self->{'decoder'}." -q -d wav -o file:".quotemeta ($self->Outfile)." ".quotemeta ($self->Filename);
+	if ($self->decoder_type =~ /ogg123/i)	{
+		$cmdline = $self->decoder." -q -d wav -o file:".quotemeta ($self->Outfile)." ".quotemeta ($self->Filename);
 	}
-	return system ($cmdline);
-}
-sub handle	{
-	my ($self) = shift;
-	return $self->{'handle'};
-}
-sub type	{
-	return 'ogg';
-}
-sub AUTOLOAD    {
-        my ($self) = shift;
-        return if $AUTOLOAD =~ /::DESTROY$/;
-        $AUTOLOAD =~ s/^.*:://;
-        $AUTOLOAD =~ s/^\s*\Ufilename\E\s*$/Filename/;
-        $AUTOLOAD =~ s/^\s*\Uoutfile\E\s*$/Outfile/;
-        $AUTOLOAD =~ s/^\s*\Ucomments\E\s*$/comments/;
-        $AUTOLOAD =~ s/^\s*\Uogginfo\E\s*$/ogginfo/;
-        $AUTOLOAD =~ s/^\s*\Ubitrate\E\s*$/bitrate/;
-        $AUTOLOAD =~ s/^\s*\Ustreams\E\s*$/streams/;
-        $AUTOLOAD =~ s/^\s*\Userialnumber\E\s*$/serialnumber/;
-        $AUTOLOAD =~ s/^\s*\Uraw_total\E\s*$/raw_total/;
-        $AUTOLOAD =~ s/^\s*\Upcm_total\E\s*$/pcm_total/;
-        $AUTOLOAD =~ s/^\s*\Utime_total\E\s*$/time_total/;
-        $AUTOLOAD =~ s/^\s*\Udebug\E\s*$/debug/;
-        $AUTOLOAD =~ s/^\s*\Uexternal_oggdecoder\E\s*$/external_oggedecoder/;
-        @_ ? $self->{$AUTOLOAD} = shift : return ($self->{$AUTOLOAD});
-}
-
-sub duration	{
-	my ($self) = shift;
-	return ($self->time_total);
-}
-sub durationMM	{
-	my ($self) = shift;
-	return $self->time_total/60;
-}
-sub durationSS	{
-	my ($self) = shift;
-	return $self->time_total%60;
-}
-sub year	{
-	my ($self) = shift;
-	return $self->comments->{'date'};
-}
-sub artist	{
-	my ($self) = shift;
-	return $self->comments->{'artist'};
-}
-sub title	{
-	my ($self) = shift;
-	return $self->comments->{'title'};
-}
-sub album	{
-	my ($self) = shift;
-	return $self->comments->{'album'};
+	system ("".$cmdline);
+	return $? >> 8;
 }
 
 1;

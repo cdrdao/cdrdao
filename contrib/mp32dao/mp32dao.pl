@@ -21,7 +21,6 @@
 use FindBin;
 use lib $FindBin::Bin;
 use Cwd;
-#use MP3::Info;
 use strict;
 use MediaHandler;
 use Audio::Wav;
@@ -67,9 +66,8 @@ tocfile_header($fh, $cdtext, $album, $artist);
 
 #Set outputfiles and decode to wav.
 print "\nDecoding compressed files to wav\n";
-$list->info;
 foreach my $file (@{$list->list})	{
-	if ( ($file->to_wav) != 0 ) {print ("\n\tWARNING: an error occurred while decoding ".$file->Filename."\n")};
+	if ( $_=($file->to_wav) != 0 ) {print ("\n\tWARNING: decoder for file ".$file->Filename." exited with code $_\n")};
 }
 $count=0;
 print "\nAnalyzing wav files and creating toc\n\n";

@@ -65,7 +65,7 @@ a <emphasis>TOC</> file suitable for burning with <productname>cdrdao</>.
 <sect1><title>Requirements</>
 <para>
 In order to be able to use <productname>mp32dao</> you must have,
-installed and working, on your system the following software:
+installed and working, the following software on your system:
 <variablelist>
 <varlistentry><term>Perl interpreter</>
 	<listitem><para>
@@ -117,7 +117,7 @@ Summary of my perl5 (revision 5.0 version 6 subversion 0) configuration:
 	It is used to fetch current working directory. You should already have it.
 </para></listitem>
 </varlistentry>
-<varlistentry><term>mp3handler,ogghandler,MediaHandler Perl Modules</>
+<varlistentry><term>mp3handler.pm, ogghandler.pm, MediaHandler.pm Perl Modules</>
 <listitem><para>
 	They are part of <productname>mp32dao</> distribution. Leave them in the same directory where mp32dao.pl is or install them
 	in the perl search path.
@@ -127,8 +127,14 @@ Summary of my perl5 (revision 5.0 version 6 subversion 0) configuration:
 </para>
 </sect1>
 <sect1><title>Installation</title>
-<para>You can put the main program file, <screen>mp32dao.pl</> anywhere you like. But it expets to find all needed
-modules in the <productname>perl</> search path or in its same directory.
+<para>You can put the main program file, <computeroutput>mp32dao.pl</> anywhere you like. But it expets to find its components
+in the <productname>perl</> search path or in its same directory. The needed components are:
+<itemizedlist>
+<listitem><screen>ogghandler.pm</></listitem>
+<listitem><screen>mp3handler.pm</></listitem>
+<listitem><screen>MediaHandler.pm</></listitem>
+<listitem><screen>BaseInfo.pm</></listitem>
+</itemizedlist>
 </para>
 </sect1>
 </chapter>
@@ -136,7 +142,7 @@ modules in the <productname>perl</> search path or in its same directory.
 <sect1><title>Command line options</>
 <para>The usage is fairly straightforward:
 	<orderedlist>
-		<listitem><para>put all and only the mp3files you want on the CD in a single directory.
+		<listitem><para>put all and only the mp3 and/or ogg files you want on the CD in a single directory.
 		</para></listitem>
 		<listitem><para>change to this directory
 		</para></listitem>
@@ -165,7 +171,8 @@ modules in the <productname>perl</> search path or in its same directory.
 <para>The Mediahandler constructor takes as input a directory name, scans for all supported
 media files, and returns a list containing handlers for all common operations, such as wav decoding,
 information access etc. This info is collected by the two lower level modules mp3handler and ogghandler
-using MP3::Info and Ogg::Vorbis. The main program builds the TOC.
+using MP3::Info and Ogg::Vorbis. The main program builds the TOC. In the distribution you will find
+a simple <productname>UML</> diagram which should make it somewhat clearer.
 </para>
 </sect1>
 </chapter>
@@ -177,6 +184,16 @@ using MP3::Info and Ogg::Vorbis. The main program builds the TOC.
 		<listitem><para>
 			No more huge wav files. It should be possible to do the decoding
 			on the fly using a FIFO.
+		</para></listitem>
+		</varlistentry>
+		<varlistentry><term>GUI</term>
+		<listitem><para>
+			Some GUIs using Perl/Tk and/or Perl/GTK.
+		</para></listitem>
+		</varlistentry>
+		<varlistentry><term>Binary</term>
+		<listitem><para>
+			Compile the script to have it available in binary form.
 		</para></listitem>
 		</varlistentry>
 	</variablelist>
