@@ -11,10 +11,12 @@ Requires:	lame >= 3
 Requires:	gtkmm2 >= 2.2.0
 Requires:	libgnomeuimm2 >= 2.0
 Requires:	GConf2 >= 2.0.0
+Requires:       libsigc++
 
 BuildRequires:	lame-devel >= 3
 BuildRequires:	gtkmm2-devel >= 2.2.0
 BuildRequires:	libgnomeuimm2-devel >= 2.0
+BuildRequires:  libsigc++-devel
 
 %description
 
