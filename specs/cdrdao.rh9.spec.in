@@ -49,6 +49,9 @@ make %{?_smp_mflags}
 %doc AUTHORS COPYING CREDITS ChangeLog INSTALL README NEWS README.FreeBSD README.PlexDAE README.Win32
 %{_bindir}/cdrdao
 %{_bindir}/gcdmaster
+%{_datadir}/applications/gcdmaster.desktop
+%{_datadir}/pixmaps/gcdmaster.png
+%{_datadir}/cdrdao/*
 %{_bindir}/toc2cue
 %{_bindir}/cue2toc
 %{_bindir}/toc2mp3
