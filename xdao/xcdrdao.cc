@@ -18,6 +18,9 @@
  */
 /*
  * $Log: xcdrdao.cc,v $
+ * Revision 1.10  2000/05/25 20:12:55  llanero
+ * added BUGS and TASKS, changed name to GnomeCDMaster
+ *
  * Revision 1.9  2000/05/17 21:15:55  llanero
  * Beginings of Record Generic Dialog
  *
@@ -181,7 +184,7 @@ static RETSIGTYPE signalHandler(int sig)
 //llanero int main (int argc, char **argv)
 int main (int argc, char* argv[])
 {
-  Gnome::Main application("StillNoName", "0.0", argc, argv);
+  Gnome::Main application("GnomeCDMaster", "0.0", argc, argv);
    
   Gtk::ButtonBox::set_child_size_default(50, 10);
 

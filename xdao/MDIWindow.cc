@@ -277,8 +277,8 @@ MDIWindow::install_menus_and_toolbar()
 }
 
 MDIWindow::MDIWindow(TocEdit *tedit)
-//FIXME: MDI STUFF  : Gnome::MDI("StillNoName", "StillNoTitle")
-  : Gnome::App("StillNoName", "StillNoTitle"),
+//FIXME: MDI STUFF  : Gnome::MDI("GnomeCDMaster", "Gnome CD Master")
+  : Gnome::App("GnomeCDMaster", "Gnome CD Master"),
     readSaveFileSelector_("")
 {
   tocEdit_ = tedit;

@@ -1,0 +1,15 @@
+Status	Who	Description
+======  ======  ==============================================================
+
+-	-	Infinite messages from cdrdao if you close xcdrdao while
+		extracting: xcdrdao should not exit!! and if xcdrdao crashes
+		cdrdao should get a SIGPIPE, continue recording and send
+		messages to stdout if appropiate, but don't try to send
+		messages to xcdrdao again.
+
+-	-	In the Extract process xcdrdao is getting: 31 32 33 32 33 34 !!
+		of trackProgress this makes the progressbar decrease and
+		increase. It looks ugly :)
+
+-	-	Using a big number with buffers when recording won't work!
+		'new' throwing an exception? (try ... else ... ???)
