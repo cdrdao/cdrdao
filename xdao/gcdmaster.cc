@@ -113,7 +113,8 @@ void GCDMaster::readFileSelectorOKCB(ProjectChooser *projectChooser)
     {
       Glib::ustring message(_("Error loading "));
       message += s;
-      Gtk::MessageDialog(message, Gtk::MESSAGE_ERROR); 
+      Gtk::MessageDialog d(*projectChooser, message, Gtk::MESSAGE_ERROR); 
+      d.run();
     }
   }
   g_free(s);

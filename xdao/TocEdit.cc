@@ -62,7 +62,7 @@ TocEdit::~TocEdit()
   trackDataScrap_ = NULL;
 }
 
-void TocEdit::toc(Toc *t, const char *filename)
+int TocEdit::toc(Toc *t, const char *filename)
 {
   delete toc_;
 
@@ -86,10 +86,13 @@ void TocEdit::toc(Toc *t, const char *filename)
 
   if (toc_->length().samples() > 0) {
     unsigned long maxSample = toc_->length().samples() - 1;
-    sampleManager_->scanToc(0, maxSample);
+    int ret = sampleManager_->scanToc(0, maxSample);
+    if (ret)
+      return ret;
   }
 
   updateLevel_ = UPD_ALL;
+  return 0;
 }
 
 Toc *TocEdit::toc() const
@@ -187,8 +190,7 @@ int TocEdit::readToc(const char *fname)
   Toc *t = Toc::read(fname);
 
   if (t != NULL) {
-    toc(t, fname);
-    return 0;
+    return toc(t, fname);
   }
 
   return 1;

@@ -18,6 +18,9 @@
  */
 /*
  * $Log: TocEdit.h,v $
+ * Revision 1.6  2004/07/18 18:12:07  poolshark
+ * Open was not checking status of scanToc, now displays error message correctly
+ *
  * Revision 1.5  2004/02/12 01:13:32  poolshark
  * Merge from gnome2 branch
  *
@@ -87,7 +90,7 @@ public:
   TocEdit(Toc *, const char *);
   ~TocEdit();
 
-  void toc(Toc *, const char *);
+  int  toc(Toc *, const char *);
   Toc *toc() const;
 
   SampleManager *sampleManager();
