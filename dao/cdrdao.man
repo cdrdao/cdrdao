@@ -441,7 +441,7 @@ block contents.
 .IP "CD_TEXT { ... }"
 .LP
 At least one of the following statements must appear to specify the
-data for the actual track. Lengths and start positions may be
+data for the current track. Lengths and start positions may be
 expressed in samples (1/44100 seconds) for audio tracks or in bytes
 for data tracks. It is also possible to give the length in blocks
 with the MSF format 'MM:SS:FF' specifying minutes, seconds and frames
@@ -450,17 +450,17 @@ with the MSF format 'MM:SS:FF' specifying minutes, seconds and frames
 If more than one statement is used the track will be composed by
 concatenating the data in the specified order.
 .IP "SILENCE <length>"
-Adds zero audio data of specified length to actual audio track. 
+Adds zero audio data of specified length to the current audio track. 
 Useful to create silent pre-gaps.
 .IP "ZERO <length>"
 Adds zero data to data tracks. Must be used to
 define pre- or post-gaps between tracks of different mode.
 .IP [\ FILE\ |\ AUDIOFILE\ ]\ "<filename>"\ <start>\ [\ <length>\ ]
-Adds the audio data of specified file to actual audio track. It is possible
-to select a portion of an audio file with <start> and <length>
-which allows non destructive cutting. The first sample of an audio file is
-addressed with <start> = 0. If <length> is omitted or set to 0 all
-audio data from <start> until the end of file is used.
+Adds the audio data of specified file to the current audio track. It
+is possible to select a portion of an audio file with <start> and
+<length> which allows non destructive cutting. The first sample of an
+audio file is addressed with <start> = 0. If <length> is omitted or
+set to 0 all audio data from <start> until the end of file is used.
 
 Audio files may have raw or WAVE format with 16 bits per sample, 44.1
 kHz sampling rate, stereo. Raw files must have the layout 'MSBLeft
@@ -480,8 +480,13 @@ sequence of increasing or decreasing numbers for both
 channels. Otherwise numbers are jumping between very high and low
 values - high volume static.
 .IP DATAFILE\ "<filename>"\ [\ <length>\ ]
-Adds data from given file to actual data track. If <length> is omitted
+Adds data from given file to the current data track. If <length> is omitted
 the actual file length will be used.
+.IP FIFO\ "<fifo\ path>"\ <length>
+Adds data from specified FIFO path to the current audio or data track.
+<length> must specify the amount of data that will be read from the
+FIFO. The value is always in terms of bytes (scalar value) or in terms
+of the block length (MSF value).
 .IP "START [ MM:SS:FF ]"
 Defines the length of the pre-gap (position where index switches from
 0 to 1). If the MSF value is omitted the current track length is
