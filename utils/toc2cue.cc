@@ -28,7 +28,7 @@
 #ifdef HAVE_GETOPT_H
 #include <getopt.h>
 #endif
-#include <fstream.h>
+#include <fstream>
 
 #include "util.h"
 #include "Toc.h"
@@ -277,7 +277,7 @@ int main(int argc, char **argv)
     exit(1);
   }
 
-  ofstream out(cueFile);
+  std::ofstream out(cueFile);
 
   if (!out) {
     message(-2, "Cannot open cue file \'%s\' for writing: %s", cueFile,
@@ -285,7 +285,7 @@ int main(int argc, char **argv)
     exit(1);
   }
 
-  out << "FILE \"" << binFileName << "\" BINARY" << endl;
+  out << "FILE \"" << binFileName << "\" BINARY" << "\n";
 
   long offset = 0;
 
@@ -319,7 +319,7 @@ int main(int argc, char **argv)
       break;
     }
     
-    out << endl;
+    out << "\n";
 
     const SubTrack *strun;
     SubTrackIterator stitr(trun);
@@ -327,17 +327,17 @@ int main(int argc, char **argv)
 
     for (strun = stitr.first(); strun != NULL; strun = stitr.next()) {
       if (strun->TrackData::type() == TrackData::ZERODATA) {
-	out << "    PREGAP " << trun->start().str() << endl;
+	out << "    PREGAP " << trun->start().str() << "\n";
 	pregap = 1;
       }
       else {
 	if (!pregap && trun->start().lba() != 0) {
-	  out << "    INDEX 00 " << Msf(offset).str() << endl;
+	  out << "    INDEX 00 " << Msf(offset).str() << "\n";
 	  out << "    INDEX 01 " 
-	      << Msf(offset + trun->start().lba()).str() << endl;
+	      << Msf(offset + trun->start().lba()).str() << "\n";
 	}
 	else {
-	  out << "    INDEX 01 " << Msf(offset).str() << endl;
+	  out << "    INDEX 01 " << Msf(offset).str() << "\n";
 	}
 
 	offset += trun->length().lba();
