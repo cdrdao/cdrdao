@@ -37,6 +37,8 @@ cdrdao \- writes audio CD-Rs in disc-at-once mode
 .IR server-list ]
 .RB [ --cddb-timeout
 .IR timeout ]
+.RB [ --cddb-directory
+.IR directory ]
 .RB [ --save ]
 .RB [ -n ]
 .RB [ -v 
@@ -320,6 +322,11 @@ Example: freedb.freedb.org:/~cddb/cddb.cgi
 .TP
 .BI \--cddb-timeout " timeout"
 Sets the timeout in seconds used for connections to CDDB servers.
+.TP
+.BI \--cddb-directory " directory"
+Specifies the local CDDB database directory where fetched CDDB records will
+be stored. If this option is not given a fetched CDDB record will not be stored
+locally.
 .TP
 .BI \--save
 Saves some of the current options to the settings file
@@ -731,6 +738,11 @@ CDDB connection timeout in seconds used by
 .I read-cddb.
 Corresponding option:
 .I --cddb-timeout
+.IP cddb_directory
+Local directory where fetched CDDB records will be stored, used by
+.I read-cddb.
+Corresponding option:
+.I --cddb-directory
 .LP
 
 

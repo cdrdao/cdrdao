@@ -19,6 +19,10 @@
 
 /*
  * $Log: main.cc,v $
+ * Revision 1.8  2000/08/06 13:13:09  andreasm
+ * Added option --cddb-directory and corresponding setting to specify where
+ * fetched CDDB record should be stored.
+ *
  * Revision 1.7  2000/06/22 12:19:28  andreasm
  * Added switch for reading CDs written in TAO mode.
  * The fifo buffer size is now also saved to $HOME/.cdrdao.
@@ -128,7 +132,7 @@
  *
  */
 
-static char rcsid[] = "$Id: main.cc,v 1.7 2000/06/22 12:19:28 andreasm Exp $";
+static char rcsid[] = "$Id: main.cc,v 1.8 2000/08/06 13:13:09 andreasm Exp $";
 
 #include <config.h>
 
@@ -166,6 +170,7 @@ static const char *SOURCE_DRIVER_ID = NULL;
 static const char *SOURCE_SCSI_DEVICE = NULL;
 static const char *DATA_FILENAME = NULL;
 static const char *CDDB_SERVER_LIST = "freedb.freedb.org freedb.freedb.org:/~cddb/cddb.cgi uk.freedb.org uk.freedb.org:/~cddb/cddb.cgi cz.freedb.org cz.freedb.org:/~cddb/cddb.cgi";
+static const char *CDDB_LOCAL_DB_DIR = NULL;
 static int WRITING_SPEED = -1;
 static int EJECT = 0;
 static int SWAP = 0;
@@ -314,6 +319,8 @@ static void printUsage()
   --save                  - save settings in $HOME/.cdrdao\n\
   --cddb-servers <list>   - sets space separated list of CDDB servers\n\
   --cddb-timeout #        - timeout in seconds for CDDB server communication\n\
+  --cddb-directory <path> - path to local CDDB directory where fetched\n\
+                            CDDB records will be stored\n\
   -v #                    - sets verbose level\n\
   -n                      - no pause before writing",
 	  SCSI_DEVICE);
@@ -390,6 +397,10 @@ static void importSettings(Command cmd)
       CDDB_SERVER_LIST = strdupCC(sval);
     }
 
+    if ((sval = SETTINGS->getString(SET_CDDB_DB_DIR)) != NULL) {
+      CDDB_LOCAL_DB_DIR = strdupCC(sval);
+    }
+
     if ((ival = SETTINGS->getInteger(SET_CDDB_TIMEOUT)) != NULL &&
 	*ival > 0) {
       CDDB_TIMEOUT = *ival;
@@ -446,6 +457,10 @@ static void exportSettings(Command cmd)
   if (cmd == READ_CDDB) {
     if (CDDB_SERVER_LIST != NULL) {
       SETTINGS->set(SET_CDDB_SERVER_LIST, CDDB_SERVER_LIST);
+    }
+
+    if (CDDB_LOCAL_DB_DIR != NULL) {
+      SETTINGS->set(SET_CDDB_DB_DIR, CDDB_LOCAL_DB_DIR);
     }
 
     if (CDDB_TIMEOUT > 0) {
@@ -690,6 +705,16 @@ static int parseCmdline(int argc, char **argv)
 	}
 	else {
 	  CDDB_SERVER_LIST = argv[1];
+	  argc--, argv++;
+	}
+      }
+      else if (strcmp((*argv) + 2, "cddb-directory") == 0) {
+	if (argc < 2) {
+	  message(-2, "Missing argument after: %s", *argv);
+	  return 1;
+	}
+	else {
+	  CDDB_LOCAL_DB_DIR = argv[1];
 	  argc--, argv++;
 	}
       }
@@ -1154,6 +1179,10 @@ static int readCddb(Toc *toc)
   Cddb cddb(toc);
 
   cddb.timeout(CDDB_TIMEOUT);
+
+  if (CDDB_LOCAL_DB_DIR != NULL)
+    cddb.localCddbDirectory(CDDB_LOCAL_DB_DIR);
+
 
   for (p = strtok(servers, sep); p != NULL; p = strtok(NULL, sep))
     cddb.appendServer(p);

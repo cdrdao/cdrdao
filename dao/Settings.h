@@ -18,6 +18,10 @@
  */
 /*
  * $Log: Settings.h,v $
+ * Revision 1.4  2000/08/06 13:13:09  andreasm
+ * Added option --cddb-directory and corresponding setting to specify where
+ * fetched CDDB record should be stored.
+ *
  * Revision 1.3  2000/06/22 12:19:28  andreasm
  * Added switch for reading CDs written in TAO mode.
  * The fifo buffer size is now also saved to $HOME/.cdrdao.
@@ -47,6 +51,7 @@ extern const char *SET_READ_DEVICE;
 extern const char *SET_READ_PARANOIA_MODE;
 extern const char *SET_CDDB_SERVER_LIST;
 extern const char *SET_CDDB_TIMEOUT;
+extern const char *SET_CDDB_DB_DIR;
 
 class Settings {
 public:
