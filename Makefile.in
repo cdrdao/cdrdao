@@ -88,7 +88,7 @@ dist:
            paranoia/config.guess paranoia/config.sub paranoia/configure \
            paranoia/configure.in paranoia/*.c paranoia/*.h $(DISTDIR)/paranoia
 	cp dao/Makefile.in dao/*.h dao/*.cc dao/cdrdao.man dao/cdrdao.drivers $(DISTDIR)/dao
-	cp xdao/Makefile.in xdao/*.h xdao/*.cc xdao/xcdrdao.man xdao/gcdmaster.* xdao/*.png $(DISTDIR)/xdao
+	cp xdao/Makefile.in xdao/*.h xdao/*.cc xdao/xcdrdao.man xdao/gcdmaster.* xdao/*.png xdao/*.xpm $(DISTDIR)/xdao
 	cp utils/Makefile.in utils/*.cc $(DISTDIR)/utils
 	cp testtocs/*.toc $(DISTDIR)/testtocs
 	tar cf - contrib | ( cd $(DISTDIR) ; tar xf - )
