@@ -48,6 +48,7 @@ ProjectChooser::ProjectChooser(Project *project)
   Gnome::Pixmap *pixmap;
   Gtk::Label *label;
   Gdk_Font font;
+  gchar *logo_char;
 
   project_ = project;
   
@@ -56,8 +57,10 @@ ProjectChooser::ProjectChooser(Project *project)
   
   Gtk::Button *openButton = manage(new Gtk::Button());
   hbox = manage(new Gtk::HBox);
-  pixmap = manage(new Gnome::Pixmap("pixmap_open.png"));
+  logo_char = gnome_pixmap_file("gcdmaster/pixmap_open.png");
+  pixmap = manage(new Gnome::Pixmap(logo_char));
   pixmap->show();
+  free(logo_char);
   hbox->pack_start(*pixmap, FALSE, FALSE, ICON_PADDING);
   // NOTE: Extra spaces are just to make it nicer.
   label = manage(new Gtk::Label("Open existing project                      "));
@@ -73,8 +76,10 @@ ProjectChooser::ProjectChooser(Project *project)
 
   Gtk::Button *audioCDButton = manage(new Gtk::Button());
   hbox = manage(new Gtk::HBox);
-  pixmap = manage(new Gnome::Pixmap("pixmap_audiocd.png"));
+  logo_char = gnome_pixmap_file("gcdmaster/pixmap_audiocd.png");
+  pixmap = manage(new Gnome::Pixmap(logo_char));
   pixmap->show();
+  free(logo_char);
   hbox->pack_start(*pixmap, FALSE, FALSE, ICON_PADDING);
   label = manage(new Gtk::Label("New Audio CD project"));
   label->show();
@@ -88,8 +93,10 @@ ProjectChooser::ProjectChooser(Project *project)
 
   Gtk::Button *dataCDButton = manage(new Gtk::Button());
   hbox = manage(new Gtk::HBox);
-  pixmap = manage(new Gnome::Pixmap("pixmap_datacd.png"));
+  logo_char = gnome_pixmap_file("gcdmaster/pixmap_datacd.png");
+  pixmap = manage(new Gnome::Pixmap(logo_char));
   pixmap->show();
+  free(logo_char);
   hbox->pack_start(*pixmap, FALSE, FALSE, ICON_PADDING);
   label = manage(new Gtk::Label("New Data CD project"));
   label->show();
@@ -103,8 +110,10 @@ dataCDButton->set_sensitive(false);
 
   Gtk::Button *mixedCDButton = manage(new Gtk::Button());
   hbox = manage(new Gtk::HBox);
-  pixmap = manage(new Gnome::Pixmap("pixmap_mixedcd.png"));
+  logo_char = gnome_pixmap_file("gcdmaster/pixmap_mixedcd.png");
+  pixmap = manage(new Gnome::Pixmap(logo_char));
   pixmap->show();
+  free(logo_char);
   hbox->pack_start(*pixmap, FALSE, FALSE, ICON_PADDING);
   label = manage(new Gtk::Label("New Mixed CD project"));
   label->show();
@@ -118,8 +127,10 @@ mixedCDButton->set_sensitive(false);
 
   Gtk::Button *copyCDButton = manage(new Gtk::Button());
   hbox = manage(new Gtk::HBox);
-  pixmap = manage(new Gnome::Pixmap("pixmap_copycd.png"));
+  logo_char = gnome_pixmap_file("gcdmaster/pixmap_copycd.png");
+  pixmap = manage(new Gnome::Pixmap(logo_char));
   pixmap->show();
+  free(logo_char);
   hbox->pack_start(*pixmap, FALSE, FALSE, ICON_PADDING);
   label = manage(new Gtk::Label("Duplicate CD"));
   label->show();
@@ -133,8 +144,10 @@ mixedCDButton->set_sensitive(false);
 
   Gtk::Button *dumpCDButton = manage(new Gtk::Button());
   hbox = manage(new Gtk::HBox);
-  pixmap = manage(new Gnome::Pixmap("pixmap_dumpcd.png"));
+  logo_char = gnome_pixmap_file("gcdmaster/pixmap_dumpcd.png");
+  pixmap = manage(new Gnome::Pixmap(logo_char));
   pixmap->show();
+  free(logo_char);
   hbox->pack_start(*pixmap, FALSE, FALSE, ICON_PADDING);
   label = manage(new Gtk::Label("Copy CD to disk"));
 //  label->set_alignment(0, 0.5);
@@ -149,8 +162,10 @@ mixedCDButton->set_sensitive(false);
 
   Gtk::Button *helpButton = manage(new Gtk::Button());
   hbox = manage(new Gtk::HBox);
-  pixmap = manage(new Gnome::Pixmap("pixmap_help.png"));
+  logo_char = gnome_pixmap_file("gcdmaster/pixmap_help.png");
+  pixmap = manage(new Gnome::Pixmap(logo_char));
   pixmap->show();
+  free(logo_char);
   hbox->pack_start(*pixmap, FALSE, FALSE, ICON_PADDING);
   label = manage(new Gtk::Label("Help"));
   label->show();

@@ -67,14 +67,22 @@ all: $(PRG)
 install: all installdirs
 	$(INSTALL_PROGRAM) $(PRG) $(bindir)
 	$(INSTALL_DATA) xcdrdao.man $(man1dir)/xcdrdao.1
-	$(INSTALL_DATA) gcdmaster.png $(prefix)/share/pixmaps/gcdmaster.png
+	$(INSTALL_DATA) gcdmaster.png $(prefix)/share/pixmaps/gcdmaster/gcdmaster.png
+	$(INSTALL_DATA) pixmap_audiocd.png $(prefix)/share/pixmaps/gcdmaster/pixmap_audiocd.png
+	$(INSTALL_DATA) pixmap_copycd.png $(prefix)/share/pixmaps/gcdmaster/pixmap_copycd.png
+	$(INSTALL_DATA) pixmap_datacd.png $(prefix)/share/pixmaps/gcdmaster/pixmap_datacd.png
+	$(INSTALL_DATA) pixmap_dumpcd.png $(prefix)/share/pixmaps/gcdmaster/pixmap_dumpcd.png
+	$(INSTALL_DATA) pixmap_help.png $(prefix)/share/pixmaps/gcdmaster/pixmap_help.png
+	$(INSTALL_DATA) pixmap_mixedcd.png $(prefix)/share/pixmaps/gcdmaster/pixmap_mixedcd.png
+	$(INSTALL_DATA) pixmap_open.png $(prefix)/share/pixmaps/gcdmaster/pixmap_open.png
 	$(INSTALL_DATA) gcdmaster.desktop $(prefix)/share/gnome/apps/Applications/gcdmaster.desktop
 
 installdirs:
 	$(srcdir)/../mkinstalldirs $(bindir)
 	$(srcdir)/../mkinstalldirs $(man1dir)
-	$(srcdir)/../mkinstalldirs $(prefix)/share/pixmaps
+	$(srcdir)/../mkinstalldirs $(prefix)/share/pixmaps/gcdmaster
 	$(srcdir)/../mkinstalldirs $(prefix)/share/gnome/apps/Applications
+
 
 clean:
 	rm -f *.o $(PRG)

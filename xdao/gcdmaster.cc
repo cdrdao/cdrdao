@@ -153,12 +153,12 @@ void GCDMaster::aboutDialog()
     authors.push_back("Manuel Clos <llanero@jazzfree.com>");
 
 //FIXME: not yet wrapped
-    logo_char = gnome_pixmap_file("gcdmaster.png");
+    logo_char = gnome_pixmap_file("gcdmaster/gcdmaster.png");
 
     if (logo_char != NULL)
       logo = logo_char;
 
-    about_ = new Gnome::About(_("gcdmaster"), "1.1.4",
+    about_ = new Gnome::About(_("gcdmaster"), "1.1.5",
                                "(C) Andreas Mueller",
                                authors,
                                _("A CD Mastering app for Gnome."),

@@ -2,6 +2,6 @@
 Name=Gnome CD Master
 Comment=Utility to Burn CDs
 Exec=gcdmaster
-Icon=gcdmaster.png
+Icon=gcdmaster/gcdmaster.png
 Terminal=0
 Type=Application
