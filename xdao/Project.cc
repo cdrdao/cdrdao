@@ -50,7 +50,7 @@ Project::Project() : Gnome::App("gcdmaster", APP_NAME)
 void Project::createMenus()
 {
   vector<Gnome::UI::SubTree> menus;
-  vector<Gnome::UI::Info> fileMenuTree, newMenuTree, actionsMenuTree;
+  vector<Gnome::UI::Info> fileMenuTree, newMenuTree, audioEditMenuTree, actionsMenuTree;
   vector<Gnome::UI::Info> settingsMenuTree, helpMenuTree, windowsMenuTree;
 
   {
@@ -92,11 +92,17 @@ void Project::createMenus()
 
     // Close the current child (project);
     fileMenuTree.push_back(Close(bind(slot(gcdmaster, &GCDMaster::closeProject), this)));
-    fileMenuTree.push_back(Exit(slot(gcdmaster, &GCDMaster::appClose)));
+    fileMenuTree.push_back(Exit(bind(slot(gcdmaster, &GCDMaster::appClose), this)));
   }
 
   {
     using namespace Gnome::UI;
+    // Edit menu
+    audioEditMenuTree.push_back(Item(Icon(GNOME_STOCK_MENU_PROP),
+    				 N_("Project Info..."),
+			      slot(this, &Project::projectInfo),
+			      N_("Edit global project data")));
+
     // Actions menu
     actionsMenuTree.push_back(Item(Icon(GNOME_STOCK_MENU_CDROM),
 								N_("_Record"),
@@ -137,6 +143,7 @@ void Project::createMenus()
   {
     using namespace Gnome::Menus;
     menus.push_back(File(fileMenuTree));
+    menus.push_back(Gnome::Menus::Edit(audioEditMenuTree));
     menus.push_back(Gnome::UI::Menu(N_("_Actions"), actionsMenuTree));
     menus.push_back(Settings(settingsMenuTree));
 //    menus.push_back(Windows(windowsMenuTree));
@@ -254,13 +261,6 @@ cout << tocEdit_->filename() << endl;
   }
 }
 
-
-void Project::recordToc2CD()
-{
-//FIXME    audioCDChild_->record_to_cd();
-}
-
-
 gint Project::getViewNumber()
 {
   return(viewNumber++);
@@ -281,4 +281,22 @@ void Project::statusMessage(const char *fmt, ...)
   str.freeze(0);
 
   va_end(args);
+}
+
+int Project::projectNumber()
+{
+  return projectNumber_;
+}
+
+TocEdit *Project::tocEdit()
+{
+  return tocEdit_;
+}
+
+void Project::tocBlockedMsg(const char *op)
+{
+  MessageBox msg(this, op, 0,
+		 "Cannot perform requested operation because", 
+		 "project is in read-only state.", NULL);
+  msg.run();
 }

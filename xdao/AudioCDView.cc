@@ -33,6 +33,8 @@
 #include "MDIWindow.h"
 #include "util.h"
 
+#include "TrackInfoDialog.h"
+#include "AudioCDProject.h"
 #include "AudioCDChild.h"
 #include "AudioCDView.h"
 #include "Project.h"
@@ -40,15 +42,18 @@
 
 
 
-AudioCDView::AudioCDView(AudioCDChild *child, Project *project) 
+AudioCDView::AudioCDView(AudioCDChild *child, AudioCDProject *project) 
 {
   char buf[20];
   gint viewNumber = project->getViewNumber();
   cdchild = child;
+  project_ = project;
   tocEditView_ = new TocEditView(child->tocEdit());
 
   widgetList = new list<Gtk::Widget *>;
   widgetList->push_back(this);
+
+  trackInfoDialog_ = 0;
 
   Gtk::VBox *vbox = this;
   
@@ -190,6 +195,38 @@ AudioCDView::AudioCDView(AudioCDChild *child, Project *project)
   playButton_->clicked.connect(slot(this, &AudioCDView::play));
 
   tocEditView_->sampleViewFull();
+  
+  // Menu Stuff
+  {
+    using namespace Gnome::UI;
+    vector<Info> menus;
+    int i;
+    
+    menus.push_back(Item(Icon(GNOME_STOCK_MENU_PROP),
+    				 N_("Track Info..."),
+  			      slot(this, &AudioCDView::trackInfo),
+  			      N_("Edit track data")));
+  
+    menus.push_back(Separator());
+  
+    menus.push_back(Item(Icon(GNOME_STOCK_MENU_CUT),
+  			      N_("Cut"),
+  			      slot(this, &AudioCDView::cutTrackData),
+  			      N_("Cut out selected samples")));
+  
+    menus.push_back(Item(Icon(GNOME_STOCK_MENU_PASTE),
+  			      N_("Paste"),
+  			      slot(this, &AudioCDView::pasteTrackData),
+  			      N_("Paste previously cut samples")));
+  
+    Array<Info>& arrayInfo = project->insert_menus("Edit/Project Info...", menus);
+    for (i = 0; i < 4; i ++)
+    {
+      Gtk::Widget *menuitem = arrayInfo[i].get_widget();
+      menuitem->hide();
+      widgetList->push_back(menuitem);
+    }
+  }
 }
 
 void AudioCDView::update(unsigned long level)
@@ -413,6 +450,54 @@ void AudioCDView::drag_data_received_cb(GdkDragContext *context,
 	    names = g_list_remove(names, names->data);
       }
 //	tocEdit_->unblockEdit();
+    break;
+  }
+}
+
+void AudioCDView::trackInfo()
+{
+  if (trackInfoDialog_ == 0)
+    trackInfoDialog_ = new TrackInfoDialog();
+
+  trackInfoDialog_->start(tocEditView_);
+}
+
+void AudioCDView::cutTrackData()
+{
+  if (!project_->tocEdit()->editable()) {
+    project_->tocBlockedMsg("Cut");
+    return;
+  }
+
+  switch (project_->tocEdit()->removeTrackData(tocEditView_)) {
+  case 0:
+    project_->statusMessage("Removed selected samples.");
+    guiUpdate();
+    break;
+  case 1:
+    project_->statusMessage("Please select samples.");
+    break;
+  case 2:
+    project_->statusMessage("Selected sample range crosses track boundaries.");
+    break;
+  }
+
+}
+
+void AudioCDView::pasteTrackData()
+{
+  if (!project_->tocEdit()->editable()) {
+    project_->tocBlockedMsg("Paste");
+    return;
+  }
+
+  switch (project_->tocEdit()->insertTrackData(tocEditView_)) {
+  case 0:
+    project_->statusMessage("Pasted samples.");
+    guiUpdate();
+    break;
+  case 1:
+    project_->statusMessage("No samples in scrap.");
     break;
   }
 }

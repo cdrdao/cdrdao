@@ -26,6 +26,7 @@
 
 class AudioCDChild;
 class AudioCDView;
+class TocInfoDialog;
 class TocEdit;
 #include "Project.h"
 
@@ -33,8 +34,9 @@ class AudioCDProject : public Project
 {
 private:
   AudioCDChild *audioCDChild_;
-  int projectNumber_;
-  bool new_; // The project file already exists
+  TocInfoDialog *tocInfoDialog_;
+  void recordToc2CD();
+  void projectInfo();
  
 public:
   AudioCDProject(int number, const char *name, TocEdit *tocEdit);

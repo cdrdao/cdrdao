@@ -22,10 +22,13 @@
 #include "AudioCDView.h"
 #include "TocEdit.h"
 #include "TocEditView.h"
+#include "TocInfoDialog.h"
 
 AudioCDProject::AudioCDProject(int number, const char *name, TocEdit *tocEdit)
 {
   projectNumber_ = number;
+
+  tocInfoDialog_ = 0;
 
   if (tocEdit == NULL)
     tocEdit_ = new TocEdit(NULL, NULL);
@@ -59,7 +62,7 @@ AudioCDProject::AudioCDProject(int number, const char *name, TocEdit *tocEdit)
 
   Gnome::StockPixmap *pixmap = new Gnome::StockPixmap(GNOME_STOCK_MENU_CDROM);
   Gtk::Label *label = new Gtk::Label("Track Editor");
-  audioCDChild_ = new AudioCDChild(this, tocEdit_, ++project_number);
+  audioCDChild_ = new AudioCDChild(this);
   AudioCDView *audioCDView = new AudioCDView(audioCDChild_, this);
   hbox->pack_start(*audioCDView, TRUE, TRUE);
   audioCDView->tocEditView()->sampleViewFull();
@@ -86,5 +89,18 @@ bool AudioCDProject::closeProject()
     return true;
   }
   return false;  // Do not close the project
+}
+
+void AudioCDProject::recordToc2CD()
+{
+  audioCDChild_->record_to_cd();
+}
+
+void AudioCDProject::projectInfo()
+{
+  if (tocInfoDialog_ == 0)
+    tocInfoDialog_ = new TocInfoDialog();
+
+  tocInfoDialog_->start(tocEdit_);
 }
 

@@ -29,6 +29,7 @@
 
 class SampleDisplay;
 class Project;
+class TrackInfoDialog;
 
 enum {
   TARGET_URI_LIST,
@@ -37,7 +38,7 @@ enum {
 class AudioCDView : public GenericView
 {
 public:
-  AudioCDView(AudioCDChild *child, Project *project);
+  AudioCDView(AudioCDChild *child, AudioCDProject *project);
   SigC::Signal0<void> add_view;
 
   void update(unsigned long level);
@@ -45,6 +46,9 @@ public:
 
 private:
   friend class AudioCDChild;
+  AudioCDProject *project_;
+
+  TrackInfoDialog *trackInfoDialog_;
 
   enum Mode { ZOOM, SELECT };
 
@@ -76,6 +80,10 @@ private:
   void zoomOut();
   void fullView();
   void play();
+
+  void trackInfo();
+  void cutTrackData();
+  void pasteTrackData();
 
   void addTrackMark();
   void addIndexMark();

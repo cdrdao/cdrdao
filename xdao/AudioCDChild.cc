@@ -27,6 +27,7 @@
 #include "xcdrdao.h"
 #include "guiUpdate.h"
 #include "MessageBox.h"
+#include "AudioCDProject.h"
 #include "AudioCDChild.h"
 #include "AudioCDView.h"
 #include "SoundIF.h"
@@ -38,17 +39,15 @@
 #include "MDIWindow.h"
 #include "AddFileDialog.h"
 #include "AddSilenceDialog.h"
-#include "TocInfoDialog.h"
-#include "TrackInfoDialog.h"
 #include "RecordGenericDialog.h"
 #include "CdTextDialog.h"
 
 #include "SampleDisplay.h"
 
-AudioCDChild::AudioCDChild(Gnome::App *app, TocEdit *tocEdit, gint number)
+AudioCDChild::AudioCDChild(AudioCDProject *project)
 {
-  tocEdit_ = tocEdit;
-  app_ = app;
+  project_ = project;
+  tocEdit_ = project->tocEdit();
 
   playing_ = 0;
   playBurst_ = 588 * 10;
@@ -58,47 +57,20 @@ AudioCDChild::AudioCDChild(Gnome::App *app, TocEdit *tocEdit, gint number)
 
 // These are not created until first needed, for faster startup
 // and less memory usage.
-  tocInfoDialog_ = 0;
-  trackInfoDialog_ = 0;
   addFileDialog_ = 0;
   addSilenceDialog_ = 0;
   cdTextDialog_ = 0;
 
   views = g_list_alloc();
 
-  vector<Gnome::UI::Info> menus, audioEditMenuTree, viewMenuTree;
+  vector<Gnome::UI::Info> menus, viewMenuTree;
 
-  // Edit menu
-  //
-  audioEditMenuTree.
-    push_back(Gnome::UI::Item(N_("Project Info..."),
-			      slot(this, &AudioCDChild::projectInfo),
-			      N_("Edit global project data")));
-
-  audioEditMenuTree.
-    push_back(Gnome::UI::Item(N_("Track Info..."),
-			      slot(this, &AudioCDChild::trackInfo),
-			      N_("Edit track data")));
-
+/*
   audioEditMenuTree.
     push_back(Gnome::UI::Item(N_("CD-TEXT..."),
 			      slot(this, &AudioCDChild::cdTextDialog),
 			      N_("Edit CD-TEXT data")));
 
-  audioEditMenuTree.push_back(Gnome::UI::Separator());
-
-  audioEditMenuTree.
-    push_back(Gnome::UI::Item(Gnome::UI::Icon(GNOME_STOCK_MENU_CUT),
-			      N_("Cut"),
-			      slot(this, &AudioCDChild::cutTrackData),
-			      N_("Cut out selected samples")));
-
-  audioEditMenuTree.
-    push_back(Gnome::UI::Item(Gnome::UI::Icon(GNOME_STOCK_MENU_PASTE),
-			      N_("Paste"),
-			      slot(this,
-				   &AudioCDChild::pasteTrackData),
-			      N_("Paste previously cut samples")));
 
   audioEditMenuTree.push_back(Gnome::UI::Separator());
 
@@ -150,7 +122,7 @@ AudioCDChild::AudioCDChild(Gnome::App *app, TocEdit *tocEdit, gint number)
     push_back(Gnome::UI::Item(N_("Insert Silence"),
 			      slot(this, &AudioCDChild::insertSilence),
 			      N_("Insert silence at current marker position")));
-
+*/
 /*
 //FIXME
   viewMenuTree.
@@ -161,10 +133,11 @@ AudioCDChild::AudioCDChild(Gnome::App *app, TocEdit *tocEdit, gint number)
 			      N_("Add new view of current project")));
 */
 
-  menus.push_back(Gnome::Menus::Edit(audioEditMenuTree));
-  menus.push_back(Gnome::Menus::View(viewMenuTree));
+/*
+//  menus.push_back(Gnome::Menus::View(viewMenuTree));
 
-  app_->insert_menus("File", menus);
+  project->app()->insert_menus("File", menus);
+*/
 }
 
 void AudioCDChild::play(unsigned long start, unsigned long end)
@@ -297,24 +270,6 @@ int AudioCDChild::playCallback()
   else {
     return 1; // keep idle handler
   }
-}
-
-void AudioCDChild::trackInfo()
-{
-  if (trackInfoDialog_ == 0)
-    trackInfoDialog_ = new TrackInfoDialog();
-
-//FIXME  GenericView *view = static_cast <GenericView *>(get_active());
-
-//FIXME  trackInfoDialog_->start(view->tocEditView());
-}
-
-void AudioCDChild::projectInfo()
-{
-  if (tocInfoDialog_ == 0)
-    tocInfoDialog_ = new TocInfoDialog();
-
-  tocInfoDialog_->start(tocEdit_);
 }
 
 void AudioCDChild::cdTextDialog()
@@ -719,55 +674,6 @@ void AudioCDChild::insertSilence()
 
   addSilenceDialog_->mode(AddSilenceDialog::M_INSERT);
   addSilenceDialog_->start(view->tocEditView());
-*/
-}
-
-void AudioCDChild::cutTrackData()
-{
-//FIXME
-/*
-  if (!tocEdit_->editable()) {
-    tocBlockedMsg("Cut");
-    return;
-  }
-
-  AudioCDView *view = static_cast <AudioCDView *>(get_active());
-
-  switch (tocEdit_->removeTrackData(view->tocEditView())) {
-  case 0:
-    MDI_WINDOW->statusMessage("Removed selected samples.");
-    guiUpdate();
-    break;
-  case 1:
-    MDI_WINDOW->statusMessage("Please select samples.");
-    break;
-  case 2:
-    MDI_WINDOW->statusMessage("Selected sample range crosses track boundaries.");
-    break;
-  }
-*/
-}
-
-void AudioCDChild::pasteTrackData()
-{
-//FIXME
-/*
-  if (!tocEdit_->editable()) {
-    tocBlockedMsg("Paste");
-    return;
-  }
-
-  AudioCDView *view = static_cast <AudioCDView *>(get_active());
-
-  switch (tocEdit_->insertTrackData(view->tocEditView())) {
-  case 0:
-    MDI_WINDOW->statusMessage("Pasted samples.");
-    guiUpdate();
-    break;
-  case 1:
-    MDI_WINDOW->statusMessage("No samples in scrap.");
-    break;
-  }
 */
 }
 

@@ -34,28 +34,25 @@ class SoundIF;
 class Sample;
 class TrackData;
 class TocEdit;
-class TocInfoDialog;
-class TrackInfoDialog;
 class CdTextDialog;
 class AddFileDialog;
 class AddSilenceDialog;
 class AudioCDView;
+class AudioCDProject;
 
 class AudioCDChild : public GenericChild
 {
 public:
-  AudioCDChild(Gnome::App *app, TocEdit *tocEdit, gint number);
+  AudioCDChild(AudioCDProject *project);
 
 private: //related windows
-  Gnome::App *app_;
-  TocInfoDialog *tocInfoDialog_;
-  TrackInfoDialog *trackInfoDialog_;
   AddFileDialog *addFileDialog_;
   AddSilenceDialog *addSilenceDialog_;
   CdTextDialog *cdTextDialog_;
 
 private:
   friend class AudioCDView;
+  AudioCDProject *project_;
 
   TocReader tocReader;
 
@@ -87,8 +84,6 @@ private:
 
   void tocBlockedMsg(const char *);
 
-  void projectInfo();
-  void trackInfo();
   void cdTextDialog();
 
 public:
@@ -96,9 +91,6 @@ public:
   void update(unsigned long level);
   bool closeProject();
   void record_to_cd();
-
-  void cutTrackData();
-  void pasteTrackData();
 
   void addPregap();
   void removeTrackMark();

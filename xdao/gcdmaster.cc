@@ -114,8 +114,8 @@ void GCDMaster::closeProject(Project *project)
   }
 cout << "Number of projects = " << projects.size() << endl;
 cout << "Number of choosers = " << choosers.size() << endl;
-  if ((projects.size() == 0) & (choosers.size() == 0))
-    appClose();
+  if ((projects.size() == 0) && (choosers.size() == 0))
+    Gnome::Main::quit(); // Quit if there are not remaining windows
 }
 
 void GCDMaster::closeChooser(ProjectChooser *projectChooser)
@@ -124,19 +124,25 @@ void GCDMaster::closeChooser(ProjectChooser *projectChooser)
   choosers.remove(projectChooser);
 cout << "Number of projects = " << projects.size() << endl;
 cout << "Number of choosers = " << choosers.size() << endl;
-  if ((projects.size() == 0) & (choosers.size() == 0))
-    appClose();
+  if ((projects.size() == 0) && (choosers.size() == 0))
+    Gnome::Main::quit(); // Quit if there are not remaining windows
 }
 
-void GCDMaster::appClose()
+void GCDMaster::appClose(Project *project)
 {
-  for (list<Project *>::iterator i = projects.begin();
-       i != projects.end(); i++)
+  if (project->closeProject())
   {
-    if (!((*i)->closeProject()))
-      return;
+    delete project;
+    projects.remove(project);
+
+    for (list<Project *>::iterator i = projects.begin();
+         i != projects.end(); i++)
+    {
+      if (!((*i)->closeProject()))
+        return;
+    }
+    Gnome::Main::quit();
   }
-  Gnome::Main::quit();
 }
 
 void GCDMaster::newChooserWindow()

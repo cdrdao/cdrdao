@@ -51,7 +51,7 @@ private:
 public:
   GCDMaster();
 
-  void appClose();
+  void appClose(Project *);
   void closeProject(Project *);
   void closeChooser(ProjectChooser *);
   void openProject(ProjectChooser *);
