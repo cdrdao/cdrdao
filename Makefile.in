@@ -73,6 +73,7 @@ dist:
 	mkdir $(DISTDIR)/xdao
 	mkdir $(DISTDIR)/testtocs
 	mkdir $(DISTDIR)/paranoia
+	mkdir $(DISTDIR)/utils
 	chmod 777 $(DISTDIR) $(DISTDIR)/trackdb $(DISTDIR)/dao $(DISTDIR)/xdao
 	chmod 777 $(DISTDIR)/paranoia
 	cp Makefile.in CREDITS README* cdrdao.lsm config.guess config.sub \
@@ -88,6 +89,7 @@ dist:
            paranoia/configure.in paranoia/*.c paranoia/*.h $(DISTDIR)/paranoia
 	cp dao/Makefile.in dao/*.h dao/*.cc dao/cdrdao.man dao/cdrdao.drivers $(DISTDIR)/dao
 	cp xdao/Makefile.in xdao/*.h xdao/*.cc xdao/xcdrdao.man xdao/gcdmaster.* xdao/*.png $(DISTDIR)/xdao
+	cp utils/Makefile.in utils/*.cc $(DISTDIR)/utils
 	cp testtocs/*.toc $(DISTDIR)/testtocs
 	tar cf - contrib | ( cd $(DISTDIR) ; tar xf - )
 	tar cf - scsilib | ( cd $(DISTDIR) ; tar xf - )
