@@ -24,8 +24,6 @@
 #include <stdarg.h>
 #include <strstream.h>
 
-#include <glade/glade.h>
-
 #include <gnome.h>
 
 #include "util.h"

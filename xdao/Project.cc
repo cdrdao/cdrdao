@@ -48,7 +48,7 @@ Project::Project(int number) : Gnome::App("gcdmaster", APP_NAME)
   viewNumber = 0;
   viewSwitcher_ = new ViewSwitcher(hbox);
   viewSwitcher_->show();
-  set_usize(500, 350);
+//  set_usize(500, 350);
   enable_layout_config(true);
 }
 

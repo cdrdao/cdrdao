@@ -59,7 +59,8 @@ ProjectChooser::ProjectChooser(Project *project)
   pixmap = manage(new Gnome::Pixmap("pixmap_open.png"));
   pixmap->show();
   hbox->pack_start(*pixmap, FALSE, FALSE, ICON_PADDING);
-  label = manage(new Gtk::Label("Open existing project"));
+  // NOTE: Extra spaces are just to make it nicer.
+  label = manage(new Gtk::Label("Open existing project                      "));
 //FIXME  font = label->get_font();
   label->show();
   hbox->pack_start(*label, FALSE, FALSE, LABEL_PADDING);

@@ -27,7 +27,6 @@
 #include <gtk--.h>
 #include <gtk/gtk.h>
 
-#include <glade/glade.h>
 #include <gnome--.h>
 
 #include "config.h"
