@@ -629,7 +629,7 @@ void ProgressDialogPool::update(unsigned long status)
 }
   
 ProgressDialog *ProgressDialogPool::start(CdDevice *device, TocEdit *tocEdit,
-			bool showBuffer = true, bool showTrack = true)
+			bool showBuffer, bool showTrack)
 {
   ProgressDialog *dialog;
 
@@ -653,7 +653,7 @@ ProgressDialog *ProgressDialogPool::start(CdDevice *device, TocEdit *tocEdit,
 }
 
 ProgressDialog *ProgressDialogPool::start(CdDevice *device, const char *tocFileName,
-			bool showBuffer = true, bool showTrack = true)
+			bool showBuffer, bool showTrack)
 {
   ProgressDialog *dialog;
 
