@@ -19,14 +19,15 @@
 package MediaHandler;
 require mp3handler;
 require ogghandler;
-@ISA = qw(mp3handler ogghandler);
+require flachandler;
+@ISA = qw(mp3handler ogghandler flachandler);
 use strict; 
 use vars qw ( @ext $AUTOLOAD );
 
 #These are supported media files. Each time a new one is added
 #its extension is put here and appropriate handler is instantiated in
 #MediaHandler constructor.
-@ext = ('.mp3', '.ogg');
+@ext = ('.mp3', '.ogg', '.flac');
 
 #2 args: self name and directory name
 #returns blessed reference
@@ -54,13 +55,16 @@ sub new	{
 	$self->{'TOTAL'} = $total;
 	@filelist=sort(@filelist);
 	foreach $filename (@filelist)	{
-		if ($filename =~ m/.ogg/i)	{
+		if ($filename =~ m/\.ogg/i)	{
 			push (@{$self->{'LIST'}}, ogghandler->new("$dirname/$filename"));
 		}
-		if ($filename =~ m/.wav/i)	{
+		if ($filename =~ m/\.wav/i)	{
 		}
-		if ($filename =~ m/.mp3/i)	{
+		if ($filename =~ m/\.mp3/i)	{
 			push (@{$self->{'LIST'}}, mp3handler->new("$dirname/$filename"));
+		}
+		if ($filename =~ m/\.flac/i)	{
+			push (@{$self->{'LIST'}}, flachandler->new("$dirname/$filename"));
 		}
 	}
 	bless ($self, $class);

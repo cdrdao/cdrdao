@@ -43,7 +43,6 @@ unless ($tocfile) {
 }
 my ($list) = MediaHandler->new (getcwd());
 die "No supported media files found!\n" if ($list->total == 0);
-
 #Creates array of mediahandlers, sets artist and album.
 foreach my $file (@{$list->list})	{
 	if (!$file->artist || !$file->title || !$file->album) {$cdtext = 0};
@@ -68,7 +67,9 @@ tocfile_header($fh, $cdtext, $album, $artist);
 #Set outputfiles and decode to wav.
 print "\nDecoding compressed files to wav\n";
 foreach my $file (@{$list->list})	{
-	if ( $_=($file->to_wav) != 0 ) {print ("\n\tWARNING: decoder for file ".$file->Filename." exited with code $_\n")};
+	if ( $_=($file->to_wav) != 0 ) {
+		printf ("\n\tWARNING: decoder for file %s exited with code %d\n", $file->Filename, $_);
+	}
 }
 $count=0;
 print "\nAnalyzing wav files and creating toc\n\n";
@@ -79,12 +80,13 @@ while ($count <= ($list->total-1))	{
     my $time = Audio::Tools::Time->new (44100, 16, 2);
     my $sample = $time->bytes_to_samples($audio_bytes);	
 	tocfile_entry ($fh, $cdtext, $file, $samplestart, $count+1);
-    if ($cdtext) {build_inf ($file, $count)};
+	#if ($cdtext) {build_inf ($file, $count)};
+	if ($cdtext) {$file->write_inf ($count+1)};
     $totalsamples = $sample - $samplestart;
     $divided = $totalsamples / 588; 
     $rounded = int($divided) * 588;
     $remainder = $totalsamples - $rounded;
-    print "\tNeed to pad up $remainder samples for track $count\n";
+    printf ("\tNeed to pad up %d samples for track %d\n", $remainder, $count+1);
 	if (($remainder != 0) && ($count ne ($list->total-1))) { 
 		my $nextfile = ${$list->list}[$count+1];
 		print $fh "FILE \"".$nextfile->Outfile."\" ";
@@ -99,29 +101,6 @@ print "\nFinished writing TOC/inf files. You may now burn the CD using\n\
 print "You may want to normalize wav files right now.\n";
 close ($fh);
 exit;
-
-#Arguments
-#       $file: Mediahandler instance
-#       $trackno: Track number
-sub build_inf   {
-    my ($file, $trackno) = @_;
-    my ($inffilename) = $file->Filename;
-    $inffilename =~ s/mp3/inf/i;
-    my ($inffilehandle);
-    open ($inffilehandle, ">$inffilename");
-    if (!$inffilehandle)        {last};
-    my (@tl) = localtime (time ());
-    $_ = sprintf ("#Created by mp32dao.pl on %02d/%02d/%d %02d:%02d:%02d\n", 
-        $tl[3], $tl[4]+1, $tl[5]+1900, $tl[2], $tl[1], $tl[0]);
-    print $inffilehandle $_;
-    print $inffilehandle "#Source file is ".$file->Filename."\n";
-    print $inffilehandle "#Report bugs to Giuseppe \"Cowo\" Corbelli <cowo\@lugbs.linux.it>\n\n";
-    print $inffilehandle "Performer=\t'".$file->Artist."'\n";
-    print $inffilehandle "Tracktitle=\t'".$file->Title."'\n";
-    print $inffilehandle "Albumtitle=\t'".$file->Album."'\n";
-    print $inffilehandle "Tracknumber=\t".($trackno+1)."\n";
-    close ($inffilehandle);
-}
 
 sub seconds_to_cd_time {
     my $seconds = shift;
@@ -154,8 +133,8 @@ sub tocfile_header	{
 		print $fh "\tLANGUAGE 0 \{\n";
 			print $fh "\t\tTITLE \"$title\"\n";
 			print $fh "\t\tPERFORMER \"$performer\"\n";
-			print $fh "\t\tDISC_ID \"XY12345\"\n";
-			print $fh "\t\tUPC_EAN \"\"\n";
+			#print $fh "\t\tDISC_ID \"XY12345\"\n";
+			#print $fh "\t\tUPC_EAN \"\"\n";
 			print $fh "\t\}\n";
 		print $fh "\}\n";
 	}
@@ -178,7 +157,7 @@ sub tocfile_entry	{
     	print $fh "\tLANGUAGE 0 {\n";
     	print $fh "\t\tTITLE \"".$song->title."\"\n";
     	print $fh "\t\tPERFORMER \"".$song->artist."\"\n";
-    	print $fh "\t\tISRC \"US-XX1-98-01234\"\n";
+		#print $fh "\t\tISRC \"US-XX1-98-01234\"\n";
     	print $fh "\t}\n}\n";
     }
     print $fh "FILE \"".$song->Outfile."\" ";

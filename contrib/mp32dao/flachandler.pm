@@ -13,16 +13,15 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 #
-#Copyright 2001 Giuseppe Corbelli - cowo@lugbs.linux.it
+# Copyright 2003 Giuseppe Corbelli - cowo@lugbs.linux.it
 #
-# This package is inherited by Mediahandler and provides mp3 info access
+# This package is inherited by Mediahandler and provides flac info access
 # and decoding. See the attached UML diagram for access methods.
 # Everything should be done using methods.
 
-package mp3handler;
+package flachandler;
 require BaseInfo;
 @ISA = qw(BaseInfo);
-use MP3::Info; 
 #use Data::Dumper; 
 use strict; 
 use File::Basename;
@@ -39,6 +38,7 @@ sub new {
 	my $self = $class->SUPER::new();	
 	#Checks on input file
 	$self->Filename(shift);
+
 	if (! $self->Filename)	{
 		$self->Error("No input file defined.");
 		return -1;
@@ -51,52 +51,74 @@ sub new {
 		$self->Error("Input file has 0 size");
 		return -1;
 	}
-	#Identify available mp3 decoder
+	#Identify available flac decoder
 	foreach my $dir (split (/\:/, $ENV{'PATH'}))	{
-		if ( (-x "$dir/lame") && (-s "$dir/lame") )	{
-			$self->decoder_type('lame');
-			$self->decoder("$dir/lame");
-			last;
-		}
-		if ( (-x "$dir/mpg321") && (-s "$dir/mpg321") )	{
-			$self->decoder_type('mpg321');
-			$self->decoder("$dir/mpg321");
-			last;
-		}
-		if ( (-x "$dir/mpg123") && (-s "$dir/mpg123") )	{
-			$self->decoder_type('mpg123');
-			$self->decoder("$dir/mpg123");
+		if ( (-x "$dir/flac") && (-s "$dir/flac") )	{
+			$self->decoder_type('flac');
+			$self->decoder("$dir/flac");
 			last;
 		}
 	}
 	if ( !$self->decoder )	{
-		$self->Error("Cannot find any of the supported mp3 decoders in \$PATH.");
+		$self->Error("Cannot find any of the supported flac decoders in \$PATH.");
+		return -1;
+	}
+
+	#Identify available metaflac decoder
+	foreach my $dir (split (/\:/, $ENV{'PATH'}))	{
+		if ( (-x "$dir/metaflac") && (-s "$dir/metaflac") )	{
+			$self->metaflac("$dir/metaflac");
+			last;
+		}
+	}
+	if ( !$self->metaflac )	{
+		$self->Error("Cannot find metaflac program in \$PATH.");
 		return -1;
 	}
 	
-	my $ID3tagref = MP3::Info::get_mp3tag ($self->Filename);
-	my $MP3info = MP3::Info::get_mp3info ($self->Filename);
-	
-	#First try the lowercase version, then the first char uppercase, last the all-uppercase
-	foreach my $n (qw(artist album title bitrate year comment genre mm ss secs frequency))	{
-		if ($ID3tagref->{$n})	{
-			$self->$n ($ID3tagref->{"$n"});
-		}	elsif	($ID3tagref->{"\u$n"})	{
-			$self->$n ($ID3tagref->{"\u$n"});
-		}	elsif	($ID3tagref->{"\U$n"})	{
-			$self->$n ($ID3tagref->{"\U$n"});
-		}	else	{
-			$self->$n ('');
+	#Use a pipe to get metaflac data
+	my $cmdline = sprintf ("%s --list --block-type=STREAMINFO,VORBIS_COMMENT %s |", $self->metaflac, $self->Filename);
+	my $pid = open (METAFLAC, $cmdline);
+	if ( (!$pid) or ($pid < 0))	{
+		$self->Error ("Cannot get info from metaflac program.");
+		return -1;
+	}
+	while (<METAFLAC>)	{
+		if (m/^\s*comment\[\d+\]\:\s*(\w+)\=(.+)$/)	{
+			my $tag = $1;
+			my $value = $2;
+			foreach my $n (qw(artist album title year comment genre))	{
+				if ($n =~ /\Q$tag\E/i)	{
+					$self->$n ($value);
+					printf ("%s matches %s value %s\n", $n, $tag, $value);
+				}
+			}
+		}	elsif (m/^\s*sample\_rate\:\s*(\d+).*$/)	{
+			my $freq = $1;
+			$self->frequency($freq);
+#			printf ("Frequency %d\n", $self->frequency);
+		}	elsif (m/^\s*channels\:\s*(\d).*$/)	{
+			my $chan = $1;
+			$self->channels($chan);
+#			printf ("Channels %d\n", $self->channels);
+		}	elsif (m/^\s*total\ssamples\:\s*(\d+).*$/)	{
+			my $samples = $1;
+			my $secs = $samples / $self->frequency;
+			$self->mm($secs / 60);
+			$self->ss($secs % 60);
+			$self->secs($secs);
+#			printf ("MM %d SS %d secs %d\n", $self->mm, $self->ss, $self->secs);
 		}
 	}
-	$MP3info->{"STEREO"} ? $self->channels(2) : $self->channels(1);
+	close (METAFLAC) or warn $! ? "Error closing metaflac pipe: $!"
+                                  : "Exit status $? from metaflac";
 	$self->debug(1);
 	bless ($self, $class);
 	return $self;
 }
 
 sub type	{
-	return "mp3";
+	return "flac";
 }
 
 #Decodes the file in mp3handler instance to the file specified as Outputfile in same instance
@@ -110,22 +132,18 @@ sub to_wav	{
 	}
 	printf ("\nDecoding file %s", $self->Filename) if ($self->debug);
 	if (!$self->Outfile)	{
-		$_ = $self->Filename; s/\.mp3/\.wav/i;
+		$_ = $self->Filename; s/\.flac/\.wav/i;
 		$self->Outfile ($_);
 		print ("\n\tNo outputfile defined. Used ".$self->Outfile."\n") if ($self->debug);
 	} else	{
 		printf (" to file %s\n", $self->Outfile) if ($self->debug);
 	}
 	if ( (-e $self->Outfile) && (-s $self->Outfile) && ($self->debug) )	{
-		print $self->Outfile." exists, skipping mp3 decode\n" if ($self->debug);
+		print $self->Outfile." exists, skipping flac decode\n" if ($self->debug);
 		return 0;
 	}
-	if ($self->decoder_type =~ /lame/i)	{
-		$cmdline = $self->decoder." --decode --mp3input -S ".quotemeta ($self->Filename)." ".quotemeta ($self->Outfile);
-	}	elsif ($self->decoder_type =~ /mpg321/i)	{
-		$cmdline = $self->decoder." -q -w ".quotemeta ($self->Outfile)." ".quotemeta ($self->Filename);
-	}	else	{
-		$cmdline = $self->decoder." -q -s ".quotemeta ($self->Filename)." \> ".quotemeta ($self->Outfile);
+	if ($self->decoder_type =~ /flac/i)	{
+		$cmdline = sprintf ("%s -d -o %s %s", $self->decoder, quotemeta ($self->Outfile), quotemeta ($self->Filename));
 	}
 	system ("".$cmdline);
 	return $? >> 8;
@@ -159,7 +177,7 @@ sub write_inf   {
 		$inffilename = shift;
 	}	else	{
 	    $inffilename = $self->Filename;
-		$inffilename =~ s/mp3/inf/i;
+		$inffilename =~ s/flac/inf/i;
 	}
     my ($inffilehandle);
     open ($inffilehandle, ">$inffilename");

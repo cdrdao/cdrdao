@@ -8,7 +8,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Library General Public License for more details.
-#
+
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
@@ -62,14 +62,20 @@ sub new {
 	open (my ($fh), "<".$self->Filename);
 	my $handle = Ogg::Vorbis->new;
 	$handle->open ($fh);
-	
-	$self->Artist($handle->comment->{"artist"});
-	$self->Album($handle->comment->{"album"});
-	$self->Title($handle->comment->{"title"});
+
+	#First try the lowercase version, then the first char uppercase, last the all-uppercase
+	foreach my $n (qw(artist album title date comment genre))	{
+		if ($handle->comment->{$n})	{
+			$self->$n ($handle->comment->{"$n"});
+		}	elsif	($handle->comment->{"\u$n"})	{
+			$self->$n ($handle->comment->{"\u$n"});
+		}	elsif	($handle->comment->{"\U$n"})	{
+			$self->$n ($handle->comment->{"\U$n"});
+		}	else	{
+			$self->$n ('');
+		}
+	}
 	$self->Avgbr($handle->bitrate);
-	$self->Year($handle->comment->{'date'});
-	$self->Comment($handle->comment->{'comment'});
-	$self->Genre($handle->comment->{'genre'});
 	$self->durationMM($handle->time_total/60);
 	$self->durationSS($handle->time_total%60);
 	$self->duration($handle->time_total);
@@ -126,6 +132,35 @@ sub to_wav	{
         #print "$ret";
 	#return $? >> 8;
         return (system ("".$cmdline))/256;
+}
+
+#Arguments
+#       $trackno: Track number
+# Optional: $filename: filename of .inf file
+sub write_inf   {
+	my ($self) = shift;
+	my ($trackno) = shift;
+	my ($inffilename);
+	if (@_)	{
+		$inffilename = shift;
+	}	else	{
+	    $inffilename = $self->Filename;
+		$inffilename =~ s/ogg/inf/i;
+	}
+    my ($inffilehandle);
+    open ($inffilehandle, ">$inffilename");
+    if (!$inffilehandle)        {last};
+    my (@tl) = localtime (time ());
+    $_ = sprintf ("#Created by mp32dao.pl on %02d/%02d/%d %02d:%02d:%02d\n", 
+        $tl[3], $tl[4]+1, $tl[5]+1900, $tl[2], $tl[1], $tl[0]);
+    print $inffilehandle $_;
+    print $inffilehandle "#Source file is ".$self->Filename."\n";
+    print $inffilehandle "#Report bugs to Giuseppe \"Cowo\" Corbelli <cowo\@lugbs.linux.it>\n\n";
+    print $inffilehandle "Performer=\t'".$self->Artist."'\n";
+    print $inffilehandle "Tracktitle=\t'".$self->Title."'\n";
+    print $inffilehandle "Albumtitle=\t'".$self->Album."'\n";
+    print $inffilehandle "Tracknumber=\t".($trackno)."\n";
+    close ($inffilehandle);
 }
 
 1;
