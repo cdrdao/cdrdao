@@ -194,13 +194,13 @@ main ()
 
 
 
-# Configure paths for Gnome and Gnomemm
+# Configure paths for Gnome
 
-dnl Test for Gnome and Gnomemm, define GNOMEMM_CFLAGS and GNOMEMM_LIBS
+dnl Test for Gnome, define GNOME_CFLAGS and GNOME_LIBS
 dnl   to be used as follows:
-dnl AC_PATH_GNOMEMM([MINIMUM-VERSION, [ACTION-IF-FOUND [, ACTION-IF-NOT-FOUND]]])
+dnl AC_PATH_GNOME([MINIMUM-VERSION, [ACTION-IF-FOUND [, ACTION-IF-NOT-FOUND]]])
 dnl
-AC_DEFUN(AC_PATH_GNOMEMM,
+AC_DEFUN(AC_PATH_GNOME,
 [dnl 
 dnl Get the cflags and libraries from the gnome-config script
 dnl
@@ -230,8 +230,8 @@ AC_ARG_WITH(gnome-prefix,[  --with-gnome-prefix=PREFIX
     gnome_config_micro_version=`$GNOME_CONFIG --version | \
            sed 's/.* \([[0-9]]*\).\([[0-9]]*\).\([[0-9]]*\)/\3/'`
 
-    GNOME_CFLAGS=`$GNOME_CONFIG --cflags gnomemm gnomeui`
-    GNOME_LIBS=`$GNOME_CONFIG --libs gnomemm gnomeui`
+    GNOME_CFLAGS=`$GNOME_CONFIG --cflags gnomeui`
+    GNOME_LIBS=`$GNOME_CONFIG --libs gnomeui`
   fi
   if test "x$no_gnome" = x ; then
      AC_MSG_RESULT(yes)
@@ -250,4 +250,94 @@ AC_ARG_WITH(gnome-prefix,[  --with-gnome-prefix=PREFIX
   fi
   AC_SUBST(GNOME_CFLAGS)
   AC_SUBST(GNOME_LIBS)
+])
+
+
+dnl Check and configure include and link paths for a Gnome module 
+dnl AC_PATH_GNOME_MODULE(MODUE-NAME, MINIMUM-VERSION, CFLAGS-VAR, LIBS-VAR, [ACTION-IF-FOUND [, ACTION-IF-NOT-FOUND]])
+dnl
+AC_DEFUN(AC_PATH_GNOME_MODULE,
+[dnl 
+dnl Get the cflags and libraries for the module from the gnome-config script
+dnl
+AC_ARG_WITH(gnome-prefix,[  --with-gnome-prefix=PREFIX
+                          Prefix where Gnome is installed (optional)],
+            gnome_config_prefix="$withval", gnome_config_prefix="")
+
+  min_gnome_module_major_version=`echo $2 | sed 's/\([[0-9]]*\).\([[0-9]]*\).\([[0-9]]*\)/\1/'`;
+  min_gnome_module_minor_version=`echo $2 | sed 's/\([[0-9]]*\).\([[0-9]]*\).\([[0-9]]*\)/\2/'`;
+  min_gnome_module_micro_version=`echo $2 | sed 's/\([[0-9]]*\).\([[0-9]]*\).\([[0-9]]*\)/\3/'`;
+
+  if test x$gnome_config_prefix != x ; then
+     gnome_config_args="$gnome_config_args --prefix=$gnome_config_prefix"
+     if test x${GNOME_CONFIG+set} != xset ; then
+        GNOME_CONFIG=$gnome_config_prefix/bin/gnome-config
+     fi
+  fi
+
+  AC_PATH_PROG(GNOME_CONFIG, gnome-config, no)
+
+  AC_MSG_CHECKING(for Gnome module $1 - version >= $2)
+
+  no_gnome=""
+  no_gnome_module=""
+
+  if test "$GNOME_CONFIG" = "no" ; then
+    no_gnome=yes
+  elif $GNOME_CONFIG --libs $1 > /dev/null 2>&1 ; then
+    gnome_module_major_version=`$GNOME_CONFIG --modversion $1 | \
+           sed "s/$1-\([[0-9]]*\).\([[0-9]]*\).\([[0-9]]*\)/\1/"`
+    gnome_module_minor_version=`$GNOME_CONFIG --modversion $1 | \
+           sed "s/$1-\([[0-9]]*\).\([[0-9]]*\).\([[0-9]]*\)/\2/"`
+    gnome_module_micro_version=`$GNOME_CONFIG --modversion $1 | \
+           sed "s/$1-\([[0-9]]*\).\([[0-9]]*\).\([[0-9]]*\)/\3/"`
+  else
+     no_gnome_module=yes   
+  fi
+
+  $3=""
+  $4=""
+
+  if test "x$no_gnome_module" = xyes ; then
+    AC_MSG_RESULT("no - module $1 not found")
+    ifelse([$6], , :, [$6])
+  elif test "x$no_gnome" = x ; then
+     gnome_module_version_ok=no
+
+     if test $gnome_module_major_version -gt $min_gnome_module_major_version ; then
+       gnome_module_version_ok=yes
+     elif test $gnome_module_major_version -eq $min_gnome_module_major_version ; then
+       if test $gnome_module_minor_version -gt $min_gnome_module_minor_version ; then
+         gnome_module_version_ok=yes
+       elif test $gnome_module_minor_version -eq $min_gnome_module_minor_version ; then
+         if test $gnome_module_micro_version -ge $min_gnome_module_micro_version ; then
+           gnome_module_version_ok=yes
+         fi
+       fi
+     fi
+
+     if test $gnome_module_version_ok = yes ; then
+       AC_MSG_RESULT(yes)
+
+       $3=`$GNOME_CONFIG --cflags $1`
+       $4=`$GNOME_CONFIG --libs $1`
+
+       ifelse([$5], , :, [$5])
+     else
+       AC_MSG_RESULT("no - found version $gnome_module_major_version.$gnome_module_minor_version.$gnome_module_micro_version")
+       ifelse([$6], , :, [$6])
+     fi
+  else
+     AC_MSG_RESULT(no)
+     if test "$GNOME_CONFIG" = "no" ; then
+       echo "*** The gnome-config script installed by Gnome could not be found"
+       echo "*** If Gnome was installed in PREFIX, make sure PREFIX/bin is in"
+       echo "*** your path, or set the GNOME_CONFIG environment variable to the"
+       echo "*** full path to gnome-config."
+     fi
+     ifelse([$6], , :, [$6])
+  fi
+
+  AC_SUBST($3)
+  AC_SUBST($4)
 ])

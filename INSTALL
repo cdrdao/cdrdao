@@ -19,17 +19,16 @@ versions. You can
  - or fix the obvious errors in the PCCTS sources
 
 
-If you fetched the source tree directly from CVS, you will have to unpack
-"scsilib.tar.gz" in the directory where "scsilib.tar.gz" resides.
+The GnomeCDMaster GUI additionally requires the Gimp toolkit gtk+-1.2.8,
+recent Gnome libraries (e.g. gnome-libs-1.2.3) and the C++ bindings
+gtkmm-1.2.4 and gnomemm-1.1.14.  The packages are available from
+www.gtk.org, www.gnome.org and www.sourceforge.net (project 'gtkmm').
+You will need exactly the mentioned library version. With older or
+newer versions the GnomeCDMaster sources usually fail to compile.
 
 
-The GnomeCDMaster GUI needs the Gimp toolkit gtk+-1.2.8, recent Gnome libs
-(e.g. gnome-libs-1.2.3) and the C++ bindings gtkmm-1.2.1 and gnomemm-1.1.10.
-The packages are available from www.gtk.org, www.gnome.org and
-www.sourceforge.net (project 'gtkmm'). You will need exactly the mentioned
-library version. With older or newer versions the GnomeCDMaster sources 
-usually fail to compile.
-
+If you fetched the source tree directly from CVS, you will first have to
+unpack "scsilib.tar.gz" in the same directory where "scsilib.tar.gz" resides.
 
 1. Type './configure'.
    Configure options for PCCTS:
@@ -46,8 +45,9 @@ usually fail to compile.
                              sense if the SCSI library does not compile for
                              some reason. Direct SCSI implementations are
                              currently available for Linux and FreeBSD.
-                             The included SCSI library will be built if the
-                             following options are not given.
+
+     The included SCSI library will be built if the following options
+     are not given.
      
      --with-scglib-inc=dir   Use SCSI library include files from specified
                              directory instead from the SCSI library that
@@ -72,5 +72,5 @@ usually fail to compile.
 
 2. Type 'make' to compile the package.
 
-3. Type 'make install' as root to install the binary and the manual page under
-   '/usr/local' or whatever was specified as installation prefix.
+3. Type 'make install' as root to install the executable and the manual page
+   under '/usr/local' or whatever was specified as the installation prefix.

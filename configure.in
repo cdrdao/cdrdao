@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_REVISION($Revision: 1.12 $)dnl
+AC_REVISION($Revision: 1.13 $)dnl
 
 cdrdao_version=1.1.5-pre2
 
@@ -183,10 +183,14 @@ if test "$pcctsinc" = default; then
 fi
 
 xdao=xdao
-AC_PATH_GTKMM(1.2.1,,[xdao=no; echo Disabled building of xcdrdao.])
+AC_PATH_GTKMM(1.2.4,,[xdao=no; echo Disabled building of xcdrdao.])
 
 if test $xdao = xdao; then
-  AC_PATH_GNOMEMM(1.2.3,, [xdao=no; echo Disabled building of xcdrdao.])
+  AC_PATH_GNOME(1.2.3,, [xdao=no; echo Disabled building of xcdrdao.])
+fi
+
+if test $xdao = xdao; then
+  AC_PATH_GNOME_MODULE(gnomemm,1.1.14,GNOMEMM_CFLAGS,GNOMEMM_LIBS,,[xdao=no; echo Disabled building of xcdrdao.])
 fi
 
 if test $xdao != xdao; then

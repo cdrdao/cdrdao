@@ -2,7 +2,7 @@ Hi,
 
 cdrdao-1.1.5 is available from:
 
-  http://cdrdao.sourceforge.net/download.html
+  http://sourceforge.net/projects/cdrdao
 
 
 Cdrdao changes:
@@ -13,6 +13,9 @@ o BURN Proof support added by ITOH Yasufumi/Martin Buck
 
 o Handle drives that do not support the explicit power calibration command
 
+o Blanking of CD-RWs is now officially supported (command 'blank',
+  option --blank-mode)
+
 o Updated CD-R vendor table
 
 o Settings are now first read from "/etc/cdrdao.conf" and
@@ -22,11 +25,19 @@ o Added command 'msinfo' to output multi session information suitable for
   'mkisofs'
 
 o Overburning is now prevented by default and must be explicitly requested
-  with option '--overburn'.
+  with option '--overburn'. Fix for Debian bug #79585 
+  (http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=79585&repeatmerged=yes).
+
+o Fixed error in cdrdao's manual page (Debian bug #82816,
+  http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=82816&repeatmerged=yes)
 
 
 GCDMaster changes:
- 
+
+- added missing 'toshiba' driver to the device configuration dialog
+  (bug 128633).
+
+- 
 
 
 Andreas
