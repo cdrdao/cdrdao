@@ -18,6 +18,10 @@
  */
 /*
  * $Log: RecordProgressDialog.cc,v $
+ * Revision 1.8  2000/08/17 21:26:46  llanero
+ * added time counter to ProgressDialog.
+ * included <sys/time.h> !
+ *
  * Revision 1.7  2000/08/01 01:27:50  llanero
  * CD to CD copy works now.
  *
@@ -49,19 +53,20 @@
  *
  */
 
-static char rcsid[] = "$Id: RecordProgressDialog.cc,v 1.7 2000/08/01 01:27:50 llanero Exp $";
+static char rcsid[] = "$Id: RecordProgressDialog.cc,v 1.8 2000/08/17 21:26:46 llanero Exp $";
 
 #include <stdio.h>
 #include <stddef.h>
 #include <string.h>
 #include <ctype.h>
 
+#include <gnome--.h>
+
 #include "RecordProgressDialog.h"
 #include "MessageBox.h"
 #include "TocEdit.h"
 #include "guiUpdate.h"
 #include "CdDevice.h"
-
 
 RecordProgressDialog::RecordProgressDialog(RecordProgressDialogPool *father)
 {
@@ -81,21 +86,11 @@ RecordProgressDialog::RecordProgressDialog(RecordProgressDialogPool *father)
   statusMsg_ = new Gtk::Label(string("XXXXXXXXXXXXXXXXXXX"));
   trackProgress_ = new Gtk::ProgressBar;
   trackProgress_->set_show_text(TRUE);
-//  trackProgress_->set_format_string("Starting...");    
   totalProgress_ = new Gtk::ProgressBar;
   totalProgress_->set_show_text(TRUE);
-//  totalProgress_->set_format_string("Starting...");    
   bufferFillRate_ = new Gtk::ProgressBar;
   bufferFillRate_->set_show_text(TRUE);
-//  bufferFillRate_->set_format_string("Starting...");    
   tocName_ = new Gtk::Label;
-  abortLabel_ = new Gtk::Label(string(" Abort "));
-  closeLabel_ = new Gtk::Label(string(" Dismiss "));
-  closeButton_ = new Gtk::Button;
-  closeButton_->add(*closeLabel_);
-  closeLabel_->show();
-  abortLabel_->show();
-  actCloseButtonLabel_ = 2;
 
   hbox = new Gtk::HBox;
   label = new Gtk::Label(string("Project: "));
@@ -109,6 +104,16 @@ RecordProgressDialog::RecordProgressDialog(RecordProgressDialogPool *father)
   hbox = new Gtk::HBox;
   hbox->pack_start(*statusMsg_, FALSE);
   statusMsg_->show();
+  contents->pack_start(*hbox, FALSE);
+  hbox->show();
+
+  hbox = new Gtk::HBox;
+  label = new Gtk::Label(string("Current Time: "), 1);
+  hbox->pack_start(*label, FALSE);
+  label->show();
+  currentTime_ = new Gtk::Label(string(""), 0);
+  hbox->pack_start(*currentTime_, FALSE);
+  currentTime_->show();
   contents->pack_start(*hbox, FALSE);
   hbox->show();
 
@@ -167,8 +172,16 @@ RecordProgressDialog::RecordProgressDialog(RecordProgressDialogPool *father)
 
   Gtk::HButtonBox *bbox = new Gtk::HButtonBox(GTK_BUTTONBOX_SPREAD);
 
+  cancelButton_ = new Gnome::Stock::Buttons::Button(GNOME_STOCK_BUTTON_CANCEL);
+  bbox->pack_start(*cancelButton_);
+
+  closeButton_ = new Gnome::Stock::Buttons::Button(GNOME_STOCK_BUTTON_CLOSE);
   bbox->pack_start(*closeButton_);
-  closeButton_->show();
+
+  cancelButton_->show();
+  actCloseButtonLabel_ = 2;
+
+  cancelButton_->clicked.connect(SigC::slot(this,&RecordProgressDialog::closeAction));
   closeButton_->clicked.connect(SigC::slot(this,&RecordProgressDialog::closeAction));
 
   get_action_area()->pack_start(*bbox);
@@ -185,6 +198,7 @@ RecordProgressDialog::~RecordProgressDialog()
 void RecordProgressDialog::start(CdDevice *device, TocEdit *tocEdit)
 {
   string s;
+  gint m_t_nr;
 
   if (device == NULL)
     return;
@@ -198,6 +212,9 @@ void RecordProgressDialog::start(CdDevice *device, TocEdit *tocEdit)
   device_ = device;
 
   clear();
+
+  SigC::Slot0<gint> my_slot = bind(slot(this,&RecordProgressDialog::time),m_t_nr);
+  Gtk::Connection conn = Gtk::Main::timeout.connect(my_slot, 1000);
 
   statusMsg_->set_text(string("Initializing..."));
   tocName_->set_text(string(tocEdit->filename()));
@@ -216,6 +233,7 @@ void RecordProgressDialog::start(CdDevice *device, TocEdit *tocEdit)
 void RecordProgressDialog::start(CdDevice *device, char *tocFileName)
 {
   string s;
+  gint m_t_nr;
 
   if (device == NULL)
     return;
@@ -229,6 +247,9 @@ void RecordProgressDialog::start(CdDevice *device, char *tocFileName)
   device_ = device;
 
   clear();
+
+  SigC::Slot0<gint> my_slot = bind(slot(this,&RecordProgressDialog::time),m_t_nr);
+  Gtk::Connection conn = Gtk::Main::timeout.connect(my_slot, 1000);
 
   statusMsg_->set_text(string("Initializing..."));
   tocName_->set_text(string(tocFileName));
@@ -318,6 +339,9 @@ void RecordProgressDialog::clear()
   actTotalProgress_ = 0;
   actBufferFill_ = 0;
 
+  gettimeofday(&time_, NULL);
+  currentTime_->set(string("0:00:00"));
+
   statusMsg_->set_text(string(""));
   trackProgress_->set_percentage(0.0);
   trackProgress_->set_format_string("");
@@ -342,7 +366,6 @@ void RecordProgressDialog::update(unsigned long level, TocEdit *tocEdit)
 
   if (!active_ || device_ == NULL)
     return;
-
   if (finished_)
     return;
 
@@ -563,25 +586,52 @@ void RecordProgressDialog::update(unsigned long level, TocEdit *tocEdit)
 }
 
 // Sets label of close button.
-// l: 1: 'abort'
-//    2: 'dismiss'
+// l: 1: 'abort'	--> CANCEL gnome stock button (i18n)
+//    2: 'dismiss'  --> CLOSE  gnome stock button (i18n)
 void RecordProgressDialog::setCloseButtonLabel(int l)
 {
   if (actCloseButtonLabel_ == l)
     return;
 
-  closeButton_->remove();
-
   switch (l) {
   case 1:
-    closeButton_->add(*abortLabel_);
+	  closeButton_->hide();
+	  cancelButton_->show();
     break;
   case 2:
-    closeButton_->add(*closeLabel_);
+	  cancelButton_->hide();
+	  closeButton_->show();
     break;
   }
 
   actCloseButtonLabel_ = l;
+}
+
+gint RecordProgressDialog::time(gint timer_nr)
+{
+  char buf[50];
+  struct timeval timenow;
+  long time, hours, mins, secs;
+
+  gettimeofday(&timenow, NULL);
+
+  time = timenow.tv_sec - time_.tv_sec;
+
+  hours = time / 3600;
+  mins = (time - (hours * 3600)) / 60;
+  secs = time - ((hours * 3600) + (mins * 60));
+
+  sprintf(buf, "%d:%02d:%02d", hours, mins, secs);
+  currentTime_->set(string(buf));
+
+  if (finished_) 
+  {
+    return 0;
+  }
+  else
+  {
+    return 1;
+  }
 }
 
 
@@ -670,4 +720,3 @@ void RecordProgressDialogPool::stop(RecordProgressDialog *dialog)
   dialog->poolNext_ = pool_;
   pool_ = dialog;
 }
-
