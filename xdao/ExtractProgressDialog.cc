@@ -29,7 +29,7 @@
 #include "guiUpdate.h"
 #include "CdDevice.h"
 
-static char rcsid[] = "$Id: ExtractProgressDialog.cc,v 1.5 2000/04/24 12:49:06 andreasm Exp $";
+static char rcsid[] = "$Id: ExtractProgressDialog.cc,v 1.6 2000/05/24 18:42:44 llanero Exp $";
 
 ExtractProgressDialog::ExtractProgressDialog(ExtractProgressDialogPool *father)
 {
@@ -48,6 +48,8 @@ ExtractProgressDialog::ExtractProgressDialog(ExtractProgressDialogPool *father)
 
   statusMsg_ = new Gtk::Label(string("XXXXXXXXXXXXXXXXXXX"));
   trackProgress_ = new Gtk::ProgressBar;
+  trackProgress_->set_show_text(TRUE);
+  trackProgress_->set_format_string("Starting...");  
   tocName_ = new Gtk::Label;
   abortLabel_ = new Gtk::Label(string(" Abort "));
   closeLabel_ = new Gtk::Label(string(" Dismiss "));
@@ -200,6 +202,7 @@ void ExtractProgressDialog::update(unsigned long level, TocEdit *tocEdit)
   int track;
   int trackProgress;
   char buf[20];
+  char bufProgress[30];
   string s;
 
   if (!active_ || device_ == NULL)
@@ -241,6 +244,8 @@ void ExtractProgressDialog::update(unsigned long level, TocEdit *tocEdit)
       actTrackProgress_ = trackProgress;
 
       trackProgress_->set_percentage(gfloat(trackProgress) / 1000.0);
+      sprintf(bufProgress, "%.2f %%%%", gfloat(trackProgress/10.0));
+      trackProgress_->set_format_string(bufProgress);  
     }
 
     /*
