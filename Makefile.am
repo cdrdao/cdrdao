@@ -10,7 +10,13 @@ else
 MAYBE_SCSILIB =
 endif
 
-SUBDIRS = $(MAYBE_SCSILIB) pccts trackdb utils paranoia dao $(MAYBE_XDAO)
+if COND_PCCTS
+MAYBE_PCCTS = pccts
+else
+MAYBE_PCCTS =
+endif
+
+SUBDIRS = $(MAYBE_SCSILIB) $(MAYBE_PCCTS) trackdb utils paranoia dao $(MAYBE_XDAO)
 
 DIST_SUBDIRS = trackdb utils paranoia dao xdao
 
@@ -23,7 +29,6 @@ EXTRA_DIST =		\
 	NEWS		\
 	Release-*	\
 	README		\
-	README.FreeBSD	\
 	README.PlexDAE	\
 	README.Win32	\
 	scsilib		\
