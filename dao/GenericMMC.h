@@ -128,6 +128,8 @@ protected:
 		     int startTrack, int endTrack, TrackInfo *);
 
   int readCdTest(long lba, long len, int subChanMode) const;
+
+  int checkDriveReady() const;
 };
 
 #endif
