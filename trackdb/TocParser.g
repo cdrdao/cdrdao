@@ -481,7 +481,8 @@ subTrack < [ TrackData::Mode trackType, TrackData::SubChannelMode subChanType ] 
        >>
      | Zero 
        << dMode = $trackType; >>
-       //{ dataMode > [ dMode ] }
+       { dataMode > [ dMode ] }
+       { subChannelMode > [ $subChanType ] }
        dataLength [ dMode, $subChanType ] > [ len ]
        << $st = new SubTrack(SubTrack::DATA, TrackData(dMode, $subChanType,
                                                        len));

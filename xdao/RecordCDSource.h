@@ -41,6 +41,10 @@ public:
   DeviceList *getDeviceList() { return DEVICES;}
   void onTheFlyOption(bool);
 
+  struct CorrectionTable {
+    int correction;
+    const char *name;
+  };
 
 private:
   DeviceList *DEVICES;
@@ -53,11 +57,6 @@ private:
 
   Gtk::Window *parent_;
   Gnome::Dialog *moreOptionsDialog_;
-
-  struct CorrectionTable {
-    int correction;
-    const char *name;
-  };
 
   Gtk::SpinButton *speedSpinButton_;
   Gtk::CheckButton *speedButton_;

@@ -1,6 +1,6 @@
 /*  cdrdao - write audio CD-Rs in disc-at-once mode
  *
- *  Copyright (C) 1998, 1999  Andreas Mueller <mueller@daneb.ping.de>
+ *  Copyright (C) 1998-2002  Andreas Mueller <andreas@daneb.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -43,7 +43,7 @@ BlankCDDialog::BlankCDDialog()
   vbox->pack_start(*Devices, true, true);
 
   // device settings
-  Gtk::Frame *blankOptionsFrame = new Gtk::Frame(string("Blank Options"));
+  Gtk::Frame *blankOptionsFrame = new Gtk::Frame("Blank Options");
   Gtk::VBox *frameBox = new Gtk::VBox;
   frameBox->set_border_width(5);
   frameBox->set_spacing(5);
@@ -106,7 +106,7 @@ void BlankCDDialog::moreOptions()
 {
   if (!moreOptionsDialog_)
   {
-    vector <string> buttons;
+    std::vector <std::string> buttons;
     buttons.push_back(GNOME_STOCK_BUTTON_CLOSE);
     moreOptionsDialog_ = new Gnome::Dialog("Blank options", buttons);
 
@@ -123,19 +123,19 @@ void BlankCDDialog::moreOptions()
     frame->add(*vbox);
     frame->show();
 
-    ejectButton_ = new Gtk::CheckButton(string("Eject the CD after blanking"), 0);
+    ejectButton_ = new Gtk::CheckButton("Eject the CD after blanking", 0);
     ejectButton_->set_active(false);
     ejectButton_->show();
     vbox->pack_start(*ejectButton_);
 
-    reloadButton_ = new Gtk::CheckButton(string("Reload the CD after writing, if necessary"), 0);
+    reloadButton_ = new Gtk::CheckButton("Reload the CD after writing, if necessary", 0);
     reloadButton_->set_active(false);
     reloadButton_->show();
     vbox->pack_start(*reloadButton_);
 
     Gtk::HBox *hbox = new Gtk::HBox;
     hbox->show();
-    Gtk::Label *label = new Gtk::Label(string("Speed: "), 0);
+    Gtk::Label *label = new Gtk::Label("Speed: ", 0);
     label->show();
     hbox->pack_start(*label, false, false);
     
@@ -147,7 +147,7 @@ void BlankCDDialog::moreOptions()
     adjustment->value_changed.connect(SigC::slot(this, &BlankCDDialog::speedChanged));
     hbox->pack_start(*speedSpinButton_, false, false, 10);
   
-    speedButton_ = new Gtk::CheckButton(string("Use max."), 0);
+    speedButton_ = new Gtk::CheckButton("Use max.", 0);
     speedButton_->set_active(true);
     speedButton_->show();
     speedButton_->toggled.connect(SigC::slot(this, &BlankCDDialog::speedButtonChanged));

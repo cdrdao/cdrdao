@@ -32,6 +32,8 @@ public:
   ~TeacCdr55();
   static CdrDriver *instance(ScsiIf *scsiIf, unsigned long options);
 
+  unsigned long getReadCapabilities(const CdToc *, int) const { return 0; }
+
   // MMC compatible drives take little endian samples
   int bigEndianSamples() const { return 0; }
 
@@ -85,9 +87,10 @@ protected:
 		   long endLba, Msf *indexIncrements, int *indexIncrementCnt,
 		   long *pregap, char *isrcCode, unsigned char *ctl);
 
-  int readSubChannels(long lba, long len, SubChannel ***, Sample *);
-  long readTrackData(TrackData::Mode mode, long lba, long len,
-		     unsigned char *buf);
+  int readSubChannels(TrackData::SubChannelMode, long lba, long len,
+		      SubChannel ***, Sample *);
+  long readTrackData(TrackData::Mode, TrackData::SubChannelMode,
+		     long lba, long len, unsigned char *buf);
 
   int readIsrc(int trackNr, char *buf);
   int readCatalog(class Toc *, long startLba, long endLba);

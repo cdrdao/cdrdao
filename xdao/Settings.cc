@@ -1,6 +1,6 @@
 /*  cdrdao - write audio CD-Rs in disc-at-once mode
  *
- *  Copyright (C) 1998-2000 Andreas Mueller <mueller@daneb.ping.de>
+ *  Copyright (C) 1998-2002 Andreas Mueller <andreas@daneb.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -16,25 +16,6 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
-/*
- * $Log: Settings.cc,v $
- * Revision 1.4  2001/08/18 19:15:43  llanero
- * added SET_DUPLICATE_ONTHEFLY_WARNING
- *
- * Revision 1.3  2000/06/22 12:20:24  andreasm
- * Changed settings file to "GnomeCDMaster".
- *
- * Revision 1.2  2000/05/01 18:15:00  andreasm
- * Switch to gnome-config settings.
- * Adapted Message Box to Gnome look, unfortunately the Gnome::MessageBox is
- * not implemented in gnome--, yet.
- *
- * Revision 1.1.1.1  2000/02/05 01:39:57  llanero
- * Uploaded cdrdao 1.1.3 with pre10 patch applied.
- *
- */
-
-static char rcsid[] = "$Id: Settings.cc,v 1.4 2001/08/18 19:15:43 llanero Exp $";
 
 #include "Settings.h"
 

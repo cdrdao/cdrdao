@@ -397,7 +397,7 @@ int TrackData::check(int trackNr) const
 }
 
 // writes out contents of object in TOC file syntax
-void TrackData::print(ostream &out) const
+void TrackData::print(std::ostream &out) const
 {
   unsigned long blen;
   const char *s;
@@ -454,7 +454,7 @@ void TrackData::print(ostream &out) const
     if (!audioCutMode())
       out << " // length in bytes: " << length();
 
-    out << endl;
+    out << std::endl;
     break;
 
   case FIFO:
@@ -468,7 +468,7 @@ void TrackData::print(ostream &out) const
       out << length();
     }
 
-    out << endl;
+    out << std::endl;
     break;
 
   case ZERODATA:
@@ -489,7 +489,7 @@ void TrackData::print(ostream &out) const
     else
       out << length();
 
-    out << endl;
+    out << std::endl;
     break;
   }
 }
@@ -1232,14 +1232,26 @@ int TrackDataReader::seekSample(unsigned long sample)
     return 10;
 
   if (trackData_->type_ == TrackData::DATAFILE) {
-    if (lseek(fd_,
-	      trackData_->offset_ + headerLength_ +
-	      (sample * sizeof(Sample)) + 
-	      (trackData_->startPos_ * sizeof(Sample)),
-	      SEEK_SET) < 0) {
-      message(-2, "Cannot seek in audio file \"%s\": %s",
-	      trackData_->filename_, strerror(errno));
-      return 10;
+    if (trackData_->audioCutMode()) {
+      // 'sample' has samples as unit
+      if (lseek(fd_,
+		trackData_->offset_ + headerLength_ +
+		(sample * sizeof(Sample)) + 
+		(trackData_->startPos_ * sizeof(Sample)),
+		SEEK_SET) < 0) {
+	message(-2, "Cannot seek in audio file \"%s\": %s",
+		trackData_->filename_, strerror(errno));
+	return 10;
+      }
+    }
+    else {
+      // 'sample' has byte as unit
+      if (lseek(fd_, trackData_->offset_ + headerLength_ + sample,
+		SEEK_SET) < 0) {
+	message(-2, "Cannot seek in audio file \"%s\": %s",
+		trackData_->filename_, strerror(errno));
+	return 10;
+      }
     }
   }
 

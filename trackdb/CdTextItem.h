@@ -20,7 +20,7 @@
 #ifndef __CDTEXTITEM_H__
 #define __CDTEXTITEM_H__
 
-class ostream;
+#include <ostream.h>
 
 class CdTextItem {
 public:
@@ -65,7 +65,7 @@ public:
 
   long dataLen() const { return dataLen_; }
 
-  void print(int isTrack, ostream &) const;
+  void print(int isTrack, std::ostream &) const;
 
   int operator==(const CdTextItem &);
   int operator!=(const CdTextItem &);

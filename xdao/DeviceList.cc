@@ -1,6 +1,6 @@
 /*  cdrdao - write audio CD-Rs in disc-at-once mode
  *
- *  Copyright (C) 1998, 1999  Andreas Mueller <mueller@daneb.ping.de>
+ *  Copyright (C) 1998-2002  Andreas Mueller <andreas@daneb.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -43,22 +43,22 @@ DeviceList::DeviceList(CdDevice::DeviceType filterType)
 
   list_ = new Gtk::CList(6);
 
-  list_->set_column_title(0, string("Bus"));
+  list_->set_column_title(0, "Bus");
   list_->set_column_justification(0, GTK_JUSTIFY_CENTER);
 
-  list_->set_column_title(1, string("Id"));
+  list_->set_column_title(1, "Id");
   list_->set_column_justification(1, GTK_JUSTIFY_CENTER);
 
-  list_->set_column_title(2, string("Lun"));
+  list_->set_column_title(2, "Lun");
   list_->set_column_justification(2, GTK_JUSTIFY_CENTER);
 
-  list_->set_column_title(3, string("Vendor"));
+  list_->set_column_title(3, "Vendor");
   list_->set_column_justification(3, GTK_JUSTIFY_LEFT);
 
-  list_->set_column_title(4, string("Model"));
+  list_->set_column_title(4, "Model");
   list_->set_column_justification(4, GTK_JUSTIFY_LEFT);
 
-  list_->set_column_title(5, string("Status"));
+  list_->set_column_title(5, "Status");
   list_->set_column_justification(5, GTK_JUSTIFY_LEFT);
 
   list_->column_titles_show();
@@ -97,15 +97,15 @@ DeviceList::DeviceList(CdDevice::DeviceType filterType)
   switch (filterType_)
   {
     case CdDevice::CD_ROM:
-                 set_label(string("Available Reader Devices"));
+                 set_label("Available Reader Devices");
                  list_->set_selection_mode(GTK_SELECTION_SINGLE);
                  break;
     case CdDevice::CD_R:
-                 set_label(string("Available Recorder Devices"));
+                 set_label("Available Recorder Devices");
                  list_->set_selection_mode(GTK_SELECTION_MULTIPLE);
                  break;
     case CdDevice::CD_RW:
-                 set_label(string("Available Recorder (RW) Devices"));
+                 set_label("Available Recorder (RW) Devices");
                  list_->set_selection_mode(GTK_SELECTION_MULTIPLE);
                  break;
   }
@@ -140,9 +140,9 @@ void DeviceList::appendTableEntry(CdDevice *dev)
 {
   DeviceData *data;
   char buf[50];
-  string idStr;
-  string busStr;
-  string lunStr;
+  std::string idStr;
+  std::string busStr;
+  std::string lunStr;
   const gchar *rowStr[6];
 
   data = new DeviceData;
@@ -250,7 +250,7 @@ void DeviceList::importStatus()
 	list_->row(i).set_selectable(false);
       }
 
-      list_->cell(i, 5).set_text(string(CdDevice::status2string(dev->status())));
+      list_->cell(i, 5).set_text(CdDevice::status2string(dev->status()));
     }
   }
 

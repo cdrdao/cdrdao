@@ -36,6 +36,8 @@ public:
   PlextorReader(ScsiIf *scsiIf, unsigned long options);
   static CdrDriver *instance(ScsiIf *scsiIf, unsigned long options);
 
+  unsigned long getReadCapabilities(const CdToc *, int) const { return 0; }
+
   // not used for readers
   int bigEndianSamples() const { return 0;}
 
@@ -68,9 +70,10 @@ protected:
 		   unsigned char *ctl);
   int readIsrc(int trackNr, char *);
 
-  long readTrackData(TrackData::Mode mode, long lba, long len,
-		     unsigned char *buf);
-  int readSubChannels(long lba, long len, SubChannel ***, Sample *);
+  long readTrackData(TrackData::Mode mode, TrackData::SubChannelMode,
+		     long lba, long len, unsigned char *buf);
+  int readSubChannels(TrackData::SubChannelMode, long lba, long len,
+		      SubChannel ***, Sample *);
   int readAudioRange(ReadDiskInfo *, int fd, long start, long end,
 		     int startTrack, int endTrack, TrackInfo *trackInfo);
 

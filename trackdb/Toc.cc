@@ -236,7 +236,7 @@ const char *Toc::catalog() const
 }
 
 // writes contents in TOC file syntax
-void Toc::print(ostream &out) const
+void Toc::print(std::ostream &out) const
 {
   int i;
   TrackEntry *t;
@@ -248,7 +248,7 @@ void Toc::print(ostream &out) const
     for (i = 0; i < 13; i++) {
       out << (char)(catalog(i) + '0');
     }
-    out << "\"" << endl;
+    out << "\"" << std::endl;
   }
 
   cdtext_.print(0, out);
@@ -256,7 +256,7 @@ void Toc::print(ostream &out) const
   for (t = tracks_, i = 1; t != NULL; t = t->next, i++) {
     out << "\n// Track " << i << "\n";
     t->track->print(out);
-    out << endl;
+    out << std::endl;
   }
 }
 

@@ -208,7 +208,7 @@ int setRealTimeScheduling(int priority)
   pthread_getschedparam(pthread_self(), &schedPolicy, &schedp);
   schedp.sched_priority = sched_get_priority_max(SCHED_RR) - priority;
 
-  if (pthread_setschedparam(pthread_self(), SCHED_RR, &schedp) != 0) {
+  if (pthread_setschedparam(pthread_self(), SCHED_RR, &schedp) < 0) {
     message(-1, "Cannot setup real time scheduling: %s", strerror(errno));
     return 3;
   }
@@ -225,7 +225,7 @@ int setRealTimeScheduling(int priority)
   
   sched_getparam (0, &schedp);
   schedp.run_q_min = schedp.run_q_max = 2;
-  if (sched_setscheduler (0, SCHED_RR, &schedp) != 0) {
+  if (sched_setscheduler (0, SCHED_RR, &schedp) < 0) {
     message(-1, "Cannot setup real time scheduling: %s", strerror(errno));
     return 3;
   }
@@ -242,7 +242,7 @@ int setRealTimeScheduling(int priority)
 
   sched_getparam (0, &schedp);
   schedp.sched_priority = sched_get_priority_max (SCHED_RR) - priority;
-  if (sched_setscheduler (0, SCHED_RR, &schedp) != 0) {
+  if (sched_setscheduler (0, SCHED_RR, &schedp) < 0) {
     message(-1, "Cannot setup real time scheduling: %s", strerror(errno));
     return 3;
   }

@@ -1185,7 +1185,8 @@ int TeacCdr55::analyzeTrack(TrackData::Mode mode, int trackNr,
   return ret;
 }
 
-int TeacCdr55::readSubChannels(long lba, long len, SubChannel ***chans,
+int TeacCdr55::readSubChannels(TrackData::SubChannelMode,
+			       long lba, long len, SubChannel ***chans,
 			       Sample *audioData)
 {
   int retries = 5;
@@ -1330,8 +1331,9 @@ CdRawToc *TeacCdr55::getRawToc(int sessionNr, int *len)
   return rawToc;
 }
 
-long TeacCdr55::readTrackData(TrackData::Mode mode, long lba, long len,
-			      unsigned char *buf)
+long TeacCdr55::readTrackData(TrackData::Mode mode,
+			      TrackData::SubChannelMode,
+			      long lba, long len, unsigned char *buf)
 {
   unsigned char cmd[10];
   long blockLen = 2340;

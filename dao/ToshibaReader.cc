@@ -42,7 +42,8 @@ CdrDriver *ToshibaReader::instance(ScsiIf *scsiIf, unsigned long options)
   return new ToshibaReader(scsiIf, options);
 }
 
-int ToshibaReader::readSubChannels(long lba, long len, SubChannel ***chans,
+int ToshibaReader::readSubChannels(TrackData::SubChannelMode,
+				   long lba, long len, SubChannel ***chans,
 				   Sample *audioData)
 {
   unsigned char cmd[10];

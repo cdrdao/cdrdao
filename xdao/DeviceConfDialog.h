@@ -18,6 +18,11 @@
  */
 /*
  * $Log: DeviceConfDialog.h,v $
+ * Revision 1.6  2002/01/20 20:43:37  andreasm
+ * Added support for sub-channel reading and writing.
+ * Adapted to autoconf-2.52.
+ * Adapted to gcc-3.0.
+ *
  * Revision 1.5  2000/10/01 16:39:10  llanero
  * applied Jason Lunz patch: "Close" instead of "Cancel" where appropiate.
  *
@@ -84,7 +89,7 @@ private:
     int driverId;
     int deviceType;
     unsigned long options;
-    string specialDevice;
+    std::string specialDevice;
   };
 
   Gtk::CList *list_;
@@ -99,7 +104,7 @@ private:
   Gtk::Entry *specialDeviceEntry_;
   Gtk::Entry *driverOptionsEntry_;
 
-  const char *checkString(const string &str);
+  const char *checkString(const std::string &str);
 
   void setDriverId(int);
   void setDeviceType(int);

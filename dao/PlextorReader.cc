@@ -368,8 +368,9 @@ CdRawToc *PlextorReader::getRawToc(int sessionNr, int *len)
   return rawToc;
 }
 
-long PlextorReader::readTrackData(TrackData::Mode mode, long lba, long len,
-				  unsigned char *buf)
+long PlextorReader::readTrackData(TrackData::Mode mode,
+				  TrackData::SubChannelMode,
+				  long lba, long len, unsigned char *buf)
 {
   unsigned char cmd[10];
   long blockLen = 2340;
@@ -953,7 +954,8 @@ int PlextorReader::readAudioRangePlextor(ReadDiskInfo *rinfo, int fd,
   return 0;
 }
 
-int PlextorReader::readSubChannels(long lba, long len, SubChannel ***chans,
+int PlextorReader::readSubChannels(TrackData::SubChannelMode,
+				   long lba, long len, SubChannel ***chans,
 				   Sample *audioData)
 {
   unsigned char cmd[12];

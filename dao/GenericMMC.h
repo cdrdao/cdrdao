@@ -48,6 +48,8 @@ public:
   ~GenericMMC();
   static CdrDriver *instance(ScsiIf *scsiIf, unsigned long options);
 
+  unsigned long getReadCapabilities(const CdToc *, int) const;
+
   // MMC compatible drives take little endian samples
   int bigEndianSamples() const { return 0; }
 
@@ -111,18 +113,20 @@ protected:
 
   int getTrackIndex(long lba, int *trackNr, int *indexNr, unsigned char *ctl);
 
-  int readSubChannels(long lba, long len, SubChannel ***, Sample *);
+  int readSubChannels(TrackData::SubChannelMode, long lba, long len,
+		      SubChannel ***, Sample *);
 
   TrackData::Mode getTrackMode(int, long trackStartLba);
 
   CdRawToc *getRawToc(int sessionNr, int *len);
 
-  long readTrackData(TrackData::Mode mode, long lba, long len,
-		     unsigned char *buf);
+  long readTrackData(TrackData::Mode, TrackData::SubChannelMode,
+		     long lba, long len, unsigned char *buf);
 
   int readAudioRange(ReadDiskInfo *, int fd, long start, long end,
 		     int startTrack, int endTrack, TrackInfo *);
 
+  int readCdTest(long lba, long len, int subChanMode) const;
 };
 
 #endif

@@ -17,7 +17,6 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#include <iostream.h>
 #include <assert.h>
 #include <string.h>
 #include <ctype.h>
@@ -116,7 +115,7 @@ CdTextItem::~CdTextItem()
   next_ = NULL;
 }
 
-void CdTextItem::print(int isTrack, ostream &out) const
+void CdTextItem::print(int isTrack, std::ostream &out) const
 {
   int i;
   char buf[20];

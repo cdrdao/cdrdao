@@ -128,7 +128,7 @@ CdTextDialog::CdTextDialog()
 
   get_action_area()->pack_start(*bbox);
 
-  set_title(string("CD-TEXT Entry"));
+  set_title("CD-TEXT Entry");
   set_usize(0, 400);
 }
 
@@ -220,7 +220,7 @@ void CdTextDialog::update(unsigned long level, TocEdit *view)
     level = UPD_ALL;
   }
 
-  string s(view->filename());
+  std::string s(view->filename());
   s += " - ";
   s += APP_NAME;
   if (view->tocDirty())
@@ -386,7 +386,7 @@ void CdTextDialog::setCdTextItem(CdTextItem::PackType type, int trackNr,
   delete newItem;
 }
 
-const char *CdTextDialog::checkString(const string &str)
+const char *CdTextDialog::checkString(const std::string &str)
 {
   static char *buf = NULL;
   static long bufLen = 0;

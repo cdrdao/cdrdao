@@ -93,7 +93,8 @@ int PlextorReaderScan::analyzeTrack(TrackData::Mode mode, int trackNr,
   return ret;
 }
 
-int PlextorReaderScan::readSubChannels(long lba, long len, SubChannel ***chans,
+int PlextorReaderScan::readSubChannels(TrackData::SubChannelMode sm,
+				       long lba, long len, SubChannel ***chans,
 				       Sample *audioData)
 {
   unsigned char cmd[12];

@@ -122,7 +122,7 @@ void GCDMaster::readFileSelectorOKCB(ProjectChooser *projectChooser)
     }
     else
     {
-      string message("Error loading ");
+      std::string message("Error loading ");
       message += s;
       Gnome::Dialogs::error(message); 
     }
@@ -168,7 +168,7 @@ void GCDMaster::appClose(Project *project)
     projects.remove(project);
     delete project;
 
-    for (list<Project *>::iterator i = projects.begin();
+    for (std::list<Project *>::iterator i = projects.begin();
          i != projects.end(); i++)
     {
 	  if (previous != 0)
@@ -241,7 +241,7 @@ void GCDMaster::newDumpCDProject(ProjectChooser *projectChooser)
 
 void GCDMaster::update(unsigned long level)
 {
-  for (list<Project *>::iterator i = projects.begin();
+  for (std::list<Project *>::iterator i = projects.begin();
        i != projects.end(); i++)
   {
     (*i)->update(level);
@@ -276,8 +276,8 @@ void GCDMaster::aboutDialog()
   else
   {
     gchar *logo_char;
-    string logo;
-    vector<string> authors;
+    std::string logo;
+    std::vector<std::string> authors;
     authors.push_back("Andreas Mueller <mueller@daneb.ping.de>");
     authors.push_back("Manuel Clos <llanero@jazzfree.com>");
 

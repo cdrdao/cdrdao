@@ -28,7 +28,8 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <errno.h>
-#include <fstream.h>
+#include <iostream>
+#include <fstream>
 #include <stdarg.h>
 #include <signal.h>
 #include <pwd.h>
@@ -86,6 +87,7 @@ static int TAO_SOURCE_ADJUST = -1;
 static int KEEPIMAGE = 0;
 static int OVERBURN = 0;
 static CdrDriver::BlankingMode BLANKING_MODE = CdrDriver::BLANK_FULL;
+static TrackData::SubChannelMode READ_SUBCHAN_MODE = TrackData::SUBCHAN_NONE;
 
 static Settings *SETTINGS = NULL; // settings read from $HOME/.cdrdao
 
@@ -257,6 +259,9 @@ options:\n\
   --datafile <filename>   - name of data file placed in toc-file\n\
   --session #             - select session\n\
   --fast-toc              - do not extract pre-gaps and index marks\n\
+  --read-raw              - select raw sectors modes for data tracks\n\
+  --read-subchan <mode>   - defines sub-channel reading mode\n\
+                            <mode> = rw | rw_raw\n\
   --tao-source            - indicate that source CD was written in TAO mode\n\
   --tao-source-adjust #   - # of link blocks for TAO source CDs (def. 2)\n\
   --with-cddb             - retrieve CDDB CD-TEXT data while copying\n\
@@ -288,7 +293,9 @@ options:\n\
   --datafile <filename>   - name of data file placed in toc-file\n\
   --session #             - select session\n\
   --fast-toc              - do not extract pre-gaps and index marks\n\
-  --read-raw              - read raw sectors for read-cd\n\
+  --read-raw              - read raw data sectors (including L-EC data)\n\
+  --read-subchan <mode>   - defines sub-channel reading mode\n\
+                            <mode> = rw | rw_raw\n\
   --tao-source            - indicate that source CD was written in TAO mode\n\
   --tao-source-adjust #   - # of link blocks for TAO source CDs (def. 2)\n\
   --paranoia-mode #       - DAE paranoia mode (0..3)\n\
@@ -358,6 +365,8 @@ options:\n\
   --buffers #             - sets fifo buffer size (min. 10)\n\
   --session #             - select session\n\
   --fast-toc              - do not extract pre-gaps and index marks\n\
+  --read-subchan <mode>   - defines sub-channel reading mode\n\
+                            <mode> = rw | rw_raw\n\
   --keepimage             - the image will not be deleted after copy\n\
   --tao-source            - indicate that source CD was written in TAO mode\n\
   --tao-source-adjust #   - # of link blocks for TAO source CDs (def. 2)\n\
@@ -874,6 +883,26 @@ static int parseCmdline(int argc, char **argv)
 		    TAO_SOURCE_ADJUST);
 	    return 1;
 	  }
+	}
+      }
+      else if (strcmp((*argv) + 2, "read-subchan") == 0) {
+	if (argc < 2) {
+	  message(-2, "Missing argument after: %s", *argv);
+	  return 1;
+	}
+	else {
+	  if (strcmp(argv[1], "rw") == 0) {
+	    READ_SUBCHAN_MODE = TrackData::SUBCHAN_RW;
+	  }
+	  else if (strcmp(argv[1], "rw_raw") == 0) {
+	    READ_SUBCHAN_MODE = TrackData::SUBCHAN_RW_RAW;
+	  }
+	  else {
+	    message(-2, "Invalid argument after %s: %s", argv[0], argv[1]);
+	    return 1;
+	  }
+
+	  argc--, argv++;
 	}
       }
       else {
@@ -1553,7 +1582,7 @@ static int copyCd(CdrDriver *src, CdrDriver *dst, int session,
 
   if (checkToc(toc)) {
     message(-3, "Toc created from source CD image is inconsistent.");
-    toc->print(cout);
+    toc->print(std::cout);
     delete toc;
     return 1;
   }
@@ -1698,7 +1727,7 @@ static int copyCdOnTheFly(CdrDriver *src, CdrDriver *dst, int session,
   
   if (checkToc(toc) != 0) {
     message(-3, "Toc created from source CD image is inconsistent - please report.");
-    toc->print(cout);
+    toc->print(std::cout);
     ret = 1;
     goto fail;
   }
@@ -2031,6 +2060,7 @@ int main(int argc, char **argv)
       exitCode = 1; goto fail;
     }
 
+    cdr->subChanReadMode(READ_SUBCHAN_MODE);
     cdr->rawDataReading(READ_RAW);
     cdr->fastTocReading(FAST_TOC);
     cdr->taoSource(TAO_SOURCE);
@@ -2059,7 +2089,7 @@ int main(int argc, char **argv)
 	}
       }
 
-      ofstream out(TOC_FILE);
+      std::ofstream out(TOC_FILE);
       if (!out) {
 	message(-2, "Cannot open \"%s\" for writing: %s", TOC_FILE,
 		strerror(errno));
@@ -2081,6 +2111,7 @@ int main(int argc, char **argv)
       exitCode = 1; goto fail;
     }
 
+    cdr->subChanReadMode(READ_SUBCHAN_MODE);
     cdr->rawDataReading(READ_RAW);
     cdr->taoSource(TAO_SOURCE);
     if (TAO_SOURCE_ADJUST >= 0)
@@ -2112,7 +2143,7 @@ int main(int argc, char **argv)
 	}
       }
 
-      ofstream out(TOC_FILE);
+      std::ofstream out(TOC_FILE);
       if (!out) {
 	message(-2, "Cannot open \"%s\" for writing: %s",
 		TOC_FILE, strerror(errno));
@@ -2270,6 +2301,7 @@ int main(int argc, char **argv)
     }
 
     srcCdr->paranoiaMode(PARANOIA_MODE);
+    srcCdr->subChanReadMode(READ_SUBCHAN_MODE);
     srcCdr->fastTocReading(FAST_TOC);
     srcCdr->force(FORCE);
     

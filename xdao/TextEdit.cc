@@ -1,6 +1,6 @@
 /*  cdrdao - write audio CD-Rs in disc-at-once mode
  *
- *  Copyright (C) 1998, 1999 Andreas Mueller <mueller@daneb.ping.de>
+ *  Copyright (C) 1998-2002 Andreas Mueller <andreas@daneb.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -16,21 +16,6 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
-/*
- * $Log: TextEdit.cc,v $
- * Revision 1.2  2000/02/20 23:34:54  llanero
- * fixed scsilib directory (files mising ?-()
- * ported xdao to 1.1.8 / gnome (MDI) app
- *
- * Revision 1.1.1.1  2000/02/05 01:40:01  llanero
- * Uploaded cdrdao 1.1.3 with pre10 patch applied.
- *
- * Revision 1.1  1999/08/19 20:28:12  mueller
- * Initial revision
- *
- */
-
-static char rcsid[] = "$Id: TextEdit.cc,v 1.2 2000/02/20 23:34:54 llanero Exp $";
 
 #include "TextEdit.h"
 
@@ -120,6 +105,5 @@ void TextEdit::setSize(const char *sample)
 
   Gdk_Font font(s->font);
 
-  set_usize(font.string_width(string(sample)) + 8,
-	    font.string_height(string(sample)) + 12);
+  set_usize(font.string_width(sample) + 8, font.string_height(sample) + 12);
 }

@@ -81,7 +81,7 @@ private:
   void exportData();
   void setCdTextItem(CdTextItem::PackType, int trackNr, int l, const char *);
 
-  const char *checkString(const string &);
+  const char *checkString(const std::string &);
 };
 
 #endif

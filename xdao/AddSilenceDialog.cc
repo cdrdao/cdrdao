@@ -46,7 +46,7 @@ AddSilenceDialog::AddSilenceDialog()
   frames_ = new Gtk::Entry;
   samples_ = new Gtk::Entry;
 
-  Gtk::Frame *frame = new Gtk::Frame(string("Length of Silence"));
+  Gtk::Frame *frame = new Gtk::Frame("Length of Silence");
 
   Gtk::Table *table = new Gtk::Table(4, 2, FALSE);
   table->set_row_spacings(5);
@@ -60,25 +60,25 @@ AddSilenceDialog::AddSilenceDialog()
   frame->add(*vbox);
   vbox->show();
   
-  Gtk::Label *label = new Gtk::Label(string("Minutes:"));
+  Gtk::Label *label = new Gtk::Label("Minutes:");
   table->attach(*label, 0, 1, 0, 1, GTK_SHRINK);
   label->show();
   table->attach(*minutes_, 1, 2, 0, 1);
   minutes_->show();
 
-  label = new Gtk::Label(string("Seconds:"));
+  label = new Gtk::Label("Seconds:");
   table->attach(*label, 0, 1, 1, 2, GTK_SHRINK);
   label->show();
   table->attach(*seconds_, 1, 2, 1, 2);
   seconds_->show();
 
-  label = new Gtk::Label(string("Frames:"));
+  label = new Gtk::Label("Frames:");
   table->attach(*label, 0, 1, 2, 3, GTK_SHRINK);
   label->show();
   table->attach(*frames_, 1, 2, 2, 3);
   frames_->show();
 
-  label = new Gtk::Label(string("Samples:"));
+  label = new Gtk::Label("Samples:");
   table->attach(*label, 0, 1, 3, 4, GTK_SHRINK);
   label->show();
   table->attach(*samples_, 1, 2, 3, 4);
@@ -95,17 +95,17 @@ AddSilenceDialog::AddSilenceDialog()
 
   Gtk::HButtonBox *bbox = new Gtk::HButtonBox(GTK_BUTTONBOX_SPREAD);
 
-  applyButton_ = new Gtk::Button(string(" Apply "));
+  applyButton_ = new Gtk::Button(" Apply ");
   bbox->pack_start(*applyButton_);
   applyButton_->show();
   applyButton_->clicked.connect(slot(this, &AddSilenceDialog::applyAction));
 
-  button = new Gtk::Button(string(" Clear "));
+  button = new Gtk::Button(" Clear ");
   bbox->pack_start(*button);
   button->show();
   button->clicked.connect(slot(this, &AddSilenceDialog::clearAction));
 
-  button = new Gtk::Button(string(" Close "));
+  button = new Gtk::Button(" Close ");
   bbox->pack_start(*button);
   button->show();
   button->clicked.connect(slot(this, &AddSilenceDialog::closeAction));
@@ -126,10 +126,10 @@ void AddSilenceDialog::mode(Mode m)
 
   switch (mode_) {
   case M_APPEND:
-    set_title(string("Append Silence"));
+    set_title("Append Silence");
     break;
   case M_INSERT:
-    set_title(string("Insert Silence"));
+    set_title("Insert Silence");
     break;
   }
 }
@@ -166,7 +166,7 @@ void AddSilenceDialog::update(unsigned long level, TocEditView *view)
     return;
   }
 
-  string s(view->tocEdit()->filename());
+  std::string s(view->tocEdit()->filename());
   s += " - ";
   s += APP_NAME;
   if (view->tocEdit()->tocDirty())
@@ -194,10 +194,10 @@ void AddSilenceDialog::closeAction()
 
 void AddSilenceDialog::clearAction()
 {
-  minutes_->set_text(string(""));
-  seconds_->set_text(string(""));
-  frames_->set_text(string(""));
-  samples_->set_text(string(""));
+  minutes_->set_text("");
+  seconds_->set_text("");
+  frames_->set_text("");
+  samples_->set_text("");
 }
 
 void AddSilenceDialog::applyAction()
@@ -220,7 +220,7 @@ void AddSilenceDialog::applyAction()
     val = atol(s);
     length += val * 60 * 75 * SAMPLES_PER_BLOCK;
     sprintf(buf, "%ld", val);
-    minutes_->set_text(string(buf));
+    minutes_->set_text(buf);
   }
 
   s = seconds_->get_text().c_str();
@@ -228,7 +228,7 @@ void AddSilenceDialog::applyAction()
     val = atol(s);
     length += val * 75 * SAMPLES_PER_BLOCK;
     sprintf(buf, "%ld", val);
-    seconds_->set_text(string(buf));
+    seconds_->set_text(buf);
   }
 
   s = frames_->get_text().c_str();
@@ -236,7 +236,7 @@ void AddSilenceDialog::applyAction()
     val = atol(s);
     length += val * SAMPLES_PER_BLOCK;
     sprintf(buf, "%ld", val);
-    frames_->set_text(string(buf));
+    frames_->set_text(buf);
   }
   
   s = samples_->get_text().c_str();
@@ -244,7 +244,7 @@ void AddSilenceDialog::applyAction()
     val = atol(s);
     length += val;
     sprintf(buf, "%ld", val);
-    samples_->set_text(string(buf));
+    samples_->set_text(buf);
   }
   
   if (length > 0) {

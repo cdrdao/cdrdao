@@ -17,7 +17,6 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#include <iostream.h>
 #include <assert.h>
 
 #include "CdTextContainer.h"
@@ -109,7 +108,7 @@ void CdTextContainer::setDefaultLanguageMapping()
     language_[i] = -1;
 }
 
-void CdTextContainer::print(int isTrack, ostream &out) const
+void CdTextContainer::print(int isTrack, std::ostream &out) const
 {
   CdTextItem *run;
   int i;

@@ -706,8 +706,8 @@ CdRawToc *CDD2600::getRawToc(int sessionNr, int *len)
   return rawToc;
 }
 
-long CDD2600::readTrackData(TrackData::Mode mode, long lba, long len,
-			    unsigned char *buf)
+long CDD2600::readTrackData(TrackData::Mode mode, TrackData::SubChannelMode,
+			    long lba, long len, unsigned char *buf)
 {
   unsigned char cmd[10];
   long blockLen = 2340;
@@ -840,8 +840,8 @@ long CDD2600::readTrackData(TrackData::Mode mode, long lba, long len,
   return len;
 }
 
-int CDD2600::readSubChannels(long lba, long len, SubChannel ***chans,
-			     Sample *audioData)
+int CDD2600::readSubChannels(TrackData::SubChannelMode, long lba, long len,
+			     SubChannel ***chans, Sample *audioData)
 {
   unsigned char cmd[10];
   int tries = 5;

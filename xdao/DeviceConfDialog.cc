@@ -1,6 +1,6 @@
 /*  cdrdao - write audio CD-Rs in disc-at-once mode
  *
- *  Copyright (C) 1998, 1999  Andreas Mueller <mueller@daneb.ping.de>
+ *  Copyright (C) 1998-2002  Andreas Mueller <andreas@daneb.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -16,52 +16,12 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
-/*
- * $Log: DeviceConfDialog.cc,v $
- * Revision 1.6  2000/10/01 16:39:10  llanero
- * applied Jason Lunz patch: "Close" instead of "Cancel" where appropiate.
- *
- * Revision 1.5  2000/09/21 02:07:06  llanero
- * MDI support:
- * Splitted AudioCDChild into same and AudioCDView
- * Move Selections from TocEdit to AudioCDView to allow
- *   multiple selections.
- * Cursor animation in all the views.
- * Can load more than one from from command line
- * Track info, Toc info, Append/Insert Silence, Append/Insert Track,
- *   they all are built for every child when needed.
- * ...
- *
- * Revision 1.4  2000/05/14 16:54:59  andreasm
- * Adapted to gtkmm-1.2.0 and gnomemm-1.1.9
- *
- * Revision 1.3  2000/04/23 09:07:08  andreasm
- * * Fixed most problems marked with '//llanero'.
- * * Added audio CD edit menus to MDIWindow.
- * * Moved central storage of TocEdit object to MDIWindow.
- * * AudioCdChild is now handled like an ordinary non modal dialog, i.e.
- *   it has a normal 'update' member function now.
- * * Added CdTextTable modal dialog.
- * * Old functionality of xcdrdao is now available again.
- *
- * Revision 1.2  2000/02/20 23:34:53  llanero
- * fixed scsilib directory (files mising ?-()
- * ported xdao to 1.1.8 / gnome (MDI) app
- *
- * Revision 1.1.1.1  2000/02/05 01:39:13  llanero
- * Uploaded cdrdao 1.1.3 with pre10 patch applied.
- *
- * Revision 1.1  1999/09/06 09:09:37  mueller
- * Initial revision
- *
- */
-
-static char rcsid[] = "$Id: DeviceConfDialog.cc,v 1.6 2000/10/01 16:39:10 llanero Exp $";
 
 #include <stdio.h>
 #include <limits.h>
 #include <math.h>
 #include <assert.h>
+#include <ctype.h>
 
 #include "DeviceConfDialog.h"
 
@@ -91,29 +51,29 @@ DeviceConfDialog::DeviceConfDialog()
   active_ = 0;
   selectedRow_ = -1;
 
-  set_title(string("Configure Devices"));
+  set_title("Configure Devices");
   set_usize(0, 500);
 
 
   list_ = new Gtk::CList(6);
-  applyButton_ = new Gtk::Button(string(" Apply "));
+  applyButton_ = new Gtk::Button(" Apply ");
 
-  list_->set_column_title(0, string("Bus"));
+  list_->set_column_title(0, "Bus");
   list_->set_column_justification(0, GTK_JUSTIFY_CENTER);
 
-  list_->set_column_title(1, string("Id"));
+  list_->set_column_title(1, "Id");
   list_->set_column_justification(1, GTK_JUSTIFY_CENTER);
 
-  list_->set_column_title(2, string("Lun"));
+  list_->set_column_title(2, "Lun");
   list_->set_column_justification(2, GTK_JUSTIFY_CENTER);
 
-  list_->set_column_title(3, string("Vendor"));
+  list_->set_column_title(3, "Vendor");
   list_->set_column_justification(3, GTK_JUSTIFY_LEFT);
 
-  list_->set_column_title(4, string("Model"));
+  list_->set_column_title(4, "Model");
   list_->set_column_justification(4, GTK_JUSTIFY_LEFT);
 
-  list_->set_column_title(5, string("Status"));
+  list_->set_column_title(5, "Status");
   list_->set_column_justification(5, GTK_JUSTIFY_LEFT);
 
   list_->column_titles_show();
@@ -197,12 +157,12 @@ DeviceConfDialog::DeviceConfDialog()
 
   Gtk::ButtonBox *bbox = new Gtk::HButtonBox(GTK_BUTTONBOX_SPREAD);  //, 5);
 
-  button = new Gtk::Button(string("Rescan"));
+  button = new Gtk::Button("Rescan");
   bbox->pack_start(*button);
   button->show();
   button->clicked.connect(SigC::slot(this,&DeviceConfDialog::rescanAction));
 
-  button = new Gtk::Button(string("Delete"));
+  button = new Gtk::Button("Delete");
   bbox->pack_start(*button);
   button->show();
   button->clicked.connect(SigC::slot(this,&DeviceConfDialog::deleteDeviceAction));
@@ -215,14 +175,14 @@ DeviceConfDialog::DeviceConfDialog()
   listVBox->pack_start(*listHBox, TRUE, TRUE, 5);
   listHBox->show();
 
-  Gtk::Frame *listFrame = new Gtk::Frame(string("Devices"));
+  Gtk::Frame *listFrame = new Gtk::Frame("Devices");
   listFrame->add(*listVBox);
   listVBox->show();
   contents->pack_start(*listFrame, TRUE, TRUE);
   listFrame->show();
 
   // device settings
-  Gtk::Frame *settingFrame = new Gtk::Frame(string("Device Settings"));
+  Gtk::Frame *settingFrame = new Gtk::Frame("Device Settings");
   table = new Gtk::Table(2, 4, FALSE);
   table->set_row_spacings(5);
   table->set_col_spacings(5);
@@ -235,7 +195,7 @@ DeviceConfDialog::DeviceConfDialog()
   hbox->show();
   table->show();
   
-  label = new Gtk::Label(string("Device Type:"));
+  label = new Gtk::Label("Device Type:");
   hbox = new Gtk::HBox;
   hbox->pack_end(*label, FALSE, FALSE);
   table->attach(*hbox, 0, 1, 0, 1);
@@ -247,7 +207,7 @@ DeviceConfDialog::DeviceConfDialog()
   devtypeMenu_->show();
   hbox->show();
 
-  label = new Gtk::Label(string("Driver:"));
+  label = new Gtk::Label("Driver:");
   hbox = new Gtk::HBox;
   hbox->pack_end(*label, FALSE, FALSE);
   table->attach(*hbox, 0, 1, 1, 2);
@@ -259,7 +219,7 @@ DeviceConfDialog::DeviceConfDialog()
   driverMenu_->show();
   hbox->show();
 
-  label = new Gtk::Label(string("Driver Options:"));
+  label = new Gtk::Label("Driver Options:");
   hbox = new Gtk::HBox;
   hbox->pack_end(*label, FALSE, FALSE);
   table->attach(*hbox, 0, 1, 2, 3);
@@ -271,7 +231,7 @@ DeviceConfDialog::DeviceConfDialog()
   driverOptionsEntry_->show();
   hbox->show();
 
-  label = new Gtk::Label(string("Device Node:"));
+  label = new Gtk::Label("Device Node:");
   hbox = new Gtk::HBox;
   hbox->pack_end(*label, FALSE, FALSE);
   table->attach(*hbox, 0, 1, 3, 4);
@@ -289,26 +249,26 @@ DeviceConfDialog::DeviceConfDialog()
 
 
   // add device
-  Gtk::Frame *addDeviceFrame = new Gtk::Frame(string("Add Device"));
+  Gtk::Frame *addDeviceFrame = new Gtk::Frame("Add Device");
   Gtk::VBox *addDeviceBox = new Gtk::VBox;
   addDeviceBox->set_spacing(5);
 
   hbox = new Gtk::HBox;
   hbox->set_spacing(5);
 
-  label = new Gtk::Label(string("Bus:"));
+  label = new Gtk::Label("Bus:");
   hbox->pack_start(*label, FALSE);
   hbox->pack_start(*busEntry_, FALSE);
   label->show();
   busEntry_->show();
 
-  label = new Gtk::Label(string("Id:"));
+  label = new Gtk::Label("Id:");
   hbox->pack_start(*label, FALSE);
   hbox->pack_start(*idEntry_, FALSE);
   label->show();
   idEntry_->show();
 
-  label = new Gtk::Label(string("Lun:"));
+  label = new Gtk::Label("Lun:");
   hbox->pack_start(*label, FALSE);
   hbox->pack_start(*lunEntry_, FALSE);
   label->show();
@@ -324,7 +284,7 @@ DeviceConfDialog::DeviceConfDialog()
   addDeviceBox->pack_start(*table, FALSE);
   table->show();
 
-  label = new Gtk::Label(string("Vendor:"));
+  label = new Gtk::Label("Vendor:");
   hbox = new Gtk::HBox;
   hbox->pack_end(*label, FALSE, FALSE);
   table->attach(*hbox, 0, 1, 0, 1);
@@ -336,7 +296,7 @@ DeviceConfDialog::DeviceConfDialog()
   vendorEntry_->show();
   hbox->show();
 
-  label = new Gtk::Label(string("Product:"));
+  label = new Gtk::Label("Product:");
   hbox = new Gtk::HBox;
   hbox->pack_end(*label, FALSE, FALSE);
   table->attach(*hbox, 0, 1, 1, 2);
@@ -349,7 +309,7 @@ DeviceConfDialog::DeviceConfDialog()
   hbox->show();
 
   bbox = new Gtk::HButtonBox(GTK_BUTTONBOX_START);
-  Gtk::Button *addButton = new Gtk::Button(string(" Add "));
+  Gtk::Button *addButton = new Gtk::Button(" Add ");
   bbox->pack_start(*addButton);
   addButton->show();
   addButton->clicked.connect(SigC::slot(this,&DeviceConfDialog::addDeviceAction));
@@ -386,12 +346,12 @@ DeviceConfDialog::DeviceConfDialog()
   applyButton_->show();
   applyButton_->clicked.connect(SigC::slot(this,&DeviceConfDialog::applyAction));
   
-  Gtk::Button *resetButton = new Gtk::Button(string(" Reset "));
+  Gtk::Button *resetButton = new Gtk::Button(" Reset ");
   bbox->pack_start(*resetButton);
   resetButton->show();
   resetButton->clicked.connect(SigC::slot(this,&DeviceConfDialog::resetAction));
 
-  Gtk::Button *cancelButton = new Gtk::Button(string(" Close "));
+  Gtk::Button *cancelButton = new Gtk::Button(" Close ");
   bbox->pack_start(*cancelButton);
   cancelButton->show();
   cancelButton->clicked.connect(SigC::slot(this,&DeviceConfDialog::closeAction));
@@ -474,8 +434,8 @@ void DeviceConfDialog::addDeviceAction()
 {
   const char *s;
 
-  string vendor;
-  string product;
+  std::string vendor;
+  std::string product;
   int bus = busEntry_->get_value_as_int();
   int id = idEntry_->get_value_as_int();
   int lun = lunEntry_->get_value_as_int();
@@ -537,9 +497,9 @@ void DeviceConfDialog::appendTableEntry(CdDevice *dev)
 {
   DeviceData *data;
   char buf[50];
-  string idStr;
-  string busStr;
-  string lunStr;
+  std::string idStr;
+  std::string busStr;
+  std::string lunStr;
   const gchar *rowStr[6];
 
   data = new DeviceData;
@@ -628,7 +588,7 @@ void DeviceConfDialog::importConfiguration(int row)
 
     driverOptionsEntry_->set_sensitive(true);
     sprintf(buf, "0x%lx", data->options);
-    driverOptionsEntry_->set_text(string(buf));
+    driverOptionsEntry_->set_text(buf);
 
     specialDeviceEntry_->set_sensitive(true);
     specialDeviceEntry_->set_text(data->specialDevice);
@@ -640,10 +600,10 @@ void DeviceConfDialog::importConfiguration(int row)
     devtypeMenu_->set_history(0);
     devtypeMenu_->set_sensitive(false);
 
-    driverOptionsEntry_->set_text(string(""));
+    driverOptionsEntry_->set_text("");
     driverOptionsEntry_->set_sensitive(false);
 
-    specialDeviceEntry_->set_text(string(""));
+    specialDeviceEntry_->set_text("");
     specialDeviceEntry_->set_sensitive(false);
   }
 }
@@ -657,7 +617,7 @@ void DeviceConfDialog::importStatus()
   for (i = 0; i < list_->rows().size(); i++) {
     if ((data = (DeviceData*)list_->row(i).get_data()) != NULL &&
 	(dev = CdDevice::find(data->bus, data->id, data->lun)) != NULL) {
-      list_->cell(i, 5).set_text(string(CdDevice::status2string(dev->status())));
+      list_->cell(i, 5).set_text(CdDevice::status2string(dev->status()));
     }
   }
 
@@ -687,7 +647,7 @@ void DeviceConfDialog::exportData()
   unsigned int i;
   DeviceData *data;
   CdDevice *dev;
-  string s;
+  std::string s;
 
   for (i = 0; i < list_->rows().size(); i++) {
     if ((data = (DeviceData*)list_->row(i).get_data()) != NULL) {
@@ -756,7 +716,7 @@ void DeviceConfDialog::unselectRow(gint row, gint column, GdkEvent *event)
   importConfiguration(-1);
 }
 
-const char *DeviceConfDialog::checkString(const string &str)
+const char *DeviceConfDialog::checkString(const std::string &str)
 {
   static char *buf = NULL;
   static long bufLen = 0;

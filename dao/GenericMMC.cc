@@ -1591,23 +1591,14 @@ int GenericMMC::analyzeTrack(TrackData::Mode mode, int trackNr, long startLba,
   return ret;
 }
 
-int GenericMMC::readSubChannels(long lba, long len, SubChannel ***chans,
+int GenericMMC::readSubChannels(TrackData::SubChannelMode sm,
+				long lba, long len, SubChannel ***chans,
 				Sample *audioData)
 {
   int retries = 5;
   unsigned char cmd[12];
   int i;
   long blockLen;
-
-  if (options_ & OPT_MMC_NO_SUBCHAN) {
-    blockLen = AUDIO_BLOCK_LEN;
-  }
-  else {
-    if (options_ & OPT_MMC_USE_PQ) 
-      blockLen = AUDIO_BLOCK_LEN + 16;
-    else
-      blockLen = AUDIO_BLOCK_LEN + 96;
-  }
 
   cmd[0] = 0xbe;  // READ CD
   cmd[1] = 0;
@@ -1619,19 +1610,37 @@ int GenericMMC::readSubChannels(long lba, long len, SubChannel ***chans,
   cmd[7] = len >> 8;
   cmd[8] = len;
   cmd[9] = 0xf8;
-
-  if (options_ & OPT_MMC_NO_SUBCHAN) {
-    cmd[10] = 0;
-  }
-  else {
-    if (options_ & OPT_MMC_USE_PQ) 
-      cmd[10] = 0x02;  // PQ sub-channel data
-    else
-      cmd[10] = 0x01;  // raw PW sub-channel data
-    
-  }
-
   cmd[11] = 0;
+
+  switch (sm) {
+  case TrackData::SUBCHAN_NONE:
+    // no sub-channel data selected choose what is available
+    if (options_ & OPT_MMC_NO_SUBCHAN) {
+      blockLen = AUDIO_BLOCK_LEN;
+      cmd[10] = 0;
+    }
+    else {
+      if (options_ & OPT_MMC_USE_PQ) {
+	blockLen = AUDIO_BLOCK_LEN + 16;
+	cmd[10] = 0x02;  // PQ sub-channel data
+      }
+      else {
+	blockLen = AUDIO_BLOCK_LEN + 96;
+	cmd[10] = 0x01;  // raw PW sub-channel data
+      }
+    }
+    break;
+
+  case TrackData::SUBCHAN_RW:
+    blockLen = AUDIO_BLOCK_LEN + 96;
+    cmd[10] = 0x04;
+    break;
+
+  case TrackData::SUBCHAN_RW_RAW:
+    blockLen = AUDIO_BLOCK_LEN + 96;
+    cmd[10] = 0x01;
+    break;
+  }
 
   while (1) {
     if (sendCmd(cmd, 12, NULL, 0,
@@ -1712,8 +1721,20 @@ int GenericMMC::readSubChannels(long lba, long len, SubChannel ***chans,
     for (i = 0; i < len; i++) {
       memcpy(audioData, p, AUDIO_BLOCK_LEN);
 
-      p += blockLen;
       audioData += SAMPLES_PER_BLOCK;
+
+      switch (sm) {
+      case TrackData::SUBCHAN_NONE:
+	break;
+
+      case TrackData::SUBCHAN_RW:
+      case TrackData::SUBCHAN_RW_RAW:
+	memcpy(audioData, p + AUDIO_BLOCK_LEN, PW_SUBCHANNEL_LEN);
+	audioData += PW_SUBCHANNEL_LEN / SAMPLE_LEN;
+	break;
+      }
+
+      p += blockLen;
     }
   }
 
@@ -1945,8 +1966,9 @@ CdRawToc *GenericMMC::getRawToc(int sessionNr, int *len)
   return rawToc;
 }
 
-long GenericMMC::readTrackData(TrackData::Mode mode, long lba, long len,
-			       unsigned char *buf)
+long GenericMMC::readTrackData(TrackData::Mode mode,
+			       TrackData::SubChannelMode sm,
+			       long lba, long len, unsigned char *buf)
 {
   long i;
   long inBlockLen = AUDIO_BLOCK_LEN;
@@ -1966,8 +1988,22 @@ long GenericMMC::readTrackData(TrackData::Mode mode, long lba, long len,
   cmd[4] = lba >> 8;
   cmd[5] = lba;
   cmd[9] = 0xf8;
-  cmd[10] = 0; // xxam!
-  //inBlockLen += PW_SUBCHANNEL_LEN; // xxam!
+
+  switch (sm) {
+  case TrackData::SUBCHAN_NONE:
+    cmd[10] = 0; // no sub-channel reading
+    break;
+
+  case TrackData::SUBCHAN_RW:
+    cmd[10] = 0x4;
+    inBlockLen += PW_SUBCHANNEL_LEN;
+    break;
+
+  case TrackData::SUBCHAN_RW_RAW:
+    cmd[10] = 0x1;
+    inBlockLen += PW_SUBCHANNEL_LEN;
+    break;
+  }
 
   while (len > 0 && !ok) {
     cmd[6] = len >> 16;
@@ -2096,6 +2132,18 @@ long GenericMMC::readTrackData(TrackData::Mode mode, long lba, long len,
 	return 0;
 	break;
       }
+
+      // copy sub-channel data
+      switch (sm) {
+      case TrackData::SUBCHAN_NONE:
+	break;
+
+      case TrackData::SUBCHAN_RW:
+      case TrackData::SUBCHAN_RW_RAW:
+	memcpy(buf, sector + AUDIO_BLOCK_LEN, PW_SUBCHANNEL_LEN);
+	buf += PW_SUBCHANNEL_LEN;
+	break;
+      }
     }
 
 #if 0
@@ -2200,8 +2248,14 @@ int GenericMMC::readAudioRange(ReadDiskInfo *rinfo, int fd, long start,
     }
   }
 
-  return CdrDriver::readAudioRangeParanoia(rinfo, fd, start, end, startTrack,
+  if (subChanReadMode_ == TrackData::SUBCHAN_NONE) {
+    return CdrDriver::readAudioRangeParanoia(rinfo, fd, start, end, startTrack,
+					     endTrack, info);
+  }
+  else {
+    return CdrDriver::readAudioRangeStream(rinfo, fd, start, end, startTrack,
 					   endTrack, info);
+  }
 }
 
 int GenericMMC::getTrackIndex(long lba, int *trackNr, int *indexNr,
@@ -2278,4 +2332,298 @@ int GenericMMC::getTrackIndex(long lba, int *trackNr, int *indexNr,
   //message(0, "%d %d", *trackNr, *indexNr);
 
   return 0;
+}
+
+/*
+ * Checks if a certain sub-channel reading mode is supported.
+ * lba: start address for reading
+ * len: maximum number of sectors available for testing
+ * subChanMode: 1: read PQ sub-channels
+ *              2: read raw P-W sub-channels
+ *              3: read cooked R-W sub-channels
+ * Return: 0 sub-channel read mode not supported
+ *         1 sub-channel read mode supported (BCD for PQ)
+ *         2 sub-channel read mode supported (HEX for PQ)
+ *         3 sub-channel read mode PQ supported but cannot determine data
+ *           format
+*/
+
+int GenericMMC::readCdTest(long lba, long len, int subChanMode) const
+{
+  unsigned char cmd[12];
+  long blockLen;
+  int ret;
+  int successRead = 0;
+  int pqSubChanBcdOk = 0;
+  int pqSubChanHexOk = 0;
+
+  //message(0, "readCdTest: %ld %ld %d", lba, len, subChanMode);
+
+  if (len <= 0)
+    return 0;
+
+  cmd[0] = 0xbe;  // READ CD
+  cmd[1] = 0;
+  cmd[6] = 0;
+  cmd[7] = 0;
+  cmd[8] = 1; // transfer length: 1
+  cmd[9] = 0xf8;
+  cmd[10] = 0;
+  cmd[11] = 0;
+
+  blockLen = AUDIO_BLOCK_LEN;
+
+  switch (subChanMode) {
+  case 1: // PQ
+    blockLen += PQ_SUBCHANNEL_LEN;
+    cmd[10] = 0x02;
+    if (len > 150)
+      len = 150; // we have to check many sub-channels here to determine the
+                // data mode (BCD or HEX)
+    break;
+
+  case 2: // PW_RAW
+    cmd[10] = 0x01;
+    blockLen +=  PW_SUBCHANNEL_LEN;
+    if (len > 10)
+      len = 10;
+    break;
+
+  case 3: // RW_COOKED
+    cmd[10] = 0x04;
+    blockLen +=  PW_SUBCHANNEL_LEN;
+    if (len > 10)
+      len = 10;
+    break;
+  }
+
+  while (len > 0) {
+    cmd[2] = lba >> 24;
+    cmd[3] = lba >> 16;
+    cmd[4] = lba >> 8;
+    cmd[5] = lba;
+    
+    if ((ret = sendCmd(cmd, 12, NULL, 0, transferBuffer_, blockLen, 0)) == 0) {
+      successRead++;
+
+      if (subChanMode == 1) {
+	unsigned char *buf = transferBuffer_ + AUDIO_BLOCK_LEN;
+
+	/*
+	{
+ 	  PQSubChannel16 chan;
+	  chan.init(buf);
+	  chan.print();
+	}
+	*/
+
+	// check if Q sub-channel values are in BCD or HEX format
+	if (SubChannel::isBcd(buf[1]) &&
+	    SubChannel::isBcd(buf[2]) &&
+	    SubChannel::isBcd(buf[3]) &&
+	    SubChannel::isBcd(buf[4]) &&
+	    SubChannel::isBcd(buf[5]) &&
+	    SubChannel::isBcd(buf[6]) &&
+	    SubChannel::isBcd(buf[7]) &&
+	    SubChannel::isBcd(buf[8]) &&
+	    SubChannel::isBcd(buf[9])) {
+	  PQSubChannel16 chan;
+	  chan.init(buf);
+
+	  if (chan.checkCrc())
+	    pqSubChanBcdOk++;
+	}
+	else {
+	  long pqlba = Msf(buf[7], buf[8], buf[9]).lba() - 150;
+
+	  //message(0, "readCdTest: pqlba: %ld", pqlba);
+	  long diff = pqlba - lba;
+	  if (diff < 0)
+	    diff = -diff;
+	  
+	  if (diff < 75) {
+	    pqSubChanHexOk++;
+	  }
+	}
+      }
+    }
+
+
+    len--;
+    lba++;
+  }
+
+  if (successRead) {
+    if (subChanMode == 1) {
+      if (pqSubChanBcdOk > pqSubChanHexOk)
+	return 1;
+      else if (pqSubChanHexOk > pqSubChanBcdOk)
+	return 2;
+      else return 3;
+    }
+    else {
+      return 1;
+    }
+  }
+
+  return 0;
+}
+
+unsigned long GenericMMC::getReadCapabilities(const CdToc *toc,
+					      int nofTracks) const
+{
+  unsigned long caps = 0;
+  int audioRawPWChecked = 0;
+  int audioPQChecked = 0;
+  int audioCookedRWChecked = 0;
+  int dataRawPWChecked = 0;
+  int dataPQChecked = 0;
+  int dataCookedRWChecked = 0;
+  int t;
+
+  if ((options_ & OPT_MMC_NO_SUBCHAN) != 0) {
+    // driver options indicate that PQ and raw RW sub-channel reading for
+    // audio tracks is not supported so skip all corresponding tests
+    audioPQChecked = 1;
+    audioRawPWChecked = 1;
+  }
+  else if ((options_ & OPT_MMC_USE_PQ) != 0) {
+    // driver options indicated that PQ sub-channel reading is supported for
+    // audio tracks and RW sub-channel reading is not supported, skip
+    // the corresponding checks and set the capabilities appropriately
+    audioPQChecked = 1;
+    audioRawPWChecked = 1;
+    
+    if ((options_ & OPT_MMC_PQ_BCD) != 0)
+      caps |= CDR_READ_CAP_AUDIO_PQ_BCD;
+    else
+      caps |= CDR_READ_CAP_AUDIO_PQ_HEX;
+  }
+
+  for (t = 0; t < nofTracks; t++) {
+    long tlen = toc[t+1].start - toc[t].start;
+
+    if ((toc[t].adrCtl & 0x04) != 0) {
+      // data track
+      if (!dataPQChecked) {
+	dataPQChecked = 1;
+
+	message(3, "Checking for PQ sub-channel reading support (data track)...");
+	switch (readCdTest(toc[t].start, tlen, 1)) {
+	case 0:
+	  message(3, "PQ sub-channel reading (data track) not supported.");
+	  break;
+
+	case 1:
+	  message(2, "PQ sub-channel reading (data track) is supported, data format is BCD.");
+	  caps |= CDR_READ_CAP_DATA_PQ_BCD;
+	  break;
+	  
+	case 2:
+	  message(2, "PQ sub-channel reading (data track) is supported, data format is HEX.");
+	  caps |= CDR_READ_CAP_DATA_PQ_HEX;
+	  break;
+	  
+	case 3:
+	  message(2, "PQ sub-channel reading (data track) seems to be supported but cannot determine data format.");
+	  message(2, "Please use driver option '--driver generic-mmc:0x1' or '--driver generic-mmc:0x3' to set the data format explicitly.");
+	  break;
+	}
+      }
+	
+      if (!dataRawPWChecked) {
+	dataRawPWChecked = 1;
+
+	message(3, "Checking for raw P-W sub-channel reading support (data track)...");
+	if (readCdTest(toc[t].start, tlen, 2)) {
+	  message(2, "Raw P-W sub-channel reading (data track) is supported.");
+	  caps |= CDR_READ_CAP_DATA_PW_RAW;
+	}
+	else {
+	  message(3, "Raw P-W sub-channel reading (data track) is not supported.");
+	}
+      }
+
+      if (!dataCookedRWChecked) {
+	dataCookedRWChecked = 1;
+      
+	message(3, "Checking for cooked R-W sub-channel reading support (data track)...");
+	if (readCdTest(toc[t].start, tlen, 3)) {
+	  message(2, "Cooked R-W sub-channel reading (data track) is supported.");
+	  caps |= CDR_READ_CAP_DATA_RW_COOKED;
+	}
+	else {
+	  message(3, "Raw R-W sub-channel reading (data track) is not supported.");
+	}
+      }
+    }
+    else {
+      // audio track
+      if (!audioPQChecked) {
+	audioPQChecked = 1;
+
+	message(3, "Checking for PQ sub-channel reading support (audio track)...");
+	switch (readCdTest(toc[t].start, tlen, 1)) {
+	case 0:
+	  message(3, "PQ sub-channel reading (audio track) is not supported.");
+	  break;
+
+	case 1:
+	  message(2, "PQ sub-channel reading (audio track) is supported, data format is BCD.");
+	  caps |= CDR_READ_CAP_AUDIO_PQ_BCD;
+	  //options_ |= OPT_MMC_USE_PQ | OPT_MMC_PQ_BCD;
+	  break;
+
+	case 2:
+	  message(2, "PQ sub-channel reading (audio track) is supported, data format is HEX.");
+	  caps |= CDR_READ_CAP_AUDIO_PQ_HEX;
+	  //options_ |= OPT_MMC_USE_PQ;
+	  //options_ &= ~OPT_MMC_PQ_BCD;
+	  break;
+
+	case 3:
+	  message(2, "PQ sub-channel reading (audio track) seems to be supported but cannot determine data format.");
+	  message(2, "Please use driver option '--driver generic-mmc:0x1' or '--driver generic-mmc:0x3' to set the data format explicitly.");
+	  break;
+	}
+      }
+
+      if (!audioRawPWChecked) {
+	audioRawPWChecked = 1;
+
+	message(3, "Checking for raw P-W sub-channel reading support (audio track)...");
+	if (readCdTest(toc[t].start, tlen, 2)) {
+	  message(2, "Raw P-W sub-channel reading (audio track) is supported.");
+	  caps |= CDR_READ_CAP_AUDIO_PW_RAW;
+	  //options_ &= ~(OPT_MMC_USE_PQ | OPT_MMC_PQ_BCD);
+	}
+	else {
+	  message(3, "Raw P-W sub-channel reading (audio track) is not supported.");
+	}
+      }
+
+      if (!audioCookedRWChecked) {
+	audioCookedRWChecked = 1;
+
+	message(3, "Checking for cooked R-W sub-channel reading support (audio track)...");
+	if (readCdTest(toc[t].start, tlen, 3)) {
+	  message(2, "Cooked R-W sub-channel reading (audio track) is supported.");
+	  caps |= CDR_READ_CAP_AUDIO_RW_COOKED;
+	}
+	else {
+	  message(3, "Raw R-W sub-channel reading (audio track) is not supported.");
+	}
+      }
+    }
+  }
+
+  /*
+  if ((caps & (CDR_READ_CAP_AUDIO_RW_RAW |
+	       CDR_READ_CAP_AUDIO_PQ_BCD |
+	       CDR_READ_CAP_AUDIO_PQ_HEX)) == 0) {
+    options_ |= OPT_MMC_NO_SUBCHAN;
+  }
+  */
+
+  return caps;
 }

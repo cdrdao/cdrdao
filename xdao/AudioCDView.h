@@ -45,7 +45,7 @@ public:
   SigC::Signal0<void> add_view;
 
   void update(unsigned long level);
-  list<Gtk::Widget *> *widgetList;
+  std::list<Gtk::Widget *> *widgetList;
 
 private:
   friend class AudioCDChild;

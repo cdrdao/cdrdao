@@ -20,9 +20,10 @@
 #ifndef __CDTEXTCONTAINER_H__
 #define __CDTEXTCONTAINER_H__
 
+#include <ostream.h>
+
 #include "CdTextItem.h"
 
-class ostream;
 
 class CdTextContainer {
 public:
@@ -37,7 +38,7 @@ public:
 
   void remove(CdTextItem::PackType, int blockNr);
 
-  void print(int isTrack, ostream &) const;
+  void print(int isTrack, std::ostream &) const;
 
   // checks if a pack exists for given 'blockNr' (language)
   int existBlock(int blockNr) const;

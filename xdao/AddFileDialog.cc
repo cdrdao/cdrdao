@@ -1,6 +1,6 @@
 /*  cdrdao - write audio CD-Rs in disc-at-once mode
  *
- *  Copyright (C) 1998-2000  Andreas Mueller <mueller@daneb.ping.de>
+ *  Copyright (C) 1998-2002  Andreas Mueller <andreas@daneb.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -34,7 +34,7 @@
 #include "AudioCDProject.h"
 #include "xcdrdao.h"
 
-AddFileDialog::AddFileDialog(AudioCDProject *project) : Gtk::FileSelection(string(""))
+AddFileDialog::AddFileDialog(AudioCDProject *project) : Gtk::FileSelection("")
 {
   tocEditView_ = NULL;
   active_ = 0;
@@ -59,15 +59,15 @@ void AddFileDialog::mode(Mode m)
 
   switch (mode_) {
   case M_APPEND_TRACK:
-    set_title(string("Append Track"));
+    set_title("Append Track");
     ((Gtk::Label *)get_ok_button()->get_child())->set_text("Append");
     break;
   case M_APPEND_FILE:
-    set_title(string("Append File"));
+    set_title("Append File");
     ((Gtk::Label *)get_ok_button()->get_child())->set_text("Append");
     break;
   case M_INSERT_FILE:
-    set_title(string("Insert File"));
+    set_title("Insert File");
     ((Gtk::Label *)get_ok_button()->get_child())->set_text("Insert");
     break;
   }
@@ -105,7 +105,7 @@ void AddFileDialog::update(unsigned long level, TocEditView *tocEditView)
     return;
   }
 
-  string s(tocEditView->tocEdit()->filename());
+  std::string s(tocEditView->tocEdit()->filename());
   s += " - ";
   s += APP_NAME;
   if (tocEditView->tocEdit()->tocDirty())
@@ -136,7 +136,7 @@ void AddFileDialog::applyAction()
   if (tocEditView_ == NULL || !tocEditView_->tocEdit()->editable())
     return;
 
-  string str = get_filename();
+  std::string str = get_filename();
   const char *s = stripCwd(str.c_str());
 
   if (s != NULL && *s != 0 && s[strlen(s) - 1] != '/') {

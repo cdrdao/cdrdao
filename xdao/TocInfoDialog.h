@@ -90,7 +90,7 @@ private:
   void clear();
   void clearCdText();
 
-  const char *checkString(const string &);
+  const char *checkString(const std::string &);
   int getCdTextLanguageIndex(int code);
   int getCdTextGenreIndex(int code1, int code2);
 

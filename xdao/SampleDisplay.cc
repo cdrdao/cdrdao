@@ -1,6 +1,6 @@
 /*  cdrdao - write audio CD-Rs in disc-at-once mode
  *
- *  Copyright (C) 1998  Andreas Mueller <mueller@daneb.ping.de>
+ *  Copyright (C) 1998-2002  Andreas Mueller <andreas@daneb.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -16,78 +16,12 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
-/*
- * $Log: SampleDisplay.cc,v $
- * Revision 1.10  2001/04/29 12:10:27  andreasm
- * Removed debug messages.
- *
- * Revision 1.9  2001/01/21 13:46:11  andreasm
- * 'update()' functions of all dialogs require a 'TocEditView' object now.
- * CD TEXT table entry is now a non modal dialog on its own.
- *
- * Revision 1.8  2000/09/21 02:07:06  llanero
- * MDI support:
- * Splitted AudioCDChild into same and AudioCDView
- * Move Selections from TocEdit to AudioCDView to allow
- *   multiple selections.
- * Cursor animation in all the views.
- * Can load more than one from from command line
- * Track info, Toc info, Append/Insert Silence, Append/Insert Track,
- *   they all are built for every child when needed.
- * ...
- *
- * Revision 1.7  2000/04/23 09:07:08  andreasm
- * * Fixed most problems marked with '//llanero'.
- * * Added audio CD edit menus to MDIWindow.
- * * Moved central storage of TocEdit object to MDIWindow.
- * * AudioCdChild is now handled like an ordinary non modal dialog, i.e.
- *   it has a normal 'update' member function now.
- * * Added CdTextTable modal dialog.
- * * Old functionality of xcdrdao is now available again.
- *
- * Revision 1.6  2000/04/17 21:30:49  andreasm
- * Fixed sample display.
- * AudioCDChild displays animated cursor again when playing.
- *
- * Revision 1.5  2000/04/14 13:22:02  llanero
- * changed the MDI object to GnomeApp until gnome-- MDI is done.
- * Also catched a bug in SampleDisplay.cc:1000.
- *
- * Revision 1.4  2000/03/05 22:25:52  llanero
- * more code translated to gtk-- 1.1.8
- *
- * Revision 1.3  2000/03/04 01:28:52  llanero
- * SampleDisplay.{cc,h} are fixed now = gtk 1.1.8 compliant.
- *
- * Revision 1.2  2000/02/20 23:34:54  llanero
- * fixed scsilib directory (files mising ?-()
- * ported xdao to 1.1.8 / gnome (MDI) app
- *
- * Revision 1.1.1.1  2000/02/05 01:39:50  llanero
- * Uploaded cdrdao 1.1.3 with pre10 patch applied.
- *
- * Revision 1.5  1999/08/07 16:27:28  mueller
- * Applied patch from Yves Bastide:
- * * prefixing member function names with their class name in connect_to_method
- * * explicitly `const_cast'ing a cast to const
- *
- * Revision 1.4  1999/05/24 18:10:25  mueller
- * Adapted to new reading interface of 'trackdb'.
- *
- * Revision 1.3  1999/01/30 19:45:43  mueller
- * Fixes for compilation with Gtk-- 0.11.1.
- *
- * Revision 1.1  1998/11/20 18:55:22  mueller
- * Initial revision
- *
- */
-
-static char rcsid[] = "$Id: SampleDisplay.cc,v 1.10 2001/04/29 12:10:27 andreasm Exp $";
 
 #include <stdio.h>
 #include <limits.h>
 #include <math.h>
 #include <assert.h>
+#include <iostream>
 
 #include "TocEdit.h"
 #include "SampleDisplay.h"
@@ -1082,7 +1016,7 @@ void SampleDisplay::updateSamples()
 	}
 
 	if (&pixmap_ == 0)
-	  cout << "null !!" << endl;
+	  std::cout << "null !!" << std::endl;
 
 	if (0 && (gint)di < sampleEndX_) {
 	  pos = sampleBuf[len -1].left() * halfHeight;

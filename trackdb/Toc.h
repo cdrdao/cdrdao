@@ -20,7 +20,7 @@
 #ifndef __TOC_H__
 #define __TOC_H__
 
-#include <iostream.h>
+#include <ostream.h>
 #include "Track.h"
 #include "CdTextContainer.h"
 #include "CdTextItem.h"
@@ -88,7 +88,7 @@ public:
   void trackSummary(int *nofAudioTracks, int *nofMode1Tracks,
 		    int *nofMode2Tracks) const;
 
-  void print(ostream &) const;
+  void print(std::ostream &) const;
 
   static const char *tocType2String(TocType);
 

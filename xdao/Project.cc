@@ -17,7 +17,6 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#include <strstream.h>
 #include <errno.h>
 
 #include "Project.h"
@@ -50,9 +49,9 @@ Project::Project() : Gnome::App("gcdmaster", APP_NAME)
 
 void Project::createMenus()
 {
-  vector<Gnome::UI::SubTree> menus;
-  vector<Gnome::UI::Info> fileMenuTree, newMenuTree, editMenuTree, actionsMenuTree;
-  vector<Gnome::UI::Info> settingsMenuTree, helpMenuTree, windowsMenuTree;
+  std::vector<Gnome::UI::SubTree> menus;
+  std::vector<Gnome::UI::Info> fileMenuTree, newMenuTree, editMenuTree, actionsMenuTree;
+  std::vector<Gnome::UI::Info> settingsMenuTree, helpMenuTree, windowsMenuTree;
 
   {
     using namespace Gnome::UI;
@@ -181,7 +180,7 @@ void Project::createToolbar()
 {
   toolbar = new Gtk::Toolbar;
   Gtk::AccelGroup *accel_group = Gtk::AccelGroup::create();
-  vector<Gnome::UI::Info> toolbarTree;
+  std::vector<Gnome::UI::Info> toolbarTree;
 
   {
     using namespace Gnome::UI;
@@ -245,7 +244,7 @@ gint Project::delete_event_impl(GdkEventAny* e)
 
 void Project::updateWindowTitle()
 {
-  string s(tocEdit_->filename());
+  std::string s(tocEdit_->filename());
   s += " - ";
   s += APP_NAME;
   if (tocEdit_->tocDirty())
@@ -266,7 +265,7 @@ void Project::saveProject()
 //FIXME    guiUpdate();
   }
   else {
-    string s("Cannot save toc to \"");
+    std::string s("Cannot save toc to \"");
     s += tocEdit_->filename();
     s+= "\":";
     
@@ -317,7 +316,7 @@ void Project::saveFileSelectorOKCB()
       saveFileSelectorCancelCB();
     }
     else {
-  	string m("Cannot save toc to \"");
+  	std::string m("Cannot save toc to \"");
   	m += tocEdit_->filename();
   	m += "\":";
     
@@ -338,14 +337,11 @@ void Project::statusMessage(const char *fmt, ...)
   va_list args;
   va_start(args, fmt);
 
-  strstream str;
+  char *s = g_strdup_vprintf(fmt, args);
 
-  str.vform(fmt, args);
-  str << ends;
+  flash(s);
 
-  flash(str.str());
-
-  str.freeze(0);
+  free(s);
 
   va_end(args);
 }

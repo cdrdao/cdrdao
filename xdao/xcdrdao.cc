@@ -159,7 +159,7 @@ int main (int argc, char* argv[])
   {
     if(!gcdmaster->openNewProject(argv[1]))
     {
-      string message("Error loading ");
+      std::string message("Error loading ");
       message += argv[1];
       Gnome::Dialogs::error(*(gcdmaster->newChooserWindow2()), message);
     }

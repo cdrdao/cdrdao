@@ -30,8 +30,8 @@ ViewSwitcher::ViewSwitcher(Gtk::HBox *hbox)
   visible = NULL;
 }
 
-void ViewSwitcher::addView(list<Gtk::Widget *> *widgets,
-		Gnome::Pixmap *pixmap, Gtk::Label *label)
+void ViewSwitcher::addView(std::list<Gtk::Widget *> *widgets,
+			   Gnome::Pixmap *pixmap, Gtk::Label *label)
 {
   Gtk::HBox *hbox = new Gtk::HBox;
 
@@ -48,19 +48,19 @@ void ViewSwitcher::addView(list<Gtk::Widget *> *widgets,
 
   if (!visible)
   {
-    for (list<Gtk::Widget *>::iterator i = widgets->begin(); i != widgets->end(); i++)
+    for (std::list<Gtk::Widget *>::iterator i = widgets->begin(); i != widgets->end(); i++)
       { (*i)->show(); }
     visible = widgets;
   }
 }
 
-void ViewSwitcher::setView(list<Gtk::Widget *> *widgets)
+void ViewSwitcher::setView(std::list<Gtk::Widget *> *widgets)
 {
   if (!(widgets->front()->is_visible()) && (visible != widgets))
   {
-    for (list<Gtk::Widget *>::iterator i = visible->begin(); i != visible->end(); i++)
+    for (std::list<Gtk::Widget *>::iterator i = visible->begin(); i != visible->end(); i++)
       { (*i)->hide(); }
-    for (list<Gtk::Widget *>::iterator i = widgets->begin(); i != widgets->end(); i++)
+    for (std::list<Gtk::Widget *>::iterator i = widgets->begin(); i != widgets->end(); i++)
       { (*i)->show(); }
     visible = widgets;
   }

@@ -33,8 +33,8 @@ class BlankCDDialog;
 class GCDMaster : public Gtk::Widget
 {
 private:
-  list<Project *> projects;
-  list<ProjectChooser *> choosers;
+  std::list<Project *> projects;
+  std::list<ProjectChooser *> choosers;
 
   gint project_number;
 

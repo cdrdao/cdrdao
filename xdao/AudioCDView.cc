@@ -17,12 +17,7 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#include <stdio.h>
-#include <fstream.h>
-#include <string.h>
-#include <errno.h>
-#include <stdarg.h>
-#include <strstream.h>
+#include <iostream.h>
 
 #include "xcdrdao.h"
 #include "guiUpdate.h"
@@ -49,7 +44,7 @@ AudioCDView::AudioCDView(AudioCDChild *child, AudioCDProject *project)
   project_ = project;
   tocEditView_ = new TocEditView(project->tocEdit());
 
-  widgetList = new list<Gtk::Widget *>;
+  widgetList = new std::list<Gtk::Widget *>;
   widgetList->push_back(this);
 
 // These are not created until first needed, for faster startup
@@ -111,25 +106,25 @@ AudioCDView::AudioCDView(AudioCDChild *child, AudioCDProject *project)
   selectionEndPos_->set_usize(entry_width, 0);
   selectionEndPos_->activate.connect(slot(this, &AudioCDView::selectionSet));
 
-  label = new Gtk::Label(string("Cursor: "));
+  label = new Gtk::Label("Cursor: ");
   selectionInfoBox->pack_start(*label, FALSE, FALSE);
   selectionInfoBox->pack_start(*cursorPos_);
   label->show();
   cursorPos_->show();
 
-  label = new Gtk::Label(string("Marker: "));
+  label = new Gtk::Label("Marker: ");
   selectionInfoBox->pack_start(*label, FALSE, FALSE);
   selectionInfoBox->pack_start(*markerPos_);
   label->show();
   markerPos_->show();
 
-  label = new Gtk::Label(string("Selection: "));
+  label = new Gtk::Label("Selection: ");
   selectionInfoBox->pack_start(*label, FALSE, FALSE);
   selectionInfoBox->pack_start(*selectionStartPos_);
   label->show();
   selectionStartPos_->show();
 
-  label = new Gtk::Label(string(" - "));
+  label = new Gtk::Label(" - ");
   selectionInfoBox->pack_start(*label, FALSE, FALSE);
   selectionInfoBox->pack_start(*selectionEndPos_);
   label->show();
@@ -356,11 +351,11 @@ void AudioCDView::update(unsigned long level)
     unsigned long marker;
 
     if (tocEditView_->sampleMarker(&marker)) {
-      markerPos_->set_text(string(cdchild->sample2string(marker)));
+      markerPos_->set_text(cdchild->sample2string(marker));
       sampleDisplay_->setMarker(marker);
     }
     else {
-      markerPos_->set_text(string(""));
+      markerPos_->set_text("");
       sampleDisplay_->clearMarker();
     }
   }
@@ -369,13 +364,13 @@ void AudioCDView::update(unsigned long level)
     unsigned long start, end;
 
     if (tocEditView_->sampleSelection(&start, &end)) {
-      selectionStartPos_->set_text(string(cdchild->sample2string(start)));
-      selectionEndPos_->set_text(string(cdchild->sample2string(end)));
+      selectionStartPos_->set_text(cdchild->sample2string(start));
+      selectionEndPos_->set_text(cdchild->sample2string(end));
       sampleDisplay_->setRegion(start, end);
     }
     else {
-      selectionStartPos_->set_text(string(""));
-      selectionEndPos_->set_text(string(""));
+      selectionStartPos_->set_text("");
+      selectionEndPos_->set_text("");
       sampleDisplay_->setRegion(1, 0);
     }
   }
@@ -386,20 +381,20 @@ void AudioCDView::update(unsigned long level)
         playStartButton_->set_active(true);
         sampleDisplay_->setCursor(1, project_->playPosition() - project_->getDelay());
 // FIXME: What about using a separate cursor for playing?
-        cursorPos_->set_text(string(cdchild->sample2string(project_->playPosition() - project_->getDelay())));
+        cursorPos_->set_text(cdchild->sample2string(project_->playPosition() - project_->getDelay()));
         break;
       case AudioCDProject::PAUSED:
         playPauseButton_->set_active(true);
         sampleDisplay_->setCursor(1, project_->playPosition() - project_->getDelay());
 // FIXME: What about using a separate cursor for playing?
-        cursorPos_->set_text(string(cdchild->sample2string(project_->playPosition() - project_->getDelay())));
+        cursorPos_->set_text(cdchild->sample2string(project_->playPosition() - project_->getDelay()));
         break;
       case AudioCDProject::STOPPED:
         playStopButton_->set_active(true);
         sampleDisplay_->setCursor(0, 0);
         break;
       default:
-        cerr << "invalid play status" << endl;
+        std::cerr << "invalid play status" << std::endl;
     }
   }
 
@@ -562,7 +557,7 @@ void AudioCDView::selectionSetCallback(unsigned long start,
 
 void AudioCDView::cursorMovedCallback(unsigned long pos)
 {
-  cursorPos_->set_text(string(cdchild->sample2string(pos)));
+  cursorPos_->set_text(cdchild->sample2string(pos));
 }
 
 void AudioCDView::viewModifiedCallback(unsigned long start, unsigned long end)
@@ -606,7 +601,7 @@ void AudioCDView::drag_data_received_cb(GdkDragContext *context,
 //  	tocEdit_->blockEdit();
 //FIXME      while (names->data) {
       if (names->data) {
-          string str = g_strdup(static_cast <char *>(names->data));
+          std::string str = g_strdup(static_cast <char *>(names->data));
           const char *file = stripCwd(str.c_str());
 
         switch (tocEditView_->tocEdit()->appendTrack(file)) {
@@ -643,8 +638,7 @@ void AudioCDView::trackInfo()
   }
   else
   {
-      string message("Please select a track first");
-      Gnome::Dialogs::ok(*project_, message); 
+      Gnome::Dialogs::ok(*project_, "Please select a track first");
   }
 
 }

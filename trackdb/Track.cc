@@ -491,7 +491,7 @@ int Track::isPadded() const
 }
 
 // writes out track data in TOC file syntax
-void Track::print(ostream &out) const
+void Track::print(std::ostream &out) const
 {
   SubTrack *st;
   const char *s;
@@ -504,21 +504,21 @@ void Track::print(ostream &out) const
   if (*s != 0)
     out << " " << s;
 
-  out << endl;
+  out << std::endl;
 
   if (!copyPermitted())
     out << "NO ";
-  out << "COPY" << endl;
+  out << "COPY" << std::endl;
 
   if (type() == TrackData::AUDIO) {
     if (!preEmphasis())
       out << "NO ";
-    out << "PRE_EMPHASIS" << endl;
+    out << "PRE_EMPHASIS" << std::endl;
 
     if (audioType() == 0)
-      out << "TWO_CHANNEL_AUDIO" << endl;
+      out << "TWO_CHANNEL_AUDIO" << std::endl;
     else
-      out << "FOUR_CHANNEL_AUDIO" << endl;
+      out << "FOUR_CHANNEL_AUDIO" << std::endl;
   
     if (isrcValid()) {
       out << "ISRC \"" << isrcCountry(0) << isrcCountry(1)
@@ -526,7 +526,7 @@ void Track::print(ostream &out) const
 	  << (char)(isrcYear(0) + '0') << (char)(isrcYear(1) + '0')
 	  << (char)(isrcSerial(0) + '0') << (char)(isrcSerial(1) + '0')
 	  << (char)(isrcSerial(2) + '0') << (char)(isrcSerial(3) + '0')
-	  << (char)(isrcSerial(4) + '0') << "\"" << endl;
+	  << (char)(isrcSerial(4) + '0') << "\"" << std::endl;
     }
 
     cdtext_.print(1, out);
@@ -538,11 +538,11 @@ void Track::print(ostream &out) const
   }
 
   if (start_.lba() != 0) {
-    out << "START " << start_.str() << endl;
+    out << "START " << start_.str() << std::endl;
   }
 
   for (i = 0; i < nofIndices_; i++) {
-    out << "INDEX " << index_[i].str() << endl;
+    out << "INDEX " << index_[i].str() << std::endl;
   }
 }
 
@@ -552,8 +552,15 @@ SubTrack *Track::findSubTrack(unsigned long sample) const
 {
   SubTrack *run;
 
-  if (sample >= length_.samples()) 
-    return NULL;
+  if (audioCutMode()) {
+    if (sample >= length_.samples()) 
+      return NULL;
+  }
+  else {
+    if (sample >=
+	length_.lba() * TrackData::dataBlockSize(type(), subChannelType()))
+      return NULL;
+  }
 
   for (run = subTracks_;
        run != NULL && run->next_ != NULL;
@@ -1755,7 +1762,11 @@ long TrackReader::readTrackData(Sample *buf, long len)
     }
 
     count -= actLen;
-    nread += actLen;
+
+    if (track_->audioCutMode())
+      nread += actLen;
+    else
+      nread += actLen / SAMPLE_LEN;
   }
 
   return len;
@@ -1768,11 +1779,32 @@ long TrackReader::readTrackData(Sample *buf, long len)
 int TrackReader::seekSample(unsigned long sample)
 {
   int ret;
+  unsigned long offset;
 
   assert(open_ != 0);
 
+  if (track_->audioCutMode() == 0) {
+    // all lengths are in byte units -> convert requested sample to a byte
+    // offset
+
+    // first determine the block which contains the requested sample
+    unsigned long block = sample / SAMPLES_PER_BLOCK;
+
+    // byte offset into block
+    unsigned long boffset = (sample % SAMPLES_PER_BLOCK) * SAMPLE_LEN;
+    
+
+    unsigned long blen = TrackData::dataBlockSize(track_->type(),
+						  track_->subChannelType());
+
+    offset = block * blen + boffset;
+  }
+  else {
+    offset = sample;
+  }
+
   // find sub track containing 'sample'
-  SubTrack *st = track_->findSubTrack(sample);
+  SubTrack *st = track_->findSubTrack(offset);
 
   if (st == NULL) 
     return 10;
@@ -1786,12 +1818,12 @@ int TrackReader::seekSample(unsigned long sample)
       return ret;
   }
 
-  assert(sample >= readSubTrack_->start());
+  assert(offset >= readSubTrack_->start());
 
-  unsigned long offset = sample - readSubTrack_->start();
+  unsigned long stOffset = offset - readSubTrack_->start();
 
   // seek in sub track
-  if ((ret = reader.seekSample(offset)) != 0)
+  if ((ret = reader.seekSample(stOffset)) != 0)
     return ret;
 
   readPosSample_ = sample;
@@ -1811,9 +1843,43 @@ long TrackReader::readSamples(Sample *buf, long len)
     }
   }
 
-  if (track_->audioCutMode() == 1) {
-    if ((ret = readTrackData(buf, len)) > 0)
-      readPosSample_ += ret;
+  if (track_->type() == TrackData::AUDIO) {
+    if (track_->audioCutMode() == 1) {
+      if ((ret = readTrackData(buf, len)) > 0) {
+	readPosSample_ += ret;
+      }
+    }
+    else {
+      long subChanLen = TrackData::subChannelSize(track_->subChannelType());
+      char subChanBuf[MAX_SUBCHANNEL_LEN];
+      ret = 0;
+      
+      while (len > 0) {
+	long burst =
+	  SAMPLES_PER_BLOCK - (readPosSample_ % SAMPLES_PER_BLOCK);
+	int fullBurst = 0;
+	
+	if (burst > len)
+	  burst = len;
+	else
+	  fullBurst = 1;
+	
+	if (readTrackData(buf, burst * SAMPLE_LEN) <= 0)
+	  return -1;
+	
+	buf += burst;
+	
+	len -= burst;
+	readPosSample_ += burst;
+	ret += burst;
+	
+	if (subChanLen > 0 && fullBurst &&
+	    readPosSample_ < track_->length_.samples()) {
+	  if (readTrackData((Sample*)subChanBuf, subChanLen) < 0)
+	    return -1;
+	}
+      }
+    }
   }
   else {
     for (i = 0; i < len; i++) {

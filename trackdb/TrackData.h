@@ -21,7 +21,7 @@
 #ifndef __TRACKDATA_H__
 #define __TRACKDATA_H__
 
-#include <iostream.h>
+#include <ostream.h>
 #include "Sample.h"
 
 #define AUDIO_BLOCK_LEN 2352
@@ -36,6 +36,7 @@
 #define PW_SUBCHANNEL_LEN 96
 #define MAX_SUBCHANNEL_LEN 96
 
+#define SAMPLE_LEN 4
 
 class TrackData {
 public:
@@ -90,7 +91,7 @@ public:
   void split(unsigned long, TrackData **part1, TrackData **part2);
   TrackData *merge(const TrackData *) const;
 
-  void print(ostream &) const;
+  void print(std::ostream &) const;
 
   static int checkAudioFile(const char *fn, unsigned long *length);
   static int waveLength(const char *filename, long offset, long *hdrlen,

@@ -1,6 +1,6 @@
 /*  cdrdao - write audio CD-Rs in disc-at-once mode
  *
- *  Copyright (C) 1998  Andreas Mueller <mueller@daneb.ping.de>
+ *  Copyright (C) 1998-2002  Andreas Mueller <andreas@daneb.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -16,50 +16,6 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
-/*
- * $Log: MessageBox.cc,v $
- * Revision 1.7  2000/09/21 02:07:06  llanero
- * MDI support:
- * Splitted AudioCDChild into same and AudioCDView
- * Move Selections from TocEdit to AudioCDView to allow
- *   multiple selections.
- * Cursor animation in all the views.
- * Can load more than one from from command line
- * Track info, Toc info, Append/Insert Silence, Append/Insert Track,
- *   they all are built for every child when needed.
- * ...
- *
- * Revision 1.6  2000/07/17 22:08:33  llanero
- * DeviceList is now a class
- * RecordGenericDialog and RecordCDTarget first implemented.
- *
- * Revision 1.5  2000/05/14 16:54:59  andreasm
- * Adapted to gtkmm-1.2.0 and gnomemm-1.1.9
- *
- * Revision 1.4  2000/05/01 18:15:00  andreasm
- * Switch to gnome-config settings.
- * Adapted Message Box to Gnome look, unfortunately the Gnome::MessageBox is
- * not implemented in gnome--, yet.
- *
- * Revision 1.3  2000/04/23 09:07:08  andreasm
- * * Fixed most problems marked with '//llanero'.
- * * Added audio CD edit menus to MDIWindow.
- * * Moved central storage of TocEdit object to MDIWindow.
- * * AudioCdChild is now handled like an ordinary non modal dialog, i.e.
- *   it has a normal 'update' member function now.
- * * Added CdTextTable modal dialog.
- * * Old functionality of xcdrdao is now available again.
- *
- * Revision 1.2  2000/02/20 23:34:54  llanero
- * fixed scsilib directory (files mising ?-()
- * ported xdao to 1.1.8 / gnome (MDI) app
- *
- * Revision 1.1.1.1  2000/02/05 01:39:32  llanero
- * Uploaded cdrdao 1.1.3 with pre10 patch applied.
- *
- */
-
-static char rcsid[] = "$Id: MessageBox.cc,v 1.7 2000/09/21 02:07:06 llanero Exp $";
 
 #include <stddef.h>
 #include <stdarg.h>
@@ -142,7 +98,7 @@ void MessageBoxBase::init(const char *type, const char *title, int askDontShow,
 
   
   for (i = 1; i <= nButtons; i++) {
-    //Gtk::Button* button = manage(new Gtk::Button(string(buttons[i - 1])));
+    //Gtk::Button* button = manage(new Gtk::Button(buttons[i - 1]));
     Gtk::Button* button = manage(createButton(buttons[i - 1]));
     button->show();
     button->clicked.connect(bind(slot(this,&MessageBoxBase::buttonAction),i));
@@ -159,12 +115,12 @@ void MessageBoxBase::init(const char *type, const char *title, int askDontShow,
   }
 
   if (askDontShow) {
-    dontShowAgain_ = new Gtk::CheckButton(string("Don't show this message again"));
+    dontShowAgain_ = new Gtk::CheckButton("Don't show this message again");
     dontShowAgain_->set_active(FALSE);
     dontShowAgain_->show();
 
     Gtk::HBox* box = manage(new Gtk::HBox);
-    Gtk::Label* label = manage(new Gtk::Label(string("")));
+    Gtk::Label* label = manage(new Gtk::Label(""));
 
     label->show();
     box->show();

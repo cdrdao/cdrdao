@@ -1,6 +1,6 @@
 /*  cdrdao - write audio CD-Rs in disc-at-once mode
  *
- *  Copyright (C) 1998-2001 Andreas Mueller <mueller@daneb.ping.de>
+ *  Copyright (C) 1998-2002 Andreas Mueller <andreas@daneb.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -24,7 +24,6 @@
 #include <unistd.h>
 #include <malloc.h>
 #include <errno.h>
-#include <string.h>
 #include <ctype.h>
 #include <assert.h>
 
@@ -125,7 +124,7 @@ CdDevice::~CdDevice()
 char *CdDevice::settingString() const
 {
   char buf[100];
-  string s;
+  std::string s;
 
   sprintf(buf, "%d,%d,%d,'", bus_, id_, lun_);
 
@@ -1221,9 +1220,9 @@ static CdDevice *addImpl(char *s)
   char *p;
   int bus, id, lun;
   int driverId;
-  string vendor;
-  string model;
-  string device;
+  std::string vendor;
+  std::string model;
+  std::string device;
   unsigned long options;
   char *val;
   CdDevice::DeviceType type;

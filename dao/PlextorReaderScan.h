@@ -37,6 +37,8 @@ public:
 
   Toc *readDisk(int session, const char *);
 
+  unsigned long getReadCapabilites(const CdToc *, int) const { return 0; }
+
 protected:
 
   int analyzeTrack(TrackData::Mode, int trackNr, long startLba, long endLba,
@@ -44,7 +46,8 @@ protected:
 		   int *indexCnt, long *pregap, char *isrcCode,
 		   unsigned char *ctl);
 
-  int readSubChannels(long lba, long len, SubChannel ***, Sample *);
+  int readSubChannels(TrackData::SubChannelMode, long lba, long len,
+		      SubChannel ***, Sample *);
 
   int readAudioRange(ReadDiskInfo *, int fd, long start, long end,
 		     int startTrack, int endTrack, TrackInfo *);

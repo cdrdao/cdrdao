@@ -50,18 +50,18 @@ TrackInfoDialog::TrackInfoDialog()
   active_ = 0;
   trackNr_ = 0;
 
-  trackNr_ = new Gtk::Label(string("99"));
-  pregapLen_ = new Gtk::Label(string("100:00:00"));
-  trackStart_ = new Gtk::Label(string("100:00:00"));
-  trackEnd_ = new Gtk::Label(string("100:00:00"));
-  trackLen_ = new Gtk::Label(string("100:00:00"));
-  indexMarks_ = new Gtk::Label(string("99"));
+  trackNr_ = new Gtk::Label("99");
+  pregapLen_ = new Gtk::Label("100:00:00");
+  trackStart_ = new Gtk::Label("100:00:00");
+  trackEnd_ = new Gtk::Label("100:00:00");
+  trackLen_ = new Gtk::Label("100:00:00");
+  indexMarks_ = new Gtk::Label("99");
 
-  copyFlag_ = new Gtk::CheckButton(string("Copy"));
-  preEmphasisFlag_ = new Gtk::CheckButton(string("Pre Emphasis"));
+  copyFlag_ = new Gtk::CheckButton("Copy");
+  preEmphasisFlag_ = new Gtk::CheckButton("Pre Emphasis");
   
-  twoChannelAudio_ = new Gtk::RadioButton(string("Two Channel Audio"));
-  fourChannelAudio_ = new Gtk::RadioButton(string("Four Channel Audio"));
+  twoChannelAudio_ = new Gtk::RadioButton("Two Channel Audio");
+  fourChannelAudio_ = new Gtk::RadioButton("Four Channel Audio");
   fourChannelAudio_->set_group(twoChannelAudio_->group());
 
   isrcCodeCountry_ = new TextEdit("XX");
@@ -92,7 +92,7 @@ TrackInfoDialog::TrackInfoDialog()
 
   hbox = new Gtk::HBox;
 
-  label = new Gtk::Label(string("Track: "));
+  label = new Gtk::Label("Track: ");
 
   hbox->pack_start(*label, FALSE, FALSE);
   label->show();
@@ -104,7 +104,7 @@ TrackInfoDialog::TrackInfoDialog()
 
 
   // time data
-  frame = new Gtk::Frame(string("Summary"));
+  frame = new Gtk::Frame("Summary");
 
   table = new Gtk::Table(5, 2, FALSE);
   table->set_row_spacings(5);
@@ -118,7 +118,7 @@ TrackInfoDialog::TrackInfoDialog()
   hbox->show();
   table->show();
   
-  label = new Gtk::Label(string("Pre-Gap:"));
+  label = new Gtk::Label("Pre-Gap:");
   hbox = new Gtk::HBox;
   hbox->pack_end(*label, FALSE, FALSE);
   table->attach(*hbox, 0, 1, 0, 1);
@@ -130,7 +130,7 @@ TrackInfoDialog::TrackInfoDialog()
   pregapLen_->show();
   hbox->show();
 
-  label = new Gtk::Label(string("Start:"));
+  label = new Gtk::Label("Start:");
   hbox = new Gtk::HBox;
   hbox->pack_end(*label, FALSE, FALSE);
   table->attach(*hbox, 0, 1, 1, 2);
@@ -142,7 +142,7 @@ TrackInfoDialog::TrackInfoDialog()
   trackStart_->show();
   hbox->show();
 
-  label = new Gtk::Label(string("End:"));
+  label = new Gtk::Label("End:");
   hbox = new Gtk::HBox;
   hbox->pack_end(*label, FALSE, FALSE);
   table->attach(*hbox, 0, 1, 2, 3);
@@ -154,7 +154,7 @@ TrackInfoDialog::TrackInfoDialog()
   trackEnd_->show();
   hbox->show();
 
-  label = new Gtk::Label(string("Length:"));
+  label = new Gtk::Label("Length:");
   hbox = new Gtk::HBox;
   hbox->pack_end(*label, FALSE, FALSE);
   table->attach(*hbox, 0, 1, 3, 4);
@@ -166,7 +166,7 @@ TrackInfoDialog::TrackInfoDialog()
   trackLen_->show();
   hbox->show();
 
-  label = new Gtk::Label(string("Index Marks:"));
+  label = new Gtk::Label("Index Marks:");
   hbox = new Gtk::HBox;
   hbox->pack_end(*label, FALSE, FALSE);
   table->attach(*hbox, 0, 1, 4, 5);
@@ -184,7 +184,7 @@ TrackInfoDialog::TrackInfoDialog()
 
 
   // sub-channel data
-  frame = new Gtk::Frame(string("Sub-Channel"));
+  frame = new Gtk::Frame("Sub-Channel");
 
   vbox = new Gtk::VBox;
   vbox->set_spacing(0);
@@ -203,23 +203,23 @@ TrackInfoDialog::TrackInfoDialog()
   fourChannelAudio_->show();
 
   hbox = new Gtk::HBox;
-  label = new Gtk::Label(string("ISRC: "));
+  label = new Gtk::Label("ISRC: ");
   hbox->pack_start(*label, FALSE);
 
   hbox->pack_start(*isrcCodeCountry_, FALSE);
-  label1 = new Gtk::Label(string("-"));
+  label1 = new Gtk::Label("-");
   hbox->pack_start(*label1, FALSE);
   isrcCodeCountry_->show();
   label1->show();
 
   hbox->pack_start(*isrcCodeOwner_, FALSE);
-  label1 = new Gtk::Label(string("-"));
+  label1 = new Gtk::Label("-");
   hbox->pack_start(*label1, FALSE);
   isrcCodeOwner_->show();
   label1->show();
 
   hbox->pack_start(*isrcCodeYear_, FALSE);
-  label1 = new Gtk::Label(string("-"));
+  label1 = new Gtk::Label("-");
   hbox->pack_start(*label1, FALSE);
   isrcCodeYear_->show();
   label1->show();
@@ -248,7 +248,7 @@ TrackInfoDialog::TrackInfoDialog()
 
 
   // CD-TEXT data
-  frame = new Gtk::Frame(string("CD-TEXT"));
+  frame = new Gtk::Frame("CD-TEXT");
 
   Gtk::Notebook *notebook = new Gtk::Notebook;
 
@@ -295,7 +295,7 @@ TrackInfoDialog::TrackInfoDialog()
   bbox->show();
   get_action_area()->show();
 
-  set_title(string("Track Info"));
+  set_title("Track Info");
 }
 
 TrackInfoDialog::~TrackInfoDialog()
@@ -333,7 +333,7 @@ Gtk::VBox *TrackInfoDialog::createCdTextPage(int n)
   Gtk::Label *label;
 
   sprintf(buf, "%d", n);
-  cdTextPages_[n].label = new Gtk::Label(string(buf));
+  cdTextPages_[n].label = new Gtk::Label(buf);
   cdTextPages_[n].label->show();
 
   cdTextPages_[n].title = new Gtk::Entry;
@@ -349,7 +349,7 @@ Gtk::VBox *TrackInfoDialog::createCdTextPage(int n)
   table->set_col_spacings(5);
   table->show();
 
-  label = new Gtk::Label(string("Title:"));
+  label = new Gtk::Label("Title:");
   hbox = new Gtk::HBox;
   hbox->pack_end(*label, FALSE);
   table->attach(*hbox, 0, 1, 0, 1, GTK_FILL);
@@ -358,7 +358,7 @@ Gtk::VBox *TrackInfoDialog::createCdTextPage(int n)
   table->attach(*(cdTextPages_[n].title), 1, 2, 0, 1);
   cdTextPages_[n].title->show();
 
-  label = new Gtk::Label(string("Performer:"));
+  label = new Gtk::Label("Performer:");
   hbox = new Gtk::HBox;
   hbox->pack_end(*label, FALSE);
   table->attach(*hbox, 0, 1, 1, 2, GTK_FILL);
@@ -367,7 +367,7 @@ Gtk::VBox *TrackInfoDialog::createCdTextPage(int n)
   table->attach(*(cdTextPages_[n].performer), 1, 2, 1, 2);
   cdTextPages_[n].performer->show();
 
-  label = new Gtk::Label(string("Songwriter:"));
+  label = new Gtk::Label("Songwriter:");
   hbox = new Gtk::HBox;
   hbox->pack_end(*label, FALSE);
   table->attach(*hbox, 0, 1, 2, 3, GTK_FILL);
@@ -376,7 +376,7 @@ Gtk::VBox *TrackInfoDialog::createCdTextPage(int n)
   table->attach(*(cdTextPages_[n].songwriter), 1, 2, 2, 3);
   cdTextPages_[n].songwriter->show();
 
-  label = new Gtk::Label(string("Composer:"));
+  label = new Gtk::Label("Composer:");
   hbox = new Gtk::HBox;
   hbox->pack_end(*label, FALSE);
   table->attach(*hbox, 0, 1, 3, 4, GTK_FILL);
@@ -385,7 +385,7 @@ Gtk::VBox *TrackInfoDialog::createCdTextPage(int n)
   table->attach(*(cdTextPages_[n].composer), 1, 2, 3, 4);
   cdTextPages_[n].composer->show();
 
-  label = new Gtk::Label(string("Arranger:"));
+  label = new Gtk::Label("Arranger:");
   hbox = new Gtk::HBox;
   hbox->pack_end(*label, FALSE);
   table->attach(*hbox, 0, 1, 4, 5, GTK_FILL);
@@ -394,7 +394,7 @@ Gtk::VBox *TrackInfoDialog::createCdTextPage(int n)
   table->attach(*(cdTextPages_[n].arranger), 1, 2, 4, 5);
   cdTextPages_[n].arranger->show();
 
-  label = new Gtk::Label(string("Message:"));
+  label = new Gtk::Label("Message:");
   hbox = new Gtk::HBox;
   hbox->pack_end(*label, FALSE);
   table->attach(*hbox, 0, 1, 5, 6, GTK_FILL);
@@ -403,7 +403,7 @@ Gtk::VBox *TrackInfoDialog::createCdTextPage(int n)
   table->attach(*(cdTextPages_[n].message), 1, 2, 5, 6);
   cdTextPages_[n].message->show();
 
-  label = new Gtk::Label(string("ISRC:"));
+  label = new Gtk::Label("ISRC:");
   hbox = new Gtk::HBox;
   hbox->pack_end(*label, FALSE);
   table->attach(*hbox, 0, 1, 6, 7, GTK_FILL);
@@ -433,20 +433,20 @@ void TrackInfoDialog::closeAction()
 
 void TrackInfoDialog::clear()
 {
-  trackNr_->set_text(string(""));
-  pregapLen_->set_text(string(""));
-  trackStart_->set_text(string(""));
-  trackEnd_->set_text(string(""));
-  trackLen_->set_text(string(""));
-  indexMarks_->set_text(string(""));
+  trackNr_->set_text("");
+  pregapLen_->set_text("");
+  trackStart_->set_text("");
+  trackEnd_->set_text("");
+  trackLen_->set_text("");
+  indexMarks_->set_text("");
   
-  isrcCodeCountry_->set_text(string(""));
+  isrcCodeCountry_->set_text("");
   isrcCodeCountry_->set_editable(false);
-  isrcCodeOwner_->set_text(string(""));
+  isrcCodeOwner_->set_text("");
   isrcCodeOwner_->set_editable(false);
-  isrcCodeYear_->set_text(string(""));
+  isrcCodeYear_->set_text("");
   isrcCodeYear_->set_editable(false);
-  isrcCodeSerial_->set_text(string(""));
+  isrcCodeSerial_->set_text("");
   isrcCodeSerial_->set_editable(false);
 
   copyFlag_->set_sensitive(false);
@@ -473,7 +473,7 @@ void TrackInfoDialog::update(unsigned long level, TocEditView *view)
     return;
   }
 
-  string s(view->tocEdit()->filename());
+  std::string s(view->tocEdit()->filename());
   s += " - ";
   s += APP_NAME;
   if (view->tocEdit()->tocDirty())
@@ -496,25 +496,25 @@ void TrackInfoDialog::clearCdText()
   int l;
 
   for (l = 0; l < 8; l++) {
-    cdTextPages_[l].title->set_text(string(""));
+    cdTextPages_[l].title->set_text("");
     cdTextPages_[l].title->set_editable(false);
 
-    cdTextPages_[l].performer->set_text(string(""));
+    cdTextPages_[l].performer->set_text("");
     cdTextPages_[l].performer->set_editable(false);
 
-    cdTextPages_[l].songwriter->set_text(string(""));
+    cdTextPages_[l].songwriter->set_text("");
     cdTextPages_[l].songwriter->set_editable(false);
 
-    cdTextPages_[l].composer->set_text(string(""));
+    cdTextPages_[l].composer->set_text("");
     cdTextPages_[l].composer->set_editable(false);
 
-    cdTextPages_[l].arranger->set_text(string(""));
+    cdTextPages_[l].arranger->set_text("");
     cdTextPages_[l].arranger->set_editable(false);
 
-    cdTextPages_[l].message->set_text(string(""));
+    cdTextPages_[l].message->set_text("");
     cdTextPages_[l].message->set_editable(false);
 
-    cdTextPages_[l].isrc->set_text(string(""));
+    cdTextPages_[l].isrc->set_text("");
     cdTextPages_[l].isrc->set_editable(false);
   }
 }
@@ -531,7 +531,7 @@ void TrackInfoDialog::applyAction()
   guiUpdate(UPD_TRACK_DATA);
 }
 
-const char *TrackInfoDialog::checkString(const string &str)
+const char *TrackInfoDialog::checkString(const std::string &str)
 {
   static char *buf = NULL;
   static long bufLen = 0;
@@ -574,51 +574,51 @@ void TrackInfoDialog::importCdText(const Toc *toc, int trackNr)
   for (l = 0; l < 8; l++) {
     if ((item = toc->getCdTextItem(trackNr, l, CdTextItem::CDTEXT_TITLE))
 	!= NULL) 
-      cdTextPages_[l].title->set_text(string((const char*)(item->data())));
+      cdTextPages_[l].title->set_text((const char*)item->data());
     else
-      cdTextPages_[l].title->set_text(string(""));
+      cdTextPages_[l].title->set_text("");
     cdTextPages_[l].title->set_editable(true);
 
     if ((item = toc->getCdTextItem(trackNr, l, CdTextItem::CDTEXT_PERFORMER))
 	!= NULL) 
-      cdTextPages_[l].performer->set_text(string((const char*)(item->data())));
+      cdTextPages_[l].performer->set_text((const char*)item->data());
     else
-      cdTextPages_[l].performer->set_text(string(""));
+      cdTextPages_[l].performer->set_text("");
     cdTextPages_[l].performer->set_editable(true);
 
     if ((item = toc->getCdTextItem(trackNr, l, CdTextItem::CDTEXT_SONGWRITER))
 	!= NULL) 
-      cdTextPages_[l].songwriter->set_text(string((const char*)(item->data())));
+      cdTextPages_[l].songwriter->set_text((const char*)item->data());
     else
-      cdTextPages_[l].songwriter->set_text(string(""));
+      cdTextPages_[l].songwriter->set_text("");
     cdTextPages_[l].songwriter->set_editable(true);
 
     if ((item = toc->getCdTextItem(trackNr, l, CdTextItem::CDTEXT_COMPOSER))
 	!= NULL) 
-      cdTextPages_[l].composer->set_text(string((const char*)(item->data())));
+      cdTextPages_[l].composer->set_text((const char*)item->data());
     else
-      cdTextPages_[l].composer->set_text(string(""));
+      cdTextPages_[l].composer->set_text("");
     cdTextPages_[l].composer->set_editable(true);
 
     if ((item = toc->getCdTextItem(trackNr, l, CdTextItem::CDTEXT_ARRANGER))
 	!= NULL) 
-      cdTextPages_[l].arranger->set_text(string((const char*)(item->data())));
+      cdTextPages_[l].arranger->set_text((const char*)item->data());
     else
-      cdTextPages_[l].arranger->set_text(string(""));
+      cdTextPages_[l].arranger->set_text("");
     cdTextPages_[l].arranger->set_editable(true);
 
     if ((item = toc->getCdTextItem(trackNr, l, CdTextItem::CDTEXT_MESSAGE))
 	!= NULL) 
-      cdTextPages_[l].message->set_text(string((const char*)(item->data())));
+      cdTextPages_[l].message->set_text((const char*)item->data());
     else
-      cdTextPages_[l].message->set_text(string(""));
+      cdTextPages_[l].message->set_text("");
     cdTextPages_[l].message->set_editable(true);
 
     if ((item = toc->getCdTextItem(trackNr, l, CdTextItem::CDTEXT_UPCEAN_ISRC))
 	!= NULL) 
-      cdTextPages_[l].isrc->set_text(string((const char*)(item->data())));
+      cdTextPages_[l].isrc->set_text((const char*)item->data());
     else
-      cdTextPages_[l].isrc->set_text(string(""));
+      cdTextPages_[l].isrc->set_text("");
     cdTextPages_[l].isrc->set_editable(true);
   }
 }
@@ -637,24 +637,24 @@ void TrackInfoDialog::importData(const Toc *toc, int trackNr)
   }
 
   sprintf(buf, "%d", trackNr);
-  trackNr_->set_text(string(buf));
+  trackNr_->set_text(buf);
 
   sprintf(buf, "%3d:%02d:%02d", track->start().min(), track->start().sec(),
 	  track->start().frac());
-  pregapLen_->set_text(string(buf));
+  pregapLen_->set_text(buf);
 
   sprintf(buf, "%3d:%02d:%02d", start.min(), start.sec(), start.frac());
-  trackStart_->set_text(string(buf));
+  trackStart_->set_text(buf);
 
   sprintf(buf, "%3d:%02d:%02d", end.min(), end.sec(), end.frac());
-  trackEnd_->set_text(string(buf));
+  trackEnd_->set_text(buf);
 
   Msf len(track->length() - track->start());
   sprintf(buf, "%3d:%02d:%02d", len.min(), len.sec(), len.frac());
-  trackLen_->set_text(string(buf));
+  trackLen_->set_text(buf);
 
   sprintf(buf, "%3d", track->nofIndices());
-  indexMarks_->set_text(string(buf));
+  indexMarks_->set_text(buf);
 
   copyFlag_->set_sensitive(true);
   preEmphasisFlag_->set_sensitive(true);
@@ -671,25 +671,25 @@ void TrackInfoDialog::importData(const Toc *toc, int trackNr)
     
   if (track->isrcValid()) {
     sprintf(buf, "%c%c", track->isrcCountry(0), track->isrcCountry(1));
-    isrcCodeCountry_->set_text(string(buf));
+    isrcCodeCountry_->set_text(buf);
     
     sprintf(buf, "%c%c%c", track->isrcOwner(0), track->isrcOwner(1),
 	    track->isrcOwner(2));
-    isrcCodeOwner_->set_text(string(buf));
+    isrcCodeOwner_->set_text(buf);
 
     sprintf(buf, "%c%c", '0' + track->isrcYear(0), '0' + track->isrcYear(1));
-    isrcCodeYear_->set_text(string(buf));
+    isrcCodeYear_->set_text(buf);
     
     sprintf(buf, "%c%c%c%c%c", '0' + track->isrcSerial(0),
 	    '0' + track->isrcSerial(1), '0' + track->isrcSerial(2),
 	    '0' + track->isrcSerial(3), '0' + track->isrcSerial(4));
-    isrcCodeSerial_->set_text(string(buf));
+    isrcCodeSerial_->set_text(buf);
   }
   else {
-    isrcCodeCountry_->set_text(string(""));
-    isrcCodeOwner_->set_text(string(""));
-    isrcCodeYear_->set_text(string(""));
-    isrcCodeSerial_->set_text(string(""));
+    isrcCodeCountry_->set_text("");
+    isrcCodeOwner_->set_text("");
+    isrcCodeYear_->set_text("");
+    isrcCodeSerial_->set_text("");
   }
 
   isrcCodeCountry_->set_editable(true);

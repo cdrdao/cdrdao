@@ -32,6 +32,8 @@ public:
   ~SonyCDU920();
   static CdrDriver *instance(ScsiIf *scsiIf, unsigned long options);
 
+  unsigned long getReadCapabilities(const CdToc *, int) const { return 0; }
+
   int bigEndianSamples() const;
 
   int multiSession(int);
@@ -75,12 +77,13 @@ protected:
 		   int *indexCnt, long *pregap, char *isrcCode,
 		   unsigned char *ctl);
 
-  int readSubChannels(long lba, long len, SubChannel ***, Sample *);
+  int readSubChannels(TrackData::SubChannelMode, long lba, long len,
+		      SubChannel ***, Sample *);
 
   CdRawToc *getRawToc(int sessionNr, int *len);
 
-  long readTrackData(TrackData::Mode mode, long lba, long len,
-		     unsigned char *buf);
+  long readTrackData(TrackData::Mode, TrackData::SubChannelMode,
+		     long lba, long len, unsigned char *buf);
 
   int readAudioRange(ReadDiskInfo *, int fd, long start, long end,
 		     int startTrack, int endTrack, TrackInfo *);

@@ -1,6 +1,6 @@
 /*  cdrdao - write audio CD-Rs in disc-at-once mode
  *
- *  Copyright (C) 1998, 1999  Andreas Mueller <mueller@daneb.ping.de>
+ *  Copyright (C) 1998-2002  Andreas Mueller <andreas@daneb.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -46,7 +46,7 @@ RecordTocSource::RecordTocSource(TocEdit *tocEdit)
   tocEdit_ = tocEdit;
 
   // device settings
-  Gtk::Frame *infoFrame = new Gtk::Frame(string("Project Information"));
+  Gtk::Frame *infoFrame = new Gtk::Frame("Project Information");
   infoFrame->show();
   
   table = new Gtk::Table(5, 2, FALSE);
@@ -55,31 +55,31 @@ RecordTocSource::RecordTocSource(TocEdit *tocEdit)
   table->set_border_width(10);
   table->show();
 
-  label = new Gtk::Label(string("Project name: "), 1);
+  label = new Gtk::Label("Project name: ", 1);
   label->show();
   table->attach(*label, 0, 1, 0, 1);
-  projectLabel_ = new Gtk::Label(string(""), 0);
+  projectLabel_ = new Gtk::Label("", 0);
   projectLabel_->show();
   table->attach(*projectLabel_, 1, 2, 0, 1);
 
-  label = new Gtk::Label(string("Toc Type: "), 1);
+  label = new Gtk::Label("Toc Type: ", 1);
   label->show();
   table->attach(*label, 0, 1, 1, 2);
-  tocTypeLabel_ = new Gtk::Label(string(""), 0);
+  tocTypeLabel_ = new Gtk::Label("", 0);
   tocTypeLabel_->show();
   table->attach(*tocTypeLabel_, 1, 2, 1, 2);
 
-  label = new Gtk::Label(string("Tracks: "), 1);
+  label = new Gtk::Label("Tracks: ", 1);
   label->show();
   table->attach(*label, 0, 1, 2, 3);
-  nofTracksLabel_ = new Gtk::Label(string(""), 0);
+  nofTracksLabel_ = new Gtk::Label("", 0);
   nofTracksLabel_->show();
   table->attach(*nofTracksLabel_, 1, 2, 2, 3);
 
-  label = new Gtk::Label(string("Length: "), 1);
+  label = new Gtk::Label("Length: ", 1);
   label->show();
   table->attach(*label, 0, 1, 3, 4);
-  tocLengthLabel_ = new Gtk::Label(string(""), 0);
+  tocLengthLabel_ = new Gtk::Label("", 0);
   tocLengthLabel_->show();
   table->attach(*tocLengthLabel_, 1, 2, 3, 4);
 
@@ -123,10 +123,10 @@ void RecordTocSource::update(unsigned long level, TocEdit *tedit)
   }
 
   if (tocEdit_ == NULL) {
-    projectLabel_->set(string(""));
-    tocTypeLabel_->set(string(""));
-    nofTracksLabel_->set(string(""));
-    tocLengthLabel_->set(string(""));
+    projectLabel_->set("");
+    tocTypeLabel_->set("");
+    nofTracksLabel_->set("");
+    tocLengthLabel_->set("");
   }
   else {
     if (level & UPD_TOC_DATA) {
@@ -134,16 +134,16 @@ void RecordTocSource::update(unsigned long level, TocEdit *tedit)
       char buf[50];
       const Toc *toc = tocEdit_->toc();
 
-      projectLabel_->set(string(tocEdit_->filename()));
+      projectLabel_->set(tocEdit_->filename());
 
-      tocTypeLabel_->set(string(toc->tocType2String(toc->tocType())));
+      tocTypeLabel_->set(toc->tocType2String(toc->tocType()));
 
       sprintf(label, "%d", toc->nofTracks());
-      nofTracksLabel_->set(string(label));
+      nofTracksLabel_->set(label);
       
       sprintf(buf, "%d:%02d:%02d", toc->length().min(),
 	      toc->length().sec(), toc->length().frac());
-      tocLengthLabel_->set(string(buf));
+      tocLengthLabel_->set(buf);
     }
   }
 }

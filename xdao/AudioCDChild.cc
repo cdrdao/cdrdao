@@ -1,6 +1,6 @@
 /*  cdrdao - write audio CD-Rs in disc-at-once mode
  *
- *  Copyright (C) 1998-2000  Andreas Mueller <mueller@daneb.ping.de>
+ *  Copyright (C) 1998-2002  Andreas Mueller <andreas@daneb.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -17,12 +17,6 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#include <stdio.h>
-#include <fstream.h>
-#include <string.h>
-#include <errno.h>
-#include <stdarg.h>
-#include <strstream.h>
 
 #include "xcdrdao.h"
 #include "guiUpdate.h"
@@ -73,7 +67,7 @@ AudioCDChild::~AudioCDChild()
 {
   AudioCDView *view = 0;
 
-  for (list<AudioCDView *>::iterator i = views.begin();
+  for (std::list<AudioCDView *>::iterator i = views.begin();
        i != views.end(); i++)
   {
     if (view != 0)
@@ -115,7 +109,7 @@ bool AudioCDChild::closeProject()
 
 void AudioCDChild::update(unsigned long level)
 {
-  for (list<AudioCDView *>::iterator i = views.begin();
+  for (std::list<AudioCDView *>::iterator i = views.begin();
        i != views.end(); i++)
   {
     (*i)->update(level);

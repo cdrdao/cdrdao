@@ -31,8 +31,11 @@ public:
   ToshibaReader(ScsiIf *scsiIf, unsigned long options);
   static CdrDriver *instance(ScsiIf *scsiIf, unsigned long options);
 
+  unsigned long getReadCapabilites(const CdToc *, int) const { return 0; }
+
 protected:
-  int readSubChannels(long lba, long len, SubChannel ***, Sample *);
+  int readSubChannels(TrackData::SubChannelMode, long lba, long len,
+		      SubChannel ***, Sample *);
 
 };
 

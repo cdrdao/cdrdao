@@ -55,7 +55,7 @@ public:
 private:
   AudioCDProject *project_;
 
-  list<AudioCDView *> views;
+  std::list<AudioCDView *> views;
 
   void readTocCallback(int);
   void saveAsTocCallback(int);

@@ -20,7 +20,7 @@
 #ifndef __TRACK_H__
 #define __TRACK_H__
 
-#include <iostream.h>
+#include <ostream.h>
 
 #include "SubTrack.h"
 #include "Msf.h"
@@ -114,7 +114,7 @@ public:
     return cdtext_.getPack(blockNr, t);
   }
 
-  void print(ostream &) const;
+  void print(std::ostream &) const;
 
 private:
   friend class TocParserGram;

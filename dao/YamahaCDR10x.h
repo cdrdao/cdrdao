@@ -38,6 +38,8 @@ public:
   ~YamahaCDR10x();
   static CdrDriver *instance(ScsiIf *scsiIf, unsigned long options);
 
+  unsigned long getReadCapabilities(const CdToc *, int) const { return 0; }
+
   // FIXME: We say we're little endian, incurring work for the host
   // The drive has endian flags, but I don't want to experiment
   int bigEndianSamples() const { return 0; }
@@ -74,7 +76,8 @@ protected:
 
   int readCatalog(Toc *, long startLba, long endLba);
   int readIsrc(int, char *);
-  int readSubChannels(long lba, long len, SubChannel ***, Sample *);
+  int readSubChannels(TrackData::SubChannelMode, long lba, long len,
+		      SubChannel ***, Sample *);
 
   virtual int selectSpeed();
   virtual int setWriteParameters();
@@ -87,8 +90,8 @@ protected:
   int analyzeTrack(TrackData::Mode, int trackNr, long startLba, long endLba,
 		   Msf *index, int *indexCnt, long *pregap, char *isrcCode,
 		   unsigned char *ctl);
-  long readTrackData(TrackData::Mode mode, long lba, long len,
-		     unsigned char *buf);
+  long readTrackData(TrackData::Mode, TrackData::SubChannelMode,
+		     long lba, long len, unsigned char *buf);
 
   int readAudioRange(ReadDiskInfo *, int fd, long start, long end,
 		     int startTrack, int endTrack, TrackInfo *);

@@ -711,7 +711,8 @@ int SonyCDU920::analyzeTrack(TrackData::Mode mode, int trackNr, long startLba,
   return ret;
 }
 
-int SonyCDU920::readSubChannels(long lba, long len, SubChannel ***chans,
+int SonyCDU920::readSubChannels(TrackData::SubChannelMode,
+				long lba, long len, SubChannel ***chans,
 				Sample *audioData)
 {
   unsigned char cmd[12];
@@ -838,8 +839,9 @@ CdRawToc *SonyCDU920::getRawToc(int sessionNr, int *len)
   return rawToc;
 }
 
-long SonyCDU920::readTrackData(TrackData::Mode mode, long lba, long len,
-			       unsigned char *buf)
+long SonyCDU920::readTrackData(TrackData::Mode mode,
+			       TrackData::SubChannelMode,
+			       long lba, long len, unsigned char *buf)
 {
   unsigned char cmd[10];
   long blockLen = 2340;

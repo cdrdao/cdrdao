@@ -1,6 +1,6 @@
 /*  cdrdao - write audio CD-Rs in disc-at-once mode
  *
- *  Copyright (C) 1998, 1999  Andreas Mueller <mueller@daneb.ping.de>
+ *  Copyright (C) 1998-2002  Andreas Mueller <andreas@daneb.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -59,21 +59,21 @@ RecordCDSource::RecordCDSource(Gtk::Window *parent)
   pack_start(*DEVICES, false, false);
 
   // device settings
-  Gtk::Frame *extractOptionsFrame = new Gtk::Frame(string("Read Options"));
+  Gtk::Frame *extractOptionsFrame = new Gtk::Frame("Read Options");
   Gtk::VBox *vbox = new Gtk::VBox;
   vbox->set_border_width(5);
   vbox->set_spacing(5);
   vbox->show();
   extractOptionsFrame->add(*vbox);
   
-  onTheFlyButton_ = new Gtk::CheckButton(string("Copy to disk before burning"), 0);
+  onTheFlyButton_ = new Gtk::CheckButton("Copy to disk before burning", 0);
   onTheFlyButton_->set_active(true);
   onTheFlyButton_->show();
   vbox->pack_start(*onTheFlyButton_);
 
   Gtk::HBox *hbox = new Gtk::HBox;
 //  hbox->show();
-  Gtk::Label *label = new Gtk::Label(string("Speed: "), 0);
+  Gtk::Label *label = new Gtk::Label("Speed: ", 0);
   label->show();
   hbox->pack_start(*label, false, false);
 
@@ -85,7 +85,7 @@ RecordCDSource::RecordCDSource(Gtk::Window *parent)
   adjustment->value_changed.connect(SigC::slot(this, &RecordCDSource::speedChanged));
   hbox->pack_start(*speedSpinButton_, false, false, 10);
 
-  speedButton_ = new Gtk::CheckButton(string("Use max."), 0);
+  speedButton_ = new Gtk::CheckButton("Use max.", 0);
   speedButton_->set_active(true);
   speedButton_->show();
   speedButton_->toggled.connect(SigC::slot(this, &RecordCDSource::speedButtonChanged));
@@ -161,7 +161,7 @@ void RecordCDSource::moreOptions()
     Gtk::HBox *hbox;
     Gtk::Label *label;
 
-    vector <string> buttons;
+    std::vector <std::string> buttons;
     buttons.push_back(GNOME_STOCK_BUTTON_CLOSE);
     moreOptionsDialog_ = new Gnome::Dialog("Source options", buttons);
 
@@ -178,12 +178,12 @@ void RecordCDSource::moreOptions()
     frame->add(*vbox);
     frame->show();
 
-    continueOnErrorButton_ = new Gtk::CheckButton(string("Continue if errors found"), 0);
+    continueOnErrorButton_ = new Gtk::CheckButton("Continue if errors found", 0);
     continueOnErrorButton_->set_active(false);
 //    continueOnErrorButton_->show();
     vbox->pack_start(*continueOnErrorButton_);
 
-    ignoreIncorrectTOCButton_ = new Gtk::CheckButton(string("Ignore incorrect TOC"), 0);
+    ignoreIncorrectTOCButton_ = new Gtk::CheckButton("Ignore incorrect TOC", 0);
     ignoreIncorrectTOCButton_->set_active(false);
 //    ignoreIncorrectTOCButton_->show();
     vbox->pack_start(*ignoreIncorrectTOCButton_);
@@ -204,7 +204,7 @@ void RecordCDSource::moreOptions()
     correctionMenu_->set_history(correction_);
   
     hbox = new Gtk::HBox;
-    label = new Gtk::Label(string("Correction Method: "));
+    label = new Gtk::Label("Correction Method: ");
     hbox->pack_start(*label, FALSE);
     label->show();
     hbox->pack_start(*correctionMenu_, FALSE);

@@ -22,6 +22,7 @@
 
 #include <gtk--.h>
 #include <gtk/gtk.h>
+#include <string>
 
 class Toc;
 class TocEdit;
@@ -87,7 +88,7 @@ private:
   void clear();
   void clearCdText();
 
-  const char *checkString(const string &);
+  const char *checkString(const std::string &);
   void importCdText(const Toc *, int);
   void importData(const Toc *, int);
   void exportCdText(TocEdit *, int);

@@ -36,6 +36,20 @@ class Track;
 #define OPT_DRV_RAW_TOC_HEX       0x00100000
 #define OPT_DRV_NO_CDTEXT_READ    0x00200000
 
+
+// reading capabilities
+#define CDR_READ_CAP_AUDIO_PW_RAW    0x001
+#define CDR_READ_CAP_AUDIO_RW_COOKED 0x002
+#define CDR_READ_CAP_AUDIO_RW_RAW    0x004
+#define CDR_READ_CAP_AUDIO_PQ_BCD    0x008
+#define CDR_READ_CAP_AUDIO_PQ_HEX    0x010
+#define CDR_READ_CAP_DATA_PW_RAW     0x020
+#define CDR_READ_CAP_DATA_RW_COOKED  0x040
+#define CDR_READ_CAP_DATA_RW_RAW     0x080
+#define CDR_READ_CAP_DATA_PQ_BCD     0x100
+#define CDR_READ_CAP_DATA_PQ_HEX     0x200
+
+
 struct DiskInfo {
   long capacity;          // recordable capacity of medium
   Msf  manufacturerId;    // disk identification
@@ -163,6 +177,9 @@ public:
   virtual int rawDataReading() const { return rawDataReading_; }
   virtual void rawDataReading(int f) { rawDataReading_ = f != 0 ? 1 : 0; }
 
+  virtual TrackData::SubChannelMode subChanReadMode() const { return subChanReadMode_; }
+  virtual void subChanReadMode(TrackData::SubChannelMode m) { subChanReadMode_ = m; }
+
   // Sets/returns the pad first pre-gap flag
   virtual int padFirstPregap() const { return padFirstPregap_; }
   virtual void padFirstPregap(int f) { padFirstPregap_ = f != 0 ? 1 : 0; }
@@ -200,6 +217,9 @@ public:
   
   // Sets cdda paranoia mode
   void paranoiaMode(int);
+
+  // Return byte order of host (0: little endian, 1: big endian)
+  int hostByteOrder() const { return hostByteOrder_; }
 
   // general commands
   virtual int testUnitReady(int) const;
@@ -321,9 +341,12 @@ protected:
 
   unsigned long options_; // driver option flags
   ScsiIf *scsiIf_;
+  int scsiMaxDataLen_;
   char *driverName_;
 
   int hostByteOrder_; // 0: little endian, 1: big endian
+
+  unsigned long readCapabilities_;
 
   int blockLength_; // length of data block for 'writeData' command
   long blocksPerWrite_; // number of blocks that can be written with a
@@ -336,6 +359,7 @@ protected:
   int encodingMode_; // mode for encoding data sectors
   int fastTocReading_;
   int rawDataReading_;
+  TrackData::SubChannelMode subChanReadMode_;
   int padFirstPregap_; // used by 'read-toc': defines if the first audio 
                        // track's pre-gap is padded with zeros in the toc-file
                        // or if it is taken from the data file
@@ -431,6 +455,8 @@ protected:
   // a MODE2, MODE2_FORM1 or MODE2_FORM2 sector
   TrackData::Mode analyzeSubHeader(unsigned char *);
 
+  virtual unsigned long getReadCapabilities(const CdToc *, int) const = 0;
+
   // Called by 'readDiskToc()' to retrieve following information about
   // the track 'trackNr' with given start/end lba addresses:
   // - all index increments, filled into 'index'/'indexCnt'
@@ -482,7 +508,8 @@ protected:
   // Audio data that is usually retrieved with the sub-channels is placed
   // in 'buf' if it is not NULL.
   // Used by 'analyzeTrackScan()' and 'readAudioRangeParanoia()'.
-  virtual int readSubChannels(long lba, long len, SubChannel ***, Sample *buf);
+  virtual int readSubChannels(TrackData::SubChannelMode, long lba, long len,
+			      SubChannel ***, Sample *buf) = 0;
 
   // Determines the readable length of a data track and the pre-gap length
   // of the following track. The implementation in the base class should
@@ -496,8 +523,8 @@ protected:
   // error occus -1 is returned. If a L-EC error occures -2 is returned.
   // This method is used by 'readDataTrack'/'analyzeDataTrack' and must be
   // overloaded by the actual driver.
-  virtual long readTrackData(TrackData::Mode mode, long lba, long len,
-			     unsigned char *buf);
+  virtual long readTrackData(TrackData::Mode, TrackData::SubChannelMode,
+			     long lba, long len, unsigned char *buf) = 0;
 
   // Reads a complete data track and saves data to a file.
   virtual int readDataTrack(ReadDiskInfo *, int fp, long start, long end,
@@ -509,7 +536,11 @@ protected:
   // actual driver.
   virtual int readAudioRange(ReadDiskInfo *, int fp, long start, long end,
 			     int startTrack, int endTrack, 
-			     TrackInfo *trackInfo) = 0;
+			     TrackInfo *) = 0;
+
+  virtual int readAudioRangeStream(ReadDiskInfo *, int fd, long start,
+				   long end, int startTrack, int endTrack, 
+				   TrackInfo *);
 
   // Reads catalog number by scanning the sub-channels.
   // Uses 'readSubChannels()' to read the the sub-channels.
@@ -530,6 +561,9 @@ protected:
   // sets block size for read/write operations
   virtual int setBlockSize(long blocksize, unsigned char density = 0);
 
+  // checks if drive capabilities support requested sub-channel reading mode
+  int checkSubChanReadCaps(TrackData::Mode, unsigned long caps);
+
   void printCdToc(CdToc *toc, int tocLen);
 
   enum ReadCdProgressType { RCD_ANALYZING = PGSMSG_RCD_ANALYZING,
@@ -538,13 +572,17 @@ protected:
 			     int trackProgress, int totalProgress);
 
 
-  // Interface for Monty's paranoia library:
 public:
-  // function called from 'cdda_read()' to read the audio data, currently
+  // function to read audio data and also the sub-channel data from
+  // specified lba,
+  // this function is called from 'cdda_read()', so that it is currently
   // public because I did not manage to define a friend function that has
   // C linkage :)
-  long paranoiaRead(Sample *buffer, long startLba, long len);
+  long audioRead(TrackData::SubChannelMode, int byteOrder,
+		 Sample *buffer, long startLba, long len);
 
+
+  // Interface for Monty's paranoia library:
 protected:
   // Extracts audio data for given track range with the help of 
   // Monty's paranoia library.
@@ -557,17 +595,17 @@ private:
   void *paranoia_;                    // paranoia structure
   struct cdrom_drive *paranoiaDrive_; // paranoia device
   int paranoiaMode_;                  // paranoia mode
-  ReadDiskInfo *paranoiaReadInfo_;
-  TrackInfo *paranoiaTrackInfo_;
-  int paranoiaStartTrack_;
-  int paranoiaEndTrack_;
-  long paranoiaLastLba_;
-  long paranoiaActLba_;
-  int paranoiaActTrack_;
-  int paranoiaActIndex_;
-  long paranoiaCrcCount_;
-  int paranoiaError_;
-  long paranoiaProgress_;
+  ReadDiskInfo *audioReadInfo_;
+  TrackInfo *audioReadTrackInfo_;
+  int audioReadStartTrack_;
+  int audioReadEndTrack_;
+  long audioReadLastLba_;
+  long audioReadActLba_;
+  int audioReadActTrack_;
+  int audioReadActIndex_;
+  long audioReadCrcCount_;
+  int audioReadError_;
+  long audioReadProgress_;
   
   // callback for the paranoia library, does nothing, currently
   static void paranoiaCallback(long, int);

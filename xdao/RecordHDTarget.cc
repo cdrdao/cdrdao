@@ -43,7 +43,7 @@ RecordHDTarget::RecordHDTarget()
   set_spacing(10);
 
   // device settings
-  Gtk::Frame *recordOptionsFrame = new Gtk::Frame(string("Record Options"));
+  Gtk::Frame *recordOptionsFrame = new Gtk::Frame("Record Options");
 
   table = new Gtk::Table(2, 2, false);
   table->set_row_spacings(2);
@@ -59,7 +59,7 @@ RecordHDTarget::RecordHDTarget()
   pack_start(*recordOptionsFrame, false, false);
   recordOptionsFrame->show();
 
-  label = new Gtk::Label(string("Directory: "));
+  label = new Gtk::Label("Directory: ");
   label->show();
   table->attach(*label, 0, 1, 0, 1, GTK_FILL);
 
@@ -71,7 +71,7 @@ RecordHDTarget::RecordHDTarget()
 
   table->attach(*dirEntry_, 1, 2, 0, 1);
 
-  label = new Gtk::Label(string("Name: "));
+  label = new Gtk::Label("Name: ");
   label->show();
   table->attach(*label, 0, 1, 1, 2, GTK_FILL);
 

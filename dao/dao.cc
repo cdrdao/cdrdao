@@ -284,7 +284,7 @@ static int writer(const Toc *toc, CdrDriver *cdr, BufferHeader *header,
       }
 #endif
 
-      mSleep(20);
+      mSleep(10);
     }
 
     Buffer &buf = header->buffers[header->buffersWritten % header->nofBuffers];
@@ -559,7 +559,7 @@ static void *reader(void *args)
     while (header->buffersRead - header->buffersWritten 
 	   == header->nofBuffers &&
 	   header->terminateReader == 0) {
-      mSleep(20);
+      mSleep(10);
     }
 
 

@@ -23,7 +23,6 @@
 
 #include <stdio.h>
 #include <stddef.h>
-#include <string.h>
 #include <ctype.h>
 
 #include "TocEdit.h"
@@ -119,8 +118,8 @@ TocInfoDialog::TocInfoDialog()
   active_ = 0;
   selectedTocType_ = Toc::CD_DA;
 
-  nofTracks_ = new Gtk::Label(string("99"));
-  tocLength_ = new Gtk::Label(string("100:00:00"));
+  nofTracks_ = new Gtk::Label("99");
+  tocLength_ = new Gtk::Label("100:00:00");
 
 
   catalog_ = new TextEdit("1234567890123");
@@ -164,7 +163,7 @@ TocInfoDialog::TocInfoDialog()
   contents->set_spacing(10);
 
   // time data
-  frame = new Gtk::Frame(string("Summary"));
+  frame = new Gtk::Frame("Summary");
 
   table = new Gtk::Table(2, 2, FALSE);
   table->set_row_spacings(5);
@@ -180,7 +179,7 @@ TocInfoDialog::TocInfoDialog()
   contents->pack_start(*frame, FALSE, FALSE);
   frame->show();
   
-  label = new Gtk::Label(string("Tracks:"));
+  label = new Gtk::Label("Tracks:");
   hbox = new Gtk::HBox;
   hbox->pack_end(*label, FALSE, FALSE);
   table->attach(*hbox, 0, 1, 0, 1);
@@ -192,7 +191,7 @@ TocInfoDialog::TocInfoDialog()
   nofTracks_->show();
   hbox->show();
 
-  label = new Gtk::Label(string("Length:"));
+  label = new Gtk::Label("Length:");
   hbox = new Gtk::HBox;
   hbox->pack_end(*label, FALSE, FALSE);
   table->attach(*hbox, 0, 1, 1, 2);
@@ -207,13 +206,13 @@ TocInfoDialog::TocInfoDialog()
 
 
   // sub-channel data
-  frame = new Gtk::Frame(string("Sub-Channel"));
+  frame = new Gtk::Frame("Sub-Channel");
 
   vbox = new Gtk::VBox;
   vbox->set_spacing(0);
 
   hbox = new Gtk::HBox;
-  label = new Gtk::Label(string("Toc Type: "));
+  label = new Gtk::Label("Toc Type: ");
   hbox->pack_start(*label, FALSE);
   label->show();
   hbox->pack_start(*tocType_, FALSE);
@@ -222,7 +221,7 @@ TocInfoDialog::TocInfoDialog()
   hbox->show();
 
   hbox = new Gtk::HBox;
-  label = new Gtk::Label(string("UPC/EAN: "));
+  label = new Gtk::Label("UPC/EAN: ");
   hbox->pack_start(*label, FALSE);
   label->show();
   hbox->pack_start(*catalog_, FALSE);
@@ -243,7 +242,7 @@ TocInfoDialog::TocInfoDialog()
   frame->show();
 
   // CD-TEXT data
-  frame = new Gtk::Frame(string("CD-TEXT"));
+  frame = new Gtk::Frame("CD-TEXT");
 
   Gtk::Notebook *notebook = new Gtk::Notebook;
 
@@ -290,7 +289,7 @@ TocInfoDialog::TocInfoDialog()
   bbox->show();
   get_action_area()->show();
 
-  set_title(string("Project Info"));
+  set_title("Project Info");
 }
 
 TocInfoDialog::~TocInfoDialog()
@@ -435,7 +434,7 @@ Gtk::VBox *TocInfoDialog::createCdTextPage(int n)
   Gtk::Label *label;
 
   sprintf(buf, "%d", n);
-  cdTextPages_[n].label = new Gtk::Label(string(buf));
+  cdTextPages_[n].label = new Gtk::Label(buf);
   cdTextPages_[n].label->show();
 
   cdTextPages_[n].title = new Gtk::Entry;
@@ -455,7 +454,7 @@ Gtk::VBox *TocInfoDialog::createCdTextPage(int n)
   table->set_col_spacings(5);
   table->show();
 
-  label = new Gtk::Label(string("Language:"));
+  label = new Gtk::Label("Language:");
   hbox = new Gtk::HBox;
   hbox->pack_end(*label, FALSE);
   table->attach(*hbox, 0, 1, 0, 1, GTK_FILL);
@@ -464,7 +463,7 @@ Gtk::VBox *TocInfoDialog::createCdTextPage(int n)
   table->attach(*(cdTextPages_[n].language), 1, 2, 0, 1);
   cdTextPages_[n].language->show();
 
-  label = new Gtk::Label(string("Title:"));
+  label = new Gtk::Label("Title:");
   hbox = new Gtk::HBox;
   hbox->pack_end(*label, FALSE);
   table->attach(*hbox, 0, 1, 1, 2, GTK_FILL);
@@ -473,7 +472,7 @@ Gtk::VBox *TocInfoDialog::createCdTextPage(int n)
   table->attach(*(cdTextPages_[n].title), 1, 2, 1, 2);
   cdTextPages_[n].title->show();
 
-  label = new Gtk::Label(string("Performer:"));
+  label = new Gtk::Label("Performer:");
   hbox = new Gtk::HBox;
   hbox->pack_end(*label, FALSE);
   table->attach(*hbox, 0, 1, 2, 3, GTK_FILL);
@@ -482,7 +481,7 @@ Gtk::VBox *TocInfoDialog::createCdTextPage(int n)
   table->attach(*(cdTextPages_[n].performer), 1, 2, 2, 3);
   cdTextPages_[n].performer->show();
 
-  label = new Gtk::Label(string("Songwriter:"));
+  label = new Gtk::Label("Songwriter:");
   hbox = new Gtk::HBox;
   hbox->pack_end(*label, FALSE);
   table->attach(*hbox, 0, 1, 3, 4, GTK_FILL);
@@ -491,7 +490,7 @@ Gtk::VBox *TocInfoDialog::createCdTextPage(int n)
   table->attach(*(cdTextPages_[n].songwriter), 1, 2, 3, 4);
   cdTextPages_[n].songwriter->show();
 
-  label = new Gtk::Label(string("Composer:"));
+  label = new Gtk::Label("Composer:");
   hbox = new Gtk::HBox;
   hbox->pack_end(*label, FALSE);
   table->attach(*hbox, 0, 1, 4, 5, GTK_FILL);
@@ -500,7 +499,7 @@ Gtk::VBox *TocInfoDialog::createCdTextPage(int n)
   table->attach(*(cdTextPages_[n].composer), 1, 2, 4, 5);
   cdTextPages_[n].composer->show();
 
-  label = new Gtk::Label(string("Arranger:"));
+  label = new Gtk::Label("Arranger:");
   hbox = new Gtk::HBox;
   hbox->pack_end(*label, FALSE);
   table->attach(*hbox, 0, 1, 5, 6, GTK_FILL);
@@ -509,7 +508,7 @@ Gtk::VBox *TocInfoDialog::createCdTextPage(int n)
   table->attach(*(cdTextPages_[n].arranger), 1, 2, 5, 6);
   cdTextPages_[n].arranger->show();
 
-  label = new Gtk::Label(string("Message:"));
+  label = new Gtk::Label("Message:");
   hbox = new Gtk::HBox;
   hbox->pack_end(*label, FALSE);
   table->attach(*hbox, 0, 1, 6, 7, GTK_FILL);
@@ -518,7 +517,7 @@ Gtk::VBox *TocInfoDialog::createCdTextPage(int n)
   table->attach(*(cdTextPages_[n].message), 1, 2, 6, 7);
   cdTextPages_[n].message->show();
 
-  label = new Gtk::Label(string("Catalog:"));
+  label = new Gtk::Label("Catalog:");
   hbox = new Gtk::HBox;
   hbox->pack_end(*label, FALSE);
   table->attach(*hbox, 0, 1, 7, 8, GTK_FILL);
@@ -527,7 +526,7 @@ Gtk::VBox *TocInfoDialog::createCdTextPage(int n)
   table->attach(*(cdTextPages_[n].catalog), 1, 2, 7, 8);
   cdTextPages_[n].catalog->show();
 
-  label = new Gtk::Label(string("UPC/EAN:"));
+  label = new Gtk::Label("UPC/EAN:");
   hbox = new Gtk::HBox;
   hbox->pack_end(*label, FALSE);
   table->attach(*hbox, 0, 1, 8, 9, GTK_FILL);
@@ -536,7 +535,7 @@ Gtk::VBox *TocInfoDialog::createCdTextPage(int n)
   table->attach(*(cdTextPages_[n].upcEan), 1, 2, 8, 9);
   cdTextPages_[n].upcEan->show();
 
-  label = new Gtk::Label(string("Genre:"));
+  label = new Gtk::Label("Genre:");
   hbox = new Gtk::HBox;
   hbox->pack_end(*label, FALSE);
   table->attach(*hbox, 0, 1, 9, 10, GTK_FILL);
@@ -545,7 +544,7 @@ Gtk::VBox *TocInfoDialog::createCdTextPage(int n)
   table->attach(*(cdTextPages_[n].genre), 1, 2, 9, 10);
   cdTextPages_[n].genre->show();
 
-  label = new Gtk::Label(string("Genre Info:"));
+  label = new Gtk::Label("Genre Info:");
   hbox = new Gtk::HBox;
   hbox->pack_end(*label, FALSE);
   table->attach(*hbox, 0, 1, 10, 11, GTK_FILL);
@@ -581,13 +580,13 @@ void TocInfoDialog::closeAction()
 
 void TocInfoDialog::clear()
 {
-  nofTracks_->set_text(string(""));
-  tocLength_->set_text(string(""));
+  nofTracks_->set_text("");
+  tocLength_->set_text("");
 
   tocType_->set_history(0);
   selectedTocType_ = Toc::CD_DA;
 
-  catalog_->set_text(string(""));
+  catalog_->set_text("");
   catalog_->set_editable(false);
 
   clearCdText();
@@ -607,7 +606,7 @@ void TocInfoDialog::update(unsigned long level, TocEdit *view)
     return;
   }
 
-  string s(view->filename());
+  std::string s(view->filename());
   s += " - ";
   s += APP_NAME;
   if (view->tocDirty())
@@ -630,28 +629,28 @@ void TocInfoDialog::clearCdText()
   int l;
 
   for (l = 0; l < 8; l++) {
-    cdTextPages_[l].title->set_text(string(""));
+    cdTextPages_[l].title->set_text("");
     cdTextPages_[l].title->set_editable(false);
 
-    cdTextPages_[l].performer->set_text(string(""));
+    cdTextPages_[l].performer->set_text("");
     cdTextPages_[l].performer->set_editable(false);
 
-    cdTextPages_[l].songwriter->set_text(string(""));
+    cdTextPages_[l].songwriter->set_text("");
     cdTextPages_[l].songwriter->set_editable(false);
 
-    cdTextPages_[l].composer->set_text(string(""));
+    cdTextPages_[l].composer->set_text("");
     cdTextPages_[l].composer->set_editable(false);
 
-    cdTextPages_[l].arranger->set_text(string(""));
+    cdTextPages_[l].arranger->set_text("");
     cdTextPages_[l].arranger->set_editable(false);
 
-    cdTextPages_[l].message->set_text(string(""));
+    cdTextPages_[l].message->set_text("");
     cdTextPages_[l].message->set_editable(false);
 
-    cdTextPages_[l].catalog->set_text(string(""));
+    cdTextPages_[l].catalog->set_text("");
     cdTextPages_[l].catalog->set_editable(false);
 
-    cdTextPages_[l].upcEan->set_text(string(""));
+    cdTextPages_[l].upcEan->set_text("");
     cdTextPages_[l].upcEan->set_editable(false);
 
     cdTextPages_[l].language->set_history(1);
@@ -673,7 +672,7 @@ void TocInfoDialog::applyAction()
   guiUpdate(UPD_TOC_DATA);
 }
 
-const char *TocInfoDialog::checkString(const string &str)
+const char *TocInfoDialog::checkString(const std::string &str)
 {
   static char *buf = NULL;
   static long bufLen = 0;
@@ -744,58 +743,58 @@ void TocInfoDialog::importCdText(const Toc *toc)
   for (l = 0; l < 8; l++) {
     if ((item = toc->getCdTextItem(0, l, CdTextItem::CDTEXT_TITLE))
 	!= NULL) 
-      cdTextPages_[l].title->set_text(string((const char*)(item->data())));
+      cdTextPages_[l].title->set_text((const char*)(item->data()));
     else
-      cdTextPages_[l].title->set_text(string(""));
+      cdTextPages_[l].title->set_text("");
     cdTextPages_[l].title->set_editable(true);
 
     if ((item = toc->getCdTextItem(0, l, CdTextItem::CDTEXT_PERFORMER))
 	!= NULL) 
-      cdTextPages_[l].performer->set_text(string((const char*)(item->data())));
+      cdTextPages_[l].performer->set_text((const char*)(item->data()));
     else
-      cdTextPages_[l].performer->set_text(string(""));
+      cdTextPages_[l].performer->set_text("");
     cdTextPages_[l].performer->set_editable(true);
 
     if ((item = toc->getCdTextItem(0, l, CdTextItem::CDTEXT_SONGWRITER))
 	!= NULL) 
-      cdTextPages_[l].songwriter->set_text(string((const char*)(item->data())));
+      cdTextPages_[l].songwriter->set_text((const char*)(item->data()));
     else
-      cdTextPages_[l].songwriter->set_text(string(""));
+      cdTextPages_[l].songwriter->set_text("");
     cdTextPages_[l].songwriter->set_editable(true);
 
     if ((item = toc->getCdTextItem(0, l, CdTextItem::CDTEXT_COMPOSER))
 	!= NULL) 
-      cdTextPages_[l].composer->set_text(string((const char*)(item->data())));
+      cdTextPages_[l].composer->set_text((const char*)(item->data()));
     else
-      cdTextPages_[l].composer->set_text(string(""));
+      cdTextPages_[l].composer->set_text("");
     cdTextPages_[l].composer->set_editable(true);
 
     if ((item = toc->getCdTextItem(0, l, CdTextItem::CDTEXT_ARRANGER))
 	!= NULL) 
-      cdTextPages_[l].arranger->set_text(string((const char*)(item->data())));
+      cdTextPages_[l].arranger->set_text((const char*)(item->data()));
     else
-      cdTextPages_[l].arranger->set_text(string(""));
+      cdTextPages_[l].arranger->set_text("");
     cdTextPages_[l].arranger->set_editable(true);
 
     if ((item = toc->getCdTextItem(0, l, CdTextItem::CDTEXT_MESSAGE))
 	!= NULL) 
-      cdTextPages_[l].message->set_text(string((const char*)(item->data())));
+      cdTextPages_[l].message->set_text((const char*)(item->data()));
     else
-      cdTextPages_[l].message->set_text(string(""));
+      cdTextPages_[l].message->set_text("");
     cdTextPages_[l].message->set_editable(true);
 
     if ((item = toc->getCdTextItem(0, l, CdTextItem::CDTEXT_DISK_ID))
 	!= NULL) 
-      cdTextPages_[l].catalog->set_text(string((const char*)(item->data())));
+      cdTextPages_[l].catalog->set_text((const char*)(item->data()));
     else
-      cdTextPages_[l].catalog->set_text(string(""));
+      cdTextPages_[l].catalog->set_text("");
     cdTextPages_[l].catalog->set_editable(true);
 
     if ((item = toc->getCdTextItem(0, l, CdTextItem::CDTEXT_UPCEAN_ISRC))
 	!= NULL) 
-      cdTextPages_[l].upcEan->set_text(string((const char*)(item->data())));
+      cdTextPages_[l].upcEan->set_text((const char*)(item->data()));
     else
-      cdTextPages_[l].upcEan->set_text(string(""));
+      cdTextPages_[l].upcEan->set_text("");
     cdTextPages_[l].upcEan->set_editable(true);
 
     if ((item = toc->getCdTextItem(0, l, CdTextItem::CDTEXT_GENRE)) != NULL) {
@@ -815,17 +814,17 @@ void TocInfoDialog::importCdText(const Toc *toc)
 	memcpy(s, item->data() + 2, len - 1);
 	s[len - 1] = 0;
 
-	cdTextPages_[l].genreInfo->set_text(string(s));
+	cdTextPages_[l].genreInfo->set_text(s);
 
 	delete[] s;
       }
       else {
-	cdTextPages_[l].genreInfo->set_text(string(""));
+	cdTextPages_[l].genreInfo->set_text("");
       }
     }
     else {
       cdTextPages_[l].selectedGenre = 1; // not used
-      cdTextPages_[l].genreInfo->set_text(string(""));
+      cdTextPages_[l].genreInfo->set_text("");
     }
     cdTextPages_[l].genre->set_history(cdTextPages_[l].selectedGenre);
 
@@ -841,10 +840,10 @@ void TocInfoDialog::importData(const Toc *toc)
 
   sprintf(buf, "%3d:%02d:%02d", toc->length().min(), toc->length().sec(),
 	  toc->length().frac());
-  tocLength_->set_text(string(buf));
+  tocLength_->set_text(buf);
 
   sprintf(buf, "%3d", toc->nofTracks());
-  nofTracks_->set_text(string(buf));
+  nofTracks_->set_text(buf);
 
   if (toc->catalogValid()) {
     for (i = 0; i < 13; i++)
@@ -852,10 +851,10 @@ void TocInfoDialog::importData(const Toc *toc)
 
     buf[13] = 0;
 
-    catalog_->set_text(string(buf));
+    catalog_->set_text(buf);
   }
   else {
-    catalog_->set_text(string(""));
+    catalog_->set_text("");
   }
 
   catalog_->set_editable(true);

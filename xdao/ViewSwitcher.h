@@ -31,15 +31,15 @@ class ViewSwitcher : public Gtk::Toolbar
 private:
   Gtk::HBox *hbox_;
 
-  list<Gtk::Widget *> *visible;
+  std::list<Gtk::Widget *> *visible;
 
-  void setView(list<Gtk::Widget *> *);
+  void setView(std::list<Gtk::Widget *> *);
   Gtk::RadioButton::Group group_;
 
 public:
   ViewSwitcher(Gtk::HBox *);
 
-  void addView(list<Gtk::Widget *> *, Gnome::Pixmap *, Gtk::Label *);
+  void addView(std::list<Gtk::Widget *> *, Gnome::Pixmap *, Gtk::Label *);
 };
 #endif
 
