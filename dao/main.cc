@@ -259,6 +259,11 @@ options:\n\
   --fast-toc              - do not extract pre-gaps and index marks\n\
   --tao-source            - indicate that source CD was written in TAO mode\n\
   --tao-source-adjust #   - # of link blocks for TAO source CDs (def. 2)\n\
+  --with-cddb             - retrieve CDDB CD-TEXT data while copying\n\
+  --cddb-servers <list>   - sets space separated list of CDDB servers\n\
+  --cddb-timeout #        - timeout in seconds for CDDB server communication\n\
+  --cddb-directory <path> - path to local CDDB directory where fetched\n\
+                            CDDB records will be stored\n\
   --force                 - force execution of operation\n\
   -v #                    - sets verbose level\n");
     break;
@@ -287,9 +292,13 @@ options:\n\
   --tao-source            - indicate that source CD was written in TAO mode\n\
   --tao-source-adjust #   - # of link blocks for TAO source CDs (def. 2)\n\
   --paranoia-mode #       - DAE paranoia mode (0..3)\n\
+  --with-cddb             - retrieve CDDB CD-TEXT data while copying\n\
+  --cddb-servers <list>   - sets space separated list of CDDB servers\n\
+  --cddb-timeout #        - timeout in seconds for CDDB server communication\n\
+  --cddb-directory <path> - path to local CDDB directory where fetched\n\
+                            CDDB records will be stored\n\
   --force                 - force execution of operation\n\
-  -v #                    - sets verbose level\n\
-  -n                      - no pause before writing\n");
+  -v #                    - sets verbose level\n");
     break;
     
   case TOC_INFO:

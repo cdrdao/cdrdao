@@ -10,6 +10,10 @@ Cdrdao changes:
 o Fixed bug in CD-TEXT writing code that caused the problems with the
   unreliable read back of the written CD-TEXT data
 
+o Added CD-TEXT writing capability to the 'generic-mmc-raw' driver; the
+  recorder must support the 96 byte raw P-W sub-channel writing mode to
+  make use of it
+
 o Fixed bug in generic-mmc-raw driver: the TOC type was not written correctly
   and some flags for data tracks were missing in the lead-in
 
@@ -17,9 +21,15 @@ o Fixed handling of toc type for multi session CDs: the toc-type of
   a session that just contains audio tracks is always CD_DA, even in multi
   session mode
 
-o Updated to libscg-0.5 from cdrtools-1.10a17
-
 o BURN Proof support added by ITOH Yasufumi/Martin Buck
+
+o Fixed bug in calculating the CDDB id (SourceForge bug 413467)
+
+o Added option --with-cddb to read CDDB data automatically with commands
+  'copy', 'read-toc' and 'read-cd'; it is now possible to add CD-TEXT data
+  from CDDB while performing an on-the-fly copy
+
+o Updated to libscg-0.5 from cdrtools-1.10
 
 o Handle drives that do not support the explicit power calibration command
 
@@ -45,6 +55,11 @@ o cdrdao's help screen was reworked by Michael Reinelt
 
 o Added Giuseppe Corbelli's enhancements for the 'mp32dao' script
 
+o Makefiles now use make variable 'datadir' to specify the share directory
+  location
+
+o Fixed printing toc-file name with command 'copy --keepimage'
+
 
 GCDMaster changes:
 
@@ -54,5 +69,14 @@ GCDMaster changes:
 - Removed the CD-TEXT table entry dialog from the 'Project Info' dialog;
   it is now a non modal dialog on its own
 
+- Enhanced progress display for extracting and recording
 
-Andreas
+- Major rework of the infra structure to support multiple projects (toc-files)
+  and multiple views of a project
+
+- Gcdmaster starts with a project chooser now; this is the first step to
+  support different project types like data CD, mixed mode CD, video CD etc.
+
+
+Andreas Mueller
+Manuel Clos

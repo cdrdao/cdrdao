@@ -1,5 +1,5 @@
-# Driver table for cdrdao-1.1.4
-# Generated Sat Apr 21 20:46:37 2001 by mueller
+# Driver table for cdrdao-1.1.5
+# Generated Sun Apr 29 12:48:15 2001 by mueller
 
 # Drivers for read operations
 R|ASUS|CD-S340|generic-mmc
@@ -104,6 +104,7 @@ W|PLEXTOR|CD-R   PX-R412|generic-mmc|OPT_MMC_USE_PQ|OPT_MMC_READ_ISRC
 W|PLEXTOR|CD-R   PX-R820|generic-mmc
 W|PLEXTOR|CD-R   PX-W1210|generic-mmc|OPT_MMC_CD_TEXT
 W|PLEXTOR|CD-R   PX-W124|generic-mmc
+W|PLEXTOR|CD-R   PX-W1610|generic-mmc|OPT_MMC_CD_TEXT
 W|PLEXTOR|CD-R   PX-W4220|generic-mmc|OPT_MMC_CD_TEXT
 W|PLEXTOR|CD-R   PX-W8220|generic-mmc|OPT_MMC_CD_TEXT
 W|PLEXTOR|CD-R   PX-W8432|generic-mmc|OPT_MMC_CD_TEXT

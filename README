@@ -288,7 +288,7 @@ Recorders:
   ----------------------------------------------------------------------
   ACER 8X4X32              5.GV                   generic-mmc-raw
   ACER CD-R/RW 4X4X32      3.LS                   generic-mmc-raw
-  AOPEN CRW620             2.40                   ricoh-mp6200   
+  AOPEN CRW620             2.40                   ricoh-mp6200     10
   AOPEN CRW9624            1.70                   generic-mmc    
   ATAPI CD-R/RW 4X4X32     3.GS                   generic-mmc-raw  7
   ATAPI CD-R/RW CRW6206A   1.3A                   generic-mmc-raw
@@ -353,6 +353,7 @@ Recorders:
   PLEXTOR CD-R   PX-R820   1.03, 1.07             generic-mmc    
   PLEXTOR CD-R   PX-W1210  1.02, 1.04             generic-mmc    
   PLEXTOR CD-R   PX-W124   1.02                   generic-mmc    
+  PLEXTOR CD-R   PX-W1610  1.00                   generic-mmc    
   PLEXTOR CD-R   PX-W4220  1.01, 1.02             generic-mmc    
   PLEXTOR CD-R   PX-W8220  1.01                   generic-mmc    
   PLEXTOR CD-R   PX-W8432  1.03, 1.05             generic-mmc    
@@ -483,6 +484,7 @@ Notes:
   7) Firmware version 3.DS does not work well in DAO mode. Update to 3.GS!
   8) With firmware 1.0c and Adaptec 2940U2W the transmission must be set to asynchron according to Adaptec and Yamaha.
   9) Sanyo OEM 32x/12x/4x CD-RW drive.
+  10) The firmware reports an empty vendor string so that the driver will not be selected automatically. Please use the --driver option.
 
 
 Pre-compiled Binaries
