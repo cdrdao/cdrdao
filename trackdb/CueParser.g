@@ -151,17 +151,15 @@ struct CueTrackData {
 #token                  "4CH"
 #token Integer          "[0-9]+"
 
-#lexclass STRING
-#token EndString        "\""         << mode(START); >>
-#token StringQuote      "\\\""
-#token StringOctal      "\\[0-9][0-9][0-9]"
-#token String           "[\ ]+"
-#token String           "~[\\\n\"\t ]*"
-
 #lexclass FILE
-#token                  "\n"           << newline(); skip(); >>
-#token                  "[\t\r\ ]*"    << skip(); >>
-#token FileName         "~[\t\r\n\ ]*" << mode(START); >>
+#token                  "[\t\ ]*"     << skip(); >>
+#token                  "\""          << skip(); mode(STRING); >>
+#token FileName         "~[\"\t\r\n\ ]*" << mode(START); >>
+
+#lexclass STRING
+#token                  "\""         << skip(); mode(START); >>
+#token String           "\n"         << newline(); >>
+#token String           "~[\n\"]*"
 
 #lexclass CATALOG
 #token                  "\n"          << newline(); skip(); >>
@@ -196,10 +194,12 @@ cue [ CueTrackData *trackData ] > [ int nofTracks ]
        int index;
        Msf m;
        int swapSamples = 0;
+       char *s = NULL;
     >>
-    (  File FileName (  Binary << swapSamples = 1; >>
-                      | Motorola << swapSamples = 0; >>
-                     )
+    (  File ( FileName | (String)* )
+       (  Binary << swapSamples = 1; >>
+        | Motorola << swapSamples = 0; >>
+       )
      | Catalog CatalogNr
     )*
 
@@ -284,28 +284,6 @@ cue [ CueTrackData *trackData ] > [ int nofTracks ]
     << $nofTracks = 0;
     >>
 
-string > [ char *ret ]
- :  << $ret = strdupCC("");
-       char *s;
-       char buf[2];
-    >>
-
-    << buf[1] = 0; >>
-
-    BeginString 
-    ( (  String      << s = strdup3CC($ret, $1->getText(), NULL); >>
-       | StringQuote << s = strdup3CC($ret, "\"", NULL); >>
-       | StringOctal << buf[0] = strtol($1->getText() + 1, NULL, 8);
-                        s = strdup3CC($ret, buf, NULL);
-                     >>
-      )
-      << delete[] $ret;
-         $ret = s;
-      >>
-    )+
- 
-    EndString
-    ;
 
 integer > [ int i, int lineNr ]
   : << $i = 0; >>

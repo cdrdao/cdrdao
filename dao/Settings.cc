@@ -205,7 +205,6 @@ int SettingsImpl::read(FILE *fp)
       if ((n = strlen(p)) > 0) {
 	for (p1 = p + n - 1; p1 >= p; p1--) {
 	  if (isspace(*p1)) {
-	    printf("Stripped off %d\n", *p1);
 	    *p1 = 0;
 	  }
 	}
