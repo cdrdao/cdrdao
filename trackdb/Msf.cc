@@ -32,9 +32,9 @@ Msf::Msf()
 
 Msf::Msf(int min, int sec, int frac)
 {
-  assert(frac >= 0 && frac < 75);
-  assert(sec >= 0 && sec < 60);
-  assert(min >= 0);
+  // assert(frac >= 0 && frac < 75);
+  // assert(sec >= 0 && sec < 60);
+  // assert(min >= 0);
 
   min_ = min;
   sec_ = sec;
