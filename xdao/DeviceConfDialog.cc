@@ -18,6 +18,9 @@
  */
 /*
  * $Log: DeviceConfDialog.cc,v $
+ * Revision 1.4  2000/05/14 16:54:59  andreasm
+ * Adapted to gtkmm-1.2.0 and gnomemm-1.1.9
+ *
  * Revision 1.3  2000/04/23 09:07:08  andreasm
  * * Fixed most problems marked with '//llanero'.
  * * Added audio CD edit menus to MDIWindow.
@@ -39,7 +42,7 @@
  *
  */
 
-static char rcsid[] = "$Id: DeviceConfDialog.cc,v 1.3 2000/04/23 09:07:08 andreasm Exp $";
+static char rcsid[] = "$Id: DeviceConfDialog.cc,v 1.4 2000/05/14 16:54:59 andreasm Exp $";
 
 #include <stdio.h>
 #include <limits.h>
@@ -479,8 +482,8 @@ void DeviceConfDialog::addDeviceAction()
 
   appendTableEntry(dev);
 
-  list_->cause_select_row(list_->rows() - 1, 0);
-  list_->moveto(list_->rows() - 1, 0, 1.0, 0.0);
+  list_->row(list_->rows().size() - 1).select();
+  list_->moveto(list_->rows().size() - 1, 0, 1.0, 0.0);
 
   guiUpdate(UPD_CD_DEVICES);
 }
@@ -492,7 +495,7 @@ void DeviceConfDialog::deleteDeviceAction()
   CdDevice *dev;
 
   if (row >= 0 &&
-      (data = (DeviceData*)list_->get_row_data(selectedRow_)) != NULL) {
+      (data = (DeviceData*)list_->row(selectedRow_).get_data()) != NULL) {
 
     dev = CdDevice::find(data->bus, data->id, data->lun);
     if (dev == NULL || dev->status() == CdDevice::DEV_RECORDING ||
@@ -503,7 +506,7 @@ void DeviceConfDialog::deleteDeviceAction()
 
     CdDevice::remove(data->bus, data->id, data->lun);
     selectedRow_ = -1;
-    list_->remove_row(row);
+    list_->rows().remove(list_->row(row));
     delete data;
 
     guiUpdate(UPD_CD_DEVICES);
@@ -563,8 +566,8 @@ void DeviceConfDialog::appendTableEntry(CdDevice *dev)
   
   rowStr[5] = CdDevice::status2string(dev->status());
 
-  list_->append(rowStr);
-  list_->set_row_data(list_->rows() - 1, data);
+  list_->rows().push_back(rowStr);
+  list_->row(list_->rows().size() - 1).set_data(data);
 }
 
 void DeviceConfDialog::import()
@@ -576,9 +579,9 @@ void DeviceConfDialog::import()
 
   list_->freeze();
 
-  while (list_->rows() > 0) {
-    data = (DeviceData*)list_->get_row_data(0);
-    list_->remove_row(0);
+  while (list_->rows().size() > 0) {
+    data = (DeviceData*)list_->row(0).get_data();
+    list_->rows().remove(list_->row(0));
     delete data;
   }
 
@@ -588,9 +591,9 @@ void DeviceConfDialog::import()
 
   list_->thaw();
 
-  if (list_->rows() > 0) {
+  if (list_->rows().size() > 0) {
     list_->columns_autosize();
-    list_->cause_select_row(0, 0);
+    list_->row(0).select();
     list_->moveto(0, 0, 0.0, 0.0);
   }
  
@@ -602,7 +605,7 @@ void DeviceConfDialog::importConfiguration(int row)
   char buf[50];
   DeviceData *data;
 
-  if (row >= 0 && (data = (DeviceData*)list_->get_row_data(row)) != NULL) {
+  if (row >= 0 && (data = (DeviceData*)list_->row(row).get_data()) != NULL) {
     driverMenu_->set_sensitive(true);
     driverMenu_->set_history(data->driverId);
 
@@ -633,14 +636,14 @@ void DeviceConfDialog::importConfiguration(int row)
 
 void DeviceConfDialog::importStatus()
 {
-  int i;
+  unsigned int i;
   DeviceData *data;
   CdDevice *dev;
 
-  for (i = 0; i < list_->rows(); i++) {
-    if ((data = (DeviceData*)list_->get_row_data(i)) != NULL &&
+  for (i = 0; i < list_->rows().size(); i++) {
+    if ((data = (DeviceData*)list_->row(i).get_data()) != NULL &&
 	(dev = CdDevice::find(data->bus, data->id, data->lun)) != NULL) {
-      list_->set_text(i, 5, string(CdDevice::status2string(dev->status())));
+      list_->cell(i, 5).set_text(string(CdDevice::status2string(dev->status())));
     }
   }
 
@@ -652,7 +655,7 @@ void DeviceConfDialog::exportConfiguration(int row)
   DeviceData *data;
   const char *s;
 
-  if (row >= 0 && (data = (DeviceData*)list_->get_row_data(row)) != NULL) {
+  if (row >= 0 && (data = (DeviceData*)list_->row(row).get_data()) != NULL) {
     data->options = strtoul(driverOptionsEntry_->get_text().c_str(), NULL, 0);
 
     s = checkString(specialDeviceEntry_->get_text());
@@ -667,13 +670,13 @@ void DeviceConfDialog::exportConfiguration(int row)
 
 void DeviceConfDialog::exportData()
 {
-  int i;
+  unsigned int i;
   DeviceData *data;
   CdDevice *dev;
   string s;
 
-  for (i = 0; i < list_->rows(); i++) {
-    if ((data = (DeviceData*)list_->get_row_data(i)) != NULL) {
+  for (i = 0; i < list_->rows().size(); i++) {
+    if ((data = (DeviceData*)list_->row(i).get_data()) != NULL) {
       if ((dev = CdDevice::find(data->bus, data->id, data->lun)) != NULL) {
 	if (dev->driverId() != data->driverId) {
 	  dev->driverId(data->driverId);
@@ -708,7 +711,7 @@ void DeviceConfDialog::setDriverId(int id)
   DeviceData *data;
 
   if (selectedRow_ >= 0 && id >= 0 && id <= CdDevice::maxDriverId() &&
-      (data = (DeviceData*)list_->get_row_data(selectedRow_)) != NULL) {
+      (data = (DeviceData*)list_->row(selectedRow_).get_data()) != NULL) {
     data->driverId = id;
   }
 }
@@ -718,7 +721,7 @@ void DeviceConfDialog::setDeviceType(int id)
   DeviceData *data;
 
   if (selectedRow_ >= 0 && id >= 0 && id <= CdDevice::maxDriverId() &&
-      (data = (DeviceData*)list_->get_row_data(selectedRow_)) != NULL) {
+      (data = (DeviceData*)list_->row(selectedRow_).get_data()) != NULL) {
     data->deviceType = id;
   }
 }

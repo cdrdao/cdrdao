@@ -18,6 +18,9 @@
  */
 /*
  * $Log: RecordDialog.cc,v $
+ * Revision 1.9  2000/05/14 16:54:59  andreasm
+ * Adapted to gtkmm-1.2.0 and gnomemm-1.1.9
+ *
  * Revision 1.8  2000/05/01 22:16:49  llanero
  * added a label to the RecordDialog that will show the Mb that the
  * buffer represents.
@@ -58,7 +61,7 @@
  *
  */
 
-static char rcsid[] = "$Id: RecordDialog.cc,v 1.8 2000/05/01 22:16:49 llanero Exp $";
+static char rcsid[] = "$Id: RecordDialog.cc,v 1.9 2000/05/14 16:54:59 andreasm Exp $";
 
 #include <stdio.h>
 #include <limits.h>
@@ -305,10 +308,10 @@ RecordDialog::~RecordDialog()
 {
   DeviceData *data;
 
-  while (list_->rows() > 0) {
-    data = (DeviceData*)list_->get_row_data(0);
+  while (list_->rows().size() > 0) {
+    data = (DeviceData*)list_->row(0).get_data();
     delete data;
-    list_->remove_row(0);
+    list_->rows().remove(list_->row(0));
   }
 
   delete list_;
@@ -372,11 +375,12 @@ void RecordDialog::startAction()
   int started = 0;
   Toc *toc;
   int buffer;
+  unsigned int i;
 
   if (tocEdit_ == NULL)
     return;
 
-  if (list_->selbegin() == list_->selend()) {
+  if (list_->selection().empty()) {
     MessageBox msg(this, "Record", 0, 
 		   "Please select at least one recorder device.", NULL);
     msg.run();
@@ -474,11 +478,10 @@ void RecordDialog::startAction()
     }
   }
   
+  Gtk::CList_Helpers::SelectionList selection = list_->selection();
 
-  Gtk::CList::seliterator itr;
-
-  for (itr = list_->selbegin(); itr != list_->selend(); itr++) {
-    DeviceData *data = (DeviceData*)list_->get_row_data(*itr);
+  for (i = 0; i < selection.size(); i++) {
+    DeviceData *data = (DeviceData*)selection[i].get_data();
 
     if (data != NULL) {
       CdDevice *dev = CdDevice::find(data->bus, data->id, data->lun);
@@ -530,27 +533,27 @@ void RecordDialog::appendTableEntry(CdDevice *dev)
   
   rowStr[5] = CdDevice::status2string(dev->status());
 
-  list_->append(rowStr);
-  list_->set_row_data(list_->rows() - 1, data);
+  list_->rows().push_back(rowStr);
+  list_->row(list_->rows().size() - 1).set_data(data);
 
   if (dev->status() == CdDevice::DEV_READY)
-    list_->set_selectable(list_->rows() - 1, true);
+    list_->row(list_->rows().size() - 1).set_selectable(true);
   else
-    list_->set_selectable(list_->rows() - 1, false);
+    list_->row(list_->rows().size() - 1).set_selectable(false);
 }
 
 void RecordDialog::import()
 {
   CdDevice *drun;
   DeviceData *data;
-  int i;
+  unsigned int i;
 
   list_->freeze();
 
-  while (list_->rows() > 0) {
-    data = (DeviceData*)list_->get_row_data(0);
+  while (list_->rows().size() > 0) {
+    data = (DeviceData*)list_->row(0).get_data();
     delete data;
-    list_->remove_row(0);
+    list_->rows().remove(list_->row(0));
   }
 
   for (drun = CdDevice::first(); drun != NULL; drun = CdDevice::next(drun)) {
@@ -563,14 +566,14 @@ void RecordDialog::import()
 
   list_->thaw();
 
-  if (list_->rows() > 0) {
+  if (list_->rows().size() > 0) {
     list_->columns_autosize();
     list_->moveto(0, 0, 0.0, 0.0);
 
     // select first selectable device
-    for (i = 0; i < list_->rows(); i++) {
-      if (list_->get_selectable(i)) {
-	list_->cause_select_row(i, 0);
+    for (i = 0; i < list_->rows().size(); i++) {
+      if (list_->row(i).get_selectable()) {
+	list_->row(i).select();
 	break;
       }
     }
@@ -579,22 +582,22 @@ void RecordDialog::import()
 
 void RecordDialog::importStatus()
 {
-  int i;
+  unsigned int i;
   DeviceData *data;
   CdDevice *dev;
 
-  for (i = 0; i < list_->rows(); i++) {
-    if ((data = (DeviceData*)list_->get_row_data(i)) != NULL &&
+  for (i = 0; i < list_->rows().size(); i++) {
+    if ((data = (DeviceData*)list_->row(i).get_data()) != NULL &&
 	(dev = CdDevice::find(data->bus, data->id, data->lun)) != NULL) {
       if (dev->status() == CdDevice::DEV_READY) {
-	list_->set_selectable(i, true);
+	list_->row(i).set_selectable(true);
       }
       else {
-	list_->cause_unselect_row(i, 0);
-	list_->set_selectable(i, false);
+	list_->row(i).unselect();
+	list_->row(i).set_selectable(false);
       }
 
-      list_->set_text(i, 5, string(CdDevice::status2string(dev->status())));
+      list_->cell(i, 5).set_text(string(CdDevice::status2string(dev->status())));
     }
   }
 
