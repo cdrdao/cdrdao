@@ -18,6 +18,9 @@
  */
 /*
  * $Log: CDD2600.cc,v $
+ * Revision 1.4  2000/11/12 18:47:59  andreasm
+ * Updated 'msinfo' command.
+ *
  * Revision 1.3  2000/10/08 16:39:40  andreasm
  * Remote progress message now always contain the track relative and total
  * progress and the total number of processed tracks.
@@ -70,7 +73,7 @@
  *
  */
 
-static char rcsid[] = "$Id: CDD2600.cc,v 1.3 2000/10/08 16:39:40 andreasm Exp $";
+static char rcsid[] = "$Id: CDD2600.cc,v 1.4 2000/11/12 18:47:59 andreasm Exp $";
 
 #include <config.h>
 
@@ -736,7 +739,7 @@ CdRawToc *CDD2600::getRawToc(int sessionNr, int *len)
   rawToc = new CdRawToc[entries];
 
   for (i = 0, p = data + 4; i < entries; i++, p += 11 ) {
-#if 1
+#if 0
     message(0, "%d %02x %02d %2x %02d:%02d:%02d %02x %02d:%02d:%02d",
 	    p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7], p[8], p[9], p[10]);
 #endif
