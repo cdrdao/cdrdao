@@ -1,6 +1,6 @@
 /*  cdrdao - write audio CD-Rs in disc-at-once mode
  *
- *  Copyright (C) 1998-2000 Andreas Mueller <mueller@daneb.ping.de>
+ *  Copyright (C) 1998-2001  Andreas Mueller <andreas@daneb.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -16,39 +16,10 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
-/*
- * $Log: TaiyoYuden.cc,v $
- * Revision 1.3  2000/12/17 10:51:23  andreasm
- * Default verbose level is now 2. Adaopted message levels to have finer
- * grained control about the amount of messages printed by cdrdao.
- * Added CD-TEXT writing support to the GenericMMCraw driver.
- * Fixed CD-TEXT cue sheet creating for the GenericMMC driver.
- *
- * Revision 1.2  2000/04/23 16:29:50  andreasm
- * Updated to state of my private development environment.
- *
- * Revision 1.5  1999/11/07 09:15:15  mueller
- * Release 1.1.3
- *
- * Revision 1.4  1999/04/05 11:04:10  mueller
- * Added driver option flags.
- *
- * Revision 1.3  1999/03/27 20:50:04  mueller
- * Adapted to changed writing interface.
- *
- * Revision 1.2  1999/02/06 20:42:44  mueller
- * Added member function 'checkToc()'.
- *
- * Revision 1.1  1999/02/04 21:05:47  mueller
- * Initial revision
- *
- */
 
 /* Driver for the TaiyoYuden drive created by Henk-Jan Slotboom.
  * Very similar to the Philips CDD2x00 drives.
  */
-
-static char rcsid[] = "$Id: TaiyoYuden.cc,v 1.3 2000/12/17 10:51:23 andreasm Exp $";
 
 #include <config.h>
 
@@ -166,13 +137,15 @@ int TaiyoYuden::startDao()
   message(2, "Writing lead-in and gap...");
 
   // write lead-in
-  if (writeZeros(toc_->leadInMode(), lba, 0, leadInLength_) != 0) {
+  if (writeZeros(toc_->leadInMode(), TrackData::SUBCHAN_NONE, lba, 0,
+		 leadInLength_) != 0) {
     flushCache();
     return 1;
   }
 
   // write gap (2 seconds)
-  if (writeZeros(toc_->leadInMode(), lba, 0, 150) != 0) {
+  if (writeZeros(toc_->leadInMode(), TrackData::SUBCHAN_NONE, lba, 0, 150)
+      != 0) {
     flushCache();
     return 1;
   }
@@ -190,7 +163,8 @@ int TaiyoYuden::finishDao()
   message(2, "Writing lead-out...");
 
   // write lead-out
-  if (writeZeros(toc_->leadOutMode(), lba, lba + 150, leadOutLength_) != 0) {
+  if (writeZeros(toc_->leadOutMode(), TrackData::SUBCHAN_NONE, lba, lba + 150,
+		 leadOutLength_) != 0) {
     flushCache();
     return 1;
   }
@@ -219,8 +193,8 @@ void TaiyoYuden::abortDao()
 // by this function but not used for writing
 // return: 0: OK
 //         1: scsi command failed
-int TaiyoYuden::writeData(TrackData::Mode mode, long &lba, const char *buf,
-			  long len)
+int TaiyoYuden::writeData(TrackData::Mode mode, TrackData::SubChannelMode sm,
+			  long &lba, const char *buf, long len)
 {
   assert(blocksPerWrite_ > 0);
   assert(blockLength_ > 0);

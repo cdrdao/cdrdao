@@ -37,6 +37,9 @@ class CdTextEncoder;
 #define OPT_MMC_NO_SUBCHAN   0x0020 // drive does not support to read 
                                     // sub-channel data
 #define OPT_MMC_NO_BURNPROOF 0x0040 // disable BURN-Proof
+#define OPT_MMC_NO_RW_PACKED 0x0080 // drive does not support the packed R-W
+                                    // sub-channel writing mode
+
 
 class GenericMMC : public CdrDriver {
 public:
@@ -63,9 +66,11 @@ public:
   int startDao();
   int finishDao();
   void abortDao();
-  int writeData(TrackData::Mode mode, long &lba, const char *buf, long len);
+  int writeData(TrackData::Mode, TrackData::SubChannelMode, long &lba,
+		const char *buf, long len);
 
-  int driveInfo(DriveInfo *, int showErrorMsg);
+  DriveInfo *driveInfo(int showErrorMsg);
+  int subChannelEncodingMode(TrackData::SubChannelMode) const;
 
 protected:
   int scsiTimeout_;
@@ -73,6 +78,7 @@ protected:
   long leadInLen_;  // length of lead-in
   long leadOutLen_; // length if lead-out
   DiskInfo diskInfo_;
+  DriveInfo *driveInfo_;
 
   CdTextEncoder *cdTextEncoder_;
 
@@ -94,7 +100,8 @@ protected:
 
   unsigned char *createCueSheet(unsigned long variant, long *cueSheetLen);
   int sendCueSheet();
-
+  unsigned char subChannelDataForm(TrackData::SubChannelMode,
+				   int encodingMode);
   int writeCdTextLeadIn();
 
   int analyzeTrack(TrackData::Mode, int trackNr, long startLba, long endLba,

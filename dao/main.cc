@@ -1124,8 +1124,14 @@ static void showToc(const Toc *toc)
     if (tcount > 1)
       printf("\n");
 
-    printf("TRACK %2d  Mode %s:\n", tcount,
+    printf("TRACK %2d  Mode %s", tcount,
 	    TrackData::mode2String(t->type()));
+
+    if (t->subChannelType() != TrackData::SUBCHAN_NONE)
+      printf(" %s", TrackData::subChannelMode2String(t->subChannelType()));
+
+    printf(":\n");
+
     if (t->type() == TrackData::AUDIO) {
       if (t->isrcValid()) {
 	printf("          ISRC %c%c %c%c%c %c%c %c%c%c%c%c\n",
@@ -1183,7 +1189,7 @@ void showData(const Toc *toc, int swap)
   }
 
   while (length > 0) {
-    if (reader.readData(lba, (char *)buf, 1) != 1) {
+    if (reader.readSamples(buf, SAMPLES_PER_BLOCK) != SAMPLES_PER_BLOCK) {
       message(-2, "Read of audio data failed.");
       return;
     }

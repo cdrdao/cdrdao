@@ -739,7 +739,7 @@ CdrDriver::CdrDriver(ScsiIf *scsiIf, unsigned long options)
 
   transferBuffer_ = new (unsigned char)[scsiIf_->maxDataLen()];
 
-  maxScannedSubChannels_ = scsiIf_->maxDataLen() / (AUDIO_BLOCK_LEN + 96);
+  maxScannedSubChannels_ = scsiIf_->maxDataLen() / (AUDIO_BLOCK_LEN + PW_SUBCHANNEL_LEN);
   scannedSubChannels_ = new (SubChannel*)[maxScannedSubChannels_];
 
   paranoia_ = NULL;
@@ -821,6 +821,19 @@ void CdrDriver::remote(int f, int fd)
     remoteFd_ = -1;
   }
 }
+
+// Returns acceptable sub-channel encoding mode for given sub-channel type:
+//  -1: writing of sub-channel type not supported at all
+//   0: accepts plain data without encoding
+//   1: accepts only completely encoded data
+int CdrDriver::subChannelEncodingMode(TrackData::SubChannelMode sm) const
+{
+  if (sm == TrackData::SUBCHAN_NONE)
+    return 0;
+  else
+    return -1;
+}
+
 
 int CdrDriver::cdrVendor(Msf &code, const char **vendorId, 
 			 const char **mediumType)
@@ -1047,13 +1060,13 @@ int CdrDriver::blankDisk(BlankingMode)
 // by this function.
 // return: 0: OK
 //         1: scsi command failed
-int CdrDriver::writeData(TrackData::Mode mode, long &lba, const char *buf,
-			 long len)
+int CdrDriver::writeData(TrackData::Mode mode, TrackData::SubChannelMode sm,
+			 long &lba, const char *buf, long len)
 {
   assert(blocksPerWrite_ > 0);
   int writeLen = 0;
   unsigned char cmd[10];
-  long blockLength = blockSize(mode);
+  long blockLength = blockSize(mode, sm);
   
 #if 0
   long sum, i;
@@ -1065,7 +1078,9 @@ int CdrDriver::writeData(TrackData::Mode mode, long &lba, const char *buf,
   }
 
   message(0, "W: %ld: %ld, %ld, %ld", lba, blockLength, len, sum);
+
 #endif
+
 
   memset(cmd, 0, 10);
   cmd[0] = 0x2a; // WRITE1
@@ -1104,47 +1119,56 @@ int CdrDriver::writeData(TrackData::Mode mode, long &lba, const char *buf,
 // count: number of zero blocks to write
 // Return: 0: OK
 //         1: SCSI error occured
-int CdrDriver::writeZeros(TrackData::Mode m, long &lba, long encLba,
-			  long count)
+int CdrDriver::writeZeros(TrackData::Mode m, TrackData::SubChannelMode sm,
+			  long &lba, long encLba, long count)
 {
   assert(blocksPerWrite_ > 0);
   assert(zeroBuffer_ != NULL);
 
   int n, i;
   long cnt = 0;
-  long total = count * AUDIO_BLOCK_LEN;
+  long total;
   long cntMb;
   long lastMb = 0;
   long blockLen;
+  char *buf;
 
-  if (encodingMode_ == 0)
-    blockLen = AUDIO_BLOCK_LEN;
-  else 
-    blockLen = blockSize(m);
+  blockLen = blockSize(m, sm);
 
-  //FILE *fp = fopen("zeros.out", "w");
+  total = count * blockLen;
+
+#if 0
+  static int wcount = 0;
+  char fname[100];
+  sprintf(fname, "zeros%d.out", wcount++);
+  FILE *fp = fopen(fname, "w");
+#endif
 
   while (count > 0) {
     n = (count > blocksPerWrite_ ? blocksPerWrite_ : count);
 
+    buf = zeroBuffer_;
+
     for (i = 0; i < n; i++) {
-      Track::encodeZeroData(encodingMode_, m, encLba++,
-			    zeroBuffer_ + i * blockLen);
+      Track::encodeZeroData(encodingMode_, m, sm, encLba++, buf);
+
+      if (encodingMode_ == 0 && bigEndianSamples() == 0) {
+	// swap encoded data blocks
+	swapSamples((Sample *)buf, SAMPLES_PER_BLOCK);
+      }
+
+      buf += blockLen;
     }
 
-    if (encodingMode_ == 0 && bigEndianSamples() == 0) {
-      // swap encoded data blocks
-      swapSamples((Sample *)zeroBuffer_, n * SAMPLES_PER_BLOCK);
-    }
 
     //fwrite(zeroBuffer_, blockLen, n, fp);
 
-    if (writeData(encodingMode_ == 0 ? TrackData::AUDIO : m, lba, zeroBuffer_,
-		  n) != 0) {
+    if (writeData(encodingMode_ == 0 ? TrackData::AUDIO : m, sm, lba,
+		  zeroBuffer_, n) != 0) {
       return 1;
     }
     
-    cnt += n * AUDIO_BLOCK_LEN;
+    cnt += n * blockLen;
 
     cntMb = cnt >> 20;
 
@@ -2373,18 +2397,35 @@ int CdrDriver::readSubChannels(long, long, SubChannel ***, Sample *)
 //         2: toc is not suitable
 int CdrDriver::checkToc(const Toc *toc)
 {
+  int ret = 0;
+
   if (multiSession_ && toc->tocType() != Toc::CD_ROM_XA) {
     message(-1, "The toc type should be set to CD_ROM_XA if a multi session");
     message(-1, "CD is recorded.");
-    return 1;
+    ret = 1;
   }
 
-  return 0;
+  TrackIterator itr(toc);
+  const Track *run;
+  int tracknr;
+
+  for (run = itr.first(), tracknr = 1; run != NULL;
+       run = itr.next(), tracknr++) {
+    if (run->subChannelType() != TrackData::SUBCHAN_NONE) {
+      if (subChannelEncodingMode(run->subChannelType()) == -1) {
+	message(-2, "Track %d: sub-channel writing mode is not supported by driver.", tracknr);
+	ret = 2;
+      }
+    }
+  }
+
+  return ret;
 }
 
 // Returns block size for given mode and actual 'encodingMode_' that must
 // be used to send data to the recorder.
-long CdrDriver::blockSize(TrackData::Mode m) const
+long CdrDriver::blockSize(TrackData::Mode m,
+			  TrackData::SubChannelMode sm) const
 {
   long bsize = 0;
 
@@ -2417,6 +2458,8 @@ long CdrDriver::blockSize(TrackData::Mode m) const
   else {
     message(-3, "Illegal encoding mode in 'CdrDriver::blockSize()'.");
   }
+
+  bsize += TrackData::subChannelSize(sm);
 
   return bsize;
 }
@@ -3219,6 +3262,7 @@ Toc *CdrDriver::buildToc(TrackInfo *trackInfos, long nofTrackInfos,
   unsigned long dataLen;
   TrackData::Mode trackMode;
   TrackData::Mode lastMode = TrackData::MODE0; // illegal in this context
+  TrackData::SubChannelMode trackSubChanMode;
   int newMode;
   long byteOffset = 0;
 
@@ -3235,6 +3279,7 @@ Toc *CdrDriver::buildToc(TrackInfo *trackInfos, long nofTrackInfos,
 
     newMode = 0;
     trackMode = ati.mode;
+    trackSubChanMode = TrackData::SUBCHAN_NONE;
 
     switch (trackMode) {
     case TrackData::AUDIO:
@@ -3265,7 +3310,7 @@ Toc *CdrDriver::buildToc(TrackInfo *trackInfos, long nofTrackInfos,
       lastMode = trackMode;
     }
     
-    Track t(trackMode);
+    Track t(trackMode, trackSubChanMode);
 
     t.preEmphasis(ati.ctl & 0x01);
     t.copyPermitted(ati.ctl & 0x02);
@@ -3279,7 +3324,7 @@ Toc *CdrDriver::buildToc(TrackInfo *trackInfos, long nofTrackInfos,
 	Msf trackLength(nti.start - ati.start - nti.pregap);
 	if (ati.pregap > 0) {
 	  t.append(SubTrack(SubTrack::DATA,
-			    TrackData(trackMode, Msf(ati.pregap).samples())));
+			    TrackData(Msf(ati.pregap).samples())));
 	}
 	t.append(SubTrack(SubTrack::DATA,
 			  TrackData(ati.filename, byteOffset,
@@ -3301,18 +3346,23 @@ Toc *CdrDriver::buildToc(TrackInfo *trackInfos, long nofTrackInfos,
 
       if (ati.pregap != 0) {
 	// add zero data for pre-gap
-	dataLen = ati.pregap * TrackData::dataBlockSize(trackMode);
-	t.append(SubTrack(SubTrack::DATA, TrackData(trackMode, dataLen)));
+	dataLen = ati.pregap * TrackData::dataBlockSize(trackMode,
+							trackSubChanMode);
+	t.append(SubTrack(SubTrack::DATA,
+			  TrackData(trackMode, trackSubChanMode, dataLen)));
       }
       
-      dataLen = trackLength * TrackData::dataBlockSize(trackMode);
+      dataLen = trackLength * TrackData::dataBlockSize(trackMode,
+						       trackSubChanMode);
       t.append(SubTrack(SubTrack::DATA,
-			TrackData(trackMode, ati.filename, byteOffset,
-				  dataLen)));
+			TrackData(trackMode, trackSubChanMode, ati.filename,
+				  byteOffset, dataLen)));
 
       if (ati.fill > 0) {
-	dataLen =  ati.fill * TrackData::dataBlockSize(trackMode);
-	t.append(SubTrack(SubTrack::DATA, TrackData(trackMode, dataLen)));
+	dataLen =  ati.fill * TrackData::dataBlockSize(trackMode,
+						       trackSubChanMode);
+	t.append(SubTrack(SubTrack::DATA,
+			  TrackData(trackMode, trackSubChanMode, dataLen)));
       }
 
       t.start(Msf(ati.pregap));
@@ -3394,7 +3444,7 @@ int CdrDriver::readDataTrack(ReadDiskInfo *info, int fd, long start, long end,
 
   trackInfo->bytesWritten = 0;
 
-  blocking = scsiIf_->maxDataLen() / AUDIO_BLOCK_LEN;;
+  blocking = scsiIf_->maxDataLen() / (AUDIO_BLOCK_LEN + PW_SUBCHANNEL_LEN);
   assert(blocking > 0);
 
   buf = new (unsigned char)[blocking * blockLen];

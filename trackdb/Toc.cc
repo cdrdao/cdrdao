@@ -297,11 +297,15 @@ int Toc::moveTrackMarker(int trackNr, int indexNr, long lba)
     return 2;
   }
 
-  if (indexNr <= 1 && act->track->type() != TrackData::AUDIO)
+  if (indexNr <= 1 && 
+      (act->track->type() != TrackData::AUDIO ||
+       act->track->subChannelType() != TrackData::SUBCHAN_NONE))
     return 6;
 
   if ((indexNr == 0 || (indexNr == 1 && act->track->start().lba() == 0)) &&
-      act->pred != NULL && act->pred->track->type() != TrackData::AUDIO)
+      act->pred != NULL && 
+      (act->pred->track->type() != TrackData::AUDIO ||
+       act->track->subChannelType() != TrackData::SUBCHAN_NONE))
     return 6;
   
 
@@ -433,10 +437,14 @@ int Toc::removeTrackMarker(int trackNr, int indexNr)
     return 2;
   }
 
-  if (act->track->type() != TrackData::AUDIO && indexNr <= 1)
+  if ((act->track->type() != TrackData::AUDIO ||
+       act->track->subChannelType() != TrackData::SUBCHAN_NONE) &&
+      indexNr <= 1)
     return 3;
 
-  if (act->pred != NULL && act->pred->track->type() != TrackData::AUDIO &&
+  if (act->pred != NULL && 
+      (act->pred->track->type() != TrackData::AUDIO ||
+       act->track->subChannelType() != TrackData::SUBCHAN_NONE) &&
       indexNr <= 1)
     return 3;
 
@@ -525,6 +533,9 @@ int Toc::addTrackMarker(long lba)
   if (act->track->type() != TrackData::AUDIO)
     return 5;
 
+  if (act->track->subChannelType() != TrackData::SUBCHAN_NONE)
+    return 5;
+
   if (lba <= act->start.lba())
     return 2;
   
@@ -538,7 +549,7 @@ int Toc::addTrackMarker(long lba)
   TrackDataList *dataList =
     act->track->removeToEnd(Msf(lba - act->absStart.lba()).samples());
 
-  Track *t = new Track(act->track->type());
+  Track *t = new Track(act->track->type(), act->track->subChannelType());
   t->appendTrackData(dataList);
   delete dataList;
 
@@ -579,11 +590,15 @@ int Toc::addPregap(long lba)
 
   if (act->track->type() != TrackData::AUDIO) 
     return 4;
+
+  if (act->track->subChannelType() != TrackData::SUBCHAN_NONE)
+    return 4;
   
   if (act->next == NULL)
     return 2; // no next track where we could add pre-gap
 
-  if (act->next->track->type() != TrackData::AUDIO) 
+  if (act->next->track->type() != act->track->type() ||
+      act->next->track->subChannelType() != act->track->subChannelType())
     return 4;
   
   if (lba <= act->start.lba())
@@ -634,7 +649,7 @@ void Toc::checkConsistency()
 // first LBA of new track, 'end' is filled with last LBA + 1 of new track.
 void Toc::appendTrack(const TrackDataList *list, long *start, long *end)
 {
-  Track t(TrackData::AUDIO);
+  Track t(TrackData::AUDIO, TrackData::SUBCHAN_NONE);
   const TrackData *run;
 
   for (run = list->first(); run != NULL; run = list->next())
@@ -645,8 +660,7 @@ void Toc::appendTrack(const TrackDataList *list, long *start, long *end)
   unsigned long len = list->length();
 
   if (len < minTime)
-    t.append(SubTrack(SubTrack::DATA,
-		      TrackData(TrackData::AUDIO, minTime - len)));
+    t.append(SubTrack(SubTrack::DATA, TrackData(minTime - len)));
 
   *start = length().lba();
 
@@ -672,6 +686,10 @@ int Toc::appendTrackData(const TrackDataList *list, long *start, long *end)
 
   if (lastTrack_->track->type() != TrackData::AUDIO)
     return 1;
+
+  if (lastTrack_->track->subChannelType() != TrackData::SUBCHAN_NONE)
+    return 1;
+
 
   *start = length().lba();
 
@@ -702,6 +720,9 @@ int Toc::removeTrackData(unsigned long start, unsigned long end,
   if (tent->track->type() != TrackData::AUDIO)
     return 2;
 
+  if (tent->track->subChannelType() != TrackData::SUBCHAN_NONE)
+    return 2;
+
   if (tent != findTrack(end))
     return 1;
 
@@ -724,6 +745,10 @@ int Toc::insertTrackData(unsigned long pos, const TrackDataList *list)
 
   if (tent != NULL && tent->track->type() != TrackData::AUDIO)
     return 1;
+
+  if (tent != NULL && tent->track->subChannelType() != TrackData::SUBCHAN_NONE)
+    return 1;
+
   
   if (tent != NULL) {
     tent->track->insertTrackData(pos - tent->absStart.samples(), list);
@@ -1118,6 +1143,13 @@ const Track *TrackIterator::first(Msf &start, Msf &end)
   return next(start, end);
 }
 
+const Track *TrackIterator::first()
+{
+  Msf start, end;
+
+  return first(start, end);
+}
+
 const Track *TrackIterator::next(Msf &start, Msf &end)
 {
   Track *t;
@@ -1134,6 +1166,12 @@ const Track *TrackIterator::next(Msf &start, Msf &end)
   }
 }
 
+const Track *TrackIterator::next()
+{
+  Msf start, end;
+
+  return next(start, end);
+}
 
 // Class TocReader
 
@@ -1203,6 +1241,7 @@ void TocReader::closeData()
   }
 }
 
+#if 0
 long TocReader::readData(long lba, char *buf, long len)
 {
   long n;
@@ -1245,6 +1284,7 @@ long TocReader::readData(long lba, char *buf, long len)
  
   return nread;
 }
+#endif
 
 // seeks to specified sample (absolute position)
 // return: 0: OK

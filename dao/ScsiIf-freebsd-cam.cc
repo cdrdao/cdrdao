@@ -1,6 +1,6 @@
 /*  cdrdao - write audio CD-Rs in disc-at-once mode
  *
- *  Copyright (C) 1998, 1999  Andreas Mueller <mueller@daneb.ping.de>
+ *  Copyright (C) 1998-2001  Andreas Mueller <andreas@daneb.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -16,30 +16,10 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
-/*
- * $Log: ScsiIf-freebsd-cam.cc,v $
- * Revision 1.1  2000/02/05 01:36:56  llanero
- * Initial revision
- *
- * Revision 1.4  1999/09/02 19:45:12  mueller
- * Added dummy implementation for 'scan()'.
- *
- * Revision 1.3  1999/04/25 10:02:11  mueller
- * Set maximum transfer length to 32k.
- *
- * Revision 1.2  1999/04/02 16:44:30  mueller
- * Removed 'revisionDate' because it is not available in general.
- *
- * Revision 1.1  1999/03/14 15:33:38  mueller
- * Initial revision
- *
- */
 
 /* SCSI interface implemenation for FreeBSD.
  * Written by Max Khon <fjoe@iclub.nsu.ru>
  */
-
-static char rcsid[] = "$Id: ScsiIf-freebsd-cam.cc,v 1.1 2000/02/05 01:36:56 llanero Exp $";
 
 #include <config.h>
 

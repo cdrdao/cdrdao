@@ -93,8 +93,8 @@ static int init_rs_sub_rw( void )
         printf("%2d,", rs_sub_rw_alog[i]);
   }
   printf("};\n");
-  printf("static unsigned char rs_sub_rw_log[%d] = {\n", (1 << RS_SUB_RW_BITS)-1);
-  for (i = 0; i < (1 << RS_SUB_RW_BITS)-1; i++) {
+  printf("static unsigned char rs_sub_rw_log[%d] = {\n", (1 << RS_SUB_RW_BITS));
+  for (i = 0; i < (1 << RS_SUB_RW_BITS); i++) {
         printf("%2d,", rs_sub_rw_log[i]);
   }
   printf("};\n");

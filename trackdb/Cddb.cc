@@ -1266,8 +1266,10 @@ int Cddb::readDbEntry(int localRecordFd)
     convertEscapeSequences(resp, buf);
 
     // remove comments
-    if ((p = strchr(buf, '#')) != NULL)
-      *p = 0;
+    //if ((p = strchr(buf, '#')) != NULL)
+    //  *p = 0;
+    if (buf[0] == '#')
+      buf[0] = 0;  // xxam!
 
     // remove leading blanks
     for (line = buf; *line != 0 && isspace(*line); line++) ;

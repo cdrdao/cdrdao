@@ -31,11 +31,15 @@ class TrackDataList;
 
 class Track {
 public:
-  Track(TrackData::Mode);
+  Track(TrackData::Mode, TrackData::SubChannelMode);
   Track(const Track &);
   ~Track();
   
   TrackData::Mode type() const { return type_; }
+  TrackData::SubChannelMode subChannelType() const { return subChannelType_; }
+
+  int audioCutMode() const { return audioCutMode_; }
+
   Msf length() const { return length_; }
 
   Msf start() const { return start_; }
@@ -74,7 +78,8 @@ public:
 
   // fills provided buffer with an audio block that contains zero data
   // encoded with given mode
-  static void encodeZeroData(int encMode, TrackData::Mode, long lba, char *);
+  static void encodeZeroData(int encMode, TrackData::Mode, 
+			     TrackData::SubChannelMode, long lba, char *);
 
   int check(int trackNr) const;
 
@@ -118,6 +123,11 @@ private:
   friend class SubTrackIterator;
 
   TrackData::Mode type_; // track type
+  TrackData::SubChannelMode subChannelType_; // sub-channel mode
+  int audioCutMode_; /* -1: undefined
+			 1: lengths of all sub-tracks are in units of samples
+			 0: lengths of all sub-tracks are in byte units
+		     */
 
   Msf length_; // total length of track
   Msf start_;  // logical start of track data, end of pre-gap
@@ -166,7 +176,8 @@ public:
   void init(const Track *);
 
   int openData();
-  long readData(int raw, long lba, char *buf, long len);
+  long readData(int raw, int subChanEncodingMode, long lba, char *buf,
+		long len);
   int seekSample(unsigned long sample);
   long readSamples(Sample *buf, long len);
   void closeData();
@@ -182,9 +193,12 @@ private:
   const SubTrack *readSubTrack_; // actual read sub-track
   int open_; // 1 indicates the 'openData()' was called
 
+  unsigned long subChanDelayLineIndex_;
+  unsigned char subChanDelayLine_[8][24];
+
 
   long readTrackData(Sample *buf, long len);
-  int readBlock(int raw, long lba, Sample *buf);
+  int readBlock(int raw, int subChanEncodingMode, long lba, Sample *buf);
 };
 
 class SubTrackIterator {

@@ -1,6 +1,7 @@
 /*  cdrdao - write audio CD-Rs in disc-at-once mode
  *
- *  Copyright (C) 1999-2000  Cameron G. MacKinnon <C_MacKinnon@yahoo.com>
+ *  Copyright (C) 1999-2001  Cameron G. MacKinnon <C_MacKinnon@yahoo.com>
+ *                           Andreas Mueller <andreas@daneb.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -17,60 +18,10 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
- * $Log: YamahaCDR10x.cc,v $
- * Revision 1.4  2000/12/17 10:51:23  andreasm
- * Default verbose level is now 2. Adaopted message levels to have finer
- * grained control about the amount of messages printed by cdrdao.
- * Added CD-TEXT writing support to the GenericMMCraw driver.
- * Fixed CD-TEXT cue sheet creating for the GenericMMC driver.
- *
- * Revision 1.3  2000/10/08 16:39:41  andreasm
- * Remote progress message now always contain the track relative and total
- * progress and the total number of processed tracks.
- *
- * Revision 1.2  2000/04/23 16:29:50  andreasm
- * Updated to state of my private development environment.
- *
- * Revision 1.5  1999/12/15 20:31:46  mueller
- * Added remote messages for 'read-cd' progress used by a GUI.
- *
- * Revision 1.4  1999/11/07 09:15:15  mueller
- * Release 1.1.3
- *
- * Revision 1.3  1999/04/05 11:04:10  mueller
- * Added driver option flags.
- *
- * Revision 1.2  1999/03/27 14:35:17  mueller
- * Added data track support.
- *
- * Revision 1.1  1999/02/28 10:27:49  mueller
- * Initial revision
- */
-
-/* Cameron's log:
- *
- * Revision 0.4  1999/01/08 21:00:00  cmackin
- * Fixed BCD fields in Cue Sheet
- * Todo: BCD issues for ISRC and Catalog
- *       core dump when RO CD inserted for burn functions
- *
- * Revision 0.3  1999/01/08 12:00:00  cmackin
- * Added {g,s}etModePage6(...): Yamaha doesn't support the (10) cmds
- *
- * Revision 0.2  1999/01/08 09:00:00  cmackin
- * Added READ CD-ROM CAPACITY to diskInfo()
- *
- * Revision 0.1  1999/01/07 20:44:58  cmackin
- * Initial revision, based on GenericMMC
- *
- */
-
 /* Driver for Yamaha CDR10X drives. 
  * Written by Cameron G. MacKinnon <C_MacKinnon@yahoo.com>.
  */
 
-static char rcsid[] = "$Id: YamahaCDR10x.cc,v 1.4 2000/12/17 10:51:23 andreasm Exp $";
 
 #include <config.h>
 
@@ -570,7 +521,8 @@ int YamahaCDR10x::startDao()
 
   long lba = -150;
 
-  if (writeZeros(toc_->leadInMode(), lba, 0, 150) != 0) {
+  if (writeZeros(toc_->leadInMode(), TrackData::SUBCHAN_NONE, lba, 0, 150)
+      != 0) {
     return 1;
   }
   
@@ -856,15 +808,15 @@ int YamahaCDR10x::driveInfo(DriveInfo *info, int showErrorMsg)
 // by this function.
 // return: 0: OK
 //         1: scsi command failed
-int YamahaCDR10x::writeData(TrackData::Mode mode, long &lba, const char *buf,
-			    long len)
+int YamahaCDR10x::writeData(TrackData::Mode mode, TrackData::SubChannelMode sm,
+			    long &lba, const char *buf, long len)
 {
   assert(blocksPerWrite_ > 0);
   int writeLen = 0;
   unsigned char cmd[10];
   int retry;
   int retval;
-  long blockLength = blockSize(mode);
+  long blockLength = blockSize(mode, TrackData::SUBCHAN_NONE);
 
 #if 0
   long sum, i;

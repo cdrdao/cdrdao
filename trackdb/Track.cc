@@ -31,9 +31,12 @@
 
 #include "edc_ecc/ecc.h"
 
-Track::Track(TrackData::Mode t) : length_(0), start_(0), end_(0)
+Track::Track(TrackData::Mode t, TrackData::SubChannelMode st) 
+  : length_(0), start_(0), end_(0)
 {
   type_ = t;
+  subChannelType_ = st;
+  audioCutMode_ = -1;
 
   nofSubTracks_ = 0;
   subTracks_ = lastSubTrack_ = NULL;
@@ -56,6 +59,8 @@ Track::Track(const Track &obj)
   SubTrack *run;
 
   type_ = obj.type_;
+  subChannelType_ = obj.subChannelType_;
+  audioCutMode_ = obj.audioCutMode_;
 
   nofSubTracks_ = obj.nofSubTracks_;
   subTracks_ = lastSubTrack_ = NULL;
@@ -116,14 +121,18 @@ const SubTrack *Track::lastSubTrack() const
 // Appends given sub-track to list of sub-tracks.
 // return: 0: OK
 //         1: tried to append PAD sub-track
+//         2: tried to append sub-track with different audioCutMode
 int Track::append(const SubTrack &strack)
 {
-  if (strack.type() == SubTrack::PAD) {
+  if (strack.type() == SubTrack::PAD)
     return 1;
-  }
+
+  if (audioCutMode_ != -1 && audioCutMode_ != strack.audioCutMode())
+    return 2;
 
   if (lastSubTrack_ != NULL && lastSubTrack_->type() == SubTrack::PAD &&
-      lastSubTrack_->mode() == strack.mode()) {
+      lastSubTrack_->mode() == strack.mode() &&
+      lastSubTrack_->subChannelMode() == strack.subChannelMode()) {
     // remove padding sub track
     delete removeSubTrack(lastSubTrack_);
   }
@@ -147,6 +156,7 @@ void Track::update()
   SubTrack *run, *next;
   SubTrack *pad;
   TrackData::Mode dataMode;
+  TrackData::SubChannelMode subChannelMode;
 
   // remove all padding sub-tracks
   run = subTracks_;
@@ -160,27 +170,40 @@ void Track::update()
     run = next;
   }
 
+  audioCutMode_ = -1;
+
   if ((run = subTracks_) != NULL) {
     do {
       dataMode = run->mode();
-      if (run->mode() == TrackData::AUDIO) {
-	blen = SAMPLES_PER_BLOCK;
-      }
-      else {
-	blen = TrackData::dataBlockSize(run->mode());
-      }
+      subChannelMode = run->subChannelMode();
 
+      if (audioCutMode_ == -1)
+	audioCutMode_ = run->audioCutMode();
+      else if (audioCutMode_ != run->audioCutMode())
+	message(-3, "Track::update: mixed audio cut mode.");
+
+      if (audioCutMode_)
+	blen = SAMPLES_PER_BLOCK;
+      else
+	blen = TrackData::dataBlockSize(dataMode, subChannelMode);
+      
       slength = 0;
 
       // find continues range of sub tracks with same data mode
       do {
 	slength += run->length();
 	run = run->next_;
-      } while (run != NULL && run->mode() == dataMode);
+      } while (run != NULL && run->mode() == dataMode &&
+	       run->subChannelMode() == subChannelMode);
       
       if ((padLen = slength % blen) != 0) {
 	padLen = blen - padLen;
-	pad = new SubTrack(SubTrack::PAD, 0, TrackData(dataMode, padLen));
+
+	if (audioCutMode_)
+	  pad = new SubTrack(SubTrack::PAD, 0, TrackData(padLen));
+	else
+	  pad = new SubTrack(SubTrack::PAD, 0, 
+			     TrackData(dataMode, subChannelMode, padLen));
 	
 	if (run != NULL) {
 	  insertSubTrackAfter(run->pred_, pad);
@@ -471,9 +494,15 @@ int Track::isPadded() const
 void Track::print(ostream &out) const
 {
   SubTrack *st;
+  const char *s;
   int i;
 
   out << "TRACK " << TrackData::mode2String(type());
+
+  s = TrackData::subChannelMode2String(subChannelType());
+
+  if (*s != 0)
+    out << " " << s;
 
   out << endl;
 
@@ -1232,16 +1261,23 @@ SubTrack *Track::removeSubTrack(SubTrack *subTrack)
 
 // Fills provided buffer with an audio block that contains zero data
 // encoded with given mode.
-// encMode: encoding mode, see 'Track::readBlock()'
+// encMode: encoding mode, see 'TrackReader::readBlock()'
 // mode: sector mode
+// smode: sub-channel mode
 // lba : absolute address of sector
-// buf : caller provided buffer that is filled with 2352 bytes
+// buf : caller provided buffer that is filled with at most 2448 bytes
 
-void Track::encodeZeroData(int encMode, TrackData::Mode mode, long lba,
-			   char *buf)
+void Track::encodeZeroData(int encMode, TrackData::Mode mode,
+			   TrackData::SubChannelMode smode,
+			   long lba, char *buf)
 {
+  long subChanLen = TrackData::subChannelSize(smode);
+  
+  // we won't have to calculate P and Q parity for zero R-W sub-channels
+  // because 0s have no impact on the parity
+    
   if (encMode == 0) {
-    memset(buf, 0, AUDIO_BLOCK_LEN);
+    memset(buf, 0, AUDIO_BLOCK_LEN + subChanLen);
 
     switch (mode) {
     case TrackData::AUDIO:
@@ -1277,25 +1313,25 @@ void Track::encodeZeroData(int encMode, TrackData::Mode mode, long lba,
   else if (encMode == 1) {
     switch (mode) {
     case TrackData::AUDIO:
-      memset(buf, 0, AUDIO_BLOCK_LEN);
+      memset(buf, 0, AUDIO_BLOCK_LEN + subChanLen);
       break;
     case TrackData::MODE0:
-      memset(buf, 0, MODE0_BLOCK_LEN);
+      memset(buf, 0, MODE0_BLOCK_LEN + subChanLen);
       break;
     case TrackData::MODE1:
     case TrackData::MODE1_RAW:
-      memset(buf, 0, MODE1_BLOCK_LEN);
+      memset(buf, 0, MODE1_BLOCK_LEN + subChanLen);
       break;
     case TrackData::MODE2:
     case TrackData::MODE2_RAW:
     case TrackData::MODE2_FORM_MIX:
-      memset(buf, 0, MODE2_BLOCK_LEN);
+      memset(buf, 0, MODE2_BLOCK_LEN + subChanLen);
       break;
     case TrackData::MODE2_FORM1:
-      memset(buf, 0, MODE2_BLOCK_LEN);
+      memset(buf, 0, MODE2_BLOCK_LEN + subChanLen);
       break;
     case TrackData::MODE2_FORM2:
-      memset(buf, 0, MODE2_BLOCK_LEN);
+      memset(buf, 0, MODE2_BLOCK_LEN + subChanLen);
       // setup sub header
       buf[2] = 0x20;
       buf[6] = 0x20;
@@ -1303,7 +1339,7 @@ void Track::encodeZeroData(int encMode, TrackData::Mode mode, long lba,
     }
   }
   else {
-    message(-3, "Illegal encoding mode in 'Track::encodeZeroData()'.");
+    message(-3, "Illegal sector encoding mode in 'Track::encodeZeroData()'.");
   }
 }
 
@@ -1327,6 +1363,8 @@ TrackReader::TrackReader(const Track *t) : reader(NULL)
   readPosSample_ = 0;
   readSubTrack_ = NULL;
   open_ = 0;
+  
+  subChanDelayLineIndex_ = 0;
 }
 
 TrackReader::~TrackReader()
@@ -1359,6 +1397,7 @@ int TrackReader::openData()
   assert(track_ != NULL);
 
   int ret = 0;
+  int i;
 
   open_ = 1;
   readPos_ = 0;
@@ -1367,6 +1406,11 @@ int TrackReader::openData()
   readSubTrack_ = track_->subTracks_;
 
   reader.init(readSubTrack_);
+
+  subChanDelayLineIndex_ = 0;
+  for(i = 0; i < MAX_SUB_DEL; i++)
+    memset(subChanDelayLine_[i], 0, 24);
+
 
   if (readSubTrack_ != NULL) {
     ret = reader.openData();
@@ -1388,7 +1432,8 @@ void TrackReader::closeData()
 }
 
 
-long TrackReader::readData(int encodingMode, long lba, char *buf, long len)
+long TrackReader::readData(int encodingMode, int subChanEncodingMode,
+			   long lba, char *buf, long len)
 {
   long err = 0;
   long b;
@@ -1403,7 +1448,8 @@ long TrackReader::readData(int encodingMode, long lba, char *buf, long len)
   }
 
   for (b = 0; b < len; b++) {
-    if ((offset = readBlock(encodingMode, lba, (Sample*)buf)) == 0) {
+    if ((offset = readBlock(encodingMode, subChanEncodingMode, lba,
+			    (Sample*)buf)) == 0) {
       err = 1;
       break;
     }
@@ -1418,7 +1464,7 @@ long TrackReader::readData(int encodingMode, long lba, char *buf, long len)
 
 // Reads one block from sub-tracks and performs the data encoding for the
 // block.
-// encodingMode: conrols how the data is encoded
+// encodingMode: conrols how the sector data is encoded
 //               0: returned data is always an audio block (2352 bytes),
 //                  data blocks are completely encoded
 //               1: data is returned mostly unencoded, the block size
@@ -1426,16 +1472,25 @@ long TrackReader::readData(int encodingMode, long lba, char *buf, long len)
 //                  MODE2_FORM2 blocks are extended by the sub header and
 //                  filled with 0 bytes to match the MODE2 block size
 //                  (2336 bytes).
+// subChanEncodingMode: conrols how the R-W sub-channel data is encoded
+//                      0: plain R-W data
+//                      1: generate Q and P parity and interleave
 // lba: Logical block address that must be encoded into header of data blocks
 // Return: 0 if error occured, else length of block that has been filled
 //         
-int TrackReader::readBlock(int encodingMode, long lba, Sample *buf)
+int TrackReader::readBlock(int encodingMode, int subChanEncodingMode,
+			   long lba, Sample *buf)
 {
-  TrackData::Mode dataMode; // actual data mode of sub-track
+  TrackData::Mode dataMode; // current data mode of sub-track
+  TrackData::SubChannelMode subChanMode; // current sub-channel mode of sub-track
   long actLen;
   long count; // amount of data the must be read from sub track
+  long blen;
   long nread = 0;
   long offset = 0; // block length of returned data
+  long subChannelDataLen;
+  char subChanData[MAX_SUBCHANNEL_LEN];
+
 
   while (reader.readLeft() == 0) {
     // skip to next sub track with available data
@@ -1449,13 +1504,19 @@ int TrackReader::readBlock(int encodingMode, long lba, Sample *buf)
     }
   }
 
-  dataMode = readSubTrack_->mode(); // actual data mode
+  dataMode = readSubTrack_->mode(); // current data mode
+  subChanMode = readSubTrack_->subChannelMode(); // current sub-channel mode
 
-  if (dataMode == TrackData::AUDIO)
+  if (track_->audioCutMode()) {
     count = SAMPLES_PER_BLOCK;
-  else
-    count = TrackData::dataBlockSize(dataMode);
+    blen = AUDIO_BLOCK_LEN;
+  }
+  else {
+    count = TrackData::dataBlockSize(dataMode, subChanMode);
+    blen = count;
+  }
 
+  subChannelDataLen = TrackData::subChannelSize(subChanMode);
 
   char *dataBuf = (char *)buf;
 
@@ -1517,7 +1578,7 @@ int TrackReader::readBlock(int encodingMode, long lba, Sample *buf)
 
   // gather one block of data, block length depends on 'dataMode'
   while (count > 0) {
-    if (dataMode == TrackData::AUDIO)
+    if (track_->audioCutMode())
       actLen = reader.readData(buf + nread, count);
     else 
       actLen = reader.readData((Sample *)(dataBuf + nread), count);
@@ -1532,9 +1593,9 @@ int TrackReader::readBlock(int encodingMode, long lba, Sample *buf)
       // next sub-track must exist since requested length match available data
       assert(readSubTrack_ != NULL); 
 
-      // mode of next sub-track must match 'dataMode', this is ensured
-      // in 'update()'.
+      // mode of next sub-track must match, this is ensured in 'update()'.
       assert(readSubTrack_->mode() == dataMode);
+      assert(readSubTrack_->subChannelMode() == subChanMode);
 
       reader.init(readSubTrack_);
       if (reader.openData() != 0) {
@@ -1544,6 +1605,14 @@ int TrackReader::readBlock(int encodingMode, long lba, Sample *buf)
 
     count -= actLen;
     nread += actLen;
+  }
+
+  if (subChannelDataLen > 0) {
+    char *subChannelSourceBuf = dataBuf + blen - subChannelDataLen;
+
+    // save sub-channel data for later processing
+    memcpy(subChanData, subChannelSourceBuf, subChannelDataLen);
+    memset(subChannelSourceBuf, 0, subChannelDataLen);
   }
 
   unsigned char *encBuf = (unsigned char *)buf;
@@ -1631,8 +1700,32 @@ int TrackReader::readBlock(int encodingMode, long lba, Sample *buf)
       break;
     }
   }
+
+  // encode R-W sub-channel data
+  switch (subChanMode) {
+  case TrackData::SUBCHAN_NONE:
+    break;
+  case TrackData::SUBCHAN_RW:
+    if (subChanEncodingMode == 1) {
+      do_encode_sub((unsigned char*)subChanData, 1, 1,
+		    &subChanDelayLineIndex_, subChanDelayLine_);
+    }
+    break;
+
+  case TrackData::SUBCHAN_RW_RAW:
+    if (subChanEncodingMode == 0) {
+      // to be done
+    }
+    break;
+  }
+  
+  if (subChannelDataLen > 0) {
+    char *subChannelTargetBuf = (char *)buf + offset;
+    
+    memcpy(subChannelTargetBuf, subChanData, subChannelDataLen);
+  }
  
-  return offset;
+  return (offset + subChannelDataLen);
 }
 
 long TrackReader::readTrackData(Sample *buf, long len)
@@ -1718,7 +1811,7 @@ long TrackReader::readSamples(Sample *buf, long len)
     }
   }
 
-  if (track_->type_ == TrackData::AUDIO) {
+  if (track_->audioCutMode() == 1) {
     if ((ret = readTrackData(buf, len)) > 0)
       readPosSample_ += ret;
   }

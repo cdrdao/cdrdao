@@ -57,7 +57,7 @@ GenericMMC::GenericMMC(ScsiIf *scsiIf, unsigned long options)
   : CdrDriver(scsiIf, options)
 {
   int i;
-  driverName_ = "Generic SCSI-3/MMC - Version 1.2";
+  driverName_ = "Generic SCSI-3/MMC - Version 2.0";
   
   speed_ = 0;
   simulate_ = 1;
@@ -66,6 +66,8 @@ GenericMMC::GenericMMC(ScsiIf *scsiIf, unsigned long options)
   scsiTimeout_ = 0;
   
   cdTextEncoder_ = NULL;
+
+  driveInfo_ = NULL;
 
   memset(&diskInfo_, 0, sizeof(DiskInfo));
 
@@ -91,6 +93,9 @@ GenericMMC::~GenericMMC()
 
   delete cdTextEncoder_;
   cdTextEncoder_ = NULL;
+
+  delete driveInfo_;
+  driveInfo_ = NULL;
 }
 
 // static constructor
@@ -113,6 +118,31 @@ int GenericMMC::checkToc(const Toc *toc)
   return err;
 }
 
+int GenericMMC::subChannelEncodingMode(TrackData::SubChannelMode sm) const
+{
+  int ret = 0;
+
+  switch (sm) {
+  case TrackData::SUBCHAN_NONE:
+    ret = 0;
+    break;
+
+  case TrackData::SUBCHAN_RW:
+    if (options_ & OPT_MMC_NO_RW_PACKED) 
+      ret = 1; // have to encode the R-W sub-channel data
+    else 
+      ret = 0;
+    break;
+
+  case TrackData::SUBCHAN_RW_RAW:
+    // raw R-W sub-channel writing is assumed to be always supported
+    ret = 1;
+    break;
+  }
+
+  return ret;
+}
+
 // sets speed
 // return: 0: OK
 //         1: illegal speed
@@ -128,13 +158,16 @@ int GenericMMC::speed(int s)
 
 int GenericMMC::speed()
 {
-  DriveInfo di;
+  DriveInfo *di;
 
-  if (driveInfo(&di, 1) != 0) {
+  delete driveInfo_;
+  driveInfo_ = NULL;
+
+  if ((di = driveInfo(1)) == NULL) {
     return 0;
   }
 
-  return speed2Mult(di.currentWriteSpeed);
+  return speed2Mult(di->currentWriteSpeed);
 
 }
 
@@ -380,8 +413,8 @@ int GenericMMC::setWriteParameters(unsigned long variant)
     mp[2] |= 1 << 4; // test write
   }
 
-  DriveInfo di;
-  if (driveInfo(&di, 1) == 0 && di.burnProof) {
+  DriveInfo *di;
+  if ((di = driveInfo(1)) != NULL && di->burnProof) {
     // This drive has BURN-Proof function.
     // Enable it unless explicitly disabled.
     if (options_ & OPT_MMC_NO_BURNPROOF) {
@@ -575,6 +608,27 @@ static unsigned char leadInOutDataMode(TrackData::Mode mode)
   return ret;
 }
 
+
+unsigned char GenericMMC::subChannelDataForm(TrackData::SubChannelMode sm,
+					     int encodingMode)
+{
+  unsigned char ret = 0;
+
+  switch (sm) {
+  case TrackData::SUBCHAN_NONE:
+    break;
+
+  case TrackData::SUBCHAN_RW:
+  case TrackData::SUBCHAN_RW_RAW:
+    if (encodingMode == 0)
+      ret = 0xc0;
+    else
+      ret = 0x40;
+    break;
+  }
+
+  return ret;
+}
 		  
 
 // Creates cue sheet for current toc.
@@ -709,6 +763,10 @@ unsigned char *GenericMMC::createCueSheet(unsigned long variant,
 	break;
       }
     }
+
+    // add mode for sub-channel writing
+    dataMode |= subChannelDataForm(t->subChannelType(),
+				   subChannelEncodingMode(t->subChannelType()));
 
     ctl = 0;
     if (t->copyPermitted()) {
@@ -898,7 +956,7 @@ int GenericMMC::sendCueSheet()
 int GenericMMC::initDao(const Toc *toc)
 {
   long n;
-  blockLength_ = AUDIO_BLOCK_LEN;
+  blockLength_ = AUDIO_BLOCK_LEN + MAX_SUBCHANNEL_LEN;
   blocksPerWrite_ = scsiIf_->maxDataLen() / blockLength_;
 
   assert(blocksPerWrite_ > 0);
@@ -1003,9 +1061,20 @@ int GenericMMC::startDao()
     return 1;
   }
 
+
   long lba = diskInfo_.thisSessionLba - 150;
 
-  if (writeZeros(toc_->leadInMode(), lba, lba + 150, 150) != 0) {
+  TrackData::Mode mode = TrackData::AUDIO;
+  TrackData::SubChannelMode subChanMode = TrackData::SUBCHAN_NONE;
+  TrackIterator itr(toc_);
+  const Track *tr;
+
+  if ((tr = itr.first()) != NULL) {
+    mode = tr->type();
+    subChanMode = tr->subChannelType();
+  }
+  
+  if (writeZeros(mode, subChanMode, lba, lba + 150, 150) != 0) {
     return 1;
   }
   
@@ -1054,13 +1123,13 @@ void GenericMMC::abortDao()
 // by this function.
 // return: 0: OK
 //         1: scsi command failed
-int GenericMMC::writeData(TrackData::Mode mode, long &lba, const char *buf,
-			  long len)
+int GenericMMC::writeData(TrackData::Mode mode, TrackData::SubChannelMode sm,
+			  long &lba, const char *buf, long len)
 {
   assert(blocksPerWrite_ > 0);
   int writeLen = 0;
   unsigned char cmd[10];
-  long blockLength = blockSize(mode);
+  long blockLength = blockSize(mode, sm);
   int retry;
   int ret;
 
@@ -1546,6 +1615,7 @@ int GenericMMC::readSubChannels(long lba, long len, SubChannel ***chans,
       cmd[10] = 0x02;  // PQ sub-channel data
     else
       cmd[10] = 0x01;  // raw PW sub-channel data
+    
   }
 
   cmd[11] = 0;
@@ -1602,8 +1672,23 @@ int GenericMMC::readSubChannels(long lba, long len, SubChannel ***chans,
       }
       else {
 	((PWSubChannel96*)scannedSubChannels_[i])->init(buf);
+
+#if 0
+	// xxam!
+	int j, k;
+	
+	message(0, "");
+	for (j = 0; j < 4; j++) {
+	  for (k = 0; k < 24; k++) {
+	    unsigned char data = buf[j * 24 + k];
+	    message(0, "%02x ", data&0x3f);
+	  }
+	  message(0, "");
+	}
+#endif
+
       }
-      
+
       buf += blockLen;
     }
   }
@@ -1705,25 +1790,32 @@ int GenericMMC::getFeature(unsigned int feature, unsigned char *buf,
   return 0;
 }
 
-int GenericMMC::driveInfo(DriveInfo *info, int showErrorMsg)
+DriveInfo *GenericMMC::driveInfo(int showErrorMsg)
 {
   unsigned char mp[32];
+
+  if (driveInfo_ != NULL)
+    return driveInfo_;
+
+  driveInfo_ = new DriveInfo;
 
   if (getModePage(0x2a, mp, 32, NULL, NULL, showErrorMsg) != 0) {
     if (showErrorMsg) {
       message(-2, "Cannot retrieve drive capabilities mode page.");
     }
-    return 1;
+    delete driveInfo_;
+    driveInfo_ = NULL;
+    return NULL;
   }
 
-  info->burnProof = (mp[4] & 0x80) ? 1 : 0;
-  info->accurateAudioStream = mp[5] & 0x02 ? 1 : 0;
+  driveInfo_->burnProof = (mp[4] & 0x80) ? 1 : 0;
+  driveInfo_->accurateAudioStream = mp[5] & 0x02 ? 1 : 0;
 
-  info->maxReadSpeed = (mp[8] << 8) | mp[9];
-  info->currentReadSpeed = (mp[14] << 8) | mp[15];
+  driveInfo_->maxReadSpeed = (mp[8] << 8) | mp[9];
+  driveInfo_->currentReadSpeed = (mp[14] << 8) | mp[15];
 
-  info->maxWriteSpeed = (mp[18] << 8) | mp[19];
-  info->currentWriteSpeed = (mp[20] << 8) | mp[21];
+  driveInfo_->maxWriteSpeed = (mp[18] << 8) | mp[19];
+  driveInfo_->currentWriteSpeed = (mp[20] << 8) | mp[21];
 
 #if 0
   unsigned char cdMasteringFeature[8];
@@ -1736,7 +1828,7 @@ int GenericMMC::driveInfo(DriveInfo *info, int showErrorMsg)
   }
 #endif
 
-  return 0;
+  return driveInfo_;
 }
 
 TrackData::Mode GenericMMC::getTrackMode(int, long trackStartLba)
@@ -1861,6 +1953,8 @@ long GenericMMC::readTrackData(TrackData::Mode mode, long lba, long len,
   cmd[4] = lba >> 8;
   cmd[5] = lba;
   cmd[9] = 0xf8;
+  cmd[10] = 0; // xxam!
+  //inBlockLen += PW_SUBCHANNEL_LEN; // xxam!
 
   while (len > 0 && !ok) {
     cmd[6] = len >> 16;
@@ -1990,6 +2084,20 @@ long GenericMMC::readTrackData(TrackData::Mode mode, long lba, long len,
 	break;
       }
     }
+
+#if 0
+    // xxam!
+    int j, k;
+
+    message(0, "");
+    for (j = 0; j < 4; j++) {
+      for (k = 0; k < 24; k++) {
+	unsigned char data = sector[AUDIO_BLOCK_LEN + j * 24 + k];
+	message(0, "%02x ", data&0x3f);
+      }
+      message(0, "");
+    }
+#endif
 
     sector += inBlockLen;
   }

@@ -38,8 +38,11 @@ GenericMMCraw::GenericMMCraw(ScsiIf *scsiIf, unsigned long options)
 
   encodingMode_ = 0;
 
+  subChannelMode_ = 0;
+
   leadInLen_ = leadOutLen_ = 0;
   subChannel_ = NULL;
+  encSubChannel_ = NULL;
   encodeBuffer_ = NULL;
 
   // CD-TEXT dynamic data
@@ -54,6 +57,9 @@ GenericMMCraw::~GenericMMCraw()
 {
   delete subChannel_, subChannel_ = NULL;
   delete[] encodeBuffer_, encodeBuffer_ = NULL;
+
+  delete[] encSubChannel_;
+  encSubChannel_ = NULL;
 
   cdTextStartLba_ = 0;
   cdTextEndLba_ = 0;
@@ -77,6 +83,49 @@ CdrDriver *GenericMMCraw::instance(ScsiIf *scsiIf, unsigned long options)
   return new GenericMMCraw(scsiIf, options);
 }
 
+int GenericMMCraw::subChannelEncodingMode(TrackData::SubChannelMode sm) const
+{
+  int ret = 0;
+
+  
+  if (subChannelMode_ == 0) {
+    // The supported sub-channel writing mode has not been determined, yet,
+    // so just return the plain mode here. 'initDao' will finally check if
+    // writing of the sub-channel data defined in 'toc_' is supported by the
+    // drive.
+    return 0;
+  }
+
+  switch (sm) {
+  case TrackData::SUBCHAN_NONE:
+    ret = 0;
+    break;
+
+  case TrackData::SUBCHAN_RW:
+    switch (subChannelMode_) {
+    case 2:
+      ret = 0; // plain
+      break;
+    case 3:
+      ret = 1; // have to create parity and perform interleaving
+      break;
+    default:
+      ret = -1; // not supported
+      break;
+    }
+    break;
+
+  case TrackData::SUBCHAN_RW_RAW:
+    if (subChannelMode_ == 3)
+      ret = 1;
+    else 
+      ret = -1;
+    break;
+  }
+
+  return ret;
+}
+
 // Sets write parameters via mode page 0x05.
 // return: 0: OK
 //         1: scsi command failed
@@ -98,8 +147,8 @@ int GenericMMCraw::setWriteParameters(int dataBlockType)
     mp[2] |= 1 << 4; // test write
   }
 
-  DriveInfo di;
-  if (driveInfo(&di, 1) == 0 && di.burnProof) {
+  DriveInfo *di;
+  if ((di = driveInfo(1)) != NULL && di->burnProof) {
     // This drive has BURN-Proof function.
     // Enable it unless explicitly disabled.
     if (options_ & OPT_MMC_NO_BURNPROOF) {
@@ -250,6 +299,133 @@ int GenericMMCraw::getMultiSessionInfo(int sessionNr, int multi,
   return err;
 }
 
+int GenericMMCraw::getSubChannelModeFromToc()
+{
+  TrackIterator itr(CdrDriver::toc_);
+  const Track *tr;
+  int mode = 0;
+  
+  for (tr = itr.first(); tr != NULL; tr = itr.next()) {
+    switch (tr->subChannelType()) {
+    case TrackData::SUBCHAN_NONE:
+      break;
+
+    case TrackData::SUBCHAN_RW:
+      // we need at least packed RW writing
+      if (mode < 2)
+	mode = 2;
+      break;
+
+    case TrackData::SUBCHAN_RW_RAW:
+      // we need raw PW writing
+      mode = 3;
+      break;
+    }
+  }
+
+  message(5, "Sub-channel mode requested by toc: %d", mode);
+
+  return mode;
+}
+
+int GenericMMCraw::setSubChannelMode()
+{
+  delete subChannel_;
+  subChannel_ = NULL;
+
+  subChannelMode_ = 0;
+  
+#if 1
+  if (cdTextEncoder_ != NULL) {
+    if (setWriteParameters(3) == 0) {
+      subChannel_ = new PWSubChannel96;
+      subChannelMode_ = 3;
+    }
+    else {
+      delete cdTextEncoder_;
+      cdTextEncoder_ = NULL;
+
+      message(force() ? -1 : -2,
+	      "Cannot write CD-TEXT data because the 96 byte raw P-W sub-channel data mode is not supported.");
+
+      if (force()) {
+	message(-1, "Ignored because of --force option.");
+      }
+      else {
+	message(-2, "Use option --force to ignore this error.");
+	return 1;
+      }
+    }
+  }
+
+  // check if the toc requires a certain sub-channel mode and try to set it
+  if (subChannel_ == NULL) {
+    int tocMode = getSubChannelModeFromToc();
+
+    if (tocMode > 0) {
+      for (; tocMode <= 3 && subChannel_ == NULL; tocMode++) {
+	if (setWriteParameters(tocMode) == 0) {
+	  if (tocMode == 1)
+	    subChannel_ = new PQSubChannel16;
+	  else
+	    subChannel_ = new PWSubChannel96;
+
+	  subChannelMode_ = tocMode;
+	}
+      }
+
+      if (subChannel_ == NULL) {
+	message(-2, "Cannot setup sub-channel writing mode for sub-channel data defined in the toc-file.");
+	return 1;
+      }
+    }
+  }
+
+  // select any available sub-channel mode
+  if (subChannel_ == NULL) {
+    if (setWriteParameters(1) == 0) {
+      subChannel_ = new PQSubChannel16;
+      subChannelMode_ = 1;
+    }
+    else if (setWriteParameters(3) == 0) {
+      subChannel_ = new PWSubChannel96;
+      subChannelMode_ = 3;
+    }
+    else if (setWriteParameters(2) == 0) {
+      subChannel_ = new PWSubChannel96;
+      subChannelMode_ = 2;
+    }
+    else {
+      message(-2, "Cannot setup disk-at-once writing for this drive.");
+      return 1;
+    }
+  }
+
+#else
+
+  //subChannel_ = new PWSubChannel96;
+  subChannel_ = new PQSubChannel16;
+  subChannelMode_ = 1;
+#endif
+
+  switch (subChannelMode_) {
+  case 1:
+    message(2, "Using 16 byte P-Q sub-channel data mode.");
+    break;
+  case 2:
+    message(2, "Using 96 byte packed P-W sub-channel data mode.");
+    break;
+  case 3:
+    if (cdTextEncoder_ != NULL)
+      message(2, "Using 96 byte raw P-W sub-channel data mode for CD-TEXT.");
+    else
+      message(2, "Using 96 byte raw P-W sub-channel data mode.");
+    break;
+  }
+
+  return 0;
+}
+
 int GenericMMCraw::initDao(const Toc *toc)
 {
   long n;
@@ -273,60 +449,8 @@ int GenericMMCraw::initDao(const Toc *toc)
     cdTextEncoder_ = NULL;
   }
 
-  delete subChannel_;
-  subChannel_ = NULL;
-
-#if 1
-  if (cdTextEncoder_ != NULL) {
-    if (setWriteParameters(3) == 0) {
-      subChannel_ = new PWSubChannel96;
-      message(2, "Using 96 byte raw P-W sub-channel data mode for CD-TEXT.");
-    }
-    else {
-      delete cdTextEncoder_;
-      cdTextEncoder_ = NULL;
-
-      message(force() ? -1 : -2,
-	      "Cannot write CD-TEXT data because the 96 byte raw P-W sub-channel data mode is not supported.");
-
-      if (force()) {
-	message(-1, "Ignored because of --force option.");
-      }
-      else {
-	message(-2, "Use option --force to ignore this error.");
-	return 1;
-      }
-    }
-  }
-
-
-  if (subChannel_ == NULL) {
-    if (setWriteParameters(1) == 0) {
-      subChannel_ = new PQSubChannel16;
-      message(2, "Using 16 byte P-Q sub-channel data mode.");
-    }
-    else if (setWriteParameters(3) == 0) {
-      subChannel_ = new PWSubChannel96;
-      message(2, "Using 96 byte raw P-W sub-channel data mode.");
-    }
-    else if (setWriteParameters(2) == 0) {
-      // since we don't use the R-W channels it's the same as the latter mode,
-      // I think
-      subChannel_ = new PWSubChannel96;
-      message(2, "Using 96 byte packed P-W sub-channel data mode.");
-    }
-    else {
-      message(-2, "Cannot setup disk-at-once writing for this drive.");
-      return 1;
-    }
-  }
-
-#else
-
-  //subChannel_ = new PWSubChannel96;
-  subChannel_ = new PQSubChannel16;
-
-#endif
+  if (setSubChannelMode() != 0)
+    return 1; 
 
   blockLength_ = AUDIO_BLOCK_LEN + subChannel_->dataLength();
   blocksPerWrite_ = scsiIf_->maxDataLen() / blockLength_;
@@ -360,7 +484,7 @@ int GenericMMCraw::initDao(const Toc *toc)
   }
 
   // allocate buffer for write zeros
-  n = blocksPerWrite_ * AUDIO_BLOCK_LEN;
+  n = blocksPerWrite_ * (AUDIO_BLOCK_LEN + subChannel_->dataLength());
   delete[] zeroBuffer_;
   zeroBuffer_ = new char[n];
   memset(zeroBuffer_, 0, n);
@@ -369,6 +493,9 @@ int GenericMMCraw::initDao(const Toc *toc)
   n = blocksPerWrite_ * blockLength_;
   delete[] encodeBuffer_;
   encodeBuffer_ = new (unsigned char)[n];
+
+  delete[] encSubChannel_;
+  encSubChannel_ = new (unsigned char)[blocksPerWrite_ * subChannel_->dataLength()];
 
   /*
   SessionInfo sessInfo;
@@ -399,11 +526,21 @@ int GenericMMCraw::startDao()
 
   long lba = leadInStart_.lba() - 450150;
   
-  if (writeZeros(CdrDriver::toc_->leadInMode(), lba, 0, leadInLen_) != 0) {
+  if (writeZeros(CdrDriver::toc_->leadInMode(), TrackData::SUBCHAN_NONE,
+		 lba, 0, leadInLen_) != 0) {
     return 1;
   }
 
-  if (writeZeros(CdrDriver::toc_->leadInMode(), lba, 0, 150) != 0) {
+  TrackData::SubChannelMode subChanMode = TrackData::SUBCHAN_NONE;
+  TrackIterator itr(CdrDriver::toc_);
+  const Track *tr;
+
+  if ((tr = itr.first()) != NULL) {
+    subChanMode = tr->subChannelType();
+  }
+
+  if (writeZeros(CdrDriver::toc_->leadInMode(), subChanMode, lba, 0, 150)
+      != 0) {
     return 1;
   }
 
@@ -418,7 +555,8 @@ int GenericMMCraw::finishDao()
 
   long lba = CdrDriver::toc_->length().lba();
 
-  writeZeros(CdrDriver::toc_->leadOutMode(), lba, lba + 150, leadOutLen_);
+  writeZeros(CdrDriver::toc_->leadOutMode(), TrackData::SUBCHAN_NONE,
+	     lba, lba + 150, leadOutLen_);
 
   message(2, "\nFlushing cache...");
   
@@ -472,15 +610,19 @@ long GenericMMCraw::nextWritableAddress()
 // block.
 // return: 0: OK
 //         1: scsi command failed
-int GenericMMCraw::writeData(TrackData::Mode mode, long &lba, const char *buf,
-			     long len)
+int GenericMMCraw::writeData(TrackData::Mode mode,
+			     TrackData::SubChannelMode sm,
+			     long &lba, const char *buf, long len)
 {
   assert(blockLength_ > 0);
   assert(blocksPerWrite_ > 0);
   assert(mode == TrackData::AUDIO);
-  int nwritten = 0;
   int writeLen = 0;
   unsigned char cmd[10];
+  int i, j;
+
+  long iblen = blockSize(mode, sm);
+  long slen = subChannel_->dataLength();
 
   /*
   message(0, "lba: %ld, len: %ld, bpc: %d, bl: %d ", lba, len, blocksPerCmd,
@@ -502,15 +644,18 @@ int GenericMMCraw::writeData(TrackData::Mode mode, long &lba, const char *buf,
     cmd[8] = writeLen;
 
     // encode the PQ sub-channel data
-    encode(lba, (unsigned char*)(buf + (nwritten * AUDIO_BLOCK_LEN)),
-	   writeLen, encodeBuffer_);
+    encode(lba, encSubChannel_, writeLen);
 
-    // add encoded CD-TEXT data for the lead-in
-    if (cdTextSubChannels_ != NULL && lba >= cdTextStartLba_ &&
-	lba < cdTextEndLba_) {
-      int i, j;
-      
-      for (i = 0; i < writeLen && lba + i < cdTextEndLba_; i++) {
+    for (i = 0; i < writeLen; i++) {
+      memcpy(encodeBuffer_ + i * blockLength_, buf + i * iblen,
+	     AUDIO_BLOCK_LEN);
+
+      memcpy(encodeBuffer_ + i * blockLength_ + AUDIO_BLOCK_LEN,
+	     encSubChannel_ + i * slen, slen);
+
+      if (cdTextSubChannels_ != NULL && lba >= cdTextStartLba_ &&
+	  lba + i < cdTextEndLba_) {
+
 	const unsigned char *data = cdTextSubChannels_[cdTextSubChannelAct_]->data();
 	long dataLen = cdTextSubChannels_[cdTextSubChannelAct_]->dataLength();
 
@@ -527,12 +672,33 @@ int GenericMMCraw::writeData(TrackData::Mode mode, long &lba, const char *buf,
 	if (cdTextSubChannelAct_ >= cdTextSubChannelCount_)
 	  cdTextSubChannelAct_ = 0;
       }
+      else {
+	switch (sm) {
+	case TrackData::SUBCHAN_NONE:
+	  break;
+
+	case TrackData::SUBCHAN_RW:
+	case TrackData::SUBCHAN_RW_RAW:
+	  {
+	    unsigned char *oBuf = encodeBuffer_ + i * blockLength_ + AUDIO_BLOCK_LEN;
+	    const char *iBuf = buf + i * iblen + AUDIO_BLOCK_LEN;
+
+	    for (j = 0; j < PW_SUBCHANNEL_LEN; j++) {
+	      *oBuf |= (*iBuf & 0x3f);
+	      oBuf++;
+	      iBuf++;
+	    }
+	  }
+	  break;
+	}
+      }
     }
+
 
 #if 0
     // consistency checks
     long sum1, sum2;
-    int i, n;
+    int n;
     const char *p;
     for (i = 0; i < writeLen; i++) {
       message(0, "%ld: ", lba + i);
@@ -541,7 +707,7 @@ int GenericMMCraw::writeData(TrackData::Mode mode, long &lba, const char *buf,
       delete chan;
 
       sum1 = 0;
-      for (p = buf + (nwritten + i) * AUDIO_BLOCK_LEN, n = 0;
+      for (p = buf + i * iblen, n = 0;
 	   n < AUDIO_BLOCK_LEN; n++, p++) {
 	sum1 += *p;
       }
@@ -566,9 +732,8 @@ int GenericMMCraw::writeData(TrackData::Mode mode, long &lba, const char *buf,
     //message(0, ". ");
 
     lba += writeLen;
-
     len -= writeLen;
-    nwritten += writeLen;
+    buf += writeLen * iblen;
   }
 
   //message(0, "");

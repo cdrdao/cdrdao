@@ -211,13 +211,12 @@ int scramble_L2(unsigned char *inout)
   return 0;
 }
 
-static int encode_LSUB_Q(unsigned char inout[LSUB_RAW + LSUB_Q])
+static int encode_LSUB_Q(unsigned char inout[LSUB_QRAW + LSUB_Q])
 {
   unsigned char *Q;
   unsigned char data;
   int i;
 
-  memmove(inout+LSUB_QRAW+LSUB_Q, inout+LSUB_QRAW, LSUB_RAW-LSUB_QRAW);
   Q = inout + LSUB_QRAW;
 
   memset(Q, 0, LSUB_Q);
@@ -239,8 +238,6 @@ static int encode_LSUB_Q(unsigned char inout[LSUB_RAW + LSUB_Q])
   }
 #else
   for (i = 0; i < LSUB_QRAW; i++) {
-	unsigned char data;
-
 	data = inout[i] & 0x3f;
 	if (data != 0) {
 		unsigned char base = rs_sub_rw_log[data];
@@ -592,55 +589,52 @@ static int do_decode_L2(unsigned char in[(L2_RAW+L2_Q+L2_P)],
 
 
 
-#define MAX_SUB_DEL 8
-static unsigned char sub_delay_line[MAX_SUB_DEL][LSUB_RAW+LSUB_Q+LSUB_P];
-static unsigned sub_del_index;
+//static unsigned char sub_delay_line[MAX_SUB_DEL][LSUB_RAW+LSUB_Q+LSUB_P];
+//static unsigned sub_del_index;
 
 /* R-W Subchannel en/decoder */
-int do_encode_sub(unsigned char in[LSUB_RAW*PACKETS_PER_SUBCHANNELFRAME],
-		unsigned char out[(LSUB_RAW+LSUB_Q+LSUB_P)*PACKETS_PER_SUBCHANNELFRAME],
-		int delay1, int permute)
+int do_encode_sub(unsigned char inout[(LSUB_RAW+LSUB_Q+LSUB_P)*PACKETS_PER_SUBCHANNELFRAME],
+		  int delay1, int permute, unsigned long *sub_del_index,
+		  unsigned char sub_delay_line[MAX_SUB_DEL][LSUB_RAW+LSUB_Q+LSUB_P])
 {
   int i;
-
-  if (in == out) return -1;
+  unsigned char *buf = inout;
 
   for (i = 0; i < PACKETS_PER_SUBCHANNELFRAME; i++) {
      int j;
      unsigned char t;
 
-     memcpy(out, in, (LSUB_RAW));
-
      /* build Q parity */
-     encode_LSUB_Q(out);
+     encode_LSUB_Q(buf);
 
      /* build P parity */
-     encode_LSUB_P(out);
+     encode_LSUB_P(buf);
 
      if (permute) {
 	/* permute */
-	t = out[1]; out[1] = out[18]; out[18] = t;
-	t = out[2]; out[2] = out[ 5]; out[ 5] = t;
-	t = out[3]; out[3] = out[23]; out[23] = t;
+	t = buf[1]; buf[1] = buf[18]; buf[18] = t;
+	t = buf[2]; buf[2] = buf[ 5]; buf[ 5] = t;
+	t = buf[3]; buf[3] = buf[23]; buf[23] = t;
      }
 
      if (delay1) {
 	/* shift through delay_line */
  	for (j = 0; j < LSUB_RAW+LSUB_Q+LSUB_P; j++) {
 		if ((j % MAX_SUB_DEL) != 0) {
-			t = sub_delay_line[(sub_del_index) % MAX_SUB_DEL][j];
-			sub_delay_line[(sub_del_index + j) % MAX_SUB_DEL][j] = out[j];
-			out[j] = t;
+			t = sub_delay_line[(*sub_del_index) % MAX_SUB_DEL][j];
+			sub_delay_line[(*sub_del_index + j) % MAX_SUB_DEL][j] = buf[j];
+			buf[j] = t;
 		}
 	}
      }
-     sub_del_index++;
-     out += LSUB_RAW+LSUB_Q+LSUB_P;
-     in += LSUB_RAW;
+     (*sub_del_index)++;
+     buf += LSUB_RAW+LSUB_Q+LSUB_P;
   }
+
   return 0;
 }
 
+#if 0
 int 
 do_decode_sub(
      unsigned char in[(LSUB_RAW+LSUB_Q+LSUB_P)*PACKETS_PER_SUBCHANNELFRAME],
@@ -688,6 +682,7 @@ do_decode_sub(
   }
   return 0;
 }
+#endif
 
 static int sectortype = MODE_0;
 int get_sector_type(void)

@@ -137,13 +137,15 @@ int RicohMP6200::startDao()
   message(2, "Writing lead-in and gap...");
 
   // write lead-in
-  if (writeZeros(toc_->leadInMode(), lba, 0, leadInLen_) != 0) {
+  if (writeZeros(toc_->leadInMode(), TrackData::SUBCHAN_NONE, lba, 0,
+		 leadInLen_) != 0) {
     flushCache();
     return 1;
   }
 
   // write gap (2 seconds)
-  if (writeZeros(toc_->leadInMode(), lba, 0, 150) != 0) {
+  if (writeZeros(toc_->leadInMode(), TrackData::SUBCHAN_NONE, lba, 0, 150)
+      != 0) {
     flushCache();
     return 1;
   }
@@ -160,7 +162,8 @@ int RicohMP6200::finishDao()
   message(2, "Writing lead-out...");
 
   // write lead-out
-  if (writeZeros(toc_->leadOutMode(), lba, lba + 150, leadOutLen_) != 0) {
+  if (writeZeros(toc_->leadOutMode(), TrackData::SUBCHAN_NONE, lba, lba + 150,
+		 leadOutLen_) != 0) {
     flushCache();
     return 1;
   }
@@ -189,8 +192,8 @@ void RicohMP6200::abortDao()
 // by this function but not used for writing
 // return: 0: OK
 //         1: scsi command failed
-int RicohMP6200::writeData(TrackData::Mode mode, long &lba, const char *buf,
-			   long len)
+int RicohMP6200::writeData(TrackData::Mode mode, TrackData::SubChannelMode sm,
+			   long &lba, const char *buf, long len)
 {
   assert(blocksPerWrite_ > 0);
   assert(blockLength_ > 0);

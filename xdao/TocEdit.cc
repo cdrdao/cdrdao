@@ -18,6 +18,9 @@
  */
 /*
  * $Log: TocEdit.cc,v $
+ * Revision 1.5  2001/09/03 17:37:42  andreasm
+ * Added support for sub-channel writing.
+ *
  * Revision 1.4  2000/11/05 12:24:41  andreasm
  * Improved handling of TocEdit views. Introduced a new class TocEditView that
  * holds all view data (displayed sample range, selected sample range,
@@ -52,7 +55,7 @@
  *
  */
 
-static char rcsid[] = "$Id: TocEdit.cc,v 1.4 2000/11/05 12:24:41 andreasm Exp $";
+static char rcsid[] = "$Id: TocEdit.cc,v 1.5 2001/09/03 17:37:42 andreasm Exp $";
 
 #include "TocEdit.h"
 
@@ -448,7 +451,8 @@ int TocEdit::appendSilence(unsigned long length)
   if (length > 0) {
     long start, end;
 
-    TrackData *data = new TrackData(TrackData::AUDIO, length);
+    TrackData *data = new TrackData(TrackData::AUDIO, TrackData::SUBCHAN_NONE,
+				    length);
     TrackDataList list;
     list.append(data);
 
@@ -473,7 +477,8 @@ int TocEdit::insertSilence(unsigned long length, unsigned long pos)
     return 1;
 
   if (length > 0) {
-    TrackData *data = new TrackData(TrackData::AUDIO, length);
+    TrackData *data = new TrackData(TrackData::AUDIO, TrackData::SUBCHAN_NONE,
+				    length);
     TrackDataList list;
 
     list.append(data);

@@ -1,6 +1,6 @@
 /*  cdrdao - write audio CD-Rs in disc-at-once mode
  *
- *  Copyright (C) 1999  Andreas Mueller <mueller@daneb.ping.de>
+ *  Copyright (C) 1998-2001  Andreas Mueller <andreas@daneb.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -17,30 +17,6 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
- * $Log: SonyCDU920.cc,v $
- * Revision 1.3  2000/12/17 10:51:23  andreasm
- * Default verbose level is now 2. Adaopted message levels to have finer
- * grained control about the amount of messages printed by cdrdao.
- * Added CD-TEXT writing support to the GenericMMCraw driver.
- * Fixed CD-TEXT cue sheet creating for the GenericMMC driver.
- *
- * Revision 1.2  2000/10/08 16:39:40  andreasm
- * Remote progress message now always contain the track relative and total
- * progress and the total number of processed tracks.
- *
- * Revision 1.1.1.1  2000/02/05 01:37:27  llanero
- * Uploaded cdrdao 1.1.3 with pre10 patch applied.
- *
- * Revision 1.2  1999/05/24 17:34:19  mueller
- * Added parameter for data form of lead-in to 'createCueSheet()'.
- *
- * Revision 1.1  1999/05/20 18:40:17  mueller
- * Initial revision
- *
- */
-
-static char rcsid[] = "$Id: SonyCDU920.cc,v 1.3 2000/12/17 10:51:23 andreasm Exp $";
 
 #include <config.h>
 
@@ -509,7 +485,8 @@ int SonyCDU920::startDao()
   long lba = -150;
 
   // write mandatory pre-gap after lead-in
-  if (writeZeros(toc_->leadInMode(), lba, 0, 150) != 0) {
+  if (writeZeros(toc_->leadInMode(), TrackData::SUBCHAN_NONE, lba, 0, 150)
+      != 0) {
     return 1;
   }
   
@@ -543,14 +520,14 @@ void SonyCDU920::abortDao()
 // by this function.
 // return: 0: OK
 //         1: scsi command failed
-int SonyCDU920::writeData(TrackData::Mode mode, long &lba, const char *buf,
-			 long len)
+int SonyCDU920::writeData(TrackData::Mode mode, TrackData::SubChannelMode sm,
+			  long &lba, const char *buf, long len)
 {
   assert(blocksPerWrite_ > 0);
 
   unsigned char cmd[10];
   int writeLen = 0;
-  long blockLength = blockSize(mode);
+  long blockLength = blockSize(mode, TrackData::SUBCHAN_NONE);
   long byteLen;
   int ret;
 

@@ -1,6 +1,6 @@
 /*  cdrdao - write audio CD-Rs in disc-at-once mode
  *
- *  Copyright (C) 1998, 1999  Andreas Mueller <mueller@daneb.ping.de>
+ *  Copyright (C) 1998-2001  Andreas Mueller <andreas@daneb.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -16,32 +16,6 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
-/*
- * $Log: ScsiIf-lib.cc,v $
- * Revision 1.3  2000/12/17 10:51:23  andreasm
- * Default verbose level is now 2. Adaopted message levels to have finer
- * grained control about the amount of messages printed by cdrdao.
- * Added CD-TEXT writing support to the GenericMMCraw driver.
- * Fixed CD-TEXT cue sheet creating for the GenericMMC driver.
- *
- * Revision 1.2  2000/10/29 08:11:11  andreasm
- * Updated CD-R vendor table.
- * Loading defaults now from "/etc/defaults/cdrdao" and then from "$HOME/.cdrdao".
- * Handle if the power calibration command is not supported by a SCSI-3/mmc drive.
- * Updated to libscg from cdrtools-1.10.
- *
- * Revision 1.1.1.1  2000/02/05 01:37:05  llanero
- * Uploaded cdrdao 1.1.3 with pre10 patch applied.
- *
- * Revision 1.2  1999/04/02 16:44:30  mueller
- * Removed 'revisionDate' because it is not available in general.
- *
- * Revision 1.1  1999/03/27 20:55:18  mueller
- * Initial revision
- *
- */
-
-static char rcsid[] = "$Id: ScsiIf-lib.cc,v 1.3 2000/12/17 10:51:23 andreasm Exp $";
 
 #include <config.h>
 

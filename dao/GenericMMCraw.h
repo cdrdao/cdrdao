@@ -34,11 +34,14 @@ public:
 
   int multiSession(int);
 
+  int subChannelEncodingMode(TrackData::SubChannelMode) const;
+
   int initDao(const Toc *);
   int startDao();
   int finishDao();
 
-  int writeData(TrackData::Mode, long &lba, const char *buf, long len);
+  int writeData(TrackData::Mode, TrackData::SubChannelMode, long &lba,
+		const char *buf, long len);
 
 protected:
   
@@ -46,9 +49,17 @@ protected:
 
 private:  
   unsigned char *encodeBuffer_; // buffer for encoding sub-channels
+  unsigned char *encSubChannel_; // holds encoded sub-channels
 
   SubChannel *subChannel_; // sub channel template
 
+  int subChannelMode_; /* selected sub-channel writing mode:
+			  0: undefined
+			  1: 16 byte PQ
+			  2: 96 byte PW packed
+			  3: 96 byte PW raw
+		       */
+  
   long cdTextStartLba_;
   long cdTextEndLba_;
   const PWSubChannel96 **cdTextSubChannels_;
@@ -57,6 +68,8 @@ private:
 
   long nextWritableAddress();
   int getMultiSessionInfo(int sessionNr, int multi, SessionInfo *info);
+  int getSubChannelModeFromToc();
+  int setSubChannelMode();
 };
 
 #endif

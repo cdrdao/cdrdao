@@ -146,7 +146,7 @@ public:
   void init(const Toc *);
 
   int openData();
-  long readData(long lba, char *buf, long len);
+  //long readData(long lba, char *buf, long len);
   int seekSample(unsigned long sample);
   long readSamples(Sample *buf, long len);
   void closeData();
@@ -172,7 +172,9 @@ public:
   const Track *find(unsigned long sample, Msf &start, Msf &end,
 		    int *trackNr);
   const Track *first(Msf &start, Msf &end);
+  const Track *first();
   const Track *next(Msf &start, Msf &end);
+  const Track *next();
 
 private:
   const Toc *toc_;
@@ -192,9 +194,5 @@ Toc::TocType Toc::tocType() const
 {
   return tocType_;
 }
-
-
-
-
 
 #endif

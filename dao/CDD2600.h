@@ -47,7 +47,8 @@ public:
   int finishDao();
   void abortDao();
 
-  int writeData(TrackData::Mode, long &lba, const char *buf, long len);
+  int writeData(TrackData::Mode, TrackData::SubChannelMode, long &lba,
+		const char *buf, long len);
 
   Toc *readDiskToc(int, const char *);
   Toc *readDisk(int, const char *);

@@ -1,6 +1,6 @@
 /*  cdrdao - write audio CD-Rs in disc-at-once mode
  *
- *  Copyright (C) 1998-2000  Andreas Mueller <mueller@daneb.ping.de>
+ *  Copyright (C) 1998-2001  Andreas Mueller <andreas@daneb.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -16,39 +16,6 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
-/*
- * $Log: TeacCdr55.cc,v $
- * Revision 1.4  2000/12/17 10:51:23  andreasm
- * Default verbose level is now 2. Adaopted message levels to have finer
- * grained control about the amount of messages printed by cdrdao.
- * Added CD-TEXT writing support to the GenericMMCraw driver.
- * Fixed CD-TEXT cue sheet creating for the GenericMMC driver.
- *
- * Revision 1.3  2000/10/08 16:39:41  andreasm
- * Remote progress message now always contain the track relative and total
- * progress and the total number of processed tracks.
- *
- * Revision 1.2  2000/04/23 16:29:50  andreasm
- * Updated to state of my private development environment.
- *
- * Revision 1.5  1999/12/15 20:31:46  mueller
- * Added remote messages for 'read-cd' progress used by a GUI.
- *
- * Revision 1.4  1999/11/07 09:15:15  mueller
- * Release 1.1.3
- *
- * Revision 1.3  1999/04/05 11:04:10  mueller
- * Added driver option flags.
- *
- * Revision 1.2  1999/03/27 14:35:37  mueller
- * Added 'read-toc' support.
- *
- * Revision 1.1  1999/03/21 19:36:08  mueller
- * Initial revision
- *
- */
-
-static char rcsid[] = "$Id: TeacCdr55.cc,v 1.4 2000/12/17 10:51:23 andreasm Exp $";
 
 #include <config.h>
 
@@ -251,7 +218,7 @@ int TeacCdr55::setSimulationMode()
 
 int TeacCdr55::setWriteDensity(TrackData::Mode mode)
 {
-  long blockLength = blockSize(mode);
+  long blockLength = blockSize(mode, TrackData::SUBCHAN_NONE);
   unsigned char cmd[6];
   unsigned char data[12];
 
@@ -815,13 +782,13 @@ int TeacCdr55::setIsrc()
 
 // Need to overload this function to set the WriteExtension flag. It'll
 // also change the write density if the actual mode changes.
-int TeacCdr55::writeData(TrackData::Mode mode, long &lba, const char *buf,
-			 long len)
+int TeacCdr55::writeData(TrackData::Mode mode, TrackData::SubChannelMode sm,
+			 long &lba, const char *buf, long len)
 {
   assert(blocksPerWrite_ > 0);
   int writeLen = 0;
   unsigned char cmd[10];
-  long blockLength = blockSize(mode);
+  long blockLength = blockSize(mode, TrackData::SUBCHAN_NONE);
   
 #if 0
   long sum, i;
@@ -945,7 +912,8 @@ int TeacCdr55::startDao()
 
   long lba = diskInfo_.thisSessionLba - 150;
 
-  if (writeZeros(actMode_, lba, lba + 150, 150) != 0) {
+  if (writeZeros(actMode_, TrackData::SUBCHAN_NONE, lba, lba + 150, 150)
+      != 0) {
     return 1;
   }
   

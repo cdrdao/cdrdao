@@ -19,6 +19,9 @@
 
 /*
  * $Log: CueParser.g,v $
+ * Revision 1.3  2001/09/03 17:37:42  andreasm
+ * Added support for sub-channel writing.
+ *
  * Revision 1.2  2000/06/19 20:14:00  andreasm
  * Implemented CDDB access via cddbp and http.
  *
@@ -427,6 +430,7 @@ static Toc *createToc(const char *cueFileName, const char *binFileName,
   long binFileLength;
   long byteOffset = 0;
   long blockLen;
+  TrackData::SubChannelMode subChanMode = TrackData::SUBCHAN_NONE;
 
   if ((fd = open(binFileName, O_RDONLY)) < 0) {
     message(-2, "Cannot open bin file '%s': %s", binFileName, strerror(errno));
@@ -450,9 +454,9 @@ static Toc *createToc(const char *cueFileName, const char *binFileName,
   toc->tocType(Toc::CD_DA);
   
   for (t = 0; t < nofTracks; t++) {
-    Track track(trackData[t].mode);
+    Track track(trackData[t].mode, subChanMode);
 
-    blockLen = TrackData::dataBlockSize(trackData[t].mode);
+    blockLen = TrackData::dataBlockSize(trackData[t].mode, subChanMode);
     
     // very simplified guessing of toc type
     switch (trackData[t].mode) {
@@ -512,8 +516,7 @@ static Toc *createToc(const char *cueFileName, const char *binFileName,
     if (trackData[t].mode == TrackData::AUDIO) {
       if (trackData[t].pregap > 0) {
 	track.append(SubTrack(SubTrack::DATA,
-			      TrackData(trackData[t].mode,
-					Msf(trackData[t].pregap).samples())));
+			      TrackData(Msf(trackData[t].pregap).samples())));
       }
 
       SubTrack st(SubTrack::DATA, TrackData(binFileName, byteOffset, 0,
@@ -526,12 +529,12 @@ static Toc *createToc(const char *cueFileName, const char *binFileName,
     else {
       if (trackData[t].pregap > 0) {
 	track.append(SubTrack(SubTrack::DATA, 
-			      TrackData(trackData[t].mode,
+			      TrackData(trackData[t].mode, subChanMode,
 					trackData[t].pregap * blockLen)));
       }
       
       track.append(SubTrack(SubTrack::DATA,
-			    TrackData(trackData[t].mode,
+			    TrackData(trackData[t].mode, subChanMode,
 				      binFileName, byteOffset,
 				      trackLength.lba() * blockLen)));
     }

@@ -1,6 +1,6 @@
 /*  cdrdao - write audio CD-Rs in disc-at-once mode
  *
- *  Copyright (C) 1998, 1999  Andreas Mueller <mueller@daneb.ping.de>
+ *  Copyright (C) 1998-2001  Andreas Mueller <andreas@daneb.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -15,24 +15,6 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- */
-/*
- * $Log: TaiyoYuden.h,v $
- * Revision 1.1  2000/02/05 01:35:14  llanero
- * Initial revision
- *
- * Revision 1.4  1999/04/05 11:04:10  mueller
- * Added driver option flags.
- *
- * Revision 1.3  1999/03/27 20:50:04  mueller
- * Adapted to changed writing interface.
- *
- * Revision 1.2  1999/02/06 20:42:44  mueller
- * Added member function 'checkToc()'.
- *
- * Revision 1.1  1999/02/04 21:05:47  mueller
- * Initial revision
- *
  */
 
 /* Driver for the TaiyoYuden drive created by Henk-Jan Slotboom.
@@ -68,7 +50,8 @@ public:
   int finishDao();
   void abortDao();
 
-  int writeData(TrackData::Mode, long &lba, const char *buf, long len);
+  int writeData(TrackData::Mode, TrackData::SubChannelMode, long &lba,
+		const char *buf, long len);
 
 protected:
   DiskInfo diskInfo_;

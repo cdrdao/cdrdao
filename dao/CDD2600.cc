@@ -180,7 +180,8 @@ int CDD2600::startDao()
   lba = diskInfo_.thisSessionLba - 150 - leadInLength_;
 
   // write lead-in
-  if (writeZeros(toc_->leadInMode(), lba, lba + 150, leadInLength_) != 0) {
+  if (writeZeros(toc_->leadInMode(), TrackData::SUBCHAN_NONE, lba, lba + 150,
+		 leadInLength_) != 0) {
     flushCache();
     return 1;
   }
@@ -188,7 +189,8 @@ int CDD2600::startDao()
   message(5, "Lba after lead-in: %ld", lba);
 
   // write gap (2 seconds)
-  if (writeZeros(toc_->leadInMode(), lba, lba + 150, 150) != 0) {
+  if (writeZeros(toc_->leadInMode(), TrackData::SUBCHAN_NONE,
+		 lba, lba + 150, 150) != 0) {
     flushCache();
     return 1;
   }
@@ -205,7 +207,8 @@ int CDD2600::finishDao()
   message(2, "Writing lead-out...");
 
   // write lead-out
-  if (writeZeros(toc_->leadOutMode(), lba, lba + 150, leadOutLength_) != 0) {
+  if (writeZeros(toc_->leadOutMode(), TrackData::SUBCHAN_NONE, lba, lba + 150,
+		 leadOutLength_) != 0) {
     flushCache();
     return 1;
   }
@@ -240,8 +243,8 @@ void CDD2600::abortDao()
 // by this function but not used for writing
 // return: 0: OK
 //         1: scsi command failed
-int CDD2600::writeData(TrackData::Mode mode, long &lba, const char *buf,
-		       long len)
+int CDD2600::writeData(TrackData::Mode mode, TrackData::SubChannelMode sm,
+		       long &lba, const char *buf, long len)
 {
   assert(blocksPerWrite_ > 0);
   assert(blockLength_ > 0);

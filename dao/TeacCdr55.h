@@ -1,6 +1,6 @@
 /*  cdrdao - write audio CD-Rs in disc-at-once mode
  *
- *  Copyright (C) 1998, 1999  Andreas Mueller <mueller@daneb.ping.de>
+ *  Copyright (C) 1998-2001  Andreas Mueller <andreas@daneb.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -15,25 +15,6 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- */
-/*
- * $Log: TeacCdr55.h,v $
- * Revision 1.2  2000/10/08 16:39:41  andreasm
- * Remote progress message now always contain the track relative and total
- * progress and the total number of processed tracks.
- *
- * Revision 1.1.1.1  2000/02/05 01:35:14  llanero
- * Uploaded cdrdao 1.1.3 with pre10 patch applied.
- *
- * Revision 1.3  1999/04/05 11:04:10  mueller
- * Added driver option flags.
- *
- * Revision 1.2  1999/03/27 14:35:37  mueller
- * Added 'read-toc' support.
- *
- * Revision 1.1  1999/03/21 19:36:08  mueller
- * Initial revision
- *
  */
 
 #ifndef __TEAC_CDR55_H__
@@ -67,7 +48,8 @@ public:
   int finishDao();
   void abortDao();
 
-  int writeData(TrackData::Mode, long &lba, const char *buf, long len);
+  int writeData(TrackData::Mode, TrackData::SubChannelMode, long &lba,
+		const char *buf, long len);
 
   int loadUnload(int) const;
 

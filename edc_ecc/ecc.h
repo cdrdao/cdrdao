@@ -90,6 +90,7 @@ int scramble_L2(unsigned char *inout);
 /* 6 bit */
 #define LSUB_Q 2
 #define LSUB_P 4
+#define MAX_SUB_DEL 8
 
 #ifdef __cplusplus
 extern "C" {
@@ -103,9 +104,9 @@ extern "C" {
      delay1: use low level delay line
      scramble: perform low level permutations
  */
-int do_encode_sub(unsigned char in[LSUB_RAW*PACKETS_PER_SUBCHANNELFRAME],
-		unsigned char out[(LSUB_RAW+LSUB_Q+LSUB_P)*PACKETS_PER_SUBCHANNELFRAME],
-		int delay1, int scramble);
+int do_encode_sub(unsigned char inout[(LSUB_RAW+LSUB_Q+LSUB_P)*PACKETS_PER_SUBCHANNELFRAME],
+		  int delay1, int scramble, unsigned long *sub_del_index,
+		  unsigned char sub_delay_line[MAX_SUB_DEL][LSUB_RAW+LSUB_Q+LSUB_P]);
 int do_decode_sub(unsigned char in[(LSUB_RAW+LSUB_Q+LSUB_P)*PACKETS_PER_SUBCHANNELFRAME],
 		unsigned char out[LSUB_RAW*PACKETS_PER_SUBCHANNELFRAME],
 		int delay1, int scramble);

@@ -73,13 +73,33 @@ void TrackData::init(const char *filename, long offset,
   startPos_ = start;
   swapSamples_ = 0;
   mode_ = AUDIO;
+  subChannelMode_ = SUBCHAN_NONE;
+  audioCutMode_ = 1;
+}
+
+// creates an AUDIO mode object that contains constant zero data 
+TrackData::TrackData(unsigned long length)
+{
+  type_ = ZERODATA;
+  mode_ = AUDIO;
+  subChannelMode_ = SUBCHAN_NONE;
+  audioCutMode_ = 1;
+
+  filename_ = NULL;
+  fileType_ = RAW;
+  startPos_ = 0;
+  offset_ = 0;
+  length_ = length;
+  swapSamples_ = 0;
 }
 
 // creates an object that contains constant data with specified mode
-TrackData::TrackData(Mode m, unsigned long length)
+TrackData::TrackData(Mode m, SubChannelMode sm, unsigned long length)
 {
   type_ = ZERODATA;
   mode_ = m;
+  subChannelMode_ = sm;
+  audioCutMode_ = 0;
 
   filename_ = NULL;
   fileType_ = RAW;
@@ -90,23 +110,26 @@ TrackData::TrackData(Mode m, unsigned long length)
 }
 
 // creates a file object  with given mode
-TrackData::TrackData(Mode m, const char *filename, long offset,
-		     unsigned long length)
+TrackData::TrackData(Mode m, SubChannelMode sm, const char *filename,
+		     long offset, unsigned long length)
 {
-  init(m, filename, offset, length);
+  init(m, sm, filename, offset, length);
 }
 
-TrackData::TrackData(Mode m, const char *filename, unsigned long length)
+TrackData::TrackData(Mode m, SubChannelMode sm, const char *filename,
+		     unsigned long length)
 {
-  init(m, filename, 0, length);
+  init(m, sm, filename, 0, length);
 }
 
-void TrackData::init(Mode m, const char *filename, long offset,
-		     unsigned long length)
+void TrackData::init(Mode m, SubChannelMode sm, const char *filename,
+		     long offset, unsigned long length)
 {
   assert(offset >= 0);
 
   mode_ = m;
+  subChannelMode_ = sm;
+  audioCutMode_ = 0;
 
   if (strcmp(filename, "-") == 0) {
     type_ = STDIN;
@@ -135,6 +158,8 @@ TrackData::TrackData(const TrackData &obj)
 {
   type_ = obj.type_;
   mode_ = obj.mode_;
+  subChannelMode_ = obj.subChannelMode_;
+  audioCutMode_ = obj.audioCutMode_;
 
   offset_ = obj.offset_;
 
@@ -209,14 +234,19 @@ int TrackData::determineLength()
 	break;
       }
 
-      if (startPos_ < len) {
-	length_ = len - startPos_;
+      if (audioCutMode()) {
+	if (startPos_ < len) {
+	  length_ = len - startPos_;
+	}
+	else {
+	  message(-2,
+		  "Start position %lu exceeds available data of file \"%s\".",
+		  startPos_, filename_);
+	  return 2;
+	}
       }
       else {
-	message(-2,
-		"Start position %lu exceeds available data of file \"%s\".",
-		startPos_, filename_);
-	return 2;
+	length_ = len * sizeof(Sample);
       }
     }
     else {
@@ -259,6 +289,11 @@ int TrackData::check(int trackNr) const
     if (mode_ == AUDIO) {
       unsigned long len = 0;
 
+      if (fileType_ == WAVE && subChannelMode_ != SUBCHAN_NONE) {
+	message(-2, "Track %d: WAVE audio files cannot contain sub-channel data.");
+	return 2;
+      }
+
       switch (audioDataLength(filename_, offset_, &len)) {
       case 1:
 	message(-2, "Track %d: Cannot open audio file \"%s\": %s", trackNr,
@@ -288,12 +323,21 @@ int TrackData::check(int trackNr) const
 	return 2;
       }
 
-      if (startPos_ + length() > len) {
-	// requested part exceeds file size
-	message(-2,
-		"Track %d: Requested length (%lu + %lu samples) exceeds length of audio file \"%s\" (%lu samples at offset %ld).",
-		trackNr, startPos_, length(), filename_, len, offset_);
-	return 2;
+      if (audioCutMode()) {
+	if (startPos_ + length() > len) {
+	  // requested part exceeds file size
+	  message(-2,
+		  "Track %d: Requested length (%lu + %lu samples) exceeds length of audio file \"%s\" (%lu samples at offset %ld).",
+		  trackNr, startPos_, length(), filename_, len, offset_);
+	  return 2;
+	}
+      }
+      else {
+	if (length() > len * sizeof(Sample)) {
+	  message(-2, "Track %d: Requested length (%lu bytes) exceeds length of file \"%s\" (%lu bytes at offset %ld).",
+		  trackNr, length(), filename_, len, offset_);
+	  return 2;
+	}
       }
     }
     else {
@@ -335,19 +379,20 @@ int TrackData::check(int trackNr) const
 void TrackData::print(ostream &out) const
 {
   unsigned long blen;
+  const char *s;
 
-  if (mode() == AUDIO) {
+  if (audioCutMode()) {
     // we're calculating in samples and not in bytes for audio data
     blen = SAMPLES_PER_BLOCK;
   }
   else {
-    blen  = dataBlockSize(mode());
+    blen  = dataBlockSize(mode(), subChannelMode());
   }
 
   switch (type()) {
   case STDIN:
   case DATAFILE:
-    if (mode() == AUDIO) {
+    if (audioCutMode()) {
       if (type() == STDIN)
 	out << "FILE \"-\" ";
       else
@@ -385,19 +430,24 @@ void TrackData::print(ostream &out) const
     else
       out << length();
 
-    if (mode() != AUDIO)
+    if (!audioCutMode())
       out << " // length in bytes: " << length();
 
     out << endl;
     break;
 
   case ZERODATA:
-    if (mode_ == AUDIO) {
+    if (audioCutMode()) {
       out << "SILENCE ";
     }
     else {
       out << "ZERO " << mode2String(mode()) << " ";
     }
+
+    s = subChannelMode2String(subChannelMode());
+
+    if (*s != 0)
+      out << s << " ";
     
     if ((length() % blen) == 0)
       out << Msf(length() / blen).str();
@@ -428,8 +478,9 @@ void TrackData::split(unsigned long pos, TrackData **part1, TrackData **part2)
 TrackData *TrackData::merge(const TrackData *obj) const
 {
 
-  if (type_ != obj->type_ || mode_ != obj->mode_ || mode_ != AUDIO ||
-      offset_ != obj->offset_)
+  if (mode_ != AUDIO || type_ != obj->type_ || mode_ != obj->mode_ || 
+      subChannelMode_ != obj->subChannelMode_ || offset_ != obj->offset_ ||
+      audioCutMode_ != obj->audioCutMode_)
     return NULL;
 
   TrackData *data = NULL;
@@ -680,8 +731,9 @@ int TrackData::waveLength(const char *filename, long offset,
 
   *hdrlen = headerLen;
   
-  if (datalen != NULL) 
+  if (datalen != NULL) {
     *datalen = len / sizeof(Sample);
+  }
 
   return 0;
 }
@@ -777,7 +829,25 @@ TrackData::FileType TrackData::audioFileType(const char *filename)
   return RAW;
 }
 
-unsigned long TrackData::dataBlockSize(Mode m)
+unsigned long TrackData::subChannelSize(SubChannelMode sm)
+{
+  unsigned long b = 0;
+  
+  switch (sm) {
+  case SUBCHAN_NONE:
+    b = 0;
+    break;
+
+  case SUBCHAN_RW:
+  case SUBCHAN_RW_RAW:
+    b = PW_SUBCHANNEL_LEN;
+    break;
+  }
+
+  return b;
+}
+
+unsigned long TrackData::dataBlockSize(Mode m, SubChannelMode sm)
 {
   unsigned long b = 0;
 
@@ -809,6 +879,8 @@ unsigned long TrackData::dataBlockSize(Mode m)
     b = MODE2_FORM2_DATA_LEN;
     break;
   }
+
+  b += subChannelSize(sm);
 
   return b;
 }
@@ -852,6 +924,27 @@ const char *TrackData::mode2String(Mode m)
 
   case MODE2_FORM_MIX:
     ret = "MODE2_FORM_MIX";
+    break;
+  }
+
+  return ret;
+}
+
+const char *TrackData::subChannelMode2String(SubChannelMode m)
+{
+  const char *ret = NULL;
+
+  switch (m) {
+  case SUBCHAN_NONE:
+    ret = "";
+    break;
+
+  case SUBCHAN_RW:
+    ret = "RW";
+    break;
+    
+  case SUBCHAN_RW_RAW:
+    ret = "RW_RAW";
     break;
   }
 
@@ -978,7 +1071,8 @@ void TrackDataReader::closeData()
   }
 }
 
-// fills 'buffer' with 'len' samples
+// fills 'buffer' with 'len' samples (in case of audio mode) or with 'len'
+// bytes of data (for all other modes)
 // return: number of samples written to buffer
 long TrackDataReader::readData(Sample *buffer, long len)
 {
@@ -998,7 +1092,7 @@ long TrackDataReader::readData(Sample *buffer, long len)
 
   switch (trackData_->type_) {
   case TrackData::ZERODATA:
-    if (trackData_->mode_ == TrackData::AUDIO)
+    if (trackData_->audioCutMode())
       memset(buffer, 0, len * sizeof(Sample));
     else
       memset(buffer, 0, len);
@@ -1008,7 +1102,7 @@ long TrackDataReader::readData(Sample *buffer, long len)
 
   case TrackData::STDIN:
   case TrackData::DATAFILE:
-    if (trackData_->mode_ == TrackData::AUDIO) {
+    if (trackData_->audioCutMode()) {
       readLen = fullRead(fd_, buffer, len * sizeof(Sample));
 
       if (readLen < 0) {
@@ -1049,7 +1143,8 @@ long TrackDataReader::readData(Sample *buffer, long len)
   }
 
   if (readLen > 0) {
-    if (trackData_->mode_ == TrackData::AUDIO) {
+    if (trackData_->mode_ == TrackData::AUDIO &&
+	trackData_->subChannelMode_ == TrackData::SUBCHAN_NONE) {
       int swap = 0;
 
       if (trackData_->fileType_ == TrackData::WAVE) {
@@ -1062,7 +1157,10 @@ long TrackDataReader::readData(Sample *buffer, long len)
 
       if (swap) {
 	// swap samples 
-	swapSamples(buffer, readLen);
+	if (trackData_->audioCutMode())
+	  swapSamples(buffer, readLen);
+	else
+	  swapSamples(buffer, readLen / sizeof(Sample));
       }
     }
 

@@ -32,10 +32,17 @@
 #define MODE2_FORM1_DATA_LEN 2048
 #define MODE2_FORM2_DATA_LEN 2324
 
+#define PQ_SUBCHANNEL_LEN 16
+#define PW_SUBCHANNEL_LEN 96
+#define MAX_SUBCHANNEL_LEN 96
+
+
 class TrackData {
 public:
   enum Mode { AUDIO, MODE0, MODE1, MODE2, MODE2_FORM1, MODE2_FORM2,
               MODE2_FORM_MIX, MODE1_RAW, MODE2_RAW };
+
+  enum SubChannelMode { SUBCHAN_NONE, SUBCHAN_RW, SUBCHAN_RW_RAW };
 
   enum Type { DATAFILE, ZERODATA, STDIN };
   
@@ -46,13 +53,16 @@ public:
 	    unsigned long length);
   TrackData(const char *filename, unsigned long start, unsigned long length);
 
+  // creates a zero audio entry
+  TrackData(unsigned long length);
+
   // creates a zero data entry with given mode
-  TrackData(Mode, unsigned long length);
+  TrackData(Mode, SubChannelMode, unsigned long length);
 
   // creates a file entry with given mode
-  TrackData(Mode, const char *filename, long offset,
+  TrackData(Mode, SubChannelMode, const char *filename, long offset,
 	    unsigned long length);
-  TrackData(Mode, const char *filename, unsigned long length);
+  TrackData(Mode, SubChannelMode, const char *filename, unsigned long length);
 
   // copy constructor
   TrackData(const TrackData &);
@@ -61,6 +71,8 @@ public:
 
   Type type() const;
   Mode mode() const;
+  SubChannelMode subChannelMode() const;
+  int audioCutMode() const;
 
   const char *filename() const;
   unsigned long startPos() const;
@@ -86,12 +98,22 @@ public:
   static FileType audioFileType(const char *filename);
   static int dataFileLength(const char *fname, long offset,
 			    unsigned long *length);
-  static unsigned long dataBlockSize(Mode m);
-  static const char *mode2String(Mode m);
+
+  static unsigned long dataBlockSize(Mode, SubChannelMode);
+  static unsigned long subChannelSize(SubChannelMode);
+
+  static const char *mode2String(Mode);
+  static const char *subChannelMode2String(SubChannelMode);
 
 private:
+  int audioCutMode_; /* defines if audio cut mode is requested, if yes
+			all lengths are in sample units and sub-channel
+			data is not allowed
+		     */
   Type type_; // type of data (file, stdin, zero)
   Mode mode_; // data mode for recording (audio, mode0, mode1, ...)
+  SubChannelMode subChannelMode_; // sub-channel mode
+
   FileType fileType_; // only for audio mode data, type of file (raw, wave)
 
   char *filename_; // used for object type 'FILE'
@@ -110,7 +132,7 @@ private:
 
   void init(const char *filename, long offset, unsigned long start,
 	    unsigned long length);
-  void init(Mode, const char *filename, long offset,
+  void init(Mode, SubChannelMode, const char *filename, long offset,
 	    unsigned long length);
   
 
@@ -147,6 +169,12 @@ private:
 };
 
 inline
+int TrackData::audioCutMode() const
+{
+  return audioCutMode_;
+}
+
+inline
 TrackData::Type TrackData::type() const
 {
   return type_;
@@ -156,6 +184,12 @@ inline
 TrackData::Mode TrackData::mode() const
 {
   return mode_;
+}
+
+inline
+TrackData::SubChannelMode TrackData::subChannelMode() const
+{
+  return subChannelMode_;
 }
 
 inline

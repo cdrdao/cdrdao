@@ -1,6 +1,6 @@
 /*  cdrdao - write audio CD-Rs in disc-at-once mode
  *
- *  Copyright (C) 1998, 1999  Andreas Mueller <mueller@daneb.ping.de>
+ *  Copyright (C) 1998-2001  Andreas Mueller <andreas@daneb.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -16,14 +16,6 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
-/*
- * $Log: dao-win32.cc,v $
- * Revision 1.1  2000/02/05 01:37:56  llanero
- * Initial revision
- *
- */
-
-static char rcsid[] = "$Id: dao-win32.cc,v 1.1 2000/02/05 01:37:56 llanero Exp $";
 
 #include "config.h"
 

@@ -1,6 +1,6 @@
 /*  cdrdao - write audio CD-Rs in disc-at-once mode
  *
- *  Copyright (C) 1998-2000 Andreas Mueller <mueller@daneb.ping.de>
+ *  Copyright (C) 1998-2001 Andreas Mueller <andreas@daneb.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -16,34 +16,6 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
-/*
- * $Log: Settings.cc,v $
- * Revision 1.5  2001/03/25 07:36:14  andreasm
- * Updated SCSI lib to version from cdrtools-1.10a17.
- * Added patches from compilation under UnixWare.
- *
- * Revision 1.4  2000/08/06 13:13:08  andreasm
- * Added option --cddb-directory and corresponding setting to specify where
- * fetched CDDB record should be stored.
- *
- * Revision 1.3  2000/06/22 12:19:28  andreasm
- * Added switch for reading CDs written in TAO mode.
- * The fifo buffer size is now also saved to $HOME/.cdrdao.
- *
- * Revision 1.2  2000/06/19 20:17:37  andreasm
- * Added CDDB reading to add CD-TEXT information to toc-files.
- * Fixed bug in reading ATIP data in 'GenericMMC::diskInfo()'.
- * Attention: CdrDriver.cc is currently configured to read TAO disks.
- *
- * Revision 1.1  2000/06/06 22:26:13  andreasm
- * Updated list of supported drives.
- * Added saving of some command line settings to $HOME/.cdrdao.
- * Added test for multi session support in raw writing mode to GenericMMC.cc.
- * Updated manual page.
- *
- */
-
-static char rcsid[] = "$Id: Settings.cc,v 1.5 2001/03/25 07:36:14 andreasm Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>

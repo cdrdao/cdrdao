@@ -223,6 +223,12 @@ public:
 
   // disk at once recording related commands
 
+  // Returns acceptable sub-channel encoding mode for given sub-channel type:
+  //  -1: writing of sub-channel type not supported at all
+  //   0: accepts plain data without encoding
+  //   1: accepts only completely encoded data
+  virtual int subChannelEncodingMode(TrackData::SubChannelMode) const;
+
   // Should check if toc is suitable for DAO writing with the actual driver.
   // Returns 0 if toc is OK, else 1.
   // Usually all tocs are suitable for writing so that the base class
@@ -248,7 +254,8 @@ public:
 
   // Sends given data to drive. 'lba' should be the current writing address
   // and will be updated according to the written number of blocks.
-  virtual int writeData(TrackData::Mode, long &lba, const char *buf, long len);
+  virtual int writeData(TrackData::Mode, TrackData::SubChannelMode sm,
+			long &lba, const char *buf, long len);
 
   // returns mode for main channel data encoding, the value is used by
   // Track::readData()
@@ -272,7 +279,7 @@ public:
 
   // Returns block size depending on given sector mode and 'encodingMode_'
   // that must be used to send data to the recorder.
-  virtual long blockSize(TrackData::Mode) const;
+  virtual long blockSize(TrackData::Mode, TrackData::SubChannelMode) const;
 
   // sends a status message to the driving application if in remote mode
   enum WriteCdProgressType { WCD_LEADIN = PGSMSG_WCD_LEADIN,
@@ -375,7 +382,8 @@ protected:
 			   const unsigned char *modePageHeader,
 			   const unsigned char *blockDesc, int showErrorMsg);
 
-  virtual int writeZeros(TrackData::Mode, long &lba, long encLba, long count);
+  virtual int writeZeros(TrackData::Mode, TrackData::SubChannelMode,
+			 long &lba, long encLba, long count);
 
 
   // Returns track control flags for given track, bits 0-3 are always zero

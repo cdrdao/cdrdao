@@ -1,6 +1,6 @@
 /*  cdrdao - write audio CD-Rs in disc-at-once mode
  *
- *  Copyright (C) 1998, 1999 Andreas Mueller <mueller@daneb.ping.de>
+ *  Copyright (C) 1998-2001 Andreas Mueller <andreas@daneb.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -17,43 +17,6 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
- * $Log: TocParser.g,v $
- * Revision 1.3  2001/01/07 18:57:49  andreasm
- * Fixed crash after a parse error.
- *
- * Revision 1.2  2000/06/10 14:44:47  andreasm
- * Tracks that are shorter than 4 seconds do not lead to a fatal error anymore.
- * The user has the opportunity to record such tracks now.
- *
- * Revision 1.1.1.1  2000/02/05 01:34:46  llanero
- * Uploaded cdrdao 1.1.3 with pre10 patch applied.
- *
- * Revision 1.8  1999/04/05 11:03:01  mueller
- * Added CD-TEXT support.
- *
- * Revision 1.7  1999/03/27 19:52:26  mueller
- * Added data track support.
- *
- * Revision 1.6  1999/01/24 17:01:00  mueller
- * Parser is now immediately aborted if lexer detects an illegal token.
- *
- * Revision 1.5  1999/01/24 16:28:08  mueller
- * Added explicit flag to determine if an argument was given to
- * the `START' statement (indicated by Eberhard Mattes).
- * Fixed error message for Eof token.
- *
- * Revision 1.4  1998/10/24 14:27:57  mueller
- * Improved consistency check for track length.
- *
- * Revision 1.3  1998/08/20 20:53:35  mueller
- * Added some compatibility code and notes.
- * Problem indicated by Joerg Schneider <joerg_schneider@gmx.net>
- *
- * Revision 1.2  1998/07/28 13:47:48  mueller
- * Automatic length determination of audio files is now done in 'AudioData'.
- *
- */
 
 #header <<
 #include <config.h>
@@ -167,6 +130,8 @@ public:
 #token Mode2Form1       "MODE2_FORM1"
 #token Mode2Form2       "MODE2_FORM2"
 #token Mode2FormMix     "MODE2_FORM_MIX"
+#token SubChanRw        "RW"
+#token SubChanRwRaw     "RW_RAW"
 #token Index            "INDEX"
 #token Catalog          "CATALOG"
 #token Isrc             "ISRC"
@@ -277,6 +242,7 @@ track > [ Track *tr, int lineNr ]
        SubTrack *st = NULL;
        char *isrcCode = NULL;
        TrackData::Mode trackType;
+       TrackData::SubChannelMode subChanType = TrackData::SUBCHAN_NONE;
        Msf length;
        Msf indexIncrement;
        Msf pos;
@@ -290,7 +256,8 @@ track > [ Track *tr, int lineNr ]
     >>
     TrackDef << $lineNr = $1->getLine(); >>
     trackMode > [ trackType ]
-    << $tr = new Track(trackType); >>
+    { subChannelMode > [ subChanType ] }
+    << $tr = new Track(trackType, subChanType); >>
 
     (  Isrc string > [ isrcCode ]
        << if (isrcCode != NULL) {
@@ -323,13 +290,12 @@ track > [ Track *tr, int lineNr ]
          else {
            if (trackType == TrackData::AUDIO) {
              $tr->append(SubTrack(SubTrack::DATA, 
-                                  TrackData(TrackData::AUDIO,
-                                            length.samples())));
+                                  TrackData(length.samples())));
            }
 	   else {
-             $tr->append(SubTrack(SubTrack::DATA, 
-                                  TrackData(trackType,
-                                            length.lba() * TrackData::dataBlockSize(trackType))));
+             $tr->append(SubTrack(SubTrack::DATA,
+                                  TrackData(trackType, subChanType,
+                                            length.lba() * TrackData::dataBlockSize(trackType, subChanType))));
            }
            startPos = $tr->length();
 	   startPosLine = $1->getLine();
@@ -337,8 +303,17 @@ track > [ Track *tr, int lineNr ]
       >>
     }
 
-    (  subTrack [ trackType ] > [ st, lineNr ] 
-       << $tr->append(*st);
+    (  subTrack [ trackType, subChanType ] > [ st, lineNr ] 
+       << 
+          if ($tr->append(*st) == 2) {
+	    message(-2,
+		    "%s:%d: Mixing of FILE/AUDIOFILE/SILENCE and DATAFILE/ZERO statements not allowed.", filename_, lineNr);
+	    message(-2,
+		    "%s:%d: PREGAP acts as SILENCE in audio tracks.",
+		    filename_, lineNr);
+	    error_ = 1;
+	  }
+
           delete st, st = NULL;
        >>
      | Start << posGiven = 0; >> { msf > [ pos ] << posGiven = 1; >> }
@@ -438,7 +413,7 @@ track > [ Track *tr, int lineNr ]
     >>
 
 
-subTrack < [ TrackData::Mode trackType ] > [ SubTrack *st, int lineNr ]
+subTrack < [ TrackData::Mode trackType, TrackData::SubChannelMode subChanType ] > [ SubTrack *st, int lineNr ]
   : << $st = NULL;
        $lineNr = 0;
        char *filename = NULL;
@@ -457,31 +432,52 @@ subTrack < [ TrackData::Mode trackType ] > [ SubTrack *st, int lineNr ]
 	  $st->swapSamples(swapSamples);
 
           $lineNr = $1->getLine();
+
+          if (trackType != TrackData::AUDIO) {
+            message(-2, "%s:%d: FILE/AUDIOFILE statements are only allowed for audio tracks.", filename_, $1->getLine());
+	    error_ = 1;
+          }
+
+          if (subChanType != TrackData::SUBCHAN_NONE) {
+	    message(-2, "%s:%d: FILE/AUDIOFILE statements are only allowed for audio tracks without sub-channel mode.", filename_, $1->getLine());
+	    error_ = 1;
+          }
        >>
      | DataFile string > [ filename ]
        << dMode = $trackType; >>
        // { dataMode > [ dMode ] }
        { "#" sLong > [ offset ] }
-       { dataLength [ dMode ] > [ len ] }
-       << $st = new SubTrack(SubTrack::DATA, TrackData(dMode, filename, 
+       { dataLength [ dMode, $subChanType ] > [ len ] }
+       << $st = new SubTrack(SubTrack::DATA, TrackData(dMode, $subChanType,
+                                                       filename, 
                                                        offset, len));
           $lineNr = $1->getLine();
        >>
      | Silence samples > [len]
-       << $st = new SubTrack(SubTrack::DATA,
- 	                     TrackData(TrackData::AUDIO, len));
+       << $st = new SubTrack(SubTrack::DATA, TrackData(len));
           $lineNr = $1->getLine();
           if (len == 0) {
 	    message(-2, "%s:%d: Length of silence is 0.\n",
 		    filename_, $lineNr);
 	    error_ = 1;
 	  }
+
+          if (trackType != TrackData::AUDIO) {
+            message(-2, "%s:%d: SILENCE statements are only allowed for audio tracks.", filename_, $1->getLine());
+	    error_ = 1;
+          }
+
+          if (subChanType != TrackData::SUBCHAN_NONE) {
+	    message(-2, "%s:%d: SILENCE statements are only allowed for audio tracks without sub-channel mode.", filename_, $1->getLine());
+	    error_ = 1;
+          }
        >>
      | Zero 
        << dMode = $trackType; >>
-       { dataMode > [ dMode ] }
-       dataLength [ dMode ] > [ len ]
-       << $st = new SubTrack(SubTrack::DATA, TrackData(dMode, len));
+       //{ dataMode > [ dMode ] }
+       dataLength [ dMode, $subChanType ] > [ len ]
+       << $st = new SubTrack(SubTrack::DATA, TrackData(dMode, $subChanType,
+                                                       len));
           $lineNr = $1->getLine();
           if (len == 0) {
 	    message(-2, "%s:%d: Length of zero data is 0.\n",
@@ -614,14 +610,11 @@ samples > [ unsigned long s ]
     // fail action
     << $s = 0; >>
 
-dataLength [ TrackData::Mode mode] > [ unsigned long len ]
+dataLength [ TrackData::Mode mode, TrackData::SubChannelMode sm] > [ unsigned long len ]
   : << Msf m;
        unsigned long blen;
 
-       if (mode == TrackData::AUDIO)
-	 blen = SAMPLES_PER_BLOCK;
-       else
-         blen = TrackData::dataBlockSize(mode);
+       blen = TrackData::dataBlockSize(mode, sm);
     >>
 
     (  msf > [ m] << $len = m.lba() * blen; >>
@@ -655,6 +648,13 @@ trackMode > [ TrackData::Mode m ]
      | Mode2Form1 << $m = TrackData::MODE2_FORM1; >>
      | Mode2Form2 << $m = TrackData::MODE2_FORM2; >>
      | Mode2FormMix << $m = TrackData::MODE2_FORM_MIX; >>
+    )
+    ;
+
+subChannelMode > [ TrackData::SubChannelMode m ]
+  :
+    (  SubChanRw << $m = TrackData::SUBCHAN_RW; >>
+     | SubChanRwRaw << $m = TrackData::SUBCHAN_RW_RAW; >>
     )
     ;
 

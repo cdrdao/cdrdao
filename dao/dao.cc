@@ -1,6 +1,6 @@
 /*  cdrdao - write audio CD-Rs in disc-at-once mode
  *
- *  Copyright (C) 1998, 1999  Andreas Mueller <mueller@daneb.ping.de>
+ *  Copyright (C) 1998-2001  Andreas Mueller <andreas@daneb.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -16,72 +16,6 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
-/*
- * $Log: dao.cc,v $
- * Revision 1.7  2001/03/25 07:36:14  andreasm
- * Updated SCSI lib to version from cdrtools-1.10a17.
- * Added patches from compilation under UnixWare.
- *
- * Revision 1.6  2000/12/17 10:51:23  andreasm
- * Default verbose level is now 2. Adaopted message levels to have finer
- * grained control about the amount of messages printed by cdrdao.
- * Added CD-TEXT writing support to the GenericMMCraw driver.
- * Fixed CD-TEXT cue sheet creating for the GenericMMC driver.
- *
- * Revision 1.5  2000/11/12 16:50:44  andreasm
- * Fixes for compilation under Win32.
- *
- * Revision 1.4  2000/10/08 16:39:41  andreasm
- * Remote progress message now always contain the track relative and total
- * progress and the total number of processed tracks.
- *
- * Revision 1.3  2000/06/06 22:26:13  andreasm
- * Updated list of supported drives.
- * Added saving of some command line settings to $HOME/.cdrdao.
- * Added test for multi session support in raw writing mode to GenericMMC.cc.
- * Updated manual page.
- *
- * Revision 1.2  2000/05/01 18:13:18  andreasm
- * Fixed too small mode page buffer.
- *
- * Revision 1.1.1.1  2000/02/05 01:38:06  llanero
- * Uploaded cdrdao 1.1.3 with pre10 patch applied.
- *
- * Revision 1.12  1999/05/11 20:04:09  mueller
- * SYSV message queues are not used anymore. The communication between
- * reader and writer is based on a polling mechanism, now.
- * Added posix thread support.
- *
- * Revision 1.11  1999/03/27 20:57:27  mueller
- * Improved buffer code. Does not use semaphores anymore.
- * The reader is now the forked process.
- *
- * Revision 1.10  1999/01/24 16:03:57  mueller
- * Applied Radek Doulik's ring buffer patch. Added some cleanups and
- * improved behavior in error case.
- *
- * Revision 1.9  1998/10/03 14:33:46  mueller
- * Applied patch from Bjoern Fischer <bfischer@Techfak.Uni-Bielefeld.DE>:
- * Cosmetic changes and correction of real time scheduling selection.
- *
- * Revision 1.8  1998/09/22 19:14:29  mueller
- * Added locking of memory pages.
- *
- * Revision 1.7  1998/09/21 19:35:51  mueller
- * Added real time scheduling. Submitted by Bjoern Fischer <bfischer@Techfak.Uni-Bielefeld.DE>.
- *
- * Revision 1.6  1998/09/06 13:34:22  mueller
- * Use 'message()' for printing messages.
- *
- * Revision 1.5  1998/08/30 19:21:15  mueller
- * Rearranged the code.
- *
- * Revision 1.4  1998/08/15 20:47:16  mueller
- * Added support for GenericMMC driver.
- *
- */
-
-static char rcsid[] = "$Id: dao.cc,v 1.7 2001/03/25 07:36:14 andreasm Exp $";
 
 #include <config.h>
 
@@ -141,6 +75,7 @@ struct Buffer {
   TrackData::Mode trackMode; // mode of track may differ from 'mode' if data
                              // blocks must be encoded in audio blocks,
                              // only used for message printing
+  TrackData::SubChannelMode subChanMode; // sub-channel data mode
   int trackNr; // if != 0 a new track with given number has started
   int trackProgress; // reading progress of current track 0..1000
   char *buffer; // address of buffer that should be written
@@ -282,6 +217,7 @@ static int writer(const Toc *toc, CdrDriver *cdr, BufferHeader *header,
   int actTrackNr = 0;
   long actProgress;
   TrackData::Mode dataMode;
+  TrackData::SubChannelMode subChanMode;
 #ifndef USE_POSIX_THREADS
   int status;
 #endif
@@ -354,6 +290,7 @@ static int writer(const Toc *toc, CdrDriver *cdr, BufferHeader *header,
     Buffer &buf = header->buffers[header->buffersWritten % header->nofBuffers];
     len = buf.bufLen;
     dataMode = buf.mode;
+    subChanMode = buf.subChanMode;
 
     if (header->readerFinished) {
       buffFill = 100;
@@ -412,9 +349,10 @@ static int writer(const Toc *toc, CdrDriver *cdr, BufferHeader *header,
     blkCount += len;
 
     if (buf.trackNr > 0) {
-      message(1, "Writing track %02d (mode %s/%s)...", buf.trackNr,
+      message(1, "Writing track %02d (mode %s/%s %s)...", buf.trackNr,
 	      TrackData::mode2String(buf.trackMode),
-	      TrackData::mode2String(dataMode));
+	      TrackData::mode2String(dataMode),
+	      TrackData::subChannelMode2String(subChanMode));
 
       actTrackNr = buf.trackNr;
     }
@@ -423,16 +361,20 @@ static int writer(const Toc *toc, CdrDriver *cdr, BufferHeader *header,
 
 #if DEBUG_WRITE
     if (fp != NULL) {
-      if (cdr != NULL)
-	fwrite(buf.buffer, cdr->blockSize(dataMode), len, fp);
-      else
+      if (cdr != NULL) {
+	message(0, "dao: blockSize: %ld", cdr->blockSize(dataMode, subChanMode));
+	
+	fwrite(buf.buffer, cdr->blockSize(dataMode, subChanMode), len, fp);
+      }
+      else {
 	fwrite(buf.buffer, 2352, len, fp);
+      }
     }	
 #endif
 
     if (cdr != NULL) {
       blockSignals();
-      if (cdr->writeData(dataMode, lba, buf.buffer, len) != 0) {
+      if (cdr->writeData(dataMode, subChanMode, lba, buf.buffer, len) != 0) {
 	message(-2, "Writing failed - buffer under run?");
 	unblockSignals();
 	return 2;
@@ -489,9 +431,10 @@ static void *reader(void *args)
   int first = header->nofBuffers;
   const Track *track;
   int trackNr = 1;
-  Msf tstart, tend;
   TrackData::Mode dataMode;
+  TrackData::SubChannelMode subChanMode;
   int encodingMode = 1;
+  int subChanEncodingMode = 1;
   int newTrack;
   long tact; // number of blocks already read from current track
   long tprogress;
@@ -510,7 +453,7 @@ static void *reader(void *args)
   TrackIterator itr(toc);
   TrackReader reader;
 
-  track = itr.first(tstart, tend);
+  track = itr.first();
   reader.init(track);
 
   if (reader.openData() != 0) {
@@ -522,6 +465,10 @@ static void *reader(void *args)
   tact = 0;
 
   dataMode = (encodingMode == 0) ? TrackData::AUDIO : track->type();
+  subChanMode = track->subChannelType();
+
+  if (cdr != NULL)
+    subChanEncodingMode = cdr->subChannelEncodingMode(subChanMode);
 
   do {
     n = (length > BUFFER_SIZE ? BUFFER_SIZE : length);
@@ -529,7 +476,8 @@ static void *reader(void *args)
     Buffer &buf = header->buffers[header->buffersRead % header->nofBuffers];
 
     do {
-      rn = reader.readData(encodingMode, lba, buf.buffer, n);
+      rn = reader.readData(encodingMode, subChanEncodingMode, lba, buf.buffer,
+			   n);
     
       if (rn < 0) {
 	message(-2, "Reading of track data failed.");
@@ -537,16 +485,23 @@ static void *reader(void *args)
       }
       
       if (rn == 0) {
-	track = itr.next(tstart, tend);
+	track = itr.next();
 	reader.init(track);
 
 	if (reader.openData() != 0) {
 	  message(-2, "Opening of track data failed.");
 	  goto fail;
 	}
+
 	trackNr++;
+
 	if (encodingMode != 0)
 	  dataMode = track->type();
+
+	subChanMode = track->subChannelType();
+
+	if (cdr != NULL)
+	  subChanEncodingMode = cdr->subChannelEncodingMode(subChanMode);
 
 	newTrack = 1;
 	tact = 0;
@@ -556,22 +511,22 @@ static void *reader(void *args)
     lba += rn;
     tact += rn;
 
-    if (track->type() == TrackData::AUDIO) {
-      if (swap) {
-	// swap audio data
-	swapSamples((Sample *)(buf.buffer), rn * SAMPLES_PER_BLOCK);
-      }
-    }
-    else {
-      if (encodingMode == 0 && cdr != NULL && cdr->bigEndianSamples() == 0) {
-	// swap encoded data blocks
-	swapSamples((Sample *)(buf.buffer), rn * SAMPLES_PER_BLOCK);
-      }
+    if (cdr != NULL &&
+	((track->type() == TrackData::AUDIO && swap) ||
+	 (encodingMode == 0 && cdr->bigEndianSamples() == 0))) {
+      // swap audio data 
+      long blockLen = cdr->blockSize(dataMode, subChanMode);
+      char *brun = buf.buffer;
+      int i;
+	
+      for (i = 0; i < rn; i++, brun += blockLen)
+	swapSamples((Sample *)brun, SAMPLES_PER_BLOCK);
     }
 
     buf.bufLen = rn;
     buf.mode = dataMode;
     buf.trackMode = track->type();
+    buf.subChanMode = subChanMode;
 
     tprogress = tact * 1000;
     tprogress /= track->length().lba();
@@ -834,7 +789,7 @@ static int getSharedMemory(long nofBuffers,
 			   ShmSegment **shmSegment)
 {
   long b;
-  long bufferSize = BUFFER_SIZE * AUDIO_BLOCK_LEN;
+  long bufferSize = BUFFER_SIZE * (AUDIO_BLOCK_LEN + PW_SUBCHANNEL_LEN);
 
   *header = NULL;
   *nofSegments = 0;
@@ -892,7 +847,7 @@ static int getSharedMemory(long nofBuffers,
 			   ShmSegment **shmSegments)
 {
   long i, b;
-  long bufferSize = BUFFER_SIZE * AUDIO_BLOCK_LEN;
+  long bufferSize = BUFFER_SIZE * (AUDIO_BLOCK_LEN + PW_SUBCHANNEL_LEN);
   long maxSegmentSize = 0;
   long bcnt = 0;
 
