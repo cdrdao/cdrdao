@@ -825,6 +825,16 @@ CdrDriver *CdrDriver::createDriver(const char *driverId, unsigned long options,
   return NULL;
 }
 
+const char *CdrDriver::detectDriver(ScsiIf *scsiIf, unsigned long *options)
+{
+  bool cd_r_read, cd_r_write, cd_rw_read, cd_rw_write;
+  if (scsiIf->checkMmc(&cd_r_read, &cd_r_write, &cd_rw_read, &cd_rw_write)) {
+    return "generic-mmc";
+  }
+
+  return NULL;
+}
+
 void CdrDriver::printDriverIds()
 {
   DriverTable *run = DRIVERS;

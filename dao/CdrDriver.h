@@ -356,6 +356,9 @@ public:
   static CdrDriver *createDriver(const char *driverId, unsigned long options,
 				 ScsiIf *);
 
+  // Try to autodetect a driver on given Scsi interface.
+  static const char *detectDriver(ScsiIf *, unsigned long *options);
+
   // Prints list of all available driver ids.
   static void printDriverIds();
 

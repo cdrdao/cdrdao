@@ -1021,7 +1021,10 @@ static CdrDriver *selectDriver(Command cmd, ScsiIf *scsiIf,
     if (id == NULL && (cmd == DISK_INFO || cmd == MSINFO))
       id = CdrDriver::selectDriver(0, scsiIf->vendor(), scsiIf->product(),
 				   &options);
-
+    // Still no driver, try to autodetect one
+    if (id == NULL)
+      id = CdrDriver::detectDriver(scsiIf, &options);
+      
     if (id != NULL) {
       ret = CdrDriver::createDriver(id, options, scsiIf);
     }

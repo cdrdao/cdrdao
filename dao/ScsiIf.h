@@ -18,6 +18,9 @@
  */
 /*
  * $Log: ScsiIf.h,v $
+ * Revision 1.3  2004/03/23 18:46:07  poolshark
+ * MMC autodetect mode
+ *
  * Revision 1.2  2004/02/12 01:13:31  poolshark
  * Merge from gnome2 branch
  *
@@ -82,6 +85,10 @@ public:
   //         2: not ready, no disk in drive
   //         3: scsi command failed
   int testUnitReady();
+
+  // check for mmc capability
+  bool checkMmc(bool *cd_r_read,  bool *cd_r_write,
+                bool *cd_rw_read, bool *cd_rw_write);
 
   struct ScanData {
     std::string dev;
