@@ -45,7 +45,7 @@
 #include "util.h"
 #include "Toc.h"
 
-#define DRIVER_IDS 12
+#define DRIVER_IDS 13
 
 CdDevice *CdDevice::DEVICE_LIST_ = NULL;
 
@@ -61,6 +61,7 @@ char *CdDevice::DRIVER_NAMES_[DRIVER_IDS] = {
   "sony-cdu948",
   "taiyo-yuden",
   "teac-cdr55",
+  "toshiba",
   "yamaha-cdr10x"
 };
   
