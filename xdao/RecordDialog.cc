@@ -18,6 +18,9 @@
  */
 /*
  * $Log: RecordDialog.cc,v $
+ * Revision 1.3  2000/04/16 20:31:59  andreasm
+ * Fixed radio button stuff.
+ *
  * Revision 1.2  2000/02/20 23:34:54  llanero
  * fixed scsilib directory (files mising ?-()
  * ported xdao to 1.1.8 / gnome (MDI) app
@@ -30,7 +33,7 @@
  *
  */
 
-static char rcsid[] = "$Id: RecordDialog.cc,v 1.2 2000/02/20 23:34:54 llanero Exp $";
+static char rcsid[] = "$Id: RecordDialog.cc,v 1.3 2000/04/16 20:31:59 andreasm Exp $";
 
 #include <stdio.h>
 #include <limits.h>
@@ -92,9 +95,10 @@ RecordDialog::RecordDialog()
 
   startButton_ = new Gtk::Button(string(" Start "));
 */
-  simulateButton_ = new Gtk::RadioButton(NULL, string("Simulate"));
-  writeButton_ = new Gtk::RadioButton(simulateButton_->group(),
-				     string("Write"));
+  Gtk::RadioButton_Helpers::Group simWriteGroup;
+
+  simulateButton_ = new Gtk::RadioButton(simWriteGroup, string("Simulate"));
+  writeButton_ = new Gtk::RadioButton(simWriteGroup, string("Write"));
   
   closeSessionButton_ = new Gtk::CheckButton(string("Close Disk"));
   closeSessionButton_->set_active(true);
