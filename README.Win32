@@ -1,4 +1,18 @@
+The Win32 port of cdrdao is based on the Cygwin Unix environment for Windows.
+This package comes with the binary version of the cygwin1.dll. You can download
+the corresponding source code from http://sourceforge.net/projects/cdrdao
+in the download section or via www.cygwin.com.
+
+This port should work on all Win32 operation systems.
+
 If you will use "cdrdao.exe" in dos prompt under win9x, (or restart in MS-DOS
 mode also), you have to check off "Auto Insert Notification" of the CD-R drive
 property. When you do "cdrdao.exe read-xx" with "Auto Insert Notification"
 property, your PC will hang (write is O.K.).
+
+During writing you should avoid to open the Explorer and similar tools.
+Currently, cdrdao does not lock the recording device so that all access
+action from the Explorer will lead to a failure of the recording process.
+
+Cdrdao requires a working ASPI installation for operation. You can fetch
+an ASPI installation package from Adaptec's home page.
