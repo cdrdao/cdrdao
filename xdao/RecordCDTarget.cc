@@ -72,7 +72,7 @@ RecordCDTarget::RecordCDTarget()
   ejectButton_ = new Gtk::CheckButton(string("Eject the CD after writing"));
   ejectButton_->set_active(false);
 
-  reloadButton_ = new Gtk::CheckButton(string("Reload the CD if necessary??!!??"));
+  reloadButton_ = new Gtk::CheckButton(string("Reload the CD after writing, if necessary"));
   reloadButton_->set_active(false);
 
   speedButton_ = new Gtk::CheckButton(string("Use max."));
@@ -100,7 +100,7 @@ RecordCDTarget::RecordCDTarget()
   hbox->show();
   table->show();
 
-  toolTips->set_tip(*table, "Right click to get a menu", "private_tip!!!");
+  toolTips->set_tip(*table, "Right click to get a menu");
   
   hbox = new Gtk::HBox;
   hbox->pack_start(*simulateButton_, FALSE, FALSE);
@@ -108,7 +108,7 @@ RecordCDTarget::RecordCDTarget()
   table->attach(*hbox, 0, 1, 0, 1);
   hbox->show();
 
-  toolTips->set_tip(*simulateButton_, "Right click to get a menu", "private_tip!!!");
+  toolTips->set_tip(*simulateButton_, "Right click to get a menu");
 
   hbox = new Gtk::HBox;
   hbox->pack_start(*closeSessionButton_, FALSE, FALSE);
