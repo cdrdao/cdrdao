@@ -21,8 +21,6 @@
 #define __PROJECT_CHOOSER_H__
 
 #include <gtk--.h>
-#include <gtk/gtk.h>
-#include <gnome--.h>
 
 class GCDMaster;
 
@@ -30,17 +28,11 @@ class ProjectChooser : public Gtk::Window
 {
 public:
   ProjectChooser();
-  ~ProjectChooser();
 
   virtual int delete_event_impl(GdkEventAny *event);
 
 private:
 
-//  void audiocd();
-//  void copy();
-//  void dump();
-
-//*  GCDMaster *gcdmaster_;
 // FIXME: When we receive a file:
 //		if it is wav, mp3, ... open an AudioCD project
 //		else open a DataCD.

@@ -48,6 +48,10 @@ AudioCDProject::AudioCDProject(int number, const char *name, TocEdit *tocEdit)
   createStatusbar();
   install_menu_hints();
 
+// Note: We must show before adding DockItems, because showing a Gnome::App
+// seems to also show all the DockItems it contains!
+  show();
+
   add_docked(*viewSwitcher_, "viewSwitcher", GNOME_DOCK_ITEM_BEH_NORMAL,
   		GNOME_DOCK_TOP, 1, 1, 0);
   
@@ -67,8 +71,6 @@ AudioCDProject::AudioCDProject(int number, const char *name, TocEdit *tocEdit)
   hbox->pack_start(*audioCDView, TRUE, TRUE);
   audioCDView->tocEditView()->sampleViewFull();
   viewSwitcher_->addView(audioCDView->widgetList, pixmap, label);
-
-
 }
 
 bool AudioCDProject::closeProject()

@@ -33,8 +33,6 @@
 
 #include <gnome.h>
 
-#define APP_NAME "Gnome CD Master"
-
 Project::Project() : Gnome::App("gcdmaster", APP_NAME)
 {
   hbox = new Gtk::HBox;

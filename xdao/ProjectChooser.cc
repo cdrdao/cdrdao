@@ -17,11 +17,8 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#include <gnome.h>
-
 #include "xcdrdao.h"
 #include "gcdmaster.h"
-//* #include "Project.h"
 #include "ProjectChooser.h"
 
 #define ICON_PADDING 10
@@ -44,15 +41,12 @@ ProjectChooser::ProjectChooser()
   
 //  drag_data_received.connect(slot(this, &AudioCDView::drag_data_received_cb));
 
-//  Gtk::Table *table = manage(new Gtk::Table(7, 3, FALSE));
-  Gtk::Table *table = new Gtk::Table(7, 3, FALSE);
+  Gtk::Table *table = manage(new Gtk::Table(7, 3, FALSE));
   Gtk::HBox *hbox;
   Gnome::Pixmap *pixmap;
   Gtk::Label *label;
   Gdk_Font font;
 
-//  gcdmaster_ = gcdmaster;
-  
 //  table->set_col_spacings(20);
   table->set_border_width(40);
   
@@ -176,6 +170,8 @@ helpButton->set_sensitive(false);
   table->show();
 //  pack_start(*table, TRUE, TRUE);
   add(*table);
+
+  set_title(APP_NAME);
 }
 
 /*
@@ -214,11 +210,6 @@ void AudioCDView::drag_data_received_cb(GdkDragContext *context,
   }
 }
 */
-
-ProjectChooser::~ProjectChooser() 
-{
-  
-}
 
 gint ProjectChooser::delete_event_impl(GdkEventAny* e)
 {

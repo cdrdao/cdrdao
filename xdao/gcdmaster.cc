@@ -162,7 +162,9 @@ void GCDMaster::newAudioCDProject2(ProjectChooser *projectChooser)
 {
   AudioCDProject *project = new AudioCDProject(project_number++, "", NULL);
   add(project);
-  project->show();
+// NOTE: We can't show the Gnome::App here, because it also shows all the DockItems
+// it contains, and the viewSwitcher will take care of this.
+//  project->show();
   if (projectChooser)
     closeChooser(projectChooser);
 }

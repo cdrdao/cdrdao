@@ -18,6 +18,10 @@
  */
 /*
  * $Log: xcdrdao.h,v $
+ * Revision 1.9  2001/04/16 21:56:04  llanero
+ * Fixes to ProjecChooser.
+ * Visibility of Dockitems in Project and AudioCDProject.
+ *
  * Revision 1.8  2001/03/02 01:46:32  llanero
  * more work on the new mdi.
  * killed MDIWINDOW
@@ -70,6 +74,8 @@
 
 #ifndef __XCDRDAO_H__
 #define __XCDRDAO_H__
+
+#define APP_NAME "Gnome CD Master"
 
 extern class GCDMaster *gcdmaster;
 //FIXME extern class MDIWindow *MDI_WINDOW;
