@@ -3413,7 +3413,8 @@ Toc *CdrDriver::readDisk(int session, const char *dataFilename)
   toc = buildToc(trackInfos, nofTracks + 1, padFirstPregap);
 
   if (!onTheFly_ && toc != NULL) {
-    readCdTextData(toc);
+    if ((options_ & OPT_DRV_NO_CDTEXT_READ) == 0)
+      readCdTextData(toc);
 
     if (readCatalog(toc, trackInfos[0].start, trackInfos[nofTracks].start)) {
       message(2, "Found disk catalogue number.");
