@@ -136,6 +136,9 @@
 #undef STDC_HEADERS
 
 /* "" */
+#undef USE_OLDSCGLIB
+
+/* "" */
 #undef USE_POSIX_THREADS
 
 /* "" */

@@ -124,7 +124,9 @@ int ScsiIf::init()
   if ((impl_->scgp_ = scg_open(impl_->dev_, errstr, sizeof(errstr), 0, 0))
 	 == NULL) {
     message(-2, "Cannot open SCSI device '%s': %s", impl_->dev_, errstr);
+#ifndef USE_OLDSCGLIB
     scg_help(stderr);
+#endif
     return 1;
   }
 

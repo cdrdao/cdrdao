@@ -74,13 +74,14 @@ cdrdao_LDADD =						\
 	-L. -ldao					\
 	-L$(top_builddir)/paranoia -lcdda_paranoia	\
 	-L$(top_builddir)/trackdb -ltrackdb		\
+	@scsilib_objs@                                  \
 	@thread_libs@					\
 	@scsilib_libs@
 
 cdrdao_DEPENDENCIES = \
 	$(top_builddir)/paranoia/libcdda_paranoia.a	\
 	$(top_builddir)/trackdb/libtrackdb.a		\
-	@scsilib_deps@					\
+	@scsilib_objs@					\
 	libdao.a
 
 drivertabledir = $(datadir)/cdrdao

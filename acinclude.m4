@@ -454,3 +454,51 @@ main ()
   AC_SUBST(LAME_LIBS)
 ]
 )
+
+AC_DEFUN(AC_LIBSCG,
+[dnl
+dnl Get libscg version
+dnl
+
+dnl  AC_MSG_CHECKING(for scg/schily library >= $1)
+
+  AC_LANG_SAVE
+  AC_LANG_C
+  ac_save_CFLAGS="$CFLAGS"
+  ac_save_LIBS="$LIBS"
+
+  AC_MSG_CHECKING(for libscg/schily version >= $1)
+  CFLAGS="$scsilib_incl"
+  LIBS="$scsilib_libs"
+
+  AC_RUN_IFELSE([AC_LANG_PROGRAM([[
+#include <stdio.h>
+#include <standard.h>
+#include <scg/scgcmd.h>
+#include <scg/scsitransp.h>
+]],[[
+  int maj1, maj2, min1, min2;
+  const char* v1 = "$1";
+  const char* v2 = scg_version(0, SCG_VERSION);
+  maj1 = atoi(v1);
+  maj2 = atoi(v2);
+  if (maj2 < maj1) {
+    return -1;
+  }
+  if (!strchr(v1, '.') || !strchr(v2, '.'))
+    return -1;
+
+  min1 = atoi(strchr(v1, '.') + 1);
+  min2 = atoi(strchr(v2, '.') + 1);
+  if (min2 < min1) {
+    return -1;
+  }
+   
+]])],[AC_MSG_RESULT(yes); $2],[AC_MSG_RESULT(no); $3],[AC_MSG_RESULT(skipped); $2])
+
+  CFLAGS="$ac_save_CFLAGS"
+  LIBS="$ac_save_LIBS"
+  AC_LANG_RESTORE
+]
+)
+
