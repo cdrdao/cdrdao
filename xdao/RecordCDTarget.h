@@ -27,34 +27,37 @@ class TocEdit;
 class CdDevice;
 class DeviceList;
 
-#include "RecordGenericDialog.h"
-
 class RecordCDTarget : public Gtk::VBox {
 public:
-  RecordCDTarget();
+  RecordCDTarget(Gtk::Window *);
   ~RecordCDTarget();
-
-  Gtk::Window *parent; // the dialog where the vbox is placed
   
-  void start(TocEdit *, RecordGenericDialog::RecordSourceType source);
+  void start();
   void stop();
 
-  void update(unsigned long level, RecordGenericDialog::RecordSourceType source);
-  void update(unsigned long level, TocEdit *,
-	      RecordGenericDialog::RecordSourceType source);
+  void update(unsigned long level);
 
+  DeviceList *getDeviceList() { return DEVICES;}
+  int getMultisession();
+  int getSpeed();
+  bool getEject();
+  int checkEjectWarning(Gtk::Window *);
+  bool getReload();
+  int checkReloadWarning(Gtk::Window *);
+  int getBuffer();
+
+  void cancelAction();
 private:
-  TocEdit *tocEdit_;
   int active_;
 
   DeviceList *DEVICES;
 
   int speed_;
 
-  Gtk::CheckButton *simulateButton_;
-  
+  Gtk::Window *parent_;
+  Gnome::Dialog *moreOptionsDialog_;
+
   Gtk::CheckButton *closeSessionButton_;
-  Gtk::CheckButton *ontheflyButton_;
   Gtk::CheckButton *ejectButton_;
   Gtk::CheckButton *reloadButton_;
 
@@ -66,14 +69,9 @@ private:
 
   void updateBufferRAMLabel();
 
-public:
-   void cancelAction();
-   void startAction(RecordGenericDialog::RecordSourceType source,
-			RecordTocSource *TOC, RecordCDSource *CD);
+  void moreOptions();
 
-private:
   void speedButtonChanged();
   void speedChanged();
 };
-
 #endif

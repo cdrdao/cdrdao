@@ -22,10 +22,10 @@
 #include <math.h>
 #include <assert.h>
 
+#include <gnome--.h>
 #include <gnome.h>
 
 #include "RecordCDTarget.h"
-#include "RecordCDSource.h"
 #include "MessageBox.h"
 #include "xcdrdao.h"
 #include "Settings.h"
@@ -33,151 +33,86 @@
 #include "CdDevice.h"
 #include "guiUpdate.h"
 #include "TocEdit.h"
-
 #include "DeviceList.h"
 
 #include "util.h"
 
-RecordCDTarget::RecordCDTarget()
+RecordCDTarget::RecordCDTarget(Gtk::Window *parent)
 {
-  Gtk::HBox *hbox;
-  Gtk::VBox *vbox;
-  Gtk::Table *table;
-  Gtk::Table *table2;
-  Gtk::Label *label;
-  Gtk::Adjustment *adjustment;
-  Gtk::Tooltips *toolTips;
-
   active_ = 0;
-  tocEdit_ = NULL;
-
-//  set_title(string("Record"));
-//  set_usize(0, 300);
-
   speed_ = 1;
-
-//  startButton_ = new Gtk::Button(string(" Start "));
-
-  toolTips = new Gtk::Tooltips;
-  toolTips->force_window();
+  parent_ = parent;
+  moreOptionsDialog_ = 0;
+  set_spacing(10);
 
   DEVICES = new DeviceList(CdDevice::CD_R);
 
-  Gtk::VBox *contents = new Gtk::VBox;
-  contents->set_spacing(10);
-
-  contents->pack_start(*DEVICES, TRUE, TRUE);
+  pack_start(*DEVICES, false, false);
 
   // device settings
   Gtk::Frame *recordOptionsFrame = new Gtk::Frame(string("Record Options"));
 
-  table = new Gtk::Table(8, 1, FALSE);
-  table->set_row_spacings(2);
-  hbox = new Gtk::HBox;
-  hbox->pack_start(*table, FALSE, FALSE, 5);
-  vbox = new Gtk::VBox;
-  vbox->pack_start(*hbox, FALSE, FALSE, 5);
+  Gtk::VBox *vbox = new Gtk::VBox;
   recordOptionsFrame->add(*vbox);
+  vbox->set_border_width(5);
+  vbox->set_spacing(5);
   vbox->show();
+
+  Gtk::HBox *hbox = new Gtk::HBox;
   hbox->show();
-  table->show();
-
-  toolTips->set_tip(*table, "Right click to get a menu");
-  
-  simulateButton_ = new Gtk::CheckButton(string("Simulation - no real write is done"), 0);
-  simulateButton_->set_active(true);
-  simulateButton_->show();
-  table->attach(*simulateButton_, 0, 1, 0, 1);
-
-//  toolTips->set_tip(*simulateButton_, "Right click to get a menu");
-
-  closeSessionButton_ = new Gtk::CheckButton(string("Close disk - no further writing possible!"), 0);
-  closeSessionButton_->set_active(true);
-  closeSessionButton_->show();
-  table->attach(*closeSessionButton_, 0, 1, 1, 2);
-
-  ontheflyButton_ = new Gtk::CheckButton(string("On the fly - no image file is created"), 0);
-  ontheflyButton_->set_active(false);
-  ontheflyButton_->show();
-  table->attach(*ontheflyButton_, 0, 3, 2, 3);
-
-  ejectButton_ = new Gtk::CheckButton(string("Eject the CD after writing"), 0);
-  ejectButton_->set_active(false);
-  ejectButton_->show();
-  table->attach(*ejectButton_, 0, 3, 3, 4);
-
-  reloadButton_ = new Gtk::CheckButton(string("Reload the CD after writing, if necessary"), 0);
-  reloadButton_->set_active(false);
-  reloadButton_->show();
-  table->attach(*reloadButton_, 0, 3, 4, 5);
-
-  table2 = new Gtk::Table(2, 3, FALSE);
-  table2->set_col_spacings(10);
-  table2->show();
-
-  label = new Gtk::Label(string("Speed: "), 0);
+  Gtk::Label *label = new Gtk::Label(string("Speed: "), 0);
   label->show();
-  table2->attach(*label, 0, 1, 0, 1);
+  hbox->pack_start(*label, false, false);
   
-  adjustment = new Gtk::Adjustment(1, 1, 20);
+  Gtk::Adjustment *adjustment = new Gtk::Adjustment(1, 1, 20);
   speedSpinButton_ = new Gtk::SpinButton(*adjustment);
   speedSpinButton_->set_digits(0);
   speedSpinButton_->show();
   speedSpinButton_->set_sensitive(false);
   adjustment->value_changed.connect(SigC::slot(this, &RecordCDTarget::speedChanged));
-  table2->attach(*speedSpinButton_, 1, 2, 0, 1);
+  hbox->pack_start(*speedSpinButton_, false, false, 10);
 
   speedButton_ = new Gtk::CheckButton(string("Use max."), 0);
   speedButton_->set_active(true);
   speedButton_->show();
   speedButton_->toggled.connect(SigC::slot(this, &RecordCDTarget::speedButtonChanged));
-  table2->attach(*speedButton_, 2, 3, 0, 1);
+  hbox->pack_start(*speedButton_, true, true);
+  vbox->pack_start(*hbox);
 
-  label = new Gtk::Label(string("Buffer: "), 0);
-  label->show();
-  table2->attach(*label, 0, 1, 1, 2);
-  adjustment = new Gtk::Adjustment(10, 10, 1000);
-  bufferSpinButton_ = new Gtk::SpinButton(*adjustment);
-  bufferSpinButton_->show();
-  table2->attach(*bufferSpinButton_, 1, 2, 1, 2);
-  hbox = new Gtk::HBox;
-  label = new Gtk::Label(string("audio seconds "));
-  hbox->pack_start(*label, FALSE);
-  label->show();
-  bufferRAMLabel_ = new Gtk::Label(string("= 1.72 Mb buffer."), 0);
-  hbox->pack_start(*bufferRAMLabel_, TRUE, TRUE);
-  bufferRAMLabel_->show();
-  adjustment->value_changed.connect(SigC::slot(this, &RecordCDTarget::updateBufferRAMLabel));
-  table2->attach(*hbox, 2, 3, 1, 2);
-  hbox->show();
+  Gnome::StockPixmap *moreOptionsPixmap =
+  	manage(new Gnome::StockPixmap(GNOME_STOCK_MENU_PROP));
+  Gtk::Label *moreOptionsLabel = manage(new Gtk::Label("More Options"));
+  Gtk::HBox *moreOptionsBox = manage(new Gtk::HBox);
+  moreOptionsBox->set_border_width(2);
+  Gtk::Button *moreOptionsButton = manage(new Gtk::Button());
+  moreOptionsBox->pack_start(*moreOptionsPixmap, false, false, 3);
+  moreOptionsBox->pack_start(*moreOptionsLabel, false, false, 4);
+  moreOptionsButton->add(*moreOptionsBox);
+  moreOptionsButton->clicked.connect(slot(this, &RecordCDTarget::moreOptions));
+  moreOptionsPixmap->show();
+  moreOptionsLabel->show();
+  moreOptionsBox->show();
+  moreOptionsButton->show();
+  moreOptionsBox = manage(new Gtk::HBox);
+  moreOptionsBox->show();
+  vbox->pack_start(*moreOptionsBox, false, false);
+  moreOptionsBox->pack_end(*moreOptionsButton, false, false);
 
-  table->attach(*table2, 0, 1, 5, 6);
-  
-  contents->pack_start(*recordOptionsFrame, FALSE, FALSE);
+  pack_start(*recordOptionsFrame, false, false);
   recordOptionsFrame->show();
-
-  Gtk::HBox *contentsHBox = new Gtk::HBox;
-
-  contentsHBox->pack_start(*contents);
-  contents->show();
-
-  pack_start(*contentsHBox);
-  contentsHBox->show();
-
-//  show();
 }
 
 RecordCDTarget::~RecordCDTarget()
 {
+  if (moreOptionsDialog_)
+    delete moreOptionsDialog_;
 }
 
-
-void RecordCDTarget::start(TocEdit *tedit,
-			   RecordGenericDialog::RecordSourceType source)
+void RecordCDTarget::start()
 {
   active_ = 1;
   
-  update(UPD_ALL, tedit, source);
+  update(UPD_ALL);
 
   show();
 }
@@ -187,34 +122,79 @@ void RecordCDTarget::stop()
   if (active_) {
     hide();
     active_ = 0;
-    tocEdit_ = NULL;
   }
 }
 
-void RecordCDTarget::update(unsigned long level,
-			    RecordGenericDialog::RecordSourceType source)
+void RecordCDTarget::moreOptions()
 {
-  update(level, tocEdit_, source);
+  if (!moreOptionsDialog_)
+  {
+    vector <string> buttons;
+    buttons.push_back(GNOME_STOCK_BUTTON_CLOSE);
+    moreOptionsDialog_ = new Gnome::Dialog("Target options", buttons);
+
+    moreOptionsDialog_->set_parent(*parent_);
+    moreOptionsDialog_->set_close(true);
+
+    Gtk::VBox *vbox = moreOptionsDialog_->get_vbox();
+    Gtk::Frame *frame = new Gtk::Frame("More Target Options");
+    vbox->pack_start(*frame);
+    vbox = new Gtk::VBox;
+    vbox->set_border_width(10);
+    vbox->set_spacing(5);
+    vbox->show();
+    frame->add(*vbox);
+    frame->show();
+
+    ejectButton_ = new Gtk::CheckButton(string("Eject the CD after writing"), 0);
+    ejectButton_->set_active(false);
+    ejectButton_->show();
+    vbox->pack_start(*ejectButton_);
+
+    reloadButton_ = new Gtk::CheckButton(string("Reload the CD after writing, if necessary"), 0);
+    reloadButton_->set_active(false);
+    reloadButton_->show();
+    vbox->pack_start(*reloadButton_);
+
+    closeSessionButton_ = new Gtk::CheckButton(string("Close disk - no further writing possible!"), 0);
+    closeSessionButton_->set_active(true);
+    closeSessionButton_->show();
+    vbox->pack_start(*closeSessionButton_);
+
+    Gtk::HBox *hbox = new Gtk::HBox;
+    hbox->show();
+    Gtk::Label *label = new Gtk::Label(string("Buffer: "), 0);
+    label->show();
+    hbox->pack_start(*label, false, false);
+
+    Gtk::Adjustment *adjustment = new Gtk::Adjustment(10, 10, 1000);
+    bufferSpinButton_ = new Gtk::SpinButton(*adjustment);
+    bufferSpinButton_->show();
+    hbox->pack_start(*bufferSpinButton_, false, false, 10);
+
+    label = new Gtk::Label(string("audio seconds "));
+    hbox->pack_start(*label, false, false);
+    label->show();
+    bufferRAMLabel_ = new Gtk::Label(string("= 1.72 Mb buffer."), 0);
+    hbox->pack_start(*bufferRAMLabel_, true, true);
+    bufferRAMLabel_->show();
+    adjustment->value_changed.connect(SigC::slot(this, &RecordCDTarget::updateBufferRAMLabel));
+
+	vbox->pack_start(*hbox);
+  }
+
+  moreOptionsDialog_->show();
 }
-void RecordCDTarget::update(unsigned long level, TocEdit *tedit,
-			    RecordGenericDialog::RecordSourceType source)
+
+void RecordCDTarget::update(unsigned long level)
 {
   if (!active_)
     return;
-
-  if (tocEdit_ != tedit) {
-    tocEdit_ = tedit;
-  }
 
   if (level & UPD_CD_DEVICES)
     DEVICES->import();
   else if (level & UPD_CD_DEVICE_STATUS)
     DEVICES->importStatus();
-
-  if (source == RecordGenericDialog::S_TOC)
-    ontheflyButton_->set_sensitive(false);
-  else if (source == RecordGenericDialog::S_CD)
-    ontheflyButton_->set_sensitive(true);
 }
 
 void RecordCDTarget::cancelAction()
@@ -222,258 +202,115 @@ void RecordCDTarget::cancelAction()
   stop();
 }
 
-void RecordCDTarget::startAction(RecordGenericDialog::RecordSourceType source,
-				 RecordTocSource *TOC, RecordCDSource *CD)
+int RecordCDTarget::getMultisession()
 {
-  int eject, simulate, speed, multiSession, reload, onthefly;
-  int correction;
-  int started = 0;
-  Toc *toc;
-  int buffer;
-  unsigned int i;
+  if (moreOptionsDialog_)
+    return closeSessionButton_->get_active() ? 0 : 1;
+  else
+    return 0; 
+}
 
-//Note: There is duplicated code here, it is easier to separate things
-//      than an if at every single line.
-  if (source == RecordGenericDialog::S_TOC)
+int RecordCDTarget::getSpeed()
+{
+  if (speedButton_->get_active())
+    return 0;
+  else
+    return speed_;
+}
+
+int RecordCDTarget::getBuffer()
+{
+  if (moreOptionsDialog_)
+    return bufferSpinButton_->get_value_as_int();
+  else
+    return 10; 
+}
+
+bool RecordCDTarget::getEject()
+{
+  if (moreOptionsDialog_)
+    return ejectButton_->get_active() ? 1 : 0;
+  else
+    return 0; 
+}
+
+int RecordCDTarget::checkEjectWarning(Gtk::Window *parent)
+{
+  // If ejecting the CD after recording is requested issue a warning message
+  // because buffer under runs may occur for other devices that are recording.
+  if (getEject())
   {
-    if (tocEdit_ == NULL)
-      return;
-
-    if (DEVICES->selection().empty()) {
-      MessageBox msg(parent, "Record", 0, 
-		     "Please select at least one recorder device.", NULL);
-      msg.run();
-      return;
-    }
-
-    toc = tocEdit_->toc();
-
-    if (toc->nofTracks() == 0 || toc->length().lba() < 300) {
-      MessageBox msg(parent, "Cannot Record", 0,
-  		   "Current toc contains no tracks or",
-             "length of at least one track is < 4 seconds.", NULL);
-      msg.run();
-      return;
-    }
-
-    switch (toc->checkCdTextData()) {
-    case 0: // OK
-      break;
-    case 1: // warning
-      {
-        Ask2Box msg(parent, "CD-TEXT Inconsistency", 0, 2,
-	  	  "Inconsistencies were detected in the defined CD-TEXT data",
-		    "which may produce undefined results. See the console",
-		    "output for more details.",
-		    "",
-		    "Do you want to proceed anyway?", NULL);
-
-        if (msg.run() != 1)
-  	return;
-      }
-      break;
-    default: // error
-      {
-        MessageBox msg(parent, "CD-TEXT Error", 0, 
-	  	     "The defined CD-TEXT data is erroneous or incomplete.",
-		       "See the console output for more details.", NULL);
-        msg.run();
-        return;
-      }
-      break;
-    }
-
-    simulate = simulateButton_->get_active() ? 1 : 0;
-    multiSession = closeSessionButton_->get_active() ? 0 : 1;
-    if (speedButton_->get_active())
-      speed = 0;
-    else
-      speed = speed_;
-    eject = ejectButton_->get_active() ? 1 : 0;
-    reload = reloadButton_->get_active() ? 1 : 0;
-    buffer = bufferSpinButton_->get_value_as_int();
-
-    // If ejecting the CD after recording is requested issue a warning message
-    // because buffer under runs may occur for other devices that are recording.
-    if (eject && gnome_config_get_bool(SET_RECORD_EJECT_WARNING)) {
-      Ask3Box msg(parent, "Record", 1, 2, 
-		  "Ejecting a CD may block the SCSI bus and",
-		  "cause buffer under runs when other devices",
-  		"are still recording.", "",
-	  	"Keep the eject setting anyway?", NULL);
-
-      switch (msg.run()) {
-      case 1: // keep eject setting
-        if (msg.dontShowAgain())
-  	gnome_config_set_bool(SET_RECORD_EJECT_WARNING, FALSE);
-        break;
-      case 2: // don't keep eject setting
-        eject = 0;
-        ejectButton_->set_active(false);
-        break;
-      default: // cancel
-        return;
-        break;
-      }
-    }
-
-    // The same is true for reloading the disk.
-    if (reload && gnome_config_get_bool(SET_RECORD_RELOAD_WARNING)) {
-      Ask3Box msg(parent, "Record", 1, 2, 
-  		"Reloading a CD may block the SCSI bus and",
-  		"cause buffer under runs when other devices",
-  		"are still recording.", "",
-  		"Keep the reload setting anyway?", NULL);
-
-      switch (msg.run()) {
-      case 1: // keep eject setting
-        if (msg.dontShowAgain())
-  	gnome_config_set_bool(SET_RECORD_RELOAD_WARNING, FALSE);
-        break;
-      case 2: // don't keep eject setting
-        reload = 0;
-        reloadButton_->set_active(false);
-        break;
-      default: // cancel
-        return;
-        break;
-      }
-    }
+    if (gnome_config_get_bool(SET_RECORD_EJECT_WARNING)) {
+      Ask3Box msg(parent, "Request", 1, 2, 
+    		"Ejecting a CD may block the SCSI bus and",
+  		  "cause buffer under runs when other devices",
+    		"are still recording.", "",
+  	  	"Keep the eject setting anyway?", NULL);
   
-    Gtk::CList_Helpers::SelectionList selection = DEVICES->selection();
-
-    for (i = 0; i < selection.size(); i++) {
-      DeviceList::DeviceData *data = (DeviceList::DeviceData*)selection[i].get_data();
-
-      if (data != NULL) {
-        CdDevice *dev = CdDevice::find(data->bus, data->id, data->lun);
-
-	if (dev != NULL) {
-	  if (dev->recordDao(tocEdit_, simulate, multiSession,
-			     speed, eject, reload, buffer) != 0) {
-	    message(-2, "Cannot start disk-at-once recording.");
-	  }
-	  else {
-	    started = 1;
-	  }
-	}
-      }
-    }
-  }
-  // We are doing CD to CD copy
-  else if (source == RecordGenericDialog::S_CD)
-  {
-    if (CD->DEVICES->selection().empty()) {
-      MessageBox msg(parent, "Record", 0, 
-		     "Please select one reader device.", NULL);
-      msg.run();
-      return;
-    }
-
-    if (DEVICES->selection().empty()) {
-      MessageBox msg(parent, "Record", 0, 
-		     "Please select at least one recorder device.", NULL);
-      msg.run();
-      return;
-    }
-
-    //Read options
-    correction = CD->getCorrection();
-
-    //Record options
-    simulate = simulateButton_->get_active() ? 1 : 0;
-    multiSession = closeSessionButton_->get_active() ? 0 : 1;
-    onthefly = ontheflyButton_->get_active() ? 1 : 0;
-    if (speedButton_->get_active())
-      speed = 0;
-    else
-      speed = speed_;
-    eject = ejectButton_->get_active() ? 1 : 0;
-    reload = reloadButton_->get_active() ? 1 : 0;
-    buffer = bufferSpinButton_->get_value_as_int();
-
-
-    // If ejecting the CD after recording is requested issue a warning message
-    // because buffer under runs may occur for other devices that are recording.
-    if (eject && gnome_config_get_bool(SET_RECORD_EJECT_WARNING)) {
-      Ask3Box msg(parent, "Record", 1, 2, 
-		  "Ejecting a CD may block the SCSI bus and",
-		  "cause buffer under runs when other devices",
-  		"are still recording.", "",
-	  	"Keep the eject setting anyway?", NULL);
-
       switch (msg.run()) {
       case 1: // keep eject setting
         if (msg.dontShowAgain())
-  	gnome_config_set_bool(SET_RECORD_EJECT_WARNING, FALSE);
+        {
+          gnome_config_set_bool(SET_RECORD_EJECT_WARNING, FALSE);
+          gnome_config_sync();
+        }
+        return 1;
         break;
       case 2: // don't keep eject setting
-        eject = 0;
         ejectButton_->set_active(false);
+        return 0;
         break;
       default: // cancel
-        return;
+        return -1;
         break;
       }
     }
+    return 1;
+  }
+  return 0;  
+}
 
-    // The same is true for reloading the disk.
-    if (reload && gnome_config_get_bool(SET_RECORD_RELOAD_WARNING)) {
-      Ask3Box msg(parent, "Record", 1, 2, 
+bool RecordCDTarget::getReload()
+{
+  if (moreOptionsDialog_)
+    return reloadButton_->get_active() ? 1 : 0;
+  else
+    return 0; 
+}
+
+int RecordCDTarget::checkReloadWarning(Gtk::Window *parent)
+{
+  // The same is true for reloading the disk.
+  if (getReload())
+  {
+    if (gnome_config_get_bool(SET_RECORD_RELOAD_WARNING)) {
+      Ask3Box msg(parent, "Request", 1, 2, 
   		"Reloading a CD may block the SCSI bus and",
   		"cause buffer under runs when other devices",
   		"are still recording.", "",
   		"Keep the reload setting anyway?", NULL);
 
       switch (msg.run()) {
-      case 1: // keep eject setting
+      case 1: // keep reload setting
         if (msg.dontShowAgain())
-  	gnome_config_set_bool(SET_RECORD_RELOAD_WARNING, FALSE);
+        {
+      	gnome_config_set_bool(SET_RECORD_RELOAD_WARNING, FALSE);
+          gnome_config_sync();
+        }
+        return 1;
         break;
-      case 2: // don't keep eject setting
-        reload = 0;
+      case 2: // don't keep reload setting
         reloadButton_->set_active(false);
+        return 0;
         break;
       default: // cancel
-        return;
+        return -1;
         break;
       }
     }
-
-    //First we get the CD reader (the "r" stands for reader)
-    Gtk::CList_Helpers::SelectionList r_selection = CD->DEVICES->selection();
-    DeviceList::DeviceData *r_data =
-			(DeviceList::DeviceData*)r_selection[0].get_data();
-    if (r_data != NULL) {
-      CdDevice *readdev = CdDevice::find(r_data->bus, r_data->id, r_data->lun);
-    if (readdev != NULL) {
-
-      Gtk::CList_Helpers::SelectionList selection = DEVICES->selection();
-
-      for (i = 0; i < selection.size(); i++) {
-        DeviceList::DeviceData *data = (DeviceList::DeviceData*)selection[i].get_data();
-
-        if (data != NULL) {
-          CdDevice *dev = CdDevice::find(data->bus, data->id, data->lun);
-
-        if (dev != NULL) {
-      	if (dev->duplicateDao(simulate, multiSession, speed,
-			       eject, reload, buffer, onthefly, correction, readdev) != 0) {
-	      message(-2, "Cannot start disk-at-once duplication.");
-  	  }
-  	  else {
-  	    started = 1;
-	    }
-        }
-      }
-      }
-      }
-    }
-
+    return 1;
   }
-
-    if (started)
-      guiUpdate(UPD_CD_DEVICE_STATUS);
+  return 0;
 }
 
 void RecordCDTarget::updateBufferRAMLabel()
@@ -498,9 +335,8 @@ void RecordCDTarget::speedButtonChanged()
 
 void RecordCDTarget::speedChanged()
 {
-//FIXME: Should only allow 1, 2, 4, 6, 8, 10, 12, 14, ...
-//FIXME: Can someone come with a cleaner solution???
-  gint new_speed;
+//FIXME: get max burn speed from selected burner(s)
+  int new_speed;
 
   new_speed = speedSpinButton_->get_value_as_int();
 
