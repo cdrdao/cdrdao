@@ -19,6 +19,9 @@
 
 /*
  * $Log: TocParser.g,v $
+ * Revision 1.3  2001/01/07 18:57:49  andreasm
+ * Fixed crash after a parse error.
+ *
  * Revision 1.2  2000/06/10 14:44:47  andreasm
  * Tracks that are shorter than 4 seconds do not lead to a fatal error anymore.
  * The user has the opportunity to record such tracks now.
@@ -241,6 +244,7 @@ toc > [ Toc *t ]
             error_ = 1;
           }
          delete[] catalog;
+	 catalog = NULL;
        } 
      >> 
    | tocType > [ toctype ]

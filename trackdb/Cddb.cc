@@ -402,7 +402,7 @@ int Cddb::openConnection()
     }
 #endif
 
-    message(3, "CDDB: Hostname: %s -> IP: %s", server,
+    message(4, "CDDB: Hostname: %s -> IP: %s", server,
 	    inet_ntoa(sockAddr.sin_addr));
 
     if ((fd_ = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
@@ -515,7 +515,7 @@ int Cddb::connectDb(const char *userName, const char *hostName,
     return 2;
   }
 
-  message(3, "CDDB: Server greeting: %s", response);
+  message(4, "CDDB: Server greeting: %s", response);
 
   connected_ = 1;
 
@@ -543,7 +543,7 @@ int Cddb::connectDb(const char *userName, const char *hostName,
     return 2;
   }
 
-  message(3, "CDDB: Handshake response: %s", response);
+  message(4, "CDDB: Handshake response: %s", response);
 
   return 0;
 }
@@ -624,7 +624,7 @@ int Cddb::queryDb(QueryResults **results)
     err = 1; goto fail;
   }    
 
-  message(3, "CDDB: QUERY response: %s", resp);
+  message(4, "CDDB: QUERY response: %s", resp);
 
   if (code[0] != 2) {
     message(-2, "CDDB: QUERY failed: %s", resp);
@@ -648,7 +648,7 @@ int Cddb::queryDb(QueryResults **results)
 	     strcmp(resp, ".") != 0) {
 	strcpy(respBuf, resp);
 
-	message(3, "CDDB: Query data: %s", resp);
+	message(4, "CDDB: Query data: %s", resp);
 
 	if (parseQueryResult(respBuf, qcategory, qdiskId, qtitle)) {
 	  appendQueryResult(qcategory, qdiskId, qtitle, 0);
@@ -719,7 +719,7 @@ int Cddb::readDb(const char *category, const char *diskId, CddbEntry **entry)
     goto fail;
   }
 
-  message(3, "CDDB: READ response: %s", resp);
+  message(4, "CDDB: READ response: %s", resp);
 
   if (code[0] == 2) {
     if ((localRecordFd = createLocalCddbFile(category, diskId)) == -2) {
@@ -780,7 +780,7 @@ void Cddb::shutdown()
       message(-1, "CDDB: EOF while waiting for QUIT response.");
     }
     else {
-      message(3, "CDDB: QUIT response: %s", resp);
+      message(4, "CDDB: QUIT response: %s", resp);
     }
   }
   else {
@@ -962,7 +962,7 @@ const char *Cddb::readLine()
   for (pos = strlen(s) - 1; pos >= 0 && isspace(s[pos]); pos--) 
     s[pos] = 0;
 
-  message(4, "CDDB: Data read: %s", s);
+  message(5, "CDDB: Data read: %s", s);
 
   return s;
 }
@@ -1053,10 +1053,10 @@ int Cddb::sendCommand(int nargs, const char *args[])
     cmd = httpCmd;
     httpCmd = NULL;
 
-    message(3, "CDDB: Sending command '%s'...", cmd);
+    message(4, "CDDB: Sending command '%s'...", cmd);
   }
   else {
-    message(3, "CDDB: Sending command '%s'...", cmd);
+    message(4, "CDDB: Sending command '%s'...", cmd);
     
     strcat(cmd, "\n");
   }
@@ -1100,7 +1100,7 @@ int Cddb::sendCommand(int nargs, const char *args[])
     p++;
   }
 
-  message(3, "CDDB: Ok.");
+  message(4, "CDDB: Ok.");
 
   fail:
   delete[] cmd;
@@ -1250,7 +1250,7 @@ int Cddb::readDbEntry(int localRecordFd)
 
   
   while ((resp = readLine()) != NULL && strcmp(resp, ".") != 0) {
-    message(3, "CDDB: READ data: %s", resp);
+    message(4, "CDDB: READ data: %s", resp);
 
     if (localRecordFd >= 0) {
       // save to local CDDB record file
