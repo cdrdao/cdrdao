@@ -86,7 +86,7 @@ dist:
 	cp paranoia/Makefile.in paranoia/README paranoia/overlapdef.txt \
            paranoia/config.guess paranoia/config.sub paranoia/configure \
            paranoia/configure.in paranoia/*.c paranoia/*.h $(DISTDIR)/paranoia
-	cp dao/Makefile.in dao/*.h dao/*.cc dao/cdrdao.man $(DISTDIR)/dao
+	cp dao/Makefile.in dao/*.h dao/*.cc dao/cdrdao.man dao/cdrdao.drivers $(DISTDIR)/dao
 	cp xdao/Makefile.in xdao/*.h xdao/*.cc xdao/xcdrdao.man $(DISTDIR)/xdao
 	cp testtocs/*.toc $(DISTDIR)/testtocs
 	tar cf - contrib | ( cd $(DISTDIR) ; tar xf - )
@@ -95,3 +95,4 @@ dist:
 	chmod -R ugo+r $(DISTDIR)
 	chmod -R u+w $(DISTDIR)
 	tar cvzf cdrdao-$(VERSION).src.tar.gz $(DISTDIR)
+	rm -rf $(DISTDIR)
