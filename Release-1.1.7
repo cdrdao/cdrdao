@@ -1,0 +1,36 @@
+Hi,
+
+cdrdao-1.1.7 is available from:
+
+  http://sf.net/projects/cdrdao
+
+
+This release is mainly triggered by the libedc_ecc license issue that
+recently came up. The affected code has been replaced by a GPL compliant
+implementation.
+
+Currently a minor functionality is missing: Packed R-W sub-channel data
+cannot be converted to raw R-W (incl. error correction and interleaving)
+sub-channel data anymore as this was also a job of the libedc_ecc which
+is not re-implemented, yet. The impact in practice should be very low.
+If you want to copy a CD including the sub-channel data it is recommended
+to use the RW_RAW mode anyway.
+
+
+Cdrdao changes:
+
+- Fixed crash in toc-file reader (only occurred for a certain type of
+  syntactical error).
+
+- Fixed compilation problems of "toc2mp3.cc" with pre gcc-3.x compilers.
+
+- Updated driver table.
+
+
+GCDMaster changes:
+
+none
+
+
+Andreas Mueller
+Manuel Clos
