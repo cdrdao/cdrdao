@@ -236,6 +236,7 @@ AudioCDView::AudioCDView(AudioCDChild *child, AudioCDProject *project)
   {
     using namespace Gnome::UI;
     vector<Info> menus;
+	Info info;
     int i;
     
     menus.push_back(Item(Icon(GNOME_STOCK_MENU_PROP),
@@ -245,47 +246,65 @@ AudioCDView::AudioCDView(AudioCDChild *child, AudioCDProject *project)
   
     menus.push_back(Separator());
   
-    menus.push_back(Item(Icon(GNOME_STOCK_MENU_CUT),
+	info = Item(Icon(GNOME_STOCK_MENU_CUT),
   			      N_("Cut"),
   			      slot(this, &AudioCDView::cutTrackData),
-  			      N_("Cut out selected samples")));
-  
-    menus.push_back(Item(Icon(GNOME_STOCK_MENU_PASTE),
+  			      N_("Cut out selected samples"));
+	info.set_accel("<control>X");
+    menus.push_back(info);
+
+    info = Item(Icon(GNOME_STOCK_MENU_PASTE),
   			      N_("Paste"),
   			      slot(this, &AudioCDView::pasteTrackData),
-  			      N_("Paste previously cut samples")));
+  			      N_("Paste previously cut samples"));
+	info.set_accel("<control>V");
+    menus.push_back(info);
 
     menus.push_back(Separator());
 
-    menus.push_back(Item(N_("Add Track Mark"),
+    info = Item(N_("Add Track Mark"),
 			      slot(this, &AudioCDView::addTrackMark),
-			      N_("Add track marker at current marker position")));
+			      N_("Add track marker at current marker position"));
+	info.set_accel("T");
+    menus.push_back(info);
 
-    menus.push_back(Item(N_("Add Index Mark"),
+    info = Item(N_("Add Index Mark"),
 			      slot(this, &AudioCDView::addIndexMark),
-			      N_("Add index marker at current marker position")));
+			      N_("Add index marker at current marker position"));
+	info.set_accel("I");
+    menus.push_back(info);
 
-    menus.push_back(Item(N_("Add Pre-Gap"),
+    info = Item(N_("Add Pre-Gap"),
 			      slot(this, &AudioCDView::addPregap),
-			      N_("Add pre-gap at current marker position")));
+			      N_("Add pre-gap at current marker position"));
+	info.set_accel("P");
+    menus.push_back(info);
 
-    menus.push_back(Item(N_("Remove Track Mark"),
+    info = Item(N_("Remove Track Mark"),
 			      slot(this, &AudioCDView::removeTrackMark),
-			      N_("Remove selected track/index marker or pre-gap")));
+			      N_("Remove selected track/index marker or pre-gap"));
+	info.set_accel("<control>D");
+    menus.push_back(info);
  
     menus.push_back(Separator());
 
-    menus.push_back(Item(N_("Append Track"),
+    info = Item(N_("Append Track"),
 			      slot(this, &AudioCDView::appendTrack),
-			      N_("Append track with data from audio file")));
+			      N_("Append track with data from audio file"));
+	info.set_accel("<control>T");
+    menus.push_back(info);
 
-    menus.push_back(Item(N_("Append File"),
+    info = Item(N_("Append File"),
 			      slot(this, &AudioCDView::appendFile),
-			      N_("Append data from audio file to last track")));
+			      N_("Append data from audio file to last track"));
+	info.set_accel("<control>F");
+    menus.push_back(info);
   
-    menus.push_back(Item(N_("Insert File"),
+    info = Item(N_("Insert File"),
 			      slot(this, &AudioCDView::insertFile),
-			      N_("Insert data from audio file at current marker position")));
+			      N_("Insert data from audio file at current marker position"));
+	info.set_accel("<control>I");
+    menus.push_back(info);
 
     menus.push_back(Separator());
 
