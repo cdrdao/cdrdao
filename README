@@ -511,12 +511,10 @@ YAMAHA CDR400, CRW4260
 
 
 HP CD-Writer+ 75XX, HP CD-Writer+ 8100, SONY CRX100, HP CD-Writer+ 8200
-    The firmware restricts the possible disk types in DAO mode to one of
-    the following:
+    The firmware restricts the possible disk types in multi session
+    mode (DAO only) to one of the following:
     
      o Pure audio CD.
-     o Mixed mode CD where the 1st track is a data track followed by at
-       least 1 audio track.
      o CD-EXTRA where the 1st session contains only audio tracks and the
        2nd session contains 1 data track.
 	  
@@ -526,13 +524,6 @@ HP CD-Writer+ 75XX, HP CD-Writer+ 8100, SONY CRX100, HP CD-Writer+ 8200
        amount.
      o Cue sheets with ISRC codes are rejected of the COPY flag is set.
        This might be fixed in future versions.
-
-    If you want to create a pure data CD you will have to append a dummy
-    audio track to the toc-file, e.g. with:
-
-        TRACK AUDIO
-	PREGAP 0:2:0
-	SILENCE 0:4:0
 
 
 SONY CD-R CDU948

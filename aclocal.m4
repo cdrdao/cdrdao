@@ -192,3 +192,62 @@ main ()
   rm -f conf.gtkmmtest
 ])
 
+
+
+# Configure paths for Gnome and Gnomemm
+
+dnl Test for Gnome and Gnomemm, define GNOMEMM_CFLAGS and GNOMEMM_LIBS
+dnl   to be used as follows:
+dnl AC_PATH_GNOMEMM([MINIMUM-VERSION, [ACTION-IF-FOUND [, ACTION-IF-NOT-FOUND]]])
+dnl
+AC_DEFUN(AC_PATH_GNOMEMM,
+[dnl 
+dnl Get the cflags and libraries from the gnome-config script
+dnl
+AC_ARG_WITH(gnome-prefix,[  --with-gnome-prefix=PREFIX
+                          Prefix where Gnome and Gnomemm is installed (optional)],
+            gnome_config_prefix="$withval", gnome_config_prefix="")
+
+  if test x$gnome_config_prefix != x ; then
+     gnome_config_args="$gnome_config_args --prefix=$gnome_config_prefix"
+     if test x${GNOME_CONFIG+set} != xset ; then
+        GNOME_CONFIG=$gnome_config_prefix/bin/gnome-config
+     fi
+  fi
+
+  AC_PATH_PROG(GNOME_CONFIG, gnome-config, no)
+  min_gnome_version=$1;
+
+  AC_MSG_CHECKING(for Gnome - version >= $min_gnome_version)
+  no_gnome=""
+  if test "$GNOME_CONFIG" = "no" ; then
+    no_gnome=yes
+  else
+    gnome_config_major_version=`$GNOME_CONFIG --version | \
+           sed 's/.* \([[0-9]]*\).\([[0-9]]*\).\([[0-9]]*\)/\1/'`
+    gnome_config_minor_version=`$GNOME_CONFIG --version | \
+           sed 's/.* \([[0-9]]*\).\([[0-9]]*\).\([[0-9]]*\)/\2/'`
+    gnome_config_micro_version=`$GNOME_CONFIG --version | \
+           sed 's/.* \([[0-9]]*\).\([[0-9]]*\).\([[0-9]]*\)/\3/'`
+
+    GNOME_CFLAGS=`$GNOME_CONFIG --cflags gnomemm gnomeui`
+    GNOME_LIBS=`$GNOME_CONFIG --libs gnomemm gnomeui`
+  fi
+  if test "x$no_gnome" = x ; then
+     AC_MSG_RESULT(yes)
+     ifelse([$2], , :, [$2])     
+  else
+     AC_MSG_RESULT(no)
+     if test "$GNOME_CONFIG" = "no" ; then
+       echo "*** The gnome-config script installed by Gnome could not be found"
+       echo "*** If Gnome was installed in PREFIX, make sure PREFIX/bin is in"
+       echo "*** your path, or set the GNOME_CONFIG environment variable to the"
+       echo "*** full path to gnome-config."
+     fi
+     GNOME_CFLAGS=""
+     GNOME_LIBS=""
+     ifelse([$3], , :, [$3])
+  fi
+  AC_SUBST(GNOME_CFLAGS)
+  AC_SUBST(GNOME_LIBS)
+])

@@ -16,10 +16,11 @@ gcc-2.95 version. You can
  - compile with  make CXXFLAGS="-fpermissive -O2"
  - use the PCCTS bug fix release 1.33mr20a from 
        http://www.mcs.net/~tmoog/pccts.html
- - or fix the obvious errors in the PCCTS installation
+ - or fix the obvious errors in the PCCTS sources
 
-The xcdrdao GUI needs the Gimp toolkit gtk+-1.2.0 and the C++ binding
-Gtk---1.0.0. Both are available from www.gtk.org.
+The GnomeCDMaster GUI needs the Gimp toolkit gtk+-1.2.6, recent Gnome libs
+(e.g. gnome-libs-1.0.55) and the C++ bindings gtkmm-1.2.0 and gnomemm-1.1.9.
+The packages are available from www.gtk.org and www.gnome.org.
 
 1. Type './configure'.
    Configure options for PCCTS:
@@ -52,7 +53,7 @@ Gtk---1.0.0. Both are available from www.gtk.org.
                              options are given the SCSI library will not be
                              built.
 
-   Misc Configure options:
+   Misc configure options:
      --with-linux-qnx-sched  Enables Linux QNX real time scheduling.
                              This will only work if your kernel is compiled
                              with the QNX scheduler.

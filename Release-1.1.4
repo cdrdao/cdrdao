@@ -18,6 +18,14 @@ Cdrdao changes:
    existing toc-file. The direct cddbp and the http encapsulated protocol
    is supported.
 
+ o Added support to better handle disks written in track-at-once mode with
+   'read-cd' and 'read-toc' (see options --tao-source and --tao-source-adjust).
+
+ o Fixed bug that prevented recording of pure data CDs with the recent HP
+   and Sony recorder models in single session mode.
+   For multi session mode the restrictions mentioned in the README are
+   still valid.
+
  o Fixed 'unit not ready' problems after writing with the 'generic-mmc'
    and 'generic-mmc-raw' driver.
 
@@ -36,7 +44,12 @@ Cdrdao changes:
  o Fixed bug in CD-TEXT reading code: CD-TEXT fields with empty strings were
    only read for the first track.
 
- 
+ o Driver 'generic-mmc': If the power calibration fails the recording process
+   will be aborted now.
+
+ o Driver 'generic-mmc-raw': Added explicit power calibration.
+
+
 Xcdrdao changes:
  
  o Xcdrdao is now a Gnome application and will be called "Gnome CD Master"
