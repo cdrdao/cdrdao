@@ -26,10 +26,9 @@ INSTALL_DATA =          ${INSTALL} -c -m 644
 #
 # pccts installation directory and tools
 #
-PCCTS_BIN = @pcctsbin@
 PCCTS_INCLUDE = @pcctsinc@
-ANTLR = $(PCCTS_BIN)/antlr
-DLG = $(PCCTS_BIN)/dlg
+ANTLR = @antlr_path@
+DLG = @dlg_path@
 #
 # compiler and library stuff
 #

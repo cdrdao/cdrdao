@@ -2795,76 +2795,173 @@ fi
 
 
 if test "$pcctsbin" = default; then
-  pcctsbin=/usr/local/bin
+  # Extract the first word of "antlr", so it can be a program name with args.
+set dummy antlr; ac_word=$2
+echo $ac_n "checking for $ac_word""... $ac_c" 1>&6
+echo "configure:2802: checking for $ac_word" >&5
+if eval "test \"`echo '$''{'ac_cv_path_antlr_path'+set}'`\" = set"; then
+  echo $ac_n "(cached) $ac_c" 1>&6
+else
+  case "$antlr_path" in
+  /*)
+  ac_cv_path_antlr_path="$antlr_path" # Let the user override the test with a path.
+  ;;
+  ?:/*)			 
+  ac_cv_path_antlr_path="$antlr_path" # Let the user override the test with a dos path.
+  ;;
+  *)
+  IFS="${IFS= 	}"; ac_save_ifs="$IFS"; IFS=":"
+  ac_dummy="$PATH"
+  for ac_dir in $ac_dummy; do 
+    test -z "$ac_dir" && ac_dir=.
+    if test -f $ac_dir/$ac_word; then
+      ac_cv_path_antlr_path="$ac_dir/$ac_word"
+      break
+    fi
+  done
+  IFS="$ac_save_ifs"
+  test -z "$ac_cv_path_antlr_path" && ac_cv_path_antlr_path="no"
+  ;;
+esac
+fi
+antlr_path="$ac_cv_path_antlr_path"
+if test -n "$antlr_path"; then
+  echo "$ac_t""$antlr_path" 1>&6
+else
+  echo "$ac_t""no" 1>&6
+fi
+
+  # Extract the first word of "dlg", so it can be a program name with args.
+set dummy dlg; ac_word=$2
+echo $ac_n "checking for $ac_word""... $ac_c" 1>&6
+echo "configure:2838: checking for $ac_word" >&5
+if eval "test \"`echo '$''{'ac_cv_path_dlg_path'+set}'`\" = set"; then
+  echo $ac_n "(cached) $ac_c" 1>&6
+else
+  case "$dlg_path" in
+  /*)
+  ac_cv_path_dlg_path="$dlg_path" # Let the user override the test with a path.
+  ;;
+  ?:/*)			 
+  ac_cv_path_dlg_path="$dlg_path" # Let the user override the test with a dos path.
+  ;;
+  *)
+  IFS="${IFS= 	}"; ac_save_ifs="$IFS"; IFS=":"
+  ac_dummy="$PATH"
+  for ac_dir in $ac_dummy; do 
+    test -z "$ac_dir" && ac_dir=.
+    if test -f $ac_dir/$ac_word; then
+      ac_cv_path_dlg_path="$ac_dir/$ac_word"
+      break
+    fi
+  done
+  IFS="$ac_save_ifs"
+  test -z "$ac_cv_path_dlg_path" && ac_cv_path_dlg_path="no"
+  ;;
+esac
+fi
+dlg_path="$ac_cv_path_dlg_path"
+if test -n "$dlg_path"; then
+  echo "$ac_t""$dlg_path" 1>&6
+else
+  echo "$ac_t""no" 1>&6
+fi
+
+else
+  # Extract the first word of "antlr", so it can be a program name with args.
+set dummy antlr; ac_word=$2
+echo $ac_n "checking for $ac_word""... $ac_c" 1>&6
+echo "configure:2875: checking for $ac_word" >&5
+if eval "test \"`echo '$''{'ac_cv_path_antlr_path'+set}'`\" = set"; then
+  echo $ac_n "(cached) $ac_c" 1>&6
+else
+  case "$antlr_path" in
+  /*)
+  ac_cv_path_antlr_path="$antlr_path" # Let the user override the test with a path.
+  ;;
+  ?:/*)			 
+  ac_cv_path_antlr_path="$antlr_path" # Let the user override the test with a dos path.
+  ;;
+  *)
+  IFS="${IFS= 	}"; ac_save_ifs="$IFS"; IFS=":"
+  ac_dummy="$pcctsbin"
+  for ac_dir in $ac_dummy; do 
+    test -z "$ac_dir" && ac_dir=.
+    if test -f $ac_dir/$ac_word; then
+      ac_cv_path_antlr_path="$ac_dir/$ac_word"
+      break
+    fi
+  done
+  IFS="$ac_save_ifs"
+  test -z "$ac_cv_path_antlr_path" && ac_cv_path_antlr_path="no"
+  ;;
+esac
+fi
+antlr_path="$ac_cv_path_antlr_path"
+if test -n "$antlr_path"; then
+  echo "$ac_t""$antlr_path" 1>&6
+else
+  echo "$ac_t""no" 1>&6
+fi
+
+  # Extract the first word of "dlg", so it can be a program name with args.
+set dummy dlg; ac_word=$2
+echo $ac_n "checking for $ac_word""... $ac_c" 1>&6
+echo "configure:2911: checking for $ac_word" >&5
+if eval "test \"`echo '$''{'ac_cv_path_dlg_path'+set}'`\" = set"; then
+  echo $ac_n "(cached) $ac_c" 1>&6
+else
+  case "$dlg_path" in
+  /*)
+  ac_cv_path_dlg_path="$dlg_path" # Let the user override the test with a path.
+  ;;
+  ?:/*)			 
+  ac_cv_path_dlg_path="$dlg_path" # Let the user override the test with a dos path.
+  ;;
+  *)
+  IFS="${IFS= 	}"; ac_save_ifs="$IFS"; IFS=":"
+  ac_dummy="$pcctsbin"
+  for ac_dir in $ac_dummy; do 
+    test -z "$ac_dir" && ac_dir=.
+    if test -f $ac_dir/$ac_word; then
+      ac_cv_path_dlg_path="$ac_dir/$ac_word"
+      break
+    fi
+  done
+  IFS="$ac_save_ifs"
+  test -z "$ac_cv_path_dlg_path" && ac_cv_path_dlg_path="no"
+  ;;
+esac
+fi
+dlg_path="$ac_cv_path_dlg_path"
+if test -n "$dlg_path"; then
+  echo "$ac_t""$dlg_path" 1>&6
+else
+  echo "$ac_t""no" 1>&6
+fi
+
+fi
+
+if test $antlr_path = "no"; then
+  { echo "configure: error: PCCTS: antlr not found in path." 1>&2; exit 1; }
+fi
+
+if test $dlg_path = "no" ; then
+  { echo "configure: error: PCCTS: dlg not found in path." 1>&2; exit 1; }
 fi
 
 if test "$pcctsinc" = default; then
-  pcctsinc=/usr/local/include/pccts
-fi
-
-# Extract the first word of "antlr", so it can be a program name with args.
-set dummy antlr; ac_word=$2
-echo $ac_n "checking for $ac_word""... $ac_c" 1>&6
-echo "configure:2809: checking for $ac_word" >&5
-if eval "test \"`echo '$''{'ac_cv_prog_HAVE_ANTLR'+set}'`\" = set"; then
-  echo $ac_n "(cached) $ac_c" 1>&6
-else
-  if test -n "$HAVE_ANTLR"; then
-  ac_cv_prog_HAVE_ANTLR="$HAVE_ANTLR" # Let the user override the test.
-else
-  IFS="${IFS= 	}"; ac_save_ifs="$IFS"; IFS=":"
-  ac_dummy="$pcctsbin"
-  for ac_dir in $ac_dummy; do
-    test -z "$ac_dir" && ac_dir=.
-    if test -f $ac_dir/$ac_word; then
-      ac_cv_prog_HAVE_ANTLR="yes"
-      break
-    fi
-  done
-  IFS="$ac_save_ifs"
-  test -z "$ac_cv_prog_HAVE_ANTLR" && ac_cv_prog_HAVE_ANTLR="no"
-fi
-fi
-HAVE_ANTLR="$ac_cv_prog_HAVE_ANTLR"
-if test -n "$HAVE_ANTLR"; then
-  echo "$ac_t""$HAVE_ANTLR" 1>&6
-else
-  echo "$ac_t""no" 1>&6
-fi
-
-# Extract the first word of "dlg", so it can be a program name with args.
-set dummy dlg; ac_word=$2
-echo $ac_n "checking for $ac_word""... $ac_c" 1>&6
-echo "configure:2839: checking for $ac_word" >&5
-if eval "test \"`echo '$''{'ac_cv_prog_HAVE_DLG'+set}'`\" = set"; then
-  echo $ac_n "(cached) $ac_c" 1>&6
-else
-  if test -n "$HAVE_DLG"; then
-  ac_cv_prog_HAVE_DLG="$HAVE_DLG" # Let the user override the test.
-else
-  IFS="${IFS= 	}"; ac_save_ifs="$IFS"; IFS=":"
-  ac_dummy="$pcctsbin"
-  for ac_dir in $ac_dummy; do
-    test -z "$ac_dir" && ac_dir=.
-    if test -f $ac_dir/$ac_word; then
-      ac_cv_prog_HAVE_DLG="yes"
-      break
-    fi
-  done
-  IFS="$ac_save_ifs"
-  test -z "$ac_cv_prog_HAVE_DLG" && ac_cv_prog_HAVE_DLG="no"
-fi
-fi
-HAVE_DLG="$ac_cv_prog_HAVE_DLG"
-if test -n "$HAVE_DLG"; then
-  echo "$ac_t""$HAVE_DLG" 1>&6
-else
-  echo "$ac_t""no" 1>&6
-fi
-
-
-if test $HAVE_ANTLR != "yes" -o $HAVE_DLG != "yes" ; then
-  { echo "configure: error: No PCCTS installation detected." 1>&2; exit 1; }
+    echo $ac_n "checking checking for pccts includes""... $ac_c" 1>&6
+echo "configure:2956: checking checking for pccts includes" >&5
+  if test -r /usr/local/include/pccts/pcctscfg.h; then
+    pcctsinc=/usr/local/include/pccts
+    echo "$ac_t""$pcctsinc" 1>&6
+  elif test -r /usr/include/pccts/pcctscfg.h; then
+    pcctsinc=/usr/include/pccts
+    echo "$ac_t""$pcctsinc" 1>&6
+  else
+    { echo "configure: error: No PCCTS headers found in /usr/local/include/pccts or /usr/include/pccts." 1>&2; exit 1; }
+  fi
 fi
 
 xdao=xdao
@@ -2909,7 +3006,7 @@ fi
   # Extract the first word of "gtkmm-config", so it can be a program name with args.
 set dummy gtkmm-config; ac_word=$2
 echo $ac_n "checking for $ac_word""... $ac_c" 1>&6
-echo "configure:2913: checking for $ac_word" >&5
+echo "configure:3010: checking for $ac_word" >&5
 if eval "test \"`echo '$''{'ac_cv_path_GTKMM_CONFIG'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
@@ -2945,7 +3042,7 @@ fi
   min_gtkmm_version=1.2.0
 
   echo $ac_n "checking for GTK-- - version >= $min_gtkmm_version""... $ac_c" 1>&6
-echo "configure:2949: checking for GTK-- - version >= $min_gtkmm_version" >&5
+echo "configure:3046: checking for GTK-- - version >= $min_gtkmm_version" >&5
   no_gtkmm=""
   if test "$GTKMM_CONFIG" = "no" ; then
     no_gtkmm=yes
@@ -2977,7 +3074,7 @@ cross_compiling=$ac_cv_prog_cxx_cross
   echo $ac_n "cross compiling; assumed OK... $ac_c"
 else
   cat > conftest.$ac_ext <<EOF
-#line 2981 "configure"
+#line 3078 "configure"
 #include "confdefs.h"
 #ifdef __cplusplus
 extern "C" void exit(int);
@@ -3059,7 +3156,7 @@ main ()
 }
 
 EOF
-if { (eval echo configure:3063: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext} && (./conftest; exit) 2>/dev/null
+if { (eval echo configure:3160: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext} && (./conftest; exit) 2>/dev/null
 then
   :
 else
@@ -3096,7 +3193,7 @@ fi
           CXXFLAGS="$CFLAGS $GTKMM_CXXFLAGS"
           LIBS="$LIBS $GTKMM_LIBS"
           cat > conftest.$ac_ext <<EOF
-#line 3100 "configure"
+#line 3197 "configure"
 #include "confdefs.h"
 
 #include <gtk--.h>
@@ -3106,7 +3203,7 @@ int main() {
  return ((gtkmm_major_version) || (gtkmm_minor_version) || (gtkmm_micro_version)); 
 ; return 0; }
 EOF
-if { (eval echo configure:3110: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+if { (eval echo configure:3207: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
   rm -rf conftest*
    echo "*** The test program compiled, but did not run. This usually means"
           echo "*** that the run-time linker is not finding GTK-- or finding the wrong"
@@ -3165,7 +3262,7 @@ fi
   # Extract the first word of "gnome-config", so it can be a program name with args.
 set dummy gnome-config; ac_word=$2
 echo $ac_n "checking for $ac_word""... $ac_c" 1>&6
-echo "configure:3169: checking for $ac_word" >&5
+echo "configure:3266: checking for $ac_word" >&5
 if eval "test \"`echo '$''{'ac_cv_path_GNOME_CONFIG'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
@@ -3201,7 +3298,7 @@ fi
   min_gnome_version=1.0.55;
 
   echo $ac_n "checking for Gnome - version >= $min_gnome_version""... $ac_c" 1>&6
-echo "configure:3205: checking for Gnome - version >= $min_gnome_version" >&5
+echo "configure:3302: checking for Gnome - version >= $min_gnome_version" >&5
   no_gnome=""
   if test "$GNOME_CONFIG" = "no" ; then
     no_gnome=yes
@@ -3323,7 +3420,6 @@ case "$host" in
      sound_if_src=SoundIF-none.cc
      ;;
 esac
-
 
 
 
@@ -3485,8 +3581,8 @@ s%@INSTALL_SCRIPT@%$INSTALL_SCRIPT%g
 s%@INSTALL_DATA@%$INSTALL_DATA%g
 s%@RANLIB@%$RANLIB%g
 s%@SET_MAKE@%$SET_MAKE%g
-s%@HAVE_ANTLR@%$HAVE_ANTLR%g
-s%@HAVE_DLG@%$HAVE_DLG%g
+s%@antlr_path@%$antlr_path%g
+s%@dlg_path@%$dlg_path%g
 s%@GTKMM_CONFIG@%$GTKMM_CONFIG%g
 s%@GTKMM_CFLAGS@%$GTKMM_CFLAGS%g
 s%@GTKMM_LIBS@%$GTKMM_LIBS%g
@@ -3499,7 +3595,6 @@ s%@xdao@%$xdao%g
 s%@scsilib_dir@%$scsilib_dir%g
 s%@scsilib_incl@%$scsilib_incl%g
 s%@scsilib_libs@%$scsilib_libs%g
-s%@pcctsbin@%$pcctsbin%g
 s%@pcctsinc@%$pcctsinc%g
 s%@dao_src@%$dao_src%g
 s%@sound_if_src@%$sound_if_src%g

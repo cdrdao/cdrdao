@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_REVISION($Revision: 1.8 $)dnl
+AC_REVISION($Revision: 1.9 $)dnl
 
 cdrdao_version=1.1.4
 
@@ -134,18 +134,33 @@ fi
 
 dnl Checks for pccts parser generator
 if test "$pcctsbin" = default; then
-  pcctsbin=/usr/local/bin
+  AC_PATH_PROG(antlr_path,antlr,no)
+  AC_PATH_PROG(dlg_path,dlg,no)
+else
+  AC_PATH_PROG(antlr_path,antlr,no,$pcctsbin)
+  AC_PATH_PROG(dlg_path,dlg,no,$pcctsbin)
+fi
+
+if test $antlr_path = "no"; then
+  AC_MSG_ERROR([PCCTS: antlr not found in path.])
+fi
+
+if test $dlg_path = "no" ; then
+  AC_MSG_ERROR([PCCTS: dlg not found in path.])
 fi
 
 if test "$pcctsinc" = default; then
-  pcctsinc=/usr/local/include/pccts
-fi
-
-AC_CHECK_PROG(HAVE_ANTLR,antlr,yes,no,$pcctsbin)
-AC_CHECK_PROG(HAVE_DLG,dlg,yes,no,$pcctsbin)
-
-if test $HAVE_ANTLR != "yes" -o $HAVE_DLG != "yes" ; then
-  AC_MSG_ERROR([No PCCTS installation detected.])
+  dnl we'll look in /usr/local and /usr for debian
+  AC_MSG_CHECKING([checking for pccts includes])
+  if test -r /usr/local/include/pccts/pcctscfg.h; then
+    pcctsinc=/usr/local/include/pccts
+    AC_MSG_RESULT([$pcctsinc])
+  elif test -r /usr/include/pccts/pcctscfg.h; then
+    pcctsinc=/usr/include/pccts
+    AC_MSG_RESULT([$pcctsinc])
+  else
+    AC_MSG_ERROR([No PCCTS headers found in /usr/local/include/pccts or /usr/include/pccts.])
+  fi
 fi
 
 xdao=xdao
@@ -250,7 +265,6 @@ AC_SUBST(xdao)
 AC_SUBST(scsilib_dir)
 AC_SUBST(scsilib_incl)
 AC_SUBST(scsilib_libs)
-AC_SUBST(pcctsbin)
 AC_SUBST(pcctsinc)
 AC_SUBST(dao_src)
 AC_SUBST(sound_if_src)
