@@ -502,10 +502,21 @@ void AudioCDView::drag_data_received_cb(GdkDragContext *context,
 
 void AudioCDView::trackInfo()
 {
-  if (trackInfoDialog_ == 0)
-    trackInfoDialog_ = new TrackInfoDialog();
+  int track;
+  
+  if (tocEditView_->trackSelection(&track))
+  {
+    if (trackInfoDialog_ == 0)
+      trackInfoDialog_ = new TrackInfoDialog();
+  
+    trackInfoDialog_->start(tocEditView_);
+  }
+  else
+  {
+      string message("Please select a track first");
+      Gnome::Dialogs::ok(*project_, message); 
+  }
 
-  trackInfoDialog_->start(tocEditView_);
 }
 
 void AudioCDView::cutTrackData()
