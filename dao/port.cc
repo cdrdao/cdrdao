@@ -279,7 +279,7 @@ int setRealTimeScheduling(int priority)
     return 3;
   }
  
-  message(2, "Now running in fixed-priority scheduling mode.");
+  message(5, "Now running in fixed-priority scheduling mode.");
 
 #else
   return 2;

@@ -1,6 +1,6 @@
 /*  cdrdao - write audio CD-Rs in disc-at-once mode
  *
- *  Copyright (C) 1998-2001 Andreas Mueller <andreas@daneb.de>
+ *  Copyright (C) 1998-2002 Andreas Mueller <andreas@daneb.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -1887,6 +1887,12 @@ int main(int argc, char **argv)
 	    "Environment variable 'HOME' not defined - cannot read .cdrdao.");
   }
 
+#ifdef UNIXWARE
+  if (getuid() != 0) {
+    message(-2, "You must be root to use cdrdao.");
+    exit(1);
+  }
+#endif
 
   if (parseCmdline(argc - 1, argv + 1) != 0) {
     VERBOSE = 2;

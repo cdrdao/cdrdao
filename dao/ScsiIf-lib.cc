@@ -1,6 +1,6 @@
 /*  cdrdao - write audio CD-Rs in disc-at-once mode
  *
- *  Copyright (C) 1998-2001  Andreas Mueller <andreas@daneb.de>
+ *  Copyright (C) 1998-2002  Andreas Mueller <andreas@daneb.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -486,12 +486,19 @@ const char *ScsiIfImpl::openScsiDevAsSg(const char *devname)
   }
 
   if (ioctl(fd, SG_GET_TIMEOUT, 0) < 0) { /* not a sg device ? */
+
+#ifdef SCSI_IOCTL_GET_BUS_NUMBER
     if (ioctl(fd, SCSI_IOCTL_GET_BUS_NUMBER, &bus) < 0) {
       message(-2, "%s: Need a filename that resolves to a SCSI device.",
 	      fname);
       close(fd);
       return NULL;
     }
+#else
+    bus = 0;
+#endif
+
+
     if (ioctl(fd, SCSI_IOCTL_GET_IDLUN, &m_idlun) < 0) {
       message(-2, "%s: Need a filename that resolves to a SCSI device (2).",
 	      fname);
@@ -522,12 +529,18 @@ const char *ScsiIfImpl::openScsiDevAsSg(const char *devname)
 	  }
 	}
       }
+
+#ifdef SCSI_IOCTL_GET_BUS_NUMBER
       if (ioctl(fd, SCSI_IOCTL_GET_BUS_NUMBER, &bbus) < 0) {
 	message(-2, "%s: SG: ioctl SCSI_IOCTL_GET_BUS_NUMBER failed: %s",
 		fname, strerror(errno));
 	close(fd);
 	fd = -9999;
       }
+#else
+      bbus = 0;
+#endif
+      
       if (ioctl(fd, SCSI_IOCTL_GET_IDLUN, &mm_idlun) < 0) {
 	message(-2, "%s: SG: ioctl SCSI_IOCTL_GET_IDLUN failed: %s", 
 		fname, strerror(errno));
