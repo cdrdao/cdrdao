@@ -3,11 +3,6 @@ Status  Who	Description
 
 -	-	Device Listing class needs "Load" and "Eject" buttons
 
-WORKING	Manuel	Finish MDI stuff if MDI support is available in
-		gnome-- 1.1.10 (will need gtk-- 1.2.1?)
-		NOT IN gnome-- 1.1.10 !!!! will write to gnome-devel-list.
-		Needs more discusion?
-
 -	-	Detect CD Drive driver automagically.
 -	-	Use Gnome::Dialog for dialogs.
 
