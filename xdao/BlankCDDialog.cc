@@ -40,7 +40,7 @@ BlankCDDialog::BlankCDDialog()
   speed_ = 1;
 
   Devices = new DeviceList(CdDevice::CD_RW);
-  vbox->pack_start(*Devices, false, false);
+  vbox->pack_start(*Devices, true, true);
 
   // device settings
   Gtk::Frame *blankOptionsFrame = new Gtk::Frame(string("Blank Options"));
