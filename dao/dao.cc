@@ -388,10 +388,10 @@ static int writer(const Toc *toc, CdrDriver *cdr, BufferHeader *header,
         if (cdr->readBufferCapacity(&totalcap, &availcap)) {
           writerFill = (int)((1.0 - ((double)availcap / (double)totalcap))
                              * 100.0);
-          message(1, "Wrote %ld of %ld MB (Buffers %3d%% %3d%%).\n",
+          message(1, "Wrote %ld of %ld MB (Buffers %3d%% %3d%%).\r",
                   cnt >> 20, total >> 20, buffFill, writerFill);
         } else {
-          message(1, "Wrote %ld of %ld MB (Buffer %3d%%).\n",
+          message(1, "Wrote %ld of %ld MB (Buffer %3d%%).\r",
                   cnt >> 20, total >> 20, buffFill);
         }
         lastMb = cntMb;
