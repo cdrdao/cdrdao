@@ -19,6 +19,11 @@
 
 /*
  * $Log: main.cc,v $
+ * Revision 1.13  2000/11/05 12:29:47  andreasm
+ * Added BURN Proof support to 'generic-mmc-raw' driver.
+ * Added command 'msinfo' that displays multi session information suitable for
+ * 'mkisofs'.
+ *
  * Revision 1.12  2000/10/29 08:11:11  andreasm
  * Updated CD-R vendor table.
  * Loading defaults now from "/etc/defaults/cdrdao" and then from "$HOME/.cdrdao".
@@ -149,7 +154,7 @@
  *
  */
 
-static char rcsid[] = "$Id: main.cc,v 1.12 2000/10/29 08:11:11 andreasm Exp $";
+static char rcsid[] = "$Id: main.cc,v 1.13 2000/11/05 12:29:47 andreasm Exp $";
 
 #include <config.h>
 
@@ -178,7 +183,7 @@ static char rcsid[] = "$Id: main.cc,v 1.12 2000/10/29 08:11:11 andreasm Exp $";
 
 enum Command { SHOW_TOC, SHOW_DATA, READ_TEST, SIMULATE, WRITE, READ_TOC,
                DISK_INFO, READ_CD, TOC_INFO, TOC_SIZE, BLANK, SCAN_BUS,
-               UNLOCK, COPY_CD, READ_CDDB };
+               UNLOCK, COPY_CD, READ_CDDB, MSINFO };
 
 static const char *PRGNAME = NULL;
 static const char *TOC_FILE = NULL;
@@ -306,6 +311,7 @@ static void printUsage()
   show-data - prints out audio data and exits\n\
   read-test - reads all audio files and exits\n\
   disk-info - shows information about inserted medium\n\
+  msinfo    - shows multi session info, output is suited for scripts\n\
   unlock    - unlock drive after failed writing\n\
   simulate  - shortcut for 'write --simulate'\n\
   write     - writes CD\n\
@@ -541,6 +547,9 @@ static int parseCmdline(int argc, char **argv)
   }
   else if (strcmp(*argv, "read-cddb") == 0) {
     COMMAND = READ_CDDB;
+  }
+  else if (strcmp(*argv, "msinfo") == 0) {
+    COMMAND = MSINFO;
   }
   else {
     message(-2, "Illegal command: %s", *argv);
@@ -794,7 +803,7 @@ static int parseCmdline(int argc, char **argv)
   }
 
   if (COMMAND != DISK_INFO && COMMAND != BLANK && COMMAND != SCAN_BUS &&
-      COMMAND != UNLOCK && COMMAND != COPY_CD) {
+      COMMAND != UNLOCK && COMMAND != COPY_CD && COMMAND != MSINFO) {
     if (argc < 1) {
       message(-2, "Missing toc-file.");
       return 1;
@@ -1199,6 +1208,33 @@ void showDiskInfo(DiskInfo *di)
   }
 }
 
+/*
+ * Show multi session info in a format that is easy to parse with scritps.
+ * Return: 0: OK
+ *         1: disk is not empty and not appendable
+ *         2: could not determine the requested information
+ */
+static int showMultiSessionInfo(DiskInfo *di)
+{
+  
+  if (di->valid.empty) {
+    if (di->empty) {
+      // print nothing  to indicate empty disk
+      return 0;
+    }
+    else if (di->valid.append) {
+      if (di->append) {
+	message(0, "%ld,%ld", di->lastSessionLba, di->thisSessionLba);
+	return 0;
+      }
+      else {
+	return 1;
+      }
+    }
+  }
+
+  return 2;
+}
 
 static int readCddb(Toc *toc)
 {
@@ -1717,7 +1753,7 @@ int main(int argc, char **argv)
 
   if (COMMAND != READ_TOC && COMMAND != DISK_INFO && COMMAND != READ_CD &&
       COMMAND != BLANK && COMMAND != SCAN_BUS && COMMAND != UNLOCK &&
-      COMMAND != COPY_CD) {
+      COMMAND != COPY_CD && COMMAND != MSINFO) {
     toc = Toc::read(TOC_FILE);
 
     if (REMOTE_MODE) {
@@ -1739,7 +1775,7 @@ int main(int argc, char **argv)
 
   if (COMMAND == SIMULATE || COMMAND == WRITE || COMMAND == READ_TOC ||
       COMMAND == DISK_INFO || COMMAND == READ_CD || COMMAND == BLANK ||
-      COMMAND == UNLOCK || COMMAND == COPY_CD) {
+      COMMAND == UNLOCK || COMMAND == COPY_CD || COMMAND == MSINFO) {
     cdr = setupDevice(COMMAND, SCSI_DEVICE, DRIVER_ID, 
 		      /* init device? */
 		      (COMMAND == UNLOCK) ? 0 : 1,
@@ -1838,6 +1874,10 @@ int main(int argc, char **argv)
 
   case DISK_INFO:
     showDiskInfo(di);
+    break;
+
+  case MSINFO:
+    exitCode = showMultiSessionInfo(di);
     break;
 
   case READ_TOC:
