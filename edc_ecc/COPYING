@@ -1,0 +1,26 @@
+	The libedc_ecc sources are protected intellectual property
+	of Heiko Eiﬂfeldt.
+
+	The libedc_ecc sources are definitely not under GPL.
+
+
+Heiko Eiﬂfeldt grants a special permission to use this library 
+limited to the following projects:
+
+	-	cdrecord/cdrtools
+
+	-	cdrdao
+
+	-	vcdimager
+
+
+You may not use this library in any other project without prior getting
+the explicit permission from Heiko Eiﬂfeldt.
+
+If you are using this library in a project that has been permitted to use
+libedc_ecc, you need to modify the license of your project in a way that
+it will not affect the license of libedc_ecc. If your project is licensed
+under GPL, you need to modify the license in a way that section 2 (commonly
+called GPL infection) does not apply to libedc_ecc and does not change
+the licence of libedc_ecc in any way.
+
