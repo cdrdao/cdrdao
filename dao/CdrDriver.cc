@@ -4055,9 +4055,10 @@ long CdrDriver::audioRead(TrackData::SubChannelMode sm, int byteOrder,
 
     sendReadCdProgressMsg(RCD_EXTRACTING, audioReadInfo_->tracks,
 			  audioReadActTrack_ + 1, progress, totalProgress);
+
+    audioReadLastLba_ = startLba;
   }
 
-  audioReadLastLba_ = startLba;
 
   if (chans == NULL) {
     // drive does not provide sub channel data so that's all we could do here:
