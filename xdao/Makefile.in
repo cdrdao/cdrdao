@@ -116,7 +116,7 @@ distclean: clean
 #
 #
 $(PRG): $(OBJ) ../trackdb/libtrackdb.a ../dao/libdao.a
-	$(CXX) $(LDFLAGS) -o $(PRG) $(OBJ) -L../dao -ldao -L../trackdb -ltrackdb -L../edc_ecc -ledc_ecc -L../paranoia -lcdda_paranoia $(LIBS)
+	$(CXX) $(LDFLAGS) -o $(PRG) $(OBJ) -L../dao -ldao -L../trackdb -ltrackdb -L../paranoia -lcdda_paranoia $(LIBS)
 
 %.o : %.cc
 	$(CXX) $(ALL_CXXFLAGS) -c $< -o $@

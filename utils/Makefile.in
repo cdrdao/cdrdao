@@ -70,10 +70,10 @@ distclean: clean
 #
 #
 toc2cue: toc2cue.o $(srcdir)/../trackdb/libtrackdb.a
-	$(CXX) $(ALL_LDFLAGS) -o toc2cue toc2cue.o -L$(srcdir)/../trackdb -ltrackdb -L$(srcdir)/../edc_ecc -ledc_ecc $(LIBS)
+	$(CXX) $(ALL_LDFLAGS) -o toc2cue toc2cue.o -L$(srcdir)/../trackdb -ltrackdb $(LIBS)
 
 toc2mp3: toc2mp3.o $(srcdir)/../trackdb/libtrackdb.a
-	$(CXX) $(ALL_LDFLAGS) -o toc2mp3 toc2mp3.o @LAME_LIBS@ -L$(srcdir)/../trackdb -ltrackdb -L$(srcdir)/../edc_ecc -ledc_ecc $(LIBS)
+	$(CXX) $(ALL_LDFLAGS) -o toc2mp3 toc2mp3.o @LAME_LIBS@ -L$(srcdir)/../trackdb -ltrackdb $(LIBS)
 
 #
 #
