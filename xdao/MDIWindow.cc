@@ -455,6 +455,7 @@ void MDIWindow::closeProject()
     if (child->closeProject())
     {
       remove(*child);
+      childs = g_list_remove(childs, child);
       guiUpdate();
     }
 }
