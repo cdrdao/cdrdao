@@ -27,6 +27,7 @@
 #include <netdb.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <signal.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/time.h>
@@ -51,6 +52,14 @@ static void convertEscapeSequences(const char *in, char *out);
 static int parseQueryResult(char *line, char *category, char *diskId,
 			    char *title);
 
+
+static RETSIGTYPE alarmHandler(int sig)
+{
+  message(0, "ALARM");
+#if RETSIGTYPE != void
+  return 0;
+#endif
+}
 
 Cddb::Cddb(const Toc *t)
 {
@@ -304,9 +313,22 @@ int Cddb::openConnection()
   struct sockaddr_in sockAddr;
   const char *server;
   unsigned short port;
+  struct sigaction newAlarmHandler;
+  struct sigaction oldAlarmHandler;
 
   if (fd_ >= 0) // already connected
     return 0;
+
+  memset(&newAlarmHandler, 0, sizeof(newAlarmHandler));
+  sigemptyset(&(newAlarmHandler.sa_mask));
+  newAlarmHandler.sa_handler = alarmHandler;
+  
+  if (sigaction(SIGALRM, &newAlarmHandler, &oldAlarmHandler) != 0) {
+    message(-2, "CDDB: Cannot install alarm signal handler: %s",
+	    strerror(errno));
+    return 1;
+  }
+  alarm(0);
 
   for (run = (selectedServer_ != NULL) ? selectedServer_ : serverList_;
        run != NULL; 
@@ -337,6 +359,7 @@ int Cddb::openConnection()
     if (!inet_aton(server, &sockAddr.sin_addr)) {
       if ((hostEnt = gethostbyname(server)) == NULL ||
 	  hostEnt->h_addrtype != AF_INET) {
+	alarm(0);
 	message(-1, "CDDB: Cannot resolve hostname '%s' - skipping.", server);
 	continue;
       }
@@ -350,25 +373,38 @@ int Cddb::openConnection()
 
     if ((fd_ = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
       message(-2, "CDDB: Cannot create socket: %s", strerror(errno));
-      return 1;
+      goto fail;
     }
 
     sockAddr.sin_family = AF_INET;
     sockAddr.sin_port = htons(port);
 
+    alarm(timeout_);
+
     if (connect(fd_, (struct sockaddr*)&sockAddr, sizeof(sockAddr)) == 0) {
+      alarm(0);
       message(1, "CDDB: Ok.");
       selectedServer_ = run;
       break;
     }
     else {
-      message(1, "CDDB: Failed.");
+      alarm(0);
+      message(-1, "CDDB: Failed to connect to '%s:%u: %s", server, port,
+	      strerror(errno));
       closeConnection();
     }
   }
 
+ fail:
   connected_ = 0;
 
+  alarm(0);
+
+  if (sigaction(SIGALRM, &oldAlarmHandler, NULL) != 0) {
+    message(-1, "CDDB: Cannot restore alarm signal handler: %s",
+	    strerror(errno));
+  }
+  
   if (fd_ < 0)
     return 1;
 
@@ -929,10 +965,12 @@ int Cddb::sendCommand(int nargs, const char *args[])
 {
   char portBuf[20];
   int len = 0;
-  int ret;
-  char *cmd;
+  int err = 0;
+  char *cmd, *p;
   char *httpCmd = NULL;
-  int run;
+  int run, ret;
+  struct timeval tv;
+  fd_set writeFds;
 
   // build command line
   for (run = 0; run < nargs; run++)
@@ -974,29 +1012,56 @@ int Cddb::sendCommand(int nargs, const char *args[])
     message(3, "CDDB: Sending command '%s'...", cmd);
   }
   else {
+    message(3, "CDDB: Sending command '%s'...", cmd);
+    
     strcat(cmd, "\n");
   }
 
   len = strlen(cmd);
+  p = cmd;
 
-  ret = fullWrite(fd_, cmd, len);
+  while (len > 0) {
+    FD_ZERO(&writeFds);
+    FD_SET(fd_, &writeFds);
 
-  if (ret < 0) {
-    message(-2, "CDDB: Failed to send command '%s': %s", cmd, strerror(errno));
-    delete[] cmd;
-    return 1;
-  }
+    tv.tv_sec = timeout_;
+    tv.tv_usec = 0;
 
-  if (ret != len) {
-    message(-2, "CDDB: Failed to send command '%s'.", cmd, strerror(errno));
-    delete[] cmd;
-    return 1;
+    ret = select(fd_ + 1, NULL, &writeFds, NULL, &tv);
+
+    if (ret == 0) {
+      message(-2, "CDDB: Timeout while sending data.");
+      err = 1; goto fail;
+    }
+    
+    if (ret < 0) {
+      message(-2, "CDDB: Error while waiting for send: %s", strerror(errno));
+      err = 1; goto fail;
+    }
+ 
+    ret = write(fd_, p, 1);
+
+    if (ret < 0) {
+      message(-2, "CDDB: Failed to send command '%s': %s", cmd,
+	      strerror(errno));
+      err = 1; goto fail;
+    }
+
+    if (ret != 1) {
+      message(-2, "CDDB: Failed to send command '%s'.", cmd);
+      err = 1; goto fail;
+    }
+
+    len--;
+    p++;
   }
 
   message(3, "CDDB: Ok.");
+
+  fail:
   delete[] cmd;
 
-  return 0;
+  return err;
 }
 
 static unsigned int cddbSum(unsigned int n)
