@@ -885,6 +885,9 @@ CdrDriver::CdrDriver(ScsiIf *scsiIf, unsigned long options)
   blockLength_ = 0;
   blocksPerWrite_ = 0;
   zeroBuffer_ = NULL;
+  
+  userCapacity_ = 0;
+  fullBurn_ = 0;
 
   scsiMaxDataLen_ = scsiIf_->maxDataLen();
 

@@ -24,6 +24,8 @@ extern const char *SET_WRITE_SPEED;
 extern const char *SET_WRITE_DRIVER;
 extern const char *SET_WRITE_DEVICE;
 extern const char *SET_WRITE_BUFFERS;
+extern const char *SET_USER_CAPACITY;
+extern const char *SET_FULL_BURN;
 extern const char *SET_READ_DRIVER;
 extern const char *SET_READ_DEVICE;
 extern const char *SET_READ_PARANOIA_MODE;

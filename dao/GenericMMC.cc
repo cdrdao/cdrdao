@@ -378,7 +378,15 @@ int GenericMMC::getSessionInfo()
 
   if (leadInStart_.lba() >= Msf(80, 0, 0).lba()) {
     leadInLen_ = 450000 - leadInStart_.lba();
-    leadOutLen_ = Msf(1, 30, 0).lba(); // 90 seconds lead-out
+//    leadOutLen_ = Msf(1, 30, 0).lba(); // 90 seconds lead-out
+    if (fullBurn_) {
+    	leadOutLen_ = (userCapacity_ ? Msf(userCapacity_, 0, 0).lba() : diskInfo_.capacity) + Msf(1, 30, 0).lba() - toc_->length().lba() - diskInfo_.thisSessionLba - 150; // Fill all rest space <vladux>
+	if (leadOutLen_ < Msf(1, 30, 0).lba()) {
+		leadOutLen_ = Msf(1, 30, 0).lba(); // 90 seconds lead-out
+	}
+    } else {
+    	leadOutLen_ = Msf(1, 30, 0).lba(); // 90 seconds lead-out
+    }
   }
   else {
     leadInLen_ = Msf(1, 0, 0).lba();

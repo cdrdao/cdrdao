@@ -44,6 +44,9 @@ const char *SET_WRITE_DRIVER = "write_driver";
 const char *SET_WRITE_DEVICE = "write_device";
 const char *SET_WRITE_BUFFERS = "write_buffers";
 
+const char *SET_USER_CAPACITY = "user_capacity";
+const char *SET_FULL_BURN = "full_burn";
+
 const char *SET_READ_DRIVER = "read_driver";
 const char *SET_READ_DEVICE = "read_device";
 const char *SET_READ_PARANOIA_MODE = "read_paranoia_mode";

@@ -82,6 +82,8 @@ static int PARANOIA_MODE = 3;
 static int ON_THE_FLY = 0;
 static int WRITE_SIMULATE = 0;
 static int SAVE_SETTINGS = 0;
+static int USER_CAPACITY = 0;
+static int FULL_BURN = 0;
 static int CDDB_TIMEOUT = 60;
 static int WITH_CDDB = 0;
 static int TAO_SOURCE = 0;
@@ -225,6 +227,12 @@ static void printUsage()
 "  --speed <writing-speed> - selects writing speed\n"
 "  --multi                 - session will not be closed\n"
 "  --overburn              - allow to overburn a medium\n"
+"  --full-burn             - force burning to the outer disk edge\n"
+"                            with '--driver generic-mmc-raw'\n"
+"  --capacity <minutes>    - sets disk capacity for '--full-burn'\n"
+"                            you must specify this when using blanks bigger\n"
+"                            than 80 min. (90,99,etc.)\n"
+"                            because they seems like 80 min. blanks\n"
 "  --eject                 - ejects cd after simulation\n"
 "  --swap                  - swap byte order of audio files\n"
 "  --buffers #             - sets fifo buffer size (min. 10)\n"
@@ -251,6 +259,12 @@ static void printUsage()
 "  --write-speed-control # - 0: disable writing speed control by the drive\n"
 "                            1: enable writing speed control (default)\n" 
 "  --overburn              - allow to overburn a medium\n"
+"  --full-burn             - force burning to the outer disk edge\n"
+"                            with '--driver generic-mmc-raw'\n"
+"  --capacity <minutes>    - sets disk capacity for '--full-burn'\n"
+"                            you must specify this when using blanks bigger\n"
+"                            than 80 min. (90,99,etc.)\n"
+"                            because they seems like 80 min. blanks\n"
 "  --eject                 - ejects cd after writing or simulation\n"
 "  --swap                  - swap byte order of audio files\n"
 "  --buffers #             - sets fifo buffer size (min. 10)\n"
@@ -391,6 +405,12 @@ static void printUsage()
 "  --write-speed-control # - 0: disable writing speed control by the drive\n"
 "                            1: enable writing speed control (default)\n" 
 "  --overburn              - allow to overburn a medium\n"
+"  --full-burn             - force burning to the outer disk edge\n"
+"                            with '--driver generic-mmc-raw'\n"
+"  --capacity <minutes>    - sets disk capacity for '--full-burn'\n"
+"                            you must specify this when using blanks bigger\n"
+"                            than 80 min. (90,99,etc.)\n"
+"                            because they seems like 80 min. blanks\n"
 "  --eject                 - ejects cd after writing or simulation\n"
 "  --swap                  - swap byte order of audio files\n"
 "  --on-the-fly            - perform on-the-fly copy, no image file is created\n"
@@ -469,6 +489,14 @@ static void importSettings(Command cmd)
 	*ival >= 10) {
       FIFO_BUFFERS = *ival;
     }
+    if ((ival = SETTINGS->getInteger(SET_USER_CAPACITY)) != NULL &&
+	*ival >= 0) {
+      USER_CAPACITY = *ival;
+    }
+    if ((ival = SETTINGS->getInteger(SET_FULL_BURN)) != NULL &&
+	*ival >= 0) {
+      FULL_BURN = *ival;
+    }
   }
 
   if (cmd == READ_CD || cmd == READ_TOC) {
@@ -544,6 +572,14 @@ static void exportSettings(Command cmd)
 
     if (FIFO_BUFFERS > 0) {
       SETTINGS->set(SET_WRITE_BUFFERS, FIFO_BUFFERS);
+    }
+
+    if (FULL_BURN > 0) {
+      SETTINGS->set(SET_FULL_BURN, FULL_BURN);
+    }
+
+    if (USER_CAPACITY > 0) {
+      SETTINGS->set(SET_USER_CAPACITY, USER_CAPACITY);
     }
   }
 
@@ -734,6 +770,20 @@ static int parseCmdline(int argc, char **argv)
 	  argc--, argv++;
 	}
       }
+      else if (strcmp((*argv) + 2, "capacity") == 0) {
+	if (argc < 2) {
+	  message(-2, "Missing argument after: %s", *argv);
+	  return 1;
+	}
+	else {
+	  USER_CAPACITY = atol(argv[1]);
+	  if (USER_CAPACITY < 0) {
+	    message(-2, "Illegal disk capacity: %s minutes", argv[1]);
+	    return 1;
+	  }
+	  argc--, argv++;
+	}
+      }
       else if (strcmp((*argv) + 2, "blank-mode") == 0) {
 	if (argc < 2) {
 	  message(-2, "Missing argument after: %s", *argv);
@@ -823,6 +873,9 @@ static int parseCmdline(int argc, char **argv)
       }
       else if (strcmp((*argv) + 2, "overburn") == 0) {
 	OVERBURN = 1;
+      }
+      else if (strcmp((*argv) + 2, "full-burn") == 0) {
+	FULL_BURN = 1;
       }
       else if (strcmp((*argv) + 2, "with-cddb") == 0) {
         WITH_CDDB = 1;
@@ -2108,6 +2161,20 @@ int main(int argc, char **argv)
       message(-2, "Cannot get disk information.");
       exitCode = 1; goto fail;
     }
+  }
+  
+  if (COMMAND == SIMULATE || COMMAND == WRITE || COMMAND == COPY_CD) {
+    if (FULL_BURN && strcmp(DRIVER_ID, "generic-mmc-raw") != 0) {
+      message(-2, "You must use the generic-mmc-raw driver to use the "
+              "full-burn option.");
+      exitCode = 1; goto fail;
+    } else {
+      int mins = USER_CAPACITY ? USER_CAPACITY :
+        Msf(cdr->diskInfo()->capacity).min();
+      message(2, "Burning entire %d mins disc.", mins);
+    }
+    cdr->userCapacity(USER_CAPACITY);
+    cdr->fullBurn(FULL_BURN);
   }
 
   if (COMMAND == COPY_CD) {

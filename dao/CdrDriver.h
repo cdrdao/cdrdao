@@ -243,6 +243,12 @@ public:
   
   // Sets cdda paranoia mode
   void paranoiaMode(int);
+  
+  // Sets user defined capacity
+  virtual void userCapacity(int c) { userCapacity_ = c; }
+  
+  // Sets burning to the outer edge mode
+  virtual void fullBurn(int f) { fullBurn_ = f; }
 
   // Return byte order of host (0: little endian, 1: big endian)
   int hostByteOrder() const { return hostByteOrder_; }
@@ -416,6 +422,9 @@ protected:
   // Byte order of audio samples read from the drive, e.g. with 
   // 'readSubChannels()'. 0: little endian, 1: big endian
   int audioDataByteOrder_; 
+  
+  int userCapacity_;
+  int fullBurn_;
 
   static unsigned char syncPattern[12];
   static char REMOTE_MSG_SYNC_[4];
