@@ -141,6 +141,7 @@ static void printUsage()
 
   message(0, "");
 
+  message(0, "LAME encoder version: %s", get_lame_version());
   message(0, "Supported bit rates: ");
   for (int i = 0; i < 16 && bitrate_table[1][i] >= 0; i++) {
     message(0, "%d ", bitrate_table[1][i]);
@@ -350,7 +351,7 @@ int encode_track(lame_global_flags *lf, const Toc *toc,
 				   sizeof(mp3buffer));
 
     if (count < 0) {
-      message(-2, "Lame encoder failed.");
+      message(-2, "Lame encoder failed: %d", count);
       ret = 0;
       break;
     }
