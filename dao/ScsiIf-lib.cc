@@ -190,7 +190,7 @@ int ScsiIf::sendCmd(const unsigned char *cmd, int cmdLen,
   scmd->cdb_len = cmdLen;
 
   if (dataOutLen > 0) {
-    if (((unsigned)dataOut % impl_->pageSize_) != 0) {
+    if (((size_t)dataOut % impl_->pageSize_) != 0) {
       //message(0, "Use SCSI buffer for data out.");
       memcpy(impl_->pageAlignedBuffer_, dataOut, dataOutLen);
       scmd->addr = impl_->pageAlignedBuffer_;
@@ -203,7 +203,7 @@ int ScsiIf::sendCmd(const unsigned char *cmd, int cmdLen,
     scmd->size = dataOutLen;
   }
   else if (dataInLen > 0) {
-    if (((unsigned)dataIn % impl_->pageSize_) != 0) {
+    if (((size_t)dataIn % impl_->pageSize_) != 0) {
       //message(0, "Use SCSI buffer for data in.");
       scmd->addr = impl_->pageAlignedBuffer_;
       usedPageAlignedBuffer = 1;
