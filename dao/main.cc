@@ -19,6 +19,17 @@
 
 /*
  * $Log: main.cc,v $
+ * Revision 1.19  2001/01/28 10:37:15  andreasm
+ * generic-mmc-raw: Fixed Q sub-channel encoding for lead-in regarding toc type
+ * and flags of data tracks.
+ * Fixed encoding of CD-TEXT packs into sub-channel. The last sub-channel is
+ * now always completely filled with valid CD-TEXT packs.
+ * Added driver options to define if the raw toc data contains BCD or HEX
+ * values so that the auto detection can be skipped.
+ * The 'blank' command now waits for completion. Added possibility to specify
+ * blanking mode (full, minimal).
+ * Updated man page, README and INSTALL.
+ *
  * Revision 1.18  2001/01/07 18:59:40  andreasm
  * Added option '--overburn' and disabled overburning by default.
  *
@@ -172,7 +183,7 @@
  *
  */
 
-static char rcsid[] = "$Id: main.cc,v 1.18 2001/01/07 18:59:40 andreasm Exp $";
+static char rcsid[] = "$Id: main.cc,v 1.19 2001/01/28 10:37:15 andreasm Exp $";
 
 #include <config.h>
 
@@ -234,6 +245,7 @@ static int TAO_SOURCE = 0;
 static int TAO_SOURCE_ADJUST = -1;
 static int KEEPIMAGE = 0;
 static int OVERBURN = 0;
+static CdrDriver::BlankingMode BLANKING_MODE = CdrDriver::BLANK_FULL;
 
 static Settings *SETTINGS = NULL; // settings read from $HOME/.cdrdao
 
@@ -332,6 +344,7 @@ static void printUsage()
   disk-info - shows information about inserted medium\n\
   msinfo    - shows multi session info, output is suited for scripts\n\
   unlock    - unlock drive after failed writing\n\
+  blank     - blank a CD-RW\n\
   simulate  - shortcut for 'write --simulate'\n\
   write     - writes CD\n\
   copy      - copies CD\n");
@@ -349,6 +362,7 @@ static void printUsage()
   --speed <writing-speed> - selects writing speed\n\
   --multi                 - session will not be not closed\n\
   --overburn              - allow to overburn a medium\n\
+  --blank-mode <mode>     - blank mode ('full', 'minimal')
   --eject                 - ejects cd after writing or simulation\n\
   --swap                  - swap byte order of audio files\n\
   --on-the-fly            - perform on-the-fly copy, no image file is created\n\
@@ -640,6 +654,25 @@ static int parseCmdline(int argc, char **argv)
 	  WRITING_SPEED = atol(argv[1]);
 	  if (WRITING_SPEED < 0) {
 	    message(-2, "Illegal writing speed: %s", argv[1]);
+	    return 1;
+	  }
+	  argc--, argv++;
+	}
+      }
+      else if (strcmp((*argv) + 2, "blank-mode") == 0) {
+	if (argc < 2) {
+	  message(-2, "Missing argument after: %s", *argv);
+	  return 1;
+	}
+	else {
+	  if (strcmp(argv[1], "full") == 0) {
+	    BLANKING_MODE = CdrDriver::BLANK_FULL;
+	  }
+	  else if (strcmp(argv[1], "minimal") == 0) {
+	    BLANKING_MODE = CdrDriver::BLANK_MINIMAL;
+	  }
+	  else {
+	    message(-2, "Illegal blank mode. Valid values: full minimal");
 	    return 1;
 	  }
 	  argc--, argv++;
@@ -2237,7 +2270,7 @@ int main(int argc, char **argv)
     }
 
     message(1, "Blanking disk...");
-    if (cdr->blankDisk() != 0) {
+    if (cdr->blankDisk(BLANKING_MODE) != 0) {
       message(-2, "Blanking failed.");
       exitCode = 1; goto fail;
     }

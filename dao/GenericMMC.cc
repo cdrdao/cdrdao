@@ -1,6 +1,6 @@
 /*  cdrdao - write audio CD-Rs in disc-at-once mode
  *
- *  Copyright (C) 1998-2000  Andreas Mueller <mueller@daneb.ping.de>
+ *  Copyright (C) 1998-2001  Andreas Mueller <mueller@daneb.ping.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -17,110 +17,10 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
- * $Log: GenericMMC.cc,v $
- * Revision 1.11  2000/12/17 10:51:22  andreasm
- * Default verbose level is now 2. Adaopted message levels to have finer
- * grained control about the amount of messages printed by cdrdao.
- * Added CD-TEXT writing support to the GenericMMCraw driver.
- * Fixed CD-TEXT cue sheet creating for the GenericMMC driver.
- *
- * Revision 1.10  2000/10/29 08:11:11  andreasm
- * Updated CD-R vendor table.
- * Loading defaults now from "/etc/defaults/cdrdao" and then from "$HOME/.cdrdao".
- * Handle if the power calibration command is not supported by a SCSI-3/mmc drive.
- * Updated to libscg from cdrtools-1.10.
- *
- * Revision 1.9  2000/10/25 20:33:28  andreasm
- * Added BURN Proof support (submitted by ITOH Yasufumi and Martin Buck).
- *
- * Revision 1.8  2000/10/08 16:39:40  andreasm
- * Remote progress message now always contain the track relative and total
- * progress and the total number of processed tracks.
- *
- * Revision 1.7  2000/06/22 12:19:28  andreasm
- * Added switch for reading CDs written in TAO mode.
- * The fifo buffer size is now also saved to $HOME/.cdrdao.
- *
- * Revision 1.6  2000/06/19 20:17:37  andreasm
- * Added CDDB reading to add CD-TEXT information to toc-files.
- * Fixed bug in reading ATIP data in 'GenericMMC::diskInfo()'.
- * Attention: CdrDriver.cc is currently configured to read TAO disks.
- *
- * Revision 1.5  2000/06/10 14:48:05  andreasm
- * Tracks that are shorter than 4 seconds can be recorded now if the user confirms
- * it.
- * The driver table is now read from an external file (.../share/cdrdao/drivers
- * and $HOME/.cdrdao-drivers).
- * Fixed bug the might prevented writing pure data CDs with some recorders.
- *
- * Revision 1.4  2000/06/06 22:26:13  andreasm
- * Updated list of supported drives.
- * Added saving of some command line settings to $HOME/.cdrdao.
- * Added test for multi session support in raw writing mode to GenericMMC.cc.
- * Updated manual page.
- *
- * Revision 1.3  2000/05/01 18:13:18  andreasm
- * Fixed too small mode page buffer.
- *
- * Revision 1.2  2000/04/23 16:29:50  andreasm
- * Updated to state of my private development environment.
- *
- * Revision 1.14  1999/12/15 20:31:46  mueller
- * Added remote messages for 'read-cd' progress used by a GUI.
- *
- * Revision 1.13  1999/11/07 09:14:59  mueller
- * Release 1.1.3
- *
- * Revision 1.12  1999/04/05 18:47:40  mueller
- * Added driver options.
- * Added option to read Q sub-channel data instead raw PW sub-channel data
- * for 'read-toc'.
- *
- * Revision 1.11  1999/03/27 20:51:26  mueller
- * Added data track support.
- *
- * Revision 1.10  1998/10/25 14:38:28  mueller
- * Fixed comment.
- *
- * Revision 1.9  1998/10/24 14:48:55  mueller
- * Added retrieval of next writable address. The Panasonic CW-7502 needs it.
- *
- * Revision 1.8  1998/10/03 15:08:44  mueller
- * Moved 'writeZeros()' to base class 'CdrDriver'.
- * Takes 'writeData()' from base class now.
- *
- * Revision 1.7  1998/09/27 19:18:48  mueller
- * Added retrieval of control nibbles for track with 'analyzeTrack()'.
- * Added multi session mode.
- *
- * Revision 1.6  1998/09/22 19:15:13  mueller
- * Removed memory allocations during write process.
- *
- * Revision 1.5  1998/09/08 11:54:22  mueller
- * Extended disk info structure because CDD2000 does not support the
- * 'READ DISK INFO' command.
- *
- * Revision 1.4  1998/09/07 15:20:20  mueller
- * Reorganized read-toc related code.
- *
- * Revision 1.3  1998/09/06 13:34:22  mueller
- * Use 'message()' for printing messages.
- *
- * Revision 1.2  1998/08/30 19:17:56  mueller
- * Fixed cue sheet generation and first writable address after testing
- * with a Yamaha CDR400t.
- *
- * Revision 1.1  1998/08/15 20:44:58  mueller
- * Initial revision
- *
- */
-
-static char rcsid[] = "$Id: GenericMMC.cc,v 1.11 2000/12/17 10:51:22 andreasm Exp $";
-
 #include <config.h>
 
 #include <string.h>
+#include <time.h>
 #include <assert.h>
 
 #include "GenericMMC.h"
@@ -136,7 +36,7 @@ GenericMMC::GenericMMC(ScsiIf *scsiIf, unsigned long options)
   : CdrDriver(scsiIf, options)
 {
   int i;
-  driverName_ = "Generic SCSI-3/MMC - Version 1.0 (data)";
+  driverName_ = "Generic SCSI-3/MMC - Version 1.2";
   
   speed_ = 0;
   simulate_ = 1;
@@ -245,20 +145,47 @@ int GenericMMC::loadUnload(int unload) const
 // Performs complete blanking of a CD-RW.
 // return: 0: OK
 //         1: scsi command failed
-int GenericMMC::blankDisk()
+int GenericMMC::blankDisk(BlankingMode mode)
 {
   unsigned char cmd[12];
+  int ret;
+  time_t startTime, endTime;
 
   memset(cmd, 0, 12);
 
   cmd[0] = 0xa1; // BLANK
-  cmd[1] = 0x0;
-  cmd[1] |= 1 << 4; // erase complete disk, immediate return
+
+  switch (mode) {
+  case BLANK_FULL:
+    cmd[1] = 0x0; // erase complete disk
+    break;
+  case BLANK_MINIMAL:
+    cmd[1] = 0x1; // erase PMA, lead-in and 1st track's pre-gap
+    break;
+  }
+
+  cmd[1] |= 1 << 4; // immediate return
 
   if (sendCmd(cmd, 12, NULL, 0, NULL, 0, 1) != 0) {
     message(-2, "Cannot erase CD-RW.");
     return 1;
   }
+
+  time(&startTime);
+
+  do {
+    mSleep(2000);
+
+    ret = testUnitReady(0);
+
+    if (ret == 1) {
+      message(-2, "Test Unit Ready command failed.");
+    }
+  } while (ret == 2);
+
+  time(&endTime);
+
+  message(2, "Blanking time: %ld seconds", endTime - startTime);
 
   return 0;
 }
@@ -1153,7 +1080,7 @@ int GenericMMC::writeCdTextLeadIn()
 
   message(2, "Writing CD-TEXT lead-in...");
 
-  message(3, "Start LBA: %ld, length: %ld", lba, len);
+  message(4, "Start LBA: %ld, length: %ld", lba, len);
 
   memset(cmd, 0, 10);
   cmd[0] = 0x2a; // WRITE1
@@ -1201,10 +1128,6 @@ DiskInfo *GenericMMC::diskInfo()
   unsigned long dataLen = 34;
   unsigned char data[34];
   char spd;
-
-  DriveInfo info;
-
-  driveInfo(&info, 1);
 
   memset(&diskInfo_, 0, sizeof(DiskInfo));
 

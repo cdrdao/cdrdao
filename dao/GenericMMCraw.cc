@@ -1,6 +1,6 @@
 /*  cdrdao - write audio CD-Rs in disc-at-once mode
  *
- *  Copyright (C) 1998  Andreas Mueller <mueller@daneb.ping.de>
+ *  Copyright (C) 1998-2001  Andreas Mueller <mueller@daneb.ping.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -16,67 +16,6 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
-/*
- * $Log: GenericMMCraw.cc,v $
- * Revision 1.5  2000/12/17 10:51:22  andreasm
- * Default verbose level is now 2. Adaopted message levels to have finer
- * grained control about the amount of messages printed by cdrdao.
- * Added CD-TEXT writing support to the GenericMMCraw driver.
- * Fixed CD-TEXT cue sheet creating for the GenericMMC driver.
- *
- * Revision 1.4  2000/11/05 12:29:47  andreasm
- * Added BURN Proof support to 'generic-mmc-raw' driver.
- * Added command 'msinfo' that displays multi session information suitable for
- * 'mkisofs'.
- *
- * Revision 1.3  2000/06/22 12:19:28  andreasm
- * Added switch for reading CDs written in TAO mode.
- * The fifo buffer size is now also saved to $HOME/.cdrdao.
- *
- * Revision 1.2  2000/04/24 12:47:57  andreasm
- * Fixed unit attention problem after writing is finished.
- * Added cddb disk id calculation.
- *
- * Revision 1.1.1.1  2000/02/05 01:36:30  llanero
- * Uploaded cdrdao 1.1.3 with pre10 patch applied.
- *
- * Revision 1.10  1999/09/03 15:00:02  mueller
- * Changed message levels from 0 to 1.
- *
- * Revision 1.9  1999/04/05 11:04:10  mueller
- * Added driver option flags.
- *
- * Revision 1.8  1999/03/27 20:51:05  mueller
- * Adapted to changed writing interface.
- *
- * Revision 1.7  1998/10/03 15:07:53  mueller
- * Moved 'writeZeros()' to base class 'CdrDriver'.
- *
- * Revision 1.6  1998/09/27 19:19:18  mueller
- * Added retrieval of control nibbles for track with 'analyzeTrack()'.
- * Added multi session mode.
- *
- * Revision 1.5  1998/09/22 19:15:13  mueller
- * Removed memory allocations during write process.
- *
- * Revision 1.4  1998/09/06 13:34:22  mueller
- * Use 'message()' for printing messages.
- *
- * Revision 1.3  1998/09/02 18:49:45  mueller
- * Added writing with data block type 0x02 using the raw P-W sub channel
- * data format.
- *
- * Revision 1.2  1998/08/30 19:16:51  mueller
- * Added support for different sub-channel data formats.
- * Now 16 byte PQ sub-channel and 96 byte raw P-W sub-channel is
- * supported.
- *
- * Revision 1.1  1998/08/25 19:28:06  mueller
- * Initial revision
- *
- */
-
-static char rcsid[] = "$Id: GenericMMCraw.cc,v 1.5 2000/12/17 10:51:22 andreasm Exp $";
 
 #include <config.h>
 
@@ -95,7 +34,7 @@ static char rcsid[] = "$Id: GenericMMCraw.cc,v 1.5 2000/12/17 10:51:22 andreasm 
 GenericMMCraw::GenericMMCraw(ScsiIf *scsiIf, unsigned long options) 
   : GenericMMC(scsiIf, options), PQChannelEncoder()
 {
-  driverName_ = "Generic SCSI-3/MMC (raw writing) - Version 1.1";
+  driverName_ = "Generic SCSI-3/MMC (raw writing) - Version 2.0";
 
   encodingMode_ = 0;
 
@@ -636,4 +575,3 @@ int GenericMMCraw::writeData(TrackData::Mode mode, long &lba, const char *buf,
 
   return 0;
 }
-

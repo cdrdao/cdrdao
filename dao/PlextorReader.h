@@ -1,6 +1,6 @@
 /*  cdrdao - write audio CD-Rs in disc-at-once mode
  *
- *  Copyright (C) 1998-2000  Andreas Mueller <mueller@daneb.ping.de>
+ *  Copyright (C) 1998-2001  Andreas Mueller <mueller@daneb.ping.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -15,44 +15,6 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- */
-/*
- * $Log: PlextorReader.h,v $
- * Revision 1.3  2000/10/08 16:39:40  andreasm
- * Remote progress message now always contain the track relative and total
- * progress and the total number of processed tracks.
- *
- * Revision 1.2  2000/04/23 16:29:50  andreasm
- * Updated to state of my private development environment.
- *
- * Revision 1.10  1999/12/12 13:37:33  mueller
- * Added DAE command for Matshita CD-ROM drives.
- *
- * Revision 1.9  1999/11/07 09:17:08  mueller
- * Release 1.1.3
- *
- * Revision 1.8  1999/04/05 18:48:37  mueller
- * Added driver options.
- * Added read-cd patch from Leon Woestenberg.
- *
- * Revision 1.7  1999/03/27 20:56:39  mueller
- * Changed toc analysis interface.
- * Added support for toc analysis of data disks.
- *
- * Revision 1.6  1998/09/27 19:20:05  mueller
- * Added retrieval of control nibbles for track with 'analyzeTrack()'.
- *
- * Revision 1.5  1998/09/07 15:20:20  mueller
- * Reorganized read-toc related code.
- *
- * Revision 1.4  1998/08/30 19:25:43  mueller
- * Added function 'diskInfo()'.
- * Changed sub channel data field in 'readSubChannelData()' to be more
- * compatible to other drives.
- *
- * Revision 1.3  1998/08/25 19:26:07  mueller
- * Moved basic index extraction algorithm to class 'CdrDriver'.
- *
  */
 
 #ifndef __PLEXTOR_READER_H__

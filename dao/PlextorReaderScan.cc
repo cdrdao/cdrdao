@@ -1,6 +1,6 @@
 /*  cdrdao - write audio CD-Rs in disc-at-once mode
  *
- *  Copyright (C) 1998-2000  Andreas Mueller <mueller@daneb.ping.de>
+ *  Copyright (C) 1998-2001  Andreas Mueller <mueller@daneb.ping.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -16,45 +16,6 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
-/*
- * $Log: PlextorReaderScan.cc,v $
- * Revision 1.4  2000/12/17 10:51:22  andreasm
- * Default verbose level is now 2. Adaopted message levels to have finer
- * grained control about the amount of messages printed by cdrdao.
- * Added CD-TEXT writing support to the GenericMMCraw driver.
- * Fixed CD-TEXT cue sheet creating for the GenericMMC driver.
- *
- * Revision 1.3  2000/10/08 16:39:40  andreasm
- * Remote progress message now always contain the track relative and total
- * progress and the total number of processed tracks.
- *
- * Revision 1.2  2000/04/23 16:29:50  andreasm
- * Updated to state of my private development environment.
- *
- * Revision 1.6  1999/12/15 20:31:46  mueller
- * Added remote messages for 'read-cd' progress used by a GUI.
- *
- * Revision 1.5  1999/11/07 09:14:59  mueller
- * Release 1.1.3
- *
- * Revision 1.4  1999/04/05 18:49:22  mueller
- * Added driver options.
- * Added option to read Q sub-channel data instead of raw PW sub-channel
- * data for 'read-toc'.
- *
- * Revision 1.3  1999/03/27 20:56:39  mueller
- * Changed toc analysis interface.
- * Added support for toc analysis of data disks.
- *
- * Revision 1.2  1998/09/27 19:20:05  mueller
- * Added retrieval of control nibbles for track with 'analyzeTrack()'.
- *
- * Revision 1.1  1998/09/07 15:15:40  mueller
- * Initial revision
- *
- */
-
-static char rcsid[] = "$Id: PlextorReaderScan.cc,v 1.4 2000/12/17 10:51:22 andreasm Exp $";
 
 #include <config.h>
 

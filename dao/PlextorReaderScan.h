@@ -1,6 +1,6 @@
 /*  cdrdao - write audio CD-Rs in disc-at-once mode
  *
- *  Copyright (C) 1998  Andreas Mueller <mueller@daneb.ping.de>
+ *  Copyright (C) 1998-2001  Andreas Mueller <mueller@daneb.ping.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -15,31 +15,6 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- */
-/*
- * $Log: PlextorReaderScan.h,v $
- * Revision 1.2  2000/10/08 16:39:40  andreasm
- * Remote progress message now always contain the track relative and total
- * progress and the total number of processed tracks.
- *
- * Revision 1.1.1.1  2000/02/05 01:35:11  llanero
- * Uploaded cdrdao 1.1.3 with pre10 patch applied.
- *
- * Revision 1.4  1999/04/05 18:49:22  mueller
- * Added driver options.
- * Added option to read Q sub-channel data instead of raw PW sub-channel
- * data for 'read-toc'.
- *
- * Revision 1.3  1999/03/27 20:56:39  mueller
- * Changed toc analysis interface.
- * Added support for toc analysis of data disks.
- *
- * Revision 1.2  1998/09/27 19:20:05  mueller
- * Added retrieval of control nibbles for track with 'analyzeTrack()'.
- *
- * Revision 1.1  1998/09/07 15:15:40  mueller
- * Initial revision
- *
  */
 
 #ifndef __PLEXTOR_READER_SCAN_H__

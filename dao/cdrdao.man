@@ -561,12 +561,14 @@ String data. Message to the user.
 String data: Should only appear in the global CD-TEXT block. The format is
 usually: XY12345
 .IP GENRE
-I am not sure if this item should contain string or binary data.
+Mixture of binary data (genre code) and string data. Should only appear in
+the global CD-TEXT block. Useful entries will be created by
+.I gcdmaster.
 .IP TOC_INFO1
-Binary data: Structure currently unknown. Should only appear in the global
+Binary data: Optional table of contents 1. Should only appear in the global
 CD-TEXT block.
 .IP TOC_INFO2
-Binary data: Structure currently unknown. Should only appear in the global
+Binary data: Optional table of contents 2. Should only appear in the global
 CD-TEXT block.
 .IP UPC_EAN
 String data: This item should only appear in the global CD-TEXT block. Was
@@ -575,22 +577,13 @@ always an empty string on the CD-TEXT CDs I had access to.
 String data: ISRC code of track. The format is usually: CC-OOO-YY-SSSSS
 .IP SIZE_INFO
 Binary data: Contains summary about all CD-TEXT data and should only appear
-in the global CD-TEXT block. This item is automatically created if not present.
-If CD-TEXT data is read via
-.BI read-toc
-or
-.BI read-cd
-and modified afterwards the SIZE_INFO item must be deleted because the data
-will not be valid anymore.
-.LP
+in the global CD-TEXT block. The data will be automatically (re)created when
+the CD-TEXT data is written.
 
 If one of the CD-TEXT items TITLE, PERFORMER, SONGWRITER, COMPOSER, ARRANGER,
-ISRC is defined for at least on track it must be defined for all tracks. If a
-CD-TEXT item is missing for a track and it is defined in the global CD-TEXT
-block the data from the global CD-TEXT block is used for the track.
-
-It is currently not possible to write CD-TEXT CDs with more than one language.
-The resulting CD will not be accepted by a CD-TEXT capable CD player.
+ISRC is defined for at least on track or in the global section it must be
+defined for all tracks and in the global section. If a DISC_ID item is defined
+in the global section, an ISRC entry must be defined for each track.
 
 .SS Examples
 
@@ -649,7 +642,7 @@ START 0:10:0
 Composed track with data from different files. Pre-gap data and length
 is taken from "pregapdata.wav". The first minute of
 "track.cdr" is omitted and two seconds silence are inserted at
-\'2:0:0\'. Index will be incremented after 2 and 4 minutes past track start:
+\&'2:0:0'. Index will be incremented after 2 and 4 minutes past track start:
 .nf
 .in +.5i
 CD_DA
@@ -772,4 +765,4 @@ resources may not be released. Use ipcs(8) and ipcrm(8) to delete them.
 .SH AUTHOR
 Andreas Mueller mueller@daneb.ping.de
 .SH SEE ALSO
-.BR cdrecord "(1), "cdda2wav "(1), "cdparanoia "(1), " sox "(1), "ipcs "(8), " ipcrm (8) 
+.BR gcdmaster "(1), "cdrecord "(1), "cdda2wav "(1), "cdparanoia "(1), " sox "(1), "ipcs "(8), " ipcrm (8) 

@@ -1,6 +1,6 @@
 /*  cdrdao - write audio CD-Rs in disc-at-once mode
  *
- *  Copyright (C) 1998-2000 Andreas Mueller <mueller@daneb.ping.de>
+ *  Copyright (C) 1998-2001 Andreas Mueller <mueller@daneb.ping.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -17,27 +17,6 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
- * $Log: CdTextEncoder.cc,v $
- * Revision 1.3  2000/12/17 10:51:22  andreasm
- * Default verbose level is now 2. Adaopted message levels to have finer
- * grained control about the amount of messages printed by cdrdao.
- * Added CD-TEXT writing support to the GenericMMCraw driver.
- * Fixed CD-TEXT cue sheet creating for the GenericMMC driver.
- *
- * Revision 1.2  2000/04/23 16:29:49  andreasm
- * Updated to state of my private development environment.
- *
- * Revision 1.3  1999/12/19 15:27:15  mueller
- * Removed copy protection flags in 'buildSizeInfoPacks'.
- *
- * Revision 1.2  1999/11/07 09:14:59  mueller
- * Release 1.1.3
- *
- * Revision 1.1  1999/06/13 19:31:15  mueller
- * Initial revision
- *
- */
 
 #include "CdTextEncoder.h"
 
@@ -50,7 +29,6 @@
 #include "CdTextItem.h"
 #include "PWSubChannel96.h"
 
-static char rcsid[] = "$Id: CdTextEncoder.cc,v 1.3 2000/12/17 10:51:22 andreasm Exp $";
 
 unsigned short CdTextEncoder::CRCTAB_[256] = {
   0x0000, 0x1021, 0x2042, 0x3063, 0x4084, 0x50A5, 0x60C6, 0x70E7, 0x8108,
@@ -377,7 +355,7 @@ void CdTextEncoder::buildSizeInfoPacks()
   }
 
   for (b = 0; b < 8; b++) {
-    sizeInfo_[b].characterCode = 1; // ASCII (7bit)
+    sizeInfo_[b].characterCode = 0; // ISO/IEC 8859-1
 
     sizeInfo_[b].firstTrack = 1; // we always start with track 1
     sizeInfo_[b].lastTrack = toc_->nofTracks();
@@ -440,14 +418,21 @@ void CdTextEncoder::calcCrcs()
 // data of each sector can hold 4 CD-TEXT packs.
 void CdTextEncoder::buildSubChannels()
 {
-  long i;
+  long i, j;
   CdTextPackEntry *prun;
   unsigned char buf[72];
 
-  subChannelCount_ = packCount_ / 4;
-
-  if (packCount_ % 4 != 0)
-    subChannelCount_ += 1;
+  switch (packCount_ % 4) {
+  case 0:
+    subChannelCount_ = packCount_ / 4;
+    break;
+  case 2:
+    subChannelCount_ = packCount_ / 2;
+    break;
+  default:
+    subChannelCount_ = packCount_;
+    break;
+  }
 
   if (subChannelCount_ == 0) {
     subChannels_ = NULL;
@@ -457,30 +442,21 @@ void CdTextEncoder::buildSubChannels()
   subChannels_ = new (PWSubChannel96*)[subChannelCount_];
   
   prun = packs_;
+
   for (i = 0; i < subChannelCount_; i++) {
     subChannels_[i] = new PWSubChannel96;
 
-    memset(buf, 0, 72);
+    for (j = 0; j < 4; j++) {
+      memcpy(buf + j * 18, prun->packData, 18);
 
-    memcpy(buf, prun->packData, 18);
-
-    if ((prun = prun->next_) != NULL) {
-      memcpy(buf + 18, prun->packData, 18);
-
-      if ((prun = prun->next_) != NULL) {
-	memcpy(buf + 36, prun->packData, 18);
-
-	if ((prun = prun->next_) != NULL) {
-	  memcpy(buf + 54, prun->packData, 18);
-	  prun = prun->next_;
-	}
-      }
+      if ((prun = prun->next_) == NULL)
+	prun = packs_;
     }
 
     subChannels_[i]->setRawRWdata(buf);
 
 #if 0
-    int j, k;
+    int k;
 
     for (j = 0; j < 6; j++) {
       message(0, "%ld:%d: ", i, j);
@@ -497,6 +473,9 @@ void CdTextEncoder::buildSubChannels()
     message(0, "Match: %d", memcmp(buf, buf1, 72));
 #endif
   }
+
+
+  assert(prun == packs_);
 }
 
 

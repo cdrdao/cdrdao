@@ -1,6 +1,6 @@
 /*  cdrdao - write audio CD-Rs in disc-at-once mode
  *
- *  Copyright (C) 1998-2000  Andreas Mueller <mueller@daneb.ping.de>
+ *  Copyright (C) 1998-2001  Andreas Mueller <mueller@daneb.ping.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -15,49 +15,6 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- */
-/*
- * $Log: CDD2600.h,v $
- * Revision 1.3  2000/10/08 16:39:40  andreasm
- * Remote progress message now always contain the track relative and total
- * progress and the total number of processed tracks.
- *
- * Revision 1.2  2000/04/23 16:29:49  andreasm
- * Updated to state of my private development environment.
- *
- * Revision 1.13  1999/11/07 09:17:08  mueller
- * Release 1.1.3
- *
- * Revision 1.12  1999/04/05 11:04:10  mueller
- * Added driver option flags.
- *
- * Revision 1.11  1999/03/27 20:52:02  mueller
- * Adapted to changed writing interface.
- *
- * Revision 1.10  1998/10/24 14:30:40  mueller
- * Changed prototype of 'readDiskToc()'.
- *
- * Revision 1.9  1998/10/03 15:11:05  mueller
- * Moved basic writing methods to class 'CDD2600Base'.
- *
- * Revision 1.8  1998/09/27 19:17:46  mueller
- * Fixed 'disc-info' for CDD2000.
- * Added retrieval of control nibbles for track with 'analyzeTrack()'.
- *
- * Revision 1.7  1998/09/22 19:15:13  mueller
- * Removed memory allocations during write process.
- *
- * Revision 1.6  1998/09/07 15:20:20  mueller
- * Reorganized read-toc related code.
- *
- * Revision 1.5  1998/08/25 19:22:42  mueller
- * Added index extraction for 'read-toc'.
- * Added disk info code.
- *
- * Revision 1.4  1998/08/07 12:44:30  mueller
- * Changed group 1 mode select commands to group 0 mode select commands.
- * Implement pre-gap detection in 'readDiscToc()'.
- *
  */
 
 #ifndef __CDD2600_H__

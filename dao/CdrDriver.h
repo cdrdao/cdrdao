@@ -1,6 +1,6 @@
 /*  cdrdao - write audio CD-Rs in disc-at-once mode
  *
- *  Copyright (C) 1998-2000  Andreas Mueller <mueller@daneb.ping.de>
+ *  Copyright (C) 1998-2001  Andreas Mueller <mueller@daneb.ping.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -15,79 +15,6 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- */
-/*
- * $Log: CdrDriver.h,v $
- * Revision 1.7  2000/11/19 17:49:33  andreasm
- * Updated 'msinfo' command.
- *
- * Revision 1.6  2000/11/05 19:20:59  andreasm
- * Unified progress messages sent from cdrdao to gcdmaster.
- *
- * Revision 1.5  2000/10/25 20:33:28  andreasm
- * Added BURN Proof support (submitted by ITOH Yasufumi and Martin Buck).
- *
- * Revision 1.4  2000/10/08 16:39:40  andreasm
- * Remote progress message now always contain the track relative and total
- * progress and the total number of processed tracks.
- *
- * Revision 1.3  2000/06/22 12:19:28  andreasm
- * Added switch for reading CDs written in TAO mode.
- * The fifo buffer size is now also saved to $HOME/.cdrdao.
- *
- * Revision 1.2  2000/04/23 16:29:49  andreasm
- * Updated to state of my private development environment.
- *
- * Revision 1.17  1999/12/15 20:31:46  mueller
- * Added remote messages for 'read-cd' progress used by a GUI.
- *
- * Revision 1.16  1999/12/12 16:22:58  mueller
- * Added density code argument to 'setBlockSize'.
- *
- * Revision 1.15  1999/11/07 09:17:08  mueller
- * Release 1.1.3
- *
- * Revision 1.14  1999/04/05 18:47:11  mueller
- * Added CD-TEXT support.
- *
- * Revision 1.13  1999/03/27 20:52:17  mueller
- * Added data track support for writing and toc analysis.
- *
- * Revision 1.12  1999/02/06 20:41:21  mueller
- * Added virtual member function 'checkToc()'.
- *
- * Revision 1.11  1998/10/24 14:28:59  mueller
- * Changed prototype of 'readDiskToc()'. It now accepts the name of the
- * audio file that should be placed into the generated toc-file.
- * Added virtual function 'readDisk()' that for reading disk toc and
- * ripping audio data at the same time.
- *
- * Revision 1.10  1998/10/03 15:10:38  mueller
- * Added function 'writeZeros()'.
- * Updated function 'writeData()'.
- *
- * Revision 1.9  1998/09/27 19:19:18  mueller
- * Added retrieval of control nibbles for track with 'analyzeTrack()'.
- * Added multi session mode.
- *
- * Revision 1.8  1998/09/22 19:15:13  mueller
- * Removed memory allocations during write process.
- *
- * Revision 1.7  1998/09/08 11:54:22  mueller
- * Extended disk info structure because CDD2000 does not support the
- * 'READ DISK INFO' command.
- *
- * Revision 1.6  1998/09/07 15:20:20  mueller
- * Reorganized read-toc related code.
- *
- * Revision 1.5  1998/08/30 19:12:19  mueller
- * Added supressing of error messages for some commands.
- * Added structure 'DriveInfo'.
- *
- * Revision 1.4  1998/08/25 19:24:07  mueller
- * Moved basic index extraction algorithm for read-toc to this class.
- * Added vendor codes.
- *
  */
 
 #ifndef __CDRDRIVER_H__
@@ -105,6 +32,8 @@ class Track;
 #define OPT_DRV_GET_TOC_GENERIC   0x00010000
 #define OPT_DRV_SWAP_READ_SAMPLES 0x00020000
 #define OPT_DRV_NO_PREGAP_READ    0x00040000
+#define OPT_DRV_RAW_TOC_BCD       0x00080000
+#define OPT_DRV_RAW_TOC_HEX       0x00100000
 
 struct DiskInfo {
   long capacity;          // recordable capacity of medium
@@ -287,8 +216,9 @@ public:
   virtual int readCapacity(long *length, int showMessage = 1);
 
   // CD-RW specific commands
-
-  virtual int blankDisk();
+  
+  enum BlankingMode { BLANK_FULL, BLANK_MINIMAL };
+  virtual int blankDisk(BlankingMode);
 
   // disk at once recording related commands
 

@@ -1,6 +1,6 @@
 /*  cdrdao - write audio CD-Rs in disc-at-once mode
  *
- *  Copyright (C) 1998-2000 Andreas Mueller <mueller@daneb.ping.de>
+ *  Copyright (C) 1998-2001 Andreas Mueller <mueller@daneb.ping.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -16,118 +16,6 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
-/*
- * $Log: CdrDriver.cc,v $
- * Revision 1.13  2000/12/17 10:51:22  andreasm
- * Default verbose level is now 2. Adaopted message levels to have finer
- * grained control about the amount of messages printed by cdrdao.
- * Added CD-TEXT writing support to the GenericMMCraw driver.
- * Fixed CD-TEXT cue sheet creating for the GenericMMC driver.
- *
- * Revision 1.12  2000/11/19 17:49:32  andreasm
- * Updated 'msinfo' command.
- *
- * Revision 1.11  2000/11/05 19:20:59  andreasm
- * Unified progress messages sent from cdrdao to gcdmaster.
- *
- * Revision 1.10  2000/10/29 08:11:11  andreasm
- * Updated CD-R vendor table.
- * Loading defaults now from "/etc/defaults/cdrdao" and then from "$HOME/.cdrdao".
- * Handle if the power calibration command is not supported by a SCSI-3/mmc drive.
- * Updated to libscg from cdrtools-1.10.
- *
- * Revision 1.9  2000/10/25 20:33:28  andreasm
- * Added BURN Proof support (submitted by ITOH Yasufumi and Martin Buck).
- *
- * Revision 1.8  2000/10/08 16:39:40  andreasm
- * Remote progress message now always contain the track relative and total
- * progress and the total number of processed tracks.
- *
- * Revision 1.7  2000/06/22 12:19:28  andreasm
- * Added switch for reading CDs written in TAO mode.
- * The fifo buffer size is now also saved to $HOME/.cdrdao.
- *
- * Revision 1.6  2000/06/19 20:25:07  andreasm
- * Fixed bug in CD-TEXT reading.
- * read-cd is now configured to handle DAO disks again.
- *
- * Revision 1.5  2000/06/19 20:17:37  andreasm
- * Added CDDB reading to add CD-TEXT information to toc-files.
- * Fixed bug in reading ATIP data in 'GenericMMC::diskInfo()'.
- * Attention: CdrDriver.cc is currently configured to read TAO disks.
- *
- * Revision 1.4  2000/06/10 14:48:05  andreasm
- * Tracks that are shorter than 4 seconds can be recorded now if the user confirms
- * it.
- * The driver table is now read from an external file (.../share/cdrdao/drivers
- * and $HOME/.cdrdao-drivers).
- * Fixed bug the might prevented writing pure data CDs with some recorders.
- *
- * Revision 1.3  2000/06/06 22:26:13  andreasm
- * Updated list of supported drives.
- * Added saving of some command line settings to $HOME/.cdrdao.
- * Added test for multi session support in raw writing mode to GenericMMC.cc.
- * Updated manual page.
- *
- * Revision 1.2  2000/04/23 16:29:49  andreasm
- * Updated to state of my private development environment.
- *
- * Revision 1.17  1999/12/15 20:31:46  mueller
- * Added remote messages for 'read-cd' progress used by a GUI.
- *
- * Revision 1.16  1999/12/12 16:23:37  mueller
- * Added density code argument to 'setBlockSize'.
- * Updated driver selection table.
- *
- * Revision 1.15  1999/12/12 14:15:37  mueller
- * Updated driver selection table.
- *
- * Revision 1.14  1999/11/07 09:14:59  mueller
- * Release 1.1.3
- *
- * Revision 1.13  1999/04/05 18:47:11  mueller
- * Added CD-TEXT support.
- *
- * Revision 1.12  1999/03/27 20:52:17  mueller
- * Added data track support for writing and toc analysis.
- *
- * Revision 1.11  1999/02/06 20:41:21  mueller
- * Added virtual member function 'checkToc()'.
- *
- * Revision 1.10  1998/10/24 14:28:59  mueller
- * Changed prototype of 'readDiskToc()'. It now accepts the name of the
- * audio file that should be placed into the generated toc-file.
- * Added virtual function 'readDisk()' that for reading disk toc and
- * ripping audio data at the same time.
- *
- * Revision 1.9  1998/10/03 15:10:38  mueller
- * Added function 'writeZeros()'.
- * Updated function 'writeData()'.
- *
- * Revision 1.8  1998/09/27 19:19:18  mueller
- * Added retrieval of control nibbles for track with 'analyzeTrack()'.
- * Added multi session mode.
- *
- * Revision 1.7  1998/09/22 19:15:13  mueller
- * Removed memory allocations during write process.
- *
- * Revision 1.6  1998/09/07 15:20:20  mueller
- * Reorganized read-toc related code.
- *
- * Revision 1.5  1998/09/06 13:34:22  mueller
- * Use 'message()' for printing messages.
- *
- * Revision 1.4  1998/08/30 19:12:19  mueller
- * Added supressing of error messages for some commands.
- * Added structure 'DriveInfo'.
- *
- * Revision 1.3  1998/08/25 19:24:07  mueller
- * Moved basic index extraction algorithm for read-toc to this class.
- * Added vendor codes.
- *
- */
-
-static char rcsid[] = "$Id: CdrDriver.cc,v 1.13 2000/12/17 10:51:22 andreasm Exp $";
 
 #include <config.h>
 
@@ -424,6 +312,10 @@ static unsigned long string2DriverOption(const char *s)
     return OPT_DRV_SWAP_READ_SAMPLES;
   else if (strcmp(s, "OPT_DRV_NO_PREGAP_READ") == 0)
     return OPT_DRV_NO_PREGAP_READ;
+  else if (strcmp(s, "OPT_DRV_RAW_TOC_BCD") == 0)
+    return OPT_DRV_RAW_TOC_BCD;
+  else if (strcmp(s, "OPT_DRV_RAW_TOC_HEX") == 0)
+    return OPT_DRV_RAW_TOC_HEX;
   else if (strcmp(s, "OPT_MMC_USE_PQ") == 0)
     return OPT_MMC_USE_PQ;
   else if (strcmp(s, "OPT_MMC_PQ_BCD") == 0)
@@ -1073,7 +965,7 @@ int CdrDriver::readCapacity(long *length, int showMessage)
   return 0;
 }
 
-int CdrDriver::blankDisk()
+int CdrDriver::blankDisk(BlankingMode)
 {
   message(-2, "Blanking is not supported by this driver.");
   return 1;
@@ -1565,57 +1457,163 @@ CdToc *CdrDriver::getToc(int sessionNr, int *cdTocLen)
     }
   }
 
-  if (isBcd == -1) {
-    // We still don't know if the values are BCD or HEX but we've ensured
-    // so far that all values are valid BCD numbers.
-
-    // Assume that we have BCD numbers and compare with the generic toc data.
+  if (options_ & OPT_DRV_RAW_TOC_BCD) {
+    if (isBcd == 0) {
+      message(-2, "The driver option 0x%lx indicates that the raw TOC data",
+	      OPT_DRV_RAW_TOC_BCD);
+      message(-2, "contains BCD values but a non BCD value was found.");
+      message(-2, "Please adjust the driver options.");
+      message(-1, "Using TOC data retrieved with generic method (no multi session support).");
+	
+      delete[] rawToc;
+      *cdTocLen = completeTocLen;
+      return completeToc;
+    }
     isBcd = 1;
-    for (i = 0; i < rawTocLen && isBcd == 1; i++) {
-      if ((rawToc[i].adrCtl & 0xf0) == 0x10 && // only process QMODE1 entries
-	  rawToc[i].point < 0xa0) { 
-	trackNr = SubChannel::bcd2int(rawToc[i].point);
+  }
+  else if (options_ & OPT_DRV_RAW_TOC_HEX) {
+    isBcd = 0;
+  }
+  else {
+    if (isBcd == -1) {
+      // We still don't know if the values are BCD or HEX but we've ensured
+      // so far that all values are valid BCD numbers.
 
-	for (j = 0; j < completeTocLen; j++) {
-	  if (completeToc[j].track == trackNr) {
-	    break;
+      // Assume that we have BCD numbers and compare with the generic toc data.
+      isBcd = 1;
+      for (i = 0; i < rawTocLen && isBcd == 1; i++) {
+	if ((rawToc[i].adrCtl & 0xf0) == 0x10 && // only process QMODE1 entries
+	    rawToc[i].point < 0xa0) { 
+	  trackNr = SubChannel::bcd2int(rawToc[i].point);
+
+	  for (j = 0; j < completeTocLen; j++) {
+	    if (completeToc[j].track == trackNr) {
+	      break;
+	    }
 	  }
-	}
 
-	if (j < completeTocLen) {
-	  min = SubChannel::bcd2int(rawToc[i].pmin);
-	  sec = SubChannel::bcd2int(rawToc[i].psec);
-	  frame = SubChannel::bcd2int(rawToc[i].pframe);
+	  if (j < completeTocLen) {
+	    min = SubChannel::bcd2int(rawToc[i].pmin);
+	    sec = SubChannel::bcd2int(rawToc[i].psec);
+	    frame = SubChannel::bcd2int(rawToc[i].pframe);
 
-	  if (min <= 99 && sec < 60 && frame < 75) {
-	    trackStart = Msf(min, sec, frame).lba() - 150;
-	    if (completeToc[j].start != trackStart) {
-	      // start does not match -> values are not BCD
+	    if (min <= 99 && sec < 60 && frame < 75) {
+	      trackStart = Msf(min, sec, frame).lba() - 150;
+	      if (completeToc[j].start != trackStart) {
+		// start does not match -> values are not BCD
+		isBcd = 0;
+	      }
+	    }
+	    else {
+	      // bogus time code -> values are not BCD
 	      isBcd = 0;
 	    }
 	  }
 	  else {
-	    // bogus time code -> values are not BCD
+	    // track not found -> values are not BCD
+	    isBcd = 0;
+	  }
+	}
+      }
+
+      if (isBcd == 1) {
+	// verify last lead-out pointer
+	trackStart = 0; // start of lead-out
+	for (i = rawTocLen - 1; i >= 0; i--) {
+	  if ((rawToc[i].adrCtl & 0xf0) == 0x10 && // QMODE1 entry
+	      rawToc[i].point == 0xa2) {
+	    min = SubChannel::bcd2int(rawToc[i].pmin);
+	    sec = SubChannel::bcd2int(rawToc[i].psec);
+	    frame = SubChannel::bcd2int(rawToc[i].pframe);
+	    
+	    if (min <= 99 && sec < 60 && frame < 75)
+	      trackStart = Msf(min, sec, frame).lba() - 150;
+	    break;
+	  }
+	}
+	
+	if (i < 0) {
+	  message(-1, "Found bogus toc data (no lead-out entry in raw data).");
+	  message(-1, "Your drive probably does not support raw toc reading.");
+	  message(-1, "Using TOC data retrieved with generic method (no multi session support).");
+	  message(-1, "Use driver option 0x%lx to suppress this message.",
+		  OPT_DRV_GET_TOC_GENERIC);
+	
+	  delete[] rawToc;
+	  *cdTocLen = completeTocLen;
+	  return completeToc;
+	}
+	
+	for (j = 0; j < completeTocLen; j++) {
+	  if (completeToc[j].track == 0xaa) {
+	    break;
+	  }
+	}
+	
+	if (j < completeTocLen) {
+	  if (trackStart != completeToc[j].start) {
+	    // lead-out start does not match -> values are not BCD
 	    isBcd = 0;
 	  }
 	}
 	else {
-	  // track not found -> values are not BCD
-	  isBcd = 0;
+	  message(-2, "Found bogus toc data (no lead-out entry).");
+	  
+	  delete[] completeToc;
+	  delete[] rawToc;
+	  return NULL;
 	}
       }
+      
     }
 
-    if (isBcd == 1) {
+    if (isBcd == 0) {
+      // verify that the decision is really correct.
+      for (i = 0; i < rawTocLen && isBcd == 0; i++) {
+	if ((rawToc[i].adrCtl & 0xf0) == 0x10 && // only process QMODE1 entries
+	    rawToc[i].point < 0xa0) {
+	  
+	  trackNr = rawToc[i].point;
+	
+	  for (j = 0; j < completeTocLen; j++) {
+	    if (completeToc[j].track == trackNr) {
+	      break;
+	    }
+	  }
+
+	  if (j < completeTocLen) {
+	    min = rawToc[i].pmin;
+	    sec = rawToc[i].psec;
+	    frame = rawToc[i].pframe;
+	    
+	    if (min <= 99 && sec < 60 && frame < 75) {
+	      trackStart = Msf(min, sec, frame).lba() - 150;
+	      if (completeToc[j].start != trackStart) {
+		// start does not match -> values are not HEX
+		isBcd = -1;
+	      }
+	    }
+	    else {
+	      // bogus time code -> values are not HEX
+	      isBcd = -1;
+	    }
+	  }
+	  else {
+	    // track not found -> values are not BCD
+	    isBcd = -1;
+	  }
+	}
+      }
+
       // verify last lead-out pointer
       trackStart = 0; // start of lead-out
       for (i = rawTocLen - 1; i >= 0; i--) {
 	if ((rawToc[i].adrCtl & 0xf0) == 0x10 && // QMODE1 entry
 	    rawToc[i].point == 0xa2) {
-	  min = SubChannel::bcd2int(rawToc[i].pmin);
-	  sec = SubChannel::bcd2int(rawToc[i].psec);
-	  frame = SubChannel::bcd2int(rawToc[i].pframe);
-
+	  min = rawToc[i].pmin;
+	  sec = rawToc[i].psec;
+	  frame = rawToc[i].pframe;
+	  
 	  if (min <= 99 && sec < 60 && frame < 75)
 	    trackStart = Msf(min, sec, frame).lba() - 150;
 	  break;
@@ -1633,7 +1631,7 @@ CdToc *CdrDriver::getToc(int sessionNr, int *cdTocLen)
 	*cdTocLen = completeTocLen;
 	return completeToc;
       }
-	
+      
       for (j = 0; j < completeTocLen; j++) {
 	if (completeToc[j].track == 0xaa) {
 	  break;
@@ -1643,115 +1641,28 @@ CdToc *CdrDriver::getToc(int sessionNr, int *cdTocLen)
       if (j < completeTocLen) {
 	if (trackStart != completeToc[j].start) {
 	  // lead-out start does not match -> values are not BCD
-	    isBcd = 0;
-	}
-      }
-      else {
-	message(-2, "Found bogus toc data (no lead-out entry).");
-
-	delete[] completeToc;
-	delete[] rawToc;
-	return NULL;
-      }
-    }
-
-  }
-
-  if (isBcd == 0) {
-    // verify that the decision is really correct.
-    for (i = 0; i < rawTocLen && isBcd == 0; i++) {
-      if ((rawToc[i].adrCtl & 0xf0) == 0x10 && // only process QMODE1 entries
-	  rawToc[i].point < 0xa0) {
-	
-	trackNr = rawToc[i].point;
-	
-	for (j = 0; j < completeTocLen; j++) {
-	  if (completeToc[j].track == trackNr) {
-	    break;
-	  }
-	}
-
-	if (j < completeTocLen) {
-	  min = rawToc[i].pmin;
-	  sec = rawToc[i].psec;
-	  frame = rawToc[i].pframe;
-
-	  if (min <= 99 && sec < 60 && frame < 75) {
-	    trackStart = Msf(min, sec, frame).lba() - 150;
-	    if (completeToc[j].start != trackStart) {
-	      // start does not match -> values are not HEX
-	      isBcd = -1;
-	    }
-	  }
-	  else {
-	    // bogus time code -> values are not HEX
-	    isBcd = -1;
-	  }
-	}
-	else {
-	  // track not found -> values are not BCD
 	  isBcd = -1;
 	}
       }
-    }
-
-    // verify last lead-out pointer
-    trackStart = 0; // start of lead-out
-    for (i = rawTocLen - 1; i >= 0; i--) {
-      if ((rawToc[i].adrCtl & 0xf0) == 0x10 && // QMODE1 entry
-	  rawToc[i].point == 0xa2) {
-	min = rawToc[i].pmin;
-	sec = rawToc[i].psec;
-	frame = rawToc[i].pframe;
-
-	if (min <= 99 && sec < 60 && frame < 75)
-	  trackStart = Msf(min, sec, frame).lba() - 150;
-	break;
-      }
-    }
-
-    if (i < 0) {
-	message(-1, "Found bogus toc data (no lead-out entry in raw data).");
-	message(-1, "Your drive probably does not support raw toc reading.");
-	message(-1, "Using TOC data retrieved with generic method (no multi session support).");
-	message(-1, "Use driver option 0x%lx to suppress this message.",
-		OPT_DRV_GET_TOC_GENERIC);
-	
-	delete[] rawToc;
-	*cdTocLen = completeTocLen;
-	return completeToc;
-    }
-    
-    for (j = 0; j < completeTocLen; j++) {
-      if (completeToc[j].track == 0xaa) {
-	break;
-      }
-    }
-    
-    if (j < completeTocLen) {
-      if (trackStart != completeToc[j].start) {
-	// lead-out start does not match -> values are not BCD
-	isBcd = -1;
-      }
-    }
-    else {
+      else {
 	message(-1, "Found bogus toc data (no lead-out entry).");
 	
 	delete[] rawToc;
 	delete[] completeToc;
 	return NULL;
+      }
     }
-  }
-  
-  if (isBcd == -1) {
-    message(-1, "Could not determine if raw toc data is BCD or HEX. Please report!");
-    message(-1, "Using TOC data retrieved with generic method (no multi session support).");
-    message(-1, "Use driver option 0x%lx to suppress this message.",
-	    OPT_DRV_GET_TOC_GENERIC);
-
-    delete[] rawToc;
-    *cdTocLen = completeTocLen;
-    return completeToc;
+    
+    if (isBcd == -1) {
+      message(-1, "Could not determine if raw toc data is BCD or HEX. Please report!");
+      message(-1, "Using TOC data retrieved with generic method (no multi session support).");
+      message(-1, "Use driver option 0x%lx to suppress this message.",
+	      OPT_DRV_GET_TOC_GENERIC);
+      
+      delete[] rawToc;
+      *cdTocLen = completeTocLen;
+      return completeToc;
+    }
   }
 
   message(4, "Raw toc contains %s values.", isBcd == 0 ? "HEX" : "BCD");
@@ -2640,9 +2551,57 @@ unsigned char CdrDriver::sessionFormat()
 // return: array of CD-TEXT packs or 'NULL' if no packs where retrieved
 CdTextPack *CdrDriver::readCdTextPacks(long *nofPacks)
 {
-  unsigned char cmd[10];
+  unsigned char cmd[12];
   unsigned char *data;
   unsigned char reqData[4];
+
+#if 0
+  memset(cmd, 0, 12);
+
+  cmd[0] = 0xbe;
+  cmd[2] = 0xf0;
+  cmd[3] = 0x00;
+  cmd[4] = 0x00;
+  cmd[5] = 0x00;
+  cmd[8] = 15;
+  cmd[9] = 0x0;
+  cmd[10] = 0x1;
+  
+  long len1 = 15 * (AUDIO_BLOCK_LEN + 96);
+  data = new unsigned char [len1];
+
+  if (sendCmd(cmd, 12, NULL, 0, data, len1) != 0) {
+    message(1, "Cannot read raw CD-TEXT data.");
+  }
+
+  long i, j;
+  unsigned char *p = data + AUDIO_BLOCK_LEN;
+
+  message(0, "Raw CD-TEXT data");
+
+  for (i = 0; i < 15; i++) {
+    unsigned char packs[72];
+    PWSubChannel96 chan(p);
+
+    chan.getRawRWdata(packs);
+
+    for (j = 0; j < 4; j++) {
+      message(0, "%02x %02x %02x %02x: %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x  CRC: %02x %02x", 
+	      packs[j*18+0], packs[j*18+1], packs[j*18+2], packs[j*18+3], 
+	      packs[j*18+4], packs[j*18+5], packs[j*18+6], packs[j*18+7], 
+	      packs[j*18+8], packs[j*18+9], packs[j*18+10], packs[j*18+11], 
+	      packs[j*18+12], packs[j*18+13], packs[j*18+14], packs[j*18+15], 
+	      packs[j*18+16], packs[j*18+17]);
+    }
+
+    p += AUDIO_BLOCK_LEN + 96;
+  }
+      
+  delete[] data;
+
+
+  message(0, "Raw CD-TEXT data - end");
+#endif
 
   memset(cmd, 0, 10);
 
