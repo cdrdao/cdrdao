@@ -104,8 +104,8 @@ by logical 'or' and appended to the '--driver' option, e.g.
      Option Bits:
         read-toc/read-cd related:
            0x00000001: Read 16 bytes PQ sub-channel instead of 96 byte
-                       raw P-W sub-channel data. If 'read-toc' fails on
-                       your drive try to select this options.
+                       raw P-W sub-channel data. If 'read-toc'/'read-cd'
+                       fails on your drive try to select this option.
                        
            0x00000002: Only used if option '0x00000001' is selected. If set
                        the read PQ sub-channel data is expected to contain
@@ -128,8 +128,9 @@ by logical 'or' and appended to the '--driver' option, e.g.
   generic-mmc
      This is a driver for SCSI-3/mmc compatible CD-recorders that support
      session-at-once (cue sheet based) writing. Most of the recent drives
-     should be compatible with this or with the 'generic-mmc-raw' driver
-     described below. Data track support is also available.
+     (ATAPI, SCSI, USB, Parallel Port) should be compatible with this or
+     with the 'generic-mmc-raw' driver described below. Data track writing
+     support is also available.
      'read-toc' scans linearly the Q sub-channel of each track to retrieve
      the pre-gap length and index marks. This method is very accurate but
      takes the same time like digital audio extraction. It should also work
@@ -160,7 +161,10 @@ by logical 'or' and appended to the '--driver' option, e.g.
                        you should consider to use '--fast-toc' since the
                        data retrieved with the binary search method is usually
                        not very reliable and not worth the additional time.
-                       
+
+           0x00000100: Force using the raw R-W sub-channel reading mode for audio
+                       and data tracks.
+
         writing related:
            0x00000010: Enable CD-TEXT writing. This must be done explicitly
                        because there is no way to detect if a recorder supports
@@ -171,7 +175,14 @@ by logical 'or' and appended to the '--driver' option, e.g.
                        will be unusable.
 
            0x00000040: Suppresses the activation of the BURN Proof feature.
-                       
+
+           0x00000080: If the drive does not support packed R-W sub-channel writing
+                       (the drive does not support the L-EC data creation and 
+                       interleaving for R-W sub-channel data) you will have to
+                       specify this option. Cdrdao will perform all the encoding
+                       and write in raw R-W mode. If the drive does not support the
+                       raw R-W writing mode, too, it is not possible to write
+                       sub-channel data.
 
   generic-mmc-raw
      This is an alternate driver for SCSI-3/mmc compatible CD-recorders.
@@ -180,10 +191,16 @@ by logical 'or' and appended to the '--driver' option, e.g.
      allows using part of the lead-out area for audio data since the drive's
      firmware has no chance to prevent this. Of course, you will get some
      error message at the end of writing when the CD-R capacity is exhausted.
+     Multi session recording is currently not supported.
      CD structure analysis is done like in the 'generic-mmc' driver. 
 
      Option Bits:
-        See 'generic-mmc' but CD-TEXT writing is not supported.
+        All of 'generic-mmc' except
+           
+           0x00000010: CD-TEXT writing capability is automatically determined.
+
+           0x00000080: R-W sub-channel writing capability is automatically determined.
+
 
   ricoh-mp6200
      Supports writing with the Ricoh MP6200S CD recorder.
@@ -233,6 +250,23 @@ compile the kernel. Cdrdao opens '/dev/cdrecorder' by default which should
 be a link to the appropriate generic SCSI device.
 
 
+ATAPI Support
+-------------
+
+ATAPI drives use the same command set as SCSI devices so that cdrdao also supports
+all ATAPI CD-ROM, CD-R and CD-RW drives. Either the 'generic-mmc' or the 
+'generic-mmc-raw' driver should work if the recorder supports DAO writing at all.
+
+Cdrdao access ATAPI devices through the same interface as used for SCSI devices.
+Therefor the operating system must emulate the ATAPI devices as SCSI devices.
+Some operating systems do this by default (e.g. Win32), other operating system must
+be told to do that (e.g. Linux, enable the IDE host adapter emulation) and some
+operating system may not support that.
+
+The same applies for USB and parallel port devices: cdrdao supports them but the
+operating system must present them as SCSI devices.
+
+
 Digital Audio Extraction
 ------------------------
 The digital audio extraction is done with the help of Monty's paranoia
@@ -270,11 +304,12 @@ toc-file or by using the xcdrdao GUI.
 If you want to create your own CD-TEXT data be sure to add the fields
 'TITLE' and 'PERFORMER' to all tracks. 
 
-IMPORTANT: The CD-TEXT writing feature must be explicitly enabled with the
-driver option 0x10 (see section Drivers). If the driver is automatically
-selected for your recorder model the driver options should be already set
-if your recorder is known to write CD-TEXT data. Please report if the
-driver database is not up to date or contains incorrect data.
+IMPORTANT: The CD-TEXT writing feature must be explicitly enabled with
+the driver option 0x10 for the 'generic-mmc' driver (see section
+Drivers).  If the driver is automatically selected for your recorder
+model the driver options should be already set if your recorder is
+known to write CD-TEXT data. Please report if the driver database is
+not up to date or contains incorrect data.
 
 The directory "testtocs" contains a template toc-file "cdtext.toc".
 
@@ -286,27 +321,48 @@ Recorders:
 
   Model                               Firmware Rev.          Driver           Notes
   ---------------------------------------------------------------------------------
+  ACER 10x8x32                        ?                      generic-mmc-raw
   ACER 2010A                          ?                      generic-mmc-raw
+  ACER 20x10x40                       ?                      generic-mmc-raw
+  ACER 4406EU                         A.AZ                   generic-mmc-raw
+  ACER 4x4x6                          ?                      generic-mmc-raw
   ACER 8X4X32                         5.GV                   generic-mmc-raw
   ACER CD-R/RW 4X4X32                 3.LS                   generic-mmc-raw
   AOPEN CD-RW CRW1632                 1.11                   generic-mmc    
+  AOPEN CD-RW CRW2040                 1.01                   generic-mmc    
   AOPEN CD-RW-241040                  ?                      generic-mmc    
+  AOPEN CRW1232                       ?                      generic-mmc-raw
   AOPEN CRW620                        2.40                   ricoh-mp6200     10
   AOPEN CRW9624                       1.70                   generic-mmc    
+  ARTEC RW241040                      1.02                   generic-mmc-raw
   ARTEC WRA-WA48                      ?                      generic-mmc-raw
+  ARTEC WRR-4048                      1.01                   generic-mmc-raw
+  ASUS CRW-1610A                      atapi                  generic-mmc-raw
+  ASUS CRW-3212A                      1.0                    generic-mmc-raw
   ATAPI CD-R/RW 12X8X32               9.JB                   generic-mmc-raw
   ATAPI CD-R/RW 4X4X32                3.GS,3.HS              generic-mmc-raw  7
   ATAPI CD-R/RW CRW6206A              1.3A                   generic-mmc-raw
   BENQ CRW2410A                       P.MJ                   generic-mmc-raw
+  BTC BCE1610IM                       0.19,A.20              generic-mmc-raw
+  BTC BCE2410IM                       A.22                   generic-mmc-raw
   BTC BCE621E                         2.0                    generic-mmc-raw
-  CD-RW CDR-2440MB                    ?                      generic-mmc    
+  CD-RW CDR-2440MB                    5SG1                   generic-mmc    
+  CREATIVE CD-RW RW1210E              LCS6                   generic-mmc    
   CREATIVE CD-RW RW4424               1.12                   generic-mmc    
+  CREATIVE CD-RW RW8433E              1R04                   generic-mmc    
   CREATIVE CD5233E                    1.00                   generic-mmc    
+  CYBERDRV CW018D                     120                    generic-mmc-raw
   CYBERDRV CW038D                     100C,110C              generic-mmc-raw
+  CYBERDRV CW058D                     100D                   generic-mmc-raw
   DELTA OME-W141                      1.40                   generic-mmc    
+  GENERIC CRD-BP1600P                 2.43                   generic-mmc    
   GENERIC CRD-R800S                   1.10                   generic-mmc    
   GENERIC CRD-RW2                     1.12                   generic-mmc      9
+  Goldstar 8120B                      ?                      generic-mmc-raw
   GRUNDIG CDR100IPW                   1.26                   cdd2600        
+  HL-DT-ST CD-RW GCE-8160B            1.02                   generic-mmc-raw
+  HL-DT-ST CD-RW GCE-8320B            1.00,1.01,1.04         generic-mmc-raw
+  HL-DT-ST RW/DVD GCC-4120B           2.01                   generic-mmc    
   HP 9510i                            1.0e                   generic-mmc    
   HP CD-Writer 4020                   1.27                   cdd2600        
   HP CD-Writer 6020                   1.07                   cdd2600        
@@ -321,15 +377,20 @@ Recorders:
   HP CD-Writer+ 9200                  1.0c, 1.0e             generic-mmc      5
   HP CD-Writer+ 9300                  1.0b                   generic-mmc      5
   HP CD-Writer+ 9600                  1.0a                   generic-mmc      5
+  HP CD-Writer+ 9700                  1.0M                   generic-mmc    
   HP DVD Writer 100j                  1.34                   generic-mmc    
+  HP DVD Writer 200j                  1.06                   generic-mmc-raw
   IDE-CD R/RW 16x10A                  P1.5                   generic-mmc    
   IDE-CD R/RW 2x2x24                  1.4                    generic-mmc-raw
+  IDE-CD R/RW 4x4x24                  1.5C                   generic-mmc-raw
   IDE-CD R/RW 4x4x32                  1.3B,1.4B              generic-mmc-raw
+  IDE-CD R/RW 8x4x32                  1.3B,1.4B,1.5          generic-mmc-raw
   IDE-CD ReWritable-2x2x6             3.09                   generic-mmc-raw
+  IMATION IMW121032IAB                2.4B                   generic-mmc    
   IMS 522                             1.05                   cdd2600        
   IMS CDD2000                         1.25,1.26              cdd2600        
   IOMEGA ZIPCD 4x650                  1.04                   generic-mmc-raw
-  JVC R2626                           1.10                   teac-cdr55     
+  JVC R2626                           1.10,2.29              teac-cdr55     
   JVC XR-W2010                        1.51                   teac-cdr55     
   KODAK PCD-225                       1.06                   cdd2600        
   LG 8088B                            ?                      generic-mmc    
@@ -337,25 +398,30 @@ Recorders:
   LG CD-ROM CDR-8428B                 1.0                    generic-mmc    
   LG CD-RW CED-8080B                  1.05,1.06              generic-mmc    
   LG CD-RW CED-8081B                  1.00,1.05,1.06         generic-mmc    
-  LG CD-RW CED-8083B                  1.06,1.1               generic-mmc    
+  LG CD-RW CED-8083B                  1.06,1.09,1.1          generic-mmc    
   LG CD-RW GCE-8240B                  1.06                   generic-mmc    
   LG COMBO                            1.0                    generic-mmc    
-  LG HL-DT-ST CD-RW GCE-8320B         1.00                   generic-mmc-raw
-  LG HL-DT-ST RW/DVD GCC-4120         2.01                   generic-mmc    
+  LG HL-DT-ST RW/DVD GCC-4080N        0010                   generic-mmc    
   LITE-ON LTR-0841                    MS10, MS84             generic-mmc    
   LITE-ON LTR-12101B                  LS15                   generic-mmc-raw
   LITE-ON LTR-16101B                  TSON                   generic-mmc-raw
   LITE-ON LTR-16102C                  US52                   generic-mmc-raw
   LITE-ON LTR-24102B                  5S07                   generic-mmc    
+  LITE-ON LTR-32123S                  XS0X                   generic-mmc-raw
+  LITE-ON LTR-32125W                  WBS4                   generic-mmc    
   LITE-ON LTR-40125S                  ZS08                   generic-mmc-raw
+  LITE-ON LTR-48125W                  VS04,VS06              generic-mmc-raw
   MATSHITA CD-R   CW-7502             X.14, X.17             generic-mmc      5
   MATSHITA CD-R   CW-7503             1.04, 1.8              generic-mmc    
   MATSHITA CD-R   CW-7582             1.00, 1.05, 1.10       generic-mmc    
   MATSHITA CD-R   CW-7585             1.04                   generic-mmc    
   MATSHITA CD-R   CW-7586             1.01,1.08              generic-mmc    
   MATSHITA CDRRW01                    1.34                   generic-mmc    
+  MATSHITA UJDA360                    ?                      generic-mmc    
   MATSHITA UJDA710                    1.50                   generic-mmc    
+  MATSHITA UJDA720                    ?                      generic-mmc    
   MEMOREX 24MAX 1040                  ?                      generic-mmc    
+  MEMOREX 40MAXX 1248AJ               ZWS1                   generic-mmc    
   MEMOREX CD-RW4224                   1.17                   generic-mmc    
   MEMOREX CDRW-2216                   1.0b                   generic-mmc-raw
   MEMOREX CR-622                      D4.0                   generic-mmc-raw  5
@@ -367,33 +433,43 @@ Recorders:
   MITSUMI CR-4802                     1.2B, 1.4D             generic-mmc-raw  4
   MITSUMI CR-4804                     2.4C                   generic-mmc-raw
   MITSUMI CR-48X5                     1.2A                   generic-mmc    
+  MITSUMI CR-48X5TE                   1.6A                   generic-mmc    
+  MITSUMI CR-48X8TE                   1.1E                   generic-mmc    
+  MITSUMI CR-48XATE                   1.0C                   generic-mmc    
   OLYMPIC RWD RW4224                  ?                      generic-mmc    
+  OTI -975 SOCRATES                   ?                      generic-mmc-raw
   PANASONIC CD-R   CW-7582            1.05                   generic-mmc    
-  PHILIPS CD D4801                    C1.3                   generic-mmc-raw
   PHILIPS CDD 3801/31                 ?                      generic-mmc-raw
   PHILIPS CDD2000                     1.25, 1.26             cdd2600        
   PHILIPS CDD2600                     1.07                   cdd2600        
   PHILIPS CDD3600                     2.00                   generic-mmc-raw
   PHILIPS CDD3610                     2.02, 3.01, 3.09       generic-mmc-raw
+  PHILIPS CDD4201                     1.5C                   generic-mmc-raw
+  PHILIPS CDD4801                     C1.3                   generic-mmc-raw
   PHILIPS CDD522                      ?                      cdd2600        
+  PHILIPS CDRW1610A                   P1.4                   generic-mmc    
+  PHILIPS CDRW2412A                   P1.5                   generic-mmc    
   PHILIPS CDRW400                     ?                      generic-mmc-raw
   PHILIPS OMNIWRITER26                1.20                   ricoh-mp6200   
   PHILIPS PCA460RW                    1.0e,1.0g              generic-mmc    
+  PHILIPS PCRW1208                    3.1,4.0                generic-mmc-raw
   PHILIPS PCRW120899                  ?                      generic-mmc-raw
   PHILIPS PCRW404                     1.06,1.4b              generic-mmc-raw
-  PHILIPS PCRW804                     1.5, 2.0               generic-mmc-raw
+  PHILIPS PCRW804                     1.5,2.0                generic-mmc-raw
   PIONEER DVD-ROM DVD-114             2.06                   generic-mmc    
   PLEXTOR CD-R   PX-R412              1.04, 1.06, 1.07       generic-mmc    
   PLEXTOR CD-R   PX-R820              1.03, 1.07             generic-mmc    
-  PLEXTOR CD-R   PX-W1210             1.02, 1.04             generic-mmc    
+  PLEXTOR CD-R   PX-W1210             1.02,1.04,1.05         generic-mmc    
   PLEXTOR CD-R   PX-W124              1.02                   generic-mmc    
   PLEXTOR CD-R   PX-W1610             1.00                   generic-mmc    
   PLEXTOR CD-R   PX-W4220             1.01, 1.02             generic-mmc    
   PLEXTOR CD-R   PX-W8220             1.01                   generic-mmc    
   PLEXTOR CD-R   PX-W8432             1.03, 1.05             generic-mmc    
   PLEXTOR CD-R PX-W241040             1.04                   generic-mmc    
-  PLEXTOR CD-R PX-W2410a              1.03                   generic-mmc    
+  PLEXTOR CD-R PX-W2410a              1.03,1.04              generic-mmc    
   PLEXTOR CD-R PX-W4012A              1.00,1.01              generic-mmc    
+  QPS CRD-BP 1500P                    6.38                   generic-mmc-raw
+  RICOH CD-R/RW MP7040                1.4                    generic-mmc    
   RICOH CD-R/RW MP7060                1.30, 1.50, 1.70       generic-mmc    
   RICOH CD-R/RW MP7063A               1.80                   generic-mmc    
   RICOH CD-R/RW MP7080                1.10                   generic-mmc    
@@ -404,17 +480,21 @@ Recorders:
   SAF CD-R2006PLUS                    2.05                   teac-cdr55     
   SAF CD-R4012                        6.0J, 6.0L             teac-cdr55     
   SAF CD-RW 226                       1.12                   teac-cdr55     
+  SAF CD-RW4224A                      1.20                   generic-mmc    
   SAF CD-RW6424                       1.30                   generic-mmc    
+  SAMSUNG CD-R/RW SW-204B             BS21                   generic-mmc-raw
   SAMSUNG CD-R/RW SW-206              1.40                   generic-mmc    
-  SAMSUNG CD-R/RW SW-208B             BS01, BS02             generic-mmc-raw
-  SAMSUNG CD-R/RW SW-212B             BS05                   generic-mmc-raw
+  SAMSUNG CD-R/RW SW-208              BS01, BS02             generic-mmc-raw
+  SAMSUNG CD-R/RW SW-212B             BS05,Q001              generic-mmc-raw
   SAMSUNG CD-R/RW SW-224              R201                   generic-mmc-raw
   SAMSUNG CD-R/RW SW-408B             BS02                   generic-mmc    
   SAMSUNG CDRW/DVD SM-308B            BS03,BS04,T100         generic-mmc    
+  SAMSUNG SW-232                      R300,R301              generic-mmc-raw
   SANYO CRD-BP3                       1.03                   generic-mmc    
   SONY CD-R   CDU920                  ?                      sony-cdu920    
   SONY CD-R   CDU924                  1.1d                   sony-cdu920    
   SONY CD-R   CDU948                  1.0j                   sony-cdu948      5
+  SONY CD-RW  CRX700E                 1.4r                   generic-mmc    
   SONY CRX-815                        ?                      generic-mmc    
   SONY CRX100                         1.0m                   generic-mmc      5
   SONY CRX120                         1.0j                   generic-mmc      5
@@ -423,7 +503,9 @@ Recorders:
   SONY CRX160E                        1.0e,1.0g              generic-mmc    
   SONY CRX175A1                       5YS2                   generic-mmc    
   SONY CRX175E                        ?                      generic-mmc    
+  SONY CRX185E1                       XYS2                   generic-mmc    
   T.YUDEN CD-WO EW-50                 2.15, 2.16, 2.18       taiyo-yuden    
+  TDK 4800                            s7s5                   generic-mmc    
   TDK CDRW121032                      1.02                   generic-mmc    
   TDK CDRW321040B                     X7S2                   generic-mmc    
   TDK CDRW8432                        1.07                   generic-mmc    
@@ -431,16 +513,21 @@ Recorders:
   TEAC CD-R55                         1.0k,1.0n,1.0r         teac-cdr55     
   TEAC CD-R56                         ?                      generic-mmc    
   TEAC CD-R58                         1.0J, 1.0H             generic-mmc    
+  TEAC CD-W216E                       1.0A                   generic-mmc    
   TEAC CD-W512EB                      2.0B                   generic-mmc    
+  TEAC CD-W512SB                      1.0H                   generic-mmc    
   TEAC CD-W516EB                      1.0A,1.0B              generic-mmc    
+  TEAC CD-W516EC                      1.8C                   generic-mmc    
   TEAC CD-W524E                       1.0b                   generic-mmc    
   TEAC CD-W54E                        1.1B                   generic-mmc    
   TEAC CD-W58E                        1.0A                   generic-mmc-raw
   TORiSAN CDW-U4424                   1.10                   generic-mmc      11
-  TOSHIBA DVD-ROM SD-M1612            ?                      generic-mmc    
+  TOSHIBA DVD-ROM SD-M1612            1004                   generic-mmc    
   TOSHIBA DVD-ROM SD-R1002            1030                   generic-mmc    
   TOSHIBA DVD-ROM SD-R1202            1020                   generic-mmc    
   TOSHIBA DVD-ROM SD-R2002            ?                      toshiba        
+  TOSHIBA DVD-ROM SD-R2102            15                     toshiba        
+  TOSHIBA R/RW 4x4x24                 ?                      generic-mmc-raw
   TRAXDATA 241040                     ?                      generic-mmc    
   TRAXDATA 2832                       ?                      generic-mmc-raw
   TRAXDATA CDR4120                    5.0G, 5.0J, 5.0N       teac-cdr55     
@@ -457,6 +544,7 @@ Recorders:
   YAMAHA CRW2100                      1.0D, 1.0H             generic-mmc    
   YAMAHA CRW2200                      ?                      generic-mmc    
   YAMAHA CRW2260                      1.0f                   generic-mmc    
+  YAMAHA CRW3200                      1.0d                   generic-mmc    
   YAMAHA CRW4001                      1.0q                   generic-mmc    
   YAMAHA CRW4260                      1.0h, 1.0q             generic-mmc      5
   YAMAHA CRW4416                      1.0b                   generic-mmc    
@@ -465,7 +553,7 @@ Recorders:
   YAMAHA CRW8824                      1.0                    generic-mmc    
   _NEC 7900                           ?                      generic-mmc-raw
   _NEC NR-7700A                       1.01                   generic-mmc    
-  _NEC NR-7800A                       1.01                   generic-mmc    
+  _NEC NR-7800A                       1.01,1.0B              generic-mmc-raw
 
 Readers (command 'read-toc', 'read-cd'):
 
@@ -477,15 +565,18 @@ Readers (command 'read-toc', 'read-cd'):
   ASUS DVD-ROM E608                   1.10                   generic-mmc    
   E-IDE CD-950E/TKU                   A41                    generic-mmc    
   E-IDE CD-ROM 36X/AKU                U23                    generic-mmc      3
+  E-IDE CD-ROM 52X/AKH                A6E                    generic-mmc    
   FUNAI E295X                         1.01                   generic-mmc    
   HITACHI CDR-7730                    ?                      generic-mmc    
   HITACHI CDR-8435                    0010                   generic-mmc    
   HITACHI DVD-ROM GD-2500             A011                   plextor        
   LG CD-ROM CRD-8480C                 1.04                   generic-mmc    
   LG CD-ROM CRD-8482B                 1.00                   generic-mmc    
-  LG CD-ROM CRD-8521B                 1.01                   generic-mmc    
+  LG CD-ROM CRD-8521B                 1.01,1.06              generic-mmc    
   LG DVD-ROM DRN8080B                 LAB8                   generic-mmc    
   LITE-ON CD-ROM                      ?                      generic-mmc    
+  LITE-ON LTD-163                     ghr3                   generic-mmc    
+  LITEON DVD-ROM LTD163D              ?                      generic-mmc    
   MATSHITA CD-ROM CR-506              8S04                   plextor        
   MATSHITA CD-ROM CR-588              LS15                   generic-mmc    
   MATSHITA CD-ROM CR-589              GS0H                   generic-mmc    
@@ -516,10 +607,11 @@ Readers (command 'read-toc', 'read-cd'):
   SONY CD-ROM CDU-76                  1.1c                   plextor        
   SONY CD-ROM CDU31A-02               ?                      generic-mmc    
   SONY CD-ROM CDU4821                 S0.P                   generic-mmc    
+  SONY CDU5211                        YYS2                   generic-mmc    
   TEAC CD-524E                        3.0B                   generic-mmc    
   TEAC CD-532E                        1.0A                   generic-mmc    
   TEAC CD-532S                        1.0A                   teac-cdr55     
-  TEAC CD-540E                        1.0A                   generic-mmc    
+  TEAC CD-540E                        1.0A,1.0C              generic-mmc    
   TEAC CD-ROM CD-532S                 1.0A                   plextor-scan   
   TOSHIBA 1504                        1008                   toshiba        
   TOSHIBA CD-ROM XM-3206B             ?                      generic-mmc    
@@ -532,11 +624,12 @@ Readers (command 'read-toc', 'read-cd'):
   TOSHIBA CD-ROM XM-6401TA            1009                   toshiba        
   TOSHIBA CD-ROM XM-6402B             1008                   generic-mmc    
   TOSHIBA DVD-ROM SD-2102             1015                   toshiba        
-  TOSHIBA DVD-ROM SD-C2202            1021                   generic-mmc    
+  TOSHIBA DVD-ROM SD-C2202            1020,1021              generic-mmc    
   TOSHIBA DVD-ROM SD-C2302            1021                   generic-mmc    
   TOSHIBA DVD-ROM SD-C2402            1317                   generic-mmc    
   TOSHIBA DVD-ROM SD-M1102            1426                   generic-mmc    
   TOSHIBA DVD-ROM SD-M1401            1008                   generic-mmc    
+  TOSHIBA DVD-ROM SD-M1402            ?                      generic-mmc    
   TOSHIBA XM-5401                     1036                   plextor        
 
 Notes:
