@@ -18,8 +18,8 @@
  */
 /*
  * $Log: PlextorReaderScan.cc,v $
- * Revision 1.1  2000/02/05 01:36:52  llanero
- * Initial revision
+ * Revision 1.1.1.1  2000/02/05 01:36:52  llanero
+ * Uploaded cdrdao 1.1.3 with pre10 patch applied.
  *
  * Revision 1.4  1999/04/05 18:49:22  mueller
  * Added driver options.
@@ -38,7 +38,7 @@
  *
  */
 
-static char rcsid[] = "$Id: PlextorReaderScan.cc,v 1.1 2000/02/05 01:36:52 llanero Exp $";
+static char rcsid[] = "$Id: PlextorReaderScan.cc,v 1.1.1.1 2000/02/05 01:36:52 llanero Exp $";
 
 #include <config.h>
 

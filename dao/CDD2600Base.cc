@@ -18,8 +18,8 @@
  */
 /*
  * $Log: CDD2600Base.cc,v $
- * Revision 1.1  2000/02/05 01:35:37  llanero
- * Initial revision
+ * Revision 1.1.1.1  2000/02/05 01:35:37  llanero
+ * Uploaded cdrdao 1.1.3 with pre10 patch applied.
  *
  * Revision 1.2  1999/03/27 20:52:02  mueller
  * Adapted to changed writing interface.
@@ -29,7 +29,7 @@
  *
  */
 
-static char rcsid[] = "$Id: CDD2600Base.cc,v 1.1 2000/02/05 01:35:37 llanero Exp $";
+static char rcsid[] = "$Id: CDD2600Base.cc,v 1.1.1.1 2000/02/05 01:35:37 llanero Exp $";
 
 #include <config.h>
 

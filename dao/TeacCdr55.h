@@ -18,8 +18,8 @@
  */
 /*
  * $Log: TeacCdr55.h,v $
- * Revision 1.1  2000/02/05 01:35:14  llanero
- * Initial revision
+ * Revision 1.1.1.1  2000/02/05 01:35:14  llanero
+ * Uploaded cdrdao 1.1.3 with pre10 patch applied.
  *
  * Revision 1.3  1999/04/05 11:04:10  mueller
  * Added driver option flags.

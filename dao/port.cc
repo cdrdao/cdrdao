@@ -18,15 +18,15 @@
  */
 /*
  * $Log: port.cc,v $
- * Revision 1.1  2000/02/05 01:38:22  llanero
- * Initial revision
+ * Revision 1.1.1.1  2000/02/05 01:38:22  llanero
+ * Uploaded cdrdao 1.1.3 with pre10 patch applied.
  *
  * Revision 1.1  1999/05/11 20:03:29  mueller
  * Initial revision
  *
  */
 
-static char rcsid[] = "$Id: port.cc,v 1.1 2000/02/05 01:38:22 llanero Exp $";
+static char rcsid[] = "$Id: port.cc,v 1.1.1.1 2000/02/05 01:38:22 llanero Exp $";
 
 #include <config.h>
 

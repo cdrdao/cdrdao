@@ -18,8 +18,8 @@
  */
 /*
  * $Log: AddSilenceDialog.cc,v $
- * Revision 1.1  2000/02/05 01:39:00  llanero
- * Initial revision
+ * Revision 1.1.1.1  2000/02/05 01:39:00  llanero
+ * Uploaded cdrdao 1.1.3 with pre10 patch applied.
  *
  * Revision 1.4  1999/08/07 16:27:28  mueller
  * Applied patch from Yves Bastide:
@@ -34,7 +34,7 @@
  *
  */
 
-static char rcsid[] = "$Id: AddSilenceDialog.cc,v 1.1 2000/02/05 01:39:00 llanero Exp $";
+static char rcsid[] = "$Id: AddSilenceDialog.cc,v 1.1.1.1 2000/02/05 01:39:00 llanero Exp $";
 
 #include <stdio.h>
 #include <limits.h>

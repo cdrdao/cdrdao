@@ -19,15 +19,15 @@
 
 /*
  * $Log: CdTextContainer.cc,v $
- * Revision 1.1  2000/02/05 01:32:35  llanero
- * Initial revision
+ * Revision 1.1.1.1  2000/02/05 01:32:35  llanero
+ * Uploaded cdrdao 1.1.3 with pre10 patch applied.
  *
  * Revision 1.1  1999/04/05 11:02:11  mueller
  * Initial revision
  *
  */
 
-static char rcsid[] = "$Id: CdTextContainer.cc,v 1.1 2000/02/05 01:32:35 llanero Exp $";
+static char rcsid[] = "$Id: CdTextContainer.cc,v 1.1.1.1 2000/02/05 01:32:35 llanero Exp $";
 
 #include <iostream.h>
 #include <assert.h>

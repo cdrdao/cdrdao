@@ -18,12 +18,12 @@
  */
 /*
  * $Log: Settings.cc,v $
- * Revision 1.1  2000/02/05 01:39:57  llanero
- * Initial revision
+ * Revision 1.1.1.1  2000/02/05 01:39:57  llanero
+ * Uploaded cdrdao 1.1.3 with pre10 patch applied.
  *
  */
 
-static char rcsid[] = "$Id: Settings.cc,v 1.1 2000/02/05 01:39:57 llanero Exp $";
+static char rcsid[] = "$Id: Settings.cc,v 1.1.1.1 2000/02/05 01:39:57 llanero Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>

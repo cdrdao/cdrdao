@@ -18,8 +18,8 @@
  */
 /*
  * $Log: xcdrdao.h,v $
- * Revision 1.1  2000/02/05 01:38:57  llanero
- * Initial revision
+ * Revision 1.1.1.1  2000/02/05 01:38:57  llanero
+ * Uploaded cdrdao 1.1.3 with pre10 patch applied.
  *
  * Revision 1.1  1998/11/20 18:58:41  mueller
  * Initial revision

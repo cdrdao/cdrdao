@@ -18,8 +18,8 @@
  */
 /*
  * $Log: TaiyoYuden.cc,v $
- * Revision 1.1  2000/02/05 01:37:33  llanero
- * Initial revision
+ * Revision 1.1.1.1  2000/02/05 01:37:33  llanero
+ * Uploaded cdrdao 1.1.3 with pre10 patch applied.
  *
  * Revision 1.4  1999/04/05 11:04:10  mueller
  * Added driver option flags.
@@ -39,7 +39,7 @@
  * Very similar to the Philips CDD2x00 drives.
  */
 
-static char rcsid[] = "$Id: TaiyoYuden.cc,v 1.1 2000/02/05 01:37:33 llanero Exp $";
+static char rcsid[] = "$Id: TaiyoYuden.cc,v 1.1.1.1 2000/02/05 01:37:33 llanero Exp $";
 
 #include <config.h>
 

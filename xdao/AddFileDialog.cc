@@ -18,15 +18,15 @@
  */
 /*
  * $Log: AddFileDialog.cc,v $
- * Revision 1.1  2000/02/05 01:38:58  llanero
- * Initial revision
+ * Revision 1.1.1.1  2000/02/05 01:38:58  llanero
+ * Uploaded cdrdao 1.1.3 with pre10 patch applied.
  *
  * Revision 1.1  1999/09/07 11:17:32  mueller
  * Initial revision
  *
  */
 
-static char rcsid[] = "$Id: AddFileDialog.cc,v 1.1 2000/02/05 01:38:58 llanero Exp $";
+static char rcsid[] = "$Id: AddFileDialog.cc,v 1.1.1.1 2000/02/05 01:38:58 llanero Exp $";
 
 #include <stdio.h>
 #include <limits.h>

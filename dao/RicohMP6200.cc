@@ -18,8 +18,8 @@
  */
 /*
  * $Log: RicohMP6200.cc,v $
- * Revision 1.1  2000/02/05 01:36:54  llanero
- * Initial revision
+ * Revision 1.1.1.1  2000/02/05 01:36:54  llanero
+ * Uploaded cdrdao 1.1.3 with pre10 patch applied.
  *
  * Revision 1.5  1999/04/05 11:04:10  mueller
  * Added driver option flags.
@@ -43,7 +43,7 @@
  * disk-at-once writing is done with the Philips CDD2x00 commands.
  */
 
-static char rcsid[] = "$Id: RicohMP6200.cc,v 1.1 2000/02/05 01:36:54 llanero Exp $";
+static char rcsid[] = "$Id: RicohMP6200.cc,v 1.1.1.1 2000/02/05 01:36:54 llanero Exp $";
 
 #include <config.h>
 

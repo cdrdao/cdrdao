@@ -18,15 +18,15 @@
  */
 /*
  * $Log: TrackDataScrap.cc,v $
- * Revision 1.1  2000/02/05 01:40:17  llanero
- * Initial revision
+ * Revision 1.1.1.1  2000/02/05 01:40:17  llanero
+ * Uploaded cdrdao 1.1.3 with pre10 patch applied.
  *
  * Revision 1.1  1999/08/27 18:40:01  mueller
  * Initial revision
  *
  */
 
-static char rcsid[] = "$Id: TrackDataScrap.cc,v 1.1 2000/02/05 01:40:17 llanero Exp $";
+static char rcsid[] = "$Id: TrackDataScrap.cc,v 1.1.1.1 2000/02/05 01:40:17 llanero Exp $";
 
 #include "TrackDataScrap.h"
 

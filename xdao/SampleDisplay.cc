@@ -18,8 +18,8 @@
  */
 /*
  * $Log: SampleDisplay.cc,v $
- * Revision 1.1  2000/02/05 01:39:50  llanero
- * Initial revision
+ * Revision 1.1.1.1  2000/02/05 01:39:50  llanero
+ * Uploaded cdrdao 1.1.3 with pre10 patch applied.
  *
  * Revision 1.5  1999/08/07 16:27:28  mueller
  * Applied patch from Yves Bastide:
@@ -37,7 +37,7 @@
  *
  */
 
-static char rcsid[] = "$Id: SampleDisplay.cc,v 1.1 2000/02/05 01:39:50 llanero Exp $";
+static char rcsid[] = "$Id: SampleDisplay.cc,v 1.1.1.1 2000/02/05 01:39:50 llanero Exp $";
 
 #include <stdio.h>
 #include <limits.h>

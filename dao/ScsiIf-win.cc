@@ -18,12 +18,12 @@
  */
 /*
  * $Log: ScsiIf-win.cc,v $
- * Revision 1.1  2000/02/05 01:37:14  llanero
- * Initial revision
+ * Revision 1.1.1.1  2000/02/05 01:37:14  llanero
+ * Uploaded cdrdao 1.1.3 with pre10 patch applied.
  *
  */
 
-static char rcsid[] = "$Id: ScsiIf-win.cc,v 1.1 2000/02/05 01:37:14 llanero Exp $";
+static char rcsid[] = "$Id: ScsiIf-win.cc,v 1.1.1.1 2000/02/05 01:37:14 llanero Exp $";
 
 #include "config.h"
 

@@ -18,15 +18,15 @@
  */
 /*
  * $Log: DeviceConfDialog.cc,v $
- * Revision 1.1  2000/02/05 01:39:13  llanero
- * Initial revision
+ * Revision 1.1.1.1  2000/02/05 01:39:13  llanero
+ * Uploaded cdrdao 1.1.3 with pre10 patch applied.
  *
  * Revision 1.1  1999/09/06 09:09:37  mueller
  * Initial revision
  *
  */
 
-static char rcsid[] = "$Id: DeviceConfDialog.cc,v 1.1 2000/02/05 01:39:13 llanero Exp $";
+static char rcsid[] = "$Id: DeviceConfDialog.cc,v 1.1.1.1 2000/02/05 01:39:13 llanero Exp $";
 
 #include <stdio.h>
 #include <limits.h>

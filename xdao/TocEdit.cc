@@ -18,15 +18,15 @@
  */
 /*
  * $Log: TocEdit.cc,v $
- * Revision 1.1  2000/02/05 01:40:06  llanero
- * Initial revision
+ * Revision 1.1.1.1  2000/02/05 01:40:06  llanero
+ * Uploaded cdrdao 1.1.3 with pre10 patch applied.
  *
  * Revision 1.1  1999/08/19 20:27:39  mueller
  * Initial revision
  *
  */
 
-static char rcsid[] = "$Id: TocEdit.cc,v 1.1 2000/02/05 01:40:06 llanero Exp $";
+static char rcsid[] = "$Id: TocEdit.cc,v 1.1.1.1 2000/02/05 01:40:06 llanero Exp $";
 
 #include "TocEdit.h"
 

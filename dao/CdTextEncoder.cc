@@ -19,8 +19,8 @@
 
 /*
  * $Log: CdTextEncoder.cc,v $
- * Revision 1.1  2000/02/05 01:35:41  llanero
- * Initial revision
+ * Revision 1.1.1.1  2000/02/05 01:35:41  llanero
+ * Uploaded cdrdao 1.1.3 with pre10 patch applied.
  *
  * Revision 1.1  1999/06/13 19:31:15  mueller
  * Initial revision
@@ -38,7 +38,7 @@
 #include "CdTextItem.h"
 #include "PWSubChannel96.h"
 
-static char rcsid[] = "$Id: CdTextEncoder.cc,v 1.1 2000/02/05 01:35:41 llanero Exp $";
+static char rcsid[] = "$Id: CdTextEncoder.cc,v 1.1.1.1 2000/02/05 01:35:41 llanero Exp $";
 
 unsigned short CdTextEncoder::CRCTAB_[256] = {
   0x0000, 0x1021, 0x2042, 0x3063, 0x4084, 0x50A5, 0x60C6, 0x70E7, 0x8108,

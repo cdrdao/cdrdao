@@ -18,8 +18,8 @@
  */
 /*
  * $Log: ScsiIf-linux.cc,v $
- * Revision 1.1  2000/02/05 01:37:07  llanero
- * Initial revision
+ * Revision 1.1.1.1  2000/02/05 01:37:07  llanero
+ * Uploaded cdrdao 1.1.3 with pre10 patch applied.
  *
  * Revision 1.8  1999/04/02 16:44:30  mueller
  * Removed 'revisionDate' because it is not available in general.
@@ -41,7 +41,7 @@
  *
  */
 
-static char rcsid[] = "$Id: ScsiIf-linux.cc,v 1.1 2000/02/05 01:37:07 llanero Exp $";
+static char rcsid[] = "$Id: ScsiIf-linux.cc,v 1.1.1.1 2000/02/05 01:37:07 llanero Exp $";
 
 #include <config.h>
 

@@ -18,12 +18,12 @@
  */
 /*
  * $Log: RecordProgressDialog.cc,v $
- * Revision 1.1  2000/02/05 01:39:36  llanero
- * Initial revision
+ * Revision 1.1.1.1  2000/02/05 01:39:36  llanero
+ * Uploaded cdrdao 1.1.3 with pre10 patch applied.
  *
  */
 
-static char rcsid[] = "$Id: RecordProgressDialog.cc,v 1.1 2000/02/05 01:39:36 llanero Exp $";
+static char rcsid[] = "$Id: RecordProgressDialog.cc,v 1.1.1.1 2000/02/05 01:39:36 llanero Exp $";
 
 #include <stddef.h>
 #include <string.h>

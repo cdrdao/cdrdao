@@ -18,8 +18,8 @@
  */
 /*
  * $Log: Toc.cc,v $
- * Revision 1.1  2000/02/05 01:32:54  llanero
- * Initial revision
+ * Revision 1.1.1.1  2000/02/05 01:32:54  llanero
+ * Uploaded cdrdao 1.1.3 with pre10 patch applied.
  *
  * Revision 1.11  1999/04/05 11:03:01  mueller
  * Added CD-TEXT support.
@@ -50,7 +50,7 @@
  *
  */
 
-static char rcsid[] = "$Id: Toc.cc,v 1.1 2000/02/05 01:32:54 llanero Exp $";
+static char rcsid[] = "$Id: Toc.cc,v 1.1.1.1 2000/02/05 01:32:54 llanero Exp $";
 
 #include <config.h>
 

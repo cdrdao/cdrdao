@@ -18,8 +18,8 @@
  */
 /*
  * $Log: SampleManager.cc,v $
- * Revision 1.1  2000/02/05 01:39:52  llanero
- * Initial revision
+ * Revision 1.1.1.1  2000/02/05 01:39:52  llanero
+ * Uploaded cdrdao 1.1.3 with pre10 patch applied.
  *
  * Revision 1.6  1999/08/07 16:27:28  mueller
  * Applied patch from Yves Bastide:

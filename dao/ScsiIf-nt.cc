@@ -18,8 +18,8 @@
  */
 /*
  * $Log: ScsiIf-nt.cc,v $
- * Revision 1.1  2000/02/05 01:37:11  llanero
- * Initial revision
+ * Revision 1.1.1.1  2000/02/05 01:37:11  llanero
+ * Uploaded cdrdao 1.1.3 with pre10 patch applied.
  *
  * Revision 1.5  1998/09/06 13:34:22  mueller
  * Use 'message()' for printing messages.
@@ -32,7 +32,7 @@
  *
  */
 
-static char rcsid[] = "$Id: ScsiIf-nt.cc,v 1.1 2000/02/05 01:37:11 llanero Exp $";
+static char rcsid[] = "$Id: ScsiIf-nt.cc,v 1.1.1.1 2000/02/05 01:37:11 llanero Exp $";
 
 #include "config.h"
 

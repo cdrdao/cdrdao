@@ -18,8 +18,8 @@
  */
 /*
  * $Log: Sample.h,v $
- * Revision 1.1  2000/02/05 01:32:25  llanero
- * Initial revision
+ * Revision 1.1.1.1  2000/02/05 01:32:25  llanero
+ * Uploaded cdrdao 1.1.3 with pre10 patch applied.
  *
  * Revision 1.2  1998/09/22 19:15:49  mueller
  * Added setting of sample data.

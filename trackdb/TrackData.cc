@@ -19,8 +19,8 @@
 
 /*
  * $Log: TrackData.cc,v $
- * Revision 1.1  2000/02/05 01:34:30  llanero
- * Initial revision
+ * Revision 1.1.1.1  2000/02/05 01:34:30  llanero
+ * Uploaded cdrdao 1.1.3 with pre10 patch applied.
  *
  * Revision 1.12  1999/04/02 20:36:21  mueller
  * Created implementation class that contains all mutual member data.
@@ -58,7 +58,7 @@
  *
  */
 
-static char rcsid[] = "$Id: TrackData.cc,v 1.1 2000/02/05 01:34:30 llanero Exp $";
+static char rcsid[] = "$Id: TrackData.cc,v 1.1.1.1 2000/02/05 01:34:30 llanero Exp $";
 
 #include <config.h>
 

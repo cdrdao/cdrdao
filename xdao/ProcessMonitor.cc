@@ -18,8 +18,8 @@
  */
 /*
  * $Log: ProcessMonitor.cc,v $
- * Revision 1.1  2000/02/05 01:39:32  llanero
- * Initial revision
+ * Revision 1.1.1.1  2000/02/05 01:39:32  llanero
+ * Uploaded cdrdao 1.1.3 with pre10 patch applied.
  *
  */
 
@@ -36,7 +36,7 @@
 
 #include "util.h"
 
-static char rcsid[] = "$Id: ProcessMonitor.cc,v 1.1 2000/02/05 01:39:32 llanero Exp $";
+static char rcsid[] = "$Id: ProcessMonitor.cc,v 1.1.1.1 2000/02/05 01:39:32 llanero Exp $";
 
 Process::Process(int pid, int commFd)
 {

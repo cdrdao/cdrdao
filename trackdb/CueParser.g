@@ -19,8 +19,8 @@
 
 /*
  * $Log: CueParser.g,v $
- * Revision 1.1  2000/02/05 01:34:37  llanero
- * Initial revision
+ * Revision 1.1.1.1  2000/02/05 01:34:37  llanero
+ * Uploaded cdrdao 1.1.3 with pre10 patch applied.
  *
  * Revision 1.1  1999/07/10 18:18:17  mueller
  * Initial revision

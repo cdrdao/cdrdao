@@ -19,8 +19,8 @@
 
 /*
  * $Log: SonyCDU948.cc,v $
- * Revision 1.1  2000/02/05 01:37:27  llanero
- * Initial revision
+ * Revision 1.1.1.1  2000/02/05 01:37:27  llanero
+ * Uploaded cdrdao 1.1.3 with pre10 patch applied.
  *
  * Revision 1.3  1999/05/24 17:32:59  mueller
  * Added CD-TEXT writing.
@@ -33,7 +33,7 @@
  *
  */
 
-static char rcsid[] = "$Id: SonyCDU948.cc,v 1.1 2000/02/05 01:37:27 llanero Exp $";
+static char rcsid[] = "$Id: SonyCDU948.cc,v 1.1.1.1 2000/02/05 01:37:27 llanero Exp $";
 
 #include <config.h>
 

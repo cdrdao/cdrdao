@@ -18,8 +18,8 @@
  */
 /*
  * $Log: CdrDriver.h,v $
- * Revision 1.1  2000/02/05 01:35:03  llanero
- * Initial revision
+ * Revision 1.1.1.1  2000/02/05 01:35:03  llanero
+ * Uploaded cdrdao 1.1.3 with pre10 patch applied.
  *
  * Revision 1.14  1999/04/05 18:47:11  mueller
  * Added CD-TEXT support.

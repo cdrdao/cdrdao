@@ -17,7 +17,7 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-static char rcsid[] = "$Id: Msf.cc,v 1.1 2000/02/05 01:32:39 llanero Exp $";
+static char rcsid[] = "$Id: Msf.cc,v 1.1.1.1 2000/02/05 01:32:39 llanero Exp $";
 
 #include <config.h>
 

@@ -18,12 +18,12 @@
  */
 /*
  * $Log: dao-win32.cc,v $
- * Revision 1.1  2000/02/05 01:37:56  llanero
- * Initial revision
+ * Revision 1.1.1.1  2000/02/05 01:37:56  llanero
+ * Uploaded cdrdao 1.1.3 with pre10 patch applied.
  *
  */
 
-static char rcsid[] = "$Id: dao-win32.cc,v 1.1 2000/02/05 01:37:56 llanero Exp $";
+static char rcsid[] = "$Id: dao-win32.cc,v 1.1.1.1 2000/02/05 01:37:56 llanero Exp $";
 
 #include "config.h"
 

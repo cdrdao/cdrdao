@@ -18,8 +18,8 @@
  */
 /*
  * $Log: CdrDriver.cc,v $
- * Revision 1.1  2000/02/05 01:36:08  llanero
- * Initial revision
+ * Revision 1.1.1.1  2000/02/05 01:36:08  llanero
+ * Uploaded cdrdao 1.1.3 with pre10 patch applied.
  *
  * Revision 1.13  1999/04/05 18:47:11  mueller
  * Added CD-TEXT support.
@@ -63,7 +63,7 @@
  *
  */
 
-static char rcsid[] = "$Id: CdrDriver.cc,v 1.1 2000/02/05 01:36:08 llanero Exp $";
+static char rcsid[] = "$Id: CdrDriver.cc,v 1.1.1.1 2000/02/05 01:36:08 llanero Exp $";
 
 #include <config.h>
 

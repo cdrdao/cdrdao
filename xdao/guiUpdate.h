@@ -18,8 +18,8 @@
  */
 /*
  * $Log: guiUpdate.h,v $
- * Revision 1.1  2000/02/05 01:38:55  llanero
- * Initial revision
+ * Revision 1.1.1.1  2000/02/05 01:38:55  llanero
+ * Uploaded cdrdao 1.1.3 with pre10 patch applied.
  *
  * Revision 1.1  1999/08/19 20:28:40  mueller
  * Initial revision

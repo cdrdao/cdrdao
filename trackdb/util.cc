@@ -18,8 +18,8 @@
  */
 /*
  * $Log: util.cc,v $
- * Revision 1.1  2000/02/05 01:34:32  llanero
- * Initial revision
+ * Revision 1.1.1.1  2000/02/05 01:34:32  llanero
+ * Uploaded cdrdao 1.1.3 with pre10 patch applied.
  *
  * Revision 1.7  1999/03/27 19:51:04  mueller
  * Added 'strdup3CC()'.
@@ -40,7 +40,7 @@
  *
  */
 
-static char rcsid[] = "$Id: util.cc,v 1.1 2000/02/05 01:34:32 llanero Exp $";
+static char rcsid[] = "$Id: util.cc,v 1.1.1.1 2000/02/05 01:34:32 llanero Exp $";
 
 #include <config.h>
 

@@ -19,8 +19,8 @@
 
 /*
  * $Log: main.cc,v $
- * Revision 1.1  2000/02/05 01:38:21  llanero
- * Initial revision
+ * Revision 1.1.1.1  2000/02/05 01:38:21  llanero
+ * Uploaded cdrdao 1.1.3 with pre10 patch applied.
  *
  * Revision 1.19  1999/04/05 18:50:01  mueller
  * Added driver options.
@@ -93,7 +93,7 @@
  *
  */
 
-static char rcsid[] = "$Id: main.cc,v 1.1 2000/02/05 01:38:21 llanero Exp $";
+static char rcsid[] = "$Id: main.cc,v 1.1.1.1 2000/02/05 01:38:21 llanero Exp $";
 
 #include <config.h>
 

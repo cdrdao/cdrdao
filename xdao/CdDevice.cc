@@ -18,15 +18,15 @@
  */
 /*
  * $Log: CdDevice.cc,v $
- * Revision 1.1  2000/02/05 01:39:09  llanero
- * Initial revision
+ * Revision 1.1.1.1  2000/02/05 01:39:09  llanero
+ * Uploaded cdrdao 1.1.3 with pre10 patch applied.
  *
  * Revision 1.1  1999/09/03 16:05:14  mueller
  * Initial revision
  *
  */
 
-static char rcsid[] = "$Id: CdDevice.cc,v 1.1 2000/02/05 01:39:09 llanero Exp $";
+static char rcsid[] = "$Id: CdDevice.cc,v 1.1.1.1 2000/02/05 01:39:09 llanero Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>

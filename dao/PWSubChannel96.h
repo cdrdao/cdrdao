@@ -18,8 +18,8 @@
  */
 /*
  * $Log: PWSubChannel96.h,v $
- * Revision 1.1  2000/02/05 01:35:05  llanero
- * Initial revision
+ * Revision 1.1.1.1  2000/02/05 01:35:05  llanero
+ * Uploaded cdrdao 1.1.3 with pre10 patch applied.
  *
  * Revision 1.5  1999/04/05 11:04:48  mueller
  * Added decoding of media catalog number and ISRC code.

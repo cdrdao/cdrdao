@@ -18,8 +18,8 @@
  */
 /*
  * $Log: ScsiIf-freebsd-cam.cc,v $
- * Revision 1.1  2000/02/05 01:36:56  llanero
- * Initial revision
+ * Revision 1.1.1.1  2000/02/05 01:36:56  llanero
+ * Uploaded cdrdao 1.1.3 with pre10 patch applied.
  *
  * Revision 1.4  1999/09/02 19:45:12  mueller
  * Added dummy implementation for 'scan()'.
@@ -39,7 +39,7 @@
  * Written by Max Khon <fjoe@iclub.nsu.ru>
  */
 
-static char rcsid[] = "$Id: ScsiIf-freebsd-cam.cc,v 1.1 2000/02/05 01:36:56 llanero Exp $";
+static char rcsid[] = "$Id: ScsiIf-freebsd-cam.cc,v 1.1.1.1 2000/02/05 01:36:56 llanero Exp $";
 
 #include <config.h>
 

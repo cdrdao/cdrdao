@@ -18,8 +18,8 @@
  */
 /*
  * $Log: ScsiIf.h,v $
- * Revision 1.1  2000/02/05 01:35:11  llanero
- * Initial revision
+ * Revision 1.1.1.1  2000/02/05 01:35:11  llanero
+ * Uploaded cdrdao 1.1.3 with pre10 patch applied.
  *
  * Revision 1.4  1999/04/02 16:44:30  mueller
  * Removed 'revisionDate' because it is not available in general.

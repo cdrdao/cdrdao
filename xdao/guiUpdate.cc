@@ -18,15 +18,15 @@
  */
 /*
  * $Log: guiUpdate.cc,v $
- * Revision 1.1  2000/02/05 01:40:28  llanero
- * Initial revision
+ * Revision 1.1.1.1  2000/02/05 01:40:28  llanero
+ * Uploaded cdrdao 1.1.3 with pre10 patch applied.
  *
  * Revision 1.1  1999/08/19 20:28:40  mueller
  * Initial revision
  *
  */
 
-static char rcsid[] = "$Id: guiUpdate.cc,v 1.1 2000/02/05 01:40:28 llanero Exp $";
+static char rcsid[] = "$Id: guiUpdate.cc,v 1.1.1.1 2000/02/05 01:40:28 llanero Exp $";
 
 #include "guiUpdate.h"
 

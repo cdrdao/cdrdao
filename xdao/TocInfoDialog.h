@@ -18,8 +18,8 @@
  */
 /*
  * $Log: TocInfoDialog.h,v $
- * Revision 1.1  2000/02/05 01:38:52  llanero
- * Initial revision
+ * Revision 1.1.1.1  2000/02/05 01:38:52  llanero
+ * Uploaded cdrdao 1.1.3 with pre10 patch applied.
  *
  * Revision 1.1  1999/08/21 14:17:39  mueller
  * Initial revision

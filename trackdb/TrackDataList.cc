@@ -19,8 +19,8 @@
 
 /*
  * $Log: TrackDataList.cc,v $
- * Revision 1.1  2000/02/05 01:34:31  llanero
- * Initial revision
+ * Revision 1.1.1.1  2000/02/05 01:34:31  llanero
+ * Uploaded cdrdao 1.1.3 with pre10 patch applied.
  *
  * Revision 1.2  1999/03/27 19:50:44  mueller
  * Renamed class 'AudioData' to 'TrackData'.
@@ -30,7 +30,7 @@
  *
  */
 
-static char rcsid[] = "$Id: TrackDataList.cc,v 1.1 2000/02/05 01:34:31 llanero Exp $";
+static char rcsid[] = "$Id: TrackDataList.cc,v 1.1.1.1 2000/02/05 01:34:31 llanero Exp $";
 
 #include <config.h>
 

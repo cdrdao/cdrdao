@@ -19,8 +19,8 @@
 
 /*
  * $Log: CdTextEncoder.h,v $
- * Revision 1.1  2000/02/05 01:34:49  llanero
- * Initial revision
+ * Revision 1.1.1.1  2000/02/05 01:34:49  llanero
+ * Uploaded cdrdao 1.1.3 with pre10 patch applied.
  *
  * Revision 1.1  1999/06/13 19:31:15  mueller
  * Initial revision

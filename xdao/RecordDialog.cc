@@ -18,15 +18,15 @@
  */
 /*
  * $Log: RecordDialog.cc,v $
- * Revision 1.1  2000/02/05 01:39:33  llanero
- * Initial revision
+ * Revision 1.1.1.1  2000/02/05 01:39:33  llanero
+ * Uploaded cdrdao 1.1.3 with pre10 patch applied.
  *
  * Revision 1.1  1999/09/07 11:16:16  mueller
  * Initial revision
  *
  */
 
-static char rcsid[] = "$Id: RecordDialog.cc,v 1.1 2000/02/05 01:39:33 llanero Exp $";
+static char rcsid[] = "$Id: RecordDialog.cc,v 1.1.1.1 2000/02/05 01:39:33 llanero Exp $";
 
 #include <stdio.h>
 #include <limits.h>

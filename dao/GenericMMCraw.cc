@@ -18,8 +18,8 @@
  */
 /*
  * $Log: GenericMMCraw.cc,v $
- * Revision 1.1  2000/02/05 01:36:30  llanero
- * Initial revision
+ * Revision 1.1.1.1  2000/02/05 01:36:30  llanero
+ * Uploaded cdrdao 1.1.3 with pre10 patch applied.
  *
  * Revision 1.10  1999/09/03 15:00:02  mueller
  * Changed message levels from 0 to 1.
@@ -57,7 +57,7 @@
  *
  */
 
-static char rcsid[] = "$Id: GenericMMCraw.cc,v 1.1 2000/02/05 01:36:30 llanero Exp $";
+static char rcsid[] = "$Id: GenericMMCraw.cc,v 1.1.1.1 2000/02/05 01:36:30 llanero Exp $";
 
 #include <config.h>
 

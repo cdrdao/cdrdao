@@ -18,8 +18,8 @@
  */
 /*
  * $Log: dao.h,v $
- * Revision 1.1  2000/02/05 01:35:20  llanero
- * Initial revision
+ * Revision 1.1.1.1  2000/02/05 01:35:20  llanero
+ * Uploaded cdrdao 1.1.3 with pre10 patch applied.
  *
  * Revision 1.3  1999/01/24 16:03:57  mueller
  * Applied Radek Doulik's ring buffer patch. Added some cleanups and
