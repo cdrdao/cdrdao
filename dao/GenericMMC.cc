@@ -341,6 +341,10 @@ int GenericMMC::selectSpeed(int readSpeed)
     cmd[5] = spd;
   }
 
+  if ((options_ & OPT_MMC_YAMAHA_FORCE_SPEED) != 0 &&
+      writeSpeedControl())
+    cmd[11] = 0x80; // enable Yamaha's force speed
+
   if (sendCmd(cmd, 12, NULL, 0, NULL, 0) != 0) {
     message(-2, "Cannot set cd speed.");
     return 1;
@@ -2691,10 +2695,12 @@ int GenericMMC::RicohGetWriteOptions()
   driveInfo_->ricohJustLink = 0;
   driveInfo_->ricohJustSpeed = 0;
    
-  if (getModePage(0x30, mp, 14, NULL, NULL, 1) != 0) {
-    message(-2, "Cannot retrieve Ricoh mode page 30.");
+  if (getModePage(0x30, mp, 14, NULL, NULL, 0) != 0) {
     return 1;
   }
+
+  if (mp[1] != 14) 
+    return 1;
 
   if (mp[2] & (1 << 5))
     driveInfo_->ricohJustSpeed = 1;
@@ -2702,8 +2708,6 @@ int GenericMMC::RicohGetWriteOptions()
   if (mp[2] & (1 << 1))
     driveInfo_->ricohJustLink = 1;
 
-  message(0, "%x %x", mp[2], mp[3]);
-  
   return 0;
 }
 

@@ -40,7 +40,9 @@ class CdTextEncoder;
 #define OPT_MMC_NO_RW_PACKED 0x0080 // drive does not support the packed R-W
                                     // sub-channel writing mode
 #define OPT_MMC_USE_RAW_RW   0x0100 // use RW sub-channel data for scanning
-
+#define OPT_MMC_YAMAHA_FORCE_SPEED 0x0200
+                                    // drive supports Yamaha's Force Speed
+                                    // feature
 
 class GenericMMC : public CdrDriver {
 public:
