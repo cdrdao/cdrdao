@@ -402,9 +402,10 @@ int encode_track(lame_global_flags *lf, const Toc *toc,
 std::string &clean_string(std::string &s)
 {
   int i = 0;
+  int len = s.length();
   char c;
 
-  while ((c = s[i]) != 0) {
+  while (i < len && (c = s[i]) != 0) {
     if (c == '_') {
       s[i] = ' ';
       i++;
@@ -416,14 +417,17 @@ std::string &clean_string(std::string &s)
     }
     else {
       s.erase(i, 1);
+      len = s.length();
     }
   }
 
-  for (i = 0; s[i] != 0 && s[i] == ' '; i++) ;
+  len = s.length();
 
-  if (s[i] == 0) {
+  for (i = 0; i < len && s[i] != 0 && isspace(s[i]); i++) ;
+
+  if (i >= len) {
     // string just contains space
-    s.clear();
+    s = "";
   }
 
   return s;
@@ -499,7 +503,7 @@ int main(int argc, char **argv)
     clean_string(albumPerformer);
   }
   else {
-    albumPerformer.clear();
+    albumPerformer = "";
   }
 
 
@@ -552,7 +556,7 @@ int main(int argc, char **argv)
 	clean_string(title);
       }
       else {
-	title.clear();
+	title = "";
       }
 
       if ((cdTextItem = toc->getCdTextItem(trackNr, cdTextLanguage, 
@@ -561,7 +565,7 @@ int main(int argc, char **argv)
 	clean_string(performer);
       }
       else {
-	performer.clear();
+	performer = "";
       }
       
       // build mp3 file name
