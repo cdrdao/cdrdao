@@ -1,9 +1,9 @@
-.TH CDRDAO 1 "Oct 17, 1999"
+.TH CDRDAO 1 "Jun 19, 2000"
 .SH NAME
 cdrdao \- writes audio CD-Rs in disc-at-once mode
 .SH SYNOPSIS
 .B cdrdao
-.RB [ show-toc | read-toc | read-cd | show-data | read-test | disk-info | unlock | simulate | write | copy]
+.RB [ show-toc | read-toc | read-cd | read-cddb | show-data | read-test | disk-info | unlock | simulate | write | copy]
 .RB [ --device
 .IR device ]
 .RB [ --source-device
@@ -30,6 +30,10 @@ cdrdao \- writes audio CD-Rs in disc-at-once mode
 .RB [ --on-the-fly ]
 .RB [ --paranoia-mode
 .IR mode ]
+.RB [ --cddb-servers
+.IR server-list ]
+.RB [ --cddb-timeout
+.IR timeout ]
 .RB [ --save ]
 .RB [ -n ]
 .RB [ -v 
@@ -76,6 +80,12 @@ Copies all tracks of the inserted CD to an image file and creates a correspondin
 The name of the image file defaults to "data.bin" if no
 .BI --datafile
 option is given.
+.TP
+.BI read-cddb
+Tries to retrieve title and artist data from a CDDB server for the CD
+represented by the given toc-file. The retrieved data is added as CD-TEXT
+data for language 0 to the toc-file. Existing CD-TEXT data for language 0 will
+be overwritten.
 .TP
 .BI show-data
 Print out all samples that would be written to the CD-R. Each line
@@ -250,6 +260,38 @@ Default is the full paranoia mode (3).
 .TP
 .BI \--on-the-fly
 Perform CD copy on the fly without creating an image file.
+.TP
+.BI \--cddb-servers " server-list"
+Sets space or ',' separated list of CDDB servers used for
+.I read-cddb.
+A server entry may have the following forms:
+.IP <server>
+Connect to <server>, default cddbp port (888), use cddbp protocol.
+.IP <server>:<port> 
+Connect to <server>, port <port>, use cddbp protocol.
+.IP <server>:<cgi-bin-path>
+Connect to <server>, default http port (80), use http protocol,
+url: <cgi-bin-path>.
+.IP <server>:<port>:<cgi-bin-path>
+Connect to <server>, port <port>, use http protocol, url: <cgi-bin-path>.
+.IP <server>:<port>:<cgi-bin-path>:<proxy-server>
+Connect to <proxy-server>, default http port (80), use http protocol,
+url: http://<server>:<port>/<cgi-bin-path>.
+.IP <server>:<port>:<cgi-bin-path>:<proxy-server>:<proxy-port>
+Connect to <proxy-server>, port <proxy-port>, use http protocol,
+url: http://<server>:<port>/<cgi-bin-path>.
+
+The <cgi-bin-path> is usually "/~cddb/cddb.cgi".
+
+All servers of the server list will be tried in the given order until a
+successful connection can be established. For http proxy servers
+the first successful connected http proxy server will be used independent of
+the ability to connect to the target http server.
+
+Example: freedb.freedb.org:/~cddb/cddb.cgi
+.TP
+.BI \--cddb-timeout " timeout"
+Sets the timeout in seconds used for connections to CDDB servers.
 .TP
 .BI \--save
 Saves some of the current options to the settings file
@@ -629,7 +671,7 @@ Driver (including driver options) that is used for operations
 Corresponding option:
 .I --driver
 .IP write_speed
-Specifies writing speed. Ccorresponding option: --speed
+Specifies writing speed. Corresponding option: --speed
 .IP read_device
 Device used for operations
 .I read-toc, read-cd and copy.
@@ -640,7 +682,7 @@ or
 .IP read_driver
 Driver (including driver options) used for operations
 .I read-toc, read-cd and copy.
-Ccorresponding option:
+Corresponding option:
 .I --driver
 or
 .I --source-driver
@@ -649,6 +691,16 @@ Paranoia mode used for operations
 .I read-cd and copy.
 Corresponding option:
 .I --paranoia-mode
+.IP cddb_server_list
+CDDB server list for
+.I read-cddb.
+Corresponding option:
+.I --cddb-servers
+.IP cddb_timeout
+CDDB connection timeout in seconds used by
+.I read-cddb.
+Corresponding option:
+.I --cddb-timeout
 .LP
 
 
