@@ -192,7 +192,7 @@ void Project::createToolbar()
   toolbar->show();
   toolbar->set_border_width(2);
 
-  add_docked(*toolbar, "main_toolbar", GNOME_DOCK_ITEM_BEH_NORMAL, GNOME_DOCK_TOP, 1, 2, 0);
+  add_docked(*toolbar, "main_toolbar", GNOME_DOCK_ITEM_BEH_NORMAL, GNOME_DOCK_TOP, 1, 1, 0);
 
 }
 
