@@ -14,8 +14,8 @@ required tools are already built at that time.
 Some parts of the standard PCCTS package won't compile with current gcc
 versions. You can
  - compile with  make CXXFLAGS="-fpermissive -O2"
- - use the PCCTS bug fix release 1.33mr20a from 
-       http://www.mcs.net/~tmoog/pccts.html
+ - use the PCCTS bug fix release 1.33mr32 from 
+       http://www.polhode.com/pccts.html
  - or fix the obvious errors in the PCCTS sources
 
 
