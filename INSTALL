@@ -14,6 +14,17 @@ unpack "scsilib.tar.gz" and "pccts.tar.gz" in the same directory where
 the tar files reside.
 
 1. Type './configure'.
+   Configure options for mp3lame library (only required for building toc2mp3):
+     --without-lame          Disable building of toc2mp3.
+     --with-lame-include     Specifies the directory containing the lame
+                             include directory.
+     --with-lame-lib         Specifies the directory containing mp3lame
+                             library.
+     --disable-lame-test     Do not run a test program that checks for the
+                             required mp3lame library version. It will be
+                             assumed that the correct mp3lame library is
+                             available.
+
    Configure options for PCCTS (only required if you do not want to use
    the PCCTS version which is included in this cdrdao source distribution):
      --with-pcctsbin=dir     Specifies directory that contains the PCCTS 

@@ -34,7 +34,7 @@ VERSION = @cdrdao_version@
 #
 CXX = @CXX@
 CXXFLAGS = @CXXFLAGS@ 
-ALL_CXXFLAGS = @DEFS@ @mydefs@ -DVERSION=\"$(VERSION)\" -DDRIVER_TABLE_FILE=\"$(DRIVER_TABLE_FILE)\" -I$(srcdir)/.. -I$(srcdir) -I$(srcdir)/../trackdb $(CXXFLAGS)
+ALL_CXXFLAGS = @DEFS@ @mydefs@ @LAME_CFLAGS@ -DVERSION=\"$(VERSION)\" -DDRIVER_TABLE_FILE=\"$(DRIVER_TABLE_FILE)\" -I$(srcdir)/.. -I$(srcdir) -I$(srcdir)/../trackdb $(CXXFLAGS)
 LDFLAGS = 
 ALL_LDFLAGS = @LDFLAGS@ $(LDFLAGS)
 LIBS = @LIBS@
@@ -43,14 +43,14 @@ AR = ar
 #
 #
 #
-SRC = toc2cue.cc
+SRC = @utils_sources@
 
 DEP = $(SRC:%.cc=%.d)
 
 #
 #
 #
-all: toc2cue
+all: @utils_targets@
 
 install: all 
 
@@ -71,6 +71,8 @@ distclean: clean
 toc2cue: toc2cue.o $(srcdir)/../trackdb/libtrackdb.a
 	$(CXX) $(ALL_LDFLAGS) -o toc2cue toc2cue.o -L$(srcdir)/../trackdb -ltrackdb -L$(srcdir)/../edc_ecc -ledc_ecc $(LIBS)
 
+toc2mp3: toc2mp3.o $(srcdir)/../trackdb/libtrackdb.a
+	$(CXX) $(ALL_LDFLAGS) -o toc2mp3 toc2mp3.o @LAME_LIBS@ -L$(srcdir)/../trackdb -ltrackdb -L$(srcdir)/../edc_ecc -ledc_ecc $(LIBS)
 
 #
 #

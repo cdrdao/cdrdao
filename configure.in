@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_REVISION($Revision: 1.21 $)dnl
+AC_REVISION($Revision: 1.22 $)dnl
 AC_INIT(cdrdao.lsm)
 
 cdrdao_version=1.1.6-pre2
@@ -16,6 +16,10 @@ AC_ARG_WITH(posix-threads,[  --with-posix-threads    use Posix threads for ring 
 AC_ARG_WITH(scglib,[  --with-scglib           use Joerg Schillings SCSI library (default: on)],use_scglib=$withval,use_scglib=default)
 AC_ARG_WITH(scglib-inc,[  --with-scglib-inc=dir   set directory for SCSI library include files],scglib_inc=$withval,scglib_inc=default)
 AC_ARG_WITH(scglib-lib,[  --with-scglib-lib=dir   set directory that contains the SCSI library],scglib_lib=$withval,scglib_lib=default)
+
+
+utils_targets=toc2cue
+utils_sources=toc2cue.cc
 
 
 dnl Checks for programs.
@@ -90,7 +94,6 @@ AC_CHECK_FUNCS(seteuid setegid getpagesize)
 AC_CHECK_FUNCS(usleep)
 
 AC_CHECK_FUNCS(inet_aton)
-
 
 dnl check if Posix threads should be used
 if test "$use_pthreads" = default; then
@@ -176,6 +179,12 @@ fi
 if test "$pcctsinc" = default; then
   pcctsinc='$(srcdir)/../pccts/h'
 fi
+
+
+AC_PATH_LAME(3.92,
+[dnl
+utils_targets="$utils_targets toc2mp3"
+utils_sources="$utils_sources toc2mp3.cc"])
 
 xdao=xdao
 AC_PATH_GTKMM(1.2.9,,[xdao=no; echo Disabled building of xcdrdao.])
@@ -301,5 +310,7 @@ AC_SUBST(dao_src)
 AC_SUBST(sound_if_src)
 AC_SUBST(thread_libs)
 AC_SUBST(mydefs)
+AC_SUBST(utils_targets)
+AC_SUBST(utils_sources)
 
 AC_OUTPUT(edc_ecc/Makefile trackdb/Makefile dao/Makefile utils/Makefile xdao/Makefile Makefile)
