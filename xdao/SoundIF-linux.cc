@@ -18,6 +18,9 @@
  */
 /*
  * $Log: SoundIF-linux.cc,v $
+ * Revision 1.3  2004/03/05 20:48:32  poolshark
+ * FreeBSD patch: add support for FreeBSD
+ *
  * Revision 1.2  2004/02/12 01:13:32  poolshark
  * Merge from gnome2 branch
  *
@@ -49,7 +52,14 @@
  *
  */
 
+# if defined(__FreeBSD__)
+#include <sys/soundcard.h>
+# if !defined(SNDCTL_DSP_CHANNELS)
+#   define	SNDCTL_DSP_CHANNELS SOUND_PCM_WRITE_CHANNELS
+# endif
+# else 
 #include <linux/soundcard.h>
+# endif
 
 #include <stdio.h>
 #include <assert.h>
