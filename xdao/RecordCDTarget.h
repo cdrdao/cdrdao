@@ -39,6 +39,7 @@ public:
 
   DeviceList *getDeviceList() { return DEVICES;}
   int getMultisession();
+  int getCopies();
   int getSpeed();
   bool getEject();
   int checkEjectWarning(Gtk::Window *);
@@ -61,6 +62,7 @@ private:
   Gtk::CheckButton *ejectButton_;
   Gtk::CheckButton *reloadButton_;
 
+  Gtk::SpinButton *copiesSpinButton_;
   Gtk::SpinButton *speedSpinButton_;
   Gtk::CheckButton *speedButton_;
 
