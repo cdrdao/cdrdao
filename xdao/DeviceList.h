@@ -38,6 +38,8 @@ public:
     int bus, id, lun;
   };
 
+  Gtk::CList *getCList() { return list_; }
+
 private:
   TocEdit *tocEdit_;
 
