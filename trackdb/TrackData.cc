@@ -19,8 +19,12 @@
 
 /*
  * $Log: TrackData.cc,v $
- * Revision 1.1  2000/02/05 01:34:30  llanero
- * Initial revision
+ * Revision 1.2  2000/06/10 14:44:47  andreasm
+ * Tracks that are shorter than 4 seconds do not lead to a fatal error anymore.
+ * The user has the opportunity to record such tracks now.
+ *
+ * Revision 1.1.1.1  2000/02/05 01:34:30  llanero
+ * Uploaded cdrdao 1.1.3 with pre10 patch applied.
  *
  * Revision 1.12  1999/04/02 20:36:21  mueller
  * Created implementation class that contains all mutual member data.
@@ -58,7 +62,7 @@
  *
  */
 
-static char rcsid[] = "$Id: TrackData.cc,v 1.1 2000/02/05 01:34:30 llanero Exp $";
+static char rcsid[] = "$Id: TrackData.cc,v 1.2 2000/06/10 14:44:47 andreasm Exp $";
 
 #include <config.h>
 
@@ -281,11 +285,9 @@ int TrackData::determineLength()
 
 // checks the consistency of object
 // return: 0: OK
-//         1: DATAFILE: file cannot be opened or 'stat()' failed
-//         2: DATAFILE: file length  does not match requested portion
-//         3: DATAFILE: file length is not a multiple of 'sizeof(Sample)'
-//         4: DATAFILE: length is zero
-int TrackData::check() const
+//         1: warning occured
+//         2: error occured
+int TrackData::check(int trackNr) const
 {
   switch (type_) {
   case ZERODATA:
@@ -300,36 +302,38 @@ int TrackData::check() const
 
       switch (audioDataLength(filename_, offset_, &len)) {
       case 1:
-	message(-2, "Cannot open audio file \"%s\": %s", filename_,
-		strerror(errno));
-	return 1;
+	message(-2, "Track %d: Cannot open audio file \"%s\": %s", trackNr,
+		filename_, strerror(errno));
+	return 2;
 	break;
       case 2:
-	message(-2, "Cannot access audio file \"%s\": %s", filename_,
-		strerror(errno));
-	return 1;
+	message(-2, "Track %d: Cannot access audio file \"%s\": %s", trackNr,
+		filename_, strerror(errno));
+	return 2;
 	break;
       case 3:
-	message(-2, "%s: Unacceptable WAVE file.", filename_);
-	return 1;
+	message(-2, "Track %d: %s: Unacceptable WAVE file.", trackNr,
+		filename_);
+	return 2;
 	break;
       case 4:
-	message(-2, "Invalid offset %ld for audio file \"%s\".", offset_,
-		filename_);
+	message(-2, "Track %d: Invalid offset %ld for audio file \"%s\".",
+		trackNr, offset_, filename_);
 	return 2;
 	break;
       }
 
       if (length() == 0) {
-	message(-2, "Requested length for audio file \"%s\" is 0.", filename_);
-	return 4;
+	message(-2, "Track %d: Requested length for audio file \"%s\" is 0.",
+		trackNr, filename_);
+	return 2;
       }
 
       if (startPos_ + length() > len) {
 	// requested part exceeds file size
 	message(-2,
-		"Requested length (%lu + %lu samples) exceeds length of audio file \"%s\" (%lu samples at offset %ld).",
-		startPos_, length(), filename_, len, offset_);
+		"Track %d: Requested length (%lu + %lu samples) exceeds length of audio file \"%s\" (%lu samples at offset %ld).",
+		trackNr, startPos_, length(), filename_, len, offset_);
 	return 2;
       }
     }
@@ -339,25 +343,26 @@ int TrackData::check() const
 
       switch (dataFileLength(filename_, offset_, &len) != 0) {
       case 1:
-	message(-2, "Cannot open data file \"%s\": %s", filename_,
-		strerror(errno));
-	return 1;
+	message(-2, "Track %d: Cannot open data file \"%s\": %s", trackNr,
+		filename_, strerror(errno));
+	return 2;
 	break;
       case 2:
-	message(-2, "Invalid offset %ld for data file \"%s\".", offset_,
-		filename_);
+	message(-2, "Track %d: Invalid offset %ld for data file \"%s\".",
+		trackNr, offset_, filename_);
 	return 2;
 	break;
       }
 
       if (length() == 0) {
-	message(-2, "Requested length for data file \"%s\" is 0.", filename_);
-	return 4;
+	message(-2, "Track %d: Requested length for data file \"%s\" is 0.",
+		trackNr, filename_);
+	return 2;
       }
 
       if (length() > len) {
-	message(-2, "Requested length (%lu bytes) exceeds length of file \"%s\" (%lu bytes at offset %ld).",
-		length(), filename_, len, offset_);
+	message(-2, "Track %d: Requested length (%lu bytes) exceeds length of file \"%s\" (%lu bytes at offset %ld).",
+		trackNr, length(), filename_, len, offset_);
 	return 2;
       }
     }

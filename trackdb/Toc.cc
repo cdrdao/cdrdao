@@ -18,8 +18,12 @@
  */
 /*
  * $Log: Toc.cc,v $
- * Revision 1.1  2000/02/05 01:32:54  llanero
- * Initial revision
+ * Revision 1.2  2000/06/10 14:44:47  andreasm
+ * Tracks that are shorter than 4 seconds do not lead to a fatal error anymore.
+ * The user has the opportunity to record such tracks now.
+ *
+ * Revision 1.1.1.1  2000/02/05 01:32:54  llanero
+ * Uploaded cdrdao 1.1.3 with pre10 patch applied.
  *
  * Revision 1.11  1999/04/05 11:03:01  mueller
  * Added CD-TEXT support.
@@ -50,7 +54,7 @@
  *
  */
 
-static char rcsid[] = "$Id: Toc.cc,v 1.1 2000/02/05 01:32:54 llanero Exp $";
+static char rcsid[] = "$Id: Toc.cc,v 1.2 2000/06/10 14:44:47 andreasm Exp $";
 
 #include <config.h>
 
@@ -188,15 +192,14 @@ int Toc::write(const char *filename) const
 int Toc::check() const
 {
   TrackEntry *t;
-  int ret;
+  int trackNr;
+  int ret = 0;
 
-  for (t = tracks_; t != NULL; t = t->next) {
-    if ((ret = t->track->check()) != 0) {
-      return ret;
-    }
+  for (t = tracks_, trackNr = 1; t != NULL; t = t->next, trackNr++) {
+    ret |= t->track->check(trackNr);
   }
 
-  return 0;
+  return ret;
 }
 
 // Sets catalog number. 's' must be a string of 13 digits.

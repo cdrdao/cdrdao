@@ -18,8 +18,12 @@
  */
 /*
  * $Log: Track.cc,v $
- * Revision 1.1  2000/02/05 01:34:25  llanero
- * Initial revision
+ * Revision 1.2  2000/06/10 14:44:47  andreasm
+ * Tracks that are shorter than 4 seconds do not lead to a fatal error anymore.
+ * The user has the opportunity to record such tracks now.
+ *
+ * Revision 1.1.1.1  2000/02/05 01:34:25  llanero
+ * Uploaded cdrdao 1.1.3 with pre10 patch applied.
  *
  * Revision 1.9  1999/04/05 11:03:01  mueller
  * Added CD-TEXT support.
@@ -44,7 +48,7 @@
  *
  */
 
-static char rcsid[] = "$Id: Track.cc,v 1.1 2000/02/05 01:34:25 llanero Exp $";
+static char rcsid[] = "$Id: Track.cc,v 1.2 2000/06/10 14:44:47 andreasm Exp $";
 
 #include <config.h>
 
@@ -388,18 +392,21 @@ Msf Track::getIndex(int i) const
   }
 }
 
-int Track::check() const
+int Track::check(int trackNr) const
 {
   SubTrack *st;
-  int ret;
+  int ret = 0;
 
-  for (st = subTracks_; st != NULL; st = st->next_) {
-    if ((ret = st->check()) != 0) {
-      return ret;
-    }
+  if (length().lba() - start().lba() < Msf(0, 4, 0).lba()) {
+    message(-1, "Track %d: Length is shorter than 4 seconds.", trackNr);
+    ret = 1;
   }
 
-  return 0;
+  for (st = subTracks_; st != NULL; st = st->next_) {
+    ret |= st->check(trackNr);
+  }
+
+  return ret;
 }
 
 // Sets ISRC code. Expected string: "CCOOOYYSSSSS"
