@@ -175,24 +175,24 @@ static void printUsage()
 
   case UNKNOWN:
     message(0, "\nUsage: %s <command> [options] [toc-file]", PRGNAME);
-    message(0, "
-command:\n\
-  show-toc  - prints out toc and exits\n\
-  toc-info  - prints out short toc-file summary\n\
-  toc-size  - prints total number of blocks for toc\n\
-  read-toc  - create toc file from audio CD\n\
-  read-cd   - create toc and rip audio data from CD\n\
-  read-cddb - contact CDDB server and add data as CD-TEXT to toc-file\n\
-  show-data - prints out audio data and exits\n\
-  read-test - reads all audio files and exits\n\
-  disk-info - shows information about inserted medium\n\
-  msinfo    - shows multi session info, output is suited for scripts\n\
-  unlock    - unlock drive after failed writing\n\
-  blank     - blank a CD-RW\n\
-  scanbus   - scan for devices\n\
-  simulate  - shortcut for 'write --simulate'\n\
-  write     - writes CD\n\
-  copy      - copies CD\n");
+    message(0,
+"command:\n"
+"  show-toc  - prints out toc and exits\n"
+"  toc-info  - prints out short toc-file summary\n"
+"  toc-size  - prints total number of blocks for toc\n"
+"  read-toc  - create toc file from audio CD\n"
+"  read-cd   - create toc and rip audio data from CD\n"
+"  read-cddb - contact CDDB server and add data as CD-TEXT to toc-file\n"
+"  show-data - prints out audio data and exits\n"
+"  read-test - reads all audio files and exits\n"
+"  disk-info - shows information about inserted medium\n"
+"  msinfo    - shows multi session info, output is suited for scripts\n"
+"  unlock    - unlock drive after failed writing\n"
+"  blank     - blank a CD-RW\n"
+"  scanbus   - scan for devices\n"
+"  simulate  - shortcut for 'write --simulate'\n"
+"  write     - writes CD\n"
+"  copy      - copies CD\n");
     
     message (0, "\n Try '%s <command> -h' to get a list of available options\n", PRGNAME);
     break;
@@ -211,101 +211,101 @@ command:\n\
   
   case SIMULATE:
     message(0, "\nUsage: %s simulate [options] toc-file", PRGNAME);
-    message(0, "
-options:\n\
-  --device <x,y,z>        - sets SCSI device of CD-writer\n\
-                            (default: %s)\n\
-  --driver <id>           - force usage of specified driver\n\
-  --speed <writing-speed> - selects writing speed\n\
-  --multi                 - session will not be not closed\n\
-  --overburn              - allow to overburn a medium\n\
-  --eject                 - ejects cd after simulation\n\
-  --swap                  - swap byte order of audio files\n\
-  --buffers #             - sets fifo buffer size (min. 10)\n\
-  --reload                - reload the disk if necessary for writing\n\
-  --force                 - force execution of operation\n\
-  -v #                    - sets verbose level\n\
-  -n                      - no pause before writing\n",
+    message(0,
+"options:\n"
+"  --device <x,y,z>        - sets SCSI device of CD-writer\n"
+"                            (default: %s)\n"
+"  --driver <id>           - force usage of specified driver\n"
+"  --speed <writing-speed> - selects writing speed\n"
+"  --multi                 - session will not be not closed\n"
+"  --overburn              - allow to overburn a medium\n"
+"  --eject                 - ejects cd after simulation\n"
+"  --swap                  - swap byte order of audio files\n"
+"  --buffers #             - sets fifo buffer size (min. 10)\n"
+"  --reload                - reload the disk if necessary for writing\n"
+"  --force                 - force execution of operation\n"
+"  -v #                    - sets verbose level\n"
+"  -n                      - no pause before writing\n",
 	    SCSI_DEVICE);
     break;
     
   case WRITE:
     message(0, "\nUsage: %s write [options] toc-file", PRGNAME);
-    message(0, "
-options:\n\
-  --device <x,y,z>        - sets SCSI device of CD-writer\n\
-                            (default: %s)\n\
-  --driver <id>           - force usage of specified driver\n\
-  --simulate              - just perform a write simulation\n\
-  --speed <writing-speed> - selects writing speed\n\
-  --multi                 - session will not be not closed\n\
-  --overburn              - allow to overburn a medium\n\
-  --eject                 - ejects cd after writing or simulation\n\
-  --swap                  - swap byte order of audio files\n\
-  --buffers #             - sets fifo buffer size (min. 10)\n\
-  --reload                - reload the disk if necessary for writing\n\
-  --force                 - force execution of operation\n\
-  -v #                    - sets verbose level\n\
-  -n                      - no pause before writing\n",
+    message(0,
+"options:\n"
+"  --device <x,y,z>        - sets SCSI device of CD-writer\n"
+"                            (default: %s)\n"
+"  --driver <id>           - force usage of specified driver\n"
+"  --simulate              - just perform a write simulation\n"
+"  --speed <writing-speed> - selects writing speed\n"
+"  --multi                 - session will not be not closed\n"
+"  --overburn              - allow to overburn a medium\n"
+"  --eject                 - ejects cd after writing or simulation\n"
+"  --swap                  - swap byte order of audio files\n"
+"  --buffers #             - sets fifo buffer size (min. 10)\n"
+"  --reload                - reload the disk if necessary for writing\n"
+"  --force                 - force execution of operation\n"
+"  -v #                    - sets verbose level\n"
+"  -n                      - no pause before writing\n",
 	    SCSI_DEVICE);
     break;
     
   case READ_TOC:
     message(0, "\nUsage: %s read-toc [options] toc-file", PRGNAME);
-    message(0, "
-options:\n\
-  --device <x,y,z> - sets SCSI device of CD-ROM reader\n\
-  --driver <id>    - force usage of specified driver for source device\n\
-  --datafile <filename>   - name of data file placed in toc-file\n\
-  --session #             - select session\n\
-  --fast-toc              - do not extract pre-gaps and index marks\n\
-  --read-raw              - select raw sectors modes for data tracks\n\
-  --read-subchan <mode>   - defines sub-channel reading mode\n\
-                            <mode> = rw | rw_raw\n\
-  --tao-source            - indicate that source CD was written in TAO mode\n\
-  --tao-source-adjust #   - # of link blocks for TAO source CDs (def. 2)\n\
-  --with-cddb             - retrieve CDDB CD-TEXT data while copying\n\
-  --cddb-servers <list>   - sets space separated list of CDDB servers\n\
-  --cddb-timeout #        - timeout in seconds for CDDB server communication\n\
-  --cddb-directory <path> - path to local CDDB directory where fetched\n\
-                            CDDB records will be stored\n\
-  --force                 - force execution of operation\n\
-  -v #                    - sets verbose level\n");
+    message(0,
+"options:\n"
+"  --device <x,y,z> - sets SCSI device of CD-ROM reader\n"
+"  --driver <id>    - force usage of specified driver for source device\n"
+"  --datafile <filename>   - name of data file placed in toc-file\n"
+"  --session #             - select session\n"
+"  --fast-toc              - do not extract pre-gaps and index marks\n"
+"  --read-raw              - select raw sectors modes for data tracks\n"
+"  --read-subchan <mode>   - defines sub-channel reading mode\n"
+"                            <mode> = rw | rw_raw\n"
+"  --tao-source            - indicate that source CD was written in TAO mode\n"
+"  --tao-source-adjust #   - # of link blocks for TAO source CDs (def. 2)\n"
+"  --with-cddb             - retrieve CDDB CD-TEXT data while copying\n"
+"  --cddb-servers <list>   - sets space separated list of CDDB servers\n"
+"  --cddb-timeout #        - timeout in seconds for CDDB server communication\n"
+"  --cddb-directory <path> - path to local CDDB directory where fetched\n"
+"                            CDDB records will be stored\n"
+"  --force                 - force execution of operation\n"
+"  -v #                    - sets verbose level\n");
     break;
     
   case DISK_INFO:
     message(0, "\nUsage: %s disk-info [options]", PRGNAME);
-    message(0, "
-options:\n\
-  --device <x,y,z>        - sets SCSI device of CD-writer\n\
-                            (default: %s)\n\
-  --driver <id>           - force usage of specified driver\n\
-  -v #                    - sets verbose level\n",
+    message(0,
+"options:\n"
+"  --device <x,y,z>        - sets SCSI device of CD-writer\n"
+"                            (default: %s)\n"
+"  --driver <id>           - force usage of specified driver\n"
+"  -v #                    - sets verbose level\n",
 	    SCSI_DEVICE);
     break;
     
   case READ_CD:
     message(0, "\nUsage: %s read-cd [options] toc-file", PRGNAME);
-    message(0, "
-options:\n\
-  --device <x,y,z> - sets SCSI device of CD-ROM reader\n\
-  --driver <id>    - force usage of specified driver for source device\n\
-  --datafile <filename>   - name of data file placed in toc-file\n\
-  --session #             - select session\n\
-  --fast-toc              - do not extract pre-gaps and index marks\n\
-  --read-raw              - read raw data sectors (including L-EC data)\n\
-  --read-subchan <mode>   - defines sub-channel reading mode\n\
-                            <mode> = rw | rw_raw\n\
-  --tao-source            - indicate that source CD was written in TAO mode\n\
-  --tao-source-adjust #   - # of link blocks for TAO source CDs (def. 2)\n\
-  --paranoia-mode #       - DAE paranoia mode (0..3)\n\
-  --with-cddb             - retrieve CDDB CD-TEXT data while copying\n\
-  --cddb-servers <list>   - sets space separated list of CDDB servers\n\
-  --cddb-timeout #        - timeout in seconds for CDDB server communication\n\
-  --cddb-directory <path> - path to local CDDB directory where fetched\n\
-                            CDDB records will be stored\n\
-  --force                 - force execution of operation\n\
-  -v #                    - sets verbose level\n");
+    message(0,
+"options:\n"
+"  --device <x,y,z> - sets SCSI device of CD-ROM reader\n"
+"  --driver <id>    - force usage of specified driver for source device\n"
+"  --datafile <filename>   - name of data file placed in toc-file\n"
+"  --session #             - select session\n"
+"  --fast-toc              - do not extract pre-gaps and index marks\n"
+"  --read-raw              - read raw data sectors (including L-EC data)\n"
+"  --read-subchan <mode>   - defines sub-channel reading mode\n"
+"                            <mode> = rw | rw_raw\n"
+"  --tao-source            - indicate that source CD was written in TAO mode\n"
+"  --tao-source-adjust #   - # of link blocks for TAO source CDs (def. 2)\n"
+"  --paranoia-mode #       - DAE paranoia mode (0..3)\n"
+"  --with-cddb             - retrieve CDDB CD-TEXT data while copying\n"
+"  --cddb-servers <list>   - sets space separated list of CDDB servers\n"
+"  --cddb-timeout #        - timeout in seconds for CDDB server communication\n"
+"  --cddb-directory <path> - path to local CDDB directory where fetched\n"
+"                            CDDB records will be stored\n"
+"  --force                 - force execution of operation\n"
+"  -v #                    - sets verbose level\n");
     break;
     
   case TOC_INFO:
@@ -317,15 +317,15 @@ options:\n\
 
   case BLANK:
     message(0, "\nUsage: %s blank [options]", PRGNAME);
-    message(0, "
-options:\n\
-  --device <x,y,z>        - sets SCSI device of CD-writer\n\
-                            (default: %s)\n\
-  --driver <id>           - force usage of specified driver\n\
-  --speed <writing-speed> - selects writing speed\n\
-  --blank-mode <mode>     - blank mode ('full', 'minimal')
-  --eject                 - ejects cd after writing or simulation\n\
-  -v #                    - sets verbose level\n",
+    message(0,
+"options:\n"
+"  --device <x,y,z>        - sets SCSI device of CD-writer\n"
+"                            (default: %s)\n"
+"  --driver <id>           - force usage of specified driver\n"
+"  --speed <writing-speed> - selects writing speed\n"
+"  --blank-mode <mode>     - blank mode ('full', 'minimal')\n"
+"  --eject                 - ejects cd after writing or simulation\n"
+"  -v #                    - sets verbose level\n",
 	  SCSI_DEVICE);
     break;
     
@@ -335,74 +335,74 @@ options:\n\
     
   case UNLOCK:
     message(0, "\nUsage: %s unlock [options]", PRGNAME);
-    message(0, "
-options:\n\
-  --device <x,y,z>        - sets SCSI device of CD-writer\n\
-                            (default: %s)\n\
-  --driver <id>           - force usage of specified driver\n\
-  --reload                - reload the disk if necessary for writing\n\
-  -v #                    - sets verbose level\n",
+    message(0,
+"options:\n"
+"  --device <x,y,z>        - sets SCSI device of CD-writer\n"
+"                            (default: %s)\n"
+"  --driver <id>           - force usage of specified driver\n"
+"  --reload                - reload the disk if necessary for writing\n"
+"  -v #                    - sets verbose level\n",
 	    SCSI_DEVICE);
     break;
     
   case COPY_CD:
     message(0, "\nUsage: %s copy [options]", PRGNAME);
-    message(0, "
-options:\n\
-  --device <x,y,z>        - sets SCSI device of CD-writer\n\
-                            (default: %s)\n\
-  --source-device <x,y,z> - sets SCSI device of CD-ROM reader\n\
-  --driver <id>           - force usage of specified driver\n\
-  --source-driver <id>    - force usage of specified driver for source device\n\
-  --simulate              - just perform a copy simulation\n\
-  --speed <writing-speed> - selects writing speed\n\
-  --multi                 - session will not be not closed\n\
-  --overburn              - allow to overburn a medium\n\
-  --eject                 - ejects cd after writing or simulation\n\
-  --swap                  - swap byte order of audio files\n\
-  --on-the-fly            - perform on-the-fly copy, no image file is created\n\
-  --datafile <filename>   - name of temporary data file\n\
-  --buffers #             - sets fifo buffer size (min. 10)\n\
-  --session #             - select session\n\
-  --fast-toc              - do not extract pre-gaps and index marks\n\
-  --read-subchan <mode>   - defines sub-channel reading mode\n\
-                            <mode> = rw | rw_raw\n\
-  --keepimage             - the image will not be deleted after copy\n\
-  --tao-source            - indicate that source CD was written in TAO mode\n\
-  --tao-source-adjust #   - # of link blocks for TAO source CDs (def. 2)\n\
-  --paranoia-mode #       - DAE paranoia mode (0..3)\n\
-  --reload                - reload the disk if necessary for writing\n\
-  --force                 - force execution of operation\n\
-  --with-cddb             - retrieve CDDB CD-TEXT data while copying\n\
-  --cddb-servers <list>   - sets space separated list of CDDB servers\n\
-  --cddb-timeout #        - timeout in seconds for CDDB server communication\n\
-  --cddb-directory <path> - path to local CDDB directory where fetched\n\
-                            CDDB records will be stored\n\
-  -v #                    - sets verbose level\n\
-  -n                      - no pause before writing\n",
+    message(0,
+"options:\n"
+"  --device <x,y,z>        - sets SCSI device of CD-writer\n"
+"                            (default: %s)\n"
+"  --source-device <x,y,z> - sets SCSI device of CD-ROM reader\n"
+"  --driver <id>           - force usage of specified driver\n"
+"  --source-driver <id>    - force usage of specified driver for source device\n"
+"  --simulate              - just perform a copy simulation\n"
+"  --speed <writing-speed> - selects writing speed\n"
+"  --multi                 - session will not be not closed\n"
+"  --overburn              - allow to overburn a medium\n"
+"  --eject                 - ejects cd after writing or simulation\n"
+"  --swap                  - swap byte order of audio files\n"
+"  --on-the-fly            - perform on-the-fly copy, no image file is created\n"
+"  --datafile <filename>   - name of temporary data file\n"
+"  --buffers #             - sets fifo buffer size (min. 10)\n"
+"  --session #             - select session\n"
+"  --fast-toc              - do not extract pre-gaps and index marks\n"
+"  --read-subchan <mode>   - defines sub-channel reading mode\n"
+"                            <mode> = rw | rw_raw\n"
+"  --keepimage             - the image will not be deleted after copy\n"
+"  --tao-source            - indicate that source CD was written in TAO mode\n"
+"  --tao-source-adjust #   - # of link blocks for TAO source CDs (def. 2)\n"
+"  --paranoia-mode #       - DAE paranoia mode (0..3)\n"
+"  --reload                - reload the disk if necessary for writing\n"
+"  --force                 - force execution of operation\n"
+"  --with-cddb             - retrieve CDDB CD-TEXT data while copying\n"
+"  --cddb-servers <list>   - sets space separated list of CDDB servers\n"
+"  --cddb-timeout #        - timeout in seconds for CDDB server communication\n"
+"  --cddb-directory <path> - path to local CDDB directory where fetched\n"
+"                            CDDB records will be stored\n"
+"  -v #                    - sets verbose level\n"
+"  -n                      - no pause before writing\n",
 	  SCSI_DEVICE);
   break;
   
   case READ_CDDB:
     message(0, "\nUsage: %s read-cddb [options] toc-file", PRGNAME);
-    message(0, "
-options:\n\
-  --cddb-servers <list>   - sets space separated list of CDDB servers\n\
-  --cddb-timeout #        - timeout in seconds for CDDB server communication\n\
-  --cddb-directory <path> - path to local CDDB directory where fetched\n\
-                            CDDB records will be stored\n\
-  -v #                    - sets verbose level\n");
+    message(0,
+"options:\n"
+"  --cddb-servers <list>   - sets space separated list of CDDB servers\n"
+"  --cddb-timeout #        - timeout in seconds for CDDB server communication\n"
+"  --cddb-directory <path> - path to local CDDB directory where fetched\n"
+"                            CDDB records will be stored\n"
+"  -v #                    - sets verbose level\n");
     break;
     
   case MSINFO:
     message(0, "\nUsage: %s msinfo [options]", PRGNAME);
-    message(0, "
-options:\n\
-  --device <x,y,z>        - sets SCSI device of CD-writer\n\
-                            (default: %s)\n\
-  --driver <id>           - force usage of specified driver\n\
-  --reload                - reload the disk if necessary for writing\n\
-  -v #                    - sets verbose level\n",
+    message(0,
+"options:\n"
+"  --device <x,y,z>        - sets SCSI device of CD-writer\n"
+"                            (default: %s)\n"
+"  --driver <id>           - force usage of specified driver\n"
+"  --reload                - reload the disk if necessary for writing\n"
+"  -v #                    - sets verbose level\n",
 	    SCSI_DEVICE);
     break;
     

@@ -35,6 +35,7 @@
 #include "Toc.h"
 #include "util.h"
 #include "CdTextItem.h"
+#include "data.h"
 
 // all drivers
 #include "CDD2600.h"
@@ -3663,7 +3664,7 @@ int CdrDriver::readDataTrack(ReadDiskInfo *info, int fd, long start, long end,
       else
 	buf[15] = 2;
 
-      memset(buf + 16, 0, blockLen - 16);
+      memcpy(buf + 16, SECTOR_ERROR_DATA, blockLen - 16);
 
       if ((ret = fullWrite(fd, buf, blockLen)) != blockLen) {
 	if (ret < 0)

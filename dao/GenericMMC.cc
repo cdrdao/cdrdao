@@ -1098,10 +1098,9 @@ int GenericMMC::finishDao()
 {
   int ret;
 
-  //message(2, "Writing lead-out...");
-
-  while ((ret = testUnitReady(0)) == 2)
+  while ((ret = testUnitReady(0)) == 2) {
     mSleep(2000);
+  }
 
   if (ret != 0)
     message(-1, "TEST UNIT READY failed after recording.");
@@ -1993,11 +1992,8 @@ long GenericMMC::readTrackData(TrackData::Mode mode,
   long i;
   long inBlockLen = AUDIO_BLOCK_LEN;
   unsigned char cmd[12];
-  TrackData::Mode actMode;
-  int ok = 0;
   const unsigned char *sense;
   int senseLen;
-  int softError;
 
   memset(cmd, 0, 12);
 
@@ -2007,6 +2003,9 @@ long GenericMMC::readTrackData(TrackData::Mode mode,
   cmd[3] = lba >> 16;
   cmd[4] = lba >> 8;
   cmd[5] = lba;
+  cmd[6] = len >> 16;
+  cmd[7] = len >> 8;
+  cmd[8] = len;
   cmd[9] = 0xf8;
 
   switch (sm) {
@@ -2025,100 +2024,68 @@ long GenericMMC::readTrackData(TrackData::Mode mode,
     break;
   }
 
-  while (len > 0 && !ok) {
-    cmd[6] = len >> 16;
-    cmd[7] = len >> 8;
-    cmd[8] = len;
+  switch (sendCmd(cmd, 12, NULL, 0, transferBuffer_, len * inBlockLen, 0)) {
+  case 0:
+    break;
 
-    memset(transferBuffer_, 0, len * inBlockLen);
+  case 2:
+    sense = scsiIf_->getSense(senseLen);
 
-    switch (sendCmd(cmd, 12, NULL, 0, transferBuffer_, len * inBlockLen, 0)) {
-    case 0:
-      ok = 1;
-      break;
+    if (senseLen > 0x0c) {
+      if ((sense[2] & 0x0f) == 5) { // Illegal request
+	switch (sense[12]) {
+	case 0x63: // End of user area encountered on this track
+	case 0x64: // Illegal mode for this track
+	  return -2;
+	  break;
 
-    case 2:
-      softError = 0;
-      sense = scsiIf_->getSense(senseLen);
-
-      if (senseLen > 0x0c) {
-	if ((sense[2] & 0x0f) == 5) { // Illegal request
-	  switch (sense[12]) {
-	  case 0x63: // End of user area encountered on this track
-	  case 0x64: // Illegal mode for this track
-	    softError = 1;
-	    break;
-	  }
-	}
-	else if ((sense[2] & 0x0f) == 4) { // Hardware Error
-          switch (sense[12]) {
-          case 0x9: // focus servo failure
-            return -2;
-            break;
-          }
-        }    
-	else if ((sense[2] & 0x0f) == 3) { // Medium error
-	  switch (sense[12]) {
-	  case 0x02: // No seek complete, sector not found
-	  case 0x11: // L-EC error
-	  case 0x15: // random positioning error
-	    return -2;
-	    break;
-	  }
+	case 0x20: // INVALID COMMAND OPERATION CODE
+	case 0x24: // INVALID FIELD IN CDB
+	case 0x26: // INVALID FIELD IN PARAMETER LIST
+	  /* These error codes mean that something was wrong with the
+	   * command we are sending. Report them as hard errors to the
+	   * upper level.
+	   */
+	  scsiIf_->printError();
+	  return -1;
+	  break;
 	}
       }
-
-      if (!softError) {
-	scsiIf_->printError();
-	return -1;
+      else if ((sense[2] & 0x0f) == 4) { // Hardware Error
+	switch (sense[12]) {
+	case 0x9: // focus servo failure
+	  return -2;
+	  break;
+	}
+      }    
+      else if ((sense[2] & 0x0f) == 3) { // Medium error
+	switch (sense[12]) {
+	case 0x02: // No seek complete, sector not found
+	case 0x11: // L-EC error
+	case 0x15: // random positioning error
+	  return -2;
+	  break;
+	}
       }
-      break;
-
-    default:
-      message(-2, "Read error at LBA %ld, len %ld", lba, len);
-      return -1;
-      break;
     }
 
-    if (!ok) {
-      len--;
-    }
+    /* All other errors are unexpected. They will be treated like L-EC errors
+     * by the upper layer. Just print the error code so that we can decice
+     * later to add the errors to the known possible error list.
+     */
+    
+    scsiIf_->printError();
+    return -2;
+    break;
+
+  default:
+    message(-2, "Read error at LBA %ld, len %ld", lba, len);
+    return -1;
+    break;
   }
 
   unsigned char *sector = transferBuffer_;
   for (i = 0; i < len; i++) {
-     
-    if (memcmp(CdrDriver::syncPattern, sector, 12) != 0) {
-      // can't be a data block
-      message(4, "Stopped because no sync pattern found.");
-      message(4, "%d %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x", i, 
-	      sector[0], sector[1], sector[2], sector[3], sector[4], sector[5],
-	      sector[6], sector[7], sector[8], sector[9], sector[10],
-	      sector[11]);
-      return i;
-    }
-    actMode = determineSectorMode(sector + 12);
-
-    if (!(actMode == mode ||
-	  (mode == TrackData::MODE2_FORM_MIX &&
-	   (actMode == TrackData::MODE2_FORM1 ||
-	    actMode == TrackData::MODE2_FORM2)) ||
-
-	  (mode == TrackData::MODE1_RAW && actMode == TrackData::MODE1) ||
-
-	  (mode == TrackData::MODE2_RAW &&
-	   (actMode == TrackData::MODE2 ||
-	    actMode == TrackData::MODE2_FORM1 ||
-	    actMode == TrackData::MODE2_FORM2)))) {
-      message(4, "Sector with not matching mode %s found.",
-	      TrackData::mode2String(actMode));
-      message(4, "%02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x",
-	      sector[12], sector[13], sector[14], sector[15], sector[16],
-	      sector[17], sector[18], sector[19], sector[20], sector[21],
-	      sector[22], sector[23]);
-      return i;
-    }
-
     if (buf != NULL) {
       switch (mode) {
       case TrackData::MODE1:
@@ -2397,8 +2364,8 @@ int GenericMMC::readCdTest(long lba, long len, int subChanMode) const
   case 1: // PQ
     blockLen += PQ_SUBCHANNEL_LEN;
     cmd[10] = 0x02;
-    if (len > 150)
-      len = 150; /* we have to check many sub-channels here to determine the
+    if (len > 300)
+      len = 300; /* we have to check many sub-channels here to determine the
 		  * data mode (BCD or HEX)
 		  */
     break;
@@ -2430,13 +2397,13 @@ int GenericMMC::readCdTest(long lba, long len, int subChanMode) const
       if (subChanMode == 1) {
 	unsigned char *buf = transferBuffer_ + AUDIO_BLOCK_LEN;
 
-	/*
+#if 0
 	{
  	  PQSubChannel16 chan;
 	  chan.init(buf);
 	  chan.print();
 	}
-	*/
+#endif
 
 	// check if Q sub-channel values are in BCD or HEX format
 	if (SubChannel::isBcd(buf[1]) &&
@@ -2451,21 +2418,30 @@ int GenericMMC::readCdTest(long lba, long len, int subChanMode) const
 	  PQSubChannel16 chan;
 	  chan.init(buf);
 
-	  if (chan.checkCrc())
-	    pqSubChanBcdOk++;
-	}
-	else {
-	  if (buf[7] < 100 && buf[8] < 60 && buf[9] < 75) {
-	    long pqlba = Msf(buf[7], buf[8], buf[9]).lba() - 150;
+	  chan.type(SubChannel::QMODE1DATA);
 
-	    //message(0, "readCdTest: pqlba: %ld", pqlba);
-	    long diff = pqlba - lba;
-	    if (diff < 0)
-	      diff = -diff;
+	  long pqlba =
+	    Msf(chan.amin(), chan.asec(), chan.aframe()).lba() - 150;
+
+	  long diff = pqlba - lba;
+	  if (diff < 0)
+	    diff = -diff;
 	  
-	    if (diff < 75) {
-	      pqSubChanHexOk++;
-	    }
+	  if (diff < 20) {
+	    pqSubChanBcdOk++;
+	  }
+	}
+
+	if (buf[7] < 100 && buf[8] < 60 && buf[9] < 75) {
+	  long pqlba = Msf(buf[7], buf[8], buf[9]).lba() - 150;
+
+	  //message(0, "readCdTest: pqlba: %ld", pqlba);
+	  long diff = pqlba - lba;
+	  if (diff < 0)
+	    diff = -diff;
+	  
+	  if (diff < 20) {
+	    pqSubChanHexOk++;
 	  }
 	}
       }
@@ -2512,15 +2488,16 @@ unsigned long GenericMMC::getReadCapabilities(const CdToc *toc,
   }
   else if ((options_ & OPT_MMC_USE_PQ) != 0) {
     // driver options indicated that PQ sub-channel reading is supported for
-    // audio tracks and RW sub-channel reading is not supported, skip
+    // audio/data tracks and RW sub-channel reading is not supported, skip
     // the corresponding checks and set the capabilities appropriately
     audioPQChecked = 1;
     audioRawPWChecked = 1;
+    dataPQChecked = 1;
     
     if ((options_ & OPT_MMC_PQ_BCD) != 0)
-      caps |= CDR_READ_CAP_AUDIO_PQ_BCD;
+      caps |= CDR_READ_CAP_AUDIO_PQ_BCD | CDR_READ_CAP_DATA_PQ_BCD;
     else
-      caps |= CDR_READ_CAP_AUDIO_PQ_HEX;
+      caps |= CDR_READ_CAP_AUDIO_PQ_HEX | CDR_READ_CAP_DATA_PQ_HEX;
   }
   else if ((options_ & OPT_MMC_USE_RAW_RW) != 0) {
     // driver options indicated that raw PW sub-channel reading is supported

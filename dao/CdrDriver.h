@@ -1,6 +1,6 @@
 /*  cdrdao - write audio CD-Rs in disc-at-once mode
  *
- *  Copyright (C) 1998-2001  Andreas Mueller <andreas@daneb.de>
+ *  Copyright (C) 1998-2002  Andreas Mueller <andreas@daneb.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -523,7 +523,7 @@ protected:
   // the returned value will be smaller than 'len' down to 0. If a read
   // error occus -1 is returned. If a L-EC error occures -2 is returned.
   // This method is used by 'readDataTrack'/'analyzeDataTrack' and must be
-  // overloaded by the actual driver.
+  // overloaded by the driver.
   virtual long readTrackData(TrackData::Mode, TrackData::SubChannelMode,
 			     long lba, long len, unsigned char *buf) = 0;
 
