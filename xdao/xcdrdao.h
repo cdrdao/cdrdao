@@ -18,6 +18,9 @@
  */
 /*
  * $Log: xcdrdao.h,v $
+ * Revision 1.12  2001/08/18 19:11:03  llanero
+ * removed RECORD_GENERIC_DIALOG declaration
+ *
  * Revision 1.11  2001/04/23 00:15:11  llanero
  * Dialogs will update title with project name + app name.
  *
@@ -85,7 +88,6 @@ extern class GCDMaster *gcdmaster;
 extern class DeviceConfDialog *DEVICE_CONF_DIALOG;
 extern class ProcessMonitor *PROCESS_MONITOR;
 extern class ProgressDialogPool *PROGRESS_POOL;
-extern class RecordGenericDialog *RECORD_GENERIC_DIALOG;
 
 void blockProcessMonitorSignals();
 void unblockProcessMonitorSignals();
