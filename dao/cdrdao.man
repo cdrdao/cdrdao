@@ -1,4 +1,4 @@
-.TH CDRDAO 1 "Sep 16, 2002"
+.TH CDRDAO 1 "Oct 6, 2002"
 .SH NAME
 cdrdao \- writes audio CD-Rs in disc-at-once mode
 .SH SYNOPSIS
