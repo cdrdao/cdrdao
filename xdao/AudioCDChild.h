@@ -38,7 +38,11 @@ class TrackData;
 class TocEdit;
 
 class AudioCDChild : public Gnome::MDIGenericChild
+//FIXME: MDI STUFF class AudioCDChild : public Gtk::Widget
 {
+public: //HACK
+  Gtk::VBox *vbox_;
+
 private:
   enum Mode { ZOOM, SELECT };
 
@@ -47,7 +51,6 @@ private:
   Mode mode_;
 
 //it is easier with pointers ?( !
-  Gtk::VBox *vbox_;
   GtkWidget *vbox_aux_;
 
   TocReader tocReader;

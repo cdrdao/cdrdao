@@ -18,6 +18,10 @@
  */
 /*
  * $Log: xcdrdao.cc,v $
+ * Revision 1.6  2000/04/14 13:22:02  llanero
+ * changed the MDI object to GnomeApp until gnome-- MDI is done.
+ * Also catched a bug in SampleDisplay.cc:1000.
+ *
  * Revision 1.5  2000/03/05 22:25:52  llanero
  * more code translated to gtk-- 1.1.8
  *
@@ -222,13 +226,16 @@ glade_gnome_init ();
   
 //llanero  MAIN_WINDOW = new MainWindow(tocEdit);
 //llanero  MAIN_WINDOW->show();
+
   MDI_WINDOW = new MDIWindow();
-  MDI_WINDOW->open_toplevel();
+//FIXME: MDI STUFF  MDI_WINDOW->open_toplevel();
+  MDI_WINDOW->show();
 
   AUDIOCD_CHILD = new AudioCDChild(tocEdit);
 
-  MDI_WINDOW->add_child(*AUDIOCD_CHILD);
-  MDI_WINDOW->add_view(*AUDIOCD_CHILD);
+//FIXME: MDI STUFF  MDI_WINDOW->add_child(*AUDIOCD_CHILD);
+//FIXME: MDI STUFF  MDI_WINDOW->add_view(*AUDIOCD_CHILD);
+  MDI_WINDOW->set_contents(*AUDIOCD_CHILD->vbox_);
 
 //llanero  guiUpdate();
 

@@ -32,7 +32,6 @@
 void
 MDIWindow::nothing_cb()
 {
-  g_print("%s", "asdfsfdasadf");
   cout << "nothing here" << endl;
 }
 
@@ -161,8 +160,9 @@ MDIWindow::install_menus_and_toolbar()
   menus->push_item(*settingsMenu);
   menus->push_item(*helpMenu);
 
-  set_menubar_template(*menus);
-
+//FIXME: MDI STUFF  set_menubar_template(*menus);
+  create_menus(*menus);
+  
   // Toolbar
   //
   Gnome::UIInfoTree *toolbarTree = new Gnome::UIInfoTree();
@@ -179,13 +179,15 @@ MDIWindow::install_menus_and_toolbar()
                                        GNOME_STOCK_PIXMAP_QUIT,
                                        slot(this, &MDIWindow::app_close)));
 
-  set_toolbar_template(*toolbarTree);
+//FIXME: MDI STUFF  set_toolbar_template(*toolbarTree);
+  create_toolbar(*toolbarTree);
 
 //  install_menu_hints(*menus);
 }
 
 MDIWindow::MDIWindow()
-  : Gnome::MDI("StillNoName", "StillNoTitle")
+//FIXME: MDI STUFF  : Gnome::MDI("StillNoName", "StillNoTitle")
+  : Gnome::App("StillNoName", "StillNoTitle")
 {
 //  set_policy(false, true, false);
 //  set_default_size(600, 400);

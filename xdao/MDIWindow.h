@@ -27,7 +27,9 @@
 
 GtkWidget* example_creator(GnomeMDIChild *child, gpointer data);
 
-class MDIWindow : public Gnome::MDI
+//FIXME: Until we get gnome-- MDI support!
+//class MDIWindow : public Gnome::MDI
+class MDIWindow : public Gnome::App
 {
 public:
   MDIWindow();

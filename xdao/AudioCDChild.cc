@@ -141,7 +141,7 @@ AudioCDChild::BuildChild()
 
 
 //llanero  add(&vbox_);
-  vbox_->show();
+//MDI  vbox_->show();
 
 //llanero:
 /*  connect_to_method(sampleDisplay_->markerSet, this,
@@ -197,7 +197,7 @@ AudioCDChild::AudioCDChild(TocEdit *tedit) : Gnome::MDIGenericChild("Untitled Au
   soundInterface_ = NULL;
 
   //Quick hack until gnome-- gets a good function to bypass this.
-  AudioCDChild::set_view_creator(&AudioCDChild_Creator, vbox_aux_);
+//FIXME: MDI STUFF  AudioCDChild::set_view_creator(&AudioCDChild_Creator, vbox_aux_);
 
 }
 
