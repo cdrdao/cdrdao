@@ -41,8 +41,8 @@ DISTDIR = cdrdao-$(VERSION)
 #
 #
 #
-SUBDIRS = @scsilib_dir@ edc_ecc trackdb paranoia dao @xdao@
-SUBDIRSINST = trackdb dao @xdao@
+SUBDIRS = @scsilib_dir@ edc_ecc trackdb paranoia dao utils @xdao@
+SUBDIRSINST = trackdb dao utils @xdao@
 
 all:
 	for d in $(SUBDIRS) ; do  \
@@ -87,7 +87,7 @@ dist:
            paranoia/config.guess paranoia/config.sub paranoia/configure \
            paranoia/configure.in paranoia/*.c paranoia/*.h $(DISTDIR)/paranoia
 	cp dao/Makefile.in dao/*.h dao/*.cc dao/cdrdao.man dao/cdrdao.drivers $(DISTDIR)/dao
-	cp xdao/Makefile.in xdao/*.h xdao/*.cc xdao/xcdrdao.man xdao/gcdmaster.* $(DISTDIR)/xdao
+	cp xdao/Makefile.in xdao/*.h xdao/*.cc xdao/xcdrdao.man xdao/gcdmaster.* xdao/*.png $(DISTDIR)/xdao
 	cp testtocs/*.toc $(DISTDIR)/testtocs
 	tar cf - contrib | ( cd $(DISTDIR) ; tar xf - )
 	tar cf - scsilib | ( cd $(DISTDIR) ; tar xf - )

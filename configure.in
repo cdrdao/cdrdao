@@ -1,7 +1,7 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_REVISION($Revision: 1.13 $)dnl
+AC_REVISION($Revision: 1.14 $)dnl
 
-cdrdao_version=1.1.5-pre2
+cdrdao_version=1.1.5-pre3
 
 AC_INIT(cdrdao.lsm)
 AC_CONFIG_HEADER(config.h)
@@ -297,4 +297,4 @@ AC_SUBST(sound_if_src)
 AC_SUBST(thread_libs)
 AC_SUBST(mydefs)
 
-AC_OUTPUT(edc_ecc/Makefile trackdb/Makefile dao/Makefile xdao/Makefile Makefile)
+AC_OUTPUT(edc_ecc/Makefile trackdb/Makefile dao/Makefile utils/Makefile xdao/Makefile Makefile)
