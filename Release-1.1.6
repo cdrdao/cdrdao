@@ -16,8 +16,9 @@ Cdrdao changes:
   the L-EC data will be calculated and interleaving will be performed
   if required by the recording hardware.
 
-- Added sub-channel reading support. Currently packed and raw R-W sub-channel
-  reading is supported (option -read-subchan).
+- Added sub-channel reading support for the generic-mmc(-raw) driver.
+  Currently packed and raw R-W sub-channel reading is supported
+  (option -read-subchan).
 
 - Added automatic check for support sub-channel reading modes to the
   'generic-mmc(-raw)' driver. The driver options (0x1, 0x2 and 0x20) should
@@ -27,11 +28,22 @@ Cdrdao changes:
   robust against read errors now. The --tao-source/--tao-source-adjust option
   should be obsolete now - but is still available.
 
+- Added on-the-fly copying support for the Win32 version.
+
+- Default blanking mode is now 'minimal' (SF feature request 425321)
+
 - Updated paranoia libraries to version of cdparanoia-III-alpha9.8.
+
+- Fixed waiting loop that was used to wait until the lead-out was written
+  and until a blanking operation is finished. Some drives do not indicate
+  this activities with a "not ready" status. Affected drivers: generic-mmc
+  and generic-mmc-raw (blanking only).
  
-- Fixed crash in cdrdao usage printing.
+- Fixed crash in cdrdao usage printing (SF bug 570156).
 
 - Fixed cue sheet setup for ISRC codes for the HP8100 recorder model.
+
+- Added/fixed SF patches 427753, 450058 and 534214.
 
 - New mp32dao version from Giuseppe Corbelli with these new features:
   - Ogg support
@@ -40,8 +52,6 @@ Cdrdao changes:
   - cdrecord's .inf file support for CD-TEXT data
 
 - Cue parser accepts spaces and '\' characters in file name now.
-
-- Default blanking mode is now 'minimal' (SF feature request 425321)
 
 - The PCCTS package is now a part of the cdrdao source code distribution
   which should avoid some compilation hassle.

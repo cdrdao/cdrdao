@@ -476,9 +476,9 @@ Recorders:
   RICOH DVD/CDRW MP9060               1.50                   generic-mmc    
   RICOH MP6200                        2.20, 2.03, 1.20, 2.40 ricoh-mp6200   
   RICOH MP6201                        ?                      ricoh-mp6200   
-  SAF CD-R 8020                       1.24                   generic-mmc    
   SAF CD-R2006PLUS                    2.05                   teac-cdr55     
   SAF CD-R4012                        6.0J, 6.0L             teac-cdr55     
+  SAF CD-R8020                        1.24                   generic-mmc    
   SAF CD-RW 226                       1.12                   teac-cdr55     
   SAF CD-RW4224A                      1.20                   generic-mmc    
   SAF CD-RW6424                       1.30                   generic-mmc    
@@ -602,6 +602,7 @@ Readers (command 'read-toc', 'read-cd'):
   PIONEER DVD-305                     1.03                   plextor        
   PLEXTOR CD-ROM                      ?                      plextor-scan   
   PLEXTOR PX-40TS                     1.11                   plextor-scan   
+  PLEXTOR PX-40TW                     ?                      plextor-scan   
   PLEXTOR PX-63                       ?                      plextor-scan   
   SONY CD-ROM                         ?                      plextor        
   SONY CD-ROM CDU-76                  1.1c                   plextor        
