@@ -84,6 +84,7 @@ private:
   int snapSampleToBlock(unsigned long sample, long *block);
 
   void zoomIn();
+  void zoomx2();
   void zoomOut();
   void fullView();
   void play();
