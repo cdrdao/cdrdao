@@ -1213,6 +1213,12 @@ void CdDevice::scan()
       CdDevice::add(sdata[i].dev.c_str(), sdata[i].vendor, sdata[i].product);
     delete[] sdata;
   }
+  sdata = ScsiIf::scan(&len, "ATA");
+  if (sdata) {
+    for (i = 0; i < len; i++)
+      CdDevice::add(sdata[i].dev.c_str(), sdata[i].vendor, sdata[i].product);
+    delete[] sdata;
+  }
 #endif
 }
 
