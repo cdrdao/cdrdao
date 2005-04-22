@@ -39,7 +39,7 @@ public:
   TocEdit(Toc *, const char *);
   ~TocEdit();
 
-  int  toc(Toc *, const char *);
+  void toc(Toc *, const char *);
   Toc *toc() const;
 
   SampleManager *sampleManager();

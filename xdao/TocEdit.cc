@@ -70,7 +70,7 @@ TocEdit::~TocEdit()
     delete trackDataScrap_;
 }
 
-int TocEdit::toc(Toc *t, const char *filename)
+void TocEdit::toc(Toc *t, const char *filename)
 {
   if (toc_)
     delete toc_;
@@ -109,7 +109,6 @@ int TocEdit::toc(Toc *t, const char *filename)
   }
 
   updateLevel_ = UPD_ALL;
-  return 0;
 }
 
 Toc *TocEdit::toc() const
@@ -191,7 +190,8 @@ int TocEdit::readToc(const char *fname)
   Toc *t = Toc::read(fname);
 
   if (t != NULL) {
-    return toc(t, fname);
+    toc(t, fname);
+    return 0;
   }
 
   return 1;

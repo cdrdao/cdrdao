@@ -16,59 +16,6 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
-/*
- * $Log: SampleDisplay.h,v $
- * Revision 1.7  2005/04/22 02:01:49  poolshark
- * Merging gtkmm24 branch
- *
- * Revision 1.6.2.1  2004/06/04 20:22:50  poolshark
- * Applying sigc++-2.0/gtkmm2.4 patch from Gert Wollny
- *
- * Revision 1.6  2004/02/12 01:13:32  poolshark
- * Merge from gnome2 branch
- *
- * Revision 1.5.6.2  2004/01/13 22:00:21  poolshark
- * Sample selection is now cleared when doing a single sample click
- *
- * Revision 1.5.6.1  2004/01/05 00:34:03  poolshark
- * First checking of gnome2 port
- *
- * Revision 1.2  2003/12/13 02:29:44  denis
- * Fixed font issues with sample display
- *
- * Revision 1.1.1.1  2003/12/09 05:32:28  denis
- * Fooya
- *
- * Revision 1.5  2001/01/21 13:46:11  andreasm
- * 'update()' functions of all dialogs require a 'TocEditView' object now.
- * CD TEXT table entry is now a non modal dialog on its own.
- *
- * Revision 1.4  2000/04/23 09:07:08  andreasm
- * * Fixed most problems marked with '//llanero'.
- * * Added audio CD edit menus to MDIWindow.
- * * Moved central storage of TocEdit object to MDIWindow.
- * * AudioCdChild is now handled like an ordinary non modal dialog, i.e.
- *   it has a normal 'update' member function now.
- * * Added CdTextTable modal dialog.
- * * Old functionality of xcdrdao is now available again.
- *
- * Revision 1.3  2000/03/04 01:28:52  llanero
- * SampleDisplay.{cc,h} are fixed now = gtk 1.1.8 compliant.
- *
- * Revision 1.2  2000/02/20 23:34:54  llanero
- * fixed scsilib directory (files mising ?-()
- * ported xdao to 1.1.8 / gnome (MDI) app
- *
- * Revision 1.1.1.1  2000/02/05 01:38:48  llanero
- * Uploaded cdrdao 1.1.3 with pre10 patch applied.
- *
- * Revision 1.2  1999/01/30 15:11:13  mueller
- * First released version. Compiles with Gtk-- 0.9.14.
- *
- * Revision 1.1  1998/11/20 18:55:22  mueller
- * Initial revision
- *
- */
 
 #ifndef __SAMPLE_DISPLAY_H
 #define __SAMPLE_DISPLAY_H
