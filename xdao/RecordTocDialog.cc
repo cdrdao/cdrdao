@@ -81,12 +81,12 @@ RecordTocDialog::RecordTocDialog(TocEdit *tocEdit)
   startBox->pack_start(*startLabel, false, false);
 
   button->add(*startBox);
-  button->signal_clicked().connect(slot(*this, &RecordTocDialog::startAction));
+  button->signal_clicked().connect(mem_fun(*this, &RecordTocDialog::startAction));
   hbox->pack_start(*button);
 
   Gtk::Button* cancel_but =
     manage(new Gtk::Button(Gtk::StockID(Gtk::Stock::CANCEL)));
-  cancel_but->signal_clicked().connect(slot(*this, &Gtk::Widget::hide));
+  cancel_but->signal_clicked().connect(mem_fun(*this, &Gtk::Widget::hide));
   hbox->pack_start(*cancel_but);
 
   vbox->pack_start(*hbox, Gtk::PACK_SHRINK);

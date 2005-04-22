@@ -16,6 +16,7 @@ class Icons
   static Gtk::StockID AUDIOCD;
   static Gtk::StockID COPYCD;
   static Gtk::StockID DUMPCD;
+  static Gtk::StockID RECORD;
 
  private:
   static struct IconEntry {

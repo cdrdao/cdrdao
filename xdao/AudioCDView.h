@@ -33,6 +33,7 @@ class Project;
 class TrackInfoDialog;
 class AddFileDialog;
 class AddSilenceDialog;
+class Track;
 
 enum {
   TARGET_URI_LIST,
@@ -41,11 +42,12 @@ enum {
 class AudioCDView : public GenericView
 {
 public:
-  AudioCDView(AudioCDChild *child, AudioCDProject *project);
+  AudioCDView(AudioCDProject *project);
   ~AudioCDView();
-  SigC::Signal0<void> add_view;
+  void add_menus(Glib::RefPtr<Gtk::UIManager> m_refUIManager);
+  sigc::signal0<void> add_view;
 
-  void update(unsigned long level);
+  void update(unsigned long level = 0);
 
   enum Mode { ZOOM, SELECT };
   void setMode(Mode);
@@ -55,15 +57,21 @@ public:
   void zoomOut();
   void fullView();
 
+  sigc::signal1<void, unsigned long> signal_tocModified;
+
+ protected:
+  static const char* sample2string(unsigned long sample);
+  static unsigned long string2sample(const char* s);
+
 private:
-  friend class AudioCDChild;
   AudioCDProject *project_;
+
+  Glib::RefPtr<Gtk::ActionGroup> m_refActionGroup;
 
   TrackInfoDialog*  trackInfoDialog_;
   AddFileDialog     addFileDialog_;
   AddSilenceDialog* addSilenceDialog_;
 
-  AudioCDChild *cdchild;
   Mode mode_;
   SampleDisplay *sampleDisplay_;
 
@@ -80,7 +88,7 @@ private:
   void trackMarkMovedCallback(const Track *, int trackNr, int indexNr,
 			      unsigned long sample);
   void viewModifiedCallback(unsigned long, unsigned long);
-  int snapSampleToBlock(unsigned long sample, long *block);
+  int  snapSampleToBlock(unsigned long sample, long *block);
 
   void trackInfo();
   void cutTrackData();
@@ -98,16 +106,15 @@ private:
   void appendFile();
   void insertFile();
 
-  int getMarker(unsigned long *sample);
+  int  getMarker(unsigned long *sample);
   void markerSet();
 
   void selectionSet();
 
   void drag_data_received_cb(const Glib::RefPtr<Gdk::DragContext>& context,
-                             gint x, gint y, GtkSelectionData *selection_data,
-                             guint info, guint time);
-
+			     int x, int y,
+			     const Gtk::SelectionData& selection_data,
+			     guint info, guint time);
 };
 
 #endif
-

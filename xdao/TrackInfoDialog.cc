@@ -223,11 +223,11 @@ TrackInfoDialog::TrackInfoDialog()
 
   applyButton_ = new Gtk::Button(Gtk::StockID(Gtk::Stock::APPLY));
   bbox->pack_start(*applyButton_);
-  applyButton_->signal_clicked().connect(slot(*this, &TrackInfoDialog::applyAction));
+  applyButton_->signal_clicked().connect(mem_fun(*this, &TrackInfoDialog::applyAction));
 
   button = new Gtk::Button(Gtk::StockID(Gtk::Stock::CLOSE));
   bbox->pack_start(*button);
-  button->signal_clicked().connect(slot(*this, &TrackInfoDialog::closeAction));
+  button->signal_clicked().connect(mem_fun(*this, &TrackInfoDialog::closeAction));
 
   get_action_area()->pack_start(*bbox);
 

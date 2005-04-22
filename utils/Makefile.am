@@ -15,6 +15,22 @@ toc2cddb_LDADD = -L$(top_builddir)/trackdb -ltrackdb
 toc2cue_LDADD = -L$(top_builddir)/trackdb -ltrackdb
 toc2mp3_LDADD = -L$(top_builddir)/trackdb -ltrackdb @LAME_LIBS@
 
+if COND_MP3
+toc2cddb_LDADD += @MAD_LIBS@
+toc2cue_LDADD += @MAD_LIBS@
+toc2mp3_LDADD += @MAD_LIBS@
+endif
+
+if COND_OGG
+toc2cddb_LDADD += @VORBISFILE_LIBS@
+toc2cue_LDADD += @VORBISFILE_LIBS@
+toc2mp3_LDADD += @VORBISFILE_LIBS@
+endif
+
+toc2cddb_LDADD += @AO_LIBS@
+toc2cue_LDADD += @AO_LIBS@
+toc2mp3_LDADD += @AO_LIBS@
+
 toc2mp3_CXXFLAGS = @LAME_CFLAGS@
 
 INCLUDES = -I$(top_builddir)/trackdb

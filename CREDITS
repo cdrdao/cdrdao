@@ -43,3 +43,6 @@ For: Support for Plextor specific options in plextor driver.
 
 To: Matthias Czapla <dermatsch@gmx.de>
 For: The cue2toc utility
+
+To: Joe Drew <drew@debian.org>
+For: mpg321 code used in MP3 decoder

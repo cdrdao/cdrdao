@@ -27,7 +27,6 @@
 #include <gnome.h>
 
 #include "RecordCDSource.h"
-#include "MessageBox.h"
 #include "xcdrdao.h"
 #include "Settings.h"
 
@@ -95,13 +94,13 @@ RecordCDSource::RecordCDSource(Gtk::Window *parent)
   speedSpinButton_->set_digits(0);
   speedSpinButton_->show();
   speedSpinButton_->set_sensitive(false);
-  adjustment->signal_value_changed().connect(SigC::slot(*this, &RecordCDSource::speedChanged));
+  adjustment->signal_value_changed().connect(sigc::mem_fun(*this, &RecordCDSource::speedChanged));
   hbox->pack_start(*speedSpinButton_, false, false, 10);
 
   speedButton_ = new Gtk::CheckButton(_("Use max."), 0);
   speedButton_->set_active(true);
   speedButton_->show();
-  speedButton_->signal_toggled().connect(SigC::slot(*this, &RecordCDSource::speedButtonChanged));
+  speedButton_->signal_toggled().connect(sigc::mem_fun(*this, &RecordCDSource::speedButtonChanged));
   hbox->pack_start(*speedButton_, true, true);
   vbox->pack_start(*hbox);
 
@@ -115,7 +114,7 @@ RecordCDSource::RecordCDSource(Gtk::Window *parent)
   moreOptionsBox->pack_start(*moreOptionsPixmap, false, false, 3);
   moreOptionsBox->pack_start(*moreOptionsLabel, false, false, 4);
   moreOptionsButton->add(*moreOptionsBox);
-  moreOptionsButton->signal_clicked().connect(slot(*this, &RecordCDSource::moreOptions));
+  moreOptionsButton->signal_clicked().connect(mem_fun(*this, &RecordCDSource::moreOptions));
   moreOptionsPixmap->show();
   moreOptionsLabel->show();
   moreOptionsBox->show();
@@ -180,9 +179,9 @@ void RecordCDSource::moreOptions()
     table->set_col_spacings(10);
     table->set_border_width(5);
 
-    moreOptionsDialog_ = new Gtk::MessageDialog(*parent_, _("Source options"),
+    moreOptionsDialog_ = new Gtk::MessageDialog(*parent_, _("Source options"),false, 
                                                 Gtk::MESSAGE_QUESTION,
-                                                Gtk::BUTTONS_CLOSE);
+                                                Gtk::BUTTONS_CLOSE, true);
 
     Gtk::VBox *vbox = moreOptionsDialog_->get_vbox();
     Gtk::Frame *frame = new Gtk::Frame(_(" More Source Options "));
@@ -209,7 +208,7 @@ void RecordCDSource::moreOptions()
 	
     for (int i = 0; i <= MAX_CORRECTION_ID; i++) {
       mitem = manage(new Gtk::MenuItem(CORRECTION_TABLE[i].name));
-      mitem->signal_activate().connect(bind(slot(*this, &RecordCDSource::setCorrection), i));
+      mitem->signal_activate().connect(bind(mem_fun(*this, &RecordCDSource::setCorrection), i));
       menu->append(*mitem);
     }
   
@@ -231,7 +230,7 @@ void RecordCDSource::moreOptions()
     for (int i = 0; i <= MAX_SUBCHAN_READ_MODE_ID; i++) {
       mitem = manage(new Gtk::MenuItem(SUBCHAN_READ_MODE_TABLE[i].name));
       mitem->signal_activate().
-        connect(bind(slot(*this, &RecordCDSource::setSubChanReadMode), i));
+        connect(bind(mem_fun(*this, &RecordCDSource::setSubChanReadMode), i));
       menu->append(*mitem);
     }
 

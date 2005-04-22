@@ -30,12 +30,12 @@ class BlankCDDialog : public Gtk::Window {
 public:
   BlankCDDialog();
 
-  void start(Project& parent);
+  void start(Gtk::Window& parent);
   void update(unsigned long level);
 
 private:
   DeviceList *Devices;
-  Project* parent_;
+  Gtk::Window* parent_;
 
   bool active_;
   int speed_;

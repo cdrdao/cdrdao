@@ -56,7 +56,8 @@ void TocEditView::sampleMarker(unsigned long sample)
     sampleMarkerValid_ = 0;
   }
 
-  tocEdit_->updateLevel_ |= UPD_SAMPLE_MARKER;
+//llanero: different views
+//  tocEdit_->updateLevel_ |= UPD_SAMPLE_MARKER;
 }
 
 int TocEditView::sampleMarker(unsigned long *sample) const
@@ -87,15 +88,18 @@ void TocEditView::sampleSelection(unsigned long smin, unsigned long smax)
     sampleSelectionValid_ = 0;
   }
   
-  tocEdit_->updateLevel_ |= UPD_SAMPLE_SEL;
+//llanero: different views
+//  tocEdit_->updateLevel_ |= UPD_SAMPLE_SEL;
 }
 
-void TocEditView::sampleSelectionClear()
+bool TocEditView::sampleSelectionClear()
 {
-  if (sampleSelectionValid_)
-    tocEdit_->updateLevel_ |= UPD_SAMPLE_SEL;
-
-  sampleSelectionValid_ = 0;
+  if (sampleSelectionValid_) {
+    sampleSelectionValid_ = 0;
+    return true;
+//llanero: different views
+//    tocEdit_->updateLevel_ |= UPD_SAMPLE_SEL;
+  }
 }
 
 int TocEditView::sampleSelection(unsigned long *smin, unsigned long *smax) const
@@ -108,12 +112,14 @@ int TocEditView::sampleSelection(unsigned long *smin, unsigned long *smax) const
   return sampleSelectionValid_;
 }
 
-void TocEditView::sampleView(unsigned long smin, unsigned long smax)
+bool TocEditView::sampleView(unsigned long smin, unsigned long smax)
 {
   if (smin <= smax && smax < tocEdit_->lengthSample()) {
     sampleViewMin_ = smin;
     sampleViewMax_ = smax;
-    tocEdit_->updateLevel_ |= UPD_SAMPLES;
+    return true;
+//llanero: different views
+//    tocEdit_->updateLevel_ |= UPD_SAMPLES;
   }
 }
 
@@ -130,7 +136,8 @@ void TocEditView::sampleViewFull()
   if ((sampleViewMax_ = tocEdit_->lengthSample()) > 0)
     sampleViewMax_ -= 1;
 
-  tocEdit_->updateLevel_ |= UPD_SAMPLES;
+//llanero: different views
+//  tocEdit_->updateLevel_ |= UPD_SAMPLES;
 }
 
 void TocEditView::sampleViewUpdate()
@@ -174,7 +181,8 @@ void TocEditView::trackSelection(int tnum)
     trackSelectionValid_ = 0;
   }
 
-  tocEdit_->updateLevel_ |= UPD_TRACK_MARK_SEL;
+//llanero: different views
+//  tocEdit_->updateLevel_ |= UPD_TRACK_MARK_SEL;
 
 }
 
@@ -196,7 +204,8 @@ void TocEditView::indexSelection(int inum)
     indexSelectionValid_ = 0;
   }
 
-  tocEdit_->updateLevel_ |= UPD_TRACK_MARK_SEL;
+//llanero: different views
+//  tocEdit_->updateLevel_ |= UPD_TRACK_MARK_SEL;
 }
 
 int TocEditView::indexSelection(int *inum) const

@@ -9,6 +9,7 @@ Gtk::StockID Icons::OPEN("gcdmaster-open");
 Gtk::StockID Icons::AUDIOCD("gcdmaster-audiocd");
 Gtk::StockID Icons::COPYCD("gcdmaster-copycd");
 Gtk::StockID Icons::DUMPCD("gcdmaster-dumpcd");
+Gtk::StockID Icons::RECORD("gcdmaster-record");
 
 struct Icons::IconEntry Icons::iconList[] = {
   { Icons::PLAY,      play_pixbuf },
@@ -18,7 +19,8 @@ struct Icons::IconEntry Icons::iconList[] = {
   { Icons::OPEN,      open_pixbuf },
   { Icons::AUDIOCD,   audiocd_pixbuf },
   { Icons::COPYCD,    copycd_pixbuf},
-  { Icons::DUMPCD,    dumpcd_pixbuf}
+  { Icons::DUMPCD,    dumpcd_pixbuf},
+  { Icons::RECORD,    record_pixbuf}
 };
 
 void Icons::registerStockIcons()

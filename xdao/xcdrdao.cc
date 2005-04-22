@@ -152,6 +152,7 @@ int main (int argc, char* argv[])
   PROGRESS_POOL = new ProgressDialogPool;
 
   gcdmaster = new GCDMaster;
+  gcdmaster->show();
 
   if (argc == 1)
     gcdmaster->newChooserWindow();
@@ -161,7 +162,7 @@ int main (int argc, char* argv[])
     {
       std::string message("Error loading ");
       message += argv[1];
-      Gtk::MessageDialog(*(gcdmaster->newChooserWindow2()), message,
+      Gtk::MessageDialog(*gcdmaster, message,
                          Gtk::MESSAGE_ERROR);
     }
     argv++;

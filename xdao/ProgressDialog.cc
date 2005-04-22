@@ -126,9 +126,9 @@ ProgressDialog::ProgressDialog(ProgressDialogPool *father)
   actCloseButtonLabel_ = 2;
 
   cancelButton_->signal_clicked().
-    connect(SigC::slot(*this, &ProgressDialog::closeAction));
+    connect(sigc::mem_fun(*this, &ProgressDialog::closeAction));
   closeButton_->signal_clicked().
-    connect(SigC::slot(*this, &ProgressDialog::closeAction));
+    connect(sigc::mem_fun(*this, &ProgressDialog::closeAction));
 
   get_action_area()->pack_start(*bbox);
   set_size_request(400, -1);
@@ -156,7 +156,7 @@ void ProgressDialog::start(CdDevice *device, const char *tocFileName)
 
   clear();
 
-  Glib::signal_timeout().connect(slot(*this, &ProgressDialog::time), 1000);
+  Glib::signal_timeout().connect(mem_fun(*this, &ProgressDialog::time), 1000);
 
   statusMsg_->set_text(_("Initializing..."));
   tocName_->set_text(tocFileName);

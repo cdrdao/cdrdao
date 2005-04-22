@@ -150,10 +150,13 @@ Toc *Toc::read(const char *filename)
 
   fclose(fp);
 
-  /*
-  if (ret != NULL)
-    ret->print(cout);
-    */
+  // Resolve all relative filenames to absoluate paths wrt to the toc
+  // file current directory.
+  std::string path = filename;
+  path = path.substr(0, path.rfind('/'));
+  if (path.empty()) path = ".";
+  for (TrackEntry* t = ret->tracks_; t != NULL; t = t->next)
+    t->track->resolveFilename(path.c_str());
 
   return ret;
 }
@@ -180,12 +183,12 @@ int Toc::write(const char *filename) const
   return 0;
 }
 
-bool Toc::write(int fd) const
+bool Toc::write(int fd, bool conversions) const
 {
     assert(fd);
 
     std::ostringstream oss(std::ostringstream::out);
-    print(oss);
+    print(oss, conversions);
 
     std::string ossstr = oss.str();
     const char* content = ossstr.c_str();
@@ -254,7 +257,7 @@ const char *Toc::catalog() const
 }
 
 // writes contents in TOC file syntax
-void Toc::print(std::ostream &out) const
+void Toc::print(std::ostream &out, bool conversions) const
 {
   int i;
   TrackEntry *t;
@@ -273,9 +276,21 @@ void Toc::print(std::ostream &out) const
 
   for (t = tracks_, i = 1; t != NULL; t = t->next, i++) {
     out << "\n// Track " << i << "\n";
-    t->track->print(out);
+    t->track->print(out, conversions);
     out << std::endl;
   }
+}
+
+void Toc::collectFiles(std::set<std::string>& set)
+{
+  for (TrackEntry* t = tracks_; t != NULL; t = t->next)
+    t->track->collectFiles(set);
+}
+
+void Toc::markFileConversion(const char* src, const char* dst)
+{
+  for (TrackEntry* t = tracks_; t != NULL; t = t->next)
+    t->track->markFileConversion(src, dst);
 }
 
 // find track entry that contains given sample number
@@ -1399,4 +1414,9 @@ long TocReader::readSamples(Sample *buf, long len)
   readPosSample_ += nread;
  
   return nread;
+}
+
+const char* TocReader::curFilename()
+{
+    return reader.curFilename();
 }

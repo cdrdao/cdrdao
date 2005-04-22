@@ -65,10 +65,17 @@ void TrackData::init(const char *filename, long offset,
   }
   else {
     type_ = DATAFILE;
+
+    //const char* fn;
+    // if (formatConverter.canConvert(filename) &&
+    //    (fn = formatConverter.convert(filename))) {
+    // filename_ = strdupCC(fn);
+    //} else {
     filename_ = strdupCC(filename);
-    fileType_ = audioFileType(filename);
+    fileType_ = audioFileType(filename_);
   }
-  
+
+  effFilename_ = NULL;
   offset_ = offset;
   startPos_ = start;
   swapSamples_ = 0;
@@ -86,6 +93,7 @@ TrackData::TrackData(unsigned long length)
   audioCutMode_ = 1;
 
   filename_ = NULL;
+  effFilename_ = NULL;
   fileType_ = RAW;
   startPos_ = 0;
   offset_ = 0;
@@ -102,6 +110,7 @@ TrackData::TrackData(Mode m, SubChannelMode sm, unsigned long length)
   audioCutMode_ = 0;
 
   filename_ = NULL;
+  effFilename_ = NULL;
   fileType_ = RAW;
   startPos_ = 0;
   offset_ = 0;
@@ -132,17 +141,22 @@ void TrackData::init(Mode m, SubChannelMode sm, const char *filename,
   }
   else {
     type_ = DATAFILE;
+    //const char* fn;
+    // if (formatConverter.canConvert(filename) &&
+    // (fn = formatConverter.convert(filename))) {
+    //filename_ = strdupCC(fn);
+    //} else {
     filename_ = strdupCC(filename);
 
     if (mode_ == AUDIO)
-      fileType_ = audioFileType(filename);
+      fileType_ = audioFileType(filename_);
     else
       fileType_ = RAW; // data files are always raw
   }
 
   offset_ = offset;
   length_ = length;
-
+  effFilename_ = NULL;
   startPos_ = 0;
   swapSamples_ = 0;
 }
@@ -159,7 +173,7 @@ TrackData::TrackData(Mode m, SubChannelMode sm, const char *filename,
   type_ = FIFO;
   fileType_ = RAW;
   filename_ = strdupCC(filename);
-
+  effFilename_ = NULL;
   offset_ = 0;
   length_ = length;
 
@@ -182,12 +196,14 @@ TrackData::TrackData(const TrackData &obj)
   case STDIN:
   case FIFO:
     filename_ = strdupCC(obj.filename_);
+    effFilename_ = (obj.effFilename_ ? strdupCC(obj.effFilename_) : NULL);
     startPos_ = obj.startPos_;
     fileType_ = obj.fileType_;
     break;
 
   case ZERODATA:
     filename_ = NULL;
+    effFilename_ = NULL;
     startPos_ = 0;
     fileType_ = RAW;
     break;
@@ -200,10 +216,11 @@ TrackData::TrackData(const TrackData &obj)
     
 TrackData::~TrackData()
 {
-  if (filename_ != NULL) {
+  if (filename_) {
     delete[] filename_;
-    filename_ = NULL;
   }
+  if (effFilename_)
+    delete[] effFilename_;
 }
 
 unsigned long TrackData::length() const
@@ -311,7 +328,8 @@ int TrackData::check(int trackNr) const
       unsigned long len = 0;
 
       if (fileType_ == WAVE && subChannelMode_ != SUBCHAN_NONE) {
-	message(-2, "Track %d: WAVE audio files cannot contain sub-channel data.", trackNr);
+	message(-2, "Track %d: WAVE audio files cannot contain sub-channel "
+                "data.", trackNr);
 	return 2;
       }
 
@@ -347,8 +365,8 @@ int TrackData::check(int trackNr) const
       if (audioCutMode()) {
 	if (startPos_ + length() > len) {
 	  // requested part exceeds file size
-	  message(-2,
-		  "Track %d: Requested length (%lu + %lu samples) exceeds length of audio file \"%s\" (%lu samples at offset %ld).",
+	  message(-2, "Track %d: Requested length (%lu + %lu samples) exceeds "
+                  "length of audio file \"%s\" (%lu samples at offset %ld).",
 		  trackNr, startPos_, length(), filename_, len, offset_);
 	  return 2;
 	}
@@ -396,8 +414,18 @@ int TrackData::check(int trackNr) const
   return 0;
 }
 
+void TrackData::effectiveFilename(const char* name)
+{
+  if (effFilename_)
+    delete effFilename_;
+
+  effFilename_ = filename_;
+  filename_ = strdupCC(name);
+  fileType_ = audioFileType(filename_);
+}
+
 // writes out contents of object in TOC file syntax
-void TrackData::print(std::ostream &out) const
+void TrackData::print(std::ostream &out, bool conversions) const
 {
   unsigned long blen;
   const char *s;
@@ -416,6 +444,8 @@ void TrackData::print(std::ostream &out) const
     if (audioCutMode()) {
       if (type() == STDIN)
 	out << "FILE \"-\" ";
+      else if (effFilename_ && !conversions)
+	out << "FILE \"" << effFilename_ << "\" ";
       else
 	out << "FILE \"" << filename_ << "\" ";
 
@@ -436,6 +466,8 @@ void TrackData::print(std::ostream &out) const
       // data mode
       if (type() == STDIN)
 	out << "DATAFILE \"-\" ";
+      else if (effFilename_ && !conversions)
+	out << "DATAFILE \"" << effFilename_ << "\" ";
       else
 	out << "DATAFILE \"" << filename_ << "\" ";
 
@@ -555,6 +587,12 @@ int TrackData::checkAudioFile(const char *fn, unsigned long *length)
   int ret;
   struct stat buf;
   long headerLength = 0;
+
+  enum FileType ft = audioFileType(fn);
+  if (ft != WAVE && ft != RAW) {
+    message(-2, "Checking audio file \"%s\": format not supported", fn);
+    return 1;
+  }
   
   if ((fd = open(fn, O_RDONLY)) < 0)
     return 1;
@@ -566,11 +604,19 @@ int TrackData::checkAudioFile(const char *fn, unsigned long *length)
   if (ret != 0)
     return 1;
 
-  if (audioFileType(fn) == WAVE) {
+  // Check if audio file needs conversion. Go ahead and do it if
+  // necessary. 
+  // if (formatConverter.canConvert(fn)) {
+  // Returns new filename, which will be either a wav or raw file.
+  // fn = formatConverter.convert(fn);
+  // if (!fn)
+  // return 1;
+  // }
+
+  if (ft == WAVE) {
     if (waveLength(fn, 0, &headerLength, length) != 0)
       return 2;
-  }
-  else {
+  } else {
     if (buf.st_size % sizeof(Sample) != 0) {
       message(-1, "%s: Length is not a multiple of sample size (4).", fn);
     }
@@ -854,13 +900,14 @@ int TrackData::dataFileLength(const char *fname, long offset,
 //         WAVE: wave file
 TrackData::FileType TrackData::audioFileType(const char *filename)
 {
-  char *p;
+  FileExtension p = fileExtension(filename);
 
-  if ((p = strrchr(filename, '.')) != NULL) {
-    if (strcasecmp(p, ".wav") == 0) {
-      return WAVE;
-    }
-  }
+  if (p == FE_WAV)
+    return WAVE;
+  if (p == FE_MP3)
+    return MP3;
+  if (p == FE_OGG)
+    return OGG;
 
   return RAW;
 }
@@ -987,7 +1034,6 @@ const char *TrackData::subChannelMode2String(SubChannelMode m)
   return ret;
 }
 
-
 TrackDataReader::TrackDataReader(const TrackData *d)
 {
   trackData_ = d;
@@ -1029,6 +1075,13 @@ int TrackDataReader::openData()
   if (trackData_->type_ == TrackData::DATAFILE) {
     if (trackData_->mode_ == TrackData::AUDIO) {
       long headerLength = 0;
+
+      if (trackData_->fileType_ != TrackData::WAVE &&
+          trackData_->fileType_ != TrackData::RAW) {
+        message(-2, "Cannot open audio file \"%s\": unsupported format",
+                trackData_->filename_);
+        return 1;
+      }
 
 #ifdef __CYGWIN__
       if ((fd_ = open(trackData_->filename_, O_RDONLY | O_BINARY)) < 0)

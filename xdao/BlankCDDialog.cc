@@ -72,7 +72,7 @@ BlankCDDialog::BlankCDDialog()
   moreOptionsBox->pack_start(*moreOptionsLabel, false, false, 4);
   moreOptionsButton->add(*moreOptionsBox);
   moreOptionsButton->signal_clicked().
-    connect(slot(*this, &BlankCDDialog::moreOptions));
+    connect(mem_fun(*this, &BlankCDDialog::moreOptions));
   moreOptionsBox = manage(new Gtk::HBox);
   frameBox->pack_start(*moreOptionsBox);
   moreOptionsBox->pack_end(*moreOptionsButton, false, false);
@@ -88,7 +88,7 @@ BlankCDDialog::BlankCDDialog()
   startBox->pack_start(*startLabel, false, false);
 
   button->add(*startBox);
-  button->signal_clicked().connect(slot(*this, &BlankCDDialog::startAction));
+  button->signal_clicked().connect(mem_fun(*this, &BlankCDDialog::startAction));
 
   Gtk::HBox *hbox2 = manage(new Gtk::HBox);
   hbox2->set_spacing(20);
@@ -97,7 +97,7 @@ BlankCDDialog::BlankCDDialog()
 
   Gtk::Button* cancel_but =
     manage(new Gtk::Button(Gtk::StockID(Gtk::Stock::CANCEL)));
-  cancel_but->signal_clicked().connect(slot(*this, &BlankCDDialog::stop));
+  cancel_but->signal_clicked().connect(mem_fun(*this, &BlankCDDialog::stop));
   hbox2->pack_start(*cancel_but);
   vbox->pack_start(*hbox2, Gtk::PACK_SHRINK);
 
@@ -107,9 +107,9 @@ BlankCDDialog::BlankCDDialog()
 void BlankCDDialog::moreOptions()
 {
   if (!moreOptionsDialog_) {
-    moreOptionsDialog_ = new Gtk::MessageDialog(*this, _("Blank options"),
+	  moreOptionsDialog_ = new Gtk::MessageDialog(*this, _("Blank options"), false, 
                                                 Gtk::MESSAGE_QUESTION,
-                                                Gtk::BUTTONS_CLOSE);
+						      Gtk::BUTTONS_CLOSE, true);
 
     Gtk::VBox *vbox = moreOptionsDialog_->get_vbox();
     Gtk::Frame *frame = new Gtk::Frame(_(" More Blank Options "));
@@ -137,13 +137,13 @@ void BlankCDDialog::moreOptions()
     speedSpinButton_->set_digits(0);
     speedSpinButton_->set_sensitive(false);
     adjustment->signal_value_changed().
-      connect(slot(*this, &BlankCDDialog::speedChanged));
+      connect(mem_fun(*this, &BlankCDDialog::speedChanged));
     hbox->pack_start(*speedSpinButton_, false, false, 10);
   
     speedButton_ = new Gtk::CheckButton(_("Use max."), 0);
     speedButton_->set_active(true);
     speedButton_->signal_toggled().
-      connect(slot(*this, &BlankCDDialog::speedButtonChanged));
+      connect(mem_fun(*this, &BlankCDDialog::speedButtonChanged));
     hbox->pack_start(*speedButton_, true, true);
     vbox->pack_start(*hbox);
     moreOptionsDialog_->show_all_children();
@@ -154,7 +154,7 @@ void BlankCDDialog::moreOptions()
   moreOptionsDialog_->hide();
 }
 
-void BlankCDDialog::start(Project& parent)
+void BlankCDDialog::start(Gtk::Window& parent)
 {
   present();
   active_ = true;

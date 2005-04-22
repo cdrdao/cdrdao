@@ -55,6 +55,8 @@ const char *SET_CDDB_SERVER_LIST = "cddb_server_list";
 const char *SET_CDDB_TIMEOUT     = "cddb_timeout";
 const char *SET_CDDB_DB_DIR      = "cddb_directory";
 
+const char *SET_TMP_FILE_DIR = "tmp_file_dir";
+
 class SettingEntry {
 public:
   SettingEntry(const char *, int);
@@ -186,33 +188,33 @@ int SettingsImpl::read(FILE *fp)
   while (fgets(buf, MAX_LINE_LENGTH, fp) != NULL) {
     // handle comment
     if ((p = strchr(buf, '#')) != NULL)
-      *p = 0;
+      continue;
 
     if ((p = strchr(buf, ':')) != NULL) {
       *p++ = 0;
 
       p1 = buf;
       while (*p1 != 0 && isspace(*p1))
-	p1++;
+        p1++;
 
       name = p1;
 
       while (*p1 != 0 && !isspace(*p1))
-	p1++;
+        p1++;
       *p1 = 0;
 
       while (*p != 0 && isspace(*p))
-	p++;
+        p++;
 
       // strip off trailing white space
       if ((n = strlen(p)) > 0) {
-	for (p1 = p + n - 1; p1 >= p; p1--) {
-	  if (isspace(*p1)) {
-	    *p1 = 0;
-	  }
-	}
+        for (p1 = p + n - 1; p1 >= p; p1--) {
+          if (isspace(*p1)) {
+            *p1 = 0;
+          }
+        }
       }
-      
+
       parseAndSetValue(name, p);
     }
   }
@@ -230,20 +232,24 @@ void SettingsImpl::parseAndSetValue(char *name, char *valStr)
     return;
 
   if (*valStr == '"') {
-    val = p = valStr + 1;
-
-    while (*p != 0 && *p != '"')
-      p++;
-
-    if (*p == '"') {
-      *p = 0;
-
+    val = valStr + 1;
+    p = val + strlen(val)-1;
+    if (*p != '"') {
+      fprintf(stderr,"Error in string constant '%s'\n", valStr);
+    } else {
+      *p=0;
       set(name, val);
     }
-  }
-  else {
-    intValue = strtol(valStr, NULL, 0);
-    set(name, intValue);
+    
+  } else {  /* valSTR is numeric? */
+    char * end = NULL;
+    errno=0;
+    intValue = strtol(valStr, &end, 0);
+    if(errno != 0 || !end || *end) {
+      fprintf(stderr,"Error parsing numeric option '%s' (missing quotes?)\n",
+              valStr);
+    } else
+      set(name, intValue);
   }
 }
 

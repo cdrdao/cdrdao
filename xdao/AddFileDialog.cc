@@ -27,7 +27,6 @@
 #include <gnome.h>
 
 #include "AddFileDialog.h"
-
 #include "guiUpdate.h"
 #include "TocEdit.h"
 #include "Sample.h"
@@ -38,13 +37,13 @@
 AddFileDialog::AddFileDialog(AudioCDProject *project)
     : Gtk::FileSelection("")
 {
-  active_ = 0;
+  active_ = false;
   project_ = project;
 
   set_filename("*.wav");
   show_fileop_buttons();
   set_select_multiple(true);
-  set_transient_for(*project);
+  set_transient_for(*project->getParentWindow ());
   mode(M_APPEND_TRACK);
 
   Gtk::Button* cancel = get_cancel_button();
@@ -55,9 +54,10 @@ AddFileDialog::AddFileDialog(AudioCDProject *project)
   ok->set_label(Gtk::Stock::ADD.id);
   ok->set_use_stock(true);
 
-  ok->signal_clicked().connect(SigC::slot(*this,&AddFileDialog::applyAction));
-  cancel->signal_clicked().connect(SigC::slot(*this,
-                                              &AddFileDialog::closeAction));
+  ok->signal_clicked().connect(sigc::mem_fun(*this,
+                                             &AddFileDialog::applyAction));
+  cancel->signal_clicked().connect(sigc::mem_fun(*this,
+                                                 &AddFileDialog::closeAction));
 }
 
 AddFileDialog::~AddFileDialog()
@@ -101,15 +101,6 @@ void AddFileDialog::stop()
   }
 }
 
-void AddFileDialog::update(unsigned long level)
-{
-  if (level & UPD_EDITABLE_STATE) {
-    if (project_->tocEdit()) {
-      get_ok_button()->set_sensitive(project_->tocEdit()->editable());
-    }
-  }
-}
-
 bool AddFileDialog::on_delete_event(GdkEventAny*)
 {
   stop();
@@ -123,11 +114,6 @@ void AddFileDialog::closeAction()
 
 void AddFileDialog::applyAction()
 {
-  if (!project_->tocEdit() ||
-      !project_->tocEdit()->editable()) {
-    return;
-  }
-
   Glib::ArrayHandle<std::string> sfiles = get_selections();
   std::list<std::string> files;
 
@@ -136,8 +122,13 @@ void AddFileDialog::applyAction()
 
     const char *s = stripCwd((*i).c_str());
 
-    if (s && *s != 0 && s[strlen(s) - 1] != '/')
-      files.push_back(s);
+    if (s && *s != 0 && s[strlen(s) - 1] != '/') {
+
+      if (fileExtension(s) == FE_M3U)
+        parseM3u(s, files);
+      else
+        files.push_back(s);
+    }
   }
 
   if (files.size() > 0) {

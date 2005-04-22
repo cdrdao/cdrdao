@@ -88,7 +88,7 @@ diff -ru --unidirectional-new-file /home/denis/packages/cdrtools-2.01a25/libscg/
 diff -ru --unidirectional-new-file /home/denis/packages/cdrtools-2.01a25/Makefile scsilib/Makefile
 --- scsilib.orig/Makefile	1998-09-20 15:58:30.000000000 -0700
 +++ scsilib/Makefile	2004-04-12 18:56:23.000000000 -0700
-@@ -13,3 +13,10 @@
+@@ -13,3 +13,13 @@
  #
  include		$(SRCROOT)/$(RULESDIR)/rules.rdi
  ###########################################################################
@@ -97,6 +97,9 @@ diff -ru --unidirectional-new-file /home/denis/packages/cdrtools-2.01a25/Makefil
 +	@
 +
 +check:
++
++uninstall:
++	@
 +
 +distclean: clean
 diff -ru --unidirectional-new-file /home/denis/packages/cdrtools-2.01a31/README.cdrdao scsilib/README.cdrdao
@@ -148,3 +151,163 @@ diff -ru --unidirectional-new-file /home/denis/packages/cdrtools-2.01a25/TARGETS
  _ARCHCMD=	(arch || /usr/ucb/arch || true)	2> /dev/null
  
  XP_ARCH:=	$(shell $(_MACHCMD) | tr '[A-Z]' '[a-z]' | tr ', /\\()"' ',//////' | tr ',/' ',-')
+diff -ruN --recursive scsilib/RULES.orig/ppc64-linux-cc.rul scsilib/RULES/ppc64-linux-cc.rul
+--- scsilib/RULES.orig/ppc64-linux-cc.rul	1970-01-01 00:00:00.000000000 +0000
++++ scsilib/RULES/ppc64-linux-cc.rul	2004-12-23 16:02:37.343901376 +0000
+@@ -0,0 +1,70 @@
++#ident "@(#)i586-linux-cc.rul	1.5 02/10/15 "
++###########################################################################
++# Written 1996 by J. Schilling
++###########################################################################
++#
++# Platform dependent MACROS for Linux
++#
++###########################################################################
++# This program is free software; you can redistribute it and/or modify
++# it under the terms of the GNU General Public License as published by
++# the Free Software Foundation; either version 2, or (at your option)
++# any later version.
++#
++# This program is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; see the file COPYING.  If not, write to
++# the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
++###########################################################################
++include $(SRCROOT)/$(RULESDIR)/rules.prg
++###########################################################################
++
++CPPFLAGS=	$(CPPOPTS) $(CPPOPTX)
++CFLAGS=		$(COPTS) $(CWARNOPTS) $(COPTOPT) $(GCCOPTOPT) $(COPTX)
++
++CPPOPTS=	-I. -I$(ARCHDIR) -I$(OINCSDIR) $(INCDIRS:%=-I%) $(OSDEFS)
++COPTS=
++CWOPTS=		-Wall -Wtraditional \
++		-Wshadow -Wmissing-prototypes -Wstrict-prototypes
++COPTOPT=	-O
++KDEFINES=	-DKERNEL -D_KERNEL
++COPTDYN=	-fpic
++COPTGPROF=	-pg
++
++LIB_PREFIX=	lib
++LIB_SUFFIX=	.a
++SHL_SUFFIX=	.so.1.0
++
++#LIB_SOCKET=	-lsocket -lnsl -ldl
++LIB_SOCKET=	
++LIB_MATH=	-lm
++#LIB_KVM=	-lkvm
++LIB_KVM=	
++
++LIBS_PATH=	-L$(OLIBSDIR)
++
++LDFLAGS=	$(LDOPTS) $(LDOPTX)
++LDLIBS=		$(LIBS) $(LIBX)
++
++#LDOPTS=		$(LIBS_PATH) $(LDPATH) $(RUNPATH)
++LDOPTS=		$(LIBS_PATH) $(LDPATH)
++LDOPTDYN=	-shared -Wl,-soname,$(TARGET)
++LNDYNLIB=	@$(SYMLINK) $(TARGET) $(PTARGET_BASE).so
++
++FLOAT_OPTIONS=	
++
++CC=		@echo "	==> COMPILING \"$@\""; gcc
++LDCC=		@echo "	==> LINKING \"$@\""; gcc
++DYNLD=		@echo "	==> LINKING dynamic library \"$@\""; gcc
++RANLIB=		@echo "	==> RANDOMIZING ARCHIVE \"$@\""; true
++ARFLAGS=	cr
++LORDER=		echo
++TSORT=		cat
++
++RMDEP=		:
++MKDEP=		@echo "	==> MAKING DEPENDENCIES \"$@\""; $(RMDEP); gcc -M
++MKDEP_OUT=
+diff -ruN --recursive scsilib/RULES.orig/ppc64-linux-gcc.rul scsilib/RULES/ppc64-linux-gcc.rul
+--- scsilib/RULES.orig/ppc64-linux-gcc.rul	1970-01-01 00:00:00.000000000 +0000
++++ scsilib/RULES/ppc64-linux-gcc.rul	2004-12-23 16:02:43.008978904 +0000
+@@ -0,0 +1,70 @@
++#ident "@(#)i586-linux-gcc.rul	1.5 02/10/15 "
++###########################################################################
++# Written 1996 by J. Schilling
++###########################################################################
++#
++# Platform dependent MACROS for Linux
++#
++###########################################################################
++# This program is free software; you can redistribute it and/or modify
++# it under the terms of the GNU General Public License as published by
++# the Free Software Foundation; either version 2, or (at your option)
++# any later version.
++#
++# This program is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; see the file COPYING.  If not, write to
++# the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
++###########################################################################
++include $(SRCROOT)/$(RULESDIR)/rules.prg
++###########################################################################
++
++CPPFLAGS=	$(CPPOPTS) $(CPPOPTX)
++CFLAGS=		$(COPTS) $(CWARNOPTS) $(COPTOPT) $(GCCOPTOPT) $(COPTX)
++
++CPPOPTS=	-I. -I$(ARCHDIR) -I$(OINCSDIR) $(INCDIRS:%=-I%) $(OSDEFS)
++COPTS=
++CWOPTS=		-Wall -Wtraditional \
++		-Wshadow -Wmissing-prototypes -Wstrict-prototypes
++COPTOPT=	-O
++KDEFINES=	-DKERNEL -D_KERNEL
++COPTDYN=	-fpic
++COPTGPROF=	-pg
++
++LIB_PREFIX=	lib
++LIB_SUFFIX=	.a
++SHL_SUFFIX=	.so.1.0
++
++#LIB_SOCKET=	-lsocket -lnsl -ldl
++LIB_SOCKET=	
++LIB_MATH=	-lm
++#LIB_KVM=	-lkvm
++LIB_KVM=	
++
++LIBS_PATH=	-L$(OLIBSDIR)
++
++LDFLAGS=	$(LDOPTS) $(LDOPTX)
++LDLIBS=		$(LIBS) $(LIBX)
++
++#LDOPTS=		$(LIBS_PATH) $(LDPATH) $(RUNPATH)
++LDOPTS=		$(LIBS_PATH) $(LDPATH)
++LDOPTDYN=	-shared -Wl,-soname,$(TARGET)
++LNDYNLIB=	@$(SYMLINK) $(TARGET) $(PTARGET_BASE).so
++
++FLOAT_OPTIONS=	
++
++CC=		@echo "	==> COMPILING \"$@\""; gcc
++LDCC=		@echo "	==> LINKING \"$@\""; gcc
++DYNLD=		@echo "	==> LINKING dynamic library \"$@\""; gcc
++RANLIB=		@echo "	==> RANDOMIZING ARCHIVE \"$@\""; true
++ARFLAGS=	cr
++LORDER=		echo
++TSORT=		cat
++
++RMDEP=		:
++MKDEP=		@echo "	==> MAKING DEPENDENCIES \"$@\""; $(RMDEP); gcc -M
++MKDEP_OUT=
+diff -pur cdrdao-1.1.9/scsilib/libscg/scsi-linux-ata.c cdrdao-1.1.9-fixed/scsilib/libscg/scsi-linux-ata.c
+--- scsilib/libscg/scsi-linux-ata.c	2005-02-05 22:45:03.422964296 +0100
++++ scsilib/libscg/scsi-linux-ata.c	2005-02-05 22:39:59.748129888 +0100
+@@ -689,7 +689,7 @@ sg_amapdev(scgp, f, device, schillybus, 
+ 		return (FALSE);
+ 
+ 	result = lstat(device, &buf);
+-	if (!result && S_ISLNK(buf.st_mode)) {
++	if (0 && !result && S_ISLNK(buf.st_mode)) {
+ 		result = readlink(device, tmp, LOCAL_MAX_PATH);
+ 		if (result > 0 && result < LOCAL_MAX_PATH) {
+ 			tmp[result] = '\0';

@@ -28,7 +28,6 @@ class Toc;
 class Track;
 class Sample;
 class SoundIF;
-class AudioCDChild;
 class AudioCDView;
 class TocInfoDialog;
 class CdTextDialog;
@@ -39,6 +38,57 @@ class AudioCDProject : public Project
 {
 public:
   enum PlayStatus {PLAYING, PAUSED, STOPPED};
+
+  AudioCDProject(int number, const char *name, TocEdit *tocEdit,
+                 Gtk::Window *parent);
+
+  void add_menus (Glib::RefPtr<Gtk::UIManager> m_refUIManager);
+  void configureAppBar (Gnome::UI::AppBar *s, Gtk::ProgressBar* p,
+                        Gtk::Button *b);
+
+  bool            closeProject();
+
+  enum PlayStatus getPlayStatus();
+  unsigned long   playPosition();
+
+  unsigned long   getDelay();
+
+  bool            appendTrack(const char* file);
+  bool            appendTracks(std::list<std::string>&);
+  bool            appendFiles(std::list<std::string>&);
+  bool            insertFiles(std::list<std::string>&);
+
+  PlayStatus      playStatus() { return playStatus_; }
+
+  // Controls for app bar
+  void            cancelEnable(bool);
+  sigc::signal0<void> signalCancelClicked;
+
+ protected:
+  Gtk::Button* buttonPlay_;
+  Gtk::Button* buttonStop_;
+  Gtk::Button* buttonPause_;
+
+  virtual void on_play_clicked();
+  virtual void on_stop_clicked();
+  virtual void on_pause_clicked();
+  virtual void on_select_clicked();
+  virtual void on_zoom_clicked();
+  virtual void on_zoom_in_clicked();
+  virtual void on_zoom_out_clicked();
+  virtual void on_zoom_fit_clicked();
+  virtual void on_cancel_clicked();
+
+  virtual void status(const char* msg);
+  virtual void errorDialog(const char* msg); 
+  virtual void progress(double val);
+  virtual void fullView();
+  virtual void sampleSelection(unsigned long, unsigned long);
+
+  void playStart();
+  void playStart(unsigned long start, unsigned long end);
+  void playPause();
+  void playStop();
 
 private:
   TocReader tocReader;
@@ -54,50 +104,17 @@ private:
   bool playCallback();
 
   Gtk::HBox      hbox_;
-  AudioCDChild*  audioCDChild_;
   AudioCDView*   audioCDView_;
   TocInfoDialog* tocInfoDialog_;
   CdTextDialog*  cdTextDialog_;
+  Glib::RefPtr<Gtk::ActionGroup> m_refActionGroup;
+  Glib::RefPtr<Gtk::ToggleAction> selectToggle_;
+  Glib::RefPtr<Gtk::ToggleAction> zoomToggle_;
   void recordToc2CD();
   void projectInfo();
   void cdTextDialog();
   void update(unsigned long level);
 
   enum PlayStatus playStatus_;
-
- protected:
-  Gtk::Button* buttonPlay_;
-  Gtk::Button* buttonStop_;
-  Gtk::Button* buttonPause_;
-
-  virtual void createToolbar();
-  virtual void createToolbar2();
-  virtual void on_play_clicked();
-  virtual void on_stop_clicked();
-  virtual void on_pause_clicked();
-  virtual void on_select_clicked();
-  virtual void on_zoom_clicked();
-  virtual void on_zoom_in_clicked();
-  virtual void on_zoom_out_clicked();
-  virtual void on_zoom_fit_clicked();
- 
-public:
-  AudioCDProject(int number, const char *name, TocEdit *tocEdit);
-
-  bool            closeProject();
-
-  void            playStart();
-  void            playStart(unsigned long start, unsigned long end);
-  void            playPause();
-  void            playStop();
-  enum PlayStatus getPlayStatus();
-  unsigned long   playPosition();
-
-  unsigned long   getDelay();
-
-  bool            appendTracks(std::list<std::string>&);
-  bool            appendFiles(std::list<std::string>&);
-  bool            insertFiles(std::list<std::string>&);
 };
 #endif
-

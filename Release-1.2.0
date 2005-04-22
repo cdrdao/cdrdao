@@ -1,0 +1,24 @@
+Hi,
+
+cdrdao-1.2.0 is available from:
+
+  http://sf.net/projects/cdrdao
+
+
+Cdrdao changes:
+
+- SECURITY FIX: cdrdao now gives up its root privileges after setting
+  up real-time scheduling, as well as before saving settings through
+  the --save option. This fixes a potential local root exploit when
+  cdrdao is installed with the +s chmod flag. Using --save also forces
+  an early exit after the settings are saved.
+
+- Added MP3 and Ogg Vorbis file support (through respectively the
+  libmad and libvorbis libraries). cdrdao will decode the MP3 and Ogg
+  files into temporary WAV files that will be deleted upon exit
+  (unless the new option --keep is used). The directory used to store
+  those temporary WAV files can be specified with the --tmpdir option
+  (default is /tmp).
+
+
+Denis Leroy

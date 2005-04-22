@@ -287,3 +287,41 @@ int setRealTimeScheduling(int priority)
 
   return 0;
 }
+
+// Give up root privileges. Returns true if succeeded or no action was
+// taken.
+
+bool giveUpRootPrivileges()
+{
+    if (geteuid() != getuid()) {
+#if defined(HAVE_SETREUID)
+        if (setreuid((uid_t)-1, getuid()) != 0)
+            return false;
+#elif defined(HAVE_SETEUID)
+        if (seteuid(getuid()) != 0)
+            return false;
+#elif defined(HAVE_SETUID)
+        if (setuid(getuid()) != 0)
+            return false;
+#else
+        return false;
+#endif
+    }
+
+    if (getegid() != getgid()) {
+#if defined(HAVE_SETREGID)
+        if (setregid((gid_t)-1, getgid()) != 0)
+            return false;
+#elif defined(HAVE_SETEGID)
+        if (setegid(getgid()) != 0)
+            return false;
+#elif defined(HAVE_SETGID)
+        if (setgid(getgid()) != 0)
+            return false;
+#else
+        return false;
+#endif
+    }
+
+    return true;
+}

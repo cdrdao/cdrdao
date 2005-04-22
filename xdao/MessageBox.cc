@@ -72,7 +72,7 @@ void MessageBoxBase::init(const char *type, const char *title, int askDontShow,
   for (i = 1; i <= nButtons; i++) {
     Gtk::Button* button = manage(createButton(buttons[i - 1]));
     button->show();
-    button->signal_clicked().connect(bind(slot(*this,
+    button->signal_clicked().connect(bind(mem_fun(*this,
                                                &MessageBoxBase::buttonAction),
                                           i));
     bbox->add(*button);

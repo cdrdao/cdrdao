@@ -457,6 +457,8 @@ static void *reader(void *args)
 
   setRealTimeScheduling(4);
 
+  giveUpRootPrivileges();
+
   if (cdr != NULL) {
     if (cdr->bigEndianSamples() == 0) {
       // swap samples for little endian recorders
@@ -745,6 +747,8 @@ int writeDiskAtOnce(const Toc *toc, CdrDriver *cdr, int nofBuffers, int swap,
     message(4, "Memory locked");
   }
 #endif
+
+  giveUpRootPrivileges();
 
   switch (writer(toc, cdr, header, startLba, speed)) {
   case 1: // error, reader process terminated abnormally

@@ -65,14 +65,14 @@ DeviceConfDialog::DeviceConfDialog()
 
   selectedRow_ = list_.get_selection()->get_selected();
   list_.get_selection()->signal_changed().
-      connect(slot(*this, &DeviceConfDialog::selectionChanged));
+      connect(mem_fun(*this, &DeviceConfDialog::selectionChanged));
 
   Gtk::Menu *dmenu = manage(new Gtk::Menu);
   Gtk::MenuItem *mi;
 
   for (i = 0; i <= CdDevice::maxDriverId(); i++) {
     mi = manage(new Gtk::MenuItem(CdDevice::driverName(i)));
-    mi->signal_activate().connect(bind(slot(*this,
+    mi->signal_activate().connect(bind(mem_fun(*this,
                                             &DeviceConfDialog::setDriverId),
                                        i));
     mi->show();
@@ -87,7 +87,7 @@ DeviceConfDialog::DeviceConfDialog()
   for (i = 0; i <= MAX_DEVICE_TYPE_ID; i++) {
     mi = manage(new
                 Gtk::MenuItem(CdDevice::deviceType2string(ID2DEVICE_TYPE[i])));
-    mi->signal_activate().connect(bind(slot(*this,
+    mi->signal_activate().connect(bind(mem_fun(*this,
                                             &DeviceConfDialog::setDeviceType),
                                        i));
     mi->show();
@@ -127,12 +127,12 @@ DeviceConfDialog::DeviceConfDialog()
   button = manage(new Gtk::Button(_("Rescan")));
   bbox->pack_start(*button);
   button->signal_clicked().
-    connect(SigC::slot(*this,&DeviceConfDialog::rescanAction));
+    connect(sigc::mem_fun(*this,&DeviceConfDialog::rescanAction));
 
   button = manage(new Gtk::Button(Gtk::StockID(Gtk::Stock::DELETE)));
   bbox->pack_start(*button);
   button->signal_clicked().
-    connect(SigC::slot(*this,&DeviceConfDialog::deleteDeviceAction));
+    connect(sigc::mem_fun(*this,&DeviceConfDialog::deleteDeviceAction));
 
   listBox->pack_start(*bbox, Gtk::PACK_SHRINK);
 
@@ -193,7 +193,7 @@ DeviceConfDialog::DeviceConfDialog()
       manage(new Gtk::Button(Gtk::StockID(Gtk::Stock::ADD)));
   bbox->pack_start(*addButton);
   addButton->signal_clicked().
-      connect(slot(*this, &DeviceConfDialog::addDeviceAction));
+      connect(mem_fun(*this, &DeviceConfDialog::addDeviceAction));
   addDeviceBox->pack_start(*bbox);
 
   addDeviceFrame_.add(*addDeviceBox);
@@ -207,18 +207,18 @@ DeviceConfDialog::DeviceConfDialog()
   Gtk::Button* applyButton =
     manage(new Gtk::Button(Gtk::StockID(Gtk::Stock::APPLY)));
   bbox->pack_start(*applyButton);
-  applyButton->signal_clicked().connect(slot(*this,
+  applyButton->signal_clicked().connect(mem_fun(*this,
                                              &DeviceConfDialog::applyAction));
   
   Gtk::Button *resetButton = manage(new Gtk::Button(_("Reset")));
   bbox->pack_start(*resetButton);
-  resetButton->signal_clicked().connect(slot(*this,
+  resetButton->signal_clicked().connect(mem_fun(*this,
                                              &DeviceConfDialog::resetAction));
 
   Gtk::Button *cancelButton =
     manage(new Gtk::Button(Gtk::StockID(Gtk::Stock::CLOSE)));
   bbox->pack_start(*cancelButton);
-  cancelButton->signal_clicked().connect(slot(*this,
+  cancelButton->signal_clicked().connect(mem_fun(*this,
                                               &DeviceConfDialog::closeAction));
 
   contents->pack_start(*bbox, Gtk::PACK_SHRINK);

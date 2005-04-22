@@ -16,41 +16,6 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
-/*
- * $Log: SoundIF-linux.cc,v $
- * Revision 1.3  2004/03/05 20:48:32  poolshark
- * FreeBSD patch: add support for FreeBSD
- *
- * Revision 1.2  2004/02/12 01:13:32  poolshark
- * Merge from gnome2 branch
- *
- * Revision 1.1.1.1.6.3  2004/01/12 20:50:26  poolshark
- * Added _( and N_( intl macros
- *
- * Revision 1.1.1.1.6.2  2004/01/06 19:03:36  poolshark
- * Missing end in destructor
- *
- * Revision 1.1.1.1.6.1  2004/01/05 00:34:03  poolshark
- * First checking of gnome2 port
- *
- * Revision 1.1.1.1  2003/12/09 05:32:28  denis
- * Fooya
- *
- * Revision 1.1.1.1  2000/02/05 01:39:57  llanero
- * Uploaded cdrdao 1.1.3 with pre10 patch applied.
- *
- * Revision 1.3  1999/08/07 16:27:28  mueller
- * Applied patch from Yves Bastide:
- * * prefixing member function names with their class name in connect_to_method
- * * explicitly `const_cast'ing a cast to const
- *
- * Revision 1.2  1999/05/24 18:09:53  mueller
- * Added check for existance of 'SNDCTL_DSP_GETODELAY'.
- *
- * Revision 1.1  1998/11/20 18:57:34  mueller
- * Initial revision
- *
- */
 
 # if defined(__FreeBSD__)
 #include <sys/soundcard.h>
@@ -62,18 +27,13 @@
 # endif
 
 #include <stdio.h>
-#include <assert.h>
-#include <string.h>
-#include <errno.h>
-#include <unistd.h>
-#include <fcntl.h>
+#include <gtkmm.h>
+#include <gnome.h>
 #include <sys/ioctl.h>
 #include <sys/types.h>
-
-#include <gnome.h>
+#include <fcntl.h>
 
 #include "SoundIF.h"
-
 #include "Sample.h"
 #include "util.h"
 

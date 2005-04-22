@@ -136,23 +136,23 @@ TocInfoDialog::TocInfoDialog(Gtk::Window* parent)
 
   mi = manage(new Gtk::MenuItem("CD-DA"));
   mi->signal_activate().
-    connect(bind(slot(*this, &TocInfoDialog::setSelectedTocType), Toc::CD_DA));
+    connect(bind(mem_fun(*this, &TocInfoDialog::setSelectedTocType), Toc::CD_DA));
   menu->append(*mi);
 
   mi = manage(new Gtk::MenuItem("CD-ROM"));
   mi->signal_activate().
-    connect(bind(slot(*this, &TocInfoDialog::setSelectedTocType),Toc::CD_ROM));
+    connect(bind(mem_fun(*this, &TocInfoDialog::setSelectedTocType),Toc::CD_ROM));
   menu->append(*mi);
 
   mi = manage(new Gtk::MenuItem("CD-ROM-XA"));
   mi->signal_activate().
-    connect(bind(slot(*this, &TocInfoDialog::setSelectedTocType),
+    connect(bind(mem_fun(*this, &TocInfoDialog::setSelectedTocType),
                  Toc::CD_ROM_XA));
   menu->append(*mi);
 
   mi = manage(new Gtk::MenuItem("CD-I"));
   mi->signal_activate().
-    connect(bind(slot(*this, &TocInfoDialog::setSelectedTocType), Toc::CD_I));
+    connect(bind(mem_fun(*this, &TocInfoDialog::setSelectedTocType), Toc::CD_I));
   menu->append(*mi);
 
   tocType_ = manage(new Gtk::OptionMenu);
@@ -216,11 +216,11 @@ TocInfoDialog::TocInfoDialog(Gtk::Window* parent)
 
   applyButton_ = manage(new Gtk::Button(Gtk::StockID(Gtk::Stock::APPLY)));
   bbox->pack_start(*applyButton_);
-  applyButton_->signal_clicked().connect(SigC::slot(*this,&TocInfoDialog::applyAction));
+  applyButton_->signal_clicked().connect(sigc::mem_fun(*this,&TocInfoDialog::applyAction));
 
   button = manage(new Gtk::Button(Gtk::StockID(Gtk::Stock::CLOSE)));
   bbox->pack_start(*button);
-  button->signal_clicked().connect(SigC::slot(*this,&TocInfoDialog::closeAction));
+  button->signal_clicked().connect(sigc::mem_fun(*this,&TocInfoDialog::closeAction));
 
   get_action_area()->pack_start(*bbox);
   show_all_children();
@@ -321,7 +321,7 @@ void TocInfoDialog::createCdTextLanguageMenu(int n)
     bval.value = i;
 
     mi = manage(new Gtk::MenuItem(CD_TEXT_LANGUAGE_CODES[i].name));
-    mi->signal_activate().connect(bind(slot(*this, &TocInfoDialog::setSelectedCDTextLanguage), bval));
+    mi->signal_activate().connect(bind(mem_fun(*this, &TocInfoDialog::setSelectedCDTextLanguage), bval));
     mi->show();
     menu->append(*mi);
   }
@@ -344,7 +344,7 @@ void TocInfoDialog::createCdTextGenreMenu(int n)
     bval.value = i;
 
     mi = manage(new Gtk::MenuItem(CD_TEXT_GENRE_CODES[i].name));
-    mi->signal_activate().connect(bind(slot(*this, &TocInfoDialog::setSelectedCDTextGenre), bval));
+    mi->signal_activate().connect(bind(mem_fun(*this, &TocInfoDialog::setSelectedCDTextGenre), bval));
     mi->show();
     menu->append(*mi);
   }

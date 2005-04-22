@@ -31,22 +31,15 @@
 #include <gtkmm.h>
 #include <gnome.h>
 
-DumpCDProject::DumpCDProject()
+DumpCDProject::DumpCDProject(Gtk::Window *parent)
 {
-  set_title(_("Dump CD to disk"));
-
-  // menu stuff
-  if (miSave_)     miSave_->set_sensitive(false);
-  if (miSaveAs_)   miSaveAs_->set_sensitive(false);
-  if (miEditTree_) miEditTree_->hide();
-  if (miRecord_)   miRecord_->set_sensitive(false);
-
   // Top vbox
   Gtk::VBox* top_vbox = manage(new Gtk::VBox);
   top_vbox->set_border_width(10);
   top_vbox->set_spacing(10);
+  parent_ = parent;
 
-  CDSource = manage(new RecordCDSource(this));
+  CDSource = manage(new RecordCDSource(parent_));
   CDSource->onTheFlyOption(false);
   CDSource->start();
   top_vbox->pack_start(*CDSource);
@@ -66,12 +59,11 @@ DumpCDProject::DumpCDProject()
   startBox->pack_start(*pixmap, false, false);
   startBox->pack_start(*startLabel, false, false);
   button->add(*startBox);
-  button->signal_clicked().connect(slot(*this, &DumpCDProject::start));
+  button->signal_clicked().connect(mem_fun(*this, &DumpCDProject::start));
   bbox->pack_start(*button, Gtk::PACK_EXPAND_PADDING);
   top_vbox->pack_start(*bbox, Gtk::PACK_SHRINK);
 
-  frame_.add(*top_vbox);
-  install_menu_hints();
+  pack_start(*top_vbox);
   guiUpdate(UPD_ALL);
   show_all();
 }
@@ -85,7 +77,7 @@ void DumpCDProject::start()
   DeviceList *sourceList = CDSource->getDeviceList();
 
   if (sourceList->selection().empty()) {
-    Gtk::MessageDialog d(*this, _("Please select one reader device"),
+    Gtk::MessageDialog d(*parent_, _("Please select one reader device"),
                          Gtk::MESSAGE_INFO);
     d.run();
     return;
@@ -98,7 +90,7 @@ void DumpCDProject::start()
   std::string imageName = HDTarget->getFilename();
 
   if (imageName == "") {
-    Gtk::MessageDialog d(*this, _("Please specify a name for the image"),
+    Gtk::MessageDialog d(*parent_, _("Please specify a name for the image"),
                        Gtk::MESSAGE_INFO);
     d.run();
     return;
@@ -111,7 +103,7 @@ void DumpCDProject::start()
     *p = 0;
 
   if (*tmp == 0 || strcmp(tmp, ".") == 0 || strcmp(tmp, "..") == 0) {
-    Gtk::MessageDialog d(*this, _("The specified image name is invalid"),
+    Gtk::MessageDialog d(*parent_, _("The specified image name is invalid"),
                          Gtk::MESSAGE_ERROR);
     d.run();
     delete[] tmp;
@@ -153,7 +145,7 @@ void DumpCDProject::start()
     s += binPath;
     s += _("\" already exists.");
 
-    Ask2Box msg(this, _("Dump CD"), 0, 1, s.c_str(),
+    Ask2Box msg(parent_, _("Dump CD"), 0, 1, s.c_str(),
     		_("Do you want to overwrite it?"), "", NULL);
 
     if (msg.run() != 1) 
@@ -166,14 +158,14 @@ void DumpCDProject::start()
     s += tocPath;
     s += _("\" already exists.");
 
-    Ask2Box msg(this, _("Dump CD"), 0, 1, s.c_str(),
+    Ask2Box msg(parent_, _("Dump CD"), 0, 1, s.c_str(),
     		_("Do you want to overwrite it?"), "", NULL);
 
     switch (msg.run()) {
     case 1: // remove the file an continue
       if (unlink(tocPath.c_str()) != -0)
       {
-        MessageBox msg(this, _("Dump CD"), 0,
+        MessageBox msg(parent_, _("Dump CD"), 0,
 		       _("Cannot delete toc-file"), tocPath.c_str(), NULL);
         msg.run();
         return;
@@ -195,10 +187,10 @@ void DumpCDProject::start()
   if (readDevice == NULL)
     return;
 
-  if (readDevice->extractDao(*this, imagePath.c_str(), correction,
+  if (readDevice->extractDao(*parent_, imagePath.c_str(), correction,
                              subChanReadMode)
       != 0) {
-    Gtk::MessageDialog d(*this, _("Cannot start reading"), Gtk::MESSAGE_ERROR);
+    Gtk::MessageDialog d(*parent_, _("Cannot start reading"), Gtk::MESSAGE_ERROR);
     d.run();
   } else {
     guiUpdate(UPD_CD_DEVICE_STATUS);
@@ -218,4 +210,3 @@ void DumpCDProject::update(unsigned long level)
   if (level & UPD_CD_DEVICE_STATUS)
     CDSource->getDeviceList()->selectOne();
 }
-

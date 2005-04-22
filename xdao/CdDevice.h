@@ -30,7 +30,7 @@ class TocEdit;
 class Process;
 class ScsiIf;
 
-class CdDevice : public SigC::Object
+class CdDevice : public sigc::trackable
 {
 public:
   enum Status { DEV_READY, DEV_RECORDING, DEV_READING, DEV_WAITING, DEV_BUSY,
@@ -79,16 +79,16 @@ public:
                  int buffer, int overburn);
   void abortDaoRecording();
 
-  int extractDao(Project& parent, const char *tocFileName, int correction,
+  int extractDao(Gtk::Window& parent, const char *tocFileName, int correction,
                  int readSubChanMode);
   void abortDaoReading();
 
-  int duplicateDao(Project& parent, int simulate, int multiSession, int speed,
+  int duplicateDao(Gtk::Window& parent, int simulate, int multiSession, int speed,
 		   int eject, int reload, int buffer, int onthefly,
 		   int correction, int readSubChanMode, CdDevice *readdev);
   void abortDaoDuplication();
 
-  int blank(Project* parent, int fast, int speed, int eject, int reload);
+  int blank(Gtk::Window* parent, int fast, int speed, int eject, int reload);
   void abortBlank();
     
   int progressStatusChanged();

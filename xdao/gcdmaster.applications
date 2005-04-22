@@ -1,0 +1,7 @@
+gcdmaster
+	command=gcdmaster
+	name=Gnome Audio CD Master
+	can_open_multiple_files=true
+	expects_uris=false
+	requires_terminal=false
+	mime_types=application/x-toc,application/x-cue,audio/x-mpegurl

@@ -16,66 +16,6 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
-/*
- * $Log: SampleManager.cc,v $
- * Revision 1.6  2004/02/12 01:13:32  poolshark
- * Merge from gnome2 branch
- *
- * Revision 1.5.6.1  2004/01/05 00:34:03  poolshark
- * First checking of gnome2 port
- *
- * Revision 1.3  2004/01/01 00:04:58  denis
- * Made scan progress use the Gnome APP progressbar
- *
- * Revision 1.2  2003/12/29 09:31:48  denis
- * fixed all dialogs
- *
- * Revision 1.1.1.1  2003/12/09 05:32:28  denis
- * Fooya
- *
- * Revision 1.5  2002/01/20 20:43:37  andreasm
- * Added support for sub-channel reading and writing.
- * Adapted to autoconf-2.52.
- * Adapted to gcc-3.0.
- *
- * Revision 1.4  2000/09/24 17:39:07  andreasm
- * Fixed length of processed data per idle signal call so that playback does
- * not jump when audio data scanning is active.
- *
- * Revision 1.3  2000/04/23 09:07:08  andreasm
- * * Fixed most problems marked with '//llanero'.
- * * Added audio CD edit menus to MDIWindow.
- * * Moved central storage of TocEdit object to MDIWindow.
- * * AudioCdChild is now handled like an ordinary non modal dialog, i.e.
- *   it has a normal 'update' member function now.
- * * Added CdTextTable modal dialog.
- * * Old functionality of xcdrdao is now available again.
- *
- * Revision 1.2  2000/02/20 23:34:54  llanero
- * fixed scsilib directory (files mising ?-()
- * ported xdao to 1.1.8 / gnome (MDI) app
- *
- * Revision 1.1.1.1  2000/02/05 01:39:52  llanero
- * Uploaded cdrdao 1.1.3 with pre10 patch applied.
- *
- * Revision 1.6  1999/08/07 16:27:28  mueller
- * Applied patch from Yves Bastide:
- * * prefixing member function names with their class name in connect_to_method
- * * explicitly `const_cast'ing a cast to const
- *
- * Revision 1.5  1999/05/24 18:10:25  mueller
- * Adapted to new reading interface of 'trackdb'.
- *
- * Revision 1.4  1999/03/06 13:55:18  mueller
- * Adapted to Gtk-- version 0.99.1
- *
- * Revision 1.3  1999/01/30 19:45:43  mueller
- * Fixes for compilation with Gtk-- 0.11.1.
- *
- * Revision 1.1  1998/11/20 18:56:06  mueller
- * Initial revision
- *
- */
 
 #include <stdio.h>
 #include <limits.h>
@@ -94,7 +34,7 @@
 
 #include "TrackDataScrap.h"
 
-class SampleManagerImpl : public SigC::Object {
+class SampleManagerImpl : public sigc::trackable {
 public:
   SampleManagerImpl(unsigned long);
   ~SampleManagerImpl();
@@ -116,28 +56,21 @@ public:
   long actBlock_;
   long endBlock_;
   long burstBlock_;
+  const char* curFilename_;
   unsigned long length_;
   gfloat percent_;
   gfloat percentStep_;
 
-  bool withGui_;
-  bool aborted_;
-
-  Gtk::ProgressBar* progressBar_;
-  Gtk::Button* abortButton_;
-  
   void getPeak(unsigned long start, unsigned long end,
 	       short *leftNeg, short *leftPos,
 	       short *rightNeg, short *rightPos);
-  int scanToc(unsigned long start, unsigned long end);
-  bool readSamples();
-  void abortAction();
+  int scanToc(unsigned long start, unsigned long end, bool blocking);
+
+  int  readSamples();
   void reallocSamples(unsigned long maxSample);
   void removeSamples(unsigned long start, unsigned long end, TrackDataScrap *);
   void insertSamples(unsigned long pos, unsigned long len,
 		     const TrackDataScrap *);
-  void setProgressBar(Gtk::ProgressBar* bar) { progressBar_ = bar; }
-  void setAbortButton(Gtk::Button*);
 };
 
 SampleManager::SampleManager(unsigned long blocking)
@@ -165,9 +98,15 @@ void SampleManager::setTocEdit(TocEdit *t)
 }
 
 
-int SampleManager::scanToc(unsigned long start, unsigned long end)
+int SampleManager::scanToc(unsigned long start, unsigned long end,
+                           bool blocking)
 {
-  return impl_->scanToc(start, end);
+  return impl_->scanToc(start, end, blocking);
+}
+
+int SampleManager::readSamples()
+{
+  return impl_->readSamples();
 }
 
 void SampleManager::getPeak(unsigned long start, unsigned long end,
@@ -189,16 +128,6 @@ void SampleManager::insertSamples(unsigned long pos, unsigned long len,
   impl_->insertSamples(pos, len, scrap);
 }
 
-void SampleManager::setProgressBar(Gtk::ProgressBar* b)
-{
-  impl_->setProgressBar(b);
-}
-
-void SampleManager::setAbortButton(Gtk::Button* b)
-{
-  impl_->setAbortButton(b);
-}
-
 SampleManagerImpl::SampleManagerImpl(unsigned long blocking) : tocReader_(NULL)
 {
   blocking_ = blocking;
@@ -213,20 +142,9 @@ SampleManagerImpl::SampleManagerImpl(unsigned long blocking) : tocReader_(NULL)
   block_ = new Sample[blocking_];
   actBlock_ = endBlock_ = burstBlock_ = 0;
   length_ = 0;
-  withGui_ = false;
 
   // allocate space in chunks of 40 minutes
   chunk_ = 40 * 60 * 75 * 588 / blocking;
-
-  progressBar_ = NULL;
-  abortButton_ = NULL;
-}
-
-void SampleManagerImpl::setAbortButton(Gtk::Button* button)
-{
-  abortButton_ = button;
-  button->signal_clicked().connect(slot(*this,
-                                        &SampleManagerImpl::abortAction));
 }
 
 SampleManagerImpl::~SampleManagerImpl()
@@ -275,14 +193,20 @@ void SampleManagerImpl::getPeak(unsigned long start, unsigned long end,
   }
 }
 
+// Return values:
+//   0 : ok
+//   1 : incorrect parameters
+//   2 : unable to read from file
 
-int SampleManagerImpl::scanToc(unsigned long start, unsigned long end)
+int SampleManagerImpl::scanToc(unsigned long start, unsigned long end,
+                               bool blocking)
 {
   long i;
   const Toc *toc;
 
   actBlock_ = start / blocking_;
   endBlock_ = end / blocking_;
+  curFilename_ = NULL;
 
   if (tocEdit_ == NULL || endBlock_ < actBlock_)
     return 1;
@@ -303,8 +227,6 @@ int SampleManagerImpl::scanToc(unsigned long start, unsigned long end)
     leftPosSamples_[i] = rightPosSamples_[i] = 16000;
   }
 
-  //message(0, "readSamples: %ld\n", endBlock_ - actBlock_ + 1);
-  
   if (tocReader_.openData() != 0)
     return 2;
 
@@ -318,38 +240,38 @@ int SampleManagerImpl::scanToc(unsigned long start, unsigned long end)
   if (len < 2000) {
     burstBlock_ = len;
     percentStep_ = 1.0;
-    withGui_ = false;
+    // withGui_ = false;
   }
   else if (len < 10000) {
     burstBlock_ = len / 100;
     percentStep_ = 0.01;
-    withGui_ = true;
+    // withGui_ = true;
   }
   else {
     burstBlock_ = 75;
     percentStep_ = gfloat(burstBlock_) / gfloat(len);
-    withGui_ = true;
+    // withGui_ = true;
   }
 
   if (burstBlock_ == 0) 
     burstBlock_ = 1;
 
   percent_ = 0;
-  aborted_ = false;
 
-  if (withGui_) {
-    if (progressBar_) progressBar_->set_fraction(0.0);
-    if (abortButton_) abortButton_->set_sensitive(true);
-    Glib::signal_idle().connect(slot(*this, &SampleManagerImpl::readSamples));
-    tocEdit_->blockEdit();
-  } else {
-    while (readSamples());
+  if (blocking) {
+    while (readSamples() == 0);
+    return 0;
   }
 
   return 0;
 }
 
-bool SampleManagerImpl::readSamples()
+// Returns:
+//   0 : in progress
+//   1 : done
+//  -1 : read error
+
+int SampleManagerImpl::readSamples()
 {
   int j;
   long n;
@@ -357,13 +279,14 @@ bool SampleManagerImpl::readSamples()
   int ret;
   long burstEnd = actBlock_ + burstBlock_;
 
-  if (withGui_ && aborted_) {
-    tocReader_.closeData();
-    if (abortButton_) abortButton_->set_sensitive(false);
-    if (progressBar_) progressBar_->set_fraction(0.0);
-    tocEdit_->unblockEdit();
+  const char* cf = tocReader_.curFilename();
+  if (cf && cf != curFilename_) {
+    std::string msg = "Scanning audio data \"";
+    msg += cf;
+    msg += "\"";
+    tocEdit_->signalStatusMessage(msg.c_str());
+    curFilename_ = cf;
     guiUpdate(UPD_SAMPLES);
-    return 0;
   }
 
   for (; actBlock_ <= endBlock_ && actBlock_ < burstEnd && length_ > 0;
@@ -392,13 +315,8 @@ bool SampleManagerImpl::readSamples()
     else {
       message(-2, "Cannot read audio data: %ld - %ld.", n, ret);
       tocReader_.closeData();
-      if (withGui_) {
-        if (abortButton_) abortButton_->set_sensitive(false);
-        if (progressBar_) progressBar_->set_fraction(0.0);
-      }
-      tocEdit_->unblockEdit();
-      guiUpdate(UPD_SAMPLES);
-      return 0;
+      tocEdit_->signalProgressFraction(0.0);
+      return -1;
     }
     length_ -= n;
   }
@@ -406,29 +324,17 @@ bool SampleManagerImpl::readSamples()
   
   if (actBlock_ >= endBlock_ && actBlock_ < burstEnd) {
     tocReader_.closeData();
-    if (withGui_) {
-      if (abortButton_) abortButton_->set_sensitive(false);
-      if (progressBar_) progressBar_->set_fraction(0.0);
-    }
-    tocEdit_->unblockEdit();
-    guiUpdate(UPD_SAMPLES);
-    return 0;
+    tocEdit_->signalProgressFraction(0.0);
+    return 1;
   }
 
   percent_ += percentStep_;
   if (percent_ > 1.0) 
     percent_ = 1.0;
 
-  if (withGui_ && progressBar_) {
-    progressBar_->set_fraction(percent_);
-  }
+  tocEdit_->signalProgressFraction(percent_);
 
-  return 1;
-}
-
-void SampleManagerImpl::abortAction()
-{
-  aborted_ = true;
+  return 0;
 }
 
 void SampleManagerImpl::reallocSamples(unsigned long maxSample)

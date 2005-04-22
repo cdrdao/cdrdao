@@ -1,6 +1,6 @@
 Name:		cdrdao
 Version:	@PACKAGE_VERSION@
-Release:        0.fdr.1.2
+Release:        1
 Epoch:          0
 Summary:	A Disk-At-Once (DAO) Audio CD writer and GUI editor
 
@@ -8,7 +8,7 @@ Group:		Applications/Multimedia
 License:	GPL
 URL:            http://cdrdao.sourceforge.net/
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
-Source0:	http://cdrdao.sourceforge.net/download/%{name}-%{version}.tar.gz
+Source0:	http://dl.sourceforge.net/sourceforge/cdrdao/%{name}-%{version}.tar.gz
 
 %description
 Writes audio CD-Rs in disc-at-once (DAO) mode allowing control over
@@ -17,35 +17,31 @@ information like ISRC codes. All data that is written to the disc must
 be specified with a text file. Audio data may be in WAVE or raw
 format.
 
-%package gcdmaster
+%package -n gcdmaster
 Summary:        The Gnome2/GTK2 GUI front-end to cdrdao
 Group:          Applications/Multimedia
 Requires:       %{name} = %{epoch}:%{version}-%{release}
-Requires:	gtkmm20 >= 0:2.2.0
-Requires:	libgnomeuimm20 >= 0:2.0
-Requires:       libsigc++ >= 0:1.2
-BuildRequires:	gtkmm20-devel >= 0:2.2.0
-BuildRequires:	libgnomeuimm20-devel >= 0:2.0
-BuildRequires:  libsigc++ >= 0:1.2
+BuildRequires:	gtkmm24-devel >= 0:2.4
+BuildRequires:	libgnomeuimm26-devel >= 0:2.6
+BuildRequires:  libsigc++20-devel >= 0:1.2
+BuildRequires:  libvorbis-devel >= 0:1.0
+BuildRequires:  libao-devel >= 0:0.8
+# BuildRequires:  libmad-devel
 
-%description gcdmaster
+%description -n gcdmaster
 Gcdmaster is a GNOME2 GUI front-end to cdrdao that makes it easy to
 visualize and manipulate audio information before burning it onto
 CD. Its features include: cut/copy/paste of sound samples, track marks
 edition and silence insertion.
 
-# -----------------------------------------------------------------------------
-
 %prep
 %setup -q
 
-# -----------------------------------------------------------------------------
 
 %build
 %configure
 make %{?_smp_mflags}
 
-# -----------------------------------------------------------------------------
 
 %install
 rm -rf $RPM_BUILD_ROOT
@@ -53,30 +49,39 @@ rm -rf $RPM_BUILD_ROOT
  
 find $RPM_BUILD_ROOT -type f -name "*.la" -exec rm -f {} ';'
 
-# -----------------------------------------------------------------------------
 
 %clean
 rm -rf $RPM_BUILD_ROOT
 
-# -----------------------------------------------------------------------------
 
 %post
 
-# -----------------------------------------------------------------------------
 
 %files
 %defattr(-, root, root, -)
 %doc AUTHORS COPYING CREDITS ChangeLog INSTALL README NEWS README.PlexDAE README.Win32
 %{_bindir}/cdrdao
-%{_datadir}/cdrdao/*
+%{_datadir}/cdrdao
 %{_bindir}/toc2*
 %{_bindir}/cue2toc
 %{_mandir}/man1/cdrdao*
 %{_mandir}/man1/cue2toc*
 
-%files gcdmaster
+%files -n gcdmaster
 %defattr(-, root, root, -)
 %{_bindir}/gcdmaster
+%{_datadir}/gcdmaster
+%{_datadir}/mime-info/gcdmaster*
+%{_datadir}/mime/packages/gcdmaster.xml
 %{_datadir}/applications/gcdmaster.desktop
-%{_datadir}/pixmaps/gcdmaster.png
+%{_datadir}/application-registry/gcdmaster.applications
+%{_datadir}/pixmaps/gcdmaster*
 %{_mandir}/man1/gcdmaster*
+
+%changelog
+* Mon Jul 20 2004 Denis Leroy <denis@poolshark.org> - 0:1.1.9pre1-0.fdr.1
+- Added Ogg and libao dependencies
+- Switch to gtkmm 2.4 APIs
+
+* Mon Jun 26 2004 Denis Leroy <denis@poolshark.org> - 0:1.1.9-0.fdr.1
+- Initial FC2 spec

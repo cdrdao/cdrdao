@@ -83,6 +83,16 @@ cdrdao_LDADD =						\
 	@thread_libs@					\
 	@scsilib_libs@
 
+if COND_MP3
+cdrdao_LDADD += @MAD_LIBS@
+endif
+
+if COND_OGG
+cdrdao_LDADD += @VORBISFILE_LIBS@
+endif
+
+cdrdao_LDADD += @AO_LIBS@
+
 cdrdao_DEPENDENCIES = \
 	$(top_builddir)/paranoia/libcdda_paranoia.a	\
 	$(top_builddir)/trackdb/libtrackdb.a		\

@@ -46,6 +46,9 @@ cdrdao \- writes audio CD-Rs in disc-at-once mode
 .IR timeout ]
 .RB [ --cddb-directory
 .IR directory ]
+.RB [ --tmpdir
+.IR directory ]
+.RB [ --keep ]
 .RB [ --save ]
 .RB [ -n ]
 .RB [ -v 
@@ -403,9 +406,15 @@ Specifies the local CDDB database directory where fetched CDDB records will
 be stored. If this option is not given a fetched CDDB record will not be stored
 locally.
 .TP
+.BI \--tmpdir " directory"
+Specifies the directory in which to store temporary data files created from decoding MP3 and Ogg Vorbis files. By default, "/tmp" is used.
+.TP
+.BI \--keep
+Upon exit from cdrdao, do not delete temporary WAV files created from MP3 and Ogg Vorbis files.
+.TP
 .BI \--save
 Saves some of the current options to the settings file
-"$HOME/.cdrdao". See section 'SETTINGS' for more details.
+"$HOME/.cdrdao" and exit. See section \'SETTINGS\' for more details.
 .TP
 .BI \-n
 Suppresses the 10 second pause before writing or simulating.
@@ -826,6 +835,9 @@ Local directory where fetched CDDB records will be stored, used by
 .I read-cddb.
 Corresponding option:
 .I --cddb-directory
+.IP tmp_file_dir
+Directory where temporay WAV files will be created from decoding MP3 and Ogg Vorbis files. Corresponding option:
+.I --tmpdir
 .LP
 
 

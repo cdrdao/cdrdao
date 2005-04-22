@@ -1,4 +1,4 @@
-/* config.h.in.  Generated from configure.in by autoheader.  */
+/* config.h.in.  Generated from configure.ac by autoheader.  */
 
 /* Define to 1 if you have the <fcntl.h> header file. */
 #undef HAVE_FCNTL_H
@@ -24,8 +24,14 @@
 /* Define to 1 if you have the `mlockall' function. */
 #undef HAVE_MLOCKALL
 
+/* "" */
+#undef HAVE_MP3_SUPPORT
+
 /* Define to 1 if you have the `munlockall' function. */
 #undef HAVE_MUNLOCKALL
+
+/* "" */
+#undef HAVE_OGG_SUPPORT
 
 /* Define to 1 if you have the `pthread_attr_setschedparam' function. */
 #undef HAVE_PTHREAD_ATTR_SETSCHEDPARAM
@@ -59,6 +65,18 @@
 
 /* Define to 1 if you have the `seteuid' function. */
 #undef HAVE_SETEUID
+
+/* Define to 1 if you have the `setgid' function. */
+#undef HAVE_SETGID
+
+/* Define to 1 if you have the `setregid' function. */
+#undef HAVE_SETREGID
+
+/* Define to 1 if you have the `setreuid' function. */
+#undef HAVE_SETREUID
+
+/* Define to 1 if you have the `setuid' function. */
+#undef HAVE_SETUID
 
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H
@@ -146,6 +164,10 @@
 
 /* Version number of package */
 #undef VERSION
+
+/* Define to 1 if your processor stores words with the most significant byte
+   first (like Motorola and SPARC, unlike Intel and VAX). */
+#undef WORDS_BIGENDIAN
 
 /* "" */
 #undef _P1003_1B_VISIBLE

@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mime-info [
+  <!ELEMENT mime-info (mime-type)+>
+  <!ATTLIST mime-info xmlns CDATA #FIXED "http://www.freedesktop.org/standards/shared-mime-info">
+
+  <!ELEMENT mime-type (comment|glob|magic|root-XML|alias|sub-class-of)*>
+  <!ATTLIST mime-type type CDATA #REQUIRED>
+
+  <!ELEMENT comment (#PCDATA)>
+  <!ATTLIST comment xml:lang CDATA #IMPLIED>
+
+  <!ELEMENT glob EMPTY>
+  <!ATTLIST glob pattern CDATA #REQUIRED>
+
+  <!ELEMENT magic (match)+>
+  <!ATTLIST magic priority CDATA #IMPLIED>
+
+  <!ELEMENT match (match)*>
+  <!ATTLIST match offset CDATA #REQUIRED>
+  <!ATTLIST match type (string|big16|big32|little16|little32|host16|host32|byte) #REQUIRED>
+  <!ATTLIST match value CDATA #REQUIRED>
+  <!ATTLIST match mask CDATA #IMPLIED>
+
+  <!ELEMENT root-XML EMPTY>
+  <!ATTLIST root-XML
+  	namespaceURI CDATA #REQUIRED
+	localName CDATA #REQUIRED>
+
+  <!ELEMENT alias EMPTY>
+  <!ATTLIST alias
+  	type CDATA #REQUIRED>
+
+  <!ELEMENT sub-class-of EMPTY>
+  <!ATTLIST sub-class-of
+  	type CDATA #REQUIRED>
+]>
+<mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
+  <mime-type type="application/x-toc">
+    <comment>Audio CD Table Of Content</comment>
+    <magic priority="50">
+      <match offset="0" type="string" value="CD_DA" />
+    </magic>
+    <glob pattern="*.toc" />
+  </mime-type>
+  <mime-type type="application/x-cue">
+    <comment>Audio CD Table Of Content</comment>
+    <glob pattern="*.cue" />
+  </mime-type>
+</mime-info>

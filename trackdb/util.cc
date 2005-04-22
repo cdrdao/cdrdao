@@ -259,3 +259,63 @@ const char *stripCwd(const char *fname)
 
   return buf;
 }
+
+FileExtension fileExtension(const char* fname)
+{
+  const char* e;
+
+  if (fname && (e = strrchr(fname, '.'))) {
+    e++;
+
+    if (strcasecmp(e, "toc") == 0)
+      return FE_TOC;
+    if (strcasecmp(e, "wav") == 0)
+      return FE_WAV;
+    if (strcasecmp(e, "mp3") == 0)
+      return FE_MP3;
+    if (strcasecmp(e, "ogg") == 0)
+      return FE_OGG;
+    if (strcasecmp(e, "m3u") == 0)
+      return FE_M3U;
+  }
+
+  return FE_UNKNOWN;
+}
+                                           
+bool resolveFilename(std::string& abs, const char* file, const char* path)
+{
+  struct stat st;
+
+  // First checks if file is already absolute, in which case we do
+  // nothing.
+  if (file[0] == '/') {
+    abs = file;
+    return true;
+  }
+
+  // Now checks if file is readable in current directory. Current
+  // directory has precedence over search path.
+  if (stat(file, &st) == 0 && (st.st_mode & S_IFREG)) {
+    char cwd[1024];
+    if (getcwd(cwd, 1024)) {
+      abs = cwd;
+      abs += "/";
+    }
+    abs += file;
+    return true;
+  }
+
+  // Now check in search path.
+  std::string afile = path;
+  if (*(afile.end()) != '/')
+    afile += "/";
+  afile += file;
+  if (stat(afile.c_str(), &st) == 0 && (st.st_mode & S_IFREG)) {
+    abs = afile;
+    return true;
+  }
+
+  // File not found.
+  abs.clear();
+  return false;
+}

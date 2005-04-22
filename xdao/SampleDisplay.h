@@ -18,6 +18,12 @@
  */
 /*
  * $Log: SampleDisplay.h,v $
+ * Revision 1.7  2005/04/22 02:01:49  poolshark
+ * Merging gtkmm24 branch
+ *
+ * Revision 1.6.2.1  2004/06/04 20:22:50  poolshark
+ * Applying sigc++-2.0/gtkmm2.4 patch from Gert Wollny
+ *
  * Revision 1.6  2004/02/12 01:13:32  poolshark
  * Merge from gnome2 branch
  *
@@ -190,13 +196,13 @@ public:
 
   void updateToc(unsigned long, unsigned long);
 
-  SigC::Signal1<void, unsigned long> markerSet;
-  SigC::Signal1<void, unsigned long> cursorMoved;
-  SigC::Signal2<void, unsigned long, unsigned long> selectionSet;
-  SigC::Signal0<void> selectionCleared;
-  SigC::Signal3<void, const Track *, int, int> trackMarkSelected;
-  SigC::Signal4<void, const Track *, int, int, unsigned long> trackMarkMoved;
-  SigC::Signal2<void, unsigned long, unsigned long> viewModified;
+  sigc::signal1<void, unsigned long> markerSet;
+  sigc::signal1<void, unsigned long> cursorMoved;
+  sigc::signal2<void, unsigned long, unsigned long> selectionSet;
+  sigc::signal0<void> selectionCleared;
+  sigc::signal3<void, const Track *, int, int> trackMarkSelected;
+  sigc::signal4<void, const Track *, int, int, unsigned long> trackMarkMoved;
+  sigc::signal2<void, unsigned long, unsigned long> viewModified;
   
 protected:
   bool handle_configure_event (GdkEventConfigure *);

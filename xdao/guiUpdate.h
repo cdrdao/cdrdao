@@ -16,30 +16,6 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
-/*
- * $Log: guiUpdate.h,v $
- * Revision 1.4  2004/02/12 01:13:32  poolshark
- * Merge from gnome2 branch
- *
- * Revision 1.3.6.1  2004/01/05 00:34:02  poolshark
- * First checking of gnome2 port
- *
- * Revision 1.1.1.1  2003/12/09 05:32:28  denis
- * Fooya
- *
- * Revision 1.3  2001/08/04 00:25:59  llanero
- * add UPD_PLAY_STATUS
- *
- * Revision 1.2  2001/04/23 00:15:11  llanero
- * Dialogs will update title with project name + app name.
- *
- * Revision 1.1.1.1  2000/02/05 01:38:55  llanero
- * Uploaded cdrdao 1.1.3 with pre10 patch applied.
- *
- * Revision 1.1  1999/08/19 20:28:40  mueller
- * Initial revision
- *
- */
 
 #ifndef __GUIUPDATE_H__
 #define __GUIUPDATE_H__

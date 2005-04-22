@@ -55,7 +55,7 @@ CdTextDialog::CdTextDialog()
       new Gtk::CheckButton(_("Enable Perfomer Entries"));
     page_[i].performerButton->set_active(false);
     page_[i].performerButton->signal_toggled().
-      connect(bind(slot(*this, &CdTextDialog::activatePerformerAction), i));
+      connect(bind(mem_fun(*this, &CdTextDialog::activatePerformerAction), i));
     page_[i].tracks = NULL;
     page_[i].table->attach(*(new Gtk::Label(_("Performer"))), 1, 2, 0, 1);
     page_[i].table->attach(*(new Gtk::Label(_("Title"))), 2, 3, 0, 1);
@@ -108,15 +108,15 @@ CdTextDialog::CdTextDialog()
   
   applyButton_ = new Gtk::Button(Gtk::StockID(Gtk::Stock::APPLY));
   bbox->pack_start(*applyButton_);
-  applyButton_->signal_clicked().connect(slot(*this, &CdTextDialog::applyAction));
+  applyButton_->signal_clicked().connect(mem_fun(*this, &CdTextDialog::applyAction));
   
   Gtk::Button *fillButton = new Gtk::Button(_(" Fill Performer "));
   bbox->pack_start(*fillButton);
-  fillButton->signal_clicked().connect(slot(*this, &CdTextDialog::fillPerformerAction));
+  fillButton->signal_clicked().connect(mem_fun(*this, &CdTextDialog::fillPerformerAction));
 
   Gtk::Button *cancelButton = new Gtk::Button(Gtk::StockID(Gtk::Stock::CLOSE));
   bbox->pack_start(*cancelButton);
-  cancelButton->signal_clicked().connect(slot(*this, &CdTextDialog::stop));
+  cancelButton->signal_clicked().connect(mem_fun(*this, &CdTextDialog::stop));
 
   get_action_area()->pack_start(*bbox);
 

@@ -1,0 +1,29 @@
+
+application/x-toc
+        description=Audio CD content
+        category=Audio
+        open=gcdmaster %f
+        view=gcdmaster %f
+        icon-filename=/usr/share/pixmaps/gcdmaster-doc.png
+
+application/x-cue
+        description=Audio CD content
+        category=Audio
+        open=gcdmaster %f
+        view=gcdmaster %f
+        icon-filename=/usr/share/pixmaps/gcdmaster-doc.png
+
+application/x-ogg
+       	short_list_application_ids_for_novice_user_level=gcdmaster
+	short_list_application_ids_for_intermediate_user_level=gcdmaster
+	short_list_application_ids_for_advanced_user_level=gcdmaster
+
+application/ogg
+       	short_list_application_ids_for_novice_user_level=gcdmaster
+	short_list_application_ids_for_intermediate_user_level=gcdmaster
+	short_list_application_ids_for_advanced_user_level=gcdmaster
+
+application/x-mp3
+       	short_list_application_ids_for_novice_user_level=gcdmaster
+	short_list_application_ids_for_intermediate_user_level=gcdmaster
+	short_list_application_ids_for_advanced_user_level=gcdmaster

@@ -20,21 +20,16 @@
 #ifndef __PROJECT_CHOOSER_H__
 #define __PROJECT_CHOOSER_H__
 
+#include <libglademm/xml.h>
 #include <gtkmm.h>
 
-class ProjectChooser : public Gtk::Window
+class ProjectChooser : public Gtk::VBox
 {
  public:
   ProjectChooser();
 
- protected:
-  virtual bool on_delete_event(GdkEventAny *event);
-
-  Gtk::VBox   vbox;
-  Gtk::Button openButton;
-  Gtk::Button audioCDButton;
-  Gtk::Button dumpCDButton;
-  Gtk::Button copyCDButton;
+  sigc::signal0<void> newAudioCDProject;
+  sigc::signal0<void> newDuplicateCDProject;
+  sigc::signal0<void> newDumpCDProject;
 };
 #endif
-

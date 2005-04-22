@@ -114,20 +114,23 @@ static gchar *INDEX_EXTEND_XPM_DATA[] = {
   "........."};
 
 
-SampleDisplay::SampleDisplay()
+SampleDisplay::SampleDisplay():
+	pixmap_(NULL),
+	trackMarkerPixmap_(NULL),
+	indexMarkerPixmap_(NULL),
+	trackMarkerSelectedPixmap_(NULL),
+	indexMarkerSelectedPixmap_(NULL),
+	trackExtendPixmap_(NULL),
+	indexExtendPixmap_(NULL),
+	drawGc_(NULL)
+		
 {
   adjustment_ = new Gtk::Adjustment(0.0, 0.0, 1.0);
-  adjustment_->signal_value_changed().connect(slot(*this,
+  adjustment_->signal_value_changed().connect(mem_fun(*this,
                                                    &SampleDisplay::scrollTo));
 
   trackManager_ = NULL;
 
-  pixmap_ = NULL;
-  trackMarkerPixmap_ = indexMarkerPixmap_ = NULL;
-  trackMarkerSelectedPixmap_ = indexMarkerSelectedPixmap_ = NULL;
-  trackExtendPixmap_ = indexExtendPixmap_ = NULL;
-
-  drawGc_ = NULL;
   width_ = height_ = chanHeight_ = lcenter_ = rcenter_ = 0;
   timeLineHeight_ = timeLineY_ = 0;
   timeTickWidth_ = 0;
@@ -151,20 +154,20 @@ SampleDisplay::SampleDisplay()
   selectedTrack_ = 0;
   selectedIndex_ = 0;
 
-  signal_expose_event().connect(slot(*this,
+  signal_expose_event().connect(mem_fun(*this,
                                      &SampleDisplay::handle_expose_event));
   signal_configure_event().
-    connect(slot(*this, &SampleDisplay::handle_configure_event));
+    connect(mem_fun(*this, &SampleDisplay::handle_configure_event));
   signal_motion_notify_event().
-    connect(slot(*this, &SampleDisplay::handle_motion_notify_event));
+    connect(mem_fun(*this, &SampleDisplay::handle_motion_notify_event));
   signal_button_press_event().
-    connect(slot(*this, &SampleDisplay::handleButtonPressEvent));
+    connect(mem_fun(*this, &SampleDisplay::handleButtonPressEvent));
   signal_button_release_event().
-    connect(slot(*this,	&SampleDisplay::handleButtonReleaseEvent));
+    connect(mem_fun(*this,	&SampleDisplay::handleButtonReleaseEvent));
   signal_enter_notify_event().
-    connect(slot(*this, &SampleDisplay::handleEnterEvent));
+    connect(mem_fun(*this, &SampleDisplay::handleEnterEvent));
   signal_leave_notify_event().
-    connect(slot(*this, &SampleDisplay::handleLeaveEvent));
+    connect(mem_fun(*this, &SampleDisplay::handleLeaveEvent));
 
   set_events (Gdk::EXPOSURE_MASK
 	      | Gdk::LEAVE_NOTIFY_MASK
@@ -513,6 +516,13 @@ bool SampleDisplay::handle_configure_event (GdkEventConfigure *event)
   width_ = get_width();
   height_ = get_height();
 
+  // Don't even try to do anything smart if we haven't received a
+  // reasonable window size yet. This will keep pixmap_ to NULL. This
+  // is important because during startup we don't control how the
+  // configure_event are timed wrt to gcdmaster bringup.
+  if (width_ <= 1 || height_ <= 1)
+    return true;
+
   chanHeight_ = (height_ - timeLineHeight_ - trackLineHeight_ - 2) / 2;
 
   lcenter_ = chanHeight_ / 2 + trackLineHeight_;
@@ -754,6 +764,9 @@ bool SampleDisplay::handleLeaveEvent(GdkEventCrossing *event)
 void SampleDisplay::redraw(gint x, gint y, gint width, gint height,
 			   int drawMask)
 {
+  if (pixmap_ == 0)
+    return;
+
   get_window()->draw_drawable(drawGc_, pixmap_, x, y, x, y, width, height);
 
   if ((drawMask & 0x02) == 0)
@@ -803,7 +816,7 @@ void SampleDisplay::updateSamples()
 
   Toc *toc = tocEdit_->toc();
 
-  if (!pixmap_)
+  if (pixmap_ == 0)
     return;
 
   gint halfHeight = chanHeight_ / 2;
@@ -981,11 +994,8 @@ void SampleDisplay::updateSamples()
       gint pos1;
       gint lastPosLeft, lastPosRight;
 
-      //printf("Drawing exact, res=%ld pres=%g %ld-%ld\n", res, pres, minSample_, maxSample_);
-
       if (reader.seekSample(minSample_) == 0 &&
 	  reader.readSamples(sampleBuf, len) == len) {
-	//printf("Drawing exact1\n");
 
 	for (j = 1, di = sampleStartX_ + pres;
 	     j < len && di < sampleEndX_ + 1; j++, di += pres) {
@@ -1083,7 +1093,7 @@ void SampleDisplay::updateSamples()
 
 void SampleDisplay::drawCursor(gint x)
 {
-  if (!pixmap_)
+  if (pixmap_ == 0)
     return;
 
   if (x < sampleStartX_ || x > sampleEndX_)
@@ -1117,7 +1127,7 @@ void SampleDisplay::drawTimeTick(gint x, gint y, unsigned long sample)
 {
   char buf[50];
 
-  if (!pixmap_)
+  if (pixmap_ == 0)
     return;
 
   unsigned long min = sample / (60 * 44100);

@@ -1,7 +1,7 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_REVISION($Revision: 1.43 $)dnl
+AC_REVISION($Revision: 1.2 $)dnl
 
-AC_INIT(cdrdao, 1.1.9)
+AC_INIT(cdrdao, 1.2.0)
 
 AC_CONFIG_SRCDIR(dao/main.cc)
 AM_INIT_AUTOMAKE
@@ -16,6 +16,8 @@ AC_ARG_WITH(scglib,[  --with-scglib           use Joerg Schillings SCSI library 
 AC_ARG_WITH(scglib-inc,[  --with-scglib-inc=dir   set directory for SCSI library include files],[scglib_inc=$withval],[scglib_inc=default])
 AC_ARG_WITH(scglib-lib,[  --with-scglib-lib=dir   set directory that contains the SCSI library],[scglib_lib=$withval],[scglib_lib=default])
 AC_ARG_WITH(xdao,[  --with-xdao             enable building of gcdmaster (default: on)],[xdao=$withval],[xdao=default])
+AC_ARG_WITH(ogg-support,[  --with-ogg-support      enable OGG format support (default:on)],[],[with_ogg_support=yes])
+AC_ARG_WITH(mp3-support,[  --with-mp3-support      enable MP3 format support (default:on)],[],[with_mp3_support=yes])
 
 dnl Checks for programs.
 AC_PROG_CC
@@ -33,6 +35,7 @@ AC_CHECK_HEADERS(fcntl.h getopt.h malloc.h unistd.h sys/mman.h sched.h)
 
 dnl Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
+AC_C_BIGENDIAN
 AC_TYPE_SIGNAL
 AC_CHECK_SIZEOF(short)
 AC_CHECK_SIZEOF(int)
@@ -99,8 +102,9 @@ fi
 dnl Checks for library functions.
 AC_CHECK_FUNCS(strerror)
 AC_CHECK_FUNCS(mlockall munlockall)
-AC_CHECK_FUNCS(seteuid setegid getpagesize)
+AC_CHECK_FUNCS(getpagesize)
 AC_CHECK_FUNCS(usleep)
+AC_CHECK_FUNCS(setreuid setregid seteuid setegid setuid setgid)
 
 AC_CHECK_FUNCS(inet_aton)
 
@@ -216,9 +220,13 @@ if test "$xdao" = default; then
 fi
 if test "$xdao" = yes; then
   en_xdao=yes
-  PKG_CHECK_MODULES(GTKMM2, gtkmm-2.0 >= 2.2,[],
+  PKG_CHECK_MODULES(SIGCPP2, sigc++-2.0 >= 2.0.0,[],
         [echo "Building of gcdmaster disabled"; en_xdao=no])
-  PKG_CHECK_MODULES(LIBGUIMM2, libgnomeuimm-2.0 >= 2.0,[],
+  PKG_CHECK_MODULES(GTKMM2, gtkmm-2.4 >= 2.4.0,[],
+        [echo "Building of gcdmaster disabled"; en_xdao=no])
+  PKG_CHECK_MODULES(LIBGUIMM2, libgnomemm-2.6 >= 2.6.0,[],
+        [echo "Building of gcdmaster disabled"; en_xdao=no])
+  PKG_CHECK_MODULES(LIBGUIMM2, libgnomeuimm-2.6 >= 2.6.0,[],
         [echo "Building of gcdmaster disabled"; en_xdao=no])
 fi
 
@@ -323,19 +331,38 @@ esac
 
 dnl Sound device selection for xcdrdao
 case "$host" in
-  *-linux-* | *-freebsd[[456]]*)
-	     sound_if_obj=SoundIF-linux.o
+  *-linux-* | *-freebsd[[456]]* | *-solaris*)
+	     sound_if_obj=SoundIF-ao.o
 	     ;;
-
-  *-solaris*)
-	      sound_if_obj=SoundIF-solaris.o
-	      ;;
 
   *)
      sound_if_obj=SoundIF-none.o
      ;;
 esac
 
+dnl Check for OGG support
+if test "$with_ogg_support" = yes; then
+  PKG_CHECK_MODULES(VORBISFILE, vorbisfile >= 1.0, [],
+        [echo "OGG support disabled"; with_ogg_support=no])
+fi
+dnl Check for MP3 support
+if test "$with_mp3_support" = yes; then
+  PKG_CHECK_MODULES(MAD, mad >= 0.10, [],
+        [echo "MP3 support disabled"; with_mp3_support=no])
+fi
+dnl Check for libao support
+if test "$with_mp3_support" = yes || test "$with_ogg_support" = yes; then
+  PKG_CHECK_MODULES(AO, ao >= 0.8, [],
+        [echo "Building of gcdmaster disabled"; with_ogg_support=no;
+        with_mp3_support=no; en_xdao=no])
+fi
+
+if test "$with_ogg_support" = yes; then
+  AC_DEFINE(HAVE_OGG_SUPPORT,1,"")
+fi
+if test "$with_mp3_support" = yes; then
+  AC_DEFINE(HAVE_MP3_SUPPORT,1,"")
+fi
 
 dnl General platform specific setup
 
@@ -368,6 +395,8 @@ AM_CONDITIONAL([COND_XDAO], [test "$en_xdao" = yes])
 AM_CONDITIONAL([COND_TOC2MP3], [test "$en_toc2mp3" = yes])
 AM_CONDITIONAL([COND_SCSILIB], [test "$en_scsilib" = yes])
 AM_CONDITIONAL([COND_PCCTS], [test "$en_pccts" = yes])
+AM_CONDITIONAL([COND_MP3], [test "$with_mp3_support" = yes])
+AM_CONDITIONAL([COND_OGG], [test "$with_ogg_support" = yes])
 
 AC_CONFIG_FILES([
         trackdb/Makefile
@@ -387,6 +416,8 @@ echo "------------------------------------------------------"
 echo "  Building scsilib   : $en_scsilib"
 echo "  Building pccts     : $en_pccts"
 echo "  Building cdrdao    : $en_cdrdao"
+echo "     OGG support     : $with_ogg_support"
+echo "     MP3 support     : $with_mp3_support"
 echo "  Building toc2cue   : $en_toc2cue"
 echo "  Building cue2toc   : $en_cue2toc"
 echo "  Building toc2mp3   : $en_toc2mp3"

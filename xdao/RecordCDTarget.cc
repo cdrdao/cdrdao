@@ -71,13 +71,13 @@ RecordCDTarget::RecordCDTarget(Gtk::Window *parent)
   speedSpinButton_->set_digits(0);
   speedSpinButton_->show();
   speedSpinButton_->set_sensitive(false);
-  adjustment->signal_value_changed().connect(SigC::slot(*this, &RecordCDTarget::speedChanged));
+  adjustment->signal_value_changed().connect(sigc::mem_fun(*this, &RecordCDTarget::speedChanged));
   hbox->pack_start(*speedSpinButton_, false, false, 10);
 
   speedButton_ = new Gtk::CheckButton("Use max.", 0);
   speedButton_->set_active(true);
   speedButton_->show();
-  speedButton_->signal_toggled().connect(SigC::slot(*this, &RecordCDTarget::speedButtonChanged));
+  speedButton_->signal_toggled().connect(sigc::mem_fun(*this, &RecordCDTarget::speedButtonChanged));
   hbox->pack_start(*speedButton_, true, true);
   vbox->pack_start(*hbox);
 
@@ -104,7 +104,7 @@ RecordCDTarget::RecordCDTarget(Gtk::Window *parent)
   moreOptionsBox->pack_start(*moreOptionsPixmap, false, false, 3);
   moreOptionsBox->pack_start(*moreOptionsLabel, false, false, 4);
   moreOptionsButton->add(*moreOptionsBox);
-  moreOptionsButton->signal_clicked().connect(slot(*this, &RecordCDTarget::moreOptions));
+  moreOptionsButton->signal_clicked().connect(mem_fun(*this, &RecordCDTarget::moreOptions));
   moreOptionsPixmap->show();
   moreOptionsLabel->show();
   moreOptionsBox->show();
@@ -145,9 +145,9 @@ void RecordCDTarget::moreOptions()
 {
   if (!moreOptionsDialog_)
   {
-    moreOptionsDialog_ = new Gtk::MessageDialog(*parent_, "Target options",
+	  moreOptionsDialog_ = new Gtk::MessageDialog(*parent_, "Target options",false, 
                                                 Gtk::MESSAGE_QUESTION,
-                                                Gtk::BUTTONS_CLOSE);
+						      Gtk::BUTTONS_CLOSE, true);
 
     Gtk::VBox *vbox = moreOptionsDialog_->get_vbox();
     Gtk::Frame *frame = new Gtk::Frame(" More Target Options ");
@@ -188,7 +188,7 @@ void RecordCDTarget::moreOptions()
     bufferRAMLabel_ = new Gtk::Label("= 1.72 Mb buffer.", 0);
     hbox->pack_start(*bufferRAMLabel_, true, true);
     adjustment->signal_value_changed().
-        connect(SigC::slot(*this, &RecordCDTarget::updateBufferRAMLabel));
+        connect(sigc::mem_fun(*this, &RecordCDTarget::updateBufferRAMLabel));
     
     vbox->pack_start(*hbox);
   }

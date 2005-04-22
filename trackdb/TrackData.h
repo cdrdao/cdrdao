@@ -22,6 +22,9 @@
 #define __TRACKDATA_H__
 
 #include <iostream>
+#include <string>
+#include <set>
+
 #include "Sample.h"
 
 #define AUDIO_BLOCK_LEN 2352
@@ -47,7 +50,7 @@ public:
 
   enum Type { DATAFILE, ZERODATA, STDIN, FIFO };
   
-  enum FileType { RAW, WAVE };
+  enum FileType { RAW, WAVE, MP3, OGG };
 
   // creates an audio mode file entry
   TrackData(const char *filename, long offset, unsigned long start,
@@ -88,10 +91,12 @@ public:
   int determineLength();
   int check(int trackNr) const;
 
+  void effectiveFilename(const char*);
+
   void split(unsigned long, TrackData **part1, TrackData **part2);
   TrackData *merge(const TrackData *) const;
 
-  void print(std::ostream &) const;
+  void print(std::ostream &, bool conversions = false) const;
 
   static int checkAudioFile(const char *fn, unsigned long *length);
   static int waveLength(const char *filename, long offset, long *hdrlen,
@@ -119,7 +124,8 @@ private:
 
   FileType fileType_; // only for audio mode data, type of file (raw, wave)
 
-  char *filename_; // used for object type 'FILE'
+  char *filename_;    // used for object type 'FILE'
+  char *effFilename_; // effective filename (absolute path or converted file)
 
   long offset_; // byte offset into file
 
@@ -152,6 +158,8 @@ public:
   void closeData();
   long readData(Sample *buffer, long len);
   int seekSample(unsigned long sample);
+
+  const TrackData* trackData() const { return trackData_; }
 
   // returns number of bytes/samples that are left for reading
   unsigned long readLeft() const;

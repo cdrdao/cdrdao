@@ -21,6 +21,9 @@
 #define __TOC_H__
 
 #include <iostream>
+#include <list>
+#include <string>
+
 #include "Track.h"
 #include "CdTextContainer.h"
 #include "CdTextItem.h"
@@ -69,7 +72,7 @@ public:
 
   static Toc *read(const char *);
   int write(const char *) const;
-  bool write(int fd) const;
+  bool write(int fd, bool conversions = false) const;
 
   int catalogValid() const { return catalogValid_; }
 
@@ -89,7 +92,12 @@ public:
   void trackSummary(int *nofAudioTracks, int *nofMode1Tracks,
 		    int *nofMode2Tracks) const;
 
-  void print(std::ostream &) const;
+  // if conversions is true, the TOc is printed with the converted WAV
+  // or RAW filenames instead of the original ones.
+  void print(std::ostream &, bool conversions = false) const;
+
+  void collectFiles(std::set<std::string>& list);
+  void markFileConversion(const char* src, const char* dst);
 
   static const char *tocType2String(TocType);
 
@@ -152,6 +160,8 @@ public:
   int seekSample(unsigned long sample);
   long readSamples(Sample *buf, long len);
   void closeData();
+
+  const char* curFilename();
   
 private:
   const Toc *toc_;

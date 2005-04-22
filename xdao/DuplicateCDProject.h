@@ -26,7 +26,7 @@ class RecordCDTarget;
 class DuplicateCDProject : public Project
 {
 public:
-  DuplicateCDProject();
+  DuplicateCDProject(Gtk::Window *parent);
   ~DuplicateCDProject();
   bool closeProject();
 
@@ -47,4 +47,3 @@ private:
   void update(unsigned long level);
 };
 #endif
-

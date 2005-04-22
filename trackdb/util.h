@@ -21,6 +21,9 @@
 #define __UTIL_H__
 
 #include <stdio.h>
+#include <stdlib.h>
+
+#include <string>
 
 class Sample;
 
@@ -39,6 +42,19 @@ unsigned char int2bcd(int);
 int bcd2int(unsigned char);
 
 const char *stripCwd(const char *fname);
+
+typedef enum {
+  FE_UNKNOWN = 0,
+  FE_TOC,
+  FE_WAV,
+  FE_MP3,
+  FE_OGG,
+  FE_M3U,
+} FileExtension;
+
+FileExtension fileExtension(const char* fname);
+
+bool resolveFilename(std::string& dest, const char* file, const char* path);
 
 void message(int level, const char *fmt, ...);
 

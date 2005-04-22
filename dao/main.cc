@@ -34,14 +34,19 @@
 #include <signal.h>
 #include <pwd.h>
 #include <ctype.h>
+#include <list>
+#include <string>
 
 #include "util.h"
 #include "Toc.h"
 #include "ScsiIf.h"
 #include "CdrDriver.h"
 #include "dao.h"
+#include "port.h"
 #include "Settings.h"
 #include "Cddb.h"
+#include "TempFileManager.h"
+#include "FormatConverter.h"
 
 
 #ifdef UNIXWARE
@@ -64,6 +69,7 @@ static const char *SOURCE_SCSI_DEVICE = NULL;
 static const char *DATA_FILENAME = NULL;
 static const char *CDDB_SERVER_LIST = "freedb.freedb.org freedb.freedb.org:/~cddb/cddb.cgi uk.freedb.org uk.freedb.org:/~cddb/cddb.cgi cz.freedb.org cz.freedb.org:/~cddb/cddb.cgi";
 static const char *CDDB_LOCAL_DB_DIR = NULL;
+static const char *TMP_FILE_DIR = NULL;
 static int WRITING_SPEED = -1;
 static int EJECT = 0;
 static int SWAP = 0;
@@ -92,6 +98,7 @@ static int KEEPIMAGE = 0;
 static int OVERBURN = 0;
 static int BUFFER_UNDER_RUN_PROTECTION = 1;
 static int WRITE_SPEED_CONTROL = 1;
+static bool KEEP = false;
 static bool PRINT_QUERY = false;
 
 static CdrDriver::BlankingMode BLANKING_MODE = CdrDriver::BLANK_MINIMAL;
@@ -173,7 +180,29 @@ static void printVersion()
   message(2, "  Paranoia DAE library - (C) Monty");
   message(2, "");
   message(2, "Check http://cdrdao.sourceforge.net/drives.html#dt for current driver tables.");
+
+  std::list<std::string> list;
+  int num = formatConverter.supportedExtensions(list);
+
+  if (num) {
+    std::string msg = "Format converter enabled for extensions:";
+    std::list<std::string>::iterator i = list.begin();
+    for (;i != list.end(); i++) {
+      msg += " ";
+      msg += (*i);
+    }
+    message(3, msg.c_str());
+  }
   message(1, "");
+}
+
+static bool convertTocFiles(Toc* toc)
+{
+  if (formatConverter.convert(toc) != FormatSupport::FS_SUCCESS) {
+    return false;
+  }
+
+  return true;
 }
 
 static void printUsage()
@@ -206,7 +235,12 @@ static void printUsage()
     break;
     
   case SHOW_TOC:
-    message(0, "\nUsage: %s show-toc [-v #] toc-file\n", PRGNAME);
+    message(0, "\nUsage: %s show-toc [options] toc-file", PRGNAME);
+    message(0,
+"options:\n"
+"  --tmpdir <path>         - sets directory for temporary wav files\n"
+"  --keep                  - keep generated temp wav files after exit\n"
+"  -v #                    - sets verbose level\n");
     break;
     
   case SHOW_DATA:
@@ -238,6 +272,8 @@ static void printUsage()
 "  --buffers #             - sets fifo buffer size (min. 10)\n"
 "  --reload                - reload the disk if necessary for writing\n"
 "  --force                 - force execution of operation\n"
+"  --tmpdir <path>         - sets directory for temporary wav files\n"
+"  --keep                  - keep generated temp wav files after exit\n"
 "  -v #                    - sets verbose level\n"
 "  -n                      - no pause before writing\n",
 	    SCSI_DEVICE);
@@ -270,6 +306,8 @@ static void printUsage()
 "  --buffers #             - sets fifo buffer size (min. 10)\n"
 "  --reload                - reload the disk if necessary for writing\n"
 "  --force                 - force execution of operation\n"
+"  --tmpdir <path>         - sets directory for temporary wav files\n"
+"  --keep                  - keep generated temp wav files after exit\n"
 "  -v #                    - sets verbose level\n"
 "  -n                      - no pause before writing\n",
 	    SCSI_DEVICE);
@@ -350,11 +388,21 @@ static void printUsage()
     break;
     
   case TOC_INFO:
-    message(0, "\nUsage: %s toc-info [-v #] toc-file\n", PRGNAME);
+    message(0, "\nUsage: %s toc-info [options] toc-file", PRGNAME);
+    message(0,
+"options:\n"
+"  --tmpdir <path>         - sets directory for temporary wav files\n"
+"  --keep                  - keep generated temp wav files after exit\n"
+"  -v #                    - sets verbose level\n");
     break;
     
   case TOC_SIZE:
-    message(0, "\nUsage: %s toc-size [-v #] toc-file\n", PRGNAME);
+    message(0, "\nUsage: %s toc-size [options] toc-file", PRGNAME);
+    message(0,
+"options:\n"
+"  --tmpdir <path>         - sets directory for temporary wav files\n"
+"  --keep                  - keep generated temp wav files after exit\n"
+"  -v #                    - sets verbose level\n");
 
   case BLANK:
     message(0, "\nUsage: %s blank [options]", PRGNAME);
@@ -553,6 +601,9 @@ static void importSettings(Command cmd)
     if ((ival = SETTINGS->getInteger(SET_CDDB_TIMEOUT)) != NULL &&
 	*ival > 0) {
       CDDB_TIMEOUT = *ival;
+    }
+    if ((sval = SETTINGS->getString(SET_TMP_FILE_DIR)) != NULL) {
+        TMP_FILE_DIR = strdupCC(sval);
     }
   }
 }
@@ -859,6 +910,9 @@ static int parseCmdline(int argc, char **argv)
       else if (strcmp((*argv) + 2, "force") == 0) {
 	FORCE = 1;
       }
+      else if (strcmp((*argv) + 2, "keep") == 0) {
+	KEEP = true;
+      }
       else if (strcmp((*argv) + 2, "on-the-fly") == 0) {
 	ON_THE_FLY = 1;
       }
@@ -953,6 +1007,16 @@ static int parseCmdline(int argc, char **argv)
 	  CDDB_LOCAL_DB_DIR = argv[1];
 	  argc--, argv++;
 	}
+      }
+      else if (strcmp((*argv) + 2, "tmpdir") == 0) {
+          if (argc < 2) {
+              message(-2, "Missing argument after: %s", *argv);
+              return 1;
+          } else {
+              TMP_FILE_DIR = argv[1];
+              SETTINGS->set(SET_TMP_FILE_DIR, TMP_FILE_DIR);
+              argc--, argv++;
+          }
       }
       else if (strcmp((*argv) + 2, "cddb-timeout") == 0) {
 	if (argc < 2) {
@@ -1060,6 +1124,26 @@ static int parseCmdline(int argc, char **argv)
 
 
   return 0;
+}
+
+// Commit settings to overall system. Export them.
+static void commitSettings(Settings* SETTINGS, const char* settingsPath)
+{
+  if (TMP_FILE_DIR)
+    tempFileManager.setTempDirectory(TMP_FILE_DIR);
+
+  tempFileManager.setKeepTemps(KEEP);
+
+  if (SAVE_SETTINGS && settingsPath != NULL) {
+    // If we're saving our settings, give up root privileges and
+    // exit. The --save option is only compiled in if setreuid() is
+    // available (because it could be used for a local root exploit).
+    if (giveUpRootPrivileges()) {
+      exportSettings(COMMAND);
+      SETTINGS->write(settingsPath);
+    }
+    exit(0);
+  }
 }
 
 // Selects driver for device of 'scsiIf'.
@@ -2104,13 +2188,9 @@ int main(int argc, char **argv)
     exit(1);
   }
 
+  commitSettings(SETTINGS, settingsPath);
+
   printVersion();
-
-  if (SAVE_SETTINGS && settingsPath != NULL) {
-    exportSettings(COMMAND);
-    SETTINGS->write(settingsPath);
-  }
-
 
   if (COMMAND != READ_TOC && COMMAND != DISK_INFO && COMMAND != READ_CD &&
       COMMAND != BLANK && COMMAND != SCAN_BUS && COMMAND != UNLOCK &&
@@ -2123,6 +2203,12 @@ int main(int argc, char **argv)
     }
 
     if (toc == NULL) {
+      exitCode = 1; goto fail;
+    }
+
+    if (!convertTocFiles(toc)) {
+      message(-2, "Could not decode audio files from toc file \"%s\".",
+              TOC_FILE);
       exitCode = 1; goto fail;
     }
 

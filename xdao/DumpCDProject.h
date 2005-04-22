@@ -26,7 +26,7 @@ class RecordHDTarget;
 class DumpCDProject : public Project
 {
 public:
-  DumpCDProject();
+  DumpCDProject(Gtk::Window *parent);
   ~DumpCDProject();
   bool closeProject();
 
@@ -43,4 +43,3 @@ private:
   void update(unsigned long level);
 };
 #endif
-

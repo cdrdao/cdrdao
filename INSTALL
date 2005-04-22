@@ -1,17 +1,15 @@
 Installation:
 
 
-The GnomeCDMaster GUI additionally requires the Gimp toolkit gtk+-1.2.8,
-recent Gnome libraries (e.g. gnome-libs-1.4.1.6) and the C++ bindings
-gtkmm-1.2.9 and gnomemm-1.2.2.  The packages are available from
-www.gtk.org, www.gnome.org and www.sourceforge.net (project 'gtkmm').
-You will need exactly the mentioned library version. With older or
-newer versions the GnomeCDMaster sources usually fail to compile.
+The GnomeCDMaster GUI additionally requires the Gimp toolkit gtk+-2.4
+recent Gnome libraries and the C++ bindings gtkmm-2.4 and gnomemm-2.4.
+The packages are available from www.gtk.org, www.gnome.org and
+gtkmm.sourceforge.net.
 
+If you fetched the source tree directly from CVS, you will first have
+to run the autogen.sh script to unpack the scsilib and pccts libraries
+and generate all the Makefiles.
 
-If you fetched the source tree directly from CVS, you will first have to
-unpack "scsilib.tar.gz" and "pccts.tar.gz" in the same directory where
-the tar files reside.
 
 1. Type './configure'.
    Configure options for mp3lame library (only required for building toc2mp3):
@@ -69,3 +67,4 @@ the tar files reside.
 
 3. Type 'make install' as root to install the executable and the manual page
    under '/usr/local' or whatever was specified as the installation prefix.
+

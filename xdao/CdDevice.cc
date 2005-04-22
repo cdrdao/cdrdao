@@ -373,7 +373,10 @@ bool CdDevice::recordDao(Gtk::Window& parent, TocEdit *tocEdit, int simulate,
     return false;
   }
 
-  if (!tocEdit->toc()->write(fd)) {
+  // Write out temporary toc file containing all the converted wav
+  // files (don't want to rely on cdrdao doing the mp3->wav
+  // translation, besides it's already been done).
+  if (!tocEdit->toc()->write(fd, true)) {
     close(fd);
     message(-2, _("Cannot write temporary toc-file."));
     return false;
@@ -454,7 +457,7 @@ bool CdDevice::recordDao(Gtk::Window& parent, TocEdit *tocEdit, int simulate,
     action_ = A_RECORD;
 
     if (process_->commFd() >= 0) {
-        Glib::signal_io().connect(bind(slot(*this, &CdDevice::updateProgress),
+        Glib::signal_io().connect(bind(mem_fun(*this, &CdDevice::updateProgress),
                                        process_->commFd()),
                                   process_->commFd(),
                                   Glib::IO_IN | Glib::IO_HUP);
@@ -502,7 +505,7 @@ void CdDevice::progress(int *status, int *totalTracks, int *track,
 // Starts a 'cdrdao' for reading whole cd.
 // Return: 0: OK, process succesfully launched
 //         1: error occured
-int CdDevice::extractDao(Project& parent, const char *tocFileName,
+int CdDevice::extractDao(Gtk::Window& parent, const char *tocFileName,
                          int correction, int readSubChanMode)
 {
   char *args[30];
@@ -587,7 +590,7 @@ int CdDevice::extractDao(Project& parent, const char *tocFileName,
     action_ = A_READ;
 
     if (process_->commFd() >= 0) {
-        Glib::signal_io().connect(bind(slot(*this, &CdDevice::updateProgress),
+        Glib::signal_io().connect(bind(mem_fun(*this, &CdDevice::updateProgress),
                                        process_->commFd()),
                                   process_->commFd(),
                                   Glib::IO_IN | Glib::IO_PRI |
@@ -611,7 +614,7 @@ void CdDevice::abortDaoReading()
 // Starts a 'cdrdao' for duplicating a CD.
 // Return: 0: OK, process succesfully launched
 //         1: error occured
-int CdDevice::duplicateDao(Project& parent, int simulate, int multiSession,
+int CdDevice::duplicateDao(Gtk::Window& parent, int simulate, int multiSession,
                            int speed, int eject, int reload, int buffer,
                            int onthefly, int correction, int readSubChanMode, 
 			   CdDevice *readdev)
@@ -743,7 +746,7 @@ int CdDevice::duplicateDao(Project& parent, int simulate, int multiSession,
     action_ = A_DUPLICATE;
 
     if (process_->commFd() >= 0) {
-        Glib::signal_io().connect(bind(slot(*this, &CdDevice::updateProgress),
+        Glib::signal_io().connect(bind(mem_fun(*this, &CdDevice::updateProgress),
                                        process_->commFd()),
                                   process_->commFd(),
                                   Glib::IO_IN | Glib::IO_HUP);
@@ -766,7 +769,7 @@ void CdDevice::abortDaoDuplication()
 // Starts a 'cdrdao' for blanking a CD.
 // Return: 0: OK, process succesfully launched
 //         1: error occured
-int CdDevice::blank(Project* parent, int fast, int speed, int eject,
+int CdDevice::blank(Gtk::Window* parent, int fast, int speed, int eject,
                     int reload)
 {
   char *args[20];
@@ -849,7 +852,7 @@ int CdDevice::blank(Project* parent, int fast, int speed, int eject,
     action_ = A_BLANK;
 
     if (process_->commFd() >= 0) {
-        Glib::signal_io().connect(bind(slot(*this, &CdDevice::updateProgress),
+        Glib::signal_io().connect(bind(mem_fun(*this, &CdDevice::updateProgress),
                                        process_->commFd()),
                                   process_->commFd(),
                                   Glib::IO_IN | Glib::IO_HUP);

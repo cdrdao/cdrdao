@@ -6,7 +6,8 @@ IMAGES =		\
 	open.png	\
 	audiocd.png	\
 	copycd.png	\
-	dumpcd.png
+	dumpcd.png	\
+	record.png
 
 noinst_DATA = pixbufs.h
 CLEANFILES = $(noinst_DATA)
@@ -20,5 +21,6 @@ pixbufs.h: $(IMAGES)
 	gdk-pixbuf-csource --raw --name audiocd_pixbuf $(srcdir)/audiocd.png >> $(srcdir)/pixbufs.h
 	gdk-pixbuf-csource --raw --name copycd_pixbuf $(srcdir)/copycd.png >> $(srcdir)/pixbufs.h
 	gdk-pixbuf-csource --raw --name dumpcd_pixbuf $(srcdir)/dumpcd.png >> $(srcdir)/pixbufs.h
+	gdk-pixbuf-csource --raw --name record_pixbuf $(srcdir)/record.png >> $(srcdir)/pixbufs.h
 
 EXTRA_DIST = $(IMAGES) pixbufs.h

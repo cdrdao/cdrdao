@@ -5,7 +5,6 @@ bin_PROGRAMS = gcdmaster
 gcdmaster_SOURCES = \
 	AddFileDialog.cc 	\
 	AddSilenceDialog.cc 	\
-	AudioCDChild.cc		\
 	AudioCDProject.cc 	\
 	AudioCDView.cc 		\
 	BlankCDDialog.cc 	\
@@ -16,7 +15,6 @@ gcdmaster_SOURCES = \
 	DumpCDProject.cc 	\
 	DuplicateCDProject.cc 	\
 	gcdmaster.cc 		\
-	GenericChild.cc 	\
 	GenericView.cc 		\
 	guiUpdate.cc 		\
 	Icons.cc		\
@@ -49,12 +47,10 @@ gcdmaster_SOURCES = \
 	DuplicateCDProject.h	\
 	Project.h		\
 	TextEdit.h		\
-	AudioCDChild.h		\
 	gcdmaster.h		\
 	RecordCDSource.h	\
 	TocEdit.h		\
 	AudioCDProject.h	\
-	GenericChild.h		\
 	RecordCDTarget.h	\
 	TocEditView.h		\
 	AudioCDView.h		\
@@ -82,9 +78,14 @@ gcdmaster_SOURCES = \
 	Settings.h
 
 EXTRA_gcdmaster_SOURCES =	\
+	SoundIF-ao.cc 		\
 	SoundIF-linux.cc 	\
 	SoundIF-none.cc 	\
 	SoundIF-solaris.cc
+
+gladedir = $(datadir)/gcdmaster/glade
+glade_DATA = 			\
+	glade/ProjectChooser.glade
 
 gcdmaster_LDADD =					\
 	@sound_if_obj@					\
@@ -93,6 +94,20 @@ gcdmaster_LDADD =					\
 	-L$(top_builddir)/trackdb -ltrackdb		\
 	@scsilib_libs@					\
 	@LIBGUIMM2_LIBS@ @GTKMM2_LIBS@
+
+AM_CXXFLAGS = @GTKMM2_CFLAGS@ @LIBGUIMM2_CFLAGS@ @AO_CFLAGS@
+
+if COND_MP3
+gcdmaster_LDADD += @MAD_LIBS@
+AM_CXXFLAGS += @MAD_CFLAGS@
+endif
+
+if COND_OGG
+gcdmaster_LDADD += @VORBISFILE_LIBS@
+AM_CXXFLAGS += @VORBISFILE_CFLAGS@
+endif
+
+gcdmaster_LDADD += @AO_LIBS@
 
 gcdmaster_DEPENDENCIES = \
 	$(top_builddir)/dao/libdao.a			\
@@ -103,15 +118,33 @@ gcdmaster_DEPENDENCIES = \
 INCLUDES =					\
 	-I$(srcdir)/../trackdb			\
 	-I$(srcdir)/../paranoia			\
-	-I$(srcdir)/../dao
-
-AM_CXXFLAGS = @GTKMM2_CFLAGS@ @LIBGUIMM2_CFLAGS@
+	-I$(srcdir)/../dao			\
+	-DCDRDAO_GLADEDIR=\""$(gladedir)"\"
 
 man1_MANS = gcdmaster.man
-EXTRA_DIST = $(man1_MANS) gcdmaster.desktop BUGS TASKS gcdmaster.png
+
+mimeinfodir = $(datadir)/mime-info
+mimeinfo_DATA = gcdmaster.keys gcdmaster.mime
+
+freedesktopdir = $(datadir)/mime/packages
+freedesktop_DATA = gcdmaster.xml
 
 desktopdir = $(datadir)/applications
 desktop_DATA = gcdmaster.desktop
 
+appregdir = $(datadir)/application-registry
+appreg_DATA = gcdmaster.applications
+
 icondir = $(datadir)/pixmaps
-icon_DATA = gcdmaster.png
+icon_DATA = gcdmaster.png gcdmaster-doc.png
+
+EXTRA_DIST = \
+	$(man1_MANS)	\
+	$(glade_DATA)	\
+	$(mimeinfo_DATA)\
+	$(desktop_DATA)	\
+	$(icon_DATA)	\
+	$(freedesktop_DATA)	\
+	$(appreg_DATA)	\
+	BUGS TASKS
+

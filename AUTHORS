@@ -1,0 +1,10 @@
+Andreas Mueller <andreasm@users.sourceforge.net> :
+- project founder, initial implementation of cdrdao
+  (no longer an active developer)
+
+Manuel Clos <llanero@users.sourceforge.net>
+- author of gcdmaster GUI front-end
+
+Denis Leroy <denis@poolshark.org>
+- project maintenance, Gtk2 port of gcdmaster
+

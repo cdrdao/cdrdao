@@ -33,67 +33,65 @@
 
 ProjectChooser::ProjectChooser()
 {
-  set_title(APP_NAME);
+  Glib::RefPtr<Gnome::Glade::Xml> refXml;
+  try
+  {
+    refXml = Gnome::Glade::Xml::create(CDRDAO_GLADEDIR "/ProjectChooser.glade", "mainbox");
+  }
+  catch(const Gnome::Glade::XmlError& ex)
+  {
+    try
+    {
+      refXml = Gnome::Glade::Xml::create("glade/ProjectChooser.glade", "mainbox");
+    }
+    catch(const Gnome::Glade::XmlError& ex)
+    {
+      std::cerr << ex.what() << std::endl;
+      return;
+    }
+  }
 
-  vbox.set_border_width(40);
+  Gtk::HBox* pBox = 0;
+  refXml->get_widget("mainbox", pBox);
+  if(!pBox)
+    return;
 
-  Gtk::HBox *hbox;
-  Gtk::Label *label;
+  Gtk::Image* pImage = 0;
+  refXml->get_widget("AudioImage", pImage);
+  if (pImage)
+  {
+    pImage->set(Icons::AUDIOCD, Gtk::ICON_SIZE_DIALOG);
+  }
+  refXml->get_widget("CopyImage", pImage);
+  if (pImage)
+  {
+    pImage->set(Icons::COPYCD, Gtk::ICON_SIZE_DIALOG);
+  }
+  refXml->get_widget("DumpImage", pImage);
+  if (pImage)
+  {
+    pImage->set(Icons::DUMPCD, Gtk::ICON_SIZE_DIALOG);
+  }
 
-  hbox = manage(new Gtk::HBox);
-  hbox->pack_start(*(manage(new Gtk::Image(Icons::OPEN,
-                                           Gtk::ICON_SIZE_DIALOG))),
-                   false, false, ICON_PADDING);
-  label = manage(new Gtk::Label(_("Open existing project")));
-  hbox->pack_start(*label, false, false, LABEL_PADDING);
-  openButton.add(*hbox);
-  vbox.pack_start(openButton);
+  Gtk::Button* pButton = 0;
+  refXml->get_widget("AudioButton", pButton);
+  if (pButton)
+  {
+    pButton->signal_clicked().
+      connect(ProjectChooser::newAudioCDProject);
+  }
+  refXml->get_widget("CopyButton", pButton);
+  if (pButton)
+  {
+    pButton->signal_clicked().
+      connect(ProjectChooser::newDuplicateCDProject);
+  }
+  refXml->get_widget("DumpButton", pButton);
+  if (pButton)
+  {
+    pButton->signal_clicked().
+      connect(ProjectChooser::newDumpCDProject);
+  }
 
-  hbox = manage(new Gtk::HBox);
-  hbox->pack_start(*(manage(new Gtk::Image(Icons::AUDIOCD,
-                                           Gtk::ICON_SIZE_DIALOG))),
-                   false, false, ICON_PADDING);
-  label = manage(new Gtk::Label(_("New Audio CD project")));
-  hbox->pack_start(*label, false, false, LABEL_PADDING);
-  audioCDButton.add(*hbox);
-  vbox.pack_start(audioCDButton);
-
-  hbox = manage(new Gtk::HBox);
-  hbox->pack_start(*(manage(new Gtk::Image(Icons::COPYCD,
-                                           Gtk::ICON_SIZE_DIALOG))),
-                   false, false, ICON_PADDING);
-  label = manage(new Gtk::Label(_("Duplicate CD")));
-  hbox->pack_start(*label, false, false, LABEL_PADDING);
-  copyCDButton.add(*hbox);
-  vbox.pack_start(copyCDButton);
-
-  hbox = manage(new Gtk::HBox);
-  hbox->pack_start(*(manage(new Gtk::Image(Icons::DUMPCD,
-                                           Gtk::ICON_SIZE_DIALOG))),
-                   false, false, ICON_PADDING);
-  label = manage(new Gtk::Label(_("Copy CD to disk")));
-  hbox->pack_start(*label, false, false, LABEL_PADDING);
-  dumpCDButton.add(*hbox);
-  vbox.pack_start(dumpCDButton);
-  add(vbox);
-
-  // Connect button signals
-  openButton.signal_clicked().
-    connect(bind(slot(*gcdmaster, &GCDMaster::openProject), this));
-  audioCDButton.signal_clicked().
-    connect(bind(slot(*gcdmaster, &GCDMaster::newAudioCDProject2), this));
-  copyCDButton.signal_clicked().
-    connect(bind(slot(*gcdmaster, &GCDMaster::newDuplicateCDProject), this));
-  dumpCDButton.signal_clicked().
-    connect(bind(slot(*gcdmaster, &GCDMaster::newDumpCDProject), this));
-
-  vbox.show_all();
+  pack_start(*pBox);
 }
-
-
-bool ProjectChooser::on_delete_event(GdkEventAny* e)
-{
-  gcdmaster->closeChooser(this);
-  return true;
-}
-

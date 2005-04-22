@@ -32,6 +32,7 @@ extern const char *SET_READ_PARANOIA_MODE;
 extern const char *SET_CDDB_SERVER_LIST;
 extern const char *SET_CDDB_TIMEOUT;
 extern const char *SET_CDDB_DB_DIR;
+extern const char *SET_TMP_FILE_DIR;
 
 class Settings {
 public:
