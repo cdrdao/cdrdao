@@ -311,3 +311,14 @@ diff -pur cdrdao-1.1.9/scsilib/libscg/scsi-linux-ata.c cdrdao-1.1.9-fixed/scsili
  		result = readlink(device, tmp, LOCAL_MAX_PATH);
  		if (result > 0 && result < LOCAL_MAX_PATH) {
  			tmp[result] = '\0';
+--- scsilib/RULES/mk-gmake.id~	2005-04-21 19:12:29.000000000 -0700
++++ scsilib/RULES/mk-gmake.id	2005-04-21 19:31:24.000000000 -0700
+@@ -37,8 +37,6 @@
+ 
+ ifndef		ARCH_DONE
+ 
+-__gmake_warn:=	$(shell cat $(SRCROOT)/$(RULESDIR)/gmake.wrn 1>&2; sleep 5)
+-
+ _MACHCMD=	(uname -p || true)	2> /dev/null
+ _ARCHCMD=	(arch || /usr/ucb/arch || true)	2> /dev/null
+ 
