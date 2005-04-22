@@ -2716,7 +2716,7 @@ int GenericMMC::RicohGetWriteOptions()
   if (mp[2] & (1 << 5))
     driveInfo_->ricohJustSpeed = 1;
 
-  if (mp[2] & (1 << 1))
+  if (mp[2] & 0x01)
     driveInfo_->ricohJustLink = 1;
 
   return 0;
