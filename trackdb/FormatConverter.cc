@@ -18,7 +18,9 @@
  */
 
 #include <stdlib.h>
+#ifdef HAVE_AO
 #include <ao/ao.h>
+#endif
 #include <fstream>
 
 #include "config.h"
