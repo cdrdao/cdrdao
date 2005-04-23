@@ -161,9 +161,16 @@ public:
   // returns current writing speed
   virtual int speed() { return speed_; }
   
+  // returns current reading speed
+  virtual int rspeed() { return rspeed_; }
+
   // sets writing speed, returns 0 for OK or 1 for illegal speed,
   // this function may send SCSI commands to the drive
   virtual int speed(int) = 0;
+
+  // sets reading speed, returns 0 for OK or 1 for illegal speed,
+  // this function may send SCSI commands to the drive
+  virtual bool rspeed(int);
 
   // sets/return buffer under run protection setting (if supported by
   // the drive: 1 = enabled, 0 = disbaled
@@ -395,6 +402,7 @@ protected:
   int enableBufferUnderRunProtection_;
   int enableWriteSpeedControl_;
   int speed_;
+  int rspeed_;
   int simulate_;
   int multiSession_;
   int encodingMode_; // mode for encoding data sectors

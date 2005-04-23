@@ -61,6 +61,9 @@ public:
   int speed(int);
   int speed();
 
+  bool rspeed(int);
+  int rspeed();
+
   DiskInfo *diskInfo();
 
   int loadUnload(int) const;
@@ -97,7 +100,7 @@ protected:
   int readCatalog(Toc *, long startLba, long endLba);
   int readIsrc(int, char *);
 
-  virtual int selectSpeed(int readSpeed);
+  virtual int selectSpeed();
   virtual int setWriteParameters(unsigned long variant);
   int setSimulationMode(int showMessage);
   int performPowerCalibration();

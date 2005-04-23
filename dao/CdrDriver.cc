@@ -1077,6 +1077,11 @@ int CdrDriver::testUnitReady(int ignoreUnitAttention) const
   return 0;
 }
 
+bool CdrDriver::rspeed(int a) {
+  rspeed_ = a;
+  return true;
+}
+
 int CdrDriver::speed2Mult(int speed)
 {
   return speed / 176;

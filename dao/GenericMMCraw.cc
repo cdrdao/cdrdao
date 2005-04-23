@@ -438,7 +438,7 @@ int GenericMMCraw::initDao(const Toc *toc)
 
   CdrDriver::toc_ = toc;
 
-  if (selectSpeed(0) != 0 ||
+  if (selectSpeed() != 0 ||
       getSessionInfo() != 0) {
     return 1;
   }

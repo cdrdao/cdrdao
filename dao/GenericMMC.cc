@@ -60,6 +60,7 @@ GenericMMC::GenericMMC(ScsiIf *scsiIf, unsigned long options)
   driverName_ = "Generic SCSI-3/MMC - Version 2.0";
   
   speed_ = 0;
+  rspeed_ = 0;
   simulate_ = 1;
   encodingMode_ = 1;
 
@@ -153,7 +154,7 @@ int GenericMMC::speed(int s)
 {
   speed_ = s;
 
-  if (selectSpeed(0) != 0)
+  if (selectSpeed() != 0)
     return 1;
   
   return 0;
@@ -173,6 +174,34 @@ int GenericMMC::speed()
   return speed2Mult(di->currentWriteSpeed);
 
 }
+
+// sets fspeed
+// return: true: OK
+//         false: illegal speed
+bool GenericMMC::rspeed(int s)
+{
+  rspeed_ = s;
+
+  if (selectSpeed() != 0)
+    return false;
+  
+  return true;
+}
+
+int GenericMMC::rspeed()
+{
+  const DriveInfo *di;
+
+  delete driveInfo_;
+  driveInfo_ = NULL;
+
+  if ((di = driveInfo(1)) == NULL) {
+    return 0;
+  }
+
+  return speed2Mult(di->currentReadSpeed);
+}
+
 
 // loads ('unload' == 0) or ejects ('unload' == 1) tray
 // return: 0: OK
@@ -310,7 +339,7 @@ int GenericMMC::blankDisk(BlankingMode mode)
 // sets read/write speed and simulation mode
 // return: 0: OK
 //         1: scsi command failed
-int GenericMMC::selectSpeed(int readSpeed)
+int GenericMMC::selectSpeed()
 {
   unsigned char cmd[12];
   int spd;
@@ -320,12 +349,12 @@ int GenericMMC::selectSpeed(int readSpeed)
   cmd[0] = 0xbb; // SET CD SPEED
 
   // select maximum read speed
-  if (readSpeed == 0) {
+  if (rspeed_ == 0) {
     cmd[2] = 0xff;
     cmd[3] = 0xff;
   }
   else {
-    spd = mult2Speed(readSpeed);
+    spd = mult2Speed(rspeed_);
     cmd[2] = spd >> 8;
     cmd[3] = spd;
   }
@@ -378,7 +407,7 @@ int GenericMMC::getSessionInfo()
 
   if (leadInStart_.lba() >= Msf(80, 0, 0).lba()) {
     leadInLen_ = 450000 - leadInStart_.lba();
-//    leadOutLen_ = Msf(1, 30, 0).lba(); // 90 seconds lead-out
+
     if (fullBurn_) {
     	leadOutLen_ = (userCapacity_ ? Msf(userCapacity_, 0, 0).lba() : diskInfo_.capacity) + Msf(1, 30, 0).lba() - toc_->length().lba() - diskInfo_.thisSessionLba - 150; // Fill all rest space <vladux>
 	if (leadOutLen_ < Msf(1, 30, 0).lba()) {
@@ -1070,7 +1099,7 @@ int GenericMMC::initDao(const Toc *toc)
     return 1;
   }
 
-  if (selectSpeed(0) != 0 ||
+  if (selectSpeed() != 0 ||
       getSessionInfo() != 0) {
     return 1;
   }
@@ -1637,7 +1666,7 @@ int GenericMMC::analyzeTrack(TrackData::Mode mode, int trackNr, long startLba,
   int ret;
   int noScan = 0;
 
-  selectSpeed(0);
+  selectSpeed();
 
   if ((readCapabilities_ & CDR_AUDIO_SCAN_CAP) == 0) {
     ret = analyzeTrackSearch(mode, trackNr, startLba, endLba, indexIncrements,

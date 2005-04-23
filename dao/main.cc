@@ -70,6 +70,7 @@ static const char *DATA_FILENAME = NULL;
 static const char *CDDB_SERVER_LIST = "freedb.freedb.org freedb.freedb.org:/~cddb/cddb.cgi uk.freedb.org uk.freedb.org:/~cddb/cddb.cgi cz.freedb.org cz.freedb.org:/~cddb/cddb.cgi";
 static const char *CDDB_LOCAL_DB_DIR = NULL;
 static const char *TMP_FILE_DIR = NULL;
+static int READING_SPEED = -1;
 static int WRITING_SPEED = -1;
 static int EJECT = 0;
 static int SWAP = 0;
@@ -323,6 +324,7 @@ static void printUsage()
 "  --session #             - select session\n"
 "  --fast-toc              - do not extract pre-gaps and index marks\n"
 "  --read-raw              - select raw sectors modes for data tracks\n"
+"  --rspeed <read-speed>   - selects reading speed\n"
 "  --read-subchan <mode>   - defines sub-channel reading mode\n"
 "                            <mode> = rw | rw_raw\n"
 "  --tao-source            - indicate that source CD was written in TAO mode\n"
@@ -373,6 +375,7 @@ static void printUsage()
 "  --session #             - select session\n"
 "  --fast-toc              - do not extract pre-gaps and index marks\n"
 "  --read-raw              - read raw data sectors (including L-EC data)\n"
+"  --rspeed <read-speed>   - selects reading speed\n"
 "  --read-subchan <mode>   - defines sub-channel reading mode\n"
 "                            <mode> = rw | rw_raw\n"
 "  --tao-source            - indicate that source CD was written in TAO mode\n"
@@ -446,6 +449,7 @@ static void printUsage()
 "  --source-driver <id>    - force usage of specified driver for source device\n"
 "  --simulate              - just perform a copy simulation\n"
 "  --speed <writing-speed> - selects writing speed\n"
+"  --rspeed <read-speed>   - selects reading speed\n"
 "  --multi                 - session will not be closed\n"
 "  --buffer-under-run-protection #\n"
 "                          - 0: disable buffer under run protection\n"
@@ -606,6 +610,12 @@ static void importSettings(Command cmd)
         TMP_FILE_DIR = strdupCC(sval);
     }
   }
+
+  if ((ival = SETTINGS->getInteger(SET_READ_SPEED)) != NULL &&
+      *ival >= 0) {
+    READING_SPEED = *ival;
+  }  
+
 }
 
 static void exportSettings(Command cmd)
@@ -677,6 +687,10 @@ static void exportSettings(Command cmd)
     if (CDDB_TIMEOUT > 0) {
       SETTINGS->set(SET_CDDB_TIMEOUT, CDDB_TIMEOUT);
     }
+  }
+
+  if (READING_SPEED >= 0) {
+    SETTINGS->set(SET_READ_SPEED, READING_SPEED);
   }
 }
 
@@ -806,6 +820,20 @@ static int parseCmdline(int argc, char **argv)
 	  SOURCE_SCSI_DEVICE = argv[1];
 	  argc--, argv++;
 	}
+      }
+      else if (strcmp((*argv) + 2, "rspeed") == 0) {
+        if (argc < 2) {
+          message(-2, "Missing argument after: %s", *argv);
+          return 1;
+        }
+        else {
+          READING_SPEED = atol(argv[1]);
+          if (READING_SPEED < 0) {
+            message(-2, "Illegal reading speed: %s", argv[1]);
+            return 1;
+          }
+          argc--, argv++;
+        }
       }
       else if (strcmp((*argv) + 2, "speed") == 0) {
 	if (argc < 2) {
@@ -1263,6 +1291,13 @@ static CdrDriver *setupDevice(Command cmd, const char *scsiDevice,
   while (initTries > 0) {
     // clear unit attention
     cdr->rezeroUnit(0);
+    if (READING_SPEED >= 0) {
+      if (!cdr->rspeed(READING_SPEED)) {
+        message(-2, "Reading speed %d is not supported by device.",
+                READING_SPEED);
+        exit(1);
+      }
+    }
 
     if (checkReady) {
       retry = 0;
@@ -1288,6 +1323,16 @@ static CdrDriver *setupDevice(Command cmd, const char *scsiDevice,
       }
 	
       cdr->rezeroUnit(0);
+
+      if (READING_SPEED >= 0) {
+        message(0, "Setting reading speed %d.",
+                READING_SPEED); 
+        if (cdr->rspeed(READING_SPEED) != 0) {
+          message(-2, "Reading speed %d is not supported by device.",
+                  READING_SPEED);
+          exit(1);
+        }
+      }
 
       if ((di = cdr->diskInfo()) == NULL) {
 	message(-2, "Cannot get disk information.");
@@ -1331,6 +1376,14 @@ static CdrDriver *setupDevice(Command cmd, const char *scsiDevice,
     }
     else {
       initTries = 0;
+    }
+  }
+
+  if (READING_SPEED >= 0) {
+    if (cdr->rspeed(READING_SPEED) != 0) {
+      message(-2, "Reading speed %d is not supported by device.",
+              READING_SPEED);
+      exit(1);
     }
   }
 
@@ -2250,17 +2303,19 @@ int main(int argc, char **argv)
   }
   
   if (COMMAND == SIMULATE || COMMAND == WRITE || COMMAND == COPY_CD) {
-    if (FULL_BURN && strcmp(DRIVER_ID, "generic-mmc-raw") != 0) {
-      message(-2, "You must use the generic-mmc-raw driver to use the "
-              "full-burn option.");
-      exitCode = 1; goto fail;
-    } else {
-      int mins = USER_CAPACITY ? USER_CAPACITY :
-        Msf(cdr->diskInfo()->capacity).min();
-      message(2, "Burning entire %d mins disc.", mins);
+    if (FULL_BURN) {
+      if (DRIVER_ID && strcmp(DRIVER_ID, "generic-mmc-raw") != 0) {
+        message(-2, "You must use the generic-mmc-raw driver to use the "
+                "full-burn option.");
+        exitCode = 1; goto fail;
+      } else {
+        int mins = USER_CAPACITY ? USER_CAPACITY :
+          Msf(cdr->diskInfo()->capacity).min();
+        message(2, "Burning entire %d mins disc.", mins);
+      }
     }
-    cdr->userCapacity(USER_CAPACITY);
     cdr->fullBurn(FULL_BURN);
+    cdr->userCapacity(USER_CAPACITY);
   }
 
   if (COMMAND == COPY_CD) {
