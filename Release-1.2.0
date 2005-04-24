@@ -20,5 +20,12 @@ Cdrdao changes:
   those temporary WAV files can be specified with the --tmpdir option
   (default is /tmp).
 
+- Added --rspeed option to manually set the device reading speed. Be
+  warned not all devices support this.
+
+GCDMaster changes:
+
+- MP3 and Ogg Vorbis support: you can drag and drop .mp3, .m3u and
+  .ogg files into the sample display window.
 
 Denis Leroy
