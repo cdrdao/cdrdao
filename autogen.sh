@@ -19,7 +19,7 @@ fi
 
 # Minimum version
 MAJOR_VERSION=1
-MINOR_VERSION=6
+MINOR_VERSION=7
 
 AMVERSION=`automake --version  | awk '/automake/ {print $4}'`
 
