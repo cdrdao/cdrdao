@@ -23,6 +23,13 @@ Cdrdao changes:
 - Added --rspeed option to manually set the device reading speed. Be
   warned not all devices support this.
 
+- Packaged scsilib library upgraded from cdrtools 2.01 (previously was
+  from 2.01a31).
+
+- Added --no-mode2-mixed option. Don't read a MODE2 disk as
+  MODE2_FORM_MIXED, only read MODE2_FORM1 or MODE2_FORM2 (Matthieu
+  Castet).
+
 GCDMaster changes:
 
 - MP3 and Ogg Vorbis support: you can drag and drop .mp3, .m3u and
