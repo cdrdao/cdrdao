@@ -140,18 +140,19 @@ diff -ru --unidirectional-new-file /home/denis/packages/cdrtools-2.01a25/TARGETS
 +++ scsilib/TARGETS/99export	2003-03-01 10:53:25.000000000 -0800
 @@ -0,0 +1 @@
 +Export
---- scsilib.orig/RULES/mk-gmake.id	2004-06-03 19:17:08.000000000 -0700
-+++ scsilib/RULES/mk-gmake.id	2004-06-28 01:14:51.224063000 -0700
-@@ -37,7 +37,7 @@
+--- scsilib/RULES/mk-gmake.id.old	2004-09-08 09:10:02.000000000 -0700
++++ scsilib/RULES/mk-gmake.id	2005-04-26 14:15:21.000000000 -0700
+@@ -37,9 +37,7 @@
  
  ifndef		ARCH_DONE
  
+-__gmake_warn:=	$(shell cat $(SRCROOT)/$(RULESDIR)/gmake.wrn 1>&2; sleep 5)
+-
 -_MACHCMD=	(mach || uname -p || true)	2> /dev/null
 +_MACHCMD=	(uname -p || true)	2> /dev/null
  _ARCHCMD=	(arch || /usr/ucb/arch || true)	2> /dev/null
  
  XP_ARCH:=	$(shell $(_MACHCMD) | tr '[A-Z]' '[a-z]' | tr ', /\\()"' ',//////' | tr ',/' ',-')
-diff -ruN --recursive scsilib/RULES.orig/ppc64-linux-cc.rul scsilib/RULES/ppc64-linux-cc.rul
 --- scsilib/RULES.orig/ppc64-linux-cc.rul	1970-01-01 00:00:00.000000000 +0000
 +++ scsilib/RULES/ppc64-linux-cc.rul	2004-12-23 16:02:37.343901376 +0000
 @@ -0,0 +1,70 @@
@@ -299,8 +300,7 @@ diff -ruN --recursive scsilib/RULES.orig/ppc64-linux-gcc.rul scsilib/RULES/ppc64
 +RMDEP=		:
 +MKDEP=		@echo "	==> MAKING DEPENDENCIES \"$@\""; $(RMDEP); gcc -M
 +MKDEP_OUT=
-diff -pur cdrdao-1.1.9/scsilib/libscg/scsi-linux-ata.c cdrdao-1.1.9-fixed/scsilib/libscg/scsi-linux-ata.c
---- scsilib/libscg/scsi-linux-ata.c	2005-02-05 22:45:03.422964296 +0100
+--- scsilib/libscg/scsi-linux-ata.c.scan	2005-02-05 22:45:03.422964296 +0100
 +++ scsilib/libscg/scsi-linux-ata.c	2005-02-05 22:39:59.748129888 +0100
 @@ -689,7 +689,7 @@ sg_amapdev(scgp, f, device, schillybus, 
  		return (FALSE);
@@ -311,14 +311,432 @@ diff -pur cdrdao-1.1.9/scsilib/libscg/scsi-linux-ata.c cdrdao-1.1.9-fixed/scsili
  		result = readlink(device, tmp, LOCAL_MAX_PATH);
  		if (result > 0 && result < LOCAL_MAX_PATH) {
  			tmp[result] = '\0';
---- scsilib/RULES/mk-gmake.id~	2005-04-21 19:12:29.000000000 -0700
-+++ scsilib/RULES/mk-gmake.id	2005-04-21 19:31:24.000000000 -0700
-@@ -37,8 +37,6 @@
+--- scsilib/libscg/scsi-linux-sg.c.scan	2004-09-22 12:57:24.313986568 +0200
++++ scsilib/libscg/scsi-linux-sg.c	2004-09-22 12:57:24.327984440 +0200
+@@ -287,6 +287,8 @@
+ 	return (0);
+ }
  
- ifndef		ARCH_DONE
++#include <glob.h>
++
+ LOCAL int
+ scgo_open(scgp, device)
+ 	SCSI	*scgp;
+@@ -301,8 +303,9 @@
+ 	register int	t;
+ 	register int	l;
+ 	register int	nopen = 0;
+-	char		devname[64];
+-		BOOL	use_ata = FALSE;
++	char		*devname;
++	BOOL	use_ata = FALSE;
++	glob_t globbuf;
  
--__gmake_warn:=	$(shell cat $(SRCROOT)/$(RULESDIR)/gmake.wrn 1>&2; sleep 5)
+ 	if (busno >= MAX_SCG || tgt >= MAX_TGT || tlun >= MAX_LUN) {
+ 		errno = EINVAL;
+@@ -383,103 +386,91 @@
+ 	 * look silly but there may be users that did boot from a SCSI hdd
+ 	 * and connected 4 CD/DVD writers to both IDE cables in the PC.
+ 	 */
+-	if (use_ata) for (i = 0; i <= 25; i++) {
+-		js_snprintf(devname, sizeof (devname), "/dev/hd%c", i+'a');
+-					/* O_NONBLOCK is dangerous */
+-		f = open(devname, O_RDWR | O_NONBLOCK);
+-		if (f < 0) {
+-			/*
+-			 * Set up error string but let us clear it later
+-			 * if at least one open succeeded.
+-			 */
+-			if (scgp->errstr)
+-				js_snprintf(scgp->errstr, SCSI_ERRSTR_SIZE,
+-							"Cannot open '/dev/hd*'");
+-			if (errno != ENOENT && errno != ENXIO && errno != ENODEV) {
++	if (use_ata) {
++		glob("/dev/hd[a-z]", GLOB_NOSORT, NULL, &globbuf);
++		
++		for (i = 0; globbuf.gl_pathv && globbuf.gl_pathv[i] != NULL ; i++) {
++			devname = globbuf.gl_pathv[i];
++			f = open(devname, O_RDWR | O_NONBLOCK);
++			if (f < 0) {
++				/*
++				 * Set up error string but let us clear it later
++				 * if at least one open succeeded.
++				 */
+ 				if (scgp->errstr)
+ 					js_snprintf(scgp->errstr, SCSI_ERRSTR_SIZE,
+-							"Cannot open '%s'", devname);
+-				return (0);
+-			}
+-		} else {
+-			int	iparm;
 -
- _MACHCMD=	(uname -p || true)	2> /dev/null
- _ARCHCMD=	(arch || /usr/ucb/arch || true)	2> /dev/null
+-			if (ioctl(f, SG_GET_TIMEOUT, &iparm) < 0) {
+-				if (scgp->errstr)
+-					js_snprintf(scgp->errstr, SCSI_ERRSTR_SIZE,
+-							"SCSI unsupported with '/dev/hd*'");
+-				close(f);
+-				continue;
++						    "Cannot open '/dev/hd*'");
++				if (errno != ENOENT && errno != ENXIO && errno != ENODEV && errno != EACCES) {
++					if (scgp->errstr)
++						js_snprintf(scgp->errstr, SCSI_ERRSTR_SIZE,
++							    "Cannot open '%s'", devname);
++					globfree(&globbuf);
++					return (0);
++				}
++			} else {
++				int	iparm;
++				
++				if (ioctl(f, SG_GET_TIMEOUT, &iparm) < 0) {
++					if (scgp->errstr)
++						js_snprintf(scgp->errstr, SCSI_ERRSTR_SIZE,
++							    "SCSI unsupported with '/dev/hd*'");
++					close(f);
++					continue;
++				}
++				sg_clearnblock(f);	/* Be very proper about this */
++				if (sg_setup(scgp, f, busno, tgt, tlun, devname[7]-'a')) {
++					globfree(&globbuf);
++					return (++nopen);
++				}
++				if (busno < 0 && tgt < 0 && tlun < 0)
++					nopen++;
+ 			}
+-			sg_clearnblock(f);	/* Be very proper about this */
+-			if (sg_setup(scgp, f, busno, tgt, tlun, i))
+-				return (++nopen);
+-			if (busno < 0 && tgt < 0 && tlun < 0)
+-				nopen++;
+ 		}
++		globfree(&globbuf);
+ 	}
+ 	if (use_ata && nopen == 0)
+ 		return (0);
+ 	if (nopen > 0 && scgp->errstr)
+ 		scgp->errstr[0] = '\0';
  
+-	if (nopen == 0) for (i = 0; i < 32; i++) {
+-		js_snprintf(devname, sizeof (devname), "/dev/sg%d", i);
+-					/* O_NONBLOCK is dangerous */
+-		f = open(devname, O_RDWR | O_NONBLOCK);
+-		if (f < 0) {
+-			/*
+-			 * Set up error string but let us clear it later
+-			 * if at least one open succeeded.
+-			 */
+-			if (scgp->errstr)
+-				js_snprintf(scgp->errstr, SCSI_ERRSTR_SIZE,
+-							"Cannot open '/dev/sg*'");
+-			if (errno != ENOENT && errno != ENXIO && errno != ENODEV) {
++	if (nopen == 0) {
++		glob("/dev/scd[0-9]", GLOB_NOSORT, NULL, &globbuf);
++		glob("/dev/scd[0-9][0-9]", GLOB_NOSORT|GLOB_APPEND, NULL, &globbuf);
++		/*glob("/dev/sg[a-z]", GLOB_NOSORT|GLOB_APPEND, NULL, &globbuf);*/
++		
++		for (i = 0; globbuf.gl_pathv && globbuf.gl_pathv[i] != NULL ; i++) {
++			devname = globbuf.gl_pathv[i];
++
++			f = open(devname, O_RDWR | O_NONBLOCK);
++			if (f < 0) {
++				/*
++				 * Set up error string but let us clear it later
++				 * if at least one open succeeded.
++				 */
+ 				if (scgp->errstr)
+ 					js_snprintf(scgp->errstr, SCSI_ERRSTR_SIZE,
+-							"Cannot open '%s'", devname);
+-				return (0);
++						    "Cannot open '/dev/scd*'");
++				if (errno != ENOENT && errno != ENXIO && errno != ENODEV) {
++					if (scgp->errstr)
++						js_snprintf(scgp->errstr, SCSI_ERRSTR_SIZE,
++							    "Cannot open '%s'", devname);
++					globfree(&globbuf);
++					return (0);
++				}
++			} else {
++				sg_clearnblock(f);	/* Be very proper about this */
++				if (sg_setup(scgp, f, busno, tgt, tlun, -1)) {
++					globfree(&globbuf);
++					return (++nopen);
++				}
++				if (busno < 0 && tgt < 0 && tlun < 0)
++					nopen++;
+ 			}
+-		} else {
+-			sg_clearnblock(f);	/* Be very proper about this */
+-			if (sg_setup(scgp, f, busno, tgt, tlun, -1))
+-				return (++nopen);
+-			if (busno < 0 && tgt < 0 && tlun < 0)
+-				nopen++;
+ 		}
+ 	}
+ 	if (nopen > 0 && scgp->errstr)
+ 		scgp->errstr[0] = '\0';
+ 
+-	if (nopen == 0) for (i = 0; i <= 25; i++) {
+-		js_snprintf(devname, sizeof (devname), "/dev/sg%c", i+'a');
+-					/* O_NONBLOCK is dangerous */
+-		f = open(devname, O_RDWR | O_NONBLOCK);
+-		if (f < 0) {
+-			/*
+-			 * Set up error string but let us clear it later
+-			 * if at least one open succeeded.
+-			 */
+-			if (scgp->errstr)
+-				js_snprintf(scgp->errstr, SCSI_ERRSTR_SIZE,
+-							"Cannot open '/dev/sg*'");
+-			if (errno != ENOENT && errno != ENXIO && errno != ENODEV) {
+-				if (scgp->errstr)
+-					js_snprintf(scgp->errstr, SCSI_ERRSTR_SIZE,
+-							"Cannot open '%s'", devname);
+-				return (0);
+-			}
+-		} else {
+-			sg_clearnblock(f);	/* Be very proper about this */
+-			if (sg_setup(scgp, f, busno, tgt, tlun, -1))
+-				return (++nopen);
+-			if (busno < 0 && tgt < 0 && tlun < 0)
+-				nopen++;
+-		}
+-	}
+-	if (nopen > 0 && scgp->errstr)
+-		scgp->errstr[0] = '\0';
+ 
+ openbydev:
+ 	if (device != NULL && *device != '\0') {
+--- scsilib/libscg/scsi-linux-ata.c.scan	2004-06-12 12:48:12.000000000 +0200
++++ scsilib/libscg/scsi-linux-ata.c	2004-09-22 12:57:24.330983984 +0200
+@@ -267,7 +267,7 @@
+ 			starget,
+ 			slun;
+ 
+-		f = open(device, O_RDONLY | O_NONBLOCK);
++		f = open(device, O_RDWR | O_NONBLOCK);
+ 
+ 		if (f < 0) {
+ 			if (scgp->errstr)
+@@ -283,6 +283,9 @@
+ 	return (nopen);
+ }
+ 
++#include <glob.h>
++
++
+ LOCAL int
+ scan_internal(scgp, nopen)
+ 	SCSI	*scgp;
+@@ -293,118 +296,62 @@
+ 	int	schilly_bus,
+ 		target,
+ 		lun;
+-	char	device[128];
++	char	*device;
++        glob_t globbuf;
++
+ 	/*
+ 	 * try always with devfs
+ 	 * unfortunatelly the solution with test of existing
+ 	 * of '/dev/.devfsd' don't work, because it root.root 700
+ 	 * and i don't like run suid root
+ 	 */
+-	BOOL	DEVFS = TRUE;
++	BOOL	DEVFS = FALSE;
+ 
+-	if (DEVFS) {
+-		for (i = 0; ; i++) {
+-			sprintf(device, "/dev/cdroms/cdrom%i", i);
+-			if ((f = open(device, O_RDONLY | O_NONBLOCK)) < 0) {
+-				if (errno != ENOENT && errno != ENXIO && errno != ENODEV && errno != EACCES) {
+-					if (scgp->debug > 4) {
+-						js_fprintf((FILE *) scgp->errfile,
+-						"try open(%s) return %i, errno %i, cancel\n", device, f, errno);
+-					}
+-					return (-2);
+-				} else if (errno == ENOENT || errno == ENODEV) {
+-					if (scgp->debug > 4) {
+-						js_fprintf((FILE *) scgp->errfile,
+-						"try open(%s) return %i, errno %i\n", device, f, errno);
+-					}
+-					if (0 == i) {
+-						DEVFS = FALSE;
+-						if (scgp->debug > 4) {
+-							js_fprintf((FILE *) scgp->errfile,
+-							"DEVFS not detected, continuing with old dev\n");
+-						}
+-					}
+-					break;
+-				}
++	glob("/dev/cdroms/cdrom*", 
++	     GLOB_NOSORT, 
++	     NULL, &globbuf);
++	glob("/dev/hd[a-z]", 
++	     GLOB_NOSORT|GLOB_APPEND, 
++	     NULL, &globbuf);
++	/*glob("/dev/scd*",  
++	     GLOB_NOSORT|GLOB_APPEND, 
++	     NULL, &globbuf);*/
++
++	for (i = 0; globbuf.gl_pathv && globbuf.gl_pathv[i] != NULL ; i++) {
++		device = globbuf.gl_pathv[i];
++		if ((f = open(device, O_RDWR | O_NONBLOCK)) < 0) {
++			if (errno != ENOENT && errno != ENXIO && errno != ENODEV && errno != EACCES) {
+ 				if (scgp->debug > 4) {
+-					if (errno == EACCES) {
+-						js_fprintf((FILE *) scgp->errfile,
+-						"errno (EACCESS), you don't have the needed rights for %s\n",
+-						device);
+-					}
+ 					js_fprintf((FILE *) scgp->errfile,
+-					"try open(%s) return %i, errno %i, trying next cdrom\n",
+-					device, f, errno);
++						   "try open(%s) return %i, errno %i, cancel\n", device, f, errno);
+ 				}
+-			} else {
+-				if (scgp->debug > 4) {
++				globfree(&globbuf);
++				return (-2);
++			} 
++			if (scgp->debug > 4) {
++				if (errno == EACCES) {
+ 					js_fprintf((FILE *) scgp->errfile,
+-					"try open(%s) return %i errno %i calling sg_mapdev(...)\n",
+-					device, f, errno);
+-				}
+-				if (sg_amapdev(scgp, f, device, &schilly_bus, &target, &lun)) {
+-					(++(*nopen));
+-				} else {
+-					close(f);
++						   "errno (EACCESS), you don't have the needed rights for %s\n",
++						   device);
+ 				}
++				js_fprintf((FILE *) scgp->errfile,
++					   "try open(%s) return %i, errno %i, trying next cdrom\n",
++					   device, f, errno);
+ 			}
+-		}
+-	}
+-	if (!DEVFS) {
+-		/* for /dev/sr0 - /dev/sr? */
+-		for (i = 0; ; i++) {
+-			sprintf(device, "/dev/sr%i", i);
+-			if ((f = open(device, O_RDONLY | O_NONBLOCK)) < 0) {
+-				if (errno != ENOENT && errno != ENXIO && errno != ENODEV && errno != EACCES) {
+-					if (scgp->debug > 4) {
+-						js_fprintf((FILE *) scgp->errfile,
+-						"try open(%s) return %i, errno %i, cancel\n",
+-						device, f, errno);
+-					}
+-					return (-2);
+-				} else if (errno == ENOENT || errno == ENODEV) {
+-					break;
+-				}
+-			} else {
+-				if (sg_amapdev(scgp, f, device, &schilly_bus, &target, &lun)) {
+-					(++(*nopen));
+-				} else {
+-					close(f);
+-				}
++		} else {
++			if (scgp->debug > 4) {
++				js_fprintf((FILE *) scgp->errfile,
++					   "try open(%s) return %i errno %i calling sg_mapdev(...)\n",
++					   device, f, errno);
+ 			}
+-		}
+-
+-		/* for /dev/hda - /dev/hdz */
+-		for (i = 'a'; i <= 'z'; i++) {
+-			sprintf(device, "/dev/hd%c", i);
+-			if ((f = open(device, O_RDONLY | O_NONBLOCK)) < 0) {
+-				if (errno != ENOENT && errno != ENXIO && errno != EACCES) {
+-					if (scgp->debug > 4) {
+-						js_fprintf((FILE *) scgp->errfile,
+-						"try open(%s) return %i, errno %i, cancel\n",
+-						device, f, errno);
+-					}
+-					return (-2);
+-				} else if (errno == ENOENT || errno == ENODEV) {
+-					break;
+-				}
++			if (sg_amapdev(scgp, f, device, &schilly_bus, &target, &lun)) {
++				(++(*nopen));
+ 			} else {
+-				/* ugly hack, make better, when you can. Alex */
+-				if (0 > ioctl(f, CDROM_DRIVE_STATUS, CDSL_CURRENT)) {
+-					if (scgp->debug > 4) {
+-						js_fprintf((FILE *) scgp->errfile,
+-						"%s is not a cdrom, skipping\n",
+-						device);
+-					}
+-					close(f);
+-				} else if (sg_amapdev(scgp, f, device, &schilly_bus, &target, &lun)) {
+-					(++(*nopen));
+-				} else {
+-					close(f);
+-				}
++				close(f);
+ 			}
+ 		}
+ 	}
++	globfree(&globbuf);
+ 	return (0);
+ }
+ 
+--- scsilib/libscg/scsi-linux-pg.c.scan	2004-01-15 01:54:36.000000000 +0100
++++ scsilib/libscg/scsi-linux-pg.c	2004-09-22 12:59:04.107815600 +0200
+@@ -130,6 +130,8 @@
+ 	return (0);
+ }
+ 
++#include <glob.h>
++
+ LOCAL int
+ scgo_open(scgp, device)
+ 	SCSI	*scgp;
+@@ -146,6 +148,8 @@
+ #endif
+ 	register int	nopen = 0;
+ 	char		devname[32];
++        glob_t globbuf;
++        int i;
+ 
+ 	if (busno >= MAX_SCG || tgt >= MAX_TGT || tlun >= MAX_LUN) {
+ 		errno = EINVAL;
+@@ -217,10 +221,14 @@
+ 		scglocal(scgp)->scgfiles[busno][tgt][tlun] = f;
+ 		return (1);
+ 	} else {
++		const char *dev;
+ 		tlun = 0;
+-		for (tgt = 0; tgt < MAX_TGT; tgt++) {
+-			js_snprintf(devname, sizeof (devname), "/dev/pg%d", tgt);
+-			f = open(devname, O_RDWR | O_NONBLOCK);
++		glob("/dev/pg[0-9]", GLOB_NOSORT, NULL, &globbuf);
++		glob("/dev/pg[0-9][0-9]", GLOB_NOSORT|GLOB_APPEND, NULL, &globbuf);
++		for (i = 0; globbuf.gl_pathv && globbuf.gl_pathv[i] != NULL ; i++) {
++		        dev = globbuf.gl_pathv[i];
++			tgt = atoi(&dev[7]);
++			f = open(dev, O_RDWR | O_NONBLOCK);
+ 			if (f < 0) {
+ 				/*
+ 				 * Set up error string but let us clear it later
+@@ -232,7 +240,8 @@
+ 				if (errno != ENOENT && errno != ENXIO && errno != ENODEV) {
+ 					if (scgp->errstr)
+ 						js_snprintf(scgp->errstr, SCSI_ERRSTR_SIZE,
+-							"Cannot open '%s'", devname);
++							"Cannot open '%s'", dev);
++					globfree(&globbuf);
+ 					return (0);
+ 				}
+ 			} else {
+@@ -240,6 +249,8 @@
+ 				nopen++;
+ 			}
+ 		}
++		globfree(&globbuf);
++
+ 	}
+ 	if (nopen > 0 && scgp->errstr)
+ 		scgp->errstr[0] = '\0';
