@@ -36,6 +36,7 @@
 #include "util.h"
 #include "CdTextItem.h"
 #include "data.h"
+#include "port.h"
 
 // all drivers
 #include "CDD2600.h"
@@ -3307,6 +3308,9 @@ Toc *CdrDriver::readDisk(int session, const char *dataFilename)
     fp = onTheFlyFd_;
   }
   else {
+
+    giveUpRootPrivileges();
+
 #ifdef __CYGWIN__
     if ((fp = open(dataFilename, O_WRONLY|O_CREAT|O_TRUNC|O_BINARY,
 		   0666)) < 0)

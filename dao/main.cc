@@ -2545,11 +2545,6 @@ int main(int argc, char **argv)
     else {
       cdr->rezeroUnit(0);
 
-#if defined(HAVE_SETEUID) && defined(HAVE_SETEGID)
-      seteuid(getuid());
-      setegid(getgid());
-#endif
-
       if (WITH_CDDB) {
 	if (readCddb(toc) == 0) {
 	  message(2, "CD-TEXT data was added to toc-file.");
