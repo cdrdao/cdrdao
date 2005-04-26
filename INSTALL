@@ -68,3 +68,11 @@ and generate all the Makefiles.
 3. Type 'make install' as root to install the executable and the manual page
    under '/usr/local' or whatever was specified as the installation prefix.
 
+
+Examples :
+
+To compile against an already installed cdrecord-devel library, you
+could use the following :
+
+  configure --with-scglib-inc=/usr/include/schily --with-scglib-lib=/usr/lib
+
