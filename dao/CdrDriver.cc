@@ -869,6 +869,7 @@ CdrDriver::CdrDriver(ScsiIf *scsiIf, unsigned long options)
 
   fastTocReading_ = 0;
   rawDataReading_ = 0;
+  mode2Mixed_ = 1;
   subChanReadMode_ = TrackData::SUBCHAN_NONE;
   taoSource_ = 0;
   taoSourceAdjust_ = 2; // usually we have 2 unreadable sectors between tracks
@@ -2202,7 +2203,7 @@ Toc *CdrDriver::readDiskToc(int session, const char *dataFilename)
 	  trackMode = TrackData::MODE2_RAW;
 	}
       }
-      else {
+      else if (mode2Mixed_) {
 	if (trackMode == TrackData::MODE2_FORM1 ||
 	    trackMode == TrackData::MODE2_FORM2) {
 	  trackMode = TrackData::MODE2_FORM_MIX;
@@ -2758,7 +2759,7 @@ TrackData::Mode CdrDriver::analyzeSubHeader(unsigned char *sh)
   if (sh[0] == sh[4] && sh[1] == sh[5] && sh[2] == sh[6] && sh[3] == sh[7]) {
     // check first copy
     //if (sh[0] < 8 && sh[1] < 8 && sh[2] != 0) {
-    if (sh[2] & 0x20 != 0)
+    if ((sh[2] & 0x20) != 0)
       return TrackData::MODE2_FORM2;
     else
       return TrackData::MODE2_FORM1;
@@ -3257,7 +3258,7 @@ Toc *CdrDriver::readDisk(int session, const char *dataFilename)
 	  trackMode = TrackData::MODE2_RAW;
 	}
       }
-      else {
+      else if (mode2Mixed_) {
 	if (trackMode == TrackData::MODE2_FORM1 ||
 	    trackMode == TrackData::MODE2_FORM2 ||
 	    trackMode == TrackData::MODE2_FORM_MIX) {
@@ -3673,7 +3674,13 @@ int CdrDriver::readDataTrack(ReadDiskInfo *info, int fd, long start, long end,
     blockLen = AUDIO_BLOCK_LEN;
     break;
   case TrackData::MODE2_FORM1:
+    mode = TrackData::MODE2_FORM1;
+    blockLen = MODE2_FORM1_DATA_LEN;
+    break;
   case TrackData::MODE2_FORM2:
+    mode = TrackData::MODE2_FORM2;
+    blockLen = MODE2_FORM2_DATA_LEN;
+    break;
   case TrackData::MODE2_FORM_MIX:
     mode = TrackData::MODE2_FORM_MIX;
     blockLen = MODE2_BLOCK_LEN;

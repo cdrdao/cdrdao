@@ -21,6 +21,7 @@ cdrdao \- writes audio CD-Rs in disc-at-once mode
 .IR file ]
 .RB [ --read-raw ]
 .RB [ --read-subchan
+.RB [ --no-mode2-mixed ]
 .IR mode ]
 .RB [ --tao-source ]
 .RB [ --tao-source-adjust
@@ -260,6 +261,14 @@ and
 for reading raw R-W sub-channel data (not de-interleaved, not error
 corrected, L-EC data included in the track image).
 If this option is not specified no sub-channel data will be extracted.
+.TP
+.BI \--no-mode2-mixed
+Only used for commands
+.BI read-cd
+and
+.BI read-toc.
+If we have MODE2_FORM1 or MODE2_FORM2, don't extract it as MODE2_FORM_MIX.
+.I toc-file.
 .TP
 .BI \--tao-source
 This option indicates to the commands

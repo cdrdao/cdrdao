@@ -81,6 +81,7 @@ static int SESSION = 1; // session for read-toc/read-cd
 static int FAST_TOC = 0; // toc reading without sub-channel analysis
 static int PAUSE = 1; // pause before writing
 static int READ_RAW = 0; // read raw sectors
+static int MODE2_MIXED = 1;
 static int REMOTE_MODE = 0;
 static int REMOTE_FD = -1;
 static int RELOAD = 0;
@@ -324,6 +325,7 @@ static void printUsage()
 "  --session #             - select session\n"
 "  --fast-toc              - do not extract pre-gaps and index marks\n"
 "  --read-raw              - select raw sectors modes for data tracks\n"
+"  --no-mode2-mixed        - don't switch to mode2_mixed\n"
 "  --rspeed <read-speed>   - selects reading speed\n"
 "  --read-subchan <mode>   - defines sub-channel reading mode\n"
 "                            <mode> = rw | rw_raw\n"
@@ -375,6 +377,7 @@ static void printUsage()
 "  --session #             - select session\n"
 "  --fast-toc              - do not extract pre-gaps and index marks\n"
 "  --read-raw              - read raw data sectors (including L-EC data)\n"
+"  --no-mode2-mixed        - don't switch to mode2_mixed\n"
 "  --rspeed <read-speed>   - selects reading speed\n"
 "  --read-subchan <mode>   - defines sub-channel reading mode\n"
 "                            <mode> = rw | rw_raw\n"
@@ -931,6 +934,9 @@ static int parseCmdline(int argc, char **argv)
       }
       else if (strcmp((*argv) + 2, "read-raw") == 0) {
 	READ_RAW = 1;
+      }
+      else if (strcmp((*argv) + 2, "no-mode2-mixed") == 0) {
+	MODE2_MIXED = 0;
       }
       else if (strcmp((*argv) + 2, "reload") == 0) {
 	RELOAD = 1;
@@ -2407,6 +2413,7 @@ int main(int argc, char **argv)
     }
     cdr->subChanReadMode(READ_SUBCHAN_MODE);
     cdr->rawDataReading(READ_RAW);
+    cdr->mode2Mixed(MODE2_MIXED);
     cdr->fastTocReading(1);
     cdr->taoSource(TAO_SOURCE);
     if (TAO_SOURCE_ADJUST >= 0)
@@ -2464,6 +2471,7 @@ int main(int argc, char **argv)
 
     cdr->subChanReadMode(READ_SUBCHAN_MODE);
     cdr->rawDataReading(READ_RAW);
+    cdr->mode2Mixed(MODE2_MIXED);
     cdr->fastTocReading(FAST_TOC);
     cdr->taoSource(TAO_SOURCE);
     if (TAO_SOURCE_ADJUST >= 0)
@@ -2517,6 +2525,7 @@ int main(int argc, char **argv)
 
     cdr->subChanReadMode(READ_SUBCHAN_MODE);
     cdr->rawDataReading(READ_RAW);
+    cdr->mode2Mixed(MODE2_MIXED);
     cdr->taoSource(TAO_SOURCE);
     if (TAO_SOURCE_ADJUST >= 0)
       cdr->taoSourceAdjust(TAO_SOURCE_ADJUST);

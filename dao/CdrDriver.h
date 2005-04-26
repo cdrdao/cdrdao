@@ -210,6 +210,10 @@ public:
   virtual int rawDataReading() const { return rawDataReading_; }
   virtual void rawDataReading(int f) { rawDataReading_ = f != 0 ? 1 : 0; }
 
+  // Returns/sets mode2 mixed track reading flag
+  virtual int mode2Mixed() const { return mode2Mixed_; }
+  virtual void mode2Mixed(int f) { mode2Mixed_ = f != 0 ? 1 : 0; }
+
   virtual TrackData::SubChannelMode subChanReadMode() const { return subChanReadMode_; }
   virtual void subChanReadMode(TrackData::SubChannelMode m) { subChanReadMode_ = m; }
 
@@ -408,6 +412,7 @@ protected:
   int encodingMode_; // mode for encoding data sectors
   int fastTocReading_;
   int rawDataReading_;
+  int mode2Mixed_;
   TrackData::SubChannelMode subChanReadMode_;
   int padFirstPregap_; // used by 'read-toc': defines if the first audio 
                        // track's pre-gap is padded with zeros in the toc-file
