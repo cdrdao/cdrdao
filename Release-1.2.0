@@ -10,8 +10,8 @@ Cdrdao changes:
 - SECURITY FIX: cdrdao now gives up its root privileges after setting
   up real-time scheduling, as well as before saving settings through
   the --save option. This fixes a potential local root exploit when
-  cdrdao is installed with the +s chmod flag. Using --save also forces
-  an early exit after the settings are saved.
+  cdrdao is installed with the +s chmod flag. Using --save now also
+  forces an early exit after the settings are saved.
 
 - Added MP3 and Ogg Vorbis file support (through respectively the
   libmad and libvorbis libraries). cdrdao will decode the MP3 and Ogg
@@ -33,6 +33,12 @@ Cdrdao changes:
 GCDMaster changes:
 
 - MP3 and Ogg Vorbis support: you can drag and drop .mp3, .m3u and
-  .ogg files into the sample display window.
+  .ogg files from Nautilus into the sample display window.
+
+- Added 'Select All' item in menu.
+
+- Added 'Eject' button to progress dialog
+
+- Bug fixes (sample selection weirdness, couldn't close window during play)
 
 Denis Leroy
