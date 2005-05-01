@@ -198,15 +198,6 @@ static void printVersion()
   message(1, "");
 }
 
-static bool convertTocFiles(Toc* toc)
-{
-  if (formatConverter.convert(toc) != FormatSupport::FS_SUCCESS) {
-    return false;
-  }
-
-  return true;
-}
-
 static void printUsage()
 {
   switch (COMMAND) {
@@ -2255,7 +2246,14 @@ int main(int argc, char **argv)
       COMMAND != BLANK && COMMAND != SCAN_BUS && COMMAND != UNLOCK &&
       COMMAND != DISCID &&
       COMMAND != COPY_CD && COMMAND != MSINFO && COMMAND != DRIVE_INFO) {
+
+    // Parse TOC file
     toc = Toc::read(TOC_FILE);
+
+    // Check and resolve input files paths
+    if (!toc->resolveFilenames(TOC_FILE)) {
+      exitCode = 1; goto fail;
+    }
 
     if (REMOTE_MODE) {
       unlink(TOC_FILE);
@@ -2265,11 +2263,13 @@ int main(int argc, char **argv)
       exitCode = 1; goto fail;
     }
 
-    if (!convertTocFiles(toc)) {
+    if (!toc->convertFilesToWav()) {
       message(-2, "Could not decode audio files from toc file \"%s\".",
               TOC_FILE);
       exitCode = 1; goto fail;
     }
+
+    toc->recomputeLength();
 
     if (COMMAND != SHOW_TOC && COMMAND != READ_CDDB) {
       if (checkToc(toc) != 0) {
