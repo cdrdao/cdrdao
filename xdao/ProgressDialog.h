@@ -66,6 +66,7 @@ private:
 
   Gtk::Button *cancelButton_;
   Gtk::Button *closeButton_;
+  Gtk::Button *ejectButton_;
   Gtk::Label *tocName_;
 
   Gtk::Label *statusMsg_;;
@@ -85,6 +86,7 @@ private:
   void start(CdDevice *, const char *tocFileName);
   void stop();
   void closeAction();
+  void ejectAction();
   void clear();
   void setCloseButtonLabel(int l);
 

@@ -32,9 +32,9 @@ class ScsiIf;
 
 class CdDevice : public sigc::trackable
 {
-public:
+ public:
   enum Status { DEV_READY, DEV_RECORDING, DEV_READING, DEV_WAITING, DEV_BUSY,
-		DEV_NO_DISK, DEV_BLANKING, DEV_FAULT, DEV_UNKNOWN };
+                DEV_NO_DISK, DEV_BLANKING, DEV_FAULT, DEV_UNKNOWN };
   enum DeviceType { CD_R, CD_RW, CD_ROM };
 
   enum Action { A_RECORD, A_READ, A_DUPLICATE, A_BLANK, A_NONE };
@@ -74,6 +74,9 @@ public:
   bool manuallyConfigured() const       { return manuallyConfigured_; }
   void manuallyConfigured(bool b)       { manuallyConfigured_ = b; }
 
+  bool ejectCd(bool load=false);
+  bool loadCd() { return ejectCd(true); }
+
   bool recordDao(Gtk::Window& parent, TocEdit *, int simulate,
                  int multiSession, int speed, int eject, int reload,
                  int buffer, int overburn);
@@ -83,9 +86,9 @@ public:
                  int readSubChanMode);
   void abortDaoReading();
 
-  int duplicateDao(Gtk::Window& parent, int simulate, int multiSession, int speed,
-		   int eject, int reload, int buffer, int onthefly,
-		   int correction, int readSubChanMode, CdDevice *readdev);
+  int duplicateDao(Gtk::Window& parent, int simulate, int multiSession, 
+                   int speed, int eject, int reload, int buffer, int onthefly,
+                   int correction, int readSubChanMode, CdDevice *readdev);
   void abortDaoDuplication();
 
   int blank(Gtk::Window* parent, int fast, int speed, int eject, int reload);
@@ -93,7 +96,7 @@ public:
     
   int progressStatusChanged();
   void progress(int *status, int *totalTracks, int *track,
-		      int *trackProgress, int *totalProgress,
+                int *trackProgress, int *totalProgress,
                 int *bufferFill, int *writerFill) const;
   
   static int maxDriverId();
@@ -107,7 +110,7 @@ public:
   static void exportSettings();
 
   static CdDevice *add(const char* scsidev, const char *vendor,
-		       const char *product);
+                       const char *product);
 
   static CdDevice *add(const char *setting);
 
@@ -127,12 +130,12 @@ public:
   /* not used anymore since Gtk::Main::input signal will call
    * CdDevice::updateProgress directly.
 
-     static int updateDeviceProgress();
+   static int updateDeviceProgress();
   */
 
   static int count();
 
-private:
+ private:
   std::string dev_; // SCSI device
   std::string vendor_;
   std::string product_;
@@ -140,7 +143,7 @@ private:
   DeviceType deviceType_;
 
   int driverId_;
-  unsigned long options_;
+  unsigned long driverOptions_;
 
   bool manuallyConfigured_;
 

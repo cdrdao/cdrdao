@@ -73,8 +73,8 @@ CdDevice::CdDevice(const char* dev, const char *vendor, const char *product)
   vendor_ = vendor;
   product_ = product;
   
-  driverId_ = 0; // undefined
-  options_ = 0;
+  driverId_ = 0;
+  driverOptions_ = 0;
 
   deviceType_ = CD_R;
 
@@ -139,7 +139,7 @@ char *CdDevice::settingString() const
 
   s += ",";
 
-  sprintf(buf, "0x%lx", options_);
+  sprintf(buf, "0x%lx", driverOptions_);
   s += buf;
 
   return strdupCC(s.c_str());
@@ -171,7 +171,7 @@ int CdDevice::autoSelectDriver()
 
   if (driverName) {
     driverId_ = driverName2Id(driverName);
-    options_ = options;
+    driverOptions_ = options;
 
   } else {
     bool r_cdr, w_cdr, r_cdrw, w_cdrw;
@@ -187,7 +187,7 @@ int CdDevice::autoSelectDriver()
       if (w_cdrw) deviceType_ = CD_RW;
     } else {
       driverId_ = DRIVER_ID_DEFAULT;
-      options_ = 0;
+      driverOptions_ = 0;
     }
     if (sif) delete sif;
   }
@@ -337,12 +337,32 @@ void CdDevice::deviceType(DeviceType t)
 
 unsigned long CdDevice::driverOptions() const
 {
-  return options_;
+  return driverOptions_;
 }
 
 void CdDevice::driverOptions(unsigned long o)
 {
-  options_ = o;
+  driverOptions_ = o;
+}
+
+bool CdDevice::ejectCd(bool load)
+{
+  bool success = false;
+
+  if (!scsiIf_)
+    createScsiIf();
+
+  if (scsiIf_) {
+    CdrDriver* driver = CdrDriver::createDriver(driverName(driverId_),
+                                                driverOptions_,
+                                                scsiIf_);
+
+    int ret = driver->loadUnload((load ? 0 : 1));
+    success = (ret == 0);
+    delete(driver);
+  }
+
+  return success;
 }
 
 // Starts a 'cdrdao' for recording given toc. Returns false if an
@@ -425,7 +445,7 @@ bool CdDevice::recordDao(Gtk::Window& parent, TocEdit *tocEdit, int simulate,
   args[n++] = (char*)dev_.c_str();
 
   if (driverId_ > 0) {
-    sprintf(drivername, "%s:0x%lx", driverName(driverId_), options_);
+    sprintf(drivername, "%s:0x%lx", driverName(driverId_), driverOptions_);
     args[n++] = "--driver";
     args[n++] = drivername;
   }
@@ -556,7 +576,7 @@ int CdDevice::extractDao(Gtk::Window& parent, const char *tocFileName,
   args[n++] = (char*)dev_.c_str();
 
   if (driverId_ > 0) {
-    sprintf(drivername, "%s:0x%lx", driverName(driverId_), options_);
+    sprintf(drivername, "%s:0x%lx", driverName(driverId_), driverOptions_);
     args[n++] = "--driver";
     args[n++] = drivername;
   }
@@ -698,7 +718,7 @@ int CdDevice::duplicateDao(Gtk::Window& parent, int simulate, int multiSession,
   args[n++] = (char*)dev_.c_str();
 
   if (driverId_ > 0) {
-    sprintf(drivername, "%s:0x%lx", driverName(driverId_), options_);
+    sprintf(drivername, "%s:0x%lx", driverName(driverId_), driverOptions_);
     args[n++] = "--driver";
     args[n++] = drivername;
   }
@@ -824,7 +844,7 @@ int CdDevice::blank(Gtk::Window* parent, int fast, int speed, int eject,
   args[n++] = (char*)dev_.c_str();
 
   if (driverId_ > 0) {
-    sprintf(drivername, "%s:0x%lx", driverName(driverId_), options_);
+    sprintf(drivername, "%s:0x%lx", driverName(driverId_), driverOptions_);
     args[n++] = "--driver";
     args[n++] = drivername;
   }

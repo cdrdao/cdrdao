@@ -115,7 +115,8 @@ ProgressDialog::ProgressDialog(ProgressDialogPool *father)
   hbox->pack_start(*contents, true, true, 10);
   get_vbox()->pack_start(*hbox, false, false, 10);
 
-  Gtk::HButtonBox *bbox = manage(new Gtk::HButtonBox(Gtk::BUTTONBOX_SPREAD));
+  Gtk::HButtonBox *bbox = manage(new Gtk::HButtonBox(Gtk::BUTTONBOX_SPREAD,
+                                                     20));
 
   cancelButton_ = manage(new Gtk::Button(Gtk::StockID(Gtk::Stock::CANCEL)));
   bbox->pack_start(*cancelButton_);
@@ -123,14 +124,19 @@ ProgressDialog::ProgressDialog(ProgressDialogPool *father)
   closeButton_ = manage(new Gtk::Button(Gtk::StockID(Gtk::Stock::CLOSE)));
   bbox->pack_start(*closeButton_);
 
+  ejectButton_ = manage(new Gtk::Button("Eject"));
+  bbox->pack_start(*ejectButton_);
+
   actCloseButtonLabel_ = 2;
 
   cancelButton_->signal_clicked().
     connect(sigc::mem_fun(*this, &ProgressDialog::closeAction));
   closeButton_->signal_clicked().
     connect(sigc::mem_fun(*this, &ProgressDialog::closeAction));
+  ejectButton_->signal_clicked().
+    connect(sigc::mem_fun(*this, &ProgressDialog::ejectAction));
 
-  get_action_area()->pack_start(*bbox);
+  get_action_area()->pack_start(*bbox, TRUE, TRUE, 10);
   set_size_request(400, -1);
   show_all_children();
 }
@@ -163,6 +169,7 @@ void ProgressDialog::start(CdDevice *device, const char *tocFileName)
 
   setCloseButtonLabel(1);
   cancelButton_->set_sensitive(true);
+  ejectButton_->set_sensitive(false);
 
   s = device->vendor();
   s += " ";
@@ -190,6 +197,14 @@ bool ProgressDialog::on_delete_event(GdkEventAny*)
   return true;
 }
 
+void ProgressDialog::ejectAction()
+{
+  if (device_)
+    if (device_->ejectCd()) {
+      ejectButton_->set_sensitive(false);
+    }
+}
+
 void ProgressDialog::closeAction()
 {
   if (finished_) {
@@ -205,6 +220,7 @@ void ProgressDialog::closeAction()
 
       if (msg.run() == 1 && device_ != NULL) {
         cancelButton_->set_sensitive(false);
+        ejectButton_->set_sensitive(true);
         device_->abortDaoRecording();
       }
     }
@@ -217,6 +233,7 @@ void ProgressDialog::closeAction()
 
       if (msg.run() == 1 && device_ != NULL) {
         cancelButton_->set_sensitive(false);
+        ejectButton_->set_sensitive(true);
         device_->abortDaoReading();
       }
     }
@@ -229,6 +246,7 @@ void ProgressDialog::closeAction()
 
       if (msg.run() == 1 && device_ != NULL) {
         cancelButton_->set_sensitive(false);
+        ejectButton_->set_sensitive(true);
         device_->abortDaoDuplication();
       }
     }
@@ -241,6 +259,7 @@ void ProgressDialog::closeAction()
 
       if (msg.run() == 1 && device_ != NULL) {
         cancelButton_->set_sensitive(false);
+        ejectButton_->set_sensitive(true);
         device_->abortBlank();
       }
     }
@@ -394,6 +413,7 @@ void ProgressDialog::update(unsigned long level)
 	finished_ = 1;
 
 	setCloseButtonLabel(2);
+        ejectButton_->set_sensitive(true);
       }
       break;
 
@@ -417,6 +437,7 @@ void ProgressDialog::update(unsigned long level)
       finished_ = 1;
       
       setCloseButtonLabel(2);
+      ejectButton_->set_sensitive(true);
     }
 
     break;
@@ -441,6 +462,7 @@ void ProgressDialog::update(unsigned long level)
       finished_ = 1;
 
       setCloseButtonLabel(2);
+      ejectButton_->set_sensitive(true);
     }
 
     break;
@@ -465,6 +487,7 @@ void ProgressDialog::update(unsigned long level)
       finished_ = 1;
       
       setCloseButtonLabel(2);
+      ejectButton_->set_sensitive(true);
     }
 
     break;
