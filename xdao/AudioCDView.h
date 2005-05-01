@@ -83,6 +83,7 @@ private:
   void markerSetCallback(unsigned long);
   void cursorMovedCallback(unsigned long);
   void selectionSetCallback(unsigned long, unsigned long);
+  void selectAll();
   void selectionClearedCallback();
   void trackMarkSelectedCallback(const Track *, int trackNr, int indexNr);
   void trackMarkMovedCallback(const Track *, int trackNr, int indexNr,

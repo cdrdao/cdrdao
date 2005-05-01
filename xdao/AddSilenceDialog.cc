@@ -232,7 +232,7 @@ void AddSilenceDialog::applyAction()
     case M_INSERT:
       if (tocEditView_->sampleMarker(&pos)) {
         if (tocEdit->insertSilence(length, pos) == 0) {
-          tocEditView_->sampleSelection(pos, pos + length - 1);
+          tocEditView_->sampleSelect(pos, pos + length - 1);
           update (UPD_TOC_DATA | UPD_TRACK_DATA, tocEditView_);
           signal_tocModified (UPD_TOC_DATA | UPD_TRACK_DATA);
         }

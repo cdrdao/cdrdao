@@ -48,7 +48,6 @@ public:
 
   bool            closeProject();
 
-  enum PlayStatus getPlayStatus();
   unsigned long   playPosition();
 
   unsigned long   getDelay();
@@ -83,7 +82,7 @@ public:
   virtual void errorDialog(const char* msg); 
   virtual void progress(double val);
   virtual void fullView();
-  virtual void sampleSelection(unsigned long, unsigned long);
+  virtual void sampleSelect(unsigned long, unsigned long);
 
   void playStart();
   void playStart(unsigned long start, unsigned long end);
@@ -98,8 +97,7 @@ private:
   unsigned long playBurst_;
   unsigned long playPosition_;
   Sample *playBuffer_;
-  int playing_;
-  int playAbort_;
+  bool playAbort_;
 
   bool playCallback();
 

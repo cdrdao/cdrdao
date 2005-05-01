@@ -33,6 +33,43 @@ class TocEdit;
 
 class SampleDisplay : public Gtk::DrawingArea
 {
+public:
+  SampleDisplay();
+
+  void setTocEdit(TocEdit *);
+  bool getSelection(unsigned long* start, unsigned long* end);
+  void setSelectedTrackMarker(int trackNr, int indexNr);
+  void setMarker(unsigned long sample);
+  void clearMarker();
+  int  getMarker(unsigned long *);
+  void setView(unsigned long start, unsigned long end);
+  void getView(unsigned long *start, unsigned long *end);
+  void setRegion(unsigned long start, unsigned long end);
+  int  getRegion(unsigned long *start, unsigned long *end);
+  void clearRegion();
+  Gtk::Adjustment *getAdjustment() { return adjustment_; }
+  void updateTrackMarks();
+  void setCursor(int, unsigned long);
+
+  void updateToc(unsigned long, unsigned long);
+
+  sigc::signal1<void, unsigned long> markerSet;
+  sigc::signal1<void, unsigned long> cursorMoved;
+  sigc::signal2<void, unsigned long, unsigned long> selectionSet;
+  sigc::signal0<void> selectionCleared;
+  sigc::signal3<void, const Track *, int, int> trackMarkSelected;
+  sigc::signal4<void, const Track *, int, int, unsigned long> trackMarkMoved;
+  sigc::signal2<void, unsigned long, unsigned long> viewModified;
+  
+protected:
+  bool handleConfigureEvent(GdkEventConfigure *);
+  bool handleExposeEvent(GdkEventExpose *event);
+  bool handleMotionNotifyEvent(GdkEventMotion *event);
+  bool handleButtonPressEvent(GdkEventButton*);
+  bool handleButtonReleaseEvent(GdkEventButton*);
+  bool handleEnterEvent(GdkEventCrossing*);
+  bool handleLeaveEvent(GdkEventCrossing*);
+
 private:
   enum DragMode { DRAG_NONE, DRAG_SAMPLE_MARKER, DRAG_TRACK_MARKER };
 
@@ -80,11 +117,11 @@ private:
   unsigned long maxSample_;
   unsigned long resolution_;
 
-  int  cursorDrawn_;
+  bool cursorDrawn_;
   gint cursorX_;
   bool cursorControlExtern_;
 
-  int markerSet_;
+  bool markerSet_;
   gint markerX_;
   unsigned long markerSample_;
 
@@ -94,7 +131,7 @@ private:
   gint selectionStart_;
   gint selectionEnd_;
 
-  int regionSet_;
+  bool regionSet_;
   unsigned long regionStartSample_;
   unsigned long regionEndSample_;
 
@@ -122,43 +159,6 @@ private:
   void drawTrackMarker(int mode, gint x, int trackNr, int indexNr,
 		       int selected, int extend);
   void drawTrackLine();
-
-public:
-  SampleDisplay();
-
-  void setTocEdit(TocEdit *);
-  int  getSelection(unsigned long *start, unsigned long *end);
-  void setSelectedTrackMarker(int trackNr, int indexNr);
-  void setMarker(unsigned long sample);
-  void clearMarker();
-  void unselect();
-  int  getMarker(unsigned long *);
-  void setView(unsigned long start, unsigned long end);
-  void getView(unsigned long *start, unsigned long *end);
-  void setRegion(unsigned long start, unsigned long end);
-  int  getRegion(unsigned long *start, unsigned long *end);
-  Gtk::Adjustment *getAdjustment() { return adjustment_; }
-  void updateTrackMarks();
-  void setCursor(int, unsigned long);
-
-  void updateToc(unsigned long, unsigned long);
-
-  sigc::signal1<void, unsigned long> markerSet;
-  sigc::signal1<void, unsigned long> cursorMoved;
-  sigc::signal2<void, unsigned long, unsigned long> selectionSet;
-  sigc::signal0<void> selectionCleared;
-  sigc::signal3<void, const Track *, int, int> trackMarkSelected;
-  sigc::signal4<void, const Track *, int, int, unsigned long> trackMarkMoved;
-  sigc::signal2<void, unsigned long, unsigned long> viewModified;
-  
-protected:
-  bool handle_configure_event (GdkEventConfigure *);
-  bool handle_expose_event (GdkEventExpose *event);
-  bool handle_motion_notify_event (GdkEventMotion *event);
-  bool handleButtonPressEvent(GdkEventButton*);
-  bool handleButtonReleaseEvent(GdkEventButton*);
-  bool handleEnterEvent(GdkEventCrossing*);
-  bool handleLeaveEvent(GdkEventCrossing*);
 };
 
 #endif

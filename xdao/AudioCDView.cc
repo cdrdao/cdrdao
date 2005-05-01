@@ -132,7 +132,7 @@ AudioCDView::AudioCDView(AudioCDProject *project)
 //                      BONOBO_DOCK_ITEM_BEH_NEVER_VERTICAL,
 //                      BONOBO_DOCK_BOTTOM, 1, 1, 0);
 //  Gtk::Widget* w = Glib::wrap(GTK_WIDGET(project->get_dock_item_by_name(buf)));
-  pack_start (*selectionInfoBox, FALSE, FALSE);
+  pack_start(*selectionInfoBox, FALSE, FALSE);
   selectionInfoBox->show();
 
   setMode(SELECT);
@@ -185,22 +185,26 @@ void AudioCDView::add_menus(Glib::RefPtr<Gtk::UIManager> m_refUIManager)
                          Gtk::AccelKey("<control>v"),
                          sigc::mem_fun(*this, &AudioCDView::pasteTrackData) );
 
+  m_refActionGroup->add( Gtk::Action::create("SelectAll",
+                         _("Select All"),
+                         _("Select entire sample")),
+                         Gtk::AccelKey("<control>a"),
+                         sigc::mem_fun(*this, &AudioCDView::selectAll) );
+
   m_refActionGroup->add( Gtk::Action::create("AddTrackMark",
                          _("Add Track Mark"),
                          _("Add track marker at current marker position")),
-                         Gtk::AccelKey("T"),
+                         Gtk::AccelKey("<control>m"),
                          sigc::mem_fun(*this, &AudioCDView::addTrackMark) );
 
   m_refActionGroup->add( Gtk::Action::create("AddIndexMark",
                          _("Add Index Mark"),
                          _("Add index marker at current marker position")),
-                         Gtk::AccelKey("I"),
                          sigc::mem_fun(*this, &AudioCDView::addIndexMark) );
 
   m_refActionGroup->add( Gtk::Action::create("AddPreGap",
                          _("Add Pre-Gap"),
                          _("Add pre-gap at current marker position")),
-                         Gtk::AccelKey("P"),
                          sigc::mem_fun(*this, &AudioCDView::addPregap) );
 
   m_refActionGroup->add( Gtk::Action::create("RemoveTrackMark",
@@ -250,6 +254,8 @@ void AudioCDView::add_menus(Glib::RefPtr<Gtk::UIManager> m_refUIManager)
         "    <separator/>"
         "      <menuitem action='Cut'/>"
         "      <menuitem action='Paste'/>"
+        "    <separator/>"
+        "      <menuitem action='SelectAll'/>"
         "    <separator/>"
         "      <menuitem action='AddTrackMark'/>"
         "      <menuitem action='AddIndexMark'/>"
@@ -322,16 +328,15 @@ void AudioCDView::update(unsigned long level)
       selectionStartPos_->set_text(sample2string(start));
       selectionEndPos_->set_text(sample2string(end));
       sampleDisplay_->setRegion(start, end);
-    }
-    else {
+    } else {
       selectionStartPos_->set_text("");
       selectionEndPos_->set_text("");
-      sampleDisplay_->setRegion(1, 0);
+      sampleDisplay_->clearRegion();
     }
   }
 
   if (level & UPD_PLAY_STATUS) {
-    switch (project_->getPlayStatus()) {
+    switch (project_->playStatus()) {
       case AudioCDProject::PLAYING:
         sampleDisplay_->setCursor(1, project_->playPosition() -
                                   project_->getDelay());
@@ -370,7 +375,7 @@ void AudioCDView::zoomIn()
 
   if (tocEditView_->sampleSelection(&start, &end)) {
     if (tocEditView_->sampleView(start, end)) {
-      update (UPD_SAMPLES);
+      update(UPD_SAMPLES);
     }
   }
 }
@@ -388,7 +393,7 @@ void AudioCDView::zoomx2()
   end = center + len / 4;
 
   if (tocEditView_->sampleView(start, end)) {
-    update (UPD_SAMPLES);
+    update(UPD_SAMPLES);
   }
 }
 
@@ -411,14 +416,14 @@ void AudioCDView::zoomOut()
     end = tocEditView_->tocEdit()->toc()->length().samples() - 1;
 
   if (tocEditView_->sampleView(start, end)) {
-    update (UPD_SAMPLES);
+    update(UPD_SAMPLES);
   }
 }
 
 void AudioCDView::fullView()
 {
   tocEditView_->sampleViewFull();
-  update (UPD_SAMPLES);
+  update(UPD_SAMPLES);
 }
 
 int AudioCDView::getMarker(unsigned long *sample)
@@ -439,14 +444,14 @@ void AudioCDView::trackMarkSelectedCallback(const Track *, int trackNr,
 {
   tocEditView_->trackSelection(trackNr);
   tocEditView_->indexSelection(indexNr);
-  update (UPD_TRACK_MARK_SEL);
+  update(UPD_TRACK_MARK_SEL);
 }
 
 // Called when the user clicks on the SampleDisplay
 void AudioCDView::markerSetCallback(unsigned long sample)
 {
   tocEditView_->sampleMarker(sample);
-  update (UPD_SAMPLE_MARKER);
+  update(UPD_SAMPLE_MARKER);
 }
 
 // Called when the user makes a selection on the SampleDisplay
@@ -455,20 +460,26 @@ void AudioCDView::selectionSetCallback(unsigned long start,
 {
   if (mode_ == ZOOM ) {
     if (tocEditView_->sampleView(start, end)) {
-      update (UPD_SAMPLES);
+      update(UPD_SAMPLES);
     }
   }
   else {
-    tocEditView_->sampleSelection(start, end);
-    update (UPD_SAMPLE_SEL);
+    tocEditView_->sampleSelect(start, end);
+    update(UPD_SAMPLE_SEL);
   }
+}
+
+void AudioCDView::selectAll()
+{
+  tocEditView_->sampleSelectAll();
+  update(UPD_SAMPLE_SEL);
 }
 
 void AudioCDView::selectionClearedCallback()
 {
   if (mode_ != ZOOM) {
     if (tocEditView_->sampleSelectionClear()) {
-      update (UPD_SAMPLE_SEL);
+      update(UPD_SAMPLE_SEL);
     }
   }
 }
@@ -481,7 +492,7 @@ void AudioCDView::cursorMovedCallback(unsigned long pos)
 void AudioCDView::viewModifiedCallback(unsigned long start, unsigned long end)
 {
   if (tocEditView_->sampleView(start, end)) {
-    update (UPD_SAMPLES);
+    update(UPD_SAMPLES);
   }
 }
 
@@ -496,7 +507,7 @@ void AudioCDView::markerSet()
   unsigned long s = string2sample(markerPos_->get_text().c_str());
 
   tocEditView_->sampleMarker(s);
-  update (UPD_SAMPLE_MARKER);
+  update(UPD_SAMPLE_MARKER);
 }
 
 // Called when the user enters a value in one of the two selection entries
@@ -507,8 +518,8 @@ void AudioCDView::selectionSet()
   unsigned long s2 =
     string2sample(selectionEndPos_->get_text().c_str());
 
-  tocEditView_->sampleSelection(s1, s2);
-  update (UPD_SAMPLE_SEL);
+  tocEditView_->sampleSelect(s1, s2);
+  update(UPD_SAMPLE_SEL);
 }
 
 void
@@ -812,7 +823,7 @@ void AudioCDView::trackMarkMovedCallback(const Track *, int trackNr,
   tocEditView_->trackSelection(trackNr);
   tocEditView_->indexSelection(indexNr);
 
-  update (UPD_TRACK_MARK_SEL);
+  update(UPD_TRACK_MARK_SEL);
 }
 
 void AudioCDView::appendTrack()

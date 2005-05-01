@@ -142,12 +142,12 @@ SampleDisplay::SampleDisplay():
   chanSep_ = 10;
 
   cursorControlExtern_ = false;
-  cursorDrawn_ = 0;
+  cursorDrawn_ = false;
   cursorX_ = 0;
 
-  markerSet_ = 0;
+  markerSet_ = false;
   selectionSet_ = false;
-  regionSet_ = 0;
+  regionSet_ = false;
   dragMode_ = DRAG_NONE;
 
   pickedTrackMarker_ = NULL;
@@ -155,11 +155,11 @@ SampleDisplay::SampleDisplay():
   selectedIndex_ = 0;
 
   signal_expose_event().connect(mem_fun(*this,
-                                     &SampleDisplay::handle_expose_event));
+                                     &SampleDisplay::handleExposeEvent));
   signal_configure_event().
-    connect(mem_fun(*this, &SampleDisplay::handle_configure_event));
+    connect(mem_fun(*this, &SampleDisplay::handleConfigureEvent));
   signal_motion_notify_event().
-    connect(mem_fun(*this, &SampleDisplay::handle_motion_notify_event));
+    connect(mem_fun(*this, &SampleDisplay::handleMotionNotifyEvent));
   signal_button_press_event().
     connect(mem_fun(*this, &SampleDisplay::handleButtonPressEvent));
   signal_button_release_event().
@@ -169,13 +169,13 @@ SampleDisplay::SampleDisplay():
   signal_leave_notify_event().
     connect(mem_fun(*this, &SampleDisplay::handleLeaveEvent));
 
-  set_events (Gdk::EXPOSURE_MASK
-	      | Gdk::LEAVE_NOTIFY_MASK
-	      | Gdk::ENTER_NOTIFY_MASK
-	      | Gdk::BUTTON_PRESS_MASK
-	      | Gdk::BUTTON_RELEASE_MASK
-	      | Gdk::POINTER_MOTION_MASK
-	      | Gdk::POINTER_MOTION_HINT_MASK);
+  set_events(Gdk::EXPOSURE_MASK
+             | Gdk::LEAVE_NOTIFY_MASK
+             | Gdk::ENTER_NOTIFY_MASK
+             | Gdk::BUTTON_PRESS_MASK
+             | Gdk::BUTTON_RELEASE_MASK
+             | Gdk::POINTER_MOTION_MASK
+             | Gdk::POINTER_MOTION_HINT_MASK);
 }
 
 void SampleDisplay::setTocEdit(TocEdit *t)
@@ -184,9 +184,9 @@ void SampleDisplay::setTocEdit(TocEdit *t)
 
   Toc *toc = tocEdit_->toc();
 
-  markerSet_ = 0;
+  markerSet_ = false;
   selectionSet_ = false;
-  regionSet_ = 0;
+  regionSet_ = false;
 
   minSample_ = 0;
 
@@ -296,15 +296,15 @@ void SampleDisplay::getView(unsigned long *start, unsigned long *end)
   *end = maxSample_;
 }
 
-int SampleDisplay::getSelection(unsigned long *start, unsigned long *end)
+bool SampleDisplay::getSelection(unsigned long *start, unsigned long *end)
 {
   if (selectionSet_) {
     *start = selectionStartSample_;
     *end = selectionEndSample_;
-    return 1;
+    return true;
   }
   
-  return 0;
+  return false;
 }
 
 int SampleDisplay::getMarker(unsigned long *sample)
@@ -331,16 +331,24 @@ void SampleDisplay::setRegion(unsigned long start, unsigned long end)
   Toc *toc = tocEdit_->toc();
 
   if (end <= start || end >= toc->length().samples()) {
-    regionSet_ = 0;
+    regionSet_ = false;
   }
   else {
     regionStartSample_ = start;
     regionEndSample_ = end;
-    regionSet_ = 1;
+    regionSet_ = true;
   }
 
   setView(minSample_, maxSample_);
+}
 
+void SampleDisplay::clearRegion()
+{
+  bool wasSet = regionSet_;
+  regionSet_ = false;
+  if (wasSet) {
+    setView(minSample_, maxSample_);
+  }
 }
 
 int SampleDisplay::getRegion(unsigned long *start, unsigned long *end)
@@ -460,7 +468,7 @@ gint SampleDisplay::sample2pixel(unsigned long sample)
   return (gint)(sampleStartX_ + val + 0.5);
 }
 
-bool SampleDisplay::handle_configure_event (GdkEventConfigure *event)
+bool SampleDisplay::handleConfigureEvent(GdkEventConfigure *event)
 {
   Glib::RefPtr<Pango::Context> context = get_pango_context();
   Pango::FontMetrics metrics = context->get_metrics(get_style()->get_font());
@@ -538,12 +546,7 @@ bool SampleDisplay::handle_configure_event (GdkEventConfigure *event)
   sampleEndX_ = width_ - 10;
   sampleWidthX_ = sampleEndX_ - sampleStartX_ + 1;
   
-  // if (pixmap_)
-  // pixmap_->release();
-      
   pixmap_ = Gdk::Pixmap::create(get_window(), get_width(), get_height(), -1);
-
-  //message(0, "handle_configure_event: %d\n", width_);
 
   if (width_ > 100 && height_ > 100)
     updateSamples();
@@ -552,7 +555,7 @@ bool SampleDisplay::handle_configure_event (GdkEventConfigure *event)
 }
 
 
-bool SampleDisplay::handle_expose_event (GdkEventExpose *event)
+bool SampleDisplay::handleExposeEvent (GdkEventExpose *event)
 {
   redraw(event->area.x, event->area.y, event->area.width, event->area.height,
 	 0);
@@ -657,7 +660,7 @@ bool SampleDisplay::handleButtonReleaseEvent(GdkEventButton *event)
   return true;
 }
 
-bool SampleDisplay::handle_motion_notify_event (GdkEventMotion *event)
+bool SampleDisplay::handleMotionNotifyEvent (GdkEventMotion *event)
 {
   gint x, y;
   GdkModifierType state;
@@ -773,7 +776,7 @@ void SampleDisplay::redraw(gint x, gint y, gint width, gint height,
     drawMarker();
 
   if ((drawMask & 0x01) == 0 && cursorDrawn_) {
-    cursorDrawn_ = 0;
+    cursorDrawn_ = false;
     drawCursor(cursorX_);
   }
 }
@@ -796,7 +799,7 @@ void SampleDisplay::setMarker(unsigned long sample)
     redraw(markerX_, 0, 1, height_, 0x02);
 
   markerSample_ = sample;
-  markerSet_ = 1;
+  markerSet_ = true;
   drawMarker();
 }
 
@@ -805,7 +808,7 @@ void SampleDisplay::clearMarker()
   if (markerSet_)
     redraw(markerX_, 0, 1, height_, 0x02);
 
-  markerSet_ = 0;
+  markerSet_ = false;
 }
 
 
@@ -864,8 +867,6 @@ void SampleDisplay::updateSamples()
   drawGc_->set_foreground(sampleColor_);
 
   if (bres > 0) {
-    //message(0, "Draw 1");
-
     for (s = minSample_, i = sampleStartX_;
 	 s < maxSample_ && i <= sampleEndX_;
 	 s += res, i++) {
@@ -885,33 +886,27 @@ void SampleDisplay::updateSamples()
 
       pos = double(lnegsum) * halfHeight;
       pos /= SHRT_MAX;
-      //pos /= bres;
       if (pos != 0)
 	pixmap_->draw_line(drawGc_, i, lcenter_, i, lcenter_ - (gint)pos);
       
       pos = double(lpossum) * halfHeight;
       pos /= SHRT_MAX;
-      //pos /= bres;
       if (pos != 0)
 	pixmap_->draw_line(drawGc_, i, lcenter_, i, lcenter_ - (gint)pos);
       
       pos = double(rnegsum) * halfHeight;
       pos /= SHRT_MAX;
-      //pos /= bres;
       if (pos != 0)
 	pixmap_->draw_line(drawGc_, i, rcenter_, i, rcenter_ - (gint)pos);
       
       pos = double(rpossum) * halfHeight;
       pos /= SHRT_MAX;
-      //pos /= bres;
       if (pos != 0)
 	pixmap_->draw_line(drawGc_, i, rcenter_, i, rcenter_ - (gint)pos);
     }
   }
   else if (maxSample_ > 0 && res >= 1) {
 
-    //message(0, "Draw 2: %ld < %ld", res,
-    //        tocEdit_->sampleManager()->blocking());
     TocReader reader(toc);
 
     if (reader.openData() == 0) {
@@ -953,25 +948,21 @@ void SampleDisplay::updateSamples()
 
 	pos = double(lnegsum) * halfHeight;
 	pos /= SHRT_MAX;
-	//pos /= bres;
 	if (pos != 0)
 	  pixmap_->draw_line(drawGc_, i, lcenter_, i, lcenter_ - (gint)pos);
       
 	pos = double(lpossum) * halfHeight;
 	pos /= SHRT_MAX;
-	//pos /= bres;
 	if (pos != 0)
 	  pixmap_->draw_line(drawGc_, i, lcenter_, i, lcenter_ - (gint)pos);
 	
 	pos = double(rnegsum) * halfHeight;
 	pos /= SHRT_MAX;
-	//pos /= bres;
 	if (pos != 0)
 	  pixmap_->draw_line(drawGc_, i, rcenter_, i, rcenter_ - (gint)pos);
 	
 	pos = double(rpossum) * halfHeight;
 	pos /= SHRT_MAX;
-	//pos /= bres;
 	if (pos != 0)
 	  pixmap_->draw_line(drawGc_, i, rcenter_, i, rcenter_ - (gint)pos);
       }
@@ -981,7 +972,6 @@ void SampleDisplay::updateSamples()
     }
   }
   else if (toc != NULL && maxSample_ > minSample_ + 1) {
-    //message(0, "Draw 3");
 
     TocReader reader(toc);
 
@@ -1108,7 +1098,7 @@ void SampleDisplay::drawCursor(gint x)
     get_window()->draw_line(drawGc_, x, trackLineY_, x, height_ - 1);
   }
   
-  cursorDrawn_ = 1;
+  cursorDrawn_ = true;
   cursorX_ = x;
 
   if (cursorControlExtern_ == false)
@@ -1119,7 +1109,7 @@ void SampleDisplay::undrawCursor()
 {
   if (cursorDrawn_) {
     redraw(cursorX_, 0, 1, height_, 0x01);
-    cursorDrawn_ = 0;
+    cursorDrawn_ = false;
   }
 }
 

@@ -70,7 +70,7 @@ AudioCDProject::AudioCDProject(int number, const char *name, TocEdit *tocEdit,
   tocEdit_->signalFullView.
     connect(sigc::mem_fun(*this, &AudioCDProject::fullView));
   tocEdit_->signalSampleSelection.
-    connect(sigc::mem_fun(*this, &AudioCDProject::sampleSelection));
+    connect(sigc::mem_fun(*this, &AudioCDProject::sampleSelect));
   tocEdit_->signalCancelEnable.
     connect(sigc::mem_fun(*this, &AudioCDProject::cancelEnable));
   tocEdit_->signalError.
@@ -283,9 +283,9 @@ void AudioCDProject::fullView()
     audioCDView_->fullView();
 }
 
-void AudioCDProject::sampleSelection(unsigned long start, unsigned long len)
+void AudioCDProject::sampleSelect(unsigned long start, unsigned long len)
 {
-  audioCDView_->tocEditView()->sampleSelection(start, len);
+  audioCDView_->tocEditView()->sampleSelect(start, len);
 }
 
 void AudioCDProject::cancelEnable(bool enable)
@@ -296,11 +296,6 @@ void AudioCDProject::cancelEnable(bool enable)
 
 bool AudioCDProject::closeProject()
 {
-  if (!tocEdit_->editable()) {
-    tocBlockedMsg(_("Close Project"));
-    return false;
-  }
-
   if (tocEdit_->tocDirty()) {
     gchar *message;
     
@@ -313,6 +308,14 @@ bool AudioCDProject::closeProject()
 
     if (msg.run() != 1)
       return false;
+  }
+
+  if (tocEdit_ && tocEdit_->isQueueActive()) {
+    tocEdit_->queueAbort();
+  }
+
+  if (playStatus_ == PLAYING || playStatus_ == PAUSED) {
+    playStop();
   }
 
   if (audioCDView_) {
@@ -400,15 +403,15 @@ void AudioCDProject::playStart()
 {
   unsigned long start, end;
  
+  // If we're in paused mode, resume playing.
   if (playStatus_ == PAUSED) {
     playStatus_ = PLAYING;
     Glib::signal_idle().connect(sigc::mem_fun(*this,
                                               &AudioCDProject::playCallback));
     return;
-  }
-
-  if (tocEdit_ && !tocEdit_->editable())
+  } else if (playStatus_ == PLAYING) {
     return;
+  }
 
   if (audioCDView_ && audioCDView_->tocEditView()) {
     if (!audioCDView_->tocEditView()->sampleSelection(&start, &end))
@@ -466,7 +469,7 @@ void AudioCDProject::playStart(unsigned long start, unsigned long end)
   playLength_ = end - start + 1;
   playPosition_ = start;
   playStatus_ = PLAYING;
-  playAbort_ = 0;
+  playAbort_ = false;
 
   level |= UPD_PLAY_STATUS;
 
@@ -494,19 +497,16 @@ void AudioCDProject::playPause()
 
 void AudioCDProject::playStop()
 {
-  if (getPlayStatus() == PAUSED)
-    {
-      soundInterface_->end();
-      tocReader.init(NULL);
-      playStatus_ = STOPPED;
-      tocEdit_->unblockEdit();
-      playStatus_ = STOPPED;
-      guiUpdate(UPD_PLAY_STATUS|UPD_EDITABLE_STATE);
-    }
-  else
-    {
-      playAbort_ = 1;
-    }
+  if (playStatus() == PAUSED) {
+    soundInterface_->end();
+    tocReader.init(NULL);
+    playStatus_ = STOPPED;
+    tocEdit_->unblockEdit();
+    playStatus_ = STOPPED;
+    guiUpdate(UPD_PLAY_STATUS|UPD_EDITABLE_STATE);
+  } else {
+    playAbort_ = true;
+  }
 }
 
 bool AudioCDProject::playCallback()
@@ -541,7 +541,7 @@ bool AudioCDProject::playCallback()
   if (delay <= playPosition_)
     level |= UPD_PLAY_STATUS;
 
-  if (len == 0 || playAbort_ != 0) {
+  if (len == 0 || playAbort_) {
     soundInterface_->end();
     tocReader.init(NULL);
     playStatus_ = STOPPED;
@@ -554,11 +554,6 @@ bool AudioCDProject::playCallback()
     guiUpdate(level);
     return true; // keep idle handler
   }
-}
-
-enum AudioCDProject::PlayStatus AudioCDProject::getPlayStatus()
-{
-  return playStatus_;
 }
 
 unsigned long AudioCDProject::playPosition()

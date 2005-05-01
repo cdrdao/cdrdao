@@ -30,10 +30,11 @@ public:
   TocEdit *tocEdit() const;
 
   void sampleMarker(unsigned long);
-  int sampleMarker(unsigned long *) const;
+  bool sampleMarker(unsigned long *) const;
 
-  void sampleSelection(unsigned long, unsigned long);
-  int sampleSelection(unsigned long *, unsigned long *) const;
+  void sampleSelect(unsigned long, unsigned long);
+  void sampleSelectAll();
+  bool sampleSelection(unsigned long *, unsigned long *) const;
   bool sampleSelectionClear();
 
   void sampleViewFull();
@@ -51,10 +52,10 @@ public:
 private:
   TocEdit *tocEdit_;
 
-  int sampleMarkerValid_;
+  bool sampleMarkerValid_;
   unsigned long sampleMarker_;
 
-  int sampleSelectionValid_;
+  bool sampleSelectionValid_;
   unsigned long sampleSelectionMin_;
   unsigned long sampleSelectionMax_;
 

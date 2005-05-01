@@ -28,8 +28,8 @@ TocEditView::TocEditView(TocEdit *t)
 {
   tocEdit_ = t;
 
-  sampleMarkerValid_ = 0;
-  sampleSelectionValid_ = 0;
+  sampleMarkerValid_ = false;
+  sampleSelectionValid_ = false;
   sampleViewMin_ = sampleViewMax_ = 0;
   trackSelectionValid_ = 0;
   indexSelectionValid_ = 0;
@@ -50,17 +50,14 @@ void TocEditView::sampleMarker(unsigned long sample)
 {
   if (sample < tocEdit_->toc()->length().samples()) {
     sampleMarker_ = sample;
-    sampleMarkerValid_ = 1;
+    sampleMarkerValid_ = true;
   }
   else {
-    sampleMarkerValid_ = 0;
+    sampleMarkerValid_ = false;
   }
-
-//llanero: different views
-//  tocEdit_->updateLevel_ |= UPD_SAMPLE_MARKER;
 }
 
-int TocEditView::sampleMarker(unsigned long *sample) const
+bool TocEditView::sampleMarker(unsigned long *sample) const
 {
   if (sampleMarkerValid_)
     *sample = sampleMarker_;
@@ -68,7 +65,18 @@ int TocEditView::sampleMarker(unsigned long *sample) const
   return sampleMarkerValid_;
 }
 
-void TocEditView::sampleSelection(unsigned long smin, unsigned long smax)
+void TocEditView::sampleSelectAll()
+{
+  unsigned long slength = tocEdit_->toc()->length().samples();
+
+  if (slength) {
+    sampleSelectionMin_ = 0;
+    sampleSelectionMax_ = slength - 1;
+    sampleSelectionValid_ = true;
+  }
+}
+
+void TocEditView::sampleSelect(unsigned long smin, unsigned long smax)
 {
   unsigned long tmp;
 
@@ -82,27 +90,23 @@ void TocEditView::sampleSelection(unsigned long smin, unsigned long smax)
     sampleSelectionMin_ = smin;
     sampleSelectionMax_ = smax;
 
-    sampleSelectionValid_ = 1;
+    sampleSelectionValid_ = true;
   }
   else {
-    sampleSelectionValid_ = 0;
+    sampleSelectionValid_ = false;
   }
-  
-//llanero: different views
-//  tocEdit_->updateLevel_ |= UPD_SAMPLE_SEL;
 }
 
 bool TocEditView::sampleSelectionClear()
 {
   if (sampleSelectionValid_) {
-    sampleSelectionValid_ = 0;
+    sampleSelectionValid_ = false;
     return true;
-//llanero: different views
-//    tocEdit_->updateLevel_ |= UPD_SAMPLE_SEL;
   }
 }
 
-int TocEditView::sampleSelection(unsigned long *smin, unsigned long *smax) const
+bool TocEditView::sampleSelection(unsigned long *smin,
+                                  unsigned long *smax) const
 {
   if (sampleSelectionValid_) {
     *smin = sampleSelectionMin_;

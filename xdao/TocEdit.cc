@@ -978,7 +978,7 @@ int TocEdit::insertTrackData(TocEditView *view)
       sampleManager_->scanToc(marker, marker, true);
       sampleManager_->scanToc(marker + len - 1, marker + len - 1, true);
       
-      view->sampleSelection(marker, marker + len - 1);
+      view->sampleSelect(marker, marker + len - 1);
     
       tocDirty(1);
 //llanero: different views
@@ -1001,7 +1001,7 @@ int TocEdit::insertTrackData(TocEditView *view)
 	sampleManager_->scanToc(Msf(start).samples() + len,
                                 Msf(end).samples() - 1, true);
 
-      view->sampleSelection(Msf(start).samples(), Msf(end).samples() - 1);
+      view->sampleSelect(Msf(start).samples(), Msf(end).samples() - 1);
       
       tocDirty(1);
       updateLevel_ |= UPD_TOC_DATA | UPD_TRACK_DATA | UPD_SAMPLE_SEL;
