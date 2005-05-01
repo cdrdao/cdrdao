@@ -1,44 +1,38 @@
-Hi,
-
-cdrdao-1.2.0 is available from:
-
-  http://sf.net/projects/cdrdao
-
-
 Cdrdao changes:
 
-- SECURITY FIX: cdrdao now gives up its root privileges after setting
-  up real-time scheduling, as well as before saving settings through
-  the --save option. This fixes a potential local root exploit when
-  cdrdao is installed with the +s chmod flag. Using --save now also
-  forces an early exit after the settings are saved.
+ o  SECURITY FIX: cdrdao now gives up its root privileges after setting
+    up real-time scheduling, as well as before saving settings through
+    the --save option. This fixes a potential local root exploit when
+    cdrdao is installed with the +s chmod flag. Using --save now also
+    forces an early exit after the settings are saved.
 
-- Added MP3 and Ogg Vorbis file support (through respectively the
-  libmad and libvorbis libraries). cdrdao will decode the MP3 and Ogg
-  files into temporary WAV files that will be deleted upon exit
-  (unless the new option --keep is used). The directory used to store
-  those temporary WAV files can be specified with the --tmpdir option
-  (default is /tmp).
+ o  Added MP3 and Ogg Vorbis file support (through respectively the
+    libmad and libvorbis libraries). cdrdao will decode the MP3 and
+    Ogg files into temporary WAV files that will be deleted upon exit
+    (unless the new option --keep is used). The directory used to
+    store those temporary WAV files can be specified with the --tmpdir
+    option (default is /tmp).
 
-- Added --rspeed option to manually set the device reading speed. Be
-  warned not all devices support this.
+ o  Added --rspeed option to manually set the device reading speed. Be
+    warned not all devices support this.
 
-- Packaged scsilib library upgraded from cdrtools 2.01 (previously was
-  from 2.01a31).
+ o  Packaged scsilib library upgraded from cdrtools 2.01 (previously
+    was from 2.01a31).
 
-- Added --no-mode2-mixed option. Don't read a MODE2 disk as
-  MODE2_FORM_MIXED, only read MODE2_FORM1 or MODE2_FORM2 (Matthieu
-  Castet).
+ o  Added --no-mode2-mixed option. Don't read a MODE2 disk as
+    MODE2_FORM_MIXED, only read MODE2_FORM1 or MODE2_FORM2 (Matthieu
+    Castet).
 
 GCDMaster changes:
 
-- MP3 and Ogg Vorbis support: you can drag and drop .mp3, .m3u and
-  .ogg files from Nautilus into the sample display window.
+ o  MP3 and Ogg Vorbis support: you can drag and drop .mp3, .m3u and
+    .ogg files from Nautilus into the sample display window.
 
-- Added 'Select All' item in menu.
+ o  Added 'Select All' item in menu.
 
-- Added 'Eject' button to progress dialog
+ o  Added 'Eject' button to progress dialog
 
-- Bug fixes (sample selection weirdness, couldn't close window during play)
+ o  Bug fixes (sample selection weirdness, couldn't close window during
+    play)
 
 Denis Leroy

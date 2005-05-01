@@ -1,0 +1,446 @@
+--------------------------------------------------------------------------
+  cdrdao 1.1.9 (2004-06-07)
+--------------------------------------------------------------------------
+
+ o MMC-driver auto-detection. If no --driver option is specified,
+   cdrdao will try to autodetect an MMC-compliant device and use the
+   generic-mmc driver by default. (Denis Leroy)
+
+ o Included scsilib upgraded from cdrtools 2.01a31 (Denis Leroy)
+
+ o Added --eject option to the unlock command to eject the cd after
+   unlocking. (Eric Benson)
+
+ o New 'discid' command to display CDDB information. (Eric Benson,
+   Denis Leroy).
+
+ o Fixed scsilib compiling problems with Linux kernel 2.6 (Jim Gifford)
+
+ o Fixed compiling problems with gcc 3.4 (Jim Gifford, Denis Leroy)
+
+ o Added --full-burn and --capacity options to extend lead-out to entire disc,
+   beyond 80 mins limit. (Vladimir Petrov)
+
+
+GCDMaster changes (Denis Leroy):
+
+ o Device configuration dialog now scans for devices on both ATA and
+   ATAPI interfaces.
+
+ o Some bug fixes (manual driver configurations were not being saved
+   correctly).
+
+cue2toc changes:
+
+ o Version 0.2 released. Complete rewrite, should now handle most of all
+   CUE files. (Matthias Czapla)
+
+--------------------------------------------------------------------------
+  cdrdao 1.1.8 (2004-02-12)
+--------------------------------------------------------------------------
+
+ o We have not heard from project founder and maintainer Andreas
+   Mueller for a long time and do not know what his intentions are
+   regarding cdrdao. Due to recent contributions to the project, we
+   have decided to nonetheless continue development and to keep
+   working towards future releases. Manuel Clos is now acting as
+   project maintainer. We hope to hear from Andreas soon.
+
+ o The latest state of the CVS tree before the merge with the
+   Gnome2/Gtk2 branch has been tagged as 'Andreas_1_1_7'.
+
+ o Improved performance of the new L-EC code by up to a factor 2 depending
+   on the hardware.
+
+ o 'read-test' runs L-EC encoder over mode 1 or mode 2 form 1 sectors to
+   allow performance testing in conjunction with option --speed.
+
+ o Fix for building on Mac OS X with gcc-3.1 (SF patch 611423).
+
+ o Support for ATAPI drives: device is now specified as
+   [path:]<x,y,z>, such as '--device 0,0,0' or '--device
+   ATAPI:0,1,0'. If you run Linux 2.6, you can also use the latest
+   /dev/hd* interface with '--device ATA:0,0,0' (Denis Leroy)
+
+GCDMaster changes (Denis Leroy):
+
+ o gcdmaster was ported to Gnome2/Gtk+2 using the new C++ Gtk2 bindings
+   (gtkmm2 and gnomeuimm2).
+
+ o ATAPI drives support: gcdmaster will also scan for ATAPI
+   devices. Devices are now specified as a '[path:]x,y,z' string.
+
+ o The samples selection can now be cleared (i.e. unselected) by
+   single-clicking the Audio view during Select mode (not in Zoom
+   mode).
+
+ o You can now select multiple files from the file selector when
+   appending or inserting tracks/files from the main Audio Project menu.
+
+ o Some features have been removed (temporarily): the multiple views
+   feature, the 'zoom to selection' icon. Also the progress dialog is
+   gone during import: progress is shown on the main status bar.
+
+mp32dao changes:
+
+ o FLAC support. mp32dao now handles mp3/ogg/flac files. (Giuseppe Corbelli)
+
+ o new: toc2cddb: translates a TOC file into a cddb file. (Giuseppe Corbelli)
+
+ o new: cue2toc: convert CUE to TOC format for audio CDs. (Matthias Czapla)
+
+--------------------------------------------------------------------------
+  cdrdao 1.1.7 (2002-10-06)
+--------------------------------------------------------------------------
+
+ o Fixed crash in toc-file reader (only occurred for a certain type of
+   syntactical error).
+
+ o Fixed compilation problems of "toc2mp3.cc" with pre gcc-3.x compilers.
+
+ o Updated driver table.
+
+--------------------------------------------------------------------------
+  cdrdao 1.1.6 (2002-09-16)
+--------------------------------------------------------------------------
+
+ o Fixed cue sheet setup for CD-TEXT writing. Some older drives did not like
+   the cue sheet format as specified in the latest SCSI-3/mmc
+   specification.
+
+ o Added sub-channel writing for the 'generic-mmc' and
+   'generic-mmc-raw' driver. Currently only the R-W sub-channels can
+   be written. The track image files may contain packed or raw R-W
+   sub-channel data. For packed sub-channel data the L-EC data will be
+   calculated and interleaving will be performed if required by the
+   recording hardware.
+
+ o Added sub-channel reading support for the generic-mmc(-raw) driver.
+   Currently packed and raw R-W sub-channel reading is supported
+   (option -read-subchan).
+
+ o Added automatic check for support sub-channel reading modes to the
+   'generic-mmc(-raw)' driver. The driver options (0x1, 0x2 and 0x20)
+   should be obsolete now, but are still available.
+
+ o The data track extraction with the generic-mmc(-raw) driver is more
+   robust against read errors now. The
+   --tao-source/--tao-source-adjust option should be obsolete now -
+   but is still available.
+
+ o Added on-the-fly copying support for the Win32 version.
+
+ o Default blanking mode is now 'minimal' (SF feature request 425321)
+
+ o Updated paranoia libraries to version of cdparanoia-III-alpha9.8.
+
+ o Fixed waiting loop that was used to wait until the lead-out was written
+   and until a blanking operation is finished. Some drives do not
+   indicate this activities with a "not ready" status. Affected
+   drivers: generic-mmc and generic-mmc-raw (blanking only).
+ 
+ o Fixed crash in cdrdao usage printing (SF bug 570156).
+
+ o Fixed cue sheet setup for ISRC codes for the HP8100 recorder model.
+
+ o Added/fixed SF patches 427753, 450058 and 534214.
+
+ o New mp32dao version from Giuseppe Corbelli with these new features:
+   - Ogg support
+   - MP3/Ogg decoding supported only with external programs
+   - Code modularization and bugfixes
+   - cdrecord's .inf file support for CD-TEXT data
+
+ o Cue parser accepts spaces and '\' characters in file name now.
+
+ o The PCCTS package is now a part of the cdrdao source code distribution
+   which should avoid some compilation hassle.
+
+ o Updated scsilib version.
+
+ o Added patches for compilation under Unixware (incl. patches for scsilib).
+
+ o Created new utility 'toc2mp3' that converts an audio CD image to a set
+   of mp3 files using the LAME encoder. The encoded mp3 files have no
+   gap at the end so that they play in sequence without noise at the
+   transition points.
+
+
+GCDMaster changes:
+
+ o Gcdmaster hotkeys are now back. (SourceForge bug 470864).
+
+ o Gcdmaster can now copy cds with just one drive, thanks to Das Poelzi for
+   the patch. (SourceForge bug 566948).
+
+ o Added switch to enable the overburn mode to the recording options box.
+
+ o Added selection of the sub-channel reading mode the CD extraction options
+   box.
+
+ o Fixed the 'Cancel' button staying disabled in the Recording/Reading progress
+   window.
+
+--------------------------------------------------------------------------
+  cdrdao 1.1.5 (2001-04-29)
+--------------------------------------------------------------------------
+
+ o Fixed bug in CD-TEXT writing code that caused the problems with the
+   unreliable read back of the written CD-TEXT data
+
+ o Added CD-TEXT writing capability to the 'generic-mmc-raw' driver; the
+   recorder must support the 96 byte raw P-W sub-channel writing mode to
+   make use of it
+
+ o Fixed bug in generic-mmc-raw driver: the TOC type was not written correctly
+   and some flags for data tracks were missing in the lead-in
+
+ o Fixed handling of toc type for multi session CDs: the toc-type of 
+   a session that just contains audio tracks is always CD_DA, even in multi
+   session mode
+
+ o BURN Proof support added by ITOH Yasufumi/Martin Buck
+
+ o Fixed bug in calculating the CDDB id (SourceForge bug 413467)
+
+ o Added option --with-cddb to read CDDB data automatically with commands
+   'copy', 'read-toc' and 'read-cd'; it is now possible to add CD-TEXT data
+   from CDDB while performing an on-the-fly copy
+
+ o Updated to libscg-0.5 from cdrtools-1.10
+
+ o Handle drives that do not support the explicit power calibration command
+
+ o Blanking of CD-RWs is now officially supported (command 'blank',
+   option --blank-mode)
+
+ o Updated CD-R vendor table
+
+ o Settings are now first read from "/etc/cdrdao.conf" and
+   "/etc/defaults/cdrdao" and then from "$HOME/.cdrdao"
+
+ o Added command 'msinfo' to output multi session information suitable for
+   'mkisofs'
+
+ o Overburning is now prevented by default and must be explicitly requested
+   with option '--overburn'. Fix for Debian bug #79585 
+   (http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=79585&repeatmerged=yes).
+
+ o Fixed error in cdrdao's manual page (Debian bug #82816,
+   http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=82816&repeatmerged=yes)
+
+ o cdrdao's help screen was reworked by Michael Reinelt
+
+ o Added Giuseppe Corbelli's enhancements for the 'mp32dao' script
+
+ o Makefiles now use make variable 'datadir' to specify the share directory
+   location
+
+ o Fixed printing toc-file name with command 'copy --keepimage'
+
+
+GCDMaster changes:
+
+ o Added missing 'toshiba' driver to the device configuration dialog
+  (SourceForge bug 128633)
+
+ o Removed the CD-TEXT table entry dialog from the 'Project Info' dialog;
+   it is now a non modal dialog on its own
+
+ o Enhanced progress display for extracting and recording
+
+ o Major rework of the infra structure to support multiple projects (toc-files)
+   and multiple views of a project
+
+ o Gcdmaster starts with a project chooser now; this is the first step
+   to support different project types like data CD, mixed mode CD,
+   video CD etc.
+
+--------------------------------------------------------------------------
+  cdrdao 1.1.4 (2000-08-27)
+--------------------------------------------------------------------------
+
+ o Created new 'toshiba' driver for 'read-toc'/'read-cd' with Toshiba
+   CD-ROM drives.
+
+ o Added full multi session support to the 'cdd2600' driver.
+
+ o CD-TEXT is written without any copy protection flags now.
+
+ o Added CDDB access to add title and artist data as CD-TEXT to an
+   existing toc-file. The direct cddbp and the http encapsulated protocol
+   is supported.
+
+ o Added support to better handle disks written in track-at-once mode with
+   'read-cd' and 'read-toc' (see options --tao-source and --tao-source-adjust).
+
+ o Fixed bug that prevented recording of pure data CDs with the recent HP
+   and Sony recorder models in single session mode.
+   For multi session mode the restrictions mentioned in the README are
+   still valid.
+
+ o Fixed 'unit not ready' problems after writing with the 'generic-mmc'
+   and 'generic-mmc-raw' driver.
+
+ o Toc-files with tracks that are shorter than 4 seconds will be recorded
+   if option '--force' is given.
+
+ o Some of the command line options are now saved to a settings file
+   "$HOME/.cdrdao" if option '--save' is given.
+
+ o The driver database is now kept in an external file so it is possible
+   to update the database between the cdrdao releases. Actual driver 
+   database files will be available from
+
+     http://cdrdao.sourceforge.net/drives.html#dt
+
+ o Added new option '--keepimage' which keeps the created image file after
+   the command 'copy' finishes.
+
+ o Fixed bug in CD-TEXT reading code: CD-TEXT fields with empty strings were
+   only read for the first track.
+
+ o Driver 'generic-mmc': If the power calibration fails the recording process
+   will be aborted now.
+
+ o Driver 'generic-mmc-raw': Added explicit power calibration.
+
+
+Xcdrdao changes:
+ 
+ o Xcdrdao is now a Gnome application and will be called "Gnome CD Master"
+   (gcdmaster) in future.
+   
+ o Added table wise entry of CD-TEXT title/performer data.
+
+ o Added a dialog to extract a CD to the hard disk.
+
+ o Added a dialog to do CD to CD copy, with "on the fly" as an option.
+
+ o Speed and record buffer are now selectable in the GUI.
+
+ o When reading/duplicating a CD you can set the paranoia mode.
+
+--------------------------------------------------------------------------
+  cdrdao 1.1.3
+--------------------------------------------------------------------------
+
+ o Data track writing is available with all drivers, especially the
+   'ricoh-mp6200' and 'generic-mmc-raw' can write data tracks now.
+
+ o Added DAE capability based on Monty's paranoia library to all drivers.
+   The 'plextor' driver will still use the special Plextor method for DAE
+   with Plextor drives but it is possible to force using the paranoia mode
+   with a driver option (see README). The paranoia mode can customized with
+   option '--paranoia-mode #'. Please read section 'Digital Audio Extraction'
+   of the README.
+
+ o 'read-cd' creates now a complete image of a session. All tracks are written
+   to a single image file (comparable to a .bin file). Pre-gaps and index marks
+   of audio tracks are extracted while ripping the audio data so that a 
+   'read-toc' step is obsolete now.
+   It may choke on CDs written in TAO mode.
+
+ o Experimental: Added a 'copy' command that performs all steps for copying a
+   CD session with a single or two drives. By default a temporary image file
+   is created in the current working directory. On the fly copying can be
+   selected with option '--on-the-fly' which avoids the temporary image file.
+   Copying of mixed mode CDs should be fine.
+   I expect problems with source CDs written in TAO mode but I did not make
+   any tests up to now.
+   On the fly copying is not available for the Win32 platform, yet.
+   Please read section 'Example for CD Copying' of the README.
+
+ o 'read-cd' ignores sectors with L-EC errors now if option '--read-raw' is
+   given. The 'cdd2600', 'ricoh-mp6200' and 'generic-mmc-raw' driver will
+   recreate the erroneous sectors when recording.
+
+ o Added full multi session support to the 'teac-cdr55' driver.
+
+ o Added multiple language support for CD-TEXT. However, I have currently no
+   access to a CD-TEXT capable consumer CD-player so I am not sure if CD-TEXT
+   recording still works. Reading the written CD-TEXT data with a CD-ROM
+   drive gives the expected results.
+
+ o ATAPI CD-ROM drives that were only working with the 'plextor' driver
+   should now be supported by the 'generic-mmc' driver with driver option 0x20
+   (--driver generic-mmc:0x20). 
+
+ o A CD-R medium is automatically ejected now before writing to reset the disk
+   status after a simulation run which is necessary e.g. for the
+   Philips CDD2x00 recorder family.
+
+
+Xcdrdao changes:
+
+ o Added dialogs for entering meta data like UPC/EAN, ISRC code and CD-TEXT.
+
+ o It is now possible to insert and remove samples at any place without
+   touching the audio files on the disk.
+
+ o Added a dialog for configuration of all available CD-ROM/CD-R devices.
+
+ o Recording can now be started from the GUI. Simultaneous recording with
+   multiple CD-recorders is possible if the hardware is suitable for it.
+
+ o Created a man page.
+
+--------------------------------------------------------------------------
+  cdrdao 1.1.2
+--------------------------------------------------------------------------
+
+ o Added support for bin/cue images. A cue file can be used now wherever a
+   toc-file is expected. The cue file must have exactly one FILE statement.
+   The bin file name is constructed from the cue file name by replacing
+   ".cue" with ".bin". Currently supported track modes: MODE1/2048, MODE1/2352,
+   MODE2/2336, MODE2/2352. The 'cdd2600' driver uses the L-EC data 
+   contained in the MODEX/2352 track images when recording. All other drivers
+   will ignore and regenerate the L-EC data.
+
+ o The 'generic-mmc' driver has full multi session support now. The start 
+   address of the last and current session which must be used for the mkisofs
+   option '-C x,y' can be retrieved with 'disk-info'.
+
+s o The 'sony-cdu948' driver is included in the source package.
+
+ o read-cd will create raw data track images (2352 byte sectors) if option
+   '--read-raw' is given.
+
+--------------------------------------------------------------------------
+  cdrdao 1.1.0
+--------------------------------------------------------------------------
+
+ o Added data track support to 'generic-mmc' driver.
+
+ o Added Henk-Jan Slotboom's driver for Taiyo-Yuden recorders.
+
+ o Created driver for the Teac CD-R55S recorder. Data tracks should be
+   supported, too, but it is not well tested.
+
+ o Added Cam MacKinnon's driver for the Yamaha CDR10x drive family.
+   Data track support is available, too, but also not well tested.
+
+ o Added Leon Woestenberg's bitwise-exact digital audio extraction patch
+   for Plextor drives (see README.PlexDAE).
+
+ o 'read-toc' will analyze mixed mode CDs now, but it is currently not
+   perfect. Please have a look at the README.
+
+ o Fixed failed assertion problems with 'read-toc' that occured when
+   the raw P-W sub-channel data passed the CRC check but was actually
+   not consistent (happened quiet often with Teac CD-ROM CD-532S drives).
+   
+ o The SCSI interface can now use Joerg Schilling's SCSI library. Cdrdao is
+   reported to work on Solaris 2.6 and FreeBSD using the SCSI library.
+   Max Khon provided an independent SCSI interface implementation for FreeBSD
+   which can be selected when configuring.
+
+ o Added experimental CD-TEXT support to 'read-toc'.
+
+ o Updated xcdrdao source to compile with Gtk-- 0.99.1.
+
+Known Limitations:
+
+ o 'read-toc' does not work for multi session CDs.
+
+ o 'read-toc' does not work well for CDs written in TAO mode.
