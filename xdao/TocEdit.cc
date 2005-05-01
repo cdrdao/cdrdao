@@ -965,8 +965,6 @@ int TocEdit::removeTrackData(TocEditView *view)
       view->sampleMarker(selMin);
 
       tocDirty(1);
-//llanero: different views
-//      updateLevel_ |= UPD_TOC_DATA | UPD_TRACK_DATA | UPD_SAMPLE_SEL | UPD_SAMPLE_MARKER | UPD_SAMPLES ;
     }
     break;
 
