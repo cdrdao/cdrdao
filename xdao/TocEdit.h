@@ -74,7 +74,7 @@ public:
   void queueAppendTrack(const char* filename);
   void queueAppendFile(const char* filename);
   void queueInsertFile(const char* filename, unsigned long pos);
-  void queueScan(unsigned long start, unsigned long end);
+  void queueScan(long start, long end);
 
   // Abort all queued work.
   void queueAbort();

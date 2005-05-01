@@ -122,7 +122,7 @@ static RETSIGTYPE signalHandler(int sig)
 }
 
 
-int main (int argc, char* argv[])
+int main(int argc, char* argv[])
 {
   Gnome::Main application("GnomeCDMaster", VERSION,
                           Gnome::UI::module_info_get(), argc, argv);
@@ -154,20 +154,19 @@ int main (int argc, char* argv[])
   gcdmaster = new GCDMaster;
   gcdmaster->show();
 
-  if (argc == 1)
-    gcdmaster->newChooserWindow();
-  else while (argc > 1)
-  {
-    if(!gcdmaster->openNewProject(argv[1]))
-    {
-      std::string message("Error loading ");
-      message += argv[1];
-      Gtk::MessageDialog(*gcdmaster, message,
-                         Gtk::MESSAGE_ERROR);
-    }
+  bool openChooser = true;
+
+  while (argc > 1) {
+
+    if (gcdmaster->openNewProject(argv[1]))
+      openChooser = false; 
+
     argv++;
     argc--;
   }
+
+  if (openChooser)
+    gcdmaster->newChooserWindow();
 
   application.run();
 

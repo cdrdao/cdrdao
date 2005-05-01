@@ -193,7 +193,7 @@ bool GCDMaster::openNewProject(const char* s)
   TocEdit* tocEdit;
 
   if (s == NULL || *s == 0 || s[strlen(s) - 1] == '/')
-    return true;
+    return false;
 
   FileExtension type = fileExtension(s);
   switch (type) {
@@ -203,6 +203,7 @@ bool GCDMaster::openNewProject(const char* s)
     break;
 
   case FE_TOC:
+  case FE_CUE:
     tocEdit = new TocEdit(NULL, NULL);
     if (tocEdit->readToc(stripCwd(s)) == 0)
       newAudioCDProject(stripCwd(s), tocEdit);
@@ -211,6 +212,8 @@ bool GCDMaster::openNewProject(const char* s)
     break;
 
   default:
+    printf("Could not open \"%s\": format not supported.\n", s);
+    return false;
     break;
   }
 
@@ -266,7 +269,7 @@ void GCDMaster::closeProject()
   {
     closeChooser();
   }
-  else if (project_->closeProject())
+  else if (project_ && project_->closeProject())
   {
     projects.remove(project_);
     delete project_;

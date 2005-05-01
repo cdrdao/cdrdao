@@ -105,7 +105,7 @@ void TocEdit::toc(Toc *t, const char *filename)
 
     // Second, queue for toc scan.
     unsigned long maxSample = toc_->length().samples() - 1;
-    queueScan(0, maxSample);
+    queueScan(0, -1);
   }
 
   updateLevel_ = UPD_ALL;
@@ -190,6 +190,13 @@ int TocEdit::readToc(const char *fname)
   Toc *t = Toc::read(fname);
 
   if (t != NULL) {
+
+    // Check and resolve input files paths
+    t->resolveFilenames(fname);
+
+    // Sometimes length fields are ommited. Make sure we got everything.
+    t->recomputeLength();
+
     toc(t, fname);
     return 0;
   }
@@ -308,6 +315,25 @@ int TocEdit::removeTrackMarker(int trackNr, int indexNr)
 
 bool TocEdit::curScan()
 {
+  // An end position of -1 means recompute the toc length and scan to
+  // the last sample position.
+
+  if (cur_->end == -1) {
+    // (Denis Leroy) The reason for this code is somewhat
+    // complex. When importing a CUE file with MP3s, the length of the
+    // last track is not known until the MP3 is actually converted to
+    // a WAV (because, unlike TOC files, CUE files don't specify
+    // explicitely the length of each track). Unlike WAV, you can't
+    // guess the length of the track based on the mp3 file size
+    // without scanning the whole thing, which we don't want to do
+    // twice obviously. So the semantic of the "scan" job is changed
+    // to integrate a length recalculation when the end is not
+    // specified. It would be cleaner to create a specific job task to
+    // do this.
+    toc_->recomputeLength();
+    cur_->end = toc_->length().samples() - 1;
+    updateLevel_ |= UPD_SAMPLES;
+  }
   int ret = sampleManager_->scanToc(cur_->pos, cur_->end);
 
   if (ret == 0)
@@ -470,7 +496,7 @@ void TocEdit::queueInsertFile(const char* filename, unsigned long pos)
     activateQueue();
 }
 
-void TocEdit::queueScan(unsigned long start, unsigned long end)
+void TocEdit::queueScan(long start, long end)
 {
   QueueJob* job = new QueueJob("scan");
   job->pos = start;
