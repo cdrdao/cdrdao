@@ -399,6 +399,13 @@ void AudioCDProject::update(unsigned long level)
 void AudioCDProject::playStart()
 {
   unsigned long start, end;
+ 
+  if (playStatus_ == PAUSED) {
+    playStatus_ = PLAYING;
+    Glib::signal_idle().connect(sigc::mem_fun(*this,
+                                              &AudioCDProject::playCallback));
+    return;
+  }
 
   if (tocEdit_ && !tocEdit_->editable())
     return;
@@ -417,14 +424,6 @@ void AudioCDProject::playStart(unsigned long start, unsigned long end)
 
   if (playStatus_ == PLAYING)
     return;
-
-  if (playStatus_ == PAUSED)
-    {
-      playStatus_ = PLAYING;
-      Glib::signal_idle().
-        connect(sigc::mem_fun(*this,&AudioCDProject::playCallback));
-      return;
-    }
 
   if (tocEdit_->lengthSample() == 0)
     {
