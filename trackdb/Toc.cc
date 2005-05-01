@@ -34,6 +34,7 @@
 #include "util.h"
 #include "TrackDataList.h"
 #include "CdTextItem.h"
+#include "CueParser.h"
 
 #ifdef UNIXWARE
 extern "C" {
@@ -42,7 +43,6 @@ extern "C" {
 #endif
 
 extern Toc *parseToc(FILE *fp, const char *filename);
-extern Toc *parseCue(FILE *fp, const char *filename);
 
 Toc::Toc() : length_(0)
 {
@@ -150,15 +150,22 @@ Toc *Toc::read(const char *filename)
 
   fclose(fp);
 
+  return ret;
+}
+
+bool Toc::resolveFilenames(const char* filename)
+{
   // Resolve all relative filenames to absoluate paths wrt to the toc
   // file current directory.
   std::string path = filename;
   path = path.substr(0, path.rfind('/'));
   if (path.empty()) path = ".";
-  for (TrackEntry* t = ret->tracks_; t != NULL; t = t->next)
-    t->track->resolveFilename(path.c_str());
 
-  return ret;
+  for (TrackEntry* t = tracks_; t != NULL; t = t->next)
+    if (!t->track->resolveFilename(path.c_str()))
+      return false;
+
+  return true;
 }
 
 // Writes toc to file with given name.
@@ -208,6 +215,17 @@ int Toc::check() const
   }
 
   return ret;
+}
+
+bool Toc::recomputeLength()
+{
+  for (TrackEntry* t = tracks_; t; t = t->next) {
+    if (!t->track->recomputeLength())
+      return false;
+  }
+
+  update();
+  return true;
 }
 
 // Sets catalog number. 's' must be a string of 13 digits.
@@ -279,6 +297,13 @@ void Toc::print(std::ostream &out, bool conversions) const
     t->track->print(out, conversions);
     out << std::endl;
   }
+}
+
+bool Toc::convertFilesToWav()
+{
+  FormatSupport::Status status = formatConverter.convert(this);
+
+  return (status == FormatSupport::FS_SUCCESS);
 }
 
 void Toc::collectFiles(std::set<std::string>& set)
@@ -676,6 +701,15 @@ int Toc::addPregap(long lba)
   return 0;
 }
 
+void Toc::fixLengths()
+{
+  TrackEntry* te;
+  int i;
+
+  for (i = 0 , te = tracks_; te; te = te->next, i++) {
+    printf("%d : Track %d\n", i, te->trackNr);
+  }
+}
 
 void Toc::checkConsistency()
 {

@@ -269,6 +269,8 @@ FileExtension fileExtension(const char* fname)
 
     if (strcasecmp(e, "toc") == 0)
       return FE_TOC;
+    if (strcasecmp(e, "cue") == 0)
+      return FE_CUE;
     if (strcasecmp(e, "wav") == 0)
       return FE_WAV;
     if (strcasecmp(e, "mp3") == 0)

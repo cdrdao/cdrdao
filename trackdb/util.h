@@ -46,6 +46,7 @@ const char *stripCwd(const char *fname);
 typedef enum {
   FE_UNKNOWN = 0,
   FE_TOC,
+  FE_CUE,
   FE_WAV,
   FE_MP3,
   FE_OGG,

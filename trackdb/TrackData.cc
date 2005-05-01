@@ -66,11 +66,6 @@ void TrackData::init(const char *filename, long offset,
   else {
     type_ = DATAFILE;
 
-    //const char* fn;
-    // if (formatConverter.canConvert(filename) &&
-    //    (fn = formatConverter.convert(filename))) {
-    // filename_ = strdupCC(fn);
-    //} else {
     filename_ = strdupCC(filename);
     fileType_ = audioFileType(filename_);
   }
@@ -141,11 +136,6 @@ void TrackData::init(Mode m, SubChannelMode sm, const char *filename,
   }
   else {
     type_ = DATAFILE;
-    //const char* fn;
-    // if (formatConverter.canConvert(filename) &&
-    // (fn = formatConverter.convert(filename))) {
-    //filename_ = strdupCC(fn);
-    //} else {
     filename_ = strdupCC(filename);
 
     if (mode_ == AUDIO)
@@ -233,6 +223,9 @@ unsigned long TrackData::length() const
 // Return: 0: OK
 //         1: cannot open or access the file (see 'errno')
 //         2: start pos or offset exceeds length of file
+//         3: track needs conversion to WAV
+//         4: format is not supported
+
 int TrackData::determineLength()
 {
   unsigned long len;
@@ -263,6 +256,22 @@ int TrackData::determineLength()
 		filename_);
 	return 2;
 	break;
+      case 5:
+#ifndef HAVE_MP3_SUPPORT
+          if (audioFileType(filename_) == MP3) {
+              message (-2, "Can't read file \"%s\": cdrdao was compiled "
+                       "without MP3 support.", filename_);
+              return 4;
+          }
+#endif
+#ifndef HAVE_OGG_SUPPORT
+          if (audioFileType(filename_) == OGG) {
+              message (-2, "Can't read file \"%s\": cdrdao was compiled "
+                       "without Ogg/Vorbis support.", filename_);
+              return 4;
+          }
+#endif
+          return 3;
       }
 
       if (audioCutMode()) {
@@ -604,15 +613,6 @@ int TrackData::checkAudioFile(const char *fn, unsigned long *length)
   if (ret != 0)
     return 1;
 
-  // Check if audio file needs conversion. Go ahead and do it if
-  // necessary. 
-  // if (formatConverter.canConvert(fn)) {
-  // Returns new filename, which will be either a wav or raw file.
-  // fn = formatConverter.convert(fn);
-  // if (!fn)
-  // return 1;
-  // }
-
   if (ft == WAVE) {
     if (waveLength(fn, 0, &headerLength, length) != 0)
       return 2;
@@ -825,6 +825,7 @@ int TrackData::waveLength(const char *filename, long offset,
 //         2: 'fstat' failed
 //         3: file header corruption
 //         4: invalid offset
+//         5: file need conversion
 //         0: OK
 int TrackData::audioDataLength(const char *fname, long offset, 
 			       unsigned long *length)
@@ -848,11 +849,13 @@ int TrackData::audioDataLength(const char *fname, long offset,
   if (offset > buf.st_size)
     return 4;
 
-  if (audioFileType(fname) == WAVE) {
+  FileType ftype = audioFileType(fname);
+  if (ftype == WAVE) {
     if (waveLength(fname, offset, &headerLength, length) != 0)
       return 3;
-  }
-  else {
+  } else if (ftype == MP3 || ftype == OGG) {
+    return 5;
+  } else {
     if (((buf.st_size - offset) % sizeof(Sample)) != 0) {
       message(-1,
 	      "Length of file \"%s\" is not a multiple of sample size (4).",

@@ -75,18 +75,18 @@ public:
 
   ~TrackData();
 
-  Type type() const;
-  Mode mode() const;
-  SubChannelMode subChannelMode() const;
-  int audioCutMode() const;
+  Type type() const                        { return type_; }
+  Mode mode() const                        { return mode_; }
+  SubChannelMode subChannelMode() const    { return subChannelMode_; }
+  int audioCutMode() const                 { return audioCutMode_; }
 
-  const char *filename() const;
-  unsigned long startPos() const;
+  const char *filename() const             { return filename_; }
+  unsigned long startPos() const           { return startPos_; }
   unsigned long length() const;
 
   // sets/returns flag for swapping expected byte order of audio samples
-  void swapSamples(int);
-  int swapSamples() const;
+  void swapSamples(int f)                  { swapSamples_ = f != 0 ? 1 : 0; }
+  int swapSamples() const                  { return swapSamples_; }
 
   int determineLength();
   int check(int trackNr) const;
@@ -178,53 +178,5 @@ private:
 
   int readUnderRunMsgGiven_;
 };
-
-inline
-int TrackData::audioCutMode() const
-{
-  return audioCutMode_;
-}
-
-inline
-TrackData::Type TrackData::type() const
-{
-  return type_;
-}
-
-inline
-TrackData::Mode TrackData::mode() const
-{
-  return mode_;
-}
-
-inline
-TrackData::SubChannelMode TrackData::subChannelMode() const
-{
-  return subChannelMode_;
-}
-
-inline
-const char *TrackData::filename() const
-{
-  return filename_;
-}
-
-inline
-unsigned long TrackData::startPos() const
-{
-  return startPos_;
-}
-
-inline
-void TrackData::swapSamples(int f)
-{
-  swapSamples_ = f != 0 ? 1 : 0;
-}
-
-inline
-int TrackData::swapSamples() const
-{
-  return swapSamples_;
-}
 
 #endif

@@ -96,21 +96,21 @@ public:
   char isrcSerial(int i) const { return isrcSerial_[i]; }   // BCD
 
   // return/set COPY flag (1: copy permitted, 0: copy not permitted)
-  int copyPermitted() const { return flags_.copy; }
+  int  copyPermitted() const { return flags_.copy; }
   void copyPermitted(int c) { flags_.copy = c != 0 ? 1 : 0; }
 
   // return/set PRE-EMPHASIS flag (1: audio with pre-emphasis,
   // 0: audio without pre-emphasis
-  int preEmphasis() const { return flags_.preEmphasis; }
+  int  preEmphasis() const { return flags_.preEmphasis; }
   void preEmphasis(int p) { flags_.preEmphasis = p != 0 ? 1 : 0; }
 
   // return/set audio type (0: two channel audio, 1: four channel audio)
-  int audioType() const { return flags_.audioType; }
+  int  audioType() const { return flags_.audioType; }
   void audioType(int t) { flags_.audioType = t != 0 ? 1 : 0; }
 
   void addCdTextItem(CdTextItem *);
   void removeCdTextItem(CdTextItem::PackType, int blockNr);
-  int existCdTextBlock(int n) const { return cdtext_.existBlock(n); }
+  int  existCdTextBlock(int n) const { return cdtext_.existBlock(n); }
   const CdTextItem *getCdTextItem(int blockNr, CdTextItem::PackType t) const {
     return cdtext_.getPack(blockNr, t);
   }
@@ -119,7 +119,8 @@ public:
 
   void collectFiles(std::set<std::string>& set);
   void markFileConversion(const char* src, const char* dst);
-  void resolveFilename(const char* path);
+  bool resolveFilename(const char* path);
+  bool recomputeLength();
 
 private:
   friend class TocParserGram;

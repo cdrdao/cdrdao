@@ -27,6 +27,7 @@
 #include "Track.h"
 #include "CdTextContainer.h"
 #include "CdTextItem.h"
+#include "FormatConverter.h"
 
 class Toc {
 public:
@@ -68,8 +69,6 @@ public:
 		      TrackDataList **);
   int insertTrackData(unsigned long pos, const TrackDataList *list);
 
-  int check() const;
-
   static Toc *read(const char *);
   int write(const char *) const;
   bool write(int fd, bool conversions = false) const;
@@ -87,10 +86,17 @@ public:
 				  CdTextItem::PackType) const;
   void cdTextLanguage(int blockNr, int lang);
   int cdTextLanguage(int blockNr) const;
-  int checkCdTextData() const;
 
   void trackSummary(int *nofAudioTracks, int *nofMode1Tracks,
 		    int *nofMode2Tracks) const;
+
+  // Verification methods
+  bool resolveFilenames(const char* tocFilename);
+  int check() const;
+  int checkCdTextData() const;
+
+  bool convertFilesToWav();
+  bool recomputeLength();
 
   // if conversions is true, the TOc is printed with the converted WAV
   // or RAW filenames instead of the original ones.
@@ -129,6 +135,8 @@ private:
   TrackEntry *findTrackByNumber(int trackNr) const;
 
   void remove(TrackEntry *);
+
+  void fixLengths();
 
   void checkConsistency();
 

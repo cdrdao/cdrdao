@@ -496,15 +496,6 @@ subTrack < [ TrackData::Mode trackType, TrackData::SubChannelMode subChanType ] 
 	  }
        >>
     )
-    << if ($st != NULL && $st->length() == 0) {
-         // try to determine length 
-         if ($st->determineLength() != 0) {
-	   message(-2, "%s:%d: Cannot determine length of track data specification.",
-		   filename_, $lineNr);
-	   error_ = 1;
-	 }
-       }
-    >> 
     ;
     // fail action
     << delete $st, $st = NULL;
@@ -896,6 +887,31 @@ void TocParserGram::syn(_ANTLRTokenPtr tok, ANTLRChar *egroup,
   message(0, "");
 }
 
+
+Toc *parseToc(const char* inp, const char *filename)
+{
+  DLGStringInput in(inp);
+  TocLexer scan(&in);
+  ANTLRTokenBuffer pipe(&scan);
+  ANTLRToken aToken;
+  scan.setToken(&aToken);
+  TocParserGram parser(&pipe);
+
+  parser.filename_ = filename;
+  scan.parser_ = &parser;
+
+  parser.init();
+  parser.error_ = 0;
+
+  Toc *t = parser.toc();
+
+  if (parser.error_ != 0) {
+    return NULL;
+  }
+  else {
+    return t;
+  }
+}
 
 Toc *parseToc(FILE *fp, const char *filename)
 {

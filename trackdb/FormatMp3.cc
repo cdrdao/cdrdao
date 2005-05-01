@@ -87,7 +87,7 @@ FormatSupport::Status FormatMp3::madInit()
 {
   struct stat st;
 
-  if (stat(src_file_, &st) != 0 || st.st_size == 0) {
+  if (stat(src_file_, &st) != 0) {
     message(-2, "Could not stat input file \"%s\": %s", src_file_,
             strerror(errno));
     return FS_INPUT_PROBLEM;

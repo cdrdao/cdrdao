@@ -398,6 +398,17 @@ int Track::check(int trackNr) const
   return ret;
 }
 
+bool Track::recomputeLength()
+{
+  for (int i = 0; i < nofSubTracks_; i++) {
+    if (subTracks_[i].length() == 0) {
+      subTracks_[i].determineLength();
+    }
+  }
+
+  update();
+}
+
 // Sets ISRC code. Expected string: "CCOOOYYSSSSS"
 //                 C: country code (ASCII)
 //                 O: owner code (ASCII)
@@ -566,14 +577,20 @@ void Track::markFileConversion(const char* src, const char* dst)
   }
 }
 
-void Track::resolveFilename(const char* path)
+bool Track::resolveFilename(const char* path)
 {
   SubTrack* st;
   for (st = subTracks_; st != NULL; st = st->next_) {
     std::string rfilename;
     const char* f = st->filename();
-    if (f && ::resolveFilename(rfilename, f, path))
-      st->effectiveFilename(rfilename.c_str());
+    if (f) {
+      if (::resolveFilename(rfilename, f, path)) {
+        st->effectiveFilename(rfilename.c_str());
+      } else {
+        message(-2, "Could not find input file \"%s\".", f);
+        return false;
+      }
+    }
   }
 }
 
