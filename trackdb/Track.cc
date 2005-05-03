@@ -383,7 +383,6 @@ Msf Track::getIndex(int i) const
 
 int Track::check(int trackNr) const
 {
-  SubTrack *st;
   int ret = 0;
 
   if (length().lba() - start().lba() < Msf(0, 4, 0).lba()) {
@@ -391,7 +390,7 @@ int Track::check(int trackNr) const
     ret = 1;
   }
 
-  for (st = subTracks_; st != NULL; st = st->next_) {
+  for (SubTrack* st = subTracks_; st; st = st->next_) {
     ret |= st->check(trackNr);
   }
 
@@ -400,9 +399,9 @@ int Track::check(int trackNr) const
 
 bool Track::recomputeLength()
 {
-  for (int i = 0; i < nofSubTracks_; i++) {
-    if (subTracks_[i].length() == 0) {
-      subTracks_[i].determineLength();
+  for (SubTrack* st = subTracks_; st; st = st->next_) {
+    if (st->length() == 0) {
+      st->determineLength();
     }
   }
 
