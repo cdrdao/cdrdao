@@ -233,7 +233,8 @@ int CdDevice::updateStatus()
 	newStatus = DEV_NO_DISK;
 	break;
       case 3:
-	newStatus = DEV_FAULT;
+        // Most likely a timeout error.
+	newStatus = DEV_BUSY;
 	break;
       }
     }
