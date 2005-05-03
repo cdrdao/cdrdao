@@ -45,7 +45,6 @@ GCDMaster::GCDMaster() : Gnome::UI::App("gcdmaster", APP_NAME)
   set_title(APP_NAME);
 
   project_number = 0;
-  blankCDDialog_ = 0;
   about_ = 0;
   project_ = 0;
   projectChooser_ = 0;
@@ -53,8 +52,33 @@ GCDMaster::GCDMaster() : Gnome::UI::App("gcdmaster", APP_NAME)
   set_resizable();
   set_wmclass("gcdmaster", "GCDMaster");
 
-  readFileSelector_.get_cancel_button()->signal_clicked().
-    connect(mem_fun(*this, &GCDMaster::readFileSelectorCancelCB));
+  readFileSelector_ =
+    new Gtk::FileChooserDialog("Please select a project",
+                               Gtk::FILE_CHOOSER_ACTION_OPEN);
+  manage(readFileSelector_);
+  readFileSelector_->set_transient_for(*this);
+  readFileSelector_->add_button(Gtk::Stock::CANCEL, Gtk::RESPONSE_CANCEL);
+  readFileSelector_->add_button(Gtk::Stock::OPEN, Gtk::RESPONSE_OK);
+
+  Gtk::FileFilter* filter_tocs = new Gtk::FileFilter;
+  manage(filter_tocs);
+#ifdef HAVE_MP3_SUPPORT
+  filter_tocs->set_name("Content Files (*.toc, *.cue, *.m3u)");
+#else
+  filter_tocs->set_name("Content Files (*.toc, *.cue)");
+#endif
+  filter_tocs->add_pattern("*.toc");
+  filter_tocs->add_pattern("*.cue");
+#ifdef HAVE_MP3_SUPPORT
+  filter_tocs->add_pattern("*.m3u");
+#endif
+  readFileSelector_->add_filter(*filter_tocs);
+
+  Gtk::FileFilter* filter_all = new Gtk::FileFilter;
+  manage(filter_all);
+  filter_all->set_name("Any files");
+  filter_all->add_pattern("*");
+  readFileSelector_->add_filter(*filter_all);
 
   Icons::registerStockIcons();
   notebook_.set_show_border (false);
@@ -222,23 +246,28 @@ bool GCDMaster::openNewProject(const char* s)
 
 void GCDMaster::openProject()
 {
-  readFileSelector_.get_ok_button()->signal_clicked().
-    connect(mem_fun(*this, &GCDMaster::readFileSelectorOKCB));
+  readFileSelector_->show();
+  int result = readFileSelector_->run();
+  readFileSelector_->hide();
 
-  readFileSelector_.show();
-  readFileSelector_.raise();
+  switch (result) {
+  case Gtk::RESPONSE_OK:
+    readFileSelectorOKCB();
+    break;
+  case Gtk::RESPONSE_CANCEL:
+    break;
+  };
 }
 
 void GCDMaster::readFileSelectorCancelCB()
 {
-  readFileSelector_.hide();
 }
 
 //FIXME: new file selector
 void GCDMaster::readFileSelectorOKCB()
 {
   TocEdit *tocEdit = new TocEdit(NULL, NULL);
-  char *s = g_strdup(readFileSelector_.get_filename().c_str());
+  char *s = g_strdup(readFileSelector_->get_filename().c_str());
 
   if (s != NULL && *s != 0 && s[strlen(s) - 1] != '/')
   {
@@ -259,8 +288,6 @@ void GCDMaster::readFileSelectorOKCB()
     }
   }
   g_free(s);
-
-  readFileSelectorCancelCB();
 }
 
 void GCDMaster::closeProject()
@@ -295,9 +322,6 @@ bool GCDMaster::on_delete_event(GdkEventAny* e)
 
 void GCDMaster::appClose()
 {
-//FIXME: count what project are modified
-// 0 -> exit app
-// 0 < -> show dialog
   if (!project_) {
     Gnome::Main::quit();
     return;
@@ -309,6 +333,7 @@ void GCDMaster::appClose()
 
     projects.remove(project_);
     delete project_;
+    project_ = 0;
 
     for (std::list<Project *>::iterator i = projects.begin();
          i != projects.end(); i++)
@@ -440,8 +465,7 @@ void GCDMaster::update(unsigned long level)
     (*i)->update(level);
   }
 
-  if (blankCDDialog_ != 0)
-    blankCDDialog_->update(level);
+  blankCDDialog_.update(level);
 }
 
 void GCDMaster::configureDevices()
@@ -451,10 +475,7 @@ void GCDMaster::configureDevices()
 
 void GCDMaster::blankCDRW()
 {
-  if (!blankCDDialog_)
-    blankCDDialog_ = new BlankCDDialog;
-
-  blankCDDialog_->start(*this);
+  blankCDDialog_.start(*this);
 }
 
 void GCDMaster::createStatusbar()

@@ -29,6 +29,7 @@
 class ProjectChooser;
 class BlankCDDialog;
 #include "Project.h"
+#include "BlankCDDialog.h"
 
 class GCDMaster : public Gnome::UI::App
 {
@@ -40,7 +41,7 @@ private:
   ProjectChooser * projectChooser_;
   gint project_number;
 
-  BlankCDDialog *blankCDDialog_;
+  BlankCDDialog blankCDDialog_;
 
   Gtk::Notebook notebook_;
 
@@ -55,7 +56,7 @@ private:
   void add(Project *);
   void add(ProjectChooser *);
 
-  Gtk::FileSelection readFileSelector_;
+  Gtk::FileChooserDialog* readFileSelector_;
   void readFileSelectorOKCB();
   void readFileSelectorCancelCB();
   void createMenus();
