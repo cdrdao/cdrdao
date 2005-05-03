@@ -156,7 +156,7 @@ public:
   virtual int bigEndianSamples() const = 0;
 
   // return information about drive
-  virtual const DriveInfo *driveInfo(int showErrorMsg) { return NULL; }
+  virtual const DriveInfo *driveInfo(bool showErrorMsg) { return NULL; }
 
   // returns current writing speed
   virtual int speed() { return speed_; }

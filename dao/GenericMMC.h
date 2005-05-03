@@ -77,7 +77,7 @@ public:
   int writeData(TrackData::Mode, TrackData::SubChannelMode, long &lba,
 		const char *buf, long len);
 
-  const DriveInfo *driveInfo(int showErrorMsg);
+  const DriveInfo *driveInfo(bool showErrorMsg);
   int subChannelEncodingMode(TrackData::SubChannelMode) const;
 
 protected:

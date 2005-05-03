@@ -60,7 +60,7 @@ public:
   int finishDao();
   void abortDao();
 
-  int driveInfo(DriveInfo *, int showErrorMsg);
+  int driveInfo(DriveInfo *, bool showErrorMsg);
   int writeData(TrackData::Mode, TrackData::SubChannelMode, long &lba,
 		const char *buf, long len);
 

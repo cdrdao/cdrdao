@@ -206,23 +206,24 @@ static void printUsage()
     message(0, "\nUsage: %s <command> [options] [toc-file]", PRGNAME);
     message(0,
 "command:\n"
-"  show-toc  - prints out toc and exits\n"
-"  toc-info  - prints out short toc-file summary\n"
-"  toc-size  - prints total number of blocks for toc\n"
-"  read-toc  - create toc file from audio CD\n"
-"  read-cd   - create toc and rip audio data from CD\n"
-"  read-cddb - contact CDDB server and add data as CD-TEXT to toc-file\n"
-"  show-data - prints out audio data and exits\n"
-"  read-test - reads all audio files and exits\n"
-"  disk-info - shows information about inserted medium\n"
-"  discid    - prints out CDDB information\n"
-"  msinfo    - shows multi session info, output is suited for scripts\n"
-"  unlock    - unlock drive after failed writing\n"
-"  blank     - blank a CD-RW\n"
-"  scanbus   - scan for devices\n"
-"  simulate  - shortcut for 'write --simulate'\n"
-"  write     - writes CD\n"
-"  copy      - copies CD\n");
+"  show-toc   - prints out toc and exits\n"
+"  toc-info   - prints out short toc-file summary\n"
+"  toc-size   - prints total number of blocks for toc\n"
+"  read-toc   - create toc file from audio CD\n"
+"  read-cd    - create toc and rip audio data from CD\n"
+"  read-cddb  - contact CDDB server and add data as CD-TEXT to toc-file\n"
+"  show-data  - prints out audio data and exits\n"
+"  read-test  - reads all audio files and exits\n"
+"  disk-info  - shows information about inserted medium\n"
+"  discid     - prints out CDDB information\n"
+"  msinfo     - shows multi session info, output is suited for scripts\n"
+"  drive-info - shows drive information\n"
+"  unlock     - unlock drive after failed writing\n"
+"  blank      - blank a CD-RW\n"
+"  scanbus    - scan for devices\n"
+"  simulate   - shortcut for 'write --simulate'\n"
+"  write      - writes CD\n"
+"  copy       - copies CD\n");
     
     message (0, "\n Try '%s <command> -h' to get a list of available options\n", PRGNAME);
     break;
@@ -400,6 +401,7 @@ static void printUsage()
 "  --tmpdir <path>         - sets directory for temporary wav files\n"
 "  --keep                  - keep generated temp wav files after exit\n"
 "  -v #                    - sets verbose level\n");
+    break;
 
   case BLANK:
     message(0, "\nUsage: %s blank [options]", PRGNAME);
@@ -428,6 +430,17 @@ static void printUsage()
 "  --driver <id>           - force usage of specified driver\n"
 "  --reload                - reload the disk if necessary for writing\n"
 "  --eject                 - ejects cd after unlocking\n"
+"  -v #                    - sets verbose level\n",
+	    SCSI_DEVICE);
+    break;
+    
+  case DRIVE_INFO:
+    message(0, "\nUsage: %s drive-info [options]", PRGNAME);
+    message(0,
+"options:\n"
+"  --device [proto:]{<x,y,z>|device} - sets SCSI device of CD-writer\n"
+"                            (default: %s)\n"
+"  --driver <id>           - force usage of specified driver\n"
 "  -v #                    - sets verbose level\n",
 	    SCSI_DEVICE);
     break;
@@ -576,7 +589,7 @@ static void importSettings(Command cmd)
   }
 
   if (cmd == BLANK || cmd == DISK_INFO || cmd == MSINFO || cmd == UNLOCK ||
-      cmd == DISCID) {
+      cmd == DISCID || cmd == DRIVE_INFO) {
     if ((sval = SETTINGS->getString(SET_WRITE_DRIVER)) != NULL) {
       DRIVER_ID = strdupCC(sval);
     }
@@ -659,7 +672,7 @@ static void exportSettings(Command cmd)
   }
 
   if (cmd == BLANK || cmd == DISK_INFO || cmd == MSINFO || cmd == UNLOCK ||
-      cmd == DISCID) {
+      cmd == DISCID || cmd == DRIVE_INFO) {
     if (DRIVER_ID != NULL)
       SETTINGS->set(SET_WRITE_DRIVER, DRIVER_ID);
     
@@ -1254,7 +1267,7 @@ static CdrDriver *setupDevice(Command cmd, const char *scsiDevice,
   switch (scsiIf->init()) {
   case 1:
     message(-2, "Please use option '--device [proto:]bus,id,lun', e.g. "
-            "--device 0,6,0 or --device ATAPI:0,0,0");
+            "--device 0,6,0 or --device ATA:0,0,0");
     delete scsiIf;
     return NULL;
     break;
@@ -2365,7 +2378,7 @@ int main(int argc, char **argv)
     break;
 
   case DRIVE_INFO:
-    showDriveInfo(cdr->driveInfo(1));
+    showDriveInfo(cdr->driveInfo(true));
     break;
 
   case SHOW_TOC:

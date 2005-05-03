@@ -40,7 +40,7 @@ public:
   int speed(int);
 
   DiskInfo *diskInfo();
-  int driveInfo(DriveInfo *, int showErrorMsg);
+  int driveInfo(DriveInfo *, bool showErrorMsg);
 
   Toc *readDiskToc(int, const char *audioFilename);
   Toc *readDisk(int, const char *audioFilename);

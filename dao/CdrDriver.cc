@@ -3752,7 +3752,7 @@ int CdrDriver::readDataTrack(ReadDiskInfo *info, int fd, long start, long end,
     if (foundLECError) {
       iterationsWithoutError = 0;
 
-      message(-1, "Found L-EC error at sector %ld - ignored.", lba);
+      message(2, "Found L-EC error at sector %ld - ignored.", lba);
 
       // create a dummy sector for the sector with L-EC errors
       Msf m(lba + 150);

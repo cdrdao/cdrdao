@@ -167,7 +167,7 @@ int GenericMMC::speed()
   delete driveInfo_;
   driveInfo_ = NULL;
 
-  if ((di = driveInfo(1)) == NULL) {
+  if ((di = driveInfo(true)) == NULL) {
     return 0;
   }
 
@@ -195,7 +195,7 @@ int GenericMMC::rspeed()
   delete driveInfo_;
   driveInfo_ = NULL;
 
-  if ((di = driveInfo(1)) == NULL) {
+  if ((di = driveInfo(true)) == NULL) {
     return 0;
   }
 
@@ -517,7 +517,7 @@ int GenericMMC::setWriteParameters(unsigned long variant)
   }
 
   const DriveInfo *di;
-  if ((di = driveInfo(1)) != NULL) {
+  if ((di = driveInfo(true)) != NULL) {
     if (di->burnProof) {
       // This drive has BURN-Proof function.
       // Enable it unless explicitly disabled.
@@ -1943,7 +1943,7 @@ int GenericMMC::getFeature(unsigned int feature, unsigned char *buf,
   return 0;
 }
 
-const DriveInfo *GenericMMC::driveInfo(int showErrorMsg)
+const DriveInfo *GenericMMC::driveInfo(bool showErrorMsg)
 {
   unsigned char mp[32];
 

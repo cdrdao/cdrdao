@@ -768,7 +768,7 @@ int YamahaCDR10x::readSubChannels(TrackData::SubChannelMode,
 }
 
 // LOOKSGOOD, except for accurate audio stream bit
-int YamahaCDR10x::driveInfo(DriveInfo *info, int showErrorMsg)
+int YamahaCDR10x::driveInfo(DriveInfo *info, bool showErrorMsg)
 {
   unsigned char mp[4];
 
