@@ -47,7 +47,6 @@
 
 #include "port.h"
 
-GCDMaster *gcdmaster = NULL;
 DeviceConfDialog *deviceConfDialog = NULL;
 ProcessMonitor *PROCESS_MONITOR = NULL;
 ProgressDialogPool *PROGRESS_POOL = NULL;
@@ -151,7 +150,7 @@ int main(int argc, char* argv[])
   deviceConfDialog = new DeviceConfDialog;
   PROGRESS_POOL = new ProgressDialogPool;
 
-  gcdmaster = new GCDMaster;
+  GCDMaster* gcdmaster = new GCDMaster;
   gcdmaster->show();
 
   bool openChooser = true;

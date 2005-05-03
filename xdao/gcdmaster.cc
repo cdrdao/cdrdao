@@ -55,7 +55,6 @@ GCDMaster::GCDMaster() : Gnome::UI::App("gcdmaster", APP_NAME)
   readFileSelector_ =
     new Gtk::FileChooserDialog("Please select a project",
                                Gtk::FILE_CHOOSER_ACTION_OPEN);
-  manage(readFileSelector_);
   readFileSelector_->set_transient_for(*this);
   readFileSelector_->add_button(Gtk::Stock::CANCEL, Gtk::RESPONSE_CANCEL);
   readFileSelector_->add_button(Gtk::Stock::OPEN, Gtk::RESPONSE_OK);
@@ -86,6 +85,8 @@ GCDMaster::GCDMaster() : Gnome::UI::App("gcdmaster", APP_NAME)
 
   createMenus();
   createStatusbar();
+
+  apps.push_back(this);
 }
 
 void GCDMaster::createMenus()
@@ -292,15 +293,15 @@ void GCDMaster::readFileSelectorOKCB()
 
 void GCDMaster::closeProject()
 {
-  if (projectChooser_)
-  {
+  if (projectChooser_) {
     closeChooser();
-  }
-  else if (project_ && project_->closeProject())
-  {
+  } else if (project_ && project_->closeProject()) {
     projects.remove(project_);
     delete project_;
   }
+  if (readFileSelector_)
+    delete readFileSelector_;
+  apps.remove(this);
   delete this;
 
   if ((projects.size() == 0) && (choosers.size() == 0))

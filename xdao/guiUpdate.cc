@@ -31,10 +31,10 @@
 
 void guiUpdate(unsigned long level)
 {
-  if (gcdmaster == 0)
-    return;
-
-  gcdmaster->update(level);
+  std::list<GCDMaster*>::iterator i = GCDMaster::apps.begin();
+  for (; i != GCDMaster::apps.end(); i++) {
+    (*i)->update(level);
+  }
 
   if (deviceConfDialog != NULL)
     deviceConfDialog->update(level);
