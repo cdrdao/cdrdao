@@ -27,7 +27,6 @@ EXTRA_DIST =		\
 	CREDITS		\
 	INSTALL		\
 	NEWS		\
-	Release-*	\
 	README		\
 	README.PlexDAE	\
 	README.Win32	\

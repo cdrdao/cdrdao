@@ -1,4 +1,56 @@
 --------------------------------------------------------------------------
+  cdrdao 1.2.0 beta
+--------------------------------------------------------------------------
+
+ o  SECURITY FIX: cdrdao now gives up its root privileges after setting
+    up real-time scheduling, as well as before saving settings through
+    the --save option. This fixes a potential local root exploit when
+    cdrdao is installed with the +s chmod flag. Using --save now also
+    forces an early exit after the settings are saved.
+
+ o  Added MP3 and Ogg Vorbis file support (through respectively the
+    libmad and libvorbis libraries). cdrdao will decode the MP3 and
+    Ogg files into temporary WAV files that will be deleted upon exit
+    (unless the new option --keep is used). The directory used to
+    store those temporary WAV files can be specified with the --tmpdir
+    option (default is /tmp).
+
+ o  Improved native CUE file support: replaced old incomplete existing
+    parser with the one from Matthias Czapla's excellent
+    cue2toc. Added support for cutting binary files.
+
+ o  Added --rspeed option to manually set the device reading speed. Be
+    warned not all devices support this.
+
+ o  Packaged scsilib library upgraded from cdrtools 2.01 (previously
+    was from 2.01a31).
+
+ o  Added --no-mode2-mixed option. Don't read a MODE2 disk as
+    MODE2_FORM_MIXED, only read MODE2_FORM1 or MODE2_FORM2 (Matthieu
+    Castet).
+
+ o  Added help for little-known drive-info command.
+
+GCDMaster changes:
+
+ o  MP3 and Ogg Vorbis support: you can drag and drop .mp3, .m3u and
+    .ogg files from Nautilus into the sample display window.
+
+ o  Switched to gtkmm24 API. Improved file browsers.
+
+ o  CUE files support.
+
+ o  Sound output now uses libao library.
+
+ o  Added 'Select All' item in menu.
+
+ o  Added 'Eject' button to progress dialog
+
+ o  Bug fixes (sample selection weirdness, couldn't close window during
+    play, problems with gcdmaster command-line argument, crashes with
+    multiple project windows, drive status not reported correctly).
+
+--------------------------------------------------------------------------
   cdrdao 1.1.9 (2004-06-07)
 --------------------------------------------------------------------------
 
