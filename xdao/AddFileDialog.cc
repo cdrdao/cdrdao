@@ -26,6 +26,7 @@
 #include <gtkmm.h>
 #include <gnome.h>
 
+#include "config.h"
 #include "AddFileDialog.h"
 #include "guiUpdate.h"
 #include "TocEdit.h"
@@ -35,33 +36,45 @@
 #include "xcdrdao.h"
 
 AddFileDialog::AddFileDialog(AudioCDProject *project)
-    : Gtk::FileSelection("")
+    : Gtk::FileChooserDialog("")
 {
   active_ = false;
   project_ = project;
 
-  set_filename("*.wav");
-  show_fileop_buttons();
   set_select_multiple(true);
   set_transient_for(*project->getParentWindow ());
   mode(M_APPEND_TRACK);
 
-  Gtk::Button* cancel = get_cancel_button();
-  cancel->set_label(Gtk::Stock::CLOSE.id);
-  cancel->set_use_stock(true);
+  Gtk::FileFilter* filter_tocs = new Gtk::FileFilter;
+  manage(filter_tocs);
+  std::string fname = "Audio Files (wav";
+#ifdef HAVE_MP3_SUPPORT
+  fname = fname + ", mp3, m3u";
+#endif
+#ifdef HAVE_OGG_SUPPORT
+  fname = fname + ", ogg";
+#endif
+  fname = fname + ")";
+  filter_tocs->set_name(fname);
 
-  Gtk::Button* ok = get_ok_button();
-  ok->set_label(Gtk::Stock::ADD.id);
-  ok->set_use_stock(true);
+  filter_tocs->add_pattern("*.wav");
+#ifdef HAVE_OGG_SUPPORT
+  filter_tocs->add_pattern("*.ogg");
+#endif
+#ifdef HAVE_MP3_SUPPORT
+  filter_tocs->add_pattern("*.mp3");
+  filter_tocs->add_pattern("*.m3u");
+#endif
+  add_filter(*filter_tocs);
 
-  ok->signal_clicked().connect(sigc::mem_fun(*this,
-                                             &AddFileDialog::applyAction));
-  cancel->signal_clicked().connect(sigc::mem_fun(*this,
-                                                 &AddFileDialog::closeAction));
-}
+  Gtk::FileFilter* filter_all = new Gtk::FileFilter;
+  manage(filter_all);
+  filter_all->set_name("Any files");
+  filter_all->add_pattern("*");
+  add_filter(*filter_all);
 
-AddFileDialog::~AddFileDialog()
-{
+  add_button(Gtk::Stock::CLOSE, Gtk::RESPONSE_CANCEL);
+  add_button(Gtk::Stock::ADD, Gtk::RESPONSE_OK);
 }
 
 void AddFileDialog::mode(Mode m)
@@ -89,8 +102,25 @@ void AddFileDialog::start()
   }
 
   active_ = true;
-  set_filename("*.wav");
   show();
+
+  bool contFlag = true;
+
+  while (contFlag) {
+
+    int result = run();
+
+    switch (result) {
+    case Gtk::RESPONSE_CANCEL:
+      contFlag = false;
+      break;
+    case Gtk::RESPONSE_OK:
+      contFlag = applyAction();
+      break;
+    }
+  }
+
+  stop();
 }
 
 void AddFileDialog::stop()
@@ -107,17 +137,12 @@ bool AddFileDialog::on_delete_event(GdkEventAny*)
   return 1;
 }
 
-void AddFileDialog::closeAction()
+bool AddFileDialog::applyAction()
 {
-  stop();
-}
-
-void AddFileDialog::applyAction()
-{
-  Glib::ArrayHandle<std::string> sfiles = get_selections();
+  std::list<Glib::ustring> sfiles = get_filenames();
   std::list<std::string> files;
 
-  for (Glib::ArrayHandle<std::string>::const_iterator i = sfiles.begin();
+  for (std::list<Glib::ustring>::const_iterator i = sfiles.begin();
        i != sfiles.end(); i++) {
 
     const char *s = stripCwd((*i).c_str());
@@ -146,8 +171,8 @@ void AddFileDialog::applyAction()
       break;
     }
     if (files.size() > 1)
-      stop();
+      return false;
   }
 
-  set_filename("*.wav");
+  return true;
 }

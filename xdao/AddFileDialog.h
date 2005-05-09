@@ -24,13 +24,12 @@
 
 class AudioCDProject;
 
-class AddFileDialog : public Gtk::FileSelection
+class AddFileDialog : public Gtk::FileChooserDialog
 {
 public:
   enum Mode { M_APPEND_TRACK, M_APPEND_FILE, M_INSERT_FILE };
 
   AddFileDialog(AudioCDProject *);
-  ~AddFileDialog();
 
   void start();
   void stop();
@@ -45,8 +44,7 @@ private:
   bool active_;
   Mode mode_;
 
-  void closeAction();
-  void applyAction();
+  bool applyAction();
     
 };
 
