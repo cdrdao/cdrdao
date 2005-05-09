@@ -13,6 +13,10 @@ Cdrdao changes:
     store those temporary WAV files can be specified with the --tmpdir
     option (default is /tmp).
 
+ o  Improved native CUE file support: replaced old incomplete existing
+    parser with the one from Matthias Czapla's excellent
+    cue2toc. Added support for cutting binary files.
+
  o  Added --rspeed option to manually set the device reading speed. Be
     warned not all devices support this.
 
@@ -23,16 +27,26 @@ Cdrdao changes:
     MODE2_FORM_MIXED, only read MODE2_FORM1 or MODE2_FORM2 (Matthieu
     Castet).
 
+ o  Added help for little-known drive-info command.
+
 GCDMaster changes:
 
  o  MP3 and Ogg Vorbis support: you can drag and drop .mp3, .m3u and
     .ogg files from Nautilus into the sample display window.
+
+ o  Switched to gtkmm24 API. Improved file browsers.
+
+ o  CUE files support.
+
+ o  Sound output now uses libao library.
 
  o  Added 'Select All' item in menu.
 
  o  Added 'Eject' button to progress dialog
 
  o  Bug fixes (sample selection weirdness, couldn't close window during
-    play)
+    play, problems with gcdmaster command-line argument, crashes with
+    multiple project windows).
+
 
 Denis Leroy
