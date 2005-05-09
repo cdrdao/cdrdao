@@ -242,7 +242,12 @@ void Track::update()
 //         1: given start behind track end
 int Track::start(Msf s)
 {
-  if (s.lba() >= length_.lba()) {
+  // A length of zero gets a pass for this test. The track length is
+  // optional for the last track entry of the TOC file, because the
+  // actual length of the track filename is not necessarily known at
+  // this stage (mp3...). The actual length will be filled in later by
+  // recomputeLength().
+  if (s.lba() >= length_.lba() && (length_.lba() != 0)) {
     return 1;
   }
 
