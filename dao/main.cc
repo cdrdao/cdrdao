@@ -2263,16 +2263,12 @@ int main(int argc, char **argv)
     // Parse TOC file
     toc = Toc::read(TOC_FILE);
 
-    // Check and resolve input files paths
-    if (!toc->resolveFilenames(TOC_FILE)) {
-      exitCode = 1; goto fail;
-    }
-
     if (REMOTE_MODE) {
       unlink(TOC_FILE);
     }
 
-    if (toc == NULL) {
+    // Check and resolve input files paths
+    if (!toc || !toc->resolveFilenames(TOC_FILE)) {
       exitCode = 1; goto fail;
     }
 
