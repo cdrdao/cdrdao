@@ -19,6 +19,7 @@
 
 #include <iostream>
 #include <sstream>
+#include <stdio.h>
 
 #include "Cue2Toc.h"
 
