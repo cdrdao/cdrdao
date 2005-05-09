@@ -267,24 +267,6 @@ check_once(enum command cmd, char *s, enum scope sc)
     exit(EXIT_FAILURE);
 }
 
-/* If this is a data track and does not start at position zero exit the
-   program. The TOC format has no way to specify a data track using only a
-   portion past the first byte of a binary file. */
-static void
-check_cutting_binary(struct trackspec *tr)
-{
-    if (tr->mode == TrackData::AUDIO)
-        return;
-    if (tr->pregap_data_from_file) {
-        if (tr->pregap < tr->start)
-            err_fail("TOC format does not allow cutting binary "
-                     "files. Try burning CUE file directly.\n");
-    } else
-        if (tr->start > 0)
-            err_fail("TOC format does not allow cutting binary "
-                     "files. Try burning CUE file directly.\n");
-}
-
 /* Allocate, initialize and return new track */
 static struct trackspec*
 new_track(void)
@@ -429,7 +411,6 @@ read_cue(const char *cuefile, const char *wavefile)
             if (track == NULL)	/* first track */
                 cs->tracklist = track = new_track();
             else {
-                check_cutting_binary(track);
                 track = track->next = new_track();
             }
 
@@ -616,8 +597,6 @@ read_cue(const char *cuefile, const char *wavefile)
         cmd = get_command(f);
     }
 
-    check_cutting_binary(track);
-
     return cs;
 }
 
@@ -776,8 +755,17 @@ write_track(struct trackspec *tr, std::ostream& f, int i, int l, int cdtext)
         if (fr2tc(timecode_buffer, start) == -1)
             err_fail2("Track start out of range");
         f << timecode_buffer;
-    } else
+    } else {
+      if (tr->start) {
+        long datastart = (tr->pregap_data_from_file ?
+                          tr->start - tr->pregap : tr->start);
+        ifprintf(f, i, l, "DATAFILE \"%s\" #%d", tr->filename,
+                 datastart * AUDIO_BLOCK_LEN);
+        start = datastart;
+      } else {
         ifprintf(f, i, l, "DATAFILE \"%s\"", tr->filename);
+      }
+    }
 
     /* If next track has the same filename and specified a start
        value use the difference between start of this and start of
@@ -785,16 +773,16 @@ write_track(struct trackspec *tr, std::ostream& f, int i, int l, int cdtext)
     if (tr->next
         && strcmp(tr->filename, tr->next->filename) == 0
         && tr->next->start != -1) {
-        if (tr->next->pregap_data_from_file)
-            len = tr->next->start - tr->next->pregap
-                - start;
-        else
-            len = tr->next->start - start;
-        if (fr2tc(timecode_buffer, len) == -1)
-            err_fail2("Track length out of range");
-        f << ' ' << timecode_buffer << std::endl;
-    } else
-        f << std::endl;
+      if (tr->next->pregap_data_from_file)
+        len = tr->next->start - tr->next->pregap - start;
+      else
+        len = tr->next->start - start;
+      if (fr2tc(timecode_buffer, len) == -1)
+        err_fail2("Track length out of range");
+      f << ' ' << timecode_buffer << std::endl;
+    } else {
+      f << std::endl;
+    }
 
     /* Pregap with data from file */
     if (tr->pregap_data_from_file) {
