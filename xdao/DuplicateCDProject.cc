@@ -31,6 +31,7 @@
 #include <gnome.h>
 
 DuplicateCDProject::DuplicateCDProject(Gtk::Window *parent)
+    : Project(parent)
 {
   Gtk::VBox *vbox = new Gtk::VBox;
   vbox->set_border_width(10);

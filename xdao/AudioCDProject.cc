@@ -38,7 +38,7 @@
 #include "MessageBox.h"
 
 AudioCDProject::AudioCDProject(int number, const char *name, TocEdit *tocEdit,
-    Gtk::Window *parent)
+                               Gtk::Window *parent) : Project(parent)
 {
   tocInfoDialog_ = NULL;
   cdTextDialog_ = NULL;
@@ -79,22 +79,20 @@ AudioCDProject::AudioCDProject(int number, const char *name, TocEdit *tocEdit,
   if (tocEdit_->isQueueActive())
     cancelEnable(true);
                                                      
-  if (strlen(name) == 0)
-    {
-      char buf[20];
-      sprintf(buf, "unnamed-%i.toc", projectNumber_);
-      tocEdit_->filename(buf);
-      new_ = true;
-    }
-  else
+  if (!name || strlen(name) == 0) {
+    char buf[20];
+    sprintf(buf, "unnamed-%i.toc", projectNumber_);
+    tocEdit_->filename(buf);
+    new_ = true;
+  } else {
     new_ = false; // The project file already exists
+  }
   
-  updateWindowTitle();
-
-
   audioCDView_ = new AudioCDView(this);
   hbox_.pack_start(*audioCDView_, TRUE, TRUE);
   audioCDView_->tocEditView()->sampleViewFull();
+
+  updateWindowTitle();
 
   guiUpdate(UPD_ALL);
   show_all();
@@ -297,16 +295,17 @@ void AudioCDProject::cancelEnable(bool enable)
 bool AudioCDProject::closeProject()
 {
   if (tocEdit_->tocDirty()) {
-    gchar *message;
-    
-    message = g_strdup_printf(_("Project %s not saved."),
-                              tocEdit_->filename());
+    Glib::ustring message = "Project ";
+    message += tocEdit_->filename();
+    message += " not saved. Are you sure you want to close it ?";
 
-    Ask2Box msg(getParentWindow (), _("Close"), 0, 2, message, "",
-                _("Continue?"), NULL);
-    g_free(message);
+    Gtk::MessageDialog d(*getParentWindow(), message, false,
+                         Gtk::MESSAGE_QUESTION, Gtk::BUTTONS_OK_CANCEL, true);
 
-    if (msg.run() != 1)
+    int ret = d.run();
+    d.hide();
+
+    if (ret == Gtk::RESPONSE_CANCEL || ret == Gtk::RESPONSE_DELETE_EVENT)
       return false;
   }
 
@@ -428,11 +427,10 @@ void AudioCDProject::playStart(unsigned long start, unsigned long end)
   if (playStatus_ == PLAYING)
     return;
 
-  if (tocEdit_->lengthSample() == 0)
-    {
-      guiUpdate(UPD_PLAY_STATUS);
-      return;
-    }
+  if (tocEdit_->lengthSample() == 0) {
+    guiUpdate(UPD_PLAY_STATUS);
+    return;
+  }
 
   if (soundInterface_ == NULL) {
     soundInterface_ = new SoundIF;
@@ -445,11 +443,11 @@ void AudioCDProject::playStart(unsigned long start, unsigned long end)
     }
   }
 
-  if (soundInterface_->start() != 0)
-    {
-      guiUpdate(UPD_PLAY_STATUS);
-      return;
-    }
+  if (soundInterface_->start() != 0) {
+    statusMessage(_("WARNING: Cannot open sound device"));
+    guiUpdate(UPD_PLAY_STATUS);
+    return;
+  }
 
   tocReader.init(tocEdit_->toc());
   if (tocReader.openData() != 0) {

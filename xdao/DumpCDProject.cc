@@ -32,6 +32,7 @@
 #include <gnome.h>
 
 DumpCDProject::DumpCDProject(Gtk::Window *parent)
+    : Project(parent)
 {
   // Top vbox
   Gtk::VBox* top_vbox = manage(new Gtk::VBox);

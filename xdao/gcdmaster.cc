@@ -53,7 +53,7 @@ GCDMaster::GCDMaster() : Gnome::UI::App("gcdmaster", APP_NAME)
   set_wmclass("gcdmaster", "GCDMaster");
 
   readFileSelector_ =
-    new Gtk::FileChooserDialog("Please select a project",
+    new Gtk::FileChooserDialog(_("Please select a project"),
                                Gtk::FILE_CHOOSER_ACTION_OPEN);
   readFileSelector_->set_transient_for(*this);
   readFileSelector_->add_button(Gtk::Stock::CANCEL, Gtk::RESPONSE_CANCEL);
@@ -80,8 +80,8 @@ GCDMaster::GCDMaster() : Gnome::UI::App("gcdmaster", APP_NAME)
   readFileSelector_->add_filter(*filter_all);
 
   Icons::registerStockIcons();
-  notebook_.set_show_border (false);
-  set_contents (notebook_);
+  notebook_.set_show_border(false);
+  set_contents(notebook_);
 
   createMenus();
   createStatusbar();
@@ -198,9 +198,9 @@ void GCDMaster::createMenus()
   }
 
   Gtk::Widget* pMenuBar = m_refUIManager->get_widget("/MenuBar");
-  set_menus (dynamic_cast<Gtk::MenuBar&> (*pMenuBar));
+  set_menus(dynamic_cast<Gtk::MenuBar&>(*pMenuBar));
   Gtk::Widget* pToolbar = m_refUIManager->get_widget("/ToolBar");
-  set_toolbar (dynamic_cast<Gtk::Toolbar&> (*pToolbar));
+  set_toolbar(dynamic_cast<Gtk::Toolbar&>(*pToolbar));
 }
 
 void GCDMaster::add(Project *project)
@@ -228,10 +228,17 @@ bool GCDMaster::openNewProject(const char* s)
     break;
 
   case FE_TOC:
-  case FE_CUE:
     tocEdit = new TocEdit(NULL, NULL);
     if (tocEdit->readToc(stripCwd(s)) == 0)
       newAudioCDProject(stripCwd(s), tocEdit);
+    else
+      return false;
+    break;
+
+  case FE_CUE:
+    tocEdit = new TocEdit(NULL, NULL);
+    if (tocEdit->readToc(stripCwd(s)) == 0)
+      newAudioCDProject("", tocEdit);
     else
       return false;
     break;
@@ -247,60 +254,38 @@ bool GCDMaster::openNewProject(const char* s)
 
 void GCDMaster::openProject()
 {
-  readFileSelector_->show();
+  readFileSelector_->present();
   int result = readFileSelector_->run();
   readFileSelector_->hide();
 
-  switch (result) {
-  case Gtk::RESPONSE_OK:
-    readFileSelectorOKCB();
-    break;
-  case Gtk::RESPONSE_CANCEL:
-    break;
-  };
-}
+  if (result == Gtk::RESPONSE_OK) {
+    char *s = g_strdup(readFileSelector_->get_filename().c_str());
 
-void GCDMaster::readFileSelectorCancelCB()
-{
-}
+    openNewProject(s);
 
-//FIXME: new file selector
-void GCDMaster::readFileSelectorOKCB()
-{
-  TocEdit *tocEdit = new TocEdit(NULL, NULL);
-  char *s = g_strdup(readFileSelector_->get_filename().c_str());
-
-  if (s != NULL && *s != 0 && s[strlen(s) - 1] != '/')
-  {
-    if (tocEdit->readToc(stripCwd(s)) == 0)
-    {
-      //FIXME: We should test what type of project it is
-      //       AudioCD, ISO. No problem now.
-
-      // cout << "Read ok" << endl;
-
-      newAudioCDProject(stripCwd(s), tocEdit);
-    }
-    else
-    {
-      Glib::ustring message(_("Error loading "));
-      message += s;
-      Gtk::MessageDialog(message, Gtk::MESSAGE_ERROR); 
-    }
+    if (s) g_free(s);
   }
-  g_free(s);
 }
 
 void GCDMaster::closeProject()
 {
   if (projectChooser_) {
+
     closeChooser();
-  } else if (project_ && project_->closeProject()) {
+
+  } else if (project_) {
+
+    if (project_->closeProject()) {
     projects.remove(project_);
     delete project_;
+    } else {
+      return; // User clicked on cancel
+    }
   }
+
   if (readFileSelector_)
     delete readFileSelector_;
+
   apps.remove(this);
   delete this;
 
@@ -318,7 +303,7 @@ void GCDMaster::closeChooser()
 bool GCDMaster::on_delete_event(GdkEventAny* e)
 {
   closeProject();
-  return true;  // Do not close window, we will delete it if necessary
+  return true;
 }
 
 void GCDMaster::appClose()
@@ -342,7 +327,7 @@ void GCDMaster::appClose()
 	  if (previous != 0)
       {
         projects.remove(previous);
-        delete (previous);
+        delete(previous);
       }
       if (!((*i)->closeProject()))
         return;
@@ -357,7 +342,7 @@ void GCDMaster::newChooserWindow()
   if (project_ || projectChooser_)
   {
     GCDMaster *gcdmaster = new GCDMaster;
-    gcdmaster->newChooserWindow ();
+    gcdmaster->newChooserWindow();
     gcdmaster->show();
   }
   else
@@ -371,8 +356,8 @@ void GCDMaster::newChooserWindow()
                                         &GCDMaster::newDumpCDProject));
     projectChooser->show();
     add(projectChooser);
-    notebook_.set_show_tabs (false);
-    notebook_.append_page (*projectChooser);
+    notebook_.set_show_tabs(false);
+    notebook_.append_page(*projectChooser);
     projectChooser_ = projectChooser;
   }
 }
@@ -380,25 +365,25 @@ void GCDMaster::newChooserWindow()
 void GCDMaster::newAudioCDProject(const char *name, TocEdit *tocEdit,
                                   const char* tracks)
 {
-  if (!project_)
-  {
+  if (!project_) {
+
     AudioCDProject *project = new AudioCDProject(project_number++, name,
                                                  tocEdit, this);
-    project->add_menus (m_refUIManager);
-    project->configureAppBar (statusbar_, progressbar_, progressButton_);
+    project->add_menus(m_refUIManager);
+    project->configureAppBar(statusbar_, progressbar_, progressButton_);
     project->show();
     add(project);
     project_ = project;
     if (projectChooser_)
       closeChooser();
-    notebook_.remove_page ();
-    notebook_.set_show_tabs (false);
-    notebook_.append_page (*project);
+    notebook_.remove_page();
+    notebook_.set_show_tabs(false);
+    notebook_.append_page(*project);
     if (tracks)
       project->appendTrack(tracks);
-  }
-  else
-  {
+
+  } else {
+
     GCDMaster *gcdmaster = new GCDMaster;
     gcdmaster->newAudioCDProject("", NULL, tracks);
     gcdmaster->show();
@@ -415,45 +400,43 @@ void GCDMaster::newDuplicateCDProject()
   if (!project_)
   {
     DuplicateCDProject *project = new DuplicateCDProject(this);
-    project->setParentWindow (this);
     project->show();
     add(project);
     project_ = project;
     if (projectChooser_)
       closeChooser();
-    notebook_.remove_page ();
-    notebook_.set_show_tabs (false);
-    notebook_.append_page (*project);
+    notebook_.remove_page();
+    notebook_.set_show_tabs(false);
+    notebook_.append_page(*project);
     set_title(_("Duplicate CD"));
   }
   else
   {
     GCDMaster *gcdmaster = new GCDMaster;
-    gcdmaster->newDuplicateCDProject ();
+    gcdmaster->newDuplicateCDProject();
     gcdmaster->show();
   }
 }
 
 void GCDMaster::newDumpCDProject()
 {
-  if (!project_)
-  {
+  if (!project_) {
+
     DumpCDProject *project = new DumpCDProject(this);
-    project->setParentWindow (this);
     project->show();
     add(project);
     project_ = project;
     if (projectChooser_)
       closeChooser();
-    notebook_.remove_page ();
-    notebook_.set_show_tabs (false);
-    notebook_.append_page (*project);
+    notebook_.remove_page();
+    notebook_.set_show_tabs(false);
+    notebook_.append_page(*project);
     set_title(_("Dump CD to disk"));
-  }
-  else
-  {
+
+  } else {
+
     GCDMaster *gcdmaster = new GCDMaster;
-    gcdmaster->newDumpCDProject ();
+    gcdmaster->newDumpCDProject();
     gcdmaster->show();
   }
 }

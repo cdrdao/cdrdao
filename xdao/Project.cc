@@ -34,11 +34,11 @@
 #include "TocEditView.h"
 #include "RecordTocDialog.h"
 
-Project::Project()
+Project::Project(Gtk::Window* parent)
 {
+  parent_ = parent;
   new_ = true;
   saveFileSelector_ = 0;  
-  viewNumber = 0;
   recordTocDialog_ = 0;
   parent_ = NULL;
   progressbar_ = NULL;
@@ -53,9 +53,10 @@ void Project::updateWindowTitle()
   s += " - ";
   s += APP_NAME;
   if (tocEdit_->tocDirty())
-    s += "(*)";
-//FIXME:llanero
-//  set_title(s);
+    s += " (*)";
+
+  if (parent_)
+    parent_->set_title(s);
 }
 
 void Project::saveProject()
@@ -83,52 +84,43 @@ void Project::saveProject()
 void Project::saveAsProject()
 {
   if (!saveFileSelector_) {
-    saveFileSelector_ = new Gtk::FileSelection(_("Save Project"));
-    saveFileSelector_->get_ok_button()->signal_clicked().
-      connect(mem_fun(*this, &Project::saveFileSelectorOKCB));
-    saveFileSelector_->get_cancel_button()->signal_clicked().
-      connect(mem_fun(*this, &Project::saveFileSelectorCancelCB));
+    saveFileSelector_ =
+      new Gtk::FileChooserDialog(_("Save Project"),
+                                 Gtk::FILE_CHOOSER_ACTION_SAVE);
+    saveFileSelector_->add_button(Gtk::Stock::CANCEL, Gtk::RESPONSE_CANCEL);
+    saveFileSelector_->add_button(Gtk::Stock::OK, Gtk::RESPONSE_OK);
     saveFileSelector_->set_transient_for(*parent_);
   }
 
   saveFileSelector_->present();
-}
-
-void Project::saveFileSelectorCancelCB()
-{
+  int result = saveFileSelector_->run();
   saveFileSelector_->hide();
-}
 
-void Project::saveFileSelectorOKCB()
-{
-  char *s = g_strdup(saveFileSelector_->get_filename().c_str());
+  if (result == Gtk::RESPONSE_OK) {
 
-  if (s != NULL && *s != 0 && s[strlen(s) - 1] != '/') {
+    char *s = g_strdup(saveFileSelector_->get_filename().c_str());
 
-    if (tocEdit_->saveAsToc(stripCwd(s)) == 0) {
-      statusMessage(_("Project saved to \"%s\"."), tocEdit_->filename());
-      new_ = false; // The project is now saved
-      updateWindowTitle();
-      saveFileSelectorCancelCB();
-      guiUpdate(UPD_TOC_DIRTY);
+    if (s != NULL && *s != 0 && s[strlen(s) - 1] != '/') {
 
-    } else {
+      if (tocEdit_->saveAsToc(stripCwd(s)) == 0) {
+        statusMessage(_("Project saved to \"%s\"."), tocEdit_->filename());
+        new_ = false; // The project is now saved
+        updateWindowTitle();
+        guiUpdate(UPD_TOC_DIRTY);
 
-      std::string m(_("Cannot save toc to \""));
-      m += tocEdit_->filename();
-      m += "\":";
-      MessageBox msg(saveFileSelector_, _("Save Project"), 0, m.c_str(),
-                     strerror(errno), NULL);
-      msg.run();
+      } else {
+
+        std::string m(_("Cannot save toc to \""));
+        m += tocEdit_->filename();
+        m += "\":";
+        MessageBox msg(saveFileSelector_, _("Save Project"), 0, m.c_str(),
+                       strerror(errno), NULL);
+        msg.run();
+      }
     }
+
+    if (s) g_free(s);
   }
-
-  if (s) g_free(s);
-}
-
-gint Project::getViewNumber()
-{
-  return viewNumber++;
 }
 
 int Project::projectNumber()

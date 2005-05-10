@@ -42,7 +42,6 @@ AudioCDView::AudioCDView(AudioCDProject *project)
     : addFileDialog_(project)
 {
   char buf[20];
-  gint viewNumber = project->getViewNumber();
   project_ = project;
   tocEditView_ = new TocEditView(project->tocEdit());
 
@@ -126,12 +125,6 @@ AudioCDView::AudioCDView(AudioCDProject *project)
   selectionEndPos_->show();
   
   selectionInfoBox->set_border_width(2);
-  sprintf(buf, "selectionBox-%i", viewNumber);
-//FIXME:llanero
-//  project->add_docked(*selectionInfoBox, buf,
-//                      BONOBO_DOCK_ITEM_BEH_NEVER_VERTICAL,
-//                      BONOBO_DOCK_BOTTOM, 1, 1, 0);
-//  Gtk::Widget* w = Glib::wrap(GTK_WIDGET(project->get_dock_item_by_name(buf)));
   pack_start(*selectionInfoBox, FALSE, FALSE);
   selectionInfoBox->show();
 

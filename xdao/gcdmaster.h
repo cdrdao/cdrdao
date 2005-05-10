@@ -57,8 +57,6 @@ private:
   void add(ProjectChooser *);
 
   Gtk::FileChooserDialog* readFileSelector_;
-  void readFileSelectorOKCB();
-  void readFileSelectorCancelCB();
   void createMenus();
   void createStatusbar();
   void aboutDialog();
