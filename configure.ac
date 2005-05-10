@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_REVISION($Revision: 1.3 $)dnl
+AC_REVISION($Revision: 1.4 $)dnl
 
 AC_INIT(cdrdao, 1.2.0)
 
@@ -57,6 +57,7 @@ case 4 in
 	$ac_cv_sizeof_long) SIZE32="long";;
 esac
 
+AC_CHECK_TYPE(u_int8_t, unsigned char)
 AC_CHECK_TYPE(int16_t,,AC_DEFINE_UNQUOTED(int16_t,$SIZE16,""))
 AC_CHECK_TYPE(int32_t,,AC_DEFINE_UNQUOTED(int32_t,$SIZE32,""))
 AC_CHECK_TYPE(u_int16_t,,AC_DEFINE_UNQUOTED(u_int16_t,$SIZE16,""))

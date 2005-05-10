@@ -192,3 +192,6 @@
 
 /* "" */
 #undef u_int32_t
+
+/* Define to `unsigned char' if <sys/types.h> does not define. */
+#undef u_int8_t
