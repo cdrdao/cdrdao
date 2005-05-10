@@ -21,6 +21,7 @@
 #define __LEC_H__
 
 #include <sys/types.h>
+#include "config.h"
 
 
 /* Encodes a MODE 0 sector.
