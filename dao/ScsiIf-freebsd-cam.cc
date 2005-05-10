@@ -223,7 +223,7 @@ int ScsiIf::inquiry()
 	return 0;
 }
 
-ScsiIf::ScanData *ScsiIf::scan(int *len)
+ScsiIf::ScanData *ScsiIf::scan(int *len, char* scsi_dev_path)
 {
   *len = 0;
   return NULL;

@@ -318,6 +318,6 @@ bool resolveFilename(std::string& abs, const char* file, const char* path)
   }
 
   // File not found.
-  abs.clear();
+  abs = "";
   return false;
 }

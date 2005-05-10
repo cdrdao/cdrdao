@@ -112,7 +112,7 @@ FormatSupport* FormatConverter::newConverterStart(const char* src,
       delete candidate;
   }
 
-  dst.clear();
+  dst = "";
   return NULL;
 }
 
