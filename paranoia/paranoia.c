@@ -157,7 +157,7 @@ static inline long do_const_sync(c_block *A,
 				 sort_info *B,char *flagB,
 				 long posA,long posB,
 				 long *begin,long *end,long *offset){
-  char *flagA=A->flags;
+  char *flagA=(char*)A->flags;
   long ret=0;
 
   if(flagB==NULL)
@@ -190,7 +190,7 @@ static inline long try_sort_sync(cdrom_paranoia *p,
   
   long dynoverlap=p->dynoverlap;
   sort_link *ptr=NULL;
-  char *Bflags=B->flags;
+  char *Bflags=(char*)B->flags;
 
   /* block flag matches 0x02 (unmatchable) */
   if(Bflags==NULL || (Bflags[post-cb(B)]&2)==0){
@@ -299,7 +299,7 @@ static long i_iterate_stage1(cdrom_paranoia *p,c_block *old,c_block *new,
   for(j=searchbegin;j<searchend;j+=23){
     if((new->flags[j-cb(new)]&6)==0){      
       tried++;
-      if(try_sort_sync(p,i,new->flags,old,j,&matchbegin,&matchend,&matchoffset,
+      if(try_sort_sync(p,i,(char*)new->flags,old,j,&matchbegin,&matchend,&matchoffset,
 		       callback)==1){
 	
 	matched+=matchend-matchbegin;
@@ -1176,7 +1176,7 @@ c_block *i_read_c_block(cdrom_paranoia *p,long beginword,long endword,
     new->vector=buffer;
     new->begin=firstread*CD_FRAMEWORDS-p->dyndrift;
     new->size=sofar*CD_FRAMEWORDS;
-    new->flags=flags;
+    new->flags=(unsigned char*)flags;
   }else{
     if(new)free_c_block(new);
     free(buffer);
