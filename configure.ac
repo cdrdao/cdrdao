@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_REVISION($Revision: 1.4 $)dnl
+AC_REVISION($Revision: 1.5 $)dnl
 
 AC_INIT(cdrdao, 1.2.0)
 
@@ -45,10 +45,10 @@ AC_CHECK_SIZEOF(long long)
 case 2 in
 	$ac_cv_sizeof_short) 
                 AC_DEFINE(size16,short,"")
-		SIZE16=TRUE;;
+		SIZE16="short";;
 	$ac_cv_sizeof_int)
                 AC_DEFINE(size16,int,"")
-		SIZE16=TRUE;;
+		SIZE16="int";;
 esac
 
 case 4 in

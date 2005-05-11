@@ -23,6 +23,9 @@
 #include <sys/types.h>
 #include "config.h"
 
+#ifndef TRUE
+#define TRUE 1
+#endif
 
 /* Encodes a MODE 0 sector.
  * 'adr' is the current physical sector address
