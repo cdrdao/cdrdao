@@ -36,8 +36,6 @@
 #include "Icons.h"
 
 // Static class members
-std::list<Project *> GCDMaster::projects;
-std::list<ProjectChooser *> GCDMaster::choosers;
 std::list<GCDMaster *> GCDMaster::apps;
 
 GCDMaster::GCDMaster() : Gnome::UI::App("gcdmaster", APP_NAME)
@@ -47,7 +45,7 @@ GCDMaster::GCDMaster() : Gnome::UI::App("gcdmaster", APP_NAME)
   project_number = 0;
   about_ = 0;
   project_ = 0;
-  projectChooser_ = 0;
+  chooser_ = 0;
 
   set_resizable();
   set_wmclass("gcdmaster", "GCDMaster");
@@ -120,10 +118,10 @@ void GCDMaster::createMenus()
                          sigc::mem_fun(*this, &GCDMaster::openProject) );
 
   m_refActionGroup->add( Gtk::Action::create("Close", Gtk::Stock::CLOSE),
-                         sigc::mem_fun(*this, &GCDMaster::closeProject) );
+                         sigc::hide_return(sigc::mem_fun(*this, &GCDMaster::closeProject)));
 
   m_refActionGroup->add( Gtk::Action::create("Quit", Gtk::Stock::QUIT),
-                         sigc::mem_fun(*this, &GCDMaster::appClose) );
+                         &GCDMaster::appClose);
 
   // Edit
   m_refActionGroup->add( Gtk::Action::create("EditMenu", _("_Edit")) );
@@ -203,16 +201,6 @@ void GCDMaster::createMenus()
   set_toolbar(dynamic_cast<Gtk::Toolbar&>(*pToolbar));
 }
 
-void GCDMaster::add(Project *project)
-{
-  GCDMaster::projects.push_back(project);
-}
-
-void GCDMaster::add(ProjectChooser *projectChooser)
-{
-  choosers.push_back(projectChooser);
-}
-
 bool GCDMaster::openNewProject(const char* s)
 {
   TocEdit* tocEdit;
@@ -259,27 +247,22 @@ void GCDMaster::openProject()
   readFileSelector_->hide();
 
   if (result == Gtk::RESPONSE_OK) {
-    char *s = g_strdup(readFileSelector_->get_filename().c_str());
-
-    openNewProject(s);
-
-    if (s) g_free(s);
+    std::string s = readFileSelector_->get_filename();
+    openNewProject(s.c_str());
   }
 }
 
-void GCDMaster::closeProject()
+bool GCDMaster::closeProject()
 {
-  if (projectChooser_) {
-
+  if (chooser_)
     closeChooser();
 
-  } else if (project_) {
-
+  if (project_) {
     if (project_->closeProject()) {
-    projects.remove(project_);
-    delete project_;
+      delete project_;
+      project_ = NULL;
     } else {
-      return; // User clicked on cancel
+      return false; // User clicked on cancel
     }
   }
 
@@ -289,15 +272,16 @@ void GCDMaster::closeProject()
   apps.remove(this);
   delete this;
 
-  if ((projects.size() == 0) && (choosers.size() == 0))
+  if (apps.size() == 0)
     Gnome::Main::quit(); // Quit if there are not remaining windows
+
+  return true;
 }
 
 void GCDMaster::closeChooser()
 {
-  choosers.remove(projectChooser_);
-  delete projectChooser_;
-  projectChooser_ = 0;
+  delete chooser_;
+  chooser_ = NULL;
 }
 
 bool GCDMaster::on_delete_event(GdkEventAny* e)
@@ -306,59 +290,42 @@ bool GCDMaster::on_delete_event(GdkEventAny* e)
   return true;
 }
 
+// Application Close. Called when the user selects 'Quit' from the
+// menu. Try to close all project windows and quit.
+
 void GCDMaster::appClose()
 {
-  if (!project_) {
-    Gnome::Main::quit();
-    return;
+  // Can't just iterate, as closeProject will remove its object from
+  // the list.
+  while (apps.size() > 0) {
+    
+    if (!(*(GCDMaster::apps.begin()))->closeProject())
+      return;
   }
 
-  if (project_->closeProject())
-  {
-    Project *previous = 0;
-
-    projects.remove(project_);
-    delete project_;
-    project_ = 0;
-
-    for (std::list<Project *>::iterator i = projects.begin();
-         i != projects.end(); i++)
-    {
-	  if (previous != 0)
-      {
-        projects.remove(previous);
-        delete(previous);
-      }
-      if (!((*i)->closeProject()))
-        return;
-      previous = *i;
-    }
-    Gnome::Main::quit();
-  }
+  return;
 }
 
 void GCDMaster::newChooserWindow()
 {
-  if (project_ || projectChooser_)
-  {
+  if (project_ || chooser_) {
+
     GCDMaster *gcdmaster = new GCDMaster;
     gcdmaster->newChooserWindow();
     gcdmaster->show();
-  }
-  else
-  {
-    ProjectChooser *projectChooser = new ProjectChooser();
-    projectChooser->newAudioCDProject.connect(sigc::mem_fun(*this,
+
+  } else {
+
+    chooser_ = new ProjectChooser();
+    chooser_->newAudioCDProject.connect(sigc::mem_fun(*this,
                                         &GCDMaster::newAudioCDProject2));
-    projectChooser->newDuplicateCDProject.connect(sigc::mem_fun(*this,
+    chooser_->newDuplicateCDProject.connect(sigc::mem_fun(*this,
                                         &GCDMaster::newDuplicateCDProject));
-    projectChooser->newDumpCDProject.connect(sigc::mem_fun(*this,
+    chooser_->newDumpCDProject.connect(sigc::mem_fun(*this,
                                         &GCDMaster::newDumpCDProject));
-    projectChooser->show();
-    add(projectChooser);
+    chooser_->show();
     notebook_.set_show_tabs(false);
-    notebook_.append_page(*projectChooser);
-    projectChooser_ = projectChooser;
+    notebook_.append_page(*chooser_);
   }
 }
 
@@ -367,25 +334,25 @@ void GCDMaster::newAudioCDProject(const char *name, TocEdit *tocEdit,
 {
   if (!project_) {
 
-    AudioCDProject *project = new AudioCDProject(project_number++, name,
-                                                 tocEdit, this);
-    project->add_menus(m_refUIManager);
-    project->configureAppBar(statusbar_, progressbar_, progressButton_);
-    project->show();
-    add(project);
-    project_ = project;
-    if (projectChooser_)
+    AudioCDProject* p = new AudioCDProject(project_number++, name, tocEdit,
+                                           this);
+    p->add_menus(m_refUIManager);
+    p->configureAppBar(statusbar_, progressbar_, progressButton_);
+
+    project_ = p;
+    project_->show();
+    if (chooser_)
       closeChooser();
     notebook_.remove_page();
     notebook_.set_show_tabs(false);
-    notebook_.append_page(*project);
+    notebook_.append_page(*project_);
     if (tracks)
-      project->appendTrack(tracks);
+      p->appendTrack(tracks);
 
   } else {
 
     GCDMaster *gcdmaster = new GCDMaster;
-    gcdmaster->newAudioCDProject("", NULL, tracks);
+    gcdmaster->newAudioCDProject(name, tocEdit, tracks);
     gcdmaster->show();
   }
 }
@@ -397,21 +364,19 @@ void GCDMaster::newAudioCDProject2()
 
 void GCDMaster::newDuplicateCDProject()
 {
-  if (!project_)
-  {
-    DuplicateCDProject *project = new DuplicateCDProject(this);
-    project->show();
-    add(project);
-    project_ = project;
-    if (projectChooser_)
+  if (!project_) {
+
+    project_ = new DuplicateCDProject(this);
+    project_->show();
+    if (chooser_)
       closeChooser();
     notebook_.remove_page();
     notebook_.set_show_tabs(false);
-    notebook_.append_page(*project);
+    notebook_.append_page(*project_);
     set_title(_("Duplicate CD"));
-  }
-  else
-  {
+
+  } else {
+
     GCDMaster *gcdmaster = new GCDMaster;
     gcdmaster->newDuplicateCDProject();
     gcdmaster->show();
@@ -422,15 +387,13 @@ void GCDMaster::newDumpCDProject()
 {
   if (!project_) {
 
-    DumpCDProject *project = new DumpCDProject(this);
-    project->show();
-    add(project);
-    project_ = project;
-    if (projectChooser_)
+    project_ = new DumpCDProject(this);
+    project_->show();
+    if (chooser_)
       closeChooser();
     notebook_.remove_page();
     notebook_.set_show_tabs(false);
-    notebook_.append_page(*project);
+    notebook_.append_page(*project_);
     set_title(_("Dump CD to disk"));
 
   } else {
@@ -443,11 +406,8 @@ void GCDMaster::newDumpCDProject()
 
 void GCDMaster::update(unsigned long level)
 {
-  for (std::list<Project *>::iterator i = projects.begin();
-       i != projects.end(); i++)
-  {
-    (*i)->update(level);
-  }
+  if (project_)
+    project_->update(level);
 
   blankCDDialog_.update(level);
 }

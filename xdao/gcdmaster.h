@@ -33,41 +33,10 @@ class BlankCDDialog;
 
 class GCDMaster : public Gnome::UI::App
 {
-private:
-  static std::list<Project *> projects;
-  static std::list<ProjectChooser *> choosers;
-
-  Project * project_;
-  ProjectChooser * projectChooser_;
-  gint project_number;
-
-  BlankCDDialog blankCDDialog_;
-
-  Gtk::Notebook notebook_;
-
-  Glib::RefPtr<Gtk::UIManager> m_refUIManager;
-  Glib::RefPtr<Gtk::ActionGroup> m_refActionGroup;
-
-  Gnome::UI::AppBar* statusbar_;  
-  Gtk::ProgressBar* progressbar_;  
-  Gtk::Button* progressButton_;  
-  Gnome::UI::About* about_;
-
-  void add(Project *);
-  void add(ProjectChooser *);
-
-  Gtk::FileChooserDialog* readFileSelector_;
-  void createMenus();
-  void createStatusbar();
-  void aboutDialog();
-
 public:
   GCDMaster();
 
-  static std::list<GCDMaster *> apps;
-
-  void appClose();
-  void closeProject();
+  bool closeProject();
   void closeChooser();
   bool on_delete_event(GdkEventAny* e);
   bool openNewProject(const char*);
@@ -85,5 +54,32 @@ public:
   void blankCDRW();
 
   void registerStockIcons();
+
+  static void appClose();
+
+  static std::list<GCDMaster *> apps;
+
+private:
+  Project* project_;
+  ProjectChooser* chooser_;
+  gint project_number;
+
+  BlankCDDialog blankCDDialog_;
+
+  Gtk::Notebook notebook_;
+
+  Glib::RefPtr<Gtk::UIManager> m_refUIManager;
+  Glib::RefPtr<Gtk::ActionGroup> m_refActionGroup;
+
+  Gnome::UI::AppBar* statusbar_;  
+  Gtk::ProgressBar* progressbar_;  
+  Gtk::Button* progressButton_;  
+  Gnome::UI::About* about_;
+
+  Gtk::FileChooserDialog* readFileSelector_;
+  void createMenus();
+  void createStatusbar();
+  void aboutDialog();
+
 };
 #endif
