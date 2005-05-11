@@ -295,6 +295,11 @@ void AudioCDProject::cancelEnable(bool enable)
 bool AudioCDProject::closeProject()
 {
   if (tocEdit_->tocDirty()) {
+
+    // Project window might be iconified and user might have forgotten
+    // about it (Quit can be called on another project window).
+    getParentWindow()->present();
+
     Glib::ustring message = "Project ";
     message += tocEdit_->filename();
     message += " not saved. Are you sure you want to close it ?";
