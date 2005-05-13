@@ -334,7 +334,7 @@ diff -ruN --recursive scsilib/RULES.orig/ppc64-linux-gcc.rul scsilib/RULES/ppc64
  
  	if (busno >= MAX_SCG || tgt >= MAX_TGT || tlun >= MAX_LUN) {
  		errno = EINVAL;
-@@ -383,103 +386,91 @@
+@@ -383,103 +386,92 @@
  	 * look silly but there may be users that did boot from a SCSI hdd
  	 * and connected 4 CD/DVD writers to both IDE cables in the PC.
  	 */
@@ -431,7 +431,8 @@ diff -ruN --recursive scsilib/RULES.orig/ppc64-linux-gcc.rul scsilib/RULES/ppc64
 +	if (nopen == 0) {
 +		glob("/dev/scd[0-9]", GLOB_NOSORT, NULL, &globbuf);
 +		glob("/dev/scd[0-9][0-9]", GLOB_NOSORT|GLOB_APPEND, NULL, &globbuf);
-+		/*glob("/dev/sg[a-z]", GLOB_NOSORT|GLOB_APPEND, NULL, &globbuf);*/
++		glob("/dev/sg[a-z]", GLOB_NOSORT|GLOB_APPEND, NULL, &globbuf);
++		glob("/dev/sg[0-9]", GLOB_NOSORT|GLOB_APPEND, NULL, &globbuf);
 +		
 +		for (i = 0; globbuf.gl_pathv && globbuf.gl_pathv[i] != NULL ; i++) {
 +			devname = globbuf.gl_pathv[i];
@@ -447,7 +448,7 @@ diff -ruN --recursive scsilib/RULES.orig/ppc64-linux-gcc.rul scsilib/RULES/ppc64
 -							"Cannot open '%s'", devname);
 -				return (0);
 +						    "Cannot open '/dev/scd*'");
-+				if (errno != ENOENT && errno != ENXIO && errno != ENODEV) {
++				if (errno != ENOENT && errno != ENXIO && errno != ENODEV && errno != EROFS) {
 +					if (scgp->errstr)
 +						js_snprintf(scgp->errstr, SCSI_ERRSTR_SIZE,
 +							    "Cannot open '%s'", devname);
