@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_REVISION($Revision: 1.5 $)dnl
+AC_REVISION($Revision: 1.6 $)dnl
 
 AC_INIT(cdrdao, 1.2.0)
 
@@ -346,11 +346,25 @@ if test "$with_ogg_support" = yes; then
   PKG_CHECK_MODULES(VORBISFILE, vorbisfile >= 1.0, [],
         [echo "OGG support disabled"; with_ogg_support=no])
 fi
+
 dnl Check for MP3 support
 if test "$with_mp3_support" = yes; then
-  PKG_CHECK_MODULES(MAD, mad >= 0.10, [],
-        [echo "MP3 support disabled"; with_mp3_support=no])
+        PKG_CHECK_MODULES(MAD, mad >= 0.10, [],
+	[echo "libMAD detection via pkg-config failed"; with_mp3_support=no])
+	if test "$with_mp3_support" = no; then
+		AC_CHECK_LIB(mad, mad_stream_init, [AC_CHECK_HEADER([mad.h])])
+		if test "$ac_cv_lib_mad_mad_stream_init" = yes; then
+        	        AC_ARG_VAR(MAD_LIBS,"")
+	        	AC_ARG_VAR(MAD_CFLAGS,"")
+		        MAD_LIBS="-lmad"
+        		MAD_CFLAGS=""
+        		with_mp3_support=yes
+        	else
+	                echo "MP3 support disabled"; with_mp3_support=no
+		fi
+	fi
 fi
+
 dnl Check for libao support
 if test "$with_mp3_support" = yes || test "$with_ogg_support" = yes; then
   PKG_CHECK_MODULES(AO, ao >= 0.8, [AC_DEFINE(HAVE_AO,1,"")],
