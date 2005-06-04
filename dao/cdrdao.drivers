@@ -244,9 +244,9 @@ W|BENQ|CRW2410A|generic-mmc-raw
 W|BTC|BCE1610IM|generic-mmc-raw
 W|BTC|BCE2410IM|generic-mmc-raw
 W|BTC|BCE621E|generic-mmc-raw
-W|CYBERDRV|CW018D|generic-mmc-raw
-W|CYBERDRV|CW038D|generic-mmc-raw
-W|CYBERDRV|CW058D|generic-mmc-raw
+W|CyberDrv|CW018D|generic-mmc-raw
+W|CyberDrv|CW038D|generic-mmc-raw
+W|CyberDrv|CW058D|generic-mmc-raw
 W|Goldstar|8120B|generic-mmc-raw
 W|HL-DT-ST|CD-RW GCE-8160B|generic-mmc-raw
 W|HL-DT-ST|CD-RW GCE-8320B|generic-mmc-raw
