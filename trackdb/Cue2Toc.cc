@@ -218,24 +218,26 @@ get_string(FILE *f, char *s, size_t n)
 /* Return track mode */
 static TrackData::Mode get_track_mode(FILE *f)
 {
-    char buf[] = "MODE1/2048";
-    char *pbuf = buf;
+  char buf[] = "MODE1/2048";
+  char *pbuf = buf;
 
-    if (get_string(f, buf, sizeof(buf) - 1) < 1)
-        err_fail("Illegal track mode");
+  if (get_string(f, buf, sizeof(buf) - 1) < 1)
+    err_fail("Illegal track mode");
 
-    /* transform to upper case */
-    while (*pbuf) {
-        *pbuf = toupper(*pbuf);
-        pbuf++;
-    }
+  /* transform to upper case */
+  while (*pbuf) {
+    *pbuf = toupper(*pbuf);
+    pbuf++;
+  }
 
-    if (strcmp(buf, "AUDIO") == 0) return TrackData::AUDIO;
-    else if (strcmp(buf, "MODE1/2048") == 0) return TrackData::MODE1;
-    else if (strcmp(buf, "MODE1/2352") == 0) return TrackData::MODE1_RAW;
-    else if (strcmp(buf, "MODE2/2336") == 0) return TrackData::MODE2;
-    else if (strcmp(buf, "MODE2/2352") == 0) return TrackData::MODE2_RAW;
-    else err_fail("Unsupported track mode");
+  if (strcmp(buf, "AUDIO") == 0) return TrackData::AUDIO;
+  if (strcmp(buf, "MODE1/2048") == 0) return TrackData::MODE1;
+  if (strcmp(buf, "MODE1/2352") == 0) return TrackData::MODE1_RAW;
+  if (strcmp(buf, "MODE2/2336") == 0) return TrackData::MODE2;
+  if (strcmp(buf, "MODE2/2352") == 0) return TrackData::MODE2_RAW;
+
+  err_fail("Unsupported track mode");
+  return TrackData::AUDIO;
 }
 
 static void check_once(enum command cmd, char *s, enum scope sc);

@@ -41,7 +41,6 @@
 AudioCDView::AudioCDView(AudioCDProject *project) 
     : addFileDialog_(project)
 {
-  char buf[20];
   project_ = project;
   tocEditView_ = new TocEditView(project->tocEdit());
 
