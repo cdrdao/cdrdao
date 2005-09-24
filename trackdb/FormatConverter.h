@@ -33,6 +33,8 @@
 class FormatSupport
 {
  public:
+  virtual ~FormatSupport() {}
+
   typedef enum {
     FS_SUCCESS,
     FS_IN_PROGRESS,
@@ -68,6 +70,8 @@ class FormatSupport
 class FormatSupportManager
 {
  public:
+  virtual ~FormatSupportManager() {}
+
   // Acts as virtual constructor. Returns a new converter if this
   // converter understands the given file extension.
   virtual FormatSupport* newConverter(const char* extension) = 0;
