@@ -285,6 +285,8 @@ FormatSupport::Status FormatMp3::madOutput()
     if (ao_play(out_, buffer_, pcm->length * 4) == 0)
       return FS_DISK_FULL;
   }
+
+  return FS_SUCCESS;
 }
 
 // ----------------------------------------------------------------

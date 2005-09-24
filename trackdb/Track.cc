@@ -411,6 +411,7 @@ bool Track::recomputeLength()
   }
 
   update();
+  return true;
 }
 
 // Sets ISRC code. Expected string: "CCOOOYYSSSSS"
@@ -596,6 +597,8 @@ bool Track::resolveFilename(const char* path)
       }
     }
   }
+
+  return true;
 }
 
 // Locates 'SubTrack' that contains specified sample.
@@ -1928,7 +1931,7 @@ long TrackReader::readSamples(Sample *buf, long len)
 	ret += burst;
 	
 	if (subChanLen > 0 && fullBurst &&
-	    readPosSample_ < track_->length_.samples()) {
+	    (unsigned long)readPosSample_ < track_->length_.samples()) {
 	  if (readTrackData((Sample*)subChanBuf, subChanLen) < 0)
 	    return -1;
 	}
