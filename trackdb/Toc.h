@@ -27,7 +27,6 @@
 #include "Track.h"
 #include "CdTextContainer.h"
 #include "CdTextItem.h"
-#include "FormatConverter.h"
 
 class Toc {
 public:

@@ -35,6 +35,7 @@
 #include "TrackDataList.h"
 #include "CdTextItem.h"
 #include "CueParser.h"
+#include "FormatConverter.h"
 
 #ifdef UNIXWARE
 extern "C" {
