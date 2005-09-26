@@ -18,7 +18,7 @@ endif
 
 SUBDIRS = $(MAYBE_SCSILIB) $(MAYBE_PCCTS) trackdb utils paranoia dao $(MAYBE_XDAO)
 
-DIST_SUBDIRS = trackdb utils paranoia dao xdao
+DIST_SUBDIRS = trackdb utils paranoia dao xdao pccts
 
 EXTRA_DIST =		\
 	AUTHORS		\
@@ -31,7 +31,6 @@ EXTRA_DIST =		\
 	README.PlexDAE	\
 	README.Win32	\
 	scsilib		\
-	pccts		\
 	specs/*.in	\
 	aspi.reg	\
 	cdrdao.lsm	\

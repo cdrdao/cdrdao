@@ -1,7 +1,7 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_REVISION($Revision: 1.7 $)dnl
+AC_REVISION($Revision: 1.8 $)dnl
 
-AC_INIT(cdrdao, 1.2.0)
+AC_INIT(cdrdao, 1.2.1)
 
 AC_CONFIG_SRCDIR(dao/main.cc)
 AM_INIT_AUTOMAKE
@@ -171,8 +171,8 @@ fi
 dnl Checks for pccts parser generator
 en_pccts="no"
 if test "$pcctsbin" = default; then
-  antlr_path='$(srcdir)/../pccts/bin/antlr'
-  dlg_path='$(srcdir)/../pccts/bin/dlg'
+  antlr_path='$(srcdir)/../pccts/antlr/antlr'
+  dlg_path='$(srcdir)/../pccts/dlg/dlg'
 
 
   en_pccts="yes"
@@ -182,8 +182,8 @@ else
 
   if test $antlr_path = "no" || test $dlg_path = "no"; then
     AC_MSG_WARN([PCCTS: antlr or dlg not found in path, using own.])
-    antlr_path='$(srcdir)/../pccts/bin/antlr'
-    dlg_path='$(srcdir)/../pccts/bin/dlg'
+    antlr_path='$(srcdir)/../pccts/antlr/antlr'
+    dlg_path='$(srcdir)/../pccts/dlg/dlg'
     en_pccts="yes"
   fi
 fi
@@ -191,8 +191,8 @@ fi
 
 if test "$pcctsinc" = default; then
   pcctsinc='$(srcdir)/../pccts/h'
-  antlr_path='$(srcdir)/../pccts/bin/antlr'
-  dlg_path='$(srcdir)/../pccts/bin/dlg'
+  antlr_path='$(srcdir)/../pccts/antlr/antlr'
+  dlg_path='$(srcdir)/../pccts/dlg/dlg'
   en_pccts="yes"
 else
   ac_save_CPPFLAGS="$CPPFLAGS"
@@ -200,7 +200,7 @@ else
   AC_CHECK_HEADER(pcctscfg.h,,[
     AC_MSG_WARN([PCCTS: headers not found in path, using own.])
     pcctsinc='$(srcdir)/../pccts/h'
-    antlr_path='$(srcdir)/../pccts/bin/antlr'
+    antlr_path='$(srcdir)/../pccts/antlr/antlr'
     en_pccts="yes"])
   CPPFLAGS="$ac_save_CPPFLAGS"
 fi
@@ -418,6 +418,9 @@ AC_CONFIG_FILES([
         xdao/Makefile
         xdao/stock/Makefile
         paranoia/Makefile
+        pccts/Makefile
+        pccts/antlr/Makefile
+        pccts/dlg/Makefile
         Makefile
         specs/cdrdao.fedora.spec
         ])
