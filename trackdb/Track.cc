@@ -588,6 +588,11 @@ bool Track::resolveFilename(const char* path)
   for (st = subTracks_; st != NULL; st = st->next_) {
     std::string rfilename;
     const char* f = st->filename();
+
+    // STDIN is a special case (stdin input), don't process it.
+    if (strcmp(f, "STDIN") == 0)
+      continue;
+
     if (f) {
       if (::resolveFilename(rfilename, f, path)) {
         st->effectiveFilename(rfilename.c_str());
