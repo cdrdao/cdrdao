@@ -791,7 +791,7 @@ in that order:
 
 Command line options will overwrite the loaded settings.
 The settings file contains name - value pairs separated by a
-colon. String values should be enclosed by ". The file is
+colon. String values must be enclosed by ". The file is
 automatically written if the command line option 
 .I \--save
 is used but it is also possible to modify it manually. Following
