@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_REVISION($Revision: 1.9 $)dnl
+AC_REVISION($Revision: 1.10 $)dnl
 
 AC_INIT(cdrdao, 1.2.1)
 
@@ -237,8 +237,6 @@ if test "$xdao" = yes; then
   PKG_CHECK_MODULES(SIGCPP2, sigc++-2.0 >= 2.0.0,[],
         [echo "Building of gcdmaster disabled"; en_xdao=no])
   PKG_CHECK_MODULES(GTKMM2, gtkmm-2.4 >= 2.4.0,[],
-        [echo "Building of gcdmaster disabled"; en_xdao=no])
-  PKG_CHECK_MODULES(LIBGUIMM2, libgnomemm-2.6 >= 2.6.0,[],
         [echo "Building of gcdmaster disabled"; en_xdao=no])
   PKG_CHECK_MODULES(LIBGUIMM2, libgnomeuimm-2.6 >= 2.6.0,[],
         [echo "Building of gcdmaster disabled"; en_xdao=no])
