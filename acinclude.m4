@@ -8,7 +8,7 @@ dnl
 AC_DEFUN([AC_PATH_LAME],
 [dnl
   AC_ARG_ENABLE(lame-test,[  --disable-lame-test     skip checking for right mp3lame library],lame_test=$enableval,lame_test=yes)
-  AC_ARG_WITH(lame,[  --without-lame          disable building of toc2mp3],lame=$withval,lame="yes")
+  AC_ARG_WITH(lame,[  --with-lame             enable building of toc2mp3 (default is YES)],lame=$withval,lame="yes")
   AC_ARG_WITH(lame-lib,[  --with-lame-lib=dir     set directory containing libmp3lame],lamelib=$withval,lamelib="")
   AC_ARG_WITH(lame-include,[  --with-lame-include=dir set directory containing lame include files],lameinc=$withval,lameinc="")
 

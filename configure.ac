@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_REVISION($Revision: 1.8 $)dnl
+AC_REVISION($Revision: 1.9 $)dnl
 
 AC_INIT(cdrdao, 1.2.1)
 
@@ -9,15 +9,28 @@ AM_CONFIG_HEADER(config.h)
 AC_CANONICAL_HOST
 
 AC_ARG_WITH(pcctsbin,[  --with-pcctsbin=dir     set directory of PCCTS parser generator executables],[pcctsbin=$withval],[pcctsbin=default])
+
 AC_ARG_WITH(pcctsinc,[  --with-pcctsinc=dir     set directory of PCCTS parser generator includes],[pcctsinc=$withval],[pcctsinc=default])
+
 AC_ARG_WITH(linux-qnx-sched,[  --with-linux-qnx-sched  enable QNX real time scheduling for Linux],[AC_DEFINE(LINUX_QNX_SCHEDULING,1,"Use real time scheduling for Linux")])
-AC_ARG_WITH(posix-threads,[  --with-posix-threads    use Posix threads for ring buffer (default: on)],[use_pthreads=$withval],[use_pthreads=default])
-AC_ARG_WITH(scglib,[  --with-scglib           use Joerg Schillings SCSI library (default: on)],[scglib=$withval],[scglib=default])
+
+AC_ARG_WITH(posix-threads,[  --with-posix-threads    use Posix threads for ring buffer (default is YES)],[use_pthreads=$withval],[use_pthreads=default])
+
+AC_ARG_WITH(scglib,[  --with-scglib=sys|pkg   use cdrtools SCSI library (see INSTALL) (default is sys)],[scglib=$withval],[scglib=sys])
+
+if test "$scglib" = yes; then
+  scglib = sys
+fi
+
 AC_ARG_WITH(scglib-inc,[  --with-scglib-inc=dir   set directory for SCSI library include files],[scglib_inc=$withval],[scglib_inc=default])
+
 AC_ARG_WITH(scglib-lib,[  --with-scglib-lib=dir   set directory that contains the SCSI library],[scglib_lib=$withval],[scglib_lib=default])
-AC_ARG_WITH(xdao,[  --with-xdao             enable building of gcdmaster (default: on)],[xdao=$withval],[xdao=default])
-AC_ARG_WITH(ogg-support,[  --with-ogg-support      enable OGG format support (default:on)],[],[with_ogg_support=yes])
-AC_ARG_WITH(mp3-support,[  --with-mp3-support      enable MP3 format support (default:on)],[],[with_mp3_support=yes])
+
+AC_ARG_WITH(xdao,[  --with-xdao             enable building of gcdmaster (default is YES)],[xdao=$withval],[xdao=default])
+
+AC_ARG_WITH(ogg-support,[  --with-ogg-support      enable OGG format support (default is YES)],[],[with_ogg_support=yes])
+
+AC_ARG_WITH(mp3-support,[  --with-mp3-support      enable MP3 format support (default is YES)],[],[with_mp3_support=yes])
 
 dnl Checks for programs.
 AC_PROG_CC
@@ -232,27 +245,34 @@ if test "$xdao" = yes; then
 fi
 
 dnl Determine source for scsi interface class
-if test "$scglib" = default; then
-  scglib=yes
-fi
 
-en_scsilib="$scglib"
-en_custom_libscg=no
-
-if test "$scglib" = yes; then
+if ! test "$scglib" = no; then
   AC_DEFINE(USE_SCGLIB,1,"")
   AC_DEFINE(SCSI_ATAPI, 1, "Allow ATAPI support device")
 
-  if test "$scglib_inc" = default -o "$scglib_lib" = default; then
+  if test "$scglib" = sys; then
+    if test "$scglib_inc" = default -o "$scglib_lib" = default; then
+      AC_CHECK_LIB(scg, scg_version, [sgsyslib=yes], [sgsyslib=no], -lschily)
+      AC_CHECK_FILE(/usr/include/schily.h, [sgsysinc=yes])
+      AC_CHECK_FILE(/usr/local/include/schily.h, [sgsysinc=yes])
+      AC_CHECK_FILE(/usr/include/schily/schily.h,
+         [sgsysinc=yes; scsilib_incl="-I/usr/include/schily"])
+      AC_CHECK_FILE(/usr/local/include/schily/schily.h,
+         [sgsysinc=yes; scsilib_incl="-I/usr/local/include/schily"])
+    else
+      scsilib_incl="-I$scglib_inc"
+      scsilib_libs="-L$scglib_lib"
+    fi
+    scsilib_dir=""
+    en_custom_libscg=yes
+    en_scsilib="no (using installed libscg)"
+  fi
+
+  if test "$scglib" = pkg; then
     scsilib_dir=scsilib
     scsilib_incl='-I$(srcdir)/../scsilib/export -I$(srcdir)/../scsilib/export/libschily'
     scsilib_libs="-L../scsilib/export"
-  else
-    scsilib_dir=""
-    en_scsilib="no (using installed libscg)"
-    en_custom_libscg=yes
-    scsilib_incl="-I$scglib_inc"
-    scsilib_libs="-L$scglib_lib"
+    en_scsilib="yes"
   fi
   
   scsilib_libs="$scsilib_libs -lscg -lschily"
@@ -270,6 +290,7 @@ if test "$scglib" = yes; then
 else
 
   en_scsilib="no (using generic sg layer)"
+  en_custom_libscg=no
   scsilib_dir=""
   scsilib_incl=""
   scsilib_libs=""
