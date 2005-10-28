@@ -166,12 +166,12 @@ int main(int argc, char **argv)
   switch (parseCommandLine(argc, argv, &tocFile, &cueFile)) {
   case 0:
     printUsage();
-    exit(1);
+    return 1;
     break;
     
   case 1:
     printf("%s\n", VERSION);
-    exit(0);
+    return 0;
     break;
   }
 
@@ -179,7 +179,7 @@ int main(int argc, char **argv)
 
   if ((toc = Toc::read(tocFile)) == NULL) {
     message(-2, "Failed to read toc-file '%s'.", tocFile);
-    exit(1);
+    return 1;
   }
 
   Msf start, end;
@@ -274,7 +274,7 @@ int main(int argc, char **argv)
 
   if (err) {
     message(-2, "Cannot convert toc-file '%s' to a cue file.", tocFile);
-    exit(1);
+    return 1;
   }
 
   std::ofstream out(cueFile);
@@ -282,7 +282,7 @@ int main(int argc, char **argv)
   if (!out) {
     message(-2, "Cannot open cue file \'%s\' for writing: %s", cueFile,
 	    strerror(errno));
-    exit(1);
+    return 1;
   }
 
   out << "FILE \"" << binFileName << "\" BINARY" << "\n";
