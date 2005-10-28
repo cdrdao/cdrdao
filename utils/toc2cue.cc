@@ -321,6 +321,10 @@ int main(int argc, char **argv)
     
     out << "\n";
 
+    if ( trun->copyPermitted() ) {
+      out << "    FLAGS DCP\n";
+    }
+
     const SubTrack *strun;
     SubTrackIterator stitr(trun);
     int pregap = 0;
