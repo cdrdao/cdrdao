@@ -348,6 +348,7 @@ int main(int argc, char **argv)
     }
   } 
 
+  out.close();
 
   message(1, "Converted toc-file '%s' to cue file '%s'.",
 	  tocFile, cueFile);
@@ -363,5 +364,5 @@ int main(int argc, char **argv)
   message(1, "noise when the resulting cue file is used for recording");
   message(1, "(even with cdrdao itself).");
 
-  exit(0);
+  return 0;
 }
