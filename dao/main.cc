@@ -2334,7 +2334,8 @@ int main(int argc, char **argv)
   }
 
   if (COMMAND == COPY_CD) {
-    if (SOURCE_SCSI_DEVICE != NULL) {
+      if (SOURCE_SCSI_DEVICE != NULL && 
+          strcmp(SCSI_DEVICE, SOURCE_SCSI_DEVICE) != 0) {
       delSrcDevice = 1;
       srcCdr = setupDevice(READ_CD, SOURCE_SCSI_DEVICE, SOURCE_DRIVER_ID,
 			 1, 1, 0, 0, 0);
