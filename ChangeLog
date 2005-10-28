@@ -1,4 +1,37 @@
 --------------------------------------------------------------------------
+  cdrdao 1.2.1 (2005-10-28)
+--------------------------------------------------------------------------
+
+ o  Fixed bad bug with missing return statemements in recomputeLength
+    and format conversion.
+
+ o  Fixed broken '-' STDIN input feature.
+
+ o  Fixed various gcc4-related compile problems.
+
+ o  Fixed copy problem with single device when read_device is
+    specified.
+
+ o  configure now tries to build against installed cdrtools by default.
+
+ o  Minor fixes to driver table.
+
+ o  pccts build is now better integrated with automake/autoconf.
+
+GCDMaster changes:
+
+ o  The crash when creating a new "Create Audio C" view seemed to be
+    related to gtkmm and libsigc++ and went away with newer releases of
+    those packages.
+
+toc2cue changes:
+
+ o  toc2cue: fixed bug that was causing empty output files.
+
+ o  Added conversion of COPY to DCP flags. (Julio Sanchez Fernandez)
+
+
+--------------------------------------------------------------------------
   cdrdao 1.2.0 (2005-05-12)
 --------------------------------------------------------------------------
 
