@@ -738,6 +738,7 @@ bool TocEdit::queueThread()
     }
     return true;
   }
+  return true;
 }
 
 int TocEdit::appendSilence(unsigned long length)

@@ -103,6 +103,7 @@ bool TocEditView::sampleSelectionClear()
     sampleSelectionValid_ = false;
     return true;
   }
+  return false;
 }
 
 bool TocEditView::sampleSelection(unsigned long *smin,
@@ -122,9 +123,8 @@ bool TocEditView::sampleView(unsigned long smin, unsigned long smax)
     sampleViewMin_ = smin;
     sampleViewMax_ = smax;
     return true;
-//llanero: different views
-//    tocEdit_->updateLevel_ |= UPD_SAMPLES;
   }
+  return false;
 }
 
 void TocEditView::sampleView(unsigned long *smin, unsigned long *smax) const
@@ -139,9 +139,6 @@ void TocEditView::sampleViewFull()
 
   if ((sampleViewMax_ = tocEdit_->lengthSample()) > 0)
     sampleViewMax_ -= 1;
-
-//llanero: different views
-//  tocEdit_->updateLevel_ |= UPD_SAMPLES;
 }
 
 void TocEditView::sampleViewUpdate()
@@ -184,10 +181,6 @@ void TocEditView::trackSelection(int tnum)
   else {
     trackSelectionValid_ = 0;
   }
-
-//llanero: different views
-//  tocEdit_->updateLevel_ |= UPD_TRACK_MARK_SEL;
-
 }
 
 int TocEditView::trackSelection(int *tnum) const
@@ -207,9 +200,6 @@ void TocEditView::indexSelection(int inum)
   else {
     indexSelectionValid_ = 0;
   }
-
-//llanero: different views
-//  tocEdit_->updateLevel_ |= UPD_TRACK_MARK_SEL;
 }
 
 int TocEditView::indexSelection(int *inum) const

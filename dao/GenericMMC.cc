@@ -2523,8 +2523,14 @@ int GenericMMC::readCdTest(long lba, long len, int subChanMode) const
 
 	  chan.type(SubChannel::QMODE1DATA);
 
-	  long pqlba =
-	    Msf(chan.amin(), chan.asec(), chan.aframe()).lba() - 150;
+	  int min = chan.amin();
+	  int sec = chan.asec();
+	  int frac = chan.aframe();
+
+	  if ((frac >= 0 && frac < 75) &&
+          (sec >= 0 && sec < 60) &&
+          (min >= 0)) {
+	  long pqlba = Msf(min, sec, frac).lba() - 150;
 
 	  long diff = pqlba - lba;
 	  if (diff < 0)
@@ -2532,6 +2538,7 @@ int GenericMMC::readCdTest(long lba, long len, int subChanMode) const
 	  
 	  if (diff < 20) {
 	    pqSubChanBcdOk++;
+	  }
 	  }
 	}
 
