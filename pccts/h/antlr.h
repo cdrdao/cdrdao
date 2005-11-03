@@ -336,7 +336,7 @@ extern void _inf_zzgettok();
 #define ANTLR_INFO												\
 	Attrib zzempty_attr(void) {static Attrib a; return a;}			\
 	Attrib zzconstr_attr(int _tok, char *_text)				\
-		{Attrib a; zzcr_attr((&a),_tok,_text); return a;}		\
+        {Attrib a={0,0}; zzcr_attr((&a),_tok,_text); return a;}		\
 	int zzasp=ZZA_STACKSIZE;						\
 	char zzStackOvfMsg[]="fatal: attrib/AST stack overflow %s(%d)!\n";      \
 	Attrib zzaStack[ZZA_STACKSIZE]; DemandLookData				\
