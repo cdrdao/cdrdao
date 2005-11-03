@@ -582,8 +582,8 @@ int TeacCdr55::setToc()
   Msf start, end;
   long offset = diskInfo_.thisSessionLba + 150; // LBA offset
   int trackOffset = diskInfo_.lastTrackNr + 1;
-  unsigned char firstTrackCtl;
-  unsigned char lastTrackCtl;
+  unsigned char firstTrackCtl = 0;
+  unsigned char lastTrackCtl = 0;
   unsigned char ctl;
   int lastTrackNr = 0;
   int sessFormat;

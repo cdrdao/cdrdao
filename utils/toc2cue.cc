@@ -196,7 +196,8 @@ int main(int argc, char **argv)
        trun = titr.next(start, end), trackNr++) {
     const SubTrack *strun;
     int stcount;
-    TrackData::Type sttype1, sttype2;
+    TrackData::Type sttype1 = TrackData::DATAFILE,
+        sttype2 = TrackData::DATAFILE;
     SubTrackIterator stitr(trun);
 
     switch (trun->type()) {

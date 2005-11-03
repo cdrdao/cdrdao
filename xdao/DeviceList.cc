@@ -152,7 +152,7 @@ void DeviceList::importStatus()
   CdDevice *cddev;
 
   Gtk::TreeNodeChildren ch = listModel_->children();
-  for (int i = 0; i < ch.size(); i++) {
+  for (unsigned i = 0; i < ch.size(); i++) {
     Gtk::TreeRow row = ch[i];
     data = row[listColumns_.dev];
 
@@ -174,8 +174,8 @@ void DeviceList::selectOne()
   if (list_.get_selection()->count_selected_rows() > 0)
     return;
 
-  for (int i = 0; i < listModel_->children().size(); i++) {
-    list_.get_selection()->select(Gtk::TreePath((unsigned)1, i));
+  for (unsigned i = 0; i < listModel_->children().size(); i++) {
+    list_.get_selection()->select(Gtk::TreePath(1, i));
     if (list_.get_selection()->count_selected_rows() > 0)
       break;
   }
@@ -190,7 +190,7 @@ void DeviceList::selectOneBut(const char *targetData)
 
     Gtk::TreeNodeChildren ch = listModel_->children();
 
-    for (int i = 0; i < ch.size(); i++) {
+    for (unsigned i = 0; i < ch.size(); i++) {
 
       std::string sourceData = (ch[i])[listColumns_.dev];
 

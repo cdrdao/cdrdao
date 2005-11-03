@@ -82,7 +82,7 @@ void dumppred1(depth,p)
     if (p->redundant) {
       fprintf(stderr," Redundant!");
     };
-    fprintf(stderr," \"%s\" (%x)", (p->expr == NULL ? "null expr" : p->expr) ,p);
+    fprintf(stderr," \"%s\" (%x)", (p->expr == NULL ? "null expr" : p->expr) ,(unsigned)p);
     if (p->source != NULL) {
        fprintf(stderr,"line %d",p->source->line);
     };

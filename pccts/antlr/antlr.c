@@ -1339,8 +1339,9 @@ tclass()
   zzBLOCK(zztasp1);
   zzMake0;
   {
-  char *t=NULL; TCnode *e; int go=1,tok,totok; TermEntry *p, *term, *toterm;
-  char *akaString=NULL; int save_file; int save_line;
+  char *t=NULL; TCnode *e; int go=1,tok,totok; TermEntry *p = NULL;
+  char *term, *toterm;
+  char *akaString=NULL; int save_file = 0; int save_line = 0;
   char *totext=NULL;
   zzmatch(118); zzCONSUME;
   zzmatch(TokenTerm);
@@ -1416,7 +1417,7 @@ tclass()
         if ( (LA(1)==TokenTerm) ) {
           zzmatch(TokenTerm);
           if ( go ) {
-            term = (TermEntry *) hash_get(Tname, LATEXT(1));
+            term = (char *) hash_get(Tname, LATEXT(1));
             if ( term==NULL && UserDefdTokens ) {
               err("implicit token definition not allowed with #tokdefs");
               go = 0;
@@ -1433,7 +1434,7 @@ tclass()
               zzmatch(119); zzCONSUME;
               zzmatch(TokenTerm);
               if ( go ) {
-                toterm = (TermEntry *) hash_get(Tname, LATEXT(1));
+                toterm = (char *) hash_get(Tname, LATEXT(1));
                 if ( toterm==NULL && UserDefdTokens ) {
                   err("implicit token definition not allowed with #tokdefs");
                   go = 0;
@@ -1457,7 +1458,7 @@ tclass()
           if ( (LA(1)==QuotedTerm) ) {
             zzmatch(QuotedTerm);
             if ( go ) {
-              term = (TermEntry *) hash_get(Texpr, LATEXT(1));
+              term = (char *) hash_get(Texpr, LATEXT(1));
               if ( term==NULL && UserDefdTokens ) {
                 err("implicit token definition not allowed with #tokdefs");
                 go = 0;

@@ -679,7 +679,7 @@ bool SampleDisplay::handleMotionNotifyEvent (GdkEventMotion *event)
 
   if (dragMode_ == DRAG_SAMPLE_MARKER) {
     gint dw = 0;
-    gint dx;
+    gint dx = 0;
 
     if (x < sampleStartX_)
       x = sampleStartX_;
@@ -1152,7 +1152,7 @@ void SampleDisplay::drawTimeLine()
     return;
 
   gint sep = timeTickWidth_ + timeTickSep_;
-  int maxNofTicks = (sampleWidthX_ + timeTickSep_) / sep;
+  unsigned long maxNofTicks = (sampleWidthX_ + timeTickSep_) / sep;
   gint x;
 
   unsigned long len = maxSample_ - minSample_ + 1;

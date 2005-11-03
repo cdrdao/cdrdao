@@ -756,7 +756,7 @@ cdTextItem [ int blockNr ] > [ CdTextItem *item, int lineNr ]
     >>
  
 cdTextBlock [ CdTextContainer &container, int isTrack ]
-  : << CdTextItem *item;
+  : << CdTextItem *item = NULL;
        int blockNr;
        int lineNr;
     >>
@@ -798,7 +798,7 @@ cdTextLanguageMap [ CdTextContainer &container ]
   : << int blockNr;
        int lang;
        int blockNrLine;
-       int langLine;
+       int langLine = 0;
     >>
 
     LanguageMap "\{"

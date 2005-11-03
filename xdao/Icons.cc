@@ -28,7 +28,7 @@ void Icons::registerStockIcons()
   Glib::RefPtr<Gtk::IconFactory> factory = Gtk::IconFactory::create();
   factory->add_default();
 
-  for (int i = 0; i < G_N_ELEMENTS(iconList); i++) {
+  for (unsigned i = 0; i < G_N_ELEMENTS(iconList); i++) {
     Gtk::IconSource* source = new Gtk::IconSource;
     Glib::RefPtr<Gdk::Pixbuf> pixbuf =
         Gdk::Pixbuf::create_from_inline(-1, iconList[i].pixbuf);

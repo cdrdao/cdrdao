@@ -688,7 +688,7 @@ int GenericMMC::getStartOfSession(long *lba)
 
 static unsigned char leadInOutDataMode(TrackData::Mode mode)
 {
-  unsigned char ret;
+  unsigned char ret = 0;
 
   switch (mode) {
   case TrackData::AUDIO:
@@ -1700,7 +1700,7 @@ int GenericMMC::readSubChannels(TrackData::SubChannelMode sm,
   int retries = 5;
   unsigned char cmd[12];
   int i;
-  long blockLen;
+  long blockLen = 0;
   unsigned long subChanMode = 0;
 
   cmd[0] = 0xbe;  // READ CD

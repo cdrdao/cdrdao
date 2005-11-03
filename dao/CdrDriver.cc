@@ -3650,7 +3650,7 @@ int CdrDriver::readDataTrack(ReadDiskInfo *info, int fd, long start, long end,
   long totalLen = len;
   long lba;
   long lastLba;
-  long blockLen;
+  long blockLen = 0;
   long blocking;
   long burst;
   long iterationsWithoutError = 0;
@@ -3658,7 +3658,7 @@ int CdrDriver::readDataTrack(ReadDiskInfo *info, int fd, long start, long end,
   long act;
   int foundLECError;
   unsigned char *buf;
-  TrackData::Mode mode;
+  TrackData::Mode mode = TrackData::AUDIO;
 
   switch (trackInfo->mode) {
   case TrackData::MODE1:

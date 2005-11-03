@@ -131,9 +131,9 @@ private:
     std::string op;
     std::string file;
     std::string cfile;
-    unsigned long pos;
-    unsigned long end;
-    unsigned long len;
+    long pos;
+    long end;
+    long len;
   };
 
   std::list<QueueJob*> queue_;

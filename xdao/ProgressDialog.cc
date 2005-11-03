@@ -264,6 +264,8 @@ void ProgressDialog::closeAction()
       }
     }
     break;
+  default:
+      break;
   }
 }
 

@@ -432,7 +432,7 @@ void DeviceConfDialog::importStatus()
   CdDevice *dev;
 
   Gtk::TreeNodeChildren ch = listModel_->children();
-  for (int i = 0; i < ch.size(); i++) {
+  for (unsigned i = 0; i < ch.size(); i++) {
     Gtk::TreeRow row = ch[i];
     data = row[listColumns_.data];
     if (data && (dev = CdDevice::find(data->dev.c_str()))) {
@@ -463,7 +463,7 @@ void DeviceConfDialog::exportData()
   std::string s;
 
   Gtk::TreeNodeChildren ch = listModel_->children();
-  for (int i = 0; i < ch.size(); i++) {
+  for (unsigned i = 0; i < ch.size(); i++) {
     Gtk::TreeRow row = ch[i];
     data = row[listColumns_.data];
     if (data && (dev = CdDevice::find(data->dev.c_str()))) {
