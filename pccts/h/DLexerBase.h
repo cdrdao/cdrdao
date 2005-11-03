@@ -56,6 +56,7 @@ public:
 /* user must subclass this */
 class DllExportPCCTS DLGInputStream {
 public:
+  virtual ~DLGInputStream() {}
 	virtual int nextChar() = 0;
 };
 
@@ -66,6 +67,7 @@ private:
 	FILE *input;
 public:
 	DLGFileInput(FILE *f) { input = f; found_eof = 0; }
+	virtual ~DLGFileInput() {}
 	int nextChar() {
 			int c;
 			if ( found_eof ) return EOF;
@@ -88,6 +90,7 @@ private:
 	const DLGChar *p;                                               // MR9
 public:
 	DLGStringInput(const DLGChar *s) { input = s; p = &input[0];}   // MR9
+	~DLGStringInput() {}
 	int nextChar()
 		{
 			if (*p) return (int) (unsigned char) *p++;              // MR14

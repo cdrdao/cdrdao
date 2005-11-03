@@ -156,7 +156,7 @@ void DeviceList::importStatus()
     Gtk::TreeRow row = ch[i];
     data = row[listColumns_.dev];
 
-    if (cddev = CdDevice::find(data.c_str())) {
+    if ((cddev = CdDevice::find(data.c_str()))) {
       if (cddev->status() == CdDevice::DEV_READY)
         list_.get_column(i)->set_clickable(true);
       else
