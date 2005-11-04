@@ -1260,7 +1260,7 @@ static CdrDriver *setupDevice(Command cmd, const char *scsiDevice,
   int inquiryFailed = 0;
   int retry = 0;
   int initTries = 2;
-  int ret;
+  int ret = 0;
 
   scsiIf = new ScsiIf(scsiDevice);
 

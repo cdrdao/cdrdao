@@ -784,7 +784,7 @@ const char *CdrDriver::selectDriver(int readWrite, const char *vendor,
   DriverSelectTable *run;
   DriverSelectTable *match = NULL;
   unsigned int matchLen = 0;
-  unsigned int len;
+  unsigned int len = 0;
 
   initDriverTable();
 
