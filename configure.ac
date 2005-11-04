@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_REVISION($Revision: 1.12 $)dnl
+AC_REVISION($Revision: 1.13 $)dnl
 
 AC_INIT(cdrdao, 1.2.1)
 
@@ -48,7 +48,6 @@ AC_HEADER_SYS_WAIT
 AC_CHECK_HEADERS(fcntl.h getopt.h malloc.h unistd.h sys/mman.h sched.h)
 
 dnl Checks for typedefs, structures, and compiler characteristics.
-AC_C_CONST
 AC_C_BIGENDIAN
 AC_TYPE_SIGNAL
 AC_CHECK_SIZEOF(short)
@@ -318,7 +317,7 @@ fi
 
 dnl If we're using custom libsch/schily libs, make sure it'll compile
 if test "$en_custom_libscg" = yes; then
-  AC_LIBSCG(0.5,[have_scg05=yes],[AC_MSG_ERROR(No cdrtools libraries found. You need to install cdrtools version >= 1.10)])
+  AC_LIBSCG(0.5,[have_scg05=yes],[AC_MSG_ERROR([No cdrtools libraries found. You need to install cdrtools version >= 1.10 (a.k.a. cdrecord-devel). To build the included fallback scsi library, please use --with-scglib=pkg (see INSTALL file)])])
   AC_LIBSCG(0.7,[have_scg07=yes], [])
 
   dnl Special case when we're compiling with cdrtools 1.10
