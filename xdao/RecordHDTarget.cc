@@ -59,9 +59,11 @@ RecordHDTarget::RecordHDTarget()
   label = manage(new Gtk::Label(_("Directory: ")));
   table->attach(*label, 0, 1, 0, 1, Gtk::FILL);
 
-  dirEntry_ = manage(new Gnome::UI::FileEntry(_("record_hd_target_dir_entry"),
-                                              _("Select Directory for Image")));
+  dirEntry_ =
+      manage(new Gnome::UI::FileEntry(_("record_hd_target_dir_entry"),
+                                      _("Select Directory for Image")));
   dirEntry_->set_directory_entry(true);
+  dirEntry_->set_property("use_filechooser", true);
 
   table->attach(*dirEntry_, 1, 2, 0, 1);
 
@@ -71,7 +73,6 @@ RecordHDTarget::RecordHDTarget()
   fileNameEntry_ = manage(new Gtk::Entry);
   table->attach(*fileNameEntry_, 1, 2, 1, 2);
 }
-
 void RecordHDTarget::start()
 {
   active_ = true;
