@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_REVISION($Revision: 1.13 $)dnl
+AC_REVISION($Revision: 1.14 $)dnl
 
 AC_INIT(cdrdao, 1.2.1)
 
@@ -17,10 +17,10 @@ AC_ARG_WITH(linux-qnx-sched,[  --with-linux-qnx-sched  enable QNX real time sche
 
 AC_ARG_WITH(posix-threads,[  --with-posix-threads    use Posix threads for ring buffer (default is YES)],[use_pthreads=$withval],[use_pthreads=default])
 
-AC_ARG_WITH(scglib,[  --with-scglib=sys|pkg   use cdrtools SCSI library (see INSTALL) (default is sys)],[scglib=$withval],[scglib=sys])
+AC_ARG_WITH(scglib,[  --with-scglib=sys|pkg   use cdrtools SCSI library (see INSTALL) (default is pkg)],[scglib=$withval],[scglib=pkg])
 
 if test "$scglib" = yes; then
-  scglib = sys
+  scglib = pkg
 fi
 
 AC_ARG_WITH(scglib-inc,[  --with-scglib-inc=dir   set directory for SCSI library include files],[scglib_inc=$withval],[scglib_inc=default])
@@ -280,7 +280,7 @@ if ! test "$scglib" = no; then
     *-freebsd2*)
 			       scsilib_libs="$scsilib_libs"
 			       ;;
-    *-freebsd[[3456]]*)
+    *-freebsd[[34567]]*)
 			       scsilib_libs="$scsilib_libs -lcam"
 			       ;;
   esac
@@ -299,7 +299,7 @@ else
 	       scsilib_objs="ScsiIf-linux.o sg_err.o"
 	       ;;
     
-    *-freebsd[[3456]]*)
+    *-freebsd[[34567]]*)
 	       scsilib_libs="-lcam"
 	       scsilib_objs="ScsiIf-freebsd-cam.o"
 	       ;;
@@ -351,7 +351,7 @@ esac
 
 dnl Sound device selection for xcdrdao
 case "$host" in
-  *-linux* | *-freebsd[[456]]* | *-solaris*)
+  *-linux* | *-freebsd[[4567]]* | *-solaris*)
 	     sound_if_obj=SoundIF-ao.o
 	     ;;
 
@@ -385,9 +385,11 @@ if test "$with_mp3_support" = yes; then
 fi
 
 dnl Check for libao support
+if test "$with_mp3_support" = yes || test "$with_ogg_support" = yes || test "$en_xdao" = yes; then
 PKG_CHECK_MODULES(AO, ao >= 0.8, [AC_DEFINE(HAVE_AO,1,"")],
         [echo "Building of gcdmaster disabled"; with_ogg_support=no;
         with_mp3_support=no; en_xdao=no])
+fi
 
 if test "$with_ogg_support" = yes; then
   AC_DEFINE(HAVE_OGG_SUPPORT,1,"")

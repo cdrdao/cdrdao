@@ -1,11 +1,6 @@
 Installation:
 
 
-The GnomeCDMaster GUI additionally requires the Gimp toolkit gtk+-2.4,
-recent Gnome libraries and the C++ bindings gtkmm-2.4 and gnomemm-2.4.
-The packages are available from www.gtk.org, www.gnome.org and
-gtkmm.sourceforge.net.
-
 If you fetched the source tree directly from CVS, you will first have
 to run the autogen.sh script to unpack the scsilib and pccts libraries
 and generate all the Makefiles.
@@ -54,16 +49,33 @@ bugs.
 1.3.  SCSI library options
 
 Cdrdao was written to take advantage of the scsi libraries that are
-part of the cdrtools project (usually installed as the cdrecord and
-cdrecord-devel packages with most distributions). Cdrdao can be compiled
-in three different modes wrt to the cdrtools libraries :
+part of the cdrtools project (sometimes installed as the cdrecord and
+cdrecord-devel packages with some distributions). Cdrdao can be
+compiled in three different modes wrt to the cdrtools libraries :
 
-1.3.1.  Using an external cdrtools package.
+1.3.1.  Using the provided cdrtools library
+
+Che cdrdao source distribution provides a subset of the cdrtools tree
+in the scsilib directory. To select it, use :
+
+     --with-scglib=pkg       Use cdrtools tree provided in scsilib
+                             directory
+
+1.3.2.  Using an external cdrtools package.
 
 If you have the cdrtools development libraries installed on your
-system, no special options are required: cdrdao will by default try to
-locate and use them. You can use the following options to specify the
-locations of those libraries (libscg.a and schily/schily.h) :
+system, you can build cdrdoa against those rather than using the
+scsilib directory. Note however that cdrdao requires specific header
+files from cdrtools that are not installed by default. Currently, only
+the RedHat/Fedora packaging of cdrtools (cdrecord-devel) provides the
+sufficient headeres and libraries.
+
+     --with-scglib=sys       Use installed cdrtools headers. Try to
+                             autodetect the location of libscg.a and
+                             schily/schily.h.
+
+You can also explicitely set the location of those files with the
+following options :
 
      --with-scglib-inc=dir   Use SCSI library include files from specified
                              directory instead from the SCSI library that
@@ -72,27 +84,13 @@ locations of those libraries (libscg.a and schily/schily.h) :
      --with-scglib-lib=dir   Specifies the directory that contains the SCSI
                              library.
 
-This is the default behavior of configure, and also the recommended way
-of building cdrdao.
-
-1.3.2.  Using the provided fallback cdrtools library
-
-If you can't use the cdrtools packages provided by your distribution,
-the cdrdao source distribution provides a "fallback" subset of the
-cdrtools tree in the scsilib directory. To select it, use :
-
-     --with-scglib=pkg       Use provided cdrtools tree provided in scsilib
-                             directory
-
-You should ONLY use this build method if for some reason you can't
-built cdrdao using 1.3.1 described above. There are several good
-reasons for this: the version of cdrtools provided by scsilib is NOT
-maintained and NOT up to date. Also, distributions usually patch their
-versions of cdrtools to meet specific requirements or fix specific
-bugs, for example the suid 'bug' encountered since the 2.6.9 linux
-kernel.
-
-Also note this option is likely to disappear in the future.
+This is the recommended way of building cdrdao. You want to use the
+available cdrtools package provided by your distribution rather than
+the one packaged with the cdrdao source code, as distribution usually
+include patches and fixes than you want cdrdao to benefit
+from. Unfortunately, it is currently somewhat tricky to build cdrdao
+straight from a manually compiled cdrtools package (because cdrtools
+doesn't really export an 'official' API or devel-like package).
 
 1.3.3.  Don't use cdrtools at all
 
@@ -111,7 +109,9 @@ cdrdao, and currently available for Linux and FreeBSD :
 1.4.  GCDMaster option
 
 GCDMaster is written in C++ and therefore requires the Gnome/Gtk C++
-bindings to build (libsigc++, gtkmm and libgnomeuimm).
+bindings to build (libsigc++, gtkmm and libgnomeuimm). The packages
+are available from www.gnome.org and gtkmm.sourceforge.net.
+
 
 GCDMaster has the following configuration options :
 
