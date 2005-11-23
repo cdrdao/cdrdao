@@ -12,15 +12,17 @@
  o  Fixed copy problem with single device when read_device is
     specified.
 
- o  configure now tries to build against installed cdrtools by default.
+ o  Added autodetect of cdrtools header files in configure
 
  o  Minor fixes to driver table.
 
  o  pccts build is now better integrated with automake/autoconf.
 
+ o  Added FreeBSD 7 support to configure.ac. Fixed libao dependency.	
+
 GCDMaster changes:
 
- o  The crash when creating a new "Create Audio C" view seemed to be
+ o  The crash when creating a new "Create Audio CD" view seemed to be
     related to gtkmm and libsigc++ and went away with newer releases of
     those packages.
 
