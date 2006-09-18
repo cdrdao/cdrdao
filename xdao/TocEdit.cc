@@ -719,6 +719,7 @@ bool TocEdit::queueThread()
           guiUpdate();
         } else if (cur_->op == "infile") {
           updateLevel_ |= UPD_TOC_DATA | UPD_TRACK_DATA | UPD_SAMPLE_SEL;
+          signalFullView();
           std::string msg = "Inserted file ";
           msg += cur_->file;
           signalStatusMessage(msg.c_str());

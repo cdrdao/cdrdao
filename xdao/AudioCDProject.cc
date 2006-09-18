@@ -673,7 +673,7 @@ bool AudioCDProject::insertFiles(std::list<std::string>& files)
 
   TocEditView* view = audioCDView_->tocEditView();
   if (!view) return false;
-  view->sampleMarker(&pos);
+  if (!view->sampleMarker(&pos)) pos = 0;
 
   std::list<std::string>::iterator i = files.end();
   do {
