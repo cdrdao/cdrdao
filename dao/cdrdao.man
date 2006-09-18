@@ -1,6 +1,6 @@
-.TH CDRDAO 1 "Oct 6, 2002"
+.TH CDRDAO 1 "Jan 18, 2006"
 .SH NAME
-cdrdao \- writes audio CD-Rs in disc-at-once mode
+cdrdao \- reads and writes CDs in disc-at-once mode
 .SH SYNOPSIS
 .B cdrdao
 .RB { show-toc|read-toc|read-cd|read-cddb|show-data|read-test|disk-info|msinfo|unlock|simulate|write|copy|blank }
@@ -143,7 +143,7 @@ to select another blanking speed.
 Like
 .BI write
 but laser stays cold. It is a shortcut for
-.BI write --simulate.
+.BI "write --simulate."
 .TP
 .BI write
 Write the CD-R according to the specifications in the
@@ -223,11 +223,12 @@ is
 .TP
 .BI \--datafile " file"
 Used for
-.BI read-toc, read-cd
+.BI "read-toc, read-cd"
 and
 .BI copy.
 Set the default data file placed in the toc-file by
-.BI read-toc. Use "-" to indicate STDIN.
+.BI read-toc.
+Use "-" to indicate STDIN.
 For commands
 .BI read-cd
 and
@@ -786,7 +787,9 @@ in that order:
 
 2. /etc/defaults/cdrdao
 
-3. $HOME/.cdrdao
+3. /etc/default/cdrdao
+
+4. $HOME/.cdrdao
 
 
 Command line options will overwrite the loaded settings.
@@ -803,7 +806,9 @@ Corresponding option:
 .I --device
 .IP write_driver
 Driver (including driver options) that is used for operations
-.I simulate, write, copy, blank, disk-info and unlock.
+.I simulate, write, copy, blank, disk-info 
+and
+.I unlock.
 Corresponding option:
 .I --driver
 .IP write_speed
@@ -812,14 +817,18 @@ Specifies writing speed. Corresponding option: --speed
 Specifies fifo buffers used for recording. Corresponding option: --buffers
 .IP read_device
 Device used for operations
-.I read-toc, read-cd and copy.
+.I read-toc, read-cd
+and
+.I copy.
 Corresponding option: 
 .I --device
 or
 .I --source-device
 .IP read_driver
 Driver (including driver options) used for operations
-.I read-toc, read-cd and copy.
+.I read-toc, read-cd
+and
+.I copy.
 Corresponding option:
 .I --driver
 or
@@ -848,12 +857,16 @@ Corresponding option:
 Directory where temporay WAV files will be created from decoding MP3 and Ogg Vorbis files. Corresponding option:
 .I --tmpdir
 .LP
-
-
 .SH BUGS
 If the program is terminated during the write/simulation process used IPC
 resources may not be released. Use ipcs(8) and ipcrm(8) to delete them.
 .SH AUTHOR
-Andreas Mueller mueller@daneb.ping.de
+.ft CW
+.nf
+\&Andreas Mueller mueller@daneb.ping.de [DEFUNCT]
+\&Denis Leroy <denis@poolshark.org>
+\&Manuel Clos <llanero@users.sourceforge.net>
+.ft R
+.fi
 .SH SEE ALSO
 .BR gcdmaster "(1), "cdrecord "(1), "cdda2wav "(1), "cdparanoia "(1), " sox "(1), "ipcs "(8), " ipcrm (8) 
