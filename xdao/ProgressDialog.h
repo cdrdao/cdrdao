@@ -62,7 +62,7 @@ private:
   bool leadTimeFilled_;
 
   struct timeval time_;
-  bool ProgressDialog::time();
+  bool time();
 
   Gtk::Button *cancelButton_;
   Gtk::Button *closeButton_;
