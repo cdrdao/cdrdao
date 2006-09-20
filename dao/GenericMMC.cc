@@ -1639,7 +1639,7 @@ int GenericMMC::readIsrc(int trackNr, char *buf)
 
   cmd[0] = 0x42; // READ SUB-CHANNEL
   cmd[2] = 1 << 6;
-  cmd[3] = 0x03; // get media catalog number
+  cmd[3] = 0x03; // get ISRC
   cmd[6] = trackNr;
   cmd[8] = 24;   // transfer length
 

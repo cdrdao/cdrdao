@@ -72,7 +72,7 @@ public:
    * Its only purpose is to reset Plextor special features to their value
    * before cdrdao initialization.
    */
-  ~PlextorReader();
+  virtual ~PlextorReader();
   static CdrDriver *instance(ScsiIf *scsiIf, unsigned long options);
 
   unsigned long getReadCapabilities(const CdToc *, int) const { return 0; }

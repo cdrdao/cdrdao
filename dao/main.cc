@@ -48,6 +48,14 @@
 #include "TempFileManager.h"
 #include "FormatConverter.h"
 
+#ifdef __CYGWIN__
+#include <windows.h>
+#include <winioctl.h>
+#define IOCTL_SCSI_BASE 							FILE_DEVICE_CONTROLLER
+#define IOCTL_SCSI_GET_CAPABILITIES			CTL_CODE(IOCTL_SCSI_BASE, 0x0404, METHOD_BUFFERED, FILE_ANY_ACCESS)
+#define IOCTL_SCSI_PASS_THROUGH_DIRECT	CTL_CODE(IOCTL_SCSI_BASE, 0x0405, METHOD_BUFFERED, FILE_READ_ACCESS | FILE_WRITE_ACCESS)
+#define IOCTL_SCSI_GET_ADDRESS				CTL_CODE(IOCTL_SCSI_BASE, 0x0406, METHOD_BUFFERED, FILE_ANY_ACCESS)
+#endif
 
 #ifdef UNIXWARE
 extern "C" {
@@ -107,6 +115,19 @@ static CdrDriver::BlankingMode BLANKING_MODE = CdrDriver::BLANK_MINIMAL;
 static TrackData::SubChannelMode READ_SUBCHAN_MODE = TrackData::SUBCHAN_NONE;
 
 static Settings *SETTINGS = NULL; // settings read from $HOME/.cdrdao
+
+static bool isNT = false;
+
+#ifdef __CYGWIN__
+/*! \brief OS handle to the device
+	As obtained from CreateFile, used to apply OS level locking.
+*/
+static HANDLE fh = NULL;
+/*! \brief Device string
+	Like "\\\\.\\E:", used in CreateFile to obtain handle to device.
+*/
+static char devstr[10];
+#endif
 
 #if defined(__FreeBSD__)
 
@@ -1388,6 +1409,76 @@ static CdrDriver *setupDevice(Command cmd, const char *scsiDevice,
       initTries = 0;
     }
   }
+
+#ifdef __CYGWIN__
+/* 	Experimental device locking code. Should work on Win2k/NT only.  */
+	typedef struct _SCSI_ADDRESS {
+		ULONG Length;
+		UCHAR PortNumber;
+		UCHAR PathId;
+		UCHAR TargetId;
+		UCHAR Lun;
+	}SCSI_ADDRESS, *PSCSI_ADDRESS;
+
+	OSVERSIONINFO osinfo;
+	osinfo.dwOSVersionInfoSize = sizeof (OSVERSIONINFO);
+	if ((GetVersionEx (&osinfo)) && (osinfo.dwPlatformId == VER_PLATFORM_WIN32_NT))
+		isNT = true;
+	if (isNT)	{
+		char devletter;
+		SCSI_ADDRESS sa;
+		DWORD bytes;
+		bool gotit = false;
+		int ha,id,lun;
+
+		ha = scsiIf->bus ();
+		id = scsiIf->id ();
+		lun = scsiIf->lun ();
+
+		for (devletter = 'A'; devletter <= 'Z'; devletter++)	{
+			sprintf (devstr, "%c:\\\0", devletter);
+			if (GetDriveType (devstr) != DRIVE_CDROM)
+				continue;
+			sprintf (devstr, "\\\\.\\%c:", devletter);
+			fh = CreateFile (devstr,
+				GENERIC_READ,
+				0,
+				NULL,
+				OPEN_EXISTING,
+				FILE_FLAG_WRITE_THROUGH|FILE_FLAG_NO_BUFFERING,
+				NULL);
+			if (fh == INVALID_HANDLE_VALUE)	{
+				//~ printf ("Error opening device %s: %d\n", devstr, GetLastError());
+				fh = NULL;
+				continue;
+			}
+			if (DeviceIoControl (fh, IOCTL_SCSI_GET_ADDRESS, NULL, 0, &sa, sizeof(SCSI_ADDRESS), &bytes, NULL))	{
+				if ( (ha == sa.PortNumber) && (lun == sa.Lun) && (id == sa.TargetId) )	{
+					gotit = true;
+					break;
+				}	else	{
+					CloseHandle (fh);
+					fh = NULL;
+					continue;
+				}
+			}
+		}
+		if (gotit)	{
+			if (!DeviceIoControl (fh, FSCTL_LOCK_VOLUME, NULL, 0, NULL, 0, &bytes, NULL))	{
+				message (-2, "Couldn't lock device %s!", devstr);
+				CloseHandle (fh);
+				fh = NULL;
+			}
+			else
+				message (2, "OS lock on device %s. Unit won't be accessible while burning.", devstr);
+		}	else	{
+			message (-2, "Unable to determine drive letter for device %s! No OS level locking.", scsiDevice);
+			if (fh) CloseHandle (fh);
+			fh = NULL;
+		}
+	}	else
+		message (2,"You are running Windows 9x. No OS level locking available.");
+#endif
 
   if (READING_SPEED >= 0) {
     if (cdr->rspeed(READING_SPEED) != 0) {
@@ -2816,14 +2907,25 @@ int main(int argc, char **argv)
 
 fail:
   delete cdr;
-  delete cdrScsi;
-
-  if (delSrcDevice) {
+  if (delSrcDevice)
     delete srcCdr;
+  delete cdrScsi;
+  if (delSrcDevice)
     delete srcCdrScsi;
-  }
 
   delete toc;
 
+#ifdef __CYGWIN__
+  if (isNT)	{
+		DWORD bytes;
+		if (fh)	{
+			if (!DeviceIoControl (fh, FSCTL_UNLOCK_VOLUME, NULL, 0, NULL, 0, &bytes, NULL))
+				message (-2, "Couldn't unlock device %s!", devstr);
+			else
+				message (2, "Device %s unlocked.", devstr);
+			CloseHandle (fh);
+		}
+	}
+#endif
   exit(exitCode);
 }
