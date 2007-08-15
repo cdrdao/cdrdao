@@ -23,6 +23,7 @@
 #include <gtkmm.h>
 #include <gtk/gtk.h>
 #include <libgnomeuimm.h>
+#include <libglademm/xml.h>
 
 #include <list>
 
@@ -51,6 +52,7 @@ public:
   void update(unsigned long level);
 
   void configureDevices();
+  void configurePreferences();
   void blankCDRW();
 
   void registerStockIcons();
@@ -76,10 +78,12 @@ private:
   Gtk::Button* progressButton_;  
   Gnome::UI::About* about_;
 
+  Glib::RefPtr<Gnome::Glade::Xml> m_refPreferencesXml;
+
   Gtk::FileChooserDialog* readFileSelector_;
   void createMenus();
   void createStatusbar();
   void aboutDialog();
-
 };
+
 #endif

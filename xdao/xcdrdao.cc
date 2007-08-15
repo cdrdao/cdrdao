@@ -24,6 +24,7 @@
 
 #include <gtkmm.h>
 #include <gnome.h>
+#include <gconfmm.h>
 
 #include <gtk/gtk.h>
 
@@ -37,19 +38,23 @@
 #include "AddSilenceDialog.h"
 #include "AddFileDialog.h"
 #include "DeviceConfDialog.h"
+#include "PreferencesDialog.h"
 #include "ProgressDialog.h"
 #include "guiUpdate.h"
 #include "CdDevice.h"
 #include "ProcessMonitor.h"
 #include "ProjectChooser.h"
+#include "ConfigManager.h"
 
 #include "gcdmaster.h"
 
 #include "port.h"
 
-DeviceConfDialog *deviceConfDialog = NULL;
-ProcessMonitor *PROCESS_MONITOR = NULL;
-ProgressDialogPool *PROGRESS_POOL = NULL;
+DeviceConfDialog*   deviceConfDialog = NULL;
+ProcessMonitor*     PROCESS_MONITOR = NULL;
+ProgressDialogPool* PROGRESS_POOL = NULL;
+PreferencesDialog*  preferencesDialog = NULL;
+ConfigManager*      configManager = NULL;
 
 static int VERBOSE = 0;
 static int PROCESS_MONITOR_SIGNAL_BLOCKED = 0;
@@ -126,10 +131,13 @@ int main(int argc, char* argv[])
   Gnome::Main application("GnomeCDMaster", VERSION,
                           Gnome::UI::module_info_get(), argc, argv);
    
-  // Gtk::ButtonBox::set_child_size_default(50, 10);
+  Gnome::Conf::init();
 
   // settings
   CdDevice::importSettings();
+
+  // create GConf configuration manager
+  configManager = new ConfigManager();
 
   // setup process monitor
   PROCESS_MONITOR = new ProcessMonitor;
@@ -149,6 +157,21 @@ int main(int argc, char* argv[])
 
   deviceConfDialog = new DeviceConfDialog;
   PROGRESS_POOL = new ProgressDialogPool;
+
+  // Create Preferences dialog from Glade file.
+  Glib::RefPtr<Gnome::Glade::Xml> refXml;
+  try {
+      refXml = Gnome::Glade::Xml::create(CDRDAO_GLADEDIR "/Preferences.glade");
+  } catch(const Gnome::Glade::XmlError& ex) {
+      std::cerr << ex.what() << std::endl;
+      exit(1);
+  }
+  refXml->get_widget_derived("PrefDialog", preferencesDialog);
+  if (!preferencesDialog) {
+      std::cerr << "Unable to create Preferences dialog from glade file\n" 
+	  CDRDAO_GLADEDIR "/Preferences.glade" << std::endl;
+      exit(1);
+  }
 
   GCDMaster* gcdmaster = new GCDMaster;
   gcdmaster->show();

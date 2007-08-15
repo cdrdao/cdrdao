@@ -25,6 +25,7 @@
 #include "xcdrdao.h"
 #include "guiUpdate.h"
 #include "DeviceConfDialog.h"
+#include "PreferencesDialog.h"
 #include "ProjectChooser.h"
 #include "gcdmaster.h"
 #include "TocEdit.h"
@@ -126,6 +127,7 @@ void GCDMaster::createMenus()
   // Edit
   m_refActionGroup->add( Gtk::Action::create("EditMenu", _("_Edit")) );
 
+
   // Actions menu
   m_refActionGroup->add( Gtk::Action::create("ActionsMenu", _("_Actions")) );
   m_refActionGroup->add( Gtk::Action::create("BlankCD", Gtk::Stock::CDROM,
@@ -139,6 +141,10 @@ void GCDMaster::createMenus()
                          _("Configure Devices..."),
                          _("Configure the read and recording devices")),
                          sigc::mem_fun(*this, &GCDMaster::configureDevices) );
+  m_refActionGroup->add( Gtk::Action::create("Preferences", Gtk::Stock::PREFERENCES,
+					     _("_Preferences..."),
+					     _("Set various preferences and parameters")),
+			 sigc::mem_fun(*this, &GCDMaster::configurePreferences));
 
   // Help
   m_refActionGroup->add( Gtk::Action::create("HelpMenu", _("_Help")) );
@@ -177,6 +183,8 @@ void GCDMaster::createMenus()
         "    </menu>"
         "    <menu action='SettingsMenu'>"
         "      <menuitem action='ConfigureDevices'/>"
+	"      <separator/>"
+        "      <menuitem action='Preferences'/>"
         "    </menu>"
         "    <menu action='HelpMenu'>"
         "      <menuitem action='About'/>"
@@ -192,7 +200,8 @@ void GCDMaster::createMenus()
   }
   catch(const Glib::Error& ex)
   {
-    std::cerr << "building menus failed: " <<  ex.what();
+    std::cerr << "building menus failed: " <<  ex.what() << "\n";
+    exit(1);
   }
 
   Gtk::Widget* pMenuBar = m_refUIManager->get_widget("/MenuBar");
@@ -415,6 +424,11 @@ void GCDMaster::update(unsigned long level)
 void GCDMaster::configureDevices()
 {
   deviceConfDialog->start();
+}
+
+void GCDMaster::configurePreferences()
+{
+    preferencesDialog->show_all();
 }
 
 void GCDMaster::blankCDRW()

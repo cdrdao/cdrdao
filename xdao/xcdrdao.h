@@ -20,9 +20,17 @@
 #ifndef __XCDRDAO_H__
 #define __XCDRDAO_H__
 
-extern class DeviceConfDialog *deviceConfDialog;
-extern class ProcessMonitor *PROCESS_MONITOR;
-extern class ProgressDialogPool *PROGRESS_POOL;
+//
+// GLOBAL objects.
+//
+// Warning: those may be shared by multiple open project windows.
+//
+
+extern class DeviceConfDialog*   deviceConfDialog;
+extern class ProcessMonitor*     PROCESS_MONITOR;
+extern class ProgressDialogPool* PROGRESS_POOL;
+extern class PreferencesDialog*  preferencesDialog;
+extern class ConfigManager*      configManager;
 
 void blockProcessMonitorSignals();
 void unblockProcessMonitorSignals();

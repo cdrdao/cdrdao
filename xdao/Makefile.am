@@ -10,6 +10,7 @@ gcdmaster_SOURCES = \
 	BlankCDDialog.cc 	\
 	CdDevice.cc 		\
 	CdTextDialog.cc 	\
+	ConfigManager.cc	\
 	DeviceConfDialog.cc 	\
 	DeviceList.cc 		\
 	DumpCDProject.cc 	\
@@ -19,6 +20,7 @@ gcdmaster_SOURCES = \
 	guiUpdate.cc 		\
 	Icons.cc		\
 	MessageBox.cc 		\
+	PreferencesDialog.cc	\
 	ProcessMonitor.cc 	\
 	ProgressDialog.cc 	\
 	Project.cc 		\
@@ -148,3 +150,6 @@ EXTRA_DIST = \
 	$(appreg_DATA)	\
 	BUGS TASKS
 
+schemasdir = @GCONF_SCHEMA_FILE_DIR@
+schemas_in_files = gcdmaster.schemas.in
+schemas_DATA = $(schemas_in_files:.schemas.in=.schemas)

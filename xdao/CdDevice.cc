@@ -37,6 +37,7 @@
 #include "guiUpdate.h"
 #include "ProgressDialog.h"
 #include "Settings.h"
+#include "ConfigManager.h"
 
 #include "config.h"
 #include "remote.h"
@@ -372,7 +373,7 @@ bool CdDevice::recordDao(Gtk::Window& parent, TocEdit *tocEdit, int simulate,
                         int multiSession, int speed, int eject, int reload,
                         int buffer, int overburn)
 {
-  char tocFileName[30];
+  char* tocFileName;
   char *args[30];
   int n = 0;
   char devname[30];
@@ -387,7 +388,16 @@ bool CdDevice::recordDao(Gtk::Window& parent, TocEdit *tocEdit, int simulate,
       || process_ != NULL)
     return false;
 
-  sprintf(tocFileName, "/tmp/gcdm.toc.XXXXXX");
+  // Create temporary toc file. Get temporary directory from
+  // ConfigManager, then append mkstemp template.
+  Glib::ustring tempdir =
+      configManager->client()->get_string("/apps/gcdmaster/temp_dir");
+  int length = tempdir.length();
+  tocFileName = (char*)alloca(length + 24);
+
+  strcpy(tocFileName, tempdir.c_str());
+  strcat(tocFileName, "/gcdm.toc.XXXXXX");
+
   int fd = mkstemp(tocFileName);
   if (!fd) {
     message(-2, _("Cannot create temporary toc-file: %s"), strerror(errno));
@@ -488,7 +498,6 @@ bool CdDevice::recordDao(Gtk::Window& parent, TocEdit *tocEdit, int simulate,
   }
   else {
     unlink(tocFileName);
-    free(tocFileName);
     return false;
   }
 }
@@ -1028,36 +1037,34 @@ void CdDevice::importSettings()
  */
 void CdDevice::exportSettings()
 {
-  int i, n;
-  char *s;
-  char buf[20];
-  CdDevice *drun;
+  static const char* pathBase = "/apps/gcdmaster/devices";
+  char* key;
+  char* s;
+  CdDevice* drun;
+  int n;
 
-  gnome_config_clean_section(SET_SECTION_DEVICES);
+  key = (char*)alloca(strlen(pathBase) + 12);
+  Glib::Slit<Glib::ustring> list;
 
   for (drun = first(), n = 0; drun != NULL; drun = next(drun)) {
+
     if (drun->manuallyConfigured()) {
+      sprintf(key, "%s%d", pathBase, n);
+      s = drun->settingString();
+
+      try {
+	Gnome::Conf::Schema sch;
+	sch.set_type(Gnome::Conf::VALUE_STRING);
+	configManager->client()->set(key, sch);
+	configManager->client()->set(key, s);
+      } catch (const Glib::Error& e) {
+	std::cerr << e.what() << std::endl;
+      }
+      // CdDevice::settingString allocates the string. Must delete it
+      // here.
+      delete[] s;
       n++;
     }
-  }
-
-  if (n > 0) {
-    gnome_config_set_int(SET_DEVICES_NUM, n);
-
-    gnome_config_push_prefix(SET_SECTION_DEVICES);
-
-    for (drun = first(), i = 0; drun != NULL; drun = next(drun)) {
-      if (drun->manuallyConfigured()) {
-	sprintf(buf, "%d", i);
-	s = drun->settingString();
-	gnome_config_set_string(buf, s);
-	delete[] s;
-
-	i++;
-      }
-    }
-
-    gnome_config_pop_prefix();
   }
 }
 

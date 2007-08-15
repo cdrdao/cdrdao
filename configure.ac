@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_REVISION($Revision: 1.15 $)dnl
+AC_REVISION($Revision: 1.16 $)dnl
 
 AC_INIT(cdrdao, 1.2.2)
 
@@ -8,6 +8,7 @@ AM_INIT_AUTOMAKE
 AM_CONFIG_HEADER(config.h)
 AM_MAINTAINER_MODE
 AC_CANONICAL_HOST
+AM_GCONF_SOURCE_2
 
 AC_ARG_WITH(pcctsbin,[  --with-pcctsbin=dir     set directory of PCCTS parser generator executables],[pcctsbin=$withval],[pcctsbin=default])
 
@@ -437,6 +438,7 @@ AC_CONFIG_FILES([
         dao/Makefile
         utils/Makefile
         xdao/Makefile
+	xdao/gcdmaster.schemas
         xdao/stock/Makefile
         paranoia/Makefile
         pccts/Makefile

@@ -59,7 +59,7 @@ bool TempFileManager::setTempDirectory(const char* path)
     return false;
   }
 
-  if (!S_ISDIR(st.st_mode) || !(st.st_mode & S_IWUSR)) {
+  if (!S_ISDIR(st.st_mode) || access(path, W_OK) != 0) {
     message(-2, "No permission for temp directory %s.",
             path);
     return false;

@@ -222,3 +222,8 @@ Ask3Box::Ask3Box(Gtk::Window *win, const char *title, int askDontShow,
 Ask3Box::~Ask3Box()
 {
 }
+
+ErrorBox::ErrorBox(const char* msg)
+	: MessageDialog(msg, false, Gtk::MESSAGE_ERROR)
+{
+}
