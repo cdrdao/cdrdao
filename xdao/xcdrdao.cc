@@ -144,7 +144,7 @@ int main(int argc, char* argv[])
   installSignalHandler(SIGCHLD, signalHandler);
 
   // setup periodic GUI updates
-  Glib::signal_timeout().connect(SigC::slot(&guiUpdatePeriodic), 2000);
+  Glib::signal_timeout().connect(sigc::ptr_fun(&guiUpdatePeriodic), 2000);
 
   installSignalHandler(SIGPIPE, SIG_IGN);
 
