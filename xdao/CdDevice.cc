@@ -1044,7 +1044,6 @@ void CdDevice::exportSettings()
   int n;
 
   key = (char*)alloca(strlen(pathBase) + 12);
-  Glib::Slit<Glib::ustring> list;
 
   for (drun = first(), n = 0; drun != NULL; drun = next(drun)) {
 
