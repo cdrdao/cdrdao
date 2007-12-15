@@ -334,7 +334,7 @@ diff -ruN --recursive scsilib/RULES.orig/ppc64-linux-gcc.rul scsilib/RULES/ppc64
  
  	if (busno >= MAX_SCG || tgt >= MAX_TGT || tlun >= MAX_LUN) {
  		errno = EINVAL;
-@@ -383,103 +386,92 @@
+@@ -383,103 +386,86 @@
  	 * look silly but there may be users that did boot from a SCSI hdd
  	 * and connected 4 CD/DVD writers to both IDE cables in the PC.
  	 */
@@ -433,6 +433,7 @@ diff -ruN --recursive scsilib/RULES.orig/ppc64-linux-gcc.rul scsilib/RULES/ppc64
 +		glob("/dev/scd[0-9][0-9]", GLOB_NOSORT|GLOB_APPEND, NULL, &globbuf);
 +		glob("/dev/sg[a-z]", GLOB_NOSORT|GLOB_APPEND, NULL, &globbuf);
 +		glob("/dev/sg[0-9]", GLOB_NOSORT|GLOB_APPEND, NULL, &globbuf);
++		glob("/dev/sr[0-9]", GLOB_NOSORT|GLOB_APPEND, NULL, &globbuf);
 +		
 +		for (i = 0; globbuf.gl_pathv && globbuf.gl_pathv[i] != NULL ; i++) {
 +			devname = globbuf.gl_pathv[i];
@@ -448,13 +449,6 @@ diff -ruN --recursive scsilib/RULES.orig/ppc64-linux-gcc.rul scsilib/RULES/ppc64
 -							"Cannot open '%s'", devname);
 -				return (0);
 +						    "Cannot open '/dev/scd*'");
-+				if (errno != ENOENT && errno != ENXIO && errno != ENODEV && errno != EROFS) {
-+					if (scgp->errstr)
-+						js_snprintf(scgp->errstr, SCSI_ERRSTR_SIZE,
-+							    "Cannot open '%s'", devname);
-+					globfree(&globbuf);
-+					return (0);
-+				}
 +			} else {
 +				sg_clearnblock(f);	/* Be very proper about this */
 +				if (sg_setup(scgp, f, busno, tgt, tlun, -1)) {
@@ -741,3 +735,346 @@ diff -ruN --recursive scsilib/RULES.orig/ppc64-linux-gcc.rul scsilib/RULES/ppc64
  	}
  	if (nopen > 0 && scgp->errstr)
  		scgp->errstr[0] = '\0';
+--- scsilib/include/btorder.h.endianness	2004-01-20 13:53:42.000000000 +0100
++++ scsilib/include/btorder.h	2004-01-20 13:55:24.000000000 +0100
+@@ -100,6 +100,7 @@
+ #	endif
+ 
+ #	if defined(__i386__) || defined(__i386) || defined(i386) || \
++	    defined(__ia64__) || defined(__ia64) || defined(ia64) || \
+ 	    defined(__alpha__) || defined(__alpha) || defined(alpha) || \
+ 	    defined(__arm__) || defined(__arm) || defined(arm)
+ #		define _BIT_FIELDS_LTOH
+--- cdrtools-2.01/libscg/scsi-linux-sg.c.silly	2004-05-20 15:42:12.000000000 +0200
++++ cdrtools-2.01/libscg/scsi-linux-sg.c	2004-09-08 11:37:47.670038792 +0200
+@@ -315,6 +315,10 @@
+ 	if (device != NULL && *device != '\0') {
+ #ifdef	USE_ATA
+ 		if (strncmp(device, "ATAPI", 5) == 0) {
++			if (scgp->overbose) {
++				js_fprintf((FILE *)scgp->errfile,
++				"Use of ATA is preferred over ATAPI.\n");
++			}
+ 			scgp->ops = &ata_ops;
+ 			return (SCGO_OPEN(scgp, device));
+ 		}
+@@ -336,18 +340,6 @@
+ 			 */
+ 			use_ata = TRUE;
+ 			device = NULL;
+-			if (scgp->overbose) {
+-				/*
+-				 * I strongly encourage people who believe that
+-				 * they need to patch this message away to read
+-				 * the messages in the Solaris USCSI libscg
+-				 * layer instead of wetting their tissues while
+-				 * being unwilling to look besides their
+-				 * own belly button.
+-				 */
+-				js_fprintf((FILE *)scgp->errfile,
+-				"Warning: Using badly designed ATAPI via /dev/hd* interface.\n");
+-			}
+ 		}
+ 	}
+ 
+@@ -497,20 +489,7 @@
+ 			if (b < 0 || b > 25)
+ 				b = -1;
+ 		}
+-		if (scgp->overbose) {
+-			/*
+-			 * Before you patch this away, are you sure that you
+-			 * know what you are going to to?
+-			 *
+-			 * Note that this is a warning that helps users from
+-			 * cdda2wav, mkisofs and other programs (that
+-			 * distinguish SCSI addresses from file names) from
+-			 * getting unexpected results.
+-			 */
+-			js_fprintf((FILE *)scgp->errfile,
+-			"Warning: Open by 'devname' is unintentional and not supported.\n");
+-		}
+-					/* O_NONBLOCK is dangerous */
++		/* O_NONBLOCK is dangerous */
+ 		f = open(device, O_RDWR | O_NONBLOCK);
+ /*		if (f < 0 && errno == ENOENT)*/
+ /*			goto openpg;*/
+diff -u -r -3 cdrtools-2.01/include/utypes.h cdrtools-2.01.ossdvd/include/utypes.h
+--- cdrtools-2.01/include/utypes.h	2003-06-15 23:41:23.000000000 +0200
++++ cdrtools-2.01.ossdvd/include/utypes.h	2004-08-27 07:13:09.076574488 +0200
+@@ -75,6 +75,25 @@
+ typedef	unsigned char	Uchar;
+ 
+ /*
++ * Added these cause Linux distro's using kernel 2.6.x seems 
++ * to want them.
++ */
++typedef	unsigned char	u8;
++typedef	unsigned short	u16;
++typedef	unsigned int	u32;
++#if defined(__GNUC__)		/* this is defined gcc-3.x */
++typedef	unsigned long long u64;
++#endif
++
++/*
++ * Dodge the __attribute_const__ out of sneaky kernel includes.
++ * cdrtools is a userland program, so no kernel attribute's
++ */
++#ifndef __attribute_const__
++# define __attribute_const__    /* unimplemented */
++#endif
++
++/*
+  * This is a definition for a compiler dependant 64 bit type.
+  * It currently is silently a long if the compiler does not
+  * support it. Check if this is the right way.
+--- cdrtools/include/mconfig.h.xc	2004-07-11 00:46:53.000000000 +0200
++++ cdrtools/include/mconfig.h	2006-06-02 17:21:55.000000000 +0200
+@@ -49,6 +49,70 @@
+ extern "C" {
+ #endif
+ 
++
++#define HAVE_BROKEN_SRC_LINUX_EXT2_FS_H	1 /* whether /usr/src/linux/include/linux/ext2_fs.h is broken */
++#undef DEV_MINOR_BITS		/* # if bits needed to hold minor device number */
++/*
++ * Byteorder/Bitorder
++ */
++#define	HAVE_C_BIGENDIAN	/* Flag that WORDS_BIGENDIAN test was done */
++#if defined(__BIG_ENDIAN__)
++#define WORDS_BIGENDIAN	1	/* If using network byte order             */
++#endif
++#define	HAVE_C_BITFIELDS	/* Flag that BITFIELDS_HTOL test was done  */
++#if defined(__BIG_ENDIAN__)
++#define BITFIELDS_HTOL	1	/* If high bits come first in structures   */
++#endif
++
++/*
++ * Types/Keywords
++ */
++
++#if defined(__x86_64__) || defined(__ia64__) || defined(__powerpc64__) || defined(__s390x__)
++#define SIZEOF_LONG_INT 8
++#define SIZEOF_CHAR_P 8
++#define SIZEOF_UNSIGNED_LONG_INT 8
++#define SIZEOF_UNSIGNED_CHAR_P 8
++#elif defined(__i386__) || defined(__powerpc__) || defined(__s390__)
++#define SIZEOF_LONG_INT 4
++#define SIZEOF_CHAR_P 4
++#define SIZEOF_UNSIGNED_LONG_INT 4
++#define SIZEOF_UNSIGNED_CHAR_P 4
++#else
++#error Architecture not defined here!
++#endif
++
++#define SIZEOF_CHAR 1
++#define SIZEOF_SHORT_INT 2
++#define SIZEOF_INT 4
++#define SIZEOF_LONG_LONG 8
++#define SIZEOF_UNSIGNED_CHAR 1
++#define SIZEOF_UNSIGNED_SHORT_INT 2
++#define SIZEOF_UNSIGNED_INT 4
++#define SIZEOF_UNSIGNED_LONG_LONG 8
++
++#if defined(__LONG_LONG_MAX__)
++#define HAVE_LONGLONG 1         /* Compiler defines long long type */
++#endif
++
++#if defined(__CHAR_UNSIGNED__)
++#define CHAR_IS_UNSIGNED 1	/* Compiler defines char to be unsigned */
++#endif
++
++#define VA_LIST_IS_ARRAY	1	/* va_list is an array */
++#define _FILE_OFFSET_BITS 64	/* # of bits in off_t if settable	   */
++#define _LARGEFILE_SOURCE 1	/* To make ftello() visible (HP-UX 10.20). */
++
++/*
++ * Strings that help to maintain OS/platform id's in C-programs
++ */
++#define HOST_ALIAS "pc-linux-gnu"		/* Output from config.guess (orig)	*/
++#define HOST_SUB   "pc-linux-gnu"		/* Output from config.sub (modified)	*/
++#define HOST_CPU   "cpu" 		/* CPU part from HOST_SUB		*/
++#define HOST_VENDOR "pc"		/* VENDOR part from HOST_SUB		*/
++#define HOST_OS	"linux-gnu"		/* CPU part from HOST_SUB		*/
++
++
+ /*
+  * The NetBSD people want to bother us.
+  * They removed the definition for 'unix' and are bleating for every test
+--- cdrtools/conf/xconfig.h.in.xc	2006-02-07 17:23:13.000000000 +0100
++++ cdrtools/conf/xconfig.h.in	2006-06-02 17:22:06.000000000 +0200
+@@ -408,38 +406,11 @@
+ #undef HAVE_ST_FLAGS		/* if struct stat contains st_flags */
+ #undef STAT_MACROS_BROKEN	/* if the macros S_ISDIR, S_ISREG .. don't work */
+ 
+-#undef DEV_MINOR_BITS		/* # if bits needed to hold minor device number */
+ #undef DEV_MINOR_NONCONTIG	/* if bits in minor device number are noncontiguous */
+ 
+ #undef HAVE_SOCKADDR_STORAGE	/* if socket.h defines struct sockaddr_storage */
+ 
+ 
+-/*
+- * Byteorder/Bitorder
+- */
+-#define	HAVE_C_BIGENDIAN	/* Flag that WORDS_BIGENDIAN test was done */
+-#undef WORDS_BIGENDIAN		/* If using network byte order             */
+-#define	HAVE_C_BITFIELDS	/* Flag that BITFIELDS_HTOL test was done  */
+-#undef BITFIELDS_HTOL		/* If high bits come first in structures   */
+-
+-/*
+- * Types/Keywords
+- */
+-#undef SIZEOF_CHAR
+-#undef SIZEOF_SHORT_INT
+-#undef SIZEOF_INT
+-#undef SIZEOF_LONG_INT
+-#undef SIZEOF_LONG_LONG
+-#undef SIZEOF_CHAR_P
+-#undef SIZEOF_UNSIGNED_CHAR
+-#undef SIZEOF_UNSIGNED_SHORT_INT
+-#undef SIZEOF_UNSIGNED_INT
+-#undef SIZEOF_UNSIGNED_LONG_INT
+-#undef SIZEOF_UNSIGNED_LONG_LONG
+-#undef SIZEOF_UNSIGNED_CHAR_P
+-
+-#undef HAVE_LONGLONG		/* Compiler defines long long type */
+-#undef CHAR_IS_UNSIGNED		/* Compiler defines char to be unsigned */
+ 
+ #undef const			/* Define to empty if const doesn't work */
+ #undef uid_t			/* To be used if uid_t is not present  */
+@@ -479,7 +450,6 @@
+ 
+ /*#undef HAVE_SIZE_T*/
+ /*#undef NO_SIZE_T*/
+-#undef VA_LIST_IS_ARRAY		/* va_list is an array */
+ #undef GETGROUPS_T
+ #define GID_T		GETGROUPS_T
+ 
+@@ -498,8 +468,6 @@
+ #ifdef	HAVE_LARGEFILES		/* If we have working largefiles at all	   */
+ 				/* This is not defined with glibc-2.1.3	   */
+ 
+-#undef _FILE_OFFSET_BITS	/* # of bits in off_t if settable	   */
+-#undef _LARGEFILE_SOURCE	/* To make ftello() visible (HP-UX 10.20). */
+ #undef _LARGE_FILES		/* Large file defined on AIX-style hosts.  */
+ #undef _XOPEN_SOURCE		/* To make ftello() visible (glibc 2.1.3). */
+ 				/* XXX We don't use this because glibc2.1.3*/
+@@ -583,15 +551,6 @@
+ #undef NO_USER_MALLOC		/* If we cannot define our own malloc()	*/
+ #undef HAVE_DYN_ARRAYS		/* If the compiler allows dynamic sized arrays */
+ 
+-/*
+- * Strings that help to maintain OS/platform id's in C-programs
+- */
+-#undef HOST_ALIAS		/* Output from config.guess (orig)	*/
+-#undef HOST_SUB			/* Output from config.sub (modified)	*/
+-#undef HOST_CPU			/* CPU part from HOST_SUB		*/
+-#undef HOST_VENDOR		/* VENDOR part from HOST_SUB		*/
+-#undef HOST_OS			/* CPU part from HOST_SUB		*/
+-
+ 
+ /*
+  * Begin restricted code for quality assurance.
+--- cdrtools-2.01/libscg/oexcl.c.excl	2004-09-22 12:03:23.426676328 +0200
++++ cdrtools-2.01/libscg/oexcl.c	2004-09-22 12:03:23.426676328 +0200
+@@ -0,0 +1,29 @@
++#include <stdlib.h>
++#include <unistd.h>
++#include <sys/types.h>
++#include <sys/stat.h>
++#include <fcntl.h>
++#include <stdio.h>
++
++int openexcl(const char *device, int mode)
++{
++  int f, i;
++
++  f = open(device, mode | O_EXCL);
++
++  if (f < 0) {
++    f = open(device, mode);
++
++    if (f >= 0) {
++      close(f);
++      f = -1;
++      for (i = 0; (i < 10) && (f == -1); i++) {
++	fprintf(stderr, "Error trying to open %s exclusively ... retrying in 1 second.\n", device);
++	usleep(1000000 + 100000.0 * rand()/(RAND_MAX+1.0));
++	f = open(device, O_RDONLY | O_NONBLOCK | O_EXCL);
++      }
++    }
++  }
++
++  return f;
++}
+--- cdrtools-2.01/libscg/scsi-linux-ata.c.excl	2004-09-22 12:03:23.423676784 +0200
++++ cdrtools-2.01/libscg/scsi-linux-ata.c	2004-09-22 12:03:23.427676176 +0200
+@@ -112,6 +112,7 @@
+ LOCAL	void	sglog		__PR((const char *fmt, ...));
+ 
+ #include <vadefs.h>
++#include "oexcl.h"
+ 
+ /* VARARGS1 */
+ #ifdef	PROTOTYPES
+@@ -267,7 +268,7 @@
+ 			starget,
+ 			slun;
+ 
+-		f = open(device, O_RDWR | O_NONBLOCK);
++		f = openexcl(device, O_RDWR | O_NONBLOCK);
+ 
+ 		if (f < 0) {
+ 			if (scgp->errstr)
+--- cdrtools-2.01/libscg/oexcl.h.excl	2004-09-22 12:03:23.428676024 +0200
++++ cdrtools-2.01/libscg/oexcl.h	2004-09-22 12:03:23.428676024 +0200
+@@ -0,0 +1,5 @@
++#ifndef OEXCL_H
++
++extern int openexcl(const char *device, int mode);
++
++#endif
+--- scsilib/libscg/Targets.orig	2007-12-15 11:49:22.000000000 +0100
++++ scsilib/libscg/Targets	2007-12-15 11:49:29.000000000 +0100
+@@ -1,3 +1,3 @@
+ CFILES=		scsitransp.c scsihack.c scsiopen.c scgsettarget.c \
+-		scsierrs.c scgtimes.c scsihelp.c \
++		scsierrs.c scgtimes.c scsihelp.c oexcl.c \
+ 		rdummy.c
+--- cdrtools-2.01/libscg/scsi-linux-sg.c	2004-09-22 12:12:49.271654816 +0200
++++ cdrtools-2.01/libscg/scsi-linux-sg.c	2004-09-22 12:12:49.271654816 +0200
+@@ -79,6 +79,7 @@
+ #endif
+ 
+ #include "scsi/sg.h"
++#include "oexcl.h"
+ 
+ #undef sense			/* conflict in struct cdrom_generic_command */
+ #include <linux/cdrom.h>
+@@ -94,7 +95,7 @@
+  *	Choose your name instead of "schily" and make clear that the version
+  *	string is related to a modified source.
+  */
+-LOCAL	char	_scg_trans_version[] = "scsi-linux-sg.c-1.83";	/* The version for this transport*/
++LOCAL	char	_scg_trans_version[] = "scsi-linux-sg.c-1.83-RH";	/* The version for this transport*/
+ 
+ #ifndef	SCSI_IOCTL_GET_BUS_NUMBER
+ #define	SCSI_IOCTL_GET_BUS_NUMBER 0x5386
+@@ -247,7 +249,7 @@
+ 		 * return "schily" for the SCG_AUTHOR request.
+ 		 */
+ 		case SCG_AUTHOR:
+-			return (_scg_auth_schily);
++			return ("schily - Red Hat");
+ 		case SCG_SCCS_ID:
+ 			return (__sccsid);
+ 		case SCG_KVERSION:
+@@ -479,7 +483,7 @@
+ 				b = -1;
+ 		}
+ 		/* O_NONBLOCK is dangerous */
+-		f = open(device, O_RDWR | O_NONBLOCK);
++		f = openexcl(device, O_RDWR | O_NONBLOCK);
+ /*		if (f < 0 && errno == ENOENT)*/
+ /*			goto openpg;*/
+ 
