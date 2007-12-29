@@ -1,7 +1,7 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_REVISION($Revision: 1.16 $)dnl
+AC_REVISION($Revision: 1.17 $)dnl
 
-AC_INIT(cdrdao, 1.2.2)
+AC_INIT(cdrdao, 1.2.3)
 
 AC_CONFIG_SRCDIR(dao/main.cc)
 AM_INIT_AUTOMAKE
@@ -21,7 +21,7 @@ AC_ARG_WITH(posix-threads,[  --with-posix-threads    use Posix threads for ring 
 AC_ARG_WITH(scglib,[  --with-scglib=sys|pkg   use cdrtools SCSI library (see INSTALL) (default is pkg)],[scglib=$withval],[scglib=pkg])
 
 if test "$scglib" = yes; then
-  scglib = pkg
+  scglib=pkg
 fi
 
 AC_ARG_WITH(scglib-inc,[  --with-scglib-inc=dir   set directory for SCSI library include files],[scglib_inc=$withval],[scglib_inc=default])
