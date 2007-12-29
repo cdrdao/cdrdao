@@ -44,6 +44,7 @@
 #include "ScsiIf.h"
 #include "CdrDriver.h"
 #include "util.h"
+#include "log.h"
 #include "Toc.h"
 
 #define DRIVER_IDS 13
@@ -317,7 +318,7 @@ bool CdDevice::updateProgress(Glib::IOCondition cond, int fd)
       }
     }
     else {
-      message(-1, _("Reading of progress message failed."));
+      log_message(-1, _("Reading of progress message failed."));
     }
   }
 
@@ -400,7 +401,7 @@ bool CdDevice::recordDao(Gtk::Window& parent, TocEdit *tocEdit, int simulate,
 
   int fd = mkstemp(tocFileName);
   if (!fd) {
-    message(-2, _("Cannot create temporary toc-file: %s"), strerror(errno));
+    log_message(-2, _("Cannot create temporary toc-file: %s"), strerror(errno));
     return false;
   }
 
@@ -409,7 +410,7 @@ bool CdDevice::recordDao(Gtk::Window& parent, TocEdit *tocEdit, int simulate,
   // translation, besides it's already been done).
   if (!tocEdit->toc()->write(fd, true)) {
     close(fd);
-    message(-2, _("Cannot write temporary toc-file."));
+    log_message(-2, _("Cannot write temporary toc-file."));
     return false;
   }
 

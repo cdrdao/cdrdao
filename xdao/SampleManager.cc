@@ -31,6 +31,7 @@
 #include "guiUpdate.h"
 #include "Toc.h"
 #include "util.h"
+#include "log.h"
 
 #include "TrackDataScrap.h"
 
@@ -313,7 +314,7 @@ int SampleManagerImpl::readSamples()
       rightPosSamples_[actBlock_] = rpossum;
     }
     else {
-      message(-2, "Cannot read audio data: %ld - %ld.", n, ret);
+      log_message(-2, "Cannot read audio data: %ld - %ld.", n, ret);
       tocReader_.closeData();
       tocEdit_->signalProgressFraction(0.0);
       return -1;

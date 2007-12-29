@@ -33,6 +33,7 @@
 
 #include "Toc.h"
 #include "util.h"
+#include "log.h"
 
 
 /* XPM data for track marker */
@@ -381,7 +382,7 @@ void SampleDisplay::setCursor(int ctrl, unsigned long sample)
 void SampleDisplay::getColor(const char *colorName, Gdk::Color *color)
 {
   if (!color->parse(colorName) || !get_colormap()->alloc_color(*color)) {
-    message(-1, _("Cannot allocate color \"%s\""), colorName);
+    log_message(-1, _("Cannot allocate color \"%s\""), colorName);
     *color = get_style()->get_black();
   }
 }

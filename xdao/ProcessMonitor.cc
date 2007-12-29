@@ -29,6 +29,7 @@
 #include "xcdrdao.h"
 
 #include "util.h"
+#include "log.h"
 
 
 Process::Process(int pid, int commFd)
@@ -114,7 +115,7 @@ Process *ProcessMonitor::start(const char *prg, char *args[], int pipeFdArgNum)
   char buf[20];
 
   if (pipe(pipeFds) != 0) {
-    message(-2, "Cannot create pipe: %s", strerror(errno));
+    log_message(-2, "Cannot create pipe: %s", strerror(errno));
     return NULL;
   }
   
@@ -123,10 +124,10 @@ Process *ProcessMonitor::start(const char *prg, char *args[], int pipeFdArgNum)
     args[pipeFdArgNum] = buf;
   }
 
-  message(0, "Starting: ");
+  log_message(0, "Starting: ");
   for (int i = 0; args[i] != NULL; i++)
-    message(0, "%s ", args[i]);
-  message(0, "");
+    log_message(0, "%s ", args[i]);
+  log_message(0, "");
 
 
   blockProcessMonitorSignals();
@@ -144,11 +145,11 @@ Process *ProcessMonitor::start(const char *prg, char *args[], int pipeFdArgNum)
 
     execvp(prg, args);
 
-    message(-2, "Cannot execute '%s': %s", prg, strerror(errno));
+    log_message(-2, "Cannot execute '%s': %s", prg, strerror(errno));
     _exit(255);
   }
   else if (pid < 0) {
-    message(-2, "Cannot fork: %s", strerror(errno));
+    log_message(-2, "Cannot fork: %s", strerror(errno));
     unblockProcessMonitorSignals();
     return NULL;
   }
@@ -241,13 +242,13 @@ void ProcessMonitor::handleSigChld()
       statusChanged_ = 1;
     }
     else {
-      message(-3, "Unknown child with pid %d exited.", pid);
+      log_message(-3, "Unknown child with pid %d exited.", pid);
     }
   }
 
   /*
   if (pid < 0) 
-    message(-2, "waitpid failed: %s", strerror(errno));
+    log_message(-2, "waitpid failed: %s", strerror(errno));
     */
 }
 

@@ -156,7 +156,7 @@ int SoundIFImpl::openDevice()
     return 0; // already open
 
   if ((dspFd_ = open("/dev/dsp", O_WRONLY | O_NONBLOCK)) < 0) {
-    message(-1, _("Cannot open \"/dev/dsp\": %s"), strerror(errno));
+    log_message(-1, _("Cannot open \"/dev/dsp\": %s"), strerror(errno));
     return 1;
   }
 
@@ -183,24 +183,24 @@ int SoundIFImpl::setupDevice()
   
   int val = 44100;
   if (ioctl(dspFd_, SNDCTL_DSP_SPEED, &val) < 0) {
-    message(-1, _("Cannot set sample rate to 44100: %s"), strerror(errno));
+    log_message(-1, _("Cannot set sample rate to 44100: %s"), strerror(errno));
     return 1;
   }
 
   val = 2;
   if (ioctl(dspFd_, SNDCTL_DSP_CHANNELS, &val) < 0) {
-    message(-1, _("Cannot setup 2 channels: %s"), strerror(errno));
+    log_message(-1, _("Cannot setup 2 channels: %s"), strerror(errno));
     return 1;
   }
 
   val = AFMT_S16_LE;
   if (ioctl(dspFd_, SNDCTL_DSP_SETFMT, &val) < 0) {
-    message(-1, _("Cannot setup sound format: %s"), strerror(errno));
+    log_message(-1, _("Cannot setup sound format: %s"), strerror(errno));
     return 1;
   }
 
   if (val != AFMT_S16_LE) {
-    message(-1, _("Sound device does not support "
+    log_message(-1, _("Sound device does not support "
                   "little endian signed 16 bit samples."));
     return 1;
   }
