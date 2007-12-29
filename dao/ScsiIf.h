@@ -16,41 +16,10 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
-/*
- * $Log: ScsiIf.h,v $
- * Revision 1.4  2006/09/20 10:49:40  poolshark
- * Win32 device locking patch from Giuseppe Corbelli
- *
- * Revision 1.3  2004/03/23 18:46:07  poolshark
- * MMC autodetect mode
- *
- * Revision 1.2  2004/02/12 01:13:31  poolshark
- * Merge from gnome2 branch
- *
- * Revision 1.1.1.1.4.2  2004/01/07 08:28:14  poolshark
- * Added ATAPI support
- *
- * Revision 1.1.1.1.4.1  2004/01/06 19:13:02  poolshark
- * Some first support for ATAPI disks
- *
- * Revision 1.1.1.1  2000/02/05 01:35:11  llanero
- * Uploaded cdrdao 1.1.3 with pre10 patch applied.
- *
- * Revision 1.4  1999/04/02 16:44:30  mueller
- * Removed 'revisionDate' because it is not available in general.
- *
- * Revision 1.3  1999/03/27 20:53:25  mueller
- * Added argument 'showMessage' to 'sendCmd()'.
- * Introduced function 'printError()' to print error message for last
- * failed command.
- *
- * Revision 1.2  1998/08/13 19:13:28  mueller
- * Added member function 'timout()' to set timeout of SCSI commands.
- *
- */
-/*! \file ScsiIf.h
-	\brief Low level SCSI interface.
-*/
+
+// \file ScsiIf.h
+//   \brief Low level SCSI interface.
+
 #ifndef __SCSIIF_H__
 #define __SCSIIF_H__
 
@@ -59,134 +28,138 @@
 
 class ScsiIfImpl;
 
-/*! \brief Base class to communicate with SCSI device
-*/
-class ScsiIf {
-public:
+//! \brief Base class to communicate with SCSI device
+
+class ScsiIf
+{
+ public:
    
-  /*! \brief Constructor. Does not do SCSI initialization.
+    //! \brief Constructor. Does not do SCSI initialization.
+    //
+    // Sets up some internal data and gets page size.
 
-	Sets up some internal data and gets page size.
-  */
-  ScsiIf(const char *dev);
-  ~ScsiIf();
+    ScsiIf(const char *dev);
+    ~ScsiIf();
 
-  /*! \brief Accessor method: vendor string of the device.*/
-  const char *vendor() const { return vendor_; }
-  /*! \brief Accessor method: product string of the device.*/
-  const char *product() const { return product_; }
-  /*! \brief Accessor method: revision string of the device.*/
-  const char *revision() const { return revision_; }
+    //! \brief Accessor method: vendor string of the device.
+    const char *vendor() const { return vendor_; }
+    //! \brief Accessor method: product string of the device.
+    const char *product() const { return product_; }
+    //! \brief Accessor method: revision string of the device.
+    const char *revision() const { return revision_; }
 
-  /*! \brief Accessor method: SCSI bus this device is connected to. */
-  const int bus ();
-  /*! \brief Accessor method: SCSI ID of the device. */
-  const int id ();
-  /*! \brief Accessor method: SCSI LUN of the device. */
-  const int lun ();
+    //! \brief Accessor method: SCSI bus this device is connected to.
+    const int bus ();
+    //! \brief Accessor method: SCSI ID of the device.
+    const int id ();
+    /*! \brief Accessor method: SCSI LUN of the device. */
+    const int lun ();
 
-  /*! \brief Opens the scsi device. Most of the code originates from cdrecord's initialization function.
-
-	Tries to build a scglib SCSI* object using device specified in ScsiIf::ScsiIf and
-	issues an inquiry to test the communication. Gets max DMA transfer length using scg_bufsize, upto MAX_DATALEN_LIMIT,
-	and builds a buffer of this size.
-
-  \return int
-	- 0 OK
-	- 1 device could not be opened
-	- 2 inquiry failed
-  */
-  int init();
+    //! \brief Opens the scsi device. Most of the code originates
+    // from cdrecord's initialization function.
+    // Tries to build a scglib SCSI* object using device specified in
+    // ScsiIf::ScsiIf and issues an inquiry to test the
+    // communication. Gets max DMA transfer length using scg_bufsize,
+    // upto MAX_DATALEN_LIMIT, and builds a buffer of this size.
+    //
+    // \return int
+    //   - 0 OK
+    //   - 1 device could not be opened
+    //   - 2 inquiry failed
+    int init();
   
-  /*! \brief Accessor method: returns max DMA transfer length */
-  int maxDataLen() const { return maxDataLen_; }
+    // \brief Accessor method: returns max DMA transfer length.
+    int maxDataLen() const { return maxDataLen_; }
 
-  /*! \brief Sends a SCSI command and receives data
+    //! \brief Sends a SCSI command and receives data
+    // \param cmd Buffer with CDB
+    // \param cmdLen Length of CDB
+    // \param dataOut Output buffer from the command, preallocated,
+    //        will be overwritten
+    // \param dataOutLen Length of preallocated output
+    //        buffer. dataOutLen or dataInLen must be 0.
+    // \param dataIn Input buffer to the command, containing
+    //        parameters to the command
+    // \param dataInLen Length of input buffer. dataOutLen or
+    //        dataInLen must be 0.
+    // \param showMessage If 0 makes scglib silent. If 1 verbose
+    //        command execution.
+    // \return int
+    //   - 0 OK
+    //   - 1 scsi command failed (os level, no sense data available)
+    //   - 2 scsi command failed (sense data available)
+    int sendCmd(const unsigned char *cmd, int cmdLen,
+		const unsigned char *dataOut, int dataOutLen,
+		unsigned char *dataIn, int dataInLen, int showMessage = 1);
 
-	\param cmd Buffer with CDB
-	\param cmdLen Length of CDB
-	\param dataOut Output buffer from the command, preallocated, will be overwritten
-	\param dataOutLen Length of preallocated output buffer. dataOutLen or dataInLen must be 0.
-	\param dataIn Input buffer to the command, containing parameters to the command
-	\param dataInLen Length of input buffer. dataOutLen or dataInLen must be 0.
-	\param showMessage If 0 makes scglib silent. If 1 verbose command execution.
-	\return int
-		- 0 OK
-        - 1 scsi command failed (os level, no sense data available)
-        - 2 scsi command failed (sense data available)
-  */
-  int sendCmd(const unsigned char *cmd, int cmdLen,
-	      const unsigned char *dataOut, int dataOutLen,
-	      unsigned char *dataIn, int dataInLen, int showMessage = 1);
-
-  /*! \brief Return the actual sense buffer in scglib
-
-	\param len will be overwritten and contain ScsiIf::impl->scgp_->scmd->sense_count (length of returned buffer).
-	\return ScsiIf::impl->scgp_->scmd->u_sense.cmd_sense. This buffer contains last sense data available to scglib.
-		The buffer is owned by scglib and must not be freed.
-  */
-  const unsigned char *getSense(int &len) const;
+    //! \brief Return the actual sense buffer in scglib
+    // \param len will be overwritten and contain
+    //        ScsiIf::impl->scgp_->scmd->sense_count (length of returned
+    //        buffer).
+    //	\return ScsiIf::impl->scgp_->scmd->u_sense.cmd_sense. This
+    //	      buffer contains last sense data available to scglib. The
+    //	      buffer is owned by scglib and must not be freed.
+    const unsigned char *getSense(int &len) const;
   
-  /*! \brief Prints extended status information of the last SCSI command.
+    //! \brief Prints extended status information of the last SCSI command.
+    // Prints the following SCSI codes:
+    //  - command transport status
+    //	- CDB
+    //  - SCSI status byte
+    //  - Sense Bytes
+    //  - Decoded Sense data
+    //  - DMA status
+    //  - SCSI timing
+    //
+    // to file specified in ScsiIf::impl_->scgp_->errfile (defaults to
+    // stderr)
+    void printError();
 
-	Prints the following SCSI codes:
-	- command transport status
-	- CDB
-	- SCSI status byte
-	- Sense Bytes
-	- Decoded Sense data
-	- DMA status
-	- SCSI timing
+    //! \brief Sets new timeout (seconds) and returns old timeout.
+    int timeout(int);
 
-	to file specified in ScsiIf::impl_->scgp_->errfile (defaults to stderr)
-  */
-  void printError();
+    //! \brief Issues TEST UNIT READY command
+    //	\return int
+    //   - 0 OK, ready
+    //   - 1 not ready (busy, default case when TUR command fails,
+    //       except when there's no disk in drive, see below)
+    //   - 2 not ready, no disk in drive
+    //   - 3 scsi command failed at OS level, no sense available
+    int testUnitReady();
 
-  /*! \brief Sets new timeout (seconds) and returns old timeout. */
-  int timeout(int);
+    //! \brief Check for mmc capability. Return whether the
+    //driver/drive can read and write CD-R and CD-RW disks.
+    bool checkMmc(bool *cd_r_read,  bool *cd_r_write,
+		  bool *cd_rw_read, bool *cd_rw_write);
 
-  /*! \brief Issues TEST UNIT READY command
+    struct ScanData {
+	std::string dev;
+	// This is crazy, but the schily header #define vendor, product
+	// and revision. Talk about namespace pollution...
+	char vendor[9];
+	char product[17];
+	char revision[5];
+    };
 
-	\return int
-		- 0 OK, ready
-		- 1 not ready (busy, default case when TUR command fails, except when there's no disk in drive, see below)
-		- 2 not ready, no disk in drive
-		- 3 scsi command failed at OS level, no sense available
-  */
-  int testUnitReady();
+    //! Scans for all SCSI devices and returns a newly allocated
+    // 'ScanData' array.
+    static ScanData *scan(int *len, char* scsi_dev_path = NULL);
 
-  // check for mmc capability
-  bool checkMmc(bool *cd_r_read,  bool *cd_r_write,
-                bool *cd_rw_read, bool *cd_rw_write);
+ private:
+    char vendor_[9];
+    char product_[17];
+    char revision_[5];
 
-  struct ScanData {
-    std::string dev;
-    // This is crazy, but the schily header #define vendor, product
-    // and revision. Talk about namespace pollution...
-    char vendor[9];
-    char product[17];
-    char revision[5];
-  };
+    int maxDataLen_;
 
-  // scans for all SCSI devices and returns a newly allocated 'ScanData' array.
-  static ScanData *scan(int *len, char* scsi_dev_path = NULL);
+    // \brief Standard INQUIRY command used to fill ScsiIf::vendor_ ,
+    // ScsiIf::product_ , ScsiIf::revision_
+    // \return int
+    //   - 0 if all right
+    //   - 1 if INQUIRY command failed
+    int inquiry();
 
-private:
-  char vendor_[9];
-  char product_[17];
-  char revision_[5];
-
-  int maxDataLen_;
-
-  /*! \brief Standard INQUIRY command used to fill ScsiIf::vendor_ , ScsiIf::product_ , ScsiIf::revision_
-
-	\return int
-		- 0 if all right
-		- 1 if INQUIRY command failed
-  */
-  int inquiry();
-
-  ScsiIfImpl *impl_;
+    ScsiIfImpl *impl_;
 };
 
 #endif

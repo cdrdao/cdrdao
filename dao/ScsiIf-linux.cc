@@ -1,6 +1,6 @@
 /*  cdrdao - write audio CD-Rs in disc-at-once mode
  *
- *  Copyright (C) 1998-2001  Andreas Mueller <andreas@daneb.de>
+ *  Copyright (C) 2007 Denis Leroy <denis@poolshark.org>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -26,61 +26,19 @@
 #include <string.h>
 #include <assert.h>
 #include <sys/ioctl.h>
-#include <linux/../scsi/sg.h>  /* cope with silly includes */
-#include <asm/param.h> // for HZ
+#include <glob.h>
+#include <asm/param.h>
+#include <scsi/scsi.h>
+#include <scsi/sg.h>
 
 #include "ScsiIf.h"
-#include "util.h"
 #include "sg_err.h"
+#include "log.h"
+#include "util.h"
 
-
-/* Runtime selection to obtain the best features available from the
-   Linux SCSI generic (sg) driver taken from:
-
-*  Copyright (C) 1999 D. Gilbert
-*  This program is free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2, or (at your option)
-*  any later version.
-
-   This program is meant as an example to application writers who wish
-   to use the Linux sg driver. Linux changed its sg driver in kernel
-   2.2.6 . The new version has extra features that application writers
-   may wish to use but not at the expense of backward compatibility with
-   the original driver. Also if an application is distributed in binary
-   code, runtime selection is needed in the application code interfacing
-   to sg in order to cope with the various combinations:
-
-   App compiled with    App binary run on     Notes
-   ----------------------------------------------------------------------
-   new sg.h             new driver
-   new sg.h             original driver       backward compatibility mode
-   original sg.h        new driver            "forward" compatibility mode
-   original sg.h        original driver
-
-
-   Noteworthy features:
-        - forward + backward compatible from 2.0 to 2.3 series of
-          kernels (tested on: 2.0.27, 2.2.10, 2.3.8). Extra features
-          are used when available. This is done via run time selection.
-        - handles /usr/include/scsi bug in Redhat 6.0 + other distros
-        - allows device argument to be a non-sg SCSI device (eg /dev/sda)
-          and shows mapping to equivalent sg device
-        - internal scan (used for previous item when non-sg device) does
-          not hang on O_EXCL flag on device but steps over it.
-        - allows app to request reserved buffer size and shows the amount
-          actually reserved **
-        - outputs as much error information as is available
-        - uses categorization and sense buffer decode routines in sg_err.c
-        - sets SCSI command length explicitly (when available)
-
-   ** The original reserved buffer (ie SG_BIG_BUFF) is allocated one for
-      all users of the driver. From 2.2.6 onwards, the reserved buffer is
-      per file descriptor.
-
-   One assumption made here is that ioctl command numbers do not change.
-
-*/
+//
+// SG_IO Linux SCSI interface
+///
 
 #ifndef SG_GET_RESERVED_SIZE
 #define SG_GET_RESERVED_SIZE 0x2272
@@ -98,486 +56,355 @@
 #define SG_MAX_SENSE 16
 #endif
 
+#define CDRDAO_DEFAULT_TIMEOUT 30000
 
-#define SG_RT_ORIG 0
-#define SG_RT_NEW32 1  /* new driver version 2.1.31 + 2.1.32 */
-#define SG_RT_NEW34 2  /* new driver version 2.1.34 and after */
+#define SYSFS_SCSI_DEVICES "/sys/bus/scsi/devices"
 
+typedef unsigned char uchar;
 
-class ScsiIfImpl {
+class ScsiIfImpl
+{
 public:
-  struct ScsiIdLun {
-    int mux4;
-    int hostUniqueId;
-  };
+    char* filename_; // user provided device name
+    int   fd_;
+    bool  readOnlyMode;
 
-  struct Sghn { /* for "forward" compatibility case */
-    int pack_len;    /* [o] reply_len (ie useless), ignored as input */
-    int reply_len;   /* [i] max length of expected reply (inc. sg_header) */
-    int pack_id;     /* [io] id number of packet (use ints >= 0) */
-    int result;      /* [o] 0==ok, else (+ve) Unix errno (best ignored) */
-    unsigned int twelve_byte:1; 
-           /* [i] Force 12 byte command length for group 6 & 7 commands  */
-    unsigned int target_status:5;   /* [o] scsi status from target */
-    unsigned int host_status:8;     /* [o] host status (see "DID" codes) */
-    unsigned int driver_status:8;   /* [o] driver status+suggestion */
-    unsigned int other_flags:10;    /* unused */
-    unsigned char sense_buffer[SG_MAX_SENSE]; /* [o] Output in 3 cases:
-           when target_status is CHECK_CONDITION or 
-           when target_status is COMMAND_TERMINATED or
-           when (driver_status & DRIVER_SENSE) is true. */
-  };      /* This structure is 36 bytes long on i386 */
+    int openScsiDevAsSg(const char* devname);
+    int adjustReservedBuffer(int requestedSize);
 
-  char *filename_; // user provided device name
-  char *dev_;      // actual sg device name
-  int fd_;
+    uchar sense_buffer[SG_MAX_SENSE];
+    uchar sense_buffer_length;
 
-  int driverVersion_;
-  int maxSendLen_;
+    uchar last_sense_buffer_length;
+    uchar last_command_status;
 
-  char *buf_;
-  Sghn *bufHd_;
-
-  const char *makeDevName(int k, int do_numeric);
-  int openScsiDevAsSg(const char *devname);
-  void determineDriverVersion();
-  int adjustReservedBuffer(int requestedSize);
+    int timeout_ms;
 };
 
 
 ScsiIf::ScsiIf(const char *dev)
 {
-  impl_ = new ScsiIfImpl;
+    impl_ = new ScsiIfImpl;
+    memset(impl_, 0, sizeof(ScsiIfImpl));
 
-  impl_->filename_ = strdupCC(dev);
-  impl_->dev_ = NULL;
-
-  impl_->maxSendLen_ = 0;
-
-  impl_->buf_ = NULL;
-  impl_->bufHd_ = NULL;
-  
-  impl_->fd_ = -1;
-
-  vendor_[0] = 0;
-  product_[0] = 0;
-  revision_[0] = 0;
+    impl_->filename_ = strdupCC(dev);
+    impl_->fd_ = -1;
+    impl_->sense_buffer_length = SG_MAX_SENSE;
+    impl_->timeout_ms = CDRDAO_DEFAULT_TIMEOUT;
 }
 
 ScsiIf::~ScsiIf()
 {
-  if (impl_->fd_ >= 0)
-    close(impl_->fd_);
+    if (impl_->fd_ >= 0)
+	close(impl_->fd_);
 
-  delete[] impl_->filename_;
-  delete[] impl_->dev_;
-  delete[] impl_->buf_;
-  delete impl_;
+    delete[] impl_->filename_;
+    delete impl_;
 }
 
-// opens and flushes scsi device
-// return: 0: OK
-//         1: device could not be opened
-//         2: inquiry failed
+// Opens and flushes scsi device.
+
 int ScsiIf::init()
 {
-  int flags;
+    int flags;
+    int sg_version = 0;
 
-  if ((impl_->fd_ = impl_->openScsiDevAsSg(impl_->filename_)) < 0) {
-    if (impl_->fd_ != -9999) {
-      message(-2, "Cannot open SG device \"%s\": %s",
-	      impl_->filename_, strerror(errno));
-      return 1;
+    impl_->fd_ = open(impl_->filename_, O_RDWR | O_NONBLOCK | O_EXCL);
+
+    if (impl_->fd_ < 0) {
+
+	if (errno == EACCES) {
+	    impl_->fd_ = open(impl_->filename_, O_RDONLY | O_NONBLOCK);
+
+	    if (impl_->fd_ < 0) {
+		goto failed;
+	    }
+	    impl_->readOnlyMode = true;
+	    log_message(-1, "No permission to write to SCSI device."
+			"Only read commands are supported.");
+	} else {
+	    goto failed;
+	}
     }
-    else {
-      message(-2, "Cannot map \"%s\" to a SG device.", impl_->filename_);
-      return 1;
+
+    if (ioctl(impl_->fd_, SG_GET_VERSION_NUM, &sg_version) == 0) {
+	log_message(3, "Detected SG driver version: %d.%d.%d",
+		    sg_version / 10000,
+		    (sg_version / 100) % 100, sg_version % 100);
+	if (sg_version < 30000) {
+	    log_message(-2, "SG interface under 3.0 not supported.");
+	    return 1;
+	}
     }
-  }
 
-  impl_->determineDriverVersion();
+    maxDataLen_ = impl_->adjustReservedBuffer(64 * 1024);
 
-  impl_->maxSendLen_ = impl_->adjustReservedBuffer(64 * 1024);
+    if (inquiry() != 0) {
+	return 2;
+    }
 
-  if (impl_->maxSendLen_ < 4096) {
-    message(-2, "%s: Cannot reserve enough buffer space - granted size: %d",
-	    impl_->dev_, impl_->maxSendLen_);
+    return 0;
+
+ failed:
+    log_message(-2, "Unable to open SCSI device %s: %s.",
+		impl_->filename_, strerror(errno));
     return 1;
-  }
-
-  maxDataLen_ = impl_->maxSendLen_ - sizeof(struct sg_header) - 12;
-
-  impl_->buf_ = new char[impl_->maxSendLen_];
-  impl_->bufHd_ = (ScsiIfImpl::Sghn *)impl_->buf_;
-  
-  flags = fcntl(impl_->fd_, F_GETFL);
-  fcntl(impl_->fd_, F_SETFL, flags|O_NONBLOCK);
-
-  memset(impl_->bufHd_, 0, sizeof(ScsiIfImpl::Sghn));
-  impl_->bufHd_->reply_len = sizeof(ScsiIfImpl::Sghn);
-
-  while (read(impl_->fd_, impl_->bufHd_, impl_->maxSendLen_) >= 0 ||
-	 errno != EAGAIN) ;
-
-  fcntl(impl_->fd_, F_SETFL, flags);
-
-#if 0 && defined(SG_EMULATED_HOST) && defined(SG_SET_TRANSFORM)
-  if (ioctl(impl_->fd_, SG_EMULATED_HOST, &flags) == 0 && flags != 0) {
-    // emulated host adaptor for ATAPI drives
-    // switch on command transformation
-    ioctl(impl_->fd_, SG_SET_TRANSFORM, NULL);
-  }
-#endif
-
-  if (inquiry() != 0) {
-    return 2;
-  }
-
-  return 0;
 }
 
-// Sets given timeout value in seconds and returns old timeout.
-// return: old timeout
+// Sets given timeout value in seconds and returns old timeout. Return
+// the previous timeout value.
+
 int ScsiIf::timeout(int t)
 {
-  int old = ioctl(impl_->fd_, SG_GET_TIMEOUT, NULL);
-  int ret;
+    int old = impl_->timeout_ms / 1000;
+    impl_->timeout_ms = t * 1000;
 
-  t *= HZ;
-
-  if ((ret = ioctl(impl_->fd_, SG_SET_TIMEOUT, &t)) != 0) {
-    message(-1, "Cannot set SCSI timeout: %s", strerror(ret));
-  }
-
-  return old/HZ;
+    return old;
 }
 
-// sends a scsi command and receives data
-// return 0: OK
-//        1: scsi command failed (os level, no sense data available)
-//        2: scsi command failed (sense data available)
-int ScsiIf::sendCmd(const unsigned char *cmd, int cmdLen, 
-		    const unsigned char *dataOut, int dataOutLen,
-		    unsigned char *dataIn, int dataInLen, int showMessage)
+// Sens a scsi command and send/receive data.
+
+int ScsiIf::sendCmd(const uchar *cmd, int cmdLen, const uchar *dataOut,
+		    int dataOutLen, uchar *dataIn, int dataInLen, int showMsg)
 {
-  int status;
-  int sendLen = sizeof(struct sg_header) + cmdLen + dataOutLen;
-  int recLen = sizeof(struct sg_header) + dataInLen;
+    int status;
 
-  assert(cmdLen > 0 && cmdLen <= 12);
+    sg_io_hdr_t io_hdr;
+    memset(&io_hdr, 0, sizeof(io_hdr));
 
-  assert(sendLen <= impl_->maxSendLen_);
+    // Check SCSI cdb length.
+    assert(cmdLen >= 0 && cmdLen <= 16);
+    // Can't both input and output data.
+    assert(!(dataOut && dataIn));
 
-  memset(impl_->buf_, 0, sizeof(ScsiIfImpl::Sghn));
-
-  memcpy(impl_->buf_ + sizeof(ScsiIfImpl::Sghn), cmd, cmdLen);
-  if (dataOut != NULL) {
-    memcpy(impl_->buf_ + sizeof(ScsiIfImpl::Sghn) + cmdLen, dataOut,
-	   dataOutLen);
-  }
-
-  impl_->bufHd_->reply_len   = recLen;
-  impl_->bufHd_->twelve_byte = (cmdLen == 12);
-  impl_->bufHd_->result = 0;
-
-  /* send command */
-  do {
-    status = write(impl_->fd_, impl_->buf_, sendLen);
-    if ((status < 0 && errno != EINTR) ||
-	(status >= 0 && status != sendLen)) {
-      /* some error happened */
-      message(-2, "write(generic) result = %d cmd = 0x%x: %s",
-	      status, cmd[0], strerror(errno) );
-      return 1;
+    io_hdr.interface_id = 'S';
+    io_hdr.cmd_len = cmdLen;
+    io_hdr.cmdp = (unsigned char*)cmd;
+    io_hdr.timeout = impl_->timeout_ms;
+    io_hdr.sbp = impl_->sense_buffer;
+    io_hdr.mx_sb_len = impl_->sense_buffer_length;
+    io_hdr.flags = 1;
+    
+    if (dataOut) {
+	io_hdr.dxferp = (void*)dataOut;
+	io_hdr.dxfer_len = dataOutLen;
+	io_hdr.dxfer_direction = SG_DXFER_TO_DEV;
+    } else if (dataIn) {
+	io_hdr.dxferp = dataIn;
+	io_hdr.dxfer_len = dataInLen;
+	io_hdr.dxfer_direction = SG_DXFER_FROM_DEV;
     }
-  } while (status < 0);
 
-  // read result
-  do {
-    status = read(impl_->fd_, impl_->buf_, recLen);
-    if (status < 0) {
-      if (errno != EINTR) {
-	message(-2, "read(generic) failed: %s", strerror(errno));
+    log_message(4, "%s: Initiating SCSI command %s",
+		impl_->filename_, sg_strcommand(cmd[0]));
+
+    if (ioctl(impl_->fd_, SG_IO, &io_hdr) < 0) {
+	int errnosave = errno;
+	log_message((showMsg ? -2 : 3), "%s: SCSI command %s (0x%02x) "
+		    "failed: %s.", impl_->filename_,
+		    sg_strcommand(cmd[0]), cmd[0],
+		    strerror(errnosave));
 	return 1;
-      }
     }
-    else if (status != recLen) {
-      message(-2, "read(generic) did not return expected amount of data.");
-      return 1;
+
+    log_message(4, "%s: SCSI command %s (0x%02x) executed in %u ms, status=%d",
+		impl_->filename_, sg_strcommand(cmd[0]),
+		cmd[0], io_hdr.duration, io_hdr.status);
+
+    impl_->last_sense_buffer_length = io_hdr.sb_len_wr;
+    impl_->last_command_status = io_hdr.status;
+
+    if (io_hdr.status) {
+	if (io_hdr.sb_len_wr > 0)
+	    return 2;
+	else
+	    return 1;
     }
-    else if (impl_->bufHd_->result) {
-      // scsi command failed
-      switch (impl_->driverVersion_) {
-      case SG_RT_NEW32:
-      case SG_RT_NEW34:
-	sg_chk_n_print("\nSCSI command failed", impl_->bufHd_->target_status, 
-		       impl_->bufHd_->host_status,
-		       impl_->bufHd_->driver_status, 
-		       impl_->bufHd_->sense_buffer);
-	break;
-      default:
-	message(-2, "read(generic) failed: %s",
-		strerror(impl_->bufHd_->result));
-	break;
-      }
 
-      return 1;
-    }
-    else if (impl_->bufHd_->sense_buffer[2] != 0) {
-      if (showMessage)
-	printError();
-
-      return 2;
-    }
-  } while (status < 0);
-
-  if (dataIn != NULL && dataInLen > 0) {
-    memcpy(dataIn, impl_->buf_ + sizeof(ScsiIfImpl::Sghn), dataInLen);
-  }
-
-  return 0;
+    return 0;
 }
 
-const unsigned char *ScsiIf::getSense(int &len) const
+const uchar *ScsiIf::getSense(int &len) const
 {
-  len = 15;
-  return impl_->bufHd_->sense_buffer;
+    len = impl_->last_sense_buffer_length;
+    return impl_->sense_buffer;
 }
 
 void ScsiIf::printError()
 {
-  switch (impl_->driverVersion_) {
-  case SG_RT_NEW32:
-  case SG_RT_NEW34:
-    sg_chk_n_print("\nSCSI command failed", impl_->bufHd_->target_status, 
-		   impl_->bufHd_->host_status, impl_->bufHd_->driver_status, 
-		   impl_->bufHd_->sense_buffer);
-    break;
-
-  default:
-    sg_print_sense("\nSCSI command failed", impl_->bufHd_->sense_buffer);
-    break;
-  }
-
-  //decodeSense(impl_->bufHd_->sense_buffer, 15);
+    sg_print_sense("\nSCSI command failed", impl_->sense_buffer);
 }
+
 
 int ScsiIf::inquiry()
 {
-  unsigned char cmd[6];
-  unsigned char result[0x2c];
-  int i;
+    unsigned char cmd[6] = { INQUIRY, 0, 0, 0, 0x2c, 0 };
+    unsigned char result[0x2c];
+    int i;
 
-  cmd[0] = 0x12; // INQUIRY
-  cmd[1] = cmd[2] = cmd[3] = 0;
-  cmd[4] = 0x2c;
-  cmd[5] = 0;
+    if (sendCmd(cmd, 6, NULL, 0, result, 0x2c, 1) != 0) {
+	log_message(-2, "Inquiry command failed on \"%s\"", impl_->filename_);
+	return 1;
+    }
 
-  if (sendCmd(cmd, 6, NULL, 0, result, 0x2c, 1) != 0) {
-    message(-2, "Inquiry command failed on \"%s\"", impl_->dev_);
-    return 1;
-  }
+    strncpy(vendor_, (char *)(result + 0x08), 8);
+    vendor_[8] = 0;
 
-  strncpy(vendor_, (char *)(result + 0x08), 8);
-  vendor_[8] = 0;
+    strncpy(product_, (char *)(result + 0x10), 16);
+    product_[16] = 0;
 
-  strncpy(product_, (char *)(result + 0x10), 16);
-  product_[16] = 0;
+    strncpy(revision_, (char *)(result + 0x20), 4);
+    revision_[4] = 0;
 
-  strncpy(revision_, (char *)(result + 0x20), 4);
-  revision_[4] = 0;
-
-  for (i = 7; i >= 0 && vendor_[i] == ' '; i--) {
-    vendor_[i] = 0;
-  }
-
-  for (i = 15; i >= 0 && product_[i] == ' '; i--) {
-    product_[i] = 0;
-  }
-
-  for (i = 3; i >= 0 && revision_[i] == ' '; i--) {
-    revision_[i] = 0;
-  }
+    // Remove all trailing spaces.
+    for (i = 7; i >= 0 && vendor_[i] == ' '; i--) {
+	vendor_[i] = 0;
+    }
+    for (i = 15; i >= 0 && product_[i] == ' '; i--) {
+	product_[i] = 0;
+    }
+    for (i = 3; i >= 0 && revision_[i] == ' '; i--) {
+	revision_[i] = 0;
+    }
   
-  return 0;
+    return 0;
 }
+
+// Scan implementation uses sysfs to 
 
 ScsiIf::ScanData *ScsiIf::scan(int *len, char* scsi_dev_path)
 {
-  *len = 0;
-  return NULL;
+    struct stat st;
+    int matches = 0;
+    int i;
+    ScanData* sdata = NULL;
+    char* path = NULL;
+    glob_t pglob;
+
+    if (stat(SYSFS_SCSI_DEVICES, &st) != 0) {
+	log_message(-2, "Unable to access sysfs filesystem at %s",
+		    SYSFS_SCSI_DEVICES);
+	goto fail;
+    }
+
+    path = (char*)alloca(strlen(SYSFS_SCSI_DEVICES) + 16);
+    sprintf(path, "%s/*", SYSFS_SCSI_DEVICES);
+    if (glob(path, 0, NULL, &pglob) != 0) {
+	log_message(-2, "Unable to glob through sysfs filesystem (%d).",
+		    errno);
+	goto fail;
+    }
+
+    sdata = new ScanData[pglob.gl_pathc];
+
+    for (i = 0; i < pglob.gl_pathc; i++) {
+	int type;
+	char rbuf[16];
+	FILE* f;
+
+	sprintf(path, "%s/type", pglob.gl_pathv[i]);
+	f = fopen(path, "r");
+	if (!f)
+	    continue;
+	int ret = fscanf(f, "%d", &type);
+	fclose(f);
+
+	if (ret != 1 || type != TYPE_ROM)
+	    continue;
+
+	// Now we have a CD-ROM device.
+	memset(&sdata[matches].vendor, 0, sizeof(sdata[matches].vendor));
+	memset(&sdata[matches].product, 0, sizeof(sdata[matches].product));
+	memset(&sdata[matches].revision, 0, sizeof(sdata[matches].revision));
+
+	// Copy vendor data
+	sprintf(path, "%s/vendor", pglob.gl_pathv[i]);
+	f = fopen(path, "r");
+	if (!f)
+	    continue;
+	if (fread(sdata[matches].vendor, 8, 1, f) != 1) {
+	    fclose(f);
+	    continue;
+	}
+	fclose(f);
+
+	// Copy product data
+	sprintf(path, "%s/model", pglob.gl_pathv[i]);
+	f = fopen(path, "r");
+	if (!f)
+	    continue;
+	if (fread(sdata[matches].product, 16, 1, f) != 1) {
+	    fclose(f);
+	    continue;
+	}
+	fclose(f);
+
+	// Copy revision data
+	sprintf(path, "%s/rev", pglob.gl_pathv[i]);
+	f = fopen(path, "r");
+	if (!f)
+	    continue;
+	if (fread(sdata[matches].revision, 4, 1, f) != 1) {
+	    fclose(f);
+	    continue;
+	}
+	fclose(f);
+
+	// figure out the block device
+	glob_t bglob;
+	sprintf(path, "%s/block:*", pglob.gl_pathv[i]);
+	if (glob(path, 0, NULL, &bglob) != 0)
+	    continue;
+	if (bglob.gl_pathc != 1) {
+	    globfree(&bglob);
+	    continue;
+	}
+
+	char* match = strrchr(bglob.gl_pathv[0], ':');
+	if (!match) {
+	    globfree(&bglob);
+	    continue;
+	}
+	char* devname = (char*)alloca(strlen(match));
+	strcpy(devname, match+1);
+	sdata[matches].dev = "/dev/";
+	sdata[matches].dev += devname;
+	globfree(&bglob);
+
+	matches++;
+
+    }
+    globfree(&pglob);
+
+    if (matches) {
+	*len = matches;
+	return sdata;
+    }
+
+    delete sdata;
+ fail:
+    *len = 0;
+    return NULL;
 }
 
 #include "ScsiIf-common.cc"
 
-void ScsiIfImpl::determineDriverVersion()
-{
-  int reserved_size = 0;
-  int sg_version = 0;
-
-  /* Run time selection code follows */
-  if (ioctl(fd_, SG_GET_RESERVED_SIZE, &reserved_size) < 0) {
-    driverVersion_ = SG_RT_ORIG;
-    message(2, "Detected old SG driver version.");
-  }
-  else if (ioctl(fd_, SG_GET_VERSION_NUM, &sg_version) < 0) {
-    driverVersion_ = SG_RT_NEW32;
-    message(2, "Detected SG driver version: 2.1.32");
-  }
-  else {
-    driverVersion_ = SG_RT_NEW34;
-    message(2, "Detected SG driver version: %d.%d.%d", sg_version / 10000,
-	    (sg_version / 100) % 100, sg_version % 100);
-  }
-}
-    
-#define MAX_SG_DEVS 26
-
-#define SCAN_ALPHA 0
-#define SCAN_NUMERIC 1
-#define DEF_SCAN SCAN_ALPHA
-
-const char *ScsiIfImpl::makeDevName(int k, int do_numeric)
-{
-  static char filename[100];
-  char buf[20];
-
-  strcpy(filename, "/dev/sg");
-
-  if (do_numeric) {
-    sprintf(buf, "%d", k);
-    strcat(filename, buf);
-  }
-  else {
-    if (k <= 26) {
-      buf[0] = 'a' + (char)k;
-      buf[1] = '\0';
-      strcat(filename, buf);
-    }
-    else {
-      strcat(filename, "xxxx");
-    }
-  }
-
-  return filename;
-}
-
-int ScsiIfImpl::openScsiDevAsSg(const char *devname)
-{
-  int fd, bus, bbus, k;
-  ScsiIdLun m_idlun, mm_idlun;
-  int do_numeric = DEF_SCAN;
-  const char *fname = devname;
-
-  if ((fd = open(fname, O_RDONLY | O_NONBLOCK)) < 0) {
-    if (EACCES == errno) {
-      if ((fd = open(fname, O_RDWR | O_NONBLOCK)) < 0)
-	return fd;
-    }
-  }
-  if (ioctl(fd, SG_GET_TIMEOUT, 0) < 0) { /* not a sg device ? */
-    if (ioctl(fd, SCSI_IOCTL_GET_BUS_NUMBER, &bus) < 0) {
-      message(-2, "%s: Need a filename that resolves to a SCSI device.",
-	      fname);
-      close(fd);
-      return -9999;
-    }
-    if (ioctl(fd, SCSI_IOCTL_GET_IDLUN, &m_idlun) < 0) {
-      message(-2, "%s: Need a filename that resolves to a SCSI device (2).",
-	      fname);
-      close(fd);
-      return -9999;
-    }
-    close(fd);
-    
-    for (k = 0; k < MAX_SG_DEVS; k++) {
-      fname = makeDevName(k, do_numeric);
-      if ((fd = open(fname, O_RDONLY | O_NONBLOCK)) < 0) {
-	if (EACCES == errno) 
-	  fd = open(fname, O_RDWR | O_NONBLOCK);
-	if (fd < 0) {
-	  if ((ENOENT == errno) && (0 == k) && (do_numeric == DEF_SCAN)) {
-	    do_numeric = ! DEF_SCAN;
-	    fname = makeDevName(k, do_numeric);
-	    if ((fd = open(fname, O_RDONLY | O_NONBLOCK)) < 0) {
-	      if (EACCES == errno) 
-		fd = open(fname, O_RDWR | O_NONBLOCK);
-	    }
-	  }
-	  if (fd < 0) {
-	    if (EBUSY == errno)
-	      continue;  /* step over if O_EXCL already on it */
-	    else
-	      break;
-	  }
-	}
-      }
-      if (ioctl(fd, SCSI_IOCTL_GET_BUS_NUMBER, &bbus) < 0) {
-	message(-2, "%s: SG: ioctl SCSI_IOCTL_GET_BUS_NUMBER failed: %s",
-		fname, strerror(errno));
-	close(fd);
-	fd = -9999;
-      }
-      if (ioctl(fd, SCSI_IOCTL_GET_IDLUN, &mm_idlun) < 0) {
-	message(-2, "%s: SG: ioctl SCSI_IOCTL_GET_IDLUN failed: %s", 
-		fname, strerror(errno));
-	close(fd);
-	fd = -9999;
-      }
-      if ((bus == bbus) && 
-	  ((m_idlun.mux4 & 0xff) == (mm_idlun.mux4 & 0xff)) &&
-	  (((m_idlun.mux4 >> 8) & 0xff) == 
-	   ((mm_idlun.mux4 >> 8) & 0xff)) &&
-	  (((m_idlun.mux4 >> 16) & 0xff) == 
-	   ((mm_idlun.mux4 >> 16) & 0xff))) {
-	message(4, "Mapping %s to sg device: %s", devname, fname);
-	break;
-      }
-      else {
-	close(fd);
-	fd = -9999;
-      }
-    }
-  }
-
-  if (fd >= 0) { /* everything ok, close and re-open read-write */
-    dev_ = strdupCC(fname);
-    close(fd);
-    return open(dev_, O_RDWR);
-  }
-  else {
-    return fd;
-  }
-}
-
 int ScsiIfImpl::adjustReservedBuffer(int requestedSize)
 {
-  int maxTransferLength;
+    int maxTransferLength;
 
-  switch (driverVersion_) {
-  case SG_RT_NEW32: /* SG_SET_RESERVED_SIZE exists but does nothing in */
-                    /* version 2.1.32 and 2.1.33, so harmless to try */
-  case SG_RT_NEW34:
     if (ioctl(fd_, SG_SET_RESERVED_SIZE, &requestedSize) < 0) {
-      message(-2, "SG_SET_RESERVED_SIZE ioctl failed: %s", strerror(errno));
-      return 0;
+	log_message(-2, "SG_SET_RESERVED_SIZE ioctl failed: %s",
+		    strerror(errno));
+	return 0;
     }
     if (ioctl(fd_, SG_GET_RESERVED_SIZE, &maxTransferLength) < 0) {
-      message(-2, "SG_GET_RESERVED_SIZE ioctl failed: %s", strerror(errno));
-      return 0;
+	log_message(-2, "SG_GET_RESERVED_SIZE ioctl failed: %s",
+		    strerror(errno));
+	return 0;
     }
-    break;
 
-  default:
-#ifdef SG_BIG_BUFF
-    maxTransferLength = SG_BIG_BUFF;
-#else
-    maxTransferLength = 4096;
-#endif
-    break;
-  }
-    
-  message(4, "SG: Maximum transfer length: %ld", maxTransferLength);
+    log_message(4, "SG: Maximum transfer length: %ld", maxTransferLength);
 
-  return maxTransferLength;
+    return maxTransferLength;
 }

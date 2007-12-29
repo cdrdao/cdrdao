@@ -30,7 +30,7 @@
 #include "SubChannel.h"
 
 #include "Toc.h"
-#include "util.h"
+#include "log.h"
 
 TaiyoYuden::TaiyoYuden(ScsiIf *scsiIf, unsigned long options)
   : PlextorReader(scsiIf, options), CDD2600Base(this)
@@ -39,7 +39,7 @@ TaiyoYuden::TaiyoYuden(ScsiIf *scsiIf, unsigned long options)
   
   leadInLength_ = leadOutLength_ = 0;
   speed_ = 2;
-  simulate_ = 1;
+  simulate_ = true;
   encodingMode_ = 0;
 
   audioDataByteOrder_ = 0; // little endian
@@ -91,7 +91,7 @@ int TaiyoYuden::loadUnload(int unload) const
   }
 
   if (sendCmd(cmd, 10, NULL, 0, NULL, 0) != 0) {
-    message(-2, "Cannot load/unload medium.");
+    log_message(-2, "Cannot load/unload medium.");
     return 1;
   }
 
@@ -134,7 +134,7 @@ int TaiyoYuden::startDao()
     return 1;
   }
 
-  message(2, "Writing lead-in and gap...");
+  log_message(2, "Writing lead-in and gap...");
 
   // write lead-in
   if (writeZeros(toc_->leadInMode(), TrackData::SUBCHAN_NONE, lba, 0,
@@ -151,7 +151,7 @@ int TaiyoYuden::startDao()
   }
 
 
-  message(2, "");
+  log_message(2, "");
 
   return 0;
 }
@@ -160,7 +160,7 @@ int TaiyoYuden::finishDao()
 {
   long lba = toc_->length().lba();
 
-  message(2, "Writing lead-out...");
+  log_message(2, "Writing lead-out...");
 
   // write lead-out
   if (writeZeros(toc_->leadOutMode(), TrackData::SUBCHAN_NONE, lba, lba + 150,
@@ -169,13 +169,13 @@ int TaiyoYuden::finishDao()
     return 1;
   }
 
-  message(2, "\nFlushing cache...");
+  log_message(2, "\nFlushing cache...");
   
   if (flushCache() != 0) {
     return 1;
   }
 
-  message(2, "");
+  log_message(2, "");
 
   delete[] zeroBuffer_, zeroBuffer_ = NULL;
 
@@ -214,7 +214,7 @@ int TaiyoYuden::writeData(TrackData::Mode mode, TrackData::SubChannelMode sm,
 
     if (sendCmd(cmd, 10, (unsigned char *)(buf + (nwritten * blockLength_)),
 		writeLen * blockLength_, NULL, 0) != 0) {
-      message(-2, "Write data failed.");
+      log_message(-2, "Write data failed.");
       return 1;
     }
 
@@ -292,15 +292,15 @@ int TaiyoYuden::checkToc(const Toc *toc)
     if (t->start().lba() == 0 && trackNr > 1) {
       if (!warningGiven) {
 	warningGiven = 1;
-	message(-1, "Each track must have a minimal pre-gap to create a useful disk.");
-	message(-1, "This is not fulfilled for following track(s):");
+	log_message(-1, "Each track must have a minimal pre-gap to create a useful disk.");
+	log_message(-1, "This is not fulfilled for following track(s):");
       }
-      message(-1, "Track %d", trackNr);
+      log_message(-1, "Track %d", trackNr);
     }
   }
 
   if (warningGiven) {
-    message(0,"");
+    log_message(0,"");
     if (err < 1)
       err = 1;
   }

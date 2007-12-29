@@ -32,7 +32,7 @@ public:
 
   static CdrDriver *instance(ScsiIf *scsiIf, unsigned long options);
 
-  int multiSession(int);
+  int multiSession(bool);
 
   int subChannelEncodingMode(TrackData::SubChannelMode) const;
 

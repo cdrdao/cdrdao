@@ -27,7 +27,7 @@
 
 #include "Msf.h"
 #include "Track.h"
-#include "util.h"
+#include "log.h"
 
 
 PQChannelEncoder::PQChannelEncoder() 
@@ -78,12 +78,12 @@ int PQChannelEncoder::setCueSheet(SubChannel *chan, unsigned char discType,
     discType = 20;
     break;
   default:
-    message(-3, "Illegal disc type.");
+    log_message(-3, "Illegal disc type.");
     return 1;
   }
 
   if ((len % sizeof(CueSheetEntry)) != 0) {
-    message(-3, "Illegal cue sheet length.");
+    log_message(-3, "Illegal cue sheet length.");
     return 1;
   }
 
@@ -189,7 +189,7 @@ int PQChannelEncoder::analyzeCueSheet()
     switch (ent->ctlAdr & 0x0f) {
     case 1:
       if (ent->min > 99 || ent->sec > 59 || ent->frame > 74) {
-	message(-3, "Illegal time field value at cue sheet entry: %d",
+	log_message(-3, "Illegal time field value at cue sheet entry: %d",
 		i);
 	return 1;
       }
@@ -199,7 +199,7 @@ int PQChannelEncoder::analyzeCueSheet()
 	  actCueSheetEntry_ = ent;
 	}
 	else {
-	  message(-3, "Illegal track number at cue sheet entry: %d", i);
+	  log_message(-3, "Illegal track number at cue sheet entry: %d", i);
 	  return 1;
 	}
       }
@@ -209,7 +209,7 @@ int PQChannelEncoder::analyzeCueSheet()
 	  leadOutCtlAdr_ = ent->ctlAdr;
 	}
 	else {
-	  message(-3, "Illegal track number at cue sheet entry: %d", i);
+	  log_message(-3, "Illegal track number at cue sheet entry: %d", i);
 	  return 1;
 	}
       }
@@ -221,7 +221,7 @@ int PQChannelEncoder::analyzeCueSheet()
 	}
 	else {
 	  if (ent->trackNr != prevTrackNr && ent->trackNr != prevTrackNr + 1) {
-	    message(-3, 
+	    log_message(-3, 
 		    "Wrong track number sequence at cue sheet entry: %d", i);
 	    return 1;
 	  }
@@ -231,14 +231,14 @@ int PQChannelEncoder::analyzeCueSheet()
 	lastTrackCtlAdr_ = ent->ctlAdr;
       }
       else {
-	message(-3, "Illegal track number at cue sheet entry: %d", i);
+	log_message(-3, "Illegal track number at cue sheet entry: %d", i);
 	return 1;
       }
 
       if (ent->trackNr != 0) {
 	lba = Msf(ent->min, ent->sec, ent->frame).lba();
 	if (lba <= prevLba) {
-	  message(-3, 
+	  log_message(-3, 
 		  "Time field does not increase at cue sheet entry: %d", i);
 	  return 1;
 	}
@@ -248,11 +248,11 @@ int PQChannelEncoder::analyzeCueSheet()
 
     case 2:
       if (i != 0) {
-	message(-3, "Catalog number must be first cue sheet entry.");
+	log_message(-3, "Catalog number must be first cue sheet entry.");
 	return 1;
       }
       if ((cueSheet_[1].ctlAdr & 0x0f) != 2) {
-	message(-3, "Missing second catalog number entry.");
+	log_message(-3, "Missing second catalog number entry.");
 	return 1;
       }
       writeCatalog_ = 1;
@@ -267,7 +267,7 @@ int PQChannelEncoder::analyzeCueSheet()
 
     case 3:
       if (((ent + 1)->ctlAdr & 0x0f) != 3) {
-	message(-3, "Missing second ISRC code entry.");
+	log_message(-3, "Missing second ISRC code entry.");
 	return 1;
       }
 
@@ -276,24 +276,24 @@ int PQChannelEncoder::analyzeCueSheet()
       i++;
       break;
     default:
-      message(-3, "Illegal adr field at cue sheet entry: %d.", i);
+      log_message(-3, "Illegal adr field at cue sheet entry: %d.", i);
       return 1;
       break;
     }
   }
 
   if (actCueSheetEntry_ == NULL) {
-    message(-3, "Cue sheet contains no lead-in entry.");
+    log_message(-3, "Cue sheet contains no lead-in entry.");
     return 1;
   }
 
   if (leadOutStart_.lba() == 0) {
-    message(-3, "Cue sheet contains no lead-out entry.");
+    log_message(-3, "Cue sheet contains no lead-out entry.");
     return 1;
   }
 
   if (firstTrackNr_ == 0) {
-    message(-3, "Cue sheet contains no data track.");
+    log_message(-3, "Cue sheet contains no data track.");
     return 1;
   }
 
@@ -326,7 +326,7 @@ const SubChannel *PQChannelEncoder::encodeSubChannel(long lba)
 
   if (lba == nextTransitionLba_) {
     // switch to next transition
-    //message(3, "Switching to next transition at lba: %ld", lba);
+    //log_message(3, "Switching to next transition at lba: %ld", lba);
     nextTransition();
     newTransition = 1;
   }

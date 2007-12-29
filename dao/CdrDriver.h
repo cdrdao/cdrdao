@@ -190,29 +190,29 @@ public:
     enableWriteSpeedControl_ = s != 0 ? 1 : 0; }
 
   // returns 1 if simulation mode, 0 for real writing
-  virtual int simulate() const { return simulate_; }
+  virtual bool simulate() const { return simulate_; }
 
   // sets simulation mode, returns 0 for OK, 1 if given mode is not supported
-  virtual int simulate(int s) { simulate_ = s != 0 ? 1 : 0; return 0; }
+  virtual void simulate(bool s) { simulate_ = s; }
 
   // Sets multi session mode (0: close session, 1: open next session).
   // Returns 1 if multi session is not supported by driver, else 0
-  virtual int multiSession(int);
+  virtual int multiSession(bool);
 
   // Returns mutli session mode.
-  virtual int multiSession() const { return multiSession_; }
+  virtual bool multiSession() const { return multiSession_; }
 
   // Returns/sets fast toc reading flag (no sub-channel analysis)
-  virtual int fastTocReading() const { return fastTocReading_; }
-  virtual void fastTocReading(int f) { fastTocReading_ = f != 0 ? 1 : 0; }
+  virtual bool fastTocReading() const { return fastTocReading_; }
+  virtual void fastTocReading(bool f) { fastTocReading_ = f; }
 
   // Returns/sets raw data track reading flag
-  virtual int rawDataReading() const { return rawDataReading_; }
-  virtual void rawDataReading(int f) { rawDataReading_ = f != 0 ? 1 : 0; }
+  virtual bool rawDataReading() const { return rawDataReading_; }
+  virtual void rawDataReading(bool f) { rawDataReading_ = f; }
 
   // Returns/sets mode2 mixed track reading flag
-  virtual int mode2Mixed() const { return mode2Mixed_; }
-  virtual void mode2Mixed(int f) { mode2Mixed_ = f != 0 ? 1 : 0; }
+  virtual bool mode2Mixed() const { return mode2Mixed_; }
+  virtual void mode2Mixed(bool f) { mode2Mixed_ = f; }
 
   virtual TrackData::SubChannelMode subChanReadMode() const { return subChanReadMode_; }
   virtual void subChanReadMode(TrackData::SubChannelMode m) { subChanReadMode_ = m; }
@@ -229,16 +229,16 @@ public:
   virtual void onTheFly(int fd);
 
   // Returns force flag
-  virtual int force() const { return force_; }
+  virtual bool force() const { return force_; }
 
   // Sets force flag
-  virtual void force(int f) { force_ = f != 0 ? 1 : 0; }
+  virtual void force(bool f) { force_ = f; }
 
   // Returns TAO source flag
-  virtual int taoSource() const { return taoSource_; }
+  virtual bool taoSource() const { return taoSource_; }
 
   // Sets TAO source flag
-  virtual void taoSource(int f) { taoSource_ = f != 0 ? 1 : 0; }
+  virtual void taoSource(bool f) { taoSource_ = f; }
 
   // Return number of adjust sectors for reading TAO source disks
   virtual int taoSourceAdjust() const { return taoSourceAdjust_; }
@@ -259,7 +259,7 @@ public:
   virtual void userCapacity(int c) { userCapacity_ = c; }
   
   // Sets burning to the outer edge mode
-  virtual void fullBurn(int f) { fullBurn_ = f; }
+  virtual void fullBurn(bool f) { fullBurn_ = f; }
 
   // Return byte order of host (0: little endian, 1: big endian)
   int hostByteOrder() const { return hostByteOrder_; }
@@ -407,11 +407,11 @@ protected:
   int enableWriteSpeedControl_;
   int speed_;
   int rspeed_;
-  int simulate_;
-  int multiSession_;
+  bool simulate_;
+  bool multiSession_;
   int encodingMode_; // mode for encoding data sectors
-  int fastTocReading_;
-  int rawDataReading_;
+  bool fastTocReading_;
+  bool rawDataReading_;
   int mode2Mixed_;
   TrackData::SubChannelMode subChanReadMode_;
   int padFirstPregap_; // used by 'read-toc': defines if the first audio 
@@ -419,10 +419,10 @@ protected:
                        // or if it is taken from the data file
   int onTheFly_; // 1 if operating in on-the-fly mode
   int onTheFlyFd_; // file descriptor for on the fly data
-  int force_; // force flag to allow certain operations
+  bool force_; // force flag to allow certain operations
   int remote_; // 1 for remote mode, else 0
   int remoteFd_; // file descriptor for remote messages
-  int taoSource_; // 1 to indicate a TAO writting source CD for read-cd/read-toc
+  bool taoSource_; // 1 to indicate a TAO writting source CD for read-cd/read-toc
   int taoSourceAdjust_; // number of unreadable sectors between two tracks
                         // written in TAO mode
   const Toc *toc_;
@@ -437,7 +437,7 @@ protected:
   int audioDataByteOrder_; 
   
   int userCapacity_;
-  int fullBurn_;
+  bool fullBurn_;
 
   static unsigned char syncPattern[12];
   static char REMOTE_MSG_SYNC_[4];

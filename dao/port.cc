@@ -48,6 +48,8 @@
 extern uid_t geteuid();
 #endif
 
+#include "log.h"
+
 /* Select POSIX scheduler interface for real time scheduling if possible */
 #ifdef USE_POSIX_THREADS
 
@@ -97,7 +99,7 @@ extern "C" int sched_getscheduler __P((pid_t __pid));
 
 #include "port.h"
 
-#include "util.h"
+#include "log.h"
 
 void mSleep(long milliSeconds)
 {
@@ -133,7 +135,7 @@ void installSignalHandler(int sig, SignalHandler handler)
   sigemptyset(&(action.sa_mask));
 
   if (sigaction(sig, &action, NULL) != 0) 
-    message(-2, "Cannot install signal handler: %s", strerror(errno));
+    log_message(-2, "Cannot install signal handler: %s", strerror(errno));
 }
 
 // Blocks specified signal.
@@ -186,16 +188,16 @@ int setRealTimeScheduling(int priority)
 {
 #if defined(__CYGWIN__)
   if (!SetPriorityClass(GetCurrentProcess(), REALTIME_PRIORITY_CLASS)) {
-    message(-1, "Cannot set real time priority class.");
+    log_message(-1, "Cannot set real time priority class.");
     return 3;
   }
 
   if (!SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_TIME_CRITICAL)) {
-    message(-1, "Cannot set real time priority.");
+    log_message(-1, "Cannot set real time priority.");
     return 3;
   }
 
-  message(5, "Using WIN32 real time scheduling.");
+  log_message(5, "Using WIN32 real time scheduling.");
 
 #elif defined(USE_POSIX_THREADS) && defined(POSIX_SCHEDULING)
   struct sched_param schedp;
@@ -209,11 +211,11 @@ int setRealTimeScheduling(int priority)
   schedp.sched_priority = sched_get_priority_max(SCHED_RR) - priority;
 
   if (pthread_setschedparam(pthread_self(), SCHED_RR, &schedp) < 0) {
-    message(-1, "Cannot setup real time scheduling: %s", strerror(errno));
+    log_message(-1, "Cannot setup real time scheduling: %s", strerror(errno));
     return 3;
   }
   else {
-    message(5, "Using pthread POSIX real time scheduling.");
+    log_message(5, "Using pthread POSIX real time scheduling.");
   }
 
 #elif defined(LINUX_QNX_SCHEDULING)
@@ -226,11 +228,11 @@ int setRealTimeScheduling(int priority)
   sched_getparam (0, &schedp);
   schedp.run_q_min = schedp.run_q_max = 2;
   if (sched_setscheduler (0, SCHED_RR, &schedp) < 0) {
-    message(-1, "Cannot setup real time scheduling: %s", strerror(errno));
+    log_message(-1, "Cannot setup real time scheduling: %s", strerror(errno));
     return 3;
   }
   else {
-    message(5, "Using Linux QNX real time scheduling.");
+    log_message(5, "Using Linux QNX real time scheduling.");
   }
 
 #elif defined POSIX_SCHEDULING
@@ -243,11 +245,11 @@ int setRealTimeScheduling(int priority)
   sched_getparam (0, &schedp);
   schedp.sched_priority = sched_get_priority_max (SCHED_RR) - priority;
   if (sched_setscheduler (0, SCHED_RR, &schedp) < 0) {
-    message(-1, "Cannot setup real time scheduling: %s", strerror(errno));
+    log_message(-1, "Cannot setup real time scheduling: %s", strerror(errno));
     return 3;
   }
   else {
-    message(5, "Using POSIX real time scheduling.");
+    log_message(5, "Using POSIX real time scheduling.");
   }
 
 #elif defined UNIXWARE
@@ -268,18 +270,18 @@ int setRealTimeScheduling(int priority)
   fp->fp_tqnsecs = FP_TQDEF;
   
   if (priocntl(P_PID, 0, PC_GETCID, (void *) &pci) < 0) {
-    message(-1, "priocntl PC_GETCID failed");
+    log_message(-1, "priocntl PC_GETCID failed");
     return 3;
   }
  
   pcp.pc_cid = pci.pc_cid;
  
   if (priocntl(P_PID, getpid(), PC_SETPARMS, (void *) &pcp) < 0) {
-    message(-1, "priocntl PC_SETPARMS failed");
+    log_message(-1, "priocntl PC_SETPARMS failed");
     return 3;
   }
  
-  message(5, "Now running in fixed-priority scheduling mode.");
+  log_message(5, "Now running in fixed-priority scheduling mode.");
 
 #else
   return 2;

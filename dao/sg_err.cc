@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "sg_err.h"
-#include "util.h"
+#include "log.h"
 
 /* This file is a huge cut, paste and hack from linux/drivers/scsi/constant.c
 *  which I guess was written by:
@@ -58,29 +58,33 @@ static const char *group_1_commands[] = {
 
 static const char *group_2_commands[] = {
 /* 40-41 */ "Change Definition", "Write Same", 
-/* 42-48 */ "Read sub-channel", "Read TOC", "Read header", 
-            "Play audio (10)", unknown, "Play audio msf",
-            "Play audio track/index", 
-/* 49-4f */ "Play track relative (10)", unknown, "Pause/resume", 
-            "Log Select", "Log Sense", unknown, unknown,
-/* 50-55 */ unknown, unknown, unknown, unknown, unknown, "Mode Select (10)",
-/* 56-5b */ unknown, unknown, unknown, unknown, "Mode Sense (10)", unknown,
-/* 5c-5f */ unknown, unknown, unknown,
+/* 42-44 */ "Read sub-channel", "Read TOC", "Read header", 
+/* 45-47 */ "Play audio (10)", "Get configuration", "Play audio msf",
+/* 48 */     "Play audio track/index", 
+/* 49-4a */ "Play track relative (10)", "Get event/status notification",
+/* 4b */    "Pause/resume", 
+/* 4c-4f */ "Log Select", "Log Sense", "Stop play/scan", unknown,
+/* 50-55 */ unknown, "Read disc information", "Read track information",
+            "Reserve track", "Send OPC information", "Mode Select (10)",
+/* 56-5b */ unknown, unknown, "Repair track", unknown, "Mode Sense (10)",
+            "Close track/session",
+/* 5c-5f */ "Read buffer capacity", "Send cue sheet", unknown,
 };
 
 
 /* The following are 12 byte commands in group 5 */
 static const char *group_5_commands[] = {
-/* a0-a5 */ unknown, unknown, unknown, unknown, unknown,
+/* a0-a5 */ unknown, "Blank", unknown, "Send key", "Report key",
             "Move medium/play audio(12)",
-/* a6-a9 */ "Exchange medium", unknown, "Read(12)", "Play track relative(12)", 
-/* aa-ae */ "Write(12)", unknown, "Erase(12)", unknown, 
+/* a6-a9 */ "Exchange medium", "Set read ahead", "Read(12)", "Play track relative(12)", 
+/* aa-ae */ "Write(12)", "Read media s/n", "Erase(12)", "Read disc structure", 
             "Write and verify(12)", 
 /* af-b1 */ "Verify(12)", "Search data high(12)", "Search data equal(12)",
 /* b2-b4 */ "Search data low(12)", "Set limits(12)", unknown,
 /* b5-b6 */ "Request volume element address", "Send volume tag",
-/* b7-b9 */ "Read defect data(12)", "Read element status", unknown,
-/* ba-bf */ unknown, unknown, unknown, unknown, unknown, unknown,
+/* b7-b9 */ "Read defect data(12)", "Read element status", "Read CD MSF",
+/* ba-bf */ unknown, "Set CD speed", unknown, "Mechanism status", "Read CD",
+            "Send disc structure",
 };
 
 
@@ -105,16 +109,16 @@ static void print_opcode(int opcode) {
     const char **table = commands[ group(opcode) ];
     switch ((unsigned long) table) {
     case RESERVED_GROUP:
-        message(0, "%s(0x%02x) ", reserved, opcode); 
+        log_message(0, "%s(0x%02x) ", reserved, opcode); 
         break;
     case VENDOR_GROUP:
-        message(0, "%s(0x%02x) ", vendor, opcode); 
+        log_message(0, "%s(0x%02x) ", vendor, opcode); 
         break;
     default:
         if (table[opcode & 0x1f] != unknown)
-	    message(0, "%s ",table[opcode & 0x1f]);
+	    log_message(0, "%s ",table[opcode & 0x1f]);
         else
-            message(0, "%s(0x%02x) ", unknown, opcode);
+            log_message(0, "%s(0x%02x) ", unknown, opcode);
         break;
     }
 }
@@ -123,8 +127,26 @@ void sg_print_command (const unsigned char * command) {
     int i,s;
     print_opcode(command[0]);
     for ( i = 1, s = COMMAND_SIZE(command[0]); i < s; ++i) 
-        message(0, "%02x ", command[i]);
-    message(0, "");
+        log_message(0, "%02x ", command[i]);
+    log_message(0, "");
+}
+
+const char* sg_strcommand(unsigned char opcode)
+{
+    static char buf[8];
+
+    const char** table = commands[group(opcode)];
+    switch ((unsigned long)table) {
+    case RESERVED_GROUP:
+    case VENDOR_GROUP:
+	break;
+    default:
+	if (table[opcode & 0x1f] != unknown)
+	    return table[opcode & 0x1f];
+	break;
+    }
+    sprintf(buf, "0x%02x", opcode);
+    return buf;
 }
 
 static const char * statuses[] = {
@@ -139,7 +161,7 @@ static const char * statuses[] = {
 
 void sg_print_target_status (int target_status) {
     /* status = (status >> 1) & 0xf; */ /* already done */
-    message(0, "%s ",statuses[target_status]);
+    log_message(0, "%s ",statuses[target_status]);
 }
 
 #define D 0x001  /* DIRECT ACCESS DEVICE (disk) */
@@ -407,17 +429,17 @@ void sg_print_sense(const char * leadin, const unsigned char * sense_buffer)
            s = SG_ERR_MAX_SENSE_LEN;
         
         if (!valid)
-            message(0, "[valid=0] ");
-        message(0, "Info fld=%d, ", (int)((sense_buffer[3] << 24) |
+            log_message(0, "[valid=0] ");
+        log_message(0, "Info fld=%d, ", (int)((sense_buffer[3] << 24) |
                (sense_buffer[4] << 16) | (sense_buffer[5] << 8) |
                sense_buffer[6]));
         
         if (sense_buffer[2] & 0x80)
-           message(0, "FMK ");     /* current command has read a filemark */
+           log_message(0, "FMK ");     /* current command has read a filemark */
         if (sense_buffer[2] & 0x40)
-           message(0, "EOM ");     /* end-of-medium condition exists */
+           log_message(0, "EOM ");     /* end-of-medium condition exists */
         if (sense_buffer[2] & 0x20)
-           message(0, "ILI ");     /* incorrect block length requested */
+           log_message(0, "ILI ");     /* incorrect block length requested */
         
         switch (code) {
         case 0x0:
@@ -432,11 +454,11 @@ void sg_print_sense(const char * leadin, const unsigned char * sense_buffer)
             error = "Invalid";
         }
         
-        message(0, "%s ", error);
+        log_message(0, "%s ", error);
         
         if (leadin)
-            message(0, "%s: ", leadin);
-        message(0, "sense key: 0x%02x: %s", sense_buffer[2] & 0x0f,
+            log_message(0, "%s: ", leadin);
+        log_message(0, "sense key: 0x%02x: %s", sense_buffer[2] & 0x0f,
 		snstext[sense_buffer[2] & 0x0f]);
         
         /* Check to see if additional sense information is available */
@@ -446,16 +468,16 @@ void sg_print_sense(const char * leadin, const unsigned char * sense_buffer)
         for(i=0; additional[i].text; i++)
             if(additional[i].code1 == sense_buffer[12] &&
                additional[i].code2 == sense_buffer[13])
-                message(0, "Additional sense indicates: %s", 
+                log_message(0, "Additional sense indicates: %s", 
                        additional[i].text);
         
         for(i=0; additional2[i].text; i++)
             if(additional2[i].code1 == sense_buffer[12] &&
                additional2[i].code2_min >= sense_buffer[13]  &&
                additional2[i].code2_max <= sense_buffer[13]) {
-                message(0, "Additional sense indicates: ");
-                message(0, additional2[i].text, sense_buffer[13]);
-                message(0, "");
+                log_message(0, "Additional sense indicates: ");
+                log_message(0, additional2[i].text, sense_buffer[13]);
+                log_message(0, "");
             };
     } else {    /* non-extended sense data */
 
@@ -468,24 +490,24 @@ void sg_print_sense(const char * leadin, const unsigned char * sense_buffer)
           */
         
         if (leadin)
-            message(0, "%s: ", leadin);
+            log_message(0, "%s: ", leadin);
         if (sense_buffer[0] < 15)
-            message(0, "old sense: key %s", snstext[sense_buffer[0] & 0x0f]);
+            log_message(0, "old sense: key %s", snstext[sense_buffer[0] & 0x0f]);
         else
-            message(0, "sns = %2x %2x", sense_buffer[0], sense_buffer[2]);
+            log_message(0, "sns = %2x %2x", sense_buffer[0], sense_buffer[2]);
         
-        message(0, "Non-extended sense class %d code 0x%0x", sense_class, code);
+        log_message(0, "Non-extended sense class %d code 0x%0x", sense_class, code);
         s = 4;
     }
     
  done:
-    message(0, "Raw sense data: ");
+    log_message(0, "Raw sense data: ");
     for (i = 0; i < s; ++i) {
         if ((i > 0) && (0 == (i % 10)))
-            message(0, "");
-        message(0, "0x%02x ", sense_buffer[i]);
+            log_message(0, "");
+        log_message(0, "0x%02x ", sense_buffer[i]);
     }
-    message(0, "");
+    log_message(0, "");
     return;
 }
 
@@ -502,12 +524,12 @@ void sg_print_host_status(int host_status)
         for(i = 0; hostbyte_table[i]; i++) ;
         maxcode = i-1;
     }
-    message(0, "Host_status=0x%02x ", host_status);
+    log_message(0, "Host_status=0x%02x ", host_status);
     if(host_status > maxcode) {
-        message(0, "is invalid "); 
+        log_message(0, "is invalid "); 
         return;
     }
-    message(0, "(%s) ",hostbyte_table[host_status]);
+    log_message(0, "(%s) ",hostbyte_table[host_status]);
 }
 
 static const char * driverbyte_table[]={
@@ -532,8 +554,8 @@ void sg_print_driver_status(int driver_status)
         for(i = 0; driversuggest_table[i]; i++) ;
         suggest_max = i;
     }
-    message(0, "Driver_status=0x%02x ",driver_status);
-    message(0, "(%s,%s) ",
+    log_message(0, "Driver_status=0x%02x ",driver_status);
+    log_message(0, "(%s,%s) ",
         dr < driver_max  ? driverbyte_table[dr]:"invalid",
         su < suggest_max ? driversuggest_table[su]:"invalid");
 }
@@ -549,10 +571,10 @@ int sg_chk_n_print(const char * leadin, int target_status,
         return 1;       /* No problems */
     if (0 != target_status) {
         if (leadin)
-            message(0, "%s: ", leadin);
+            log_message(0, "%s: ", leadin);
         done_leadin = 1;
         sg_print_target_status(target_status);
-        message(0, "");
+        log_message(0, "");
         if (sense_buffer && ((target_status == CHECK_CONDITION) ||
                              (target_status == COMMAND_TERMINATED))) {
             sg_print_sense(0, sense_buffer);
@@ -561,23 +583,23 @@ int sg_chk_n_print(const char * leadin, int target_status,
     }
     if (0 != host_status) {
         if (leadin && (! done_leadin))
-            message(0, "%s: ", leadin);
+            log_message(0, "%s: ", leadin);
         if (done_leadin)
-            message(0, "plus...: ");
+            log_message(0, "plus...: ");
         else
             done_leadin = 1;
         sg_print_host_status(host_status);
-        message(0, "");
+        log_message(0, "");
     }
     if (0 != driver_status) {
         if (leadin && (! done_leadin))
-            message(0, "%s: ", leadin);
+            log_message(0, "%s: ", leadin);
         if (done_leadin)
-            message(0, "plus...: ");
+            log_message(0, "plus...: ");
         else
             done_leadin = 1;
         sg_print_driver_status(driver_status);
-        message(0, "");
+        log_message(0, "");
         if (sense_buffer && (! done_sense) && (DRIVER_SENSE & driver_status))
             sg_print_sense(0, sense_buffer);
     }

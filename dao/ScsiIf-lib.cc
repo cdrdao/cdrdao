@@ -25,6 +25,7 @@
 #include <errno.h>
 
 #include "ScsiIf.h"
+#include "log.h"
 #include "util.h"
 
 #include "xconfig.h"
@@ -91,7 +92,7 @@ ScsiIf::ScsiIf(const char *dev)
 #endif
 
   if (impl_->pageSize_ == 0) {
-    message(-3, "Cannot determine page size.");
+    log_message(-3, "Cannot determine page size.");
     impl_->pageSize_ = 1;
   }
 
@@ -123,10 +124,7 @@ int ScsiIf::init()
 
   if ((impl_->scgp_ = scg_open(impl_->dev_, errstr, sizeof(errstr), 0, 0))
 	 == NULL) {
-    message(-2, "Cannot open SCSI device '%s': %s", impl_->dev_, errstr);
-#ifndef USE_OLDSCGLIB
-    scg_help(stderr);
-#endif
+    log_message(-2, "Cannot open SCSI device '%s': %s", impl_->dev_, errstr);
     return 1;
   }
 
@@ -134,7 +132,7 @@ int ScsiIf::init()
 
   maxDataLen_ = scg_bufsize(impl_->scgp_, MAX_DATALEN_LIMIT);
 
-  message(5, "SCSI: max DMA: %ld", maxDataLen_);
+  log_message(5, "SCSI: max DMA: %ld", maxDataLen_);
 
   if (maxDataLen_ > MAX_DATALEN_LIMIT)
     maxDataLen_ = MAX_DATALEN_LIMIT;
@@ -142,7 +140,7 @@ int ScsiIf::init()
   impl_->pageAlignedBuffer_ = (char *)scg_getbuf(impl_->scgp_, maxDataLen_);
 
   if (impl_->pageAlignedBuffer_ == NULL) {
-    message(-2, "Cannot get SCSI buffer.");
+    log_message(-2, "Cannot get SCSI buffer.");
     return 1;
   }
 
@@ -193,12 +191,12 @@ int ScsiIf::sendCmd(const unsigned char *cmd, int cmdLen,
 
   if (dataOutLen > 0) {
     if (((size_t)dataOut % impl_->pageSize_) != 0) {
-      //message(0, "Use SCSI buffer for data out.");
+      //log_message(0, "Use SCSI buffer for data out.");
       memcpy(impl_->pageAlignedBuffer_, dataOut, dataOutLen);
       scmd->addr = impl_->pageAlignedBuffer_;
     }
     else {
-      //message(0, "Data out is page aligned.");
+      //log_message(0, "Data out is page aligned.");
       scmd->addr = (char*)dataOut;
     }
 
@@ -206,12 +204,12 @@ int ScsiIf::sendCmd(const unsigned char *cmd, int cmdLen,
   }
   else if (dataInLen > 0) {
     if (((size_t)dataIn % impl_->pageSize_) != 0) {
-      //message(0, "Use SCSI buffer for data in.");
+      //log_message(0, "Use SCSI buffer for data in.");
       scmd->addr = impl_->pageAlignedBuffer_;
       usedPageAlignedBuffer = 1;
     }
     else {
-      //message(0, "Data in is page aligned.");
+      //log_message(0, "Data in is page aligned.");
       scmd->addr = (char*)dataIn;
     }
 
@@ -264,7 +262,7 @@ int ScsiIf::inquiry()
 
 
   if (sendCmd(cmd, 6, NULL, 0, result, 0x2c, 0) != 0) {
-    message (-2, "Inquiry command failed on '%s'.", impl_->dev_);
+    log_message(-2, "Inquiry command failed on '%s'.", impl_->dev_);
     return 1;
   }
 
@@ -394,21 +392,21 @@ static void printVersionInfo(SCSI *scgp)
 
     const char *vers = scg_version(0, SCG_VERSION);
     const char *auth = scg_version(0, SCG_AUTHOR);
-    message(2, "Using libscg version '%s-%s'", auth, vers);
+    log_message(3, "Using libscg version '%s-%s'", auth, vers);
   
     vers = scg_version(scgp, SCG_VERSION);
     auth = scg_version(scgp, SCG_AUTHOR);
   
-    message(3, "Using libscg transport code version '%s-%s'", auth, vers);
+    log_message(3, "Using libscg transport code version '%s-%s'", auth, vers);
 
     vers = scg_version(scgp, SCG_RVERSION);
     auth = scg_version(scgp, SCG_RAUTHOR);
 
     if (vers != NULL && auth != NULL) {
-      message(3, "Using remote transport code version '%s-%s'", auth, vers);
+      log_message(3, "Using remote transport code version '%s-%s'", auth, vers);
     }
 
-    message(2, "");
+    log_message(2, "");
   }
 }
 
@@ -483,7 +481,7 @@ const char *ScsiIfImpl::openScsiDevAsSg(const char *devname)
   }
 
   if (fd < 0) {
-    message(-2, "Cannot open \"%s\": %s", fname, strerror(errno));
+    log_message(-2, "Cannot open \"%s\": %s", fname, strerror(errno));
     return NULL;
   }
 
@@ -491,7 +489,7 @@ const char *ScsiIfImpl::openScsiDevAsSg(const char *devname)
 
 #ifdef SCSI_IOCTL_GET_BUS_NUMBER
     if (ioctl(fd, SCSI_IOCTL_GET_BUS_NUMBER, &bus) < 0) {
-      message(-2, "%s: Need a filename that resolves to a SCSI device.",
+      log_message(-2, "%s: Need a filename that resolves to a SCSI device.",
 	      fname);
       close(fd);
       return NULL;
@@ -502,7 +500,7 @@ const char *ScsiIfImpl::openScsiDevAsSg(const char *devname)
 
 
     if (ioctl(fd, SCSI_IOCTL_GET_IDLUN, &m_idlun) < 0) {
-      message(-2, "%s: Need a filename that resolves to a SCSI device (2).",
+      log_message(-2, "%s: Need a filename that resolves to a SCSI device (2).",
 	      fname);
       close(fd);
       return NULL;
@@ -534,7 +532,7 @@ const char *ScsiIfImpl::openScsiDevAsSg(const char *devname)
 
 #ifdef SCSI_IOCTL_GET_BUS_NUMBER
       if (ioctl(fd, SCSI_IOCTL_GET_BUS_NUMBER, &bbus) < 0) {
-	message(-2, "%s: SG: ioctl SCSI_IOCTL_GET_BUS_NUMBER failed: %s",
+	log_message(-2, "%s: SG: ioctl SCSI_IOCTL_GET_BUS_NUMBER failed: %s",
 		fname, strerror(errno));
 	close(fd);
 	fd = -9999;
@@ -544,7 +542,7 @@ const char *ScsiIfImpl::openScsiDevAsSg(const char *devname)
 #endif
 
       if (ioctl(fd, SCSI_IOCTL_GET_IDLUN, &mm_idlun) < 0) {
-	message(-2, "%s: SG: ioctl SCSI_IOCTL_GET_IDLUN failed: %s",
+	log_message(-2, "%s: SG: ioctl SCSI_IOCTL_GET_IDLUN failed: %s",
 		fname, strerror(errno));
 	close(fd);
 	fd = -9999;
@@ -555,7 +553,7 @@ const char *ScsiIfImpl::openScsiDevAsSg(const char *devname)
 	   ((mm_idlun.mux4 >> 8) & 0xff)) &&
 	  (((m_idlun.mux4 >> 16) & 0xff) ==
 	   ((mm_idlun.mux4 >> 16) & 0xff))) {
-	message(4, "Mapping %s to sg device: %s", devname, fname);
+	log_message(4, "Mapping %s to sg device: %s", devname, fname);
 	break;
       }
       else {
@@ -570,7 +568,7 @@ const char *ScsiIfImpl::openScsiDevAsSg(const char *devname)
     return fname;
   }
   else {
-    message(-2, "Cannot map \"%s\" to a SG device.", devname);
+    log_message(-2, "Cannot map \"%s\" to a SG device.", devname);
     return NULL;
   }
 }

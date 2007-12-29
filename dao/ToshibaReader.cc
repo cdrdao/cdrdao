@@ -25,7 +25,7 @@
 #include "ToshibaReader.h"
 
 #include "Toc.h"
-#include "util.h"
+#include "log.h"
 
 ToshibaReader::ToshibaReader(ScsiIf *scsiIf, unsigned long options)
   : PlextorReader(scsiIf, options | OPT_DRV_GET_TOC_GENERIC)
@@ -70,7 +70,7 @@ int ToshibaReader::readSubChannels(TrackData::SubChannelMode,
 		  (tries == 1) ? 1 : 0);
 
     if (ret != 0 && tries == 1) {
-      message(-2, "Reading of audio data failed at sector %ld.", lba);
+      log_message(-2, "Reading of audio data failed at sector %ld.", lba);
       return 1;
     }
     

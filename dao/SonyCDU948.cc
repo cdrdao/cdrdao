@@ -26,7 +26,7 @@
 #include "SonyCDU948.h"
 #include "PWSubChannel96.h"
 
-#include "util.h"
+#include "log.h"
 #include "Toc.h"
 #include "CdTextEncoder.h"
 
@@ -114,7 +114,7 @@ int SonyCDU948::selectSpeed()
   }
 
   if (setModePage6(mp, NULL, NULL, 1) != 0) {
-    message(-2, "Cannot set speed mode page.");
+    log_message(-2, "Cannot set speed mode page.");
     return 1;
   }
 
@@ -143,7 +143,7 @@ int SonyCDU948::setWriteParameters()
   data[3] = (multiSession_ != 0 ? (3 << 6) : 0);
   
   if (sendCmd(cmd, 10, data, 52, NULL, 0, 1) != 0) {
-    message(-1, "Cannot set write parameters.");
+    log_message(-1, "Cannot set write parameters.");
     return 1;
   }
 
@@ -157,7 +157,7 @@ int SonyCDU948::initDao(const Toc *toc)
   delete cdTextEncoder_;
   cdTextEncoder_ = new CdTextEncoder(toc);
   if (cdTextEncoder_->encode() != 0) {
-    message(-2, "CD-TEXT encoding failed.");
+    log_message(-2, "CD-TEXT encoding failed.");
     return 1;
   }
 
@@ -214,7 +214,7 @@ int SonyCDU948::writeCdTextLeadIn()
     return 0;
 
   if (leadInLen_ == 0) {
-    message(-2, "Cannot write CD-TEXT lead-in because lead-in length is not known.");
+    log_message(-2, "Cannot write CD-TEXT lead-in because lead-in length is not known.");
     return 1;
   }
 
@@ -224,7 +224,7 @@ int SonyCDU948::writeCdTextLeadIn()
   assert(cdTextSubChannels != NULL);
   assert(cdTextSubChannelCount > 0);
 
-  message(2, "Writing CD-TEXT lead-in...");
+  log_message(2, "Writing CD-TEXT lead-in...");
 
   memset(cmd, 0, 10);
   cmd[0] = 0xe1; // WRITE CONTINUE
@@ -250,7 +250,7 @@ int SonyCDU948::writeCdTextLeadIn()
     }
 
     if (sendCmd(cmd, 10, transferBuffer_, byteLen, NULL, 0) != 0) {
-      message(-2, "Writing of CD-TEXT data failed.");
+      log_message(-2, "Writing of CD-TEXT data failed.");
       return 1;
     }
 

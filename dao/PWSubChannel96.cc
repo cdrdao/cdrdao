@@ -23,7 +23,7 @@
 #include <string.h>
 #include <assert.h>
 
-#include "util.h"
+#include "log.h"
 
 PWSubChannel96::PWSubChannel96()
 {
@@ -475,13 +475,13 @@ const char *PWSubChannel96::isrc() const
 void PWSubChannel96::print() const
 {
   if (type_ != QMODE_ILLEGAL) 
-    message(0, "P:%02x ", getChannelByte(P_CHAN, 0));
+    log_message(0, "P:%02x ", getChannelByte(P_CHAN, 0));
 
   switch (type_) {
   case QMODE1TOC:
   case QMODE1DATA:
   case QMODE5TOC:
-    message(0, "Q: (%02x) %02x,%02x %02x:%02x:%02x %02x %02x:%02x:%02x ", 
+    log_message(0, "Q: (%02x) %02x,%02x %02x:%02x:%02x %02x %02x:%02x:%02x ", 
 	   getChannelByte(Q_CHAN, 0), getChannelByte(Q_CHAN, 1),
 	   getChannelByte(Q_CHAN, 2), getChannelByte(Q_CHAN, 3),
 	   getChannelByte(Q_CHAN, 4), getChannelByte(Q_CHAN, 5),
@@ -489,20 +489,20 @@ void PWSubChannel96::print() const
 	   getChannelByte(Q_CHAN, 8), getChannelByte(Q_CHAN, 9));
     break;
   case QMODE2:
-    message(0, "Q: (%02x) MCN: %s      %02x ", getChannelByte(Q_CHAN, 0),
+    log_message(0, "Q: (%02x) MCN: %s      %02x ", getChannelByte(Q_CHAN, 0),
 	    catalog(), getChannelByte(Q_CHAN, 9));
     break;
   case QMODE3:
-    message(0, "Q: (%02x) ISRC: %s      %02x ", getChannelByte(Q_CHAN, 0),
+    log_message(0, "Q: (%02x) ISRC: %s      %02x ", getChannelByte(Q_CHAN, 0),
 	    isrc(), getChannelByte(Q_CHAN, 9));
     break;
   case QMODE_ILLEGAL:
-    message(0, "INVALID QMODE: %02x", getChannelByte(Q_CHAN, 0));
+    log_message(0, "INVALID QMODE: %02x", getChannelByte(Q_CHAN, 0));
     break;
   }
 
   if (type_ != QMODE_ILLEGAL) 
-    message(0, "%04x %d", 
+    log_message(0, "%04x %d", 
 	    (getChannelByte(Q_CHAN, 10) << 8) | getChannelByte(Q_CHAN, 11),
 	    checkCrc());
 }

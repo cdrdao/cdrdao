@@ -36,7 +36,9 @@
 #include <ctype.h>
 #include <list>
 #include <string>
+#include <assert.h>
 
+#include "log.h"
 #include "util.h"
 #include "Toc.h"
 #include "ScsiIf.h"
@@ -64,57 +66,129 @@ extern "C" {
 };
 #endif
 
-enum Command { UNKNOWN, SHOW_TOC, SHOW_DATA, READ_TEST, SIMULATE, WRITE,
-	       READ_TOC, DISK_INFO, READ_CD, TOC_INFO, TOC_SIZE, BLANK,
-	       SCAN_BUS, UNLOCK, COPY_CD, READ_CDDB, MSINFO, DRIVE_INFO,
-               DISCID };
+typedef enum {
+    UNKNOWN = -1,
+    SHOW_TOC,
+    SHOW_DATA,
+    READ_TEST,
+    SIMULATE,
+    WRITE,
+    READ_TOC,
+    DISK_INFO,
+    READ_CD,
+    TOC_INFO,
+    TOC_SIZE,
+    BLANK,
+    SCAN_BUS,
+    UNLOCK,
+    COPY_CD,
+    READ_CDDB,
+    MSINFO,
+    DRIVE_INFO,
+    DISCID,
+    SHOW_VERSION,
+    LAST_CMD,
+} DaoCommand;
 
-static const char *PRGNAME = NULL;
-static const char *TOC_FILE = NULL;
-static const char *DRIVER_ID = NULL;
-static const char *SOURCE_DRIVER_ID = NULL;
-static const char *SOURCE_SCSI_DEVICE = NULL;
-static const char *DATA_FILENAME = NULL;
-static const char *CDDB_SERVER_LIST = "freedb.freedb.org freedb.freedb.org:/~cddb/cddb.cgi uk.freedb.org uk.freedb.org:/~cddb/cddb.cgi cz.freedb.org cz.freedb.org:/~cddb/cddb.cgi";
-static const char *CDDB_LOCAL_DB_DIR = NULL;
-static const char *TMP_FILE_DIR = NULL;
-static int READING_SPEED = -1;
-static int WRITING_SPEED = -1;
-static int EJECT = 0;
-static int SWAP = 0;
-static int MULTI_SESSION = 0;
-static Command COMMAND;
-static int VERBOSE = 2; // verbose level
-static int SESSION = 1; // session for read-toc/read-cd
-static int FAST_TOC = 0; // toc reading without sub-channel analysis
-static int PAUSE = 1; // pause before writing
-static int READ_RAW = 0; // read raw sectors
-static int MODE2_MIXED = 1;
-static int REMOTE_MODE = 0;
-static int REMOTE_FD = -1;
-static int RELOAD = 0;
-static int FORCE = 0;
-static int PARANOIA_MODE = 3;
-static int ON_THE_FLY = 0;
-static int WRITE_SIMULATE = 0;
-static int SAVE_SETTINGS = 0;
-static int USER_CAPACITY = 0;
-static int FULL_BURN = 0;
-static int CDDB_TIMEOUT = 60;
-static int WITH_CDDB = 0;
-static int TAO_SOURCE = 0;
-static int TAO_SOURCE_ADJUST = -1;
-static int KEEPIMAGE = 0;
-static int OVERBURN = 0;
-static int BUFFER_UNDER_RUN_PROTECTION = 1;
-static int WRITE_SPEED_CONTROL = 1;
-static bool KEEP = false;
-static bool PRINT_QUERY = false;
+typedef enum {
+    NO_DEVICE,
+    NEED_CDR_R,
+    NEED_CDR_W,
+    NEED_CDRW_W,
+} DaoDeviceType;
 
-static CdrDriver::BlankingMode BLANKING_MODE = CdrDriver::BLANK_MINIMAL;
-static TrackData::SubChannelMode READ_SUBCHAN_MODE = TrackData::SUBCHAN_NONE;
+// The cmdInfo[] array provides information about each of cdrdao's
+// main commands, including some of the basic processing steps
+// required, almost as a simplified state machine.
 
-static Settings *SETTINGS = NULL; // settings read from $HOME/.cdrdao
+static struct {
+    // The command code, which is also the index into the array
+    DaoCommand cmd;
+    // The command-line string for this command
+    const char* str;
+    // What type of device does the command require, for device
+    // auto-detection.
+    DaoDeviceType requiredDevice;
+    // Does the command require a toc file
+    bool needTocFile;
+    // Does the command require to parse an existing toc file
+    bool tocParse;
+    // Does the command require to check the parsed toc file
+    bool tocCheck;
+} cmdInfo[LAST_CMD] = {
+    { SHOW_TOC,     "show-toc",   NO_DEVICE,   1, 1, 0 },
+    { SHOW_DATA,    "show-data",  NO_DEVICE,   1, 1, 1 },
+    { READ_TEST,    "read-test",  NO_DEVICE,   1, 1, 1 },
+    { SIMULATE,     "simulate",   NEED_CDR_W,  1, 1, 1 },
+    { WRITE,        "write",      NEED_CDR_W,  1, 1, 1 },
+    { READ_TOC,     "read-toc",   NEED_CDR_R,  1, 0, 1 },
+    { DISK_INFO,    "disk-info",  NEED_CDR_R,  0, 0, 1 },
+    { READ_CD,      "read-cd",    NEED_CDR_R,  1, 0, 1 },
+    { TOC_INFO,     "toc-info",   NO_DEVICE,   1, 1, 1 },
+    { TOC_SIZE,     "toc-size",   NO_DEVICE,   1, 1, 1 },
+    { BLANK,        "blank",      NEED_CDRW_W, 0, 0, 1 },
+    { SCAN_BUS,     "scanbus",    NO_DEVICE,   0, 0, 1 },
+    { UNLOCK,       "unlock",     NEED_CDR_R,  0, 0, 1 },
+    { COPY_CD,      "copy",       NEED_CDR_W,  0, 0, 1 },
+    { READ_CDDB,    "read-cddb",  NO_DEVICE,   1, 1, 0 },
+    { MSINFO,       "msinfo",     NEED_CDR_R,  0, 0, 1 },
+    { DRIVE_INFO,   "drive-info", NEED_CDR_R,  0, 0, 1 },
+    { DISCID,       "discid",     NEED_CDR_R,  0, 0, 1 },
+    { SHOW_VERSION, "version",    NO_DEVICE,   0, 0, 0 },
+};
+
+typedef struct {
+
+    DaoCommand command;
+
+    const char* progName;
+    const char* tocFile;
+    const char* driverId;
+    const char* sourceDriverId;
+    const char* scsiDevice;
+    const char* sourceScsiDevice;
+    const char* dataFilename;
+    const char* cddbLocalDbDir;
+    const char* tmpFileDir;
+    const char* cddbServerList;
+
+    int  readingSpeed;
+    int  writingSpeed;
+    bool eject;
+    bool swap;
+    bool multiSession;
+    int  verbose;
+    int  session;
+    int  fifoBuffers;
+    bool fastToc;
+    bool pause;
+    bool readRaw;
+    bool mode2Mixed;
+    bool remoteMode;
+    int  remoteFd;
+    bool reload;
+    bool force;
+    int  paranoiaMode;
+    bool onTheFly;
+    bool writeSimulate;
+    bool saveSettings;
+    int  userCapacity;
+    bool fullBurn;
+    int  cddbTimeout;
+    bool withCddb;
+    bool taoSource;
+    int  taoSourceAdjust;
+    bool keepImage;
+    bool overburn;
+    int  bufferUnderrunProtection;
+    bool writeSpeedControl;
+    bool keep;
+    bool printQuery;
+
+    CdrDriver::BlankingMode blankingMode;
+    TrackData::SubChannelMode readSubchanMode;
+
+} DaoCommandLine;
 
 static bool isNT = false;
 
@@ -129,80 +203,10 @@ static HANDLE fh = NULL;
 static char devstr[10];
 #endif
 
-#if defined(__FreeBSD__)
-
-#  ifdef USE_SCGLIB
-static const char *SCSI_DEVICE = "0,0,0";
-#  else
-static const char *SCSI_DEVICE = "cd0";
-#  endif
-static int FIFO_BUFFERS = 20;
-
-#elif defined(__linux__)
-
-static const char *SCSI_DEVICE = "/dev/cdrecorder";
-static int FIFO_BUFFERS = 32;
-
-#else
-
-static const char *SCSI_DEVICE = "0,0,0";
-static int FIFO_BUFFERS = 32;
-
-#endif
-
-void message(int level, const char *fmt, ...)
-{
-  long len = strlen(fmt);
-  char last = len > 0 ? fmt[len - 1] : 0;
-
-  va_list args;
-  va_start(args, fmt);
-
-  if (level < 0) {
-    switch (level) {
-    case -1:
-      fprintf(stderr, "WARNING: ");
-      break;
-    case -2:
-      fprintf(stderr, "ERROR: ");
-      break;
-    case -3:
-      fprintf(stderr, "INTERNAL ERROR: ");
-      break;
-    default:
-      fprintf(stderr, "FATAL ERROR: ");
-      break;
-    }
-    vfprintf(stderr, fmt, args);
-    if (last != ' ' && last != '\r')
-      fprintf(stderr, "\n");
-    
-    fflush(stderr);
-    if (level <= -10)
-      exit(1);
-  }
-  else if (level <= VERBOSE) {
-    vfprintf(stderr, fmt, args);
-    if (last != ' ' && last != '\r')
-      fprintf(stderr, "\n");
-
-    fflush(stderr);
-  }
-
-  va_end(args);
-}
-
 static void printVersion()
 {
-  message(1, "Cdrdao version %s - (C) Andreas Mueller <andreas@daneb.de>",
+  log_message(2, "Cdrdao version %s - (C) Andreas Mueller <andreas@daneb.de>",
 	  VERSION);
-
-#ifdef USE_SCGLIB
-  message(2, "  SCSI interface library - (C) Joerg Schilling");
-#endif
-  message(2, "  Paranoia DAE library - (C) Monty");
-  message(2, "");
-  message(2, "Check http://cdrdao.sourceforge.net/drives.html#dt for current driver tables.");
 
   std::list<std::string> list;
   int num = formatConverter.supportedExtensions(list);
@@ -214,18 +218,50 @@ static void printVersion()
       msg += " ";
       msg += (*i);
     }
-    message(3, msg.c_str());
+    log_message(3, msg.c_str());
   }
-  message(1, "");
 }
 
-static void printUsage()
+static void setOptionDefaults(DaoCommandLine* options)
 {
-  switch (COMMAND) {
+    memset(options, 0, sizeof(DaoCommandLine));
+
+    options->readingSpeed = -1;
+    options->writingSpeed = -1;
+    options->command = UNKNOWN;
+    options->verbose = 2;
+    options->session = 1;
+    options->pause = true;
+    options->mode2Mixed = true;
+    options->remoteFd = -1;
+    options->paranoiaMode = 3;
+    options->cddbTimeout = 60;
+    options->taoSourceAdjust = -1;
+    options->bufferUnderrunProtection = 1;
+    options->writeSpeedControl = true;
+    options->keep = false;
+    options->printQuery = false;
+#if defined(__FreeBSD__)
+    options->fifoBuffers = 20;
+#else
+    options->fifoBuffers = 32;
+#endif
+    options->cddbServerList = "freedb.freedb.org freedb.freedb.org"
+	":/~cddb/cddb.cgi uk.freedb.org uk.freedb.org:/~cddb/cddb.cgi"
+	"cz.freedb.org cz.freedb.org:/~cddb/cddb.cgi";
+
+    options->blankingMode = CdrDriver::BLANK_MINIMAL;
+    options->readSubchanMode = TrackData::SUBCHAN_NONE;
+}
+
+static void printUsage(DaoCommandLine* options)
+{
+    switch (options->command) {
 
   case UNKNOWN:
-    message(0, "\nUsage: %s <command> [options] [toc-file]", PRGNAME);
-    message(0,
+    log_message(0, "\nUsage: %s <command> [options] [toc-file]",
+		options->progName);
+    log_message(0,
 "command:\n"
 "  show-toc   - prints out toc and exits\n"
 "  toc-info   - prints out short toc-file summary\n"
@@ -246,12 +282,14 @@ static void printUsage()
 "  write      - writes CD\n"
 "  copy       - copies CD\n");
     
-    message (0, "\n Try '%s <command> -h' to get a list of available options\n", PRGNAME);
+    log_message(0, "\n Try '%s <command> -h' to get a list of available "
+		"options\n", options->progName);
     break;
     
   case SHOW_TOC:
-    message(0, "\nUsage: %s show-toc [options] toc-file", PRGNAME);
-    message(0,
+    log_message(0, "\nUsage: %s show-toc [options] toc-file",
+		options->progName);
+    log_message(0,
 "options:\n"
 "  --tmpdir <path>         - sets directory for temporary wav files\n"
 "  --keep                  - keep generated temp wav files after exit\n"
@@ -259,19 +297,21 @@ static void printUsage()
     break;
     
   case SHOW_DATA:
-    message(0, "\nUsage: %s show-data [--swap] [-v #] toc-file\n", PRGNAME);
+    log_message(0, "\nUsage: %s show-data [--swap] [-v #] toc-file\n",
+		options->progName);
     break;
     
   case READ_TEST:
-    message(0, "\nUsage: %s read-test [-v #] toc-file\n", PRGNAME);
+    log_message(0, "\nUsage: %s read-test [-v #] toc-file\n",
+		options->progName);
     break;
   
   case SIMULATE:
-    message(0, "\nUsage: %s simulate [options] toc-file", PRGNAME);
-    message(0,
+    log_message(0, "\nUsage: %s simulate [options] toc-file",
+		options->progName);
+    log_message(0,
 "options:\n"
 "  --device [proto:]{<x,y,z>|device} - sets SCSI device of CD-writer\n"
-"                            (default: %s)\n"
 "  --driver <id>           - force usage of specified driver\n"
 "  --speed <writing-speed> - selects writing speed\n"
 "  --multi                 - session will not be closed\n"
@@ -290,16 +330,14 @@ static void printUsage()
 "  --tmpdir <path>         - sets directory for temporary wav files\n"
 "  --keep                  - keep generated temp wav files after exit\n"
 "  -v #                    - sets verbose level\n"
-"  -n                      - no pause before writing\n",
-	    SCSI_DEVICE);
+"  -n                      - no pause before writing\n");
     break;
     
   case WRITE:
-    message(0, "\nUsage: %s write [options] toc-file", PRGNAME);
-    message(0,
+    log_message(0, "\nUsage: %s write [options] toc-file", options->progName);
+    log_message(0,
 "options:\n"
 "  --device [proto:]{<x,y,z>|device} - sets SCSI device of CD-writer\n"
-"                            (default: %s)\n"
 "  --driver <id>           - force usage of specified driver\n"
 "  --simulate              - just perform a write simulation\n"
 "  --speed <writing-speed> - selects writing speed\n"
@@ -324,13 +362,13 @@ static void printUsage()
 "  --tmpdir <path>         - sets directory for temporary wav files\n"
 "  --keep                  - keep generated temp wav files after exit\n"
 "  -v #                    - sets verbose level\n"
-"  -n                      - no pause before writing\n",
-	    SCSI_DEVICE);
+"  -n                      - no pause before writing\n");
     break;
     
   case READ_TOC:
-    message(0, "\nUsage: %s read-toc [options] toc-file", PRGNAME);
-    message(0,
+    log_message(0, "\nUsage: %s read-toc [options] toc-file",
+		options->progName);
+    log_message(0,
 "options:\n"
 "  --device [proto:]{<x,y,z>|device} - sets SCSI device of CD-ROM reader\n"
 "  --driver <id>    - force usage of specified driver for source device\n"
@@ -354,35 +392,32 @@ static void printUsage()
     break;
     
   case DISK_INFO:
-    message(0, "\nUsage: %s disk-info [options]", PRGNAME);
-    message(0,
+    log_message(0, "\nUsage: %s disk-info [options]", options->progName);
+    log_message(0,
 "options:\n"
 "  --device [proto:]{<x,y,z>|device} - sets SCSI device of CD-writer\n"
-"                            (default: %s)\n"
 "  --driver <id>           - force usage of specified driver\n"
-"  -v #                    - sets verbose level\n",
-	    SCSI_DEVICE);
+"  -v #                    - sets verbose level\n");
     break;
     
   case DISCID:
-    message(0, "\nUsage: %s discid [options]", PRGNAME);
-    message(0,
+    log_message(0, "\nUsage: %s discid [options]", options->progName);
+    log_message(0,
 "options:\n"
 "  --device [proto:]{<x,y,z>|device} - sets SCSI device of CD-writer\n"
-"                            (default: %s)\n"
 "  --driver <id>           - force usage of specified driver\n"
 "  --cddb-servers <list>   - sets space separated list of CDDB servers\n"
 "  --cddb-timeout #        - timeout in seconds for CDDB server communication\n"
 "  --cddb-directory <path> - path to local CDDB directory where fetched\n"
 "                            CDDB records will be stored\n"
 "  --query-string          - prints out CDDB query only\n"
-"  -v #                    - sets verbose level\n",
-        SCSI_DEVICE);
+"  -v #                    - sets verbose level\n");
     break;
    
   case READ_CD:
-    message(0, "\nUsage: %s read-cd [options] toc-file", PRGNAME);
-    message(0,
+    log_message(0, "\nUsage: %s read-cd [options] toc-file",
+		options->progName);
+    log_message(0,
 "options:\n"
 "  --device [proto:]{<x,y,z>|device} - sets SCSI device of CD-ROM reader\n"
 "  --driver <id>    - force usage of specified driver for source device\n"
@@ -407,8 +442,9 @@ static void printUsage()
     break;
     
   case TOC_INFO:
-    message(0, "\nUsage: %s toc-info [options] toc-file", PRGNAME);
-    message(0,
+      log_message(0, "\nUsage: %s toc-info [options] toc-file",
+		  options->progName);
+    log_message(0,
 "options:\n"
 "  --tmpdir <path>         - sets directory for temporary wav files\n"
 "  --keep                  - keep generated temp wav files after exit\n"
@@ -416,8 +452,9 @@ static void printUsage()
     break;
     
   case TOC_SIZE:
-    message(0, "\nUsage: %s toc-size [options] toc-file", PRGNAME);
-    message(0,
+    log_message(0, "\nUsage: %s toc-size [options] toc-file",
+		options->progName);
+    log_message(0,
 "options:\n"
 "  --tmpdir <path>         - sets directory for temporary wav files\n"
 "  --keep                  - keep generated temp wav files after exit\n"
@@ -425,53 +462,46 @@ static void printUsage()
     break;
 
   case BLANK:
-    message(0, "\nUsage: %s blank [options]", PRGNAME);
-    message(0,
+    log_message(0, "\nUsage: %s blank [options]", options->progName);
+    log_message(0,
 "options:\n"
 "  --device [proto:]{<x,y,z>|device} - sets SCSI device of CD-writer\n"
-"                            (default: %s)\n"
 "  --driver <id>           - force usage of specified driver\n"
 "  --speed <writing-speed> - selects writing speed\n"
 "  --blank-mode <mode>     - blank mode ('full', 'minimal')\n"
 "  --eject                 - ejects cd after writing or simulation\n"
-"  -v #                    - sets verbose level\n",
-	  SCSI_DEVICE);
+"  -v #                    - sets verbose level\n");
     break;
     
   case SCAN_BUS:
-    message(0, "\nUsage: %s scan-bus [-v #]\n", PRGNAME);
+    log_message(0, "\nUsage: %s scan-bus [-v #]\n", options->progName);
     break;
     
   case UNLOCK:
-    message(0, "\nUsage: %s unlock [options]", PRGNAME);
-    message(0,
+    log_message(0, "\nUsage: %s unlock [options]", options->progName);
+    log_message(0,
 "options:\n"
 "  --device [proto:]{<x,y,z>|device} - sets SCSI device of CD-writer\n"
-"                            (default: %s)\n"
 "  --driver <id>           - force usage of specified driver\n"
 "  --reload                - reload the disk if necessary for writing\n"
 "  --eject                 - ejects cd after unlocking\n"
-"  -v #                    - sets verbose level\n",
-	    SCSI_DEVICE);
+"  -v #                    - sets verbose level\n");
     break;
     
   case DRIVE_INFO:
-    message(0, "\nUsage: %s drive-info [options]", PRGNAME);
-    message(0,
+    log_message(0, "\nUsage: %s drive-info [options]", options->progName);
+    log_message(0,
 "options:\n"
 "  --device [proto:]{<x,y,z>|device} - sets SCSI device of CD-writer\n"
-"                            (default: %s)\n"
 "  --driver <id>           - force usage of specified driver\n"
-"  -v #                    - sets verbose level\n",
-	    SCSI_DEVICE);
+"  -v #                    - sets verbose level\n");
     break;
     
   case COPY_CD:
-    message(0, "\nUsage: %s copy [options]", PRGNAME);
-    message(0,
+    log_message(0, "\nUsage: %s copy [options]", options->progName);
+    log_message(0,
 "options:\n"
 "  --device [proto:]{<x,y,z>|device} - sets SCSI device of CD-writer\n"
-"                            (default: %s)\n"
 "  --source-device {<x,y,z>|device} - sets SCSI device of CD-ROM reader\n"
 "  --driver <id>           - force usage of specified driver\n"
 "  --source-driver <id>    - force usage of specified driver for source device\n"
@@ -512,13 +542,13 @@ static void printUsage()
 "  --cddb-directory <path> - path to local CDDB directory where fetched\n"
 "                            CDDB records will be stored\n"
 "  -v #                    - sets verbose level\n"
-"  -n                      - no pause before writing\n",
-	  SCSI_DEVICE);
+"  -n                      - no pause before writing\n");
   break;
   
   case READ_CDDB:
-    message(0, "\nUsage: %s read-cddb [options] toc-file", PRGNAME);
-    message(0,
+    log_message(0, "\nUsage: %s read-cddb [options] toc-file",
+		options->progName);
+    log_message(0,
 "options:\n"
 "  --cddb-servers <list>   - sets space separated list of CDDB servers\n"
 "  --cddb-timeout #        - timeout in seconds for CDDB server communication\n"
@@ -528,685 +558,623 @@ static void printUsage()
     break;
     
   case MSINFO:
-    message(0, "\nUsage: %s msinfo [options]", PRGNAME);
-    message(0,
+    log_message(0, "\nUsage: %s msinfo [options]", options->progName);
+    log_message(0,
 "options:\n"
 "  --device [proto:]{<x,y,z>|device} - sets SCSI device of CD-writer\n"
-"                            (default: %s)\n"
 "  --driver <id>           - force usage of specified driver\n"
 "  --reload                - reload the disk if necessary for writing\n"
-"  -v #                    - sets verbose level\n",
-	    SCSI_DEVICE);
+"  -v #                    - sets verbose level\n");
     break;
     
   default:
-    message (0, "Sorry, no help available for command %d :-(\n", COMMAND);
+    log_message(0, "Sorry, no help available for command %d :-(\n",
+		options->command);
     break;
   }
   
 }
 
-static void importSettings(Command cmd)
+static void importSettings(DaoCommandLine* opts, Settings* settings)
 {
-  const char *sval;
-  const int *ival;
+    const char *sval;
+    const int *ival;
 
-  if (cmd == SIMULATE || cmd == WRITE || cmd == COPY_CD) {
-    if ((sval = SETTINGS->getString(SET_WRITE_DRIVER)) != NULL) {
-      DRIVER_ID = strdupCC(sval);
-    }
+    DaoCommand cmd = opts->command;
 
-    if ((sval = SETTINGS->getString(SET_WRITE_DEVICE)) != NULL) {
-      SCSI_DEVICE = strdupCC(sval);
-    }
+    if (cmd == SIMULATE || cmd == WRITE || cmd == COPY_CD) {
+	if ((sval = settings->getString(Settings::setWriteDriver)) != NULL) {
+	    opts->driverId = strdupCC(sval);
+	}
+
+	if ((sval = settings->getString(Settings::setWriteDevice)) != NULL) {
+	    opts->scsiDevice = strdupCC(sval);
+	}
     
-    if ((ival = SETTINGS->getInteger(SET_WRITE_SPEED)) != NULL &&
-	*ival >= 0) {
-      WRITING_SPEED = *ival;
+	if ((ival = settings->getInteger(Settings::setWriteSpeed)) != NULL &&
+	    *ival >= 0) {
+	    opts->writingSpeed = *ival;
+	}
+
+	if ((ival = settings->getInteger(Settings::setWriteBuffers)) != NULL &&
+	    *ival >= 10) {
+	    opts->fifoBuffers = *ival;
+	}
+	if ((ival = settings->getInteger(Settings::setUserCapacity)) != NULL &&
+	    *ival >= 0) {
+	    opts->userCapacity = *ival;
+	}
+	if ((ival = settings->getInteger(Settings::setFullBurn)) != NULL &&
+	    *ival >= 0) {
+	    opts->fullBurn = *ival;
+	}
     }
 
-    if ((ival = SETTINGS->getInteger(SET_WRITE_BUFFERS)) != NULL &&
-	*ival >= 10) {
-      FIFO_BUFFERS = *ival;
-    }
-    if ((ival = SETTINGS->getInteger(SET_USER_CAPACITY)) != NULL &&
-	*ival >= 0) {
-      USER_CAPACITY = *ival;
-    }
-    if ((ival = SETTINGS->getInteger(SET_FULL_BURN)) != NULL &&
-	*ival >= 0) {
-      FULL_BURN = *ival;
-    }
-  }
+    if (cmd == READ_CD || cmd == READ_TOC) {
+	if ((sval = settings->getString(Settings::setReadDriver)) != NULL) {
+	    opts->driverId = strdupCC(sval);
+	}
 
-  if (cmd == READ_CD || cmd == READ_TOC) {
-    if ((sval = SETTINGS->getString(SET_READ_DRIVER)) != NULL) {
-      DRIVER_ID = strdupCC(sval);
+	if ((sval = settings->getString(Settings::setReadDevice)) != NULL) {
+	    opts->scsiDevice = strdupCC(sval);
+	}
+
+	if ((ival = settings->getInteger(Settings::setReadParanoiaMode)) != NULL &&
+	    *ival >= 0) {
+	    opts->paranoiaMode = *ival;
+	}
     }
 
-    if ((sval = SETTINGS->getString(SET_READ_DEVICE)) != NULL) {
-      SCSI_DEVICE = strdupCC(sval);
-    }
+    if (cmd == COPY_CD) {
+	if ((sval = settings->getString(Settings::setReadDriver)) != NULL) {
+	    opts->sourceDriverId = strdupCC(sval);
+	}
 
-    if ((ival = SETTINGS->getInteger(SET_READ_PARANOIA_MODE)) != NULL &&
-	*ival >= 0) {
-      PARANOIA_MODE = *ival;
-    }
-  }
-
-  if (cmd == COPY_CD) {
-    if ((sval = SETTINGS->getString(SET_READ_DRIVER)) != NULL) {
-      SOURCE_DRIVER_ID = strdupCC(sval);
-    }
-
-    if ((sval = SETTINGS->getString(SET_READ_DEVICE)) != NULL) {
-      SOURCE_SCSI_DEVICE = strdupCC(sval);
-    }
+	if ((sval = settings->getString(Settings::setReadDevice)) != NULL) {
+	    opts->sourceScsiDevice = strdupCC(sval);
+	}
     
-    if ((ival = SETTINGS->getInteger(SET_READ_PARANOIA_MODE)) != NULL &&
+	if ((ival = settings->getInteger(Settings::setReadParanoiaMode)) != NULL &&
+	    *ival >= 0) {
+	    opts->paranoiaMode = *ival;
+	}
+    }
+
+    if (cmd == BLANK || cmd == DISK_INFO || cmd == MSINFO || cmd == UNLOCK ||
+	cmd == DISCID || cmd == DRIVE_INFO) {
+	if ((sval = settings->getString(Settings::setWriteDriver)) != NULL) {
+	    opts->driverId = strdupCC(sval);
+	}
+
+	if ((sval = settings->getString(Settings::setWriteDevice)) != NULL) {
+	    opts->scsiDevice = strdupCC(sval);
+	}
+    }
+
+    if (cmd == READ_CDDB || cmd == COPY_CD || cmd == READ_TOC ||
+	cmd == READ_CD || cmd == DISCID) {
+	if ((sval = settings->getString(Settings::setCddbServerList)) != NULL) {
+	    opts->cddbServerList = strdupCC(sval);
+	}
+
+	if ((sval = settings->getString(Settings::setCddbDbDir)) != NULL) {
+	    opts->cddbLocalDbDir = strdupCC(sval);
+	}
+
+	if ((ival = settings->getInteger(Settings::setCddbTimeout)) != NULL &&
+	    *ival > 0) {
+	    opts->cddbTimeout = *ival;
+	}
+	if ((sval = settings->getString(Settings::setTmpFileDir)) != NULL) {
+	    opts->tmpFileDir = strdupCC(sval);
+	}
+    }
+
+    if ((ival = settings->getInteger(Settings::setReadSpeed)) != NULL &&
 	*ival >= 0) {
-      PARANOIA_MODE = *ival;
-    }
-  }
-
-  if (cmd == BLANK || cmd == DISK_INFO || cmd == MSINFO || cmd == UNLOCK ||
-      cmd == DISCID || cmd == DRIVE_INFO) {
-    if ((sval = SETTINGS->getString(SET_WRITE_DRIVER)) != NULL) {
-      DRIVER_ID = strdupCC(sval);
-    }
-
-    if ((sval = SETTINGS->getString(SET_WRITE_DEVICE)) != NULL) {
-      SCSI_DEVICE = strdupCC(sval);
-    }
-  }
-
-  if (cmd == READ_CDDB || cmd == COPY_CD || cmd == READ_TOC ||
-      cmd == READ_CD || cmd == DISCID) {
-    if ((sval = SETTINGS->getString(SET_CDDB_SERVER_LIST)) != NULL) {
-      CDDB_SERVER_LIST = strdupCC(sval);
-    }
-
-    if ((sval = SETTINGS->getString(SET_CDDB_DB_DIR)) != NULL) {
-      CDDB_LOCAL_DB_DIR = strdupCC(sval);
-    }
-
-    if ((ival = SETTINGS->getInteger(SET_CDDB_TIMEOUT)) != NULL &&
-	*ival > 0) {
-      CDDB_TIMEOUT = *ival;
-    }
-    if ((sval = SETTINGS->getString(SET_TMP_FILE_DIR)) != NULL) {
-        TMP_FILE_DIR = strdupCC(sval);
-    }
-  }
-
-  if ((ival = SETTINGS->getInteger(SET_READ_SPEED)) != NULL &&
-      *ival >= 0) {
-    READING_SPEED = *ival;
-  }  
-
+	opts->readingSpeed = *ival;
+    }  
 }
 
-static void exportSettings(Command cmd)
+static void exportSettings(DaoCommandLine* opts, Settings* settings)
 {
-  if (cmd == SIMULATE || cmd == WRITE || cmd == COPY_CD) {
-    if (DRIVER_ID != NULL)
-      SETTINGS->set(SET_WRITE_DRIVER, DRIVER_ID);
+    DaoCommand cmd = opts->command;
+
+    if (cmd == SIMULATE || cmd == WRITE || cmd == COPY_CD) {
+	if (opts->driverId != NULL)
+	    settings->set(Settings::setWriteDriver, opts->driverId);
     
-    if (SCSI_DEVICE != NULL)
-      SETTINGS->set(SET_WRITE_DEVICE, SCSI_DEVICE);
+	if (opts->scsiDevice != NULL)
+	    settings->set(Settings::setWriteDevice, opts->scsiDevice);
 
-    if (WRITING_SPEED >= 0) {
-      SETTINGS->set(SET_WRITE_SPEED, WRITING_SPEED);
+	if (opts->writingSpeed >= 0) {
+	    settings->set(Settings::setWriteSpeed, opts->writingSpeed);
     }
 
-    if (FIFO_BUFFERS > 0) {
-      SETTINGS->set(SET_WRITE_BUFFERS, FIFO_BUFFERS);
+	if (opts->fifoBuffers > 0) {
+	    settings->set(Settings::setWriteBuffers, opts->fifoBuffers);
+	}
+
+	if (opts->fullBurn > 0) {
+	    settings->set(Settings::setFullBurn, opts->fullBurn);
+	}
+
+	if (opts->userCapacity > 0) {
+	    settings->set(Settings::setUserCapacity, opts->userCapacity);
+	}
     }
 
-    if (FULL_BURN > 0) {
-      SETTINGS->set(SET_FULL_BURN, FULL_BURN);
+    if (cmd == READ_CD) {
+	if (opts->driverId != NULL)
+	    settings->set(Settings::setReadDriver, opts->driverId);
+
+	if (opts->scsiDevice != NULL)
+	    settings->set(Settings::setReadDevice, opts->scsiDevice);
+
+	settings->set(Settings::setReadParanoiaMode, opts->paranoiaMode);
     }
 
-    if (USER_CAPACITY > 0) {
-      SETTINGS->set(SET_USER_CAPACITY, USER_CAPACITY);
+    if (cmd == COPY_CD) {
+	if (opts->sourceDriverId != NULL)
+	    settings->set(Settings::setReadDriver, opts->sourceDriverId);
+
+	if (opts->sourceScsiDevice != NULL)
+	    settings->set(Settings::setReadDevice, opts->sourceScsiDevice);
+
+	settings->set(Settings::setReadParanoiaMode, opts->paranoiaMode);
     }
-  }
 
-  if (cmd == READ_CD) {
-    if (DRIVER_ID != NULL)
-      SETTINGS->set(SET_READ_DRIVER, DRIVER_ID);
-
-    if (SCSI_DEVICE != NULL)
-      SETTINGS->set(SET_READ_DEVICE, SCSI_DEVICE);
-
-    SETTINGS->set(SET_READ_PARANOIA_MODE, PARANOIA_MODE);
-  }
-
-  if (cmd == COPY_CD) {
-    if (SOURCE_DRIVER_ID != NULL)
-      SETTINGS->set(SET_READ_DRIVER, SOURCE_DRIVER_ID);
-
-    if (SOURCE_SCSI_DEVICE != NULL)
-      SETTINGS->set(SET_READ_DEVICE, SOURCE_SCSI_DEVICE);
-
-    SETTINGS->set(SET_READ_PARANOIA_MODE, PARANOIA_MODE);
-  }
-
-  if (cmd == BLANK || cmd == DISK_INFO || cmd == MSINFO || cmd == UNLOCK ||
-      cmd == DISCID || cmd == DRIVE_INFO) {
-    if (DRIVER_ID != NULL)
-      SETTINGS->set(SET_WRITE_DRIVER, DRIVER_ID);
+    if (cmd == BLANK || cmd == DISK_INFO || cmd == MSINFO || cmd == UNLOCK ||
+	cmd == DISCID || cmd == DRIVE_INFO) {
+	if (opts->driverId != NULL)
+	    settings->set(Settings::setWriteDriver, opts->driverId);
     
-    if (SCSI_DEVICE != NULL)
-      SETTINGS->set(SET_WRITE_DEVICE, SCSI_DEVICE);
-  }
-
-  if (cmd == READ_CDDB ||
-      (WITH_CDDB && (cmd == COPY_CD || cmd == READ_TOC || cmd == READ_CD ||
-                     cmd == DISCID))) {
-    if (CDDB_SERVER_LIST != NULL) {
-      SETTINGS->set(SET_CDDB_SERVER_LIST, CDDB_SERVER_LIST);
+	if (opts->scsiDevice != NULL)
+	    settings->set(Settings::setWriteDevice, opts->scsiDevice);
     }
 
-    if (CDDB_LOCAL_DB_DIR != NULL) {
-      SETTINGS->set(SET_CDDB_DB_DIR, CDDB_LOCAL_DB_DIR);
+    if (cmd == READ_CDDB ||
+	(opts->withCddb && (cmd == COPY_CD || cmd == READ_TOC ||
+			      cmd == READ_CD || cmd == DISCID))) {
+	if (opts->cddbServerList != NULL) {
+	    settings->set(Settings::setCddbServerList, opts->cddbServerList);
+	}
+
+	if (opts->cddbLocalDbDir != NULL) {
+	    settings->set(Settings::setCddbDbDir, opts->cddbLocalDbDir);
+	}
+
+	if (opts->cddbTimeout > 0) {
+	    settings->set(Settings::setCddbTimeout, opts->cddbTimeout);
+	}
     }
 
-    if (CDDB_TIMEOUT > 0) {
-      SETTINGS->set(SET_CDDB_TIMEOUT, CDDB_TIMEOUT);
+    if (opts->readingSpeed >= 0) {
+	settings->set(Settings::setReadSpeed, opts->readingSpeed);
     }
-  }
 
-  if (READING_SPEED >= 0) {
-    SETTINGS->set(SET_READ_SPEED, READING_SPEED);
-  }
+    if (cmd == SHOW_TOC || cmd == SIMULATE || cmd == WRITE ||
+	cmd == TOC_INFO || cmd == TOC_SIZE) {
+	settings->set(Settings::setTmpFileDir, opts->tmpFileDir);
+    }
 }
 
-static int parseCmdline(int argc, char **argv)
+static int parseCmdline(int argc, char **argv, DaoCommandLine* opts,
+			Settings* settings)
 {
-  if (argc < 1) {
-    return 1;
-  }
+    int i;
 
-  if (strcmp(*argv, "show-toc") == 0) {
-    COMMAND = SHOW_TOC;
-  }
-  else if (strcmp(*argv, "read-toc") == 0) {
-    COMMAND = READ_TOC;
-  }
-  else if (strcmp(*argv, "show-data") == 0) {
-    COMMAND = SHOW_DATA;
-  }
-  else if (strcmp(*argv, "read-test") == 0) {
-    COMMAND = READ_TEST;
-  }
-  else if (strcmp(*argv, "simulate") == 0) {
-    COMMAND = SIMULATE;
-  }
-  else if (strcmp(*argv, "write") == 0) {
-    COMMAND = WRITE;
-  }
-  else if (strcmp(*argv, "disk-info") == 0) {
-    COMMAND = DISK_INFO;
-  }
-  else if (strcmp(*argv, "discid") == 0) {
-    COMMAND = DISCID;
-  }
-  else if (strcmp(*argv, "read-cd") == 0) {
-    COMMAND = READ_CD;
-  }
-  else if (strcmp(*argv, "toc-info") == 0) {
-    COMMAND = TOC_INFO;
-  }
-  else if (strcmp(*argv, "toc-size") == 0) {
-    COMMAND = TOC_SIZE;
-  }
-  else if (strcmp(*argv, "blank") == 0) {
-    COMMAND = BLANK;
-  }
-  else if (strcmp(*argv, "scanbus") == 0) {
-    COMMAND = SCAN_BUS;
-  }
-  else if (strcmp(*argv, "unlock") == 0) {
-    COMMAND = UNLOCK;
-  }
-  else if (strcmp(*argv, "copy") == 0) {
-    COMMAND = COPY_CD;
-  }
-  else if (strcmp(*argv, "read-cddb") == 0) {
-    COMMAND = READ_CDDB;
-  }
-  else if (strcmp(*argv, "msinfo") == 0) {
-    COMMAND = MSINFO;
-  }
-  else if (strcmp(*argv, "drive-info") == 0) {
-    COMMAND = DRIVE_INFO;
-  }
-  else {
-    COMMAND=UNKNOWN;
-    message(-2, "Illegal command: %s", *argv);
-    return 1;
-  }
-
-  // retrieve settings from $HOME/.cdrdao for given command
-  importSettings(COMMAND);
-
-  argc--, argv++;
-
-  while (argc > 0 && (*argv)[0] == '-') {
-    if ((*argv)[1] != '-') {
-      switch ((*argv)[1]) {
-      case 'h':
+    if (argc < 1) {
 	return 1;
-	
-      case 'v':
-	if ((*argv)[2] != 0) {
-	  VERBOSE = atoi((*argv) + 2);
-	}
-	else {
-	  if (argc < 2) {
-	    message(-2, "Missing argument after: %s", *argv);
-	    return 1;
-	  }
-	  else {
-	    VERBOSE = atoi(argv[1]);
-	    argc--, argv++;
-	  }
-	}
-	break;
-
-      case 'n':
-	PAUSE = 0;
-	break;
-
-      default:
-	message(-2, "Illegal option: %s", *argv);
-	return 1;
-	break;
-      }
     }
-    else {
-      if (strcmp((*argv) + 2, "help") == 0) {
-	return 1;
-      }
-      else if (strcmp((*argv) + 2, "device") == 0) {
-	if (argc < 2) {
-	  message(-2, "Missing argument after: %s", *argv);
-	  return 1;
-	}
-	else {
-	  SCSI_DEVICE = argv[1];
-	  argc--, argv++;
-	}
-      }
-      else if (strcmp((*argv) + 2, "source-device") == 0) {
-	if (argc < 2) {
-	  message(-2, "Missing argument after: %s", *argv);
-	  return 1;
-	}
-	else {
-	  SOURCE_SCSI_DEVICE = argv[1];
-	  argc--, argv++;
-	}
-      }
-      else if (strcmp((*argv) + 2, "rspeed") == 0) {
-        if (argc < 2) {
-          message(-2, "Missing argument after: %s", *argv);
-          return 1;
-        }
-        else {
-          READING_SPEED = atol(argv[1]);
-          if (READING_SPEED < 0) {
-            message(-2, "Illegal reading speed: %s", argv[1]);
-            return 1;
-          }
-          argc--, argv++;
-        }
-      }
-      else if (strcmp((*argv) + 2, "speed") == 0) {
-	if (argc < 2) {
-	  message(-2, "Missing argument after: %s", *argv);
-	  return 1;
-	}
-	else {
-	  WRITING_SPEED = atol(argv[1]);
-	  if (WRITING_SPEED < 0) {
-	    message(-2, "Illegal writing speed: %s", argv[1]);
-	    return 1;
-	  }
-	  argc--, argv++;
-	}
-      }
-      else if (strcmp((*argv) + 2, "capacity") == 0) {
-	if (argc < 2) {
-	  message(-2, "Missing argument after: %s", *argv);
-	  return 1;
-	}
-	else {
-	  USER_CAPACITY = atol(argv[1]);
-	  if (USER_CAPACITY < 0) {
-	    message(-2, "Illegal disk capacity: %s minutes", argv[1]);
-	    return 1;
-	  }
-	  argc--, argv++;
-	}
-      }
-      else if (strcmp((*argv) + 2, "blank-mode") == 0) {
-	if (argc < 2) {
-	  message(-2, "Missing argument after: %s", *argv);
-	  return 1;
-	}
-	else {
-	  if (strcmp(argv[1], "full") == 0) {
-	    BLANKING_MODE = CdrDriver::BLANK_FULL;
-	  }
-	  else if (strcmp(argv[1], "minimal") == 0) {
-	    BLANKING_MODE = CdrDriver::BLANK_MINIMAL;
-	  }
-	  else {
-	    message(-2, "Illegal blank mode. Valid values: full minimal");
-	    return 1;
-	  }
-	  argc--, argv++;
-	}
-      }
-      else if (strcmp((*argv) + 2, "paranoia-mode") == 0) {
-	if (argc < 2) {
-	  message(-2, "Missing argument after: %s", *argv);
-	  return 1;
-	}
-	else {
-	  PARANOIA_MODE= atol(argv[1]);
-	  if (PARANOIA_MODE < 0) {
-	    message(-2, "Illegal paranoia mode: %s", argv[1]);
-	    return 1;
-	  }
-	  argc--, argv++;
-	}
-      }
-      else if (strcmp((*argv) + 2, "remote") == 0) {
-	if (argc < 2) {
-	  message(-2, "Missing argument after: %s", *argv);
-	  return 1;
-	}
-	else {
-	  REMOTE_FD = atol(argv[1]);
-	  if (REMOTE_FD < 0) {
-	    message(-2, "Invalid remote message file descriptor: %s", argv[1]);
-	    return 1;
-	  }
-	  REMOTE_MODE = 1;
-	  argc--, argv++;
-	}
-      }
-      else if (strcmp((*argv) + 2, "eject") == 0) {
-	EJECT = 1;
-      }
-      else if (strcmp((*argv) + 2, "swap") == 0) {
-	SWAP = 1;
-      }
-      else if (strcmp((*argv) + 2, "query-string") == 0) {
-        PRINT_QUERY = true;
-      }
-      else if (strcmp((*argv) + 2, "multi") == 0) {
-	MULTI_SESSION = 1;
-      }
-      else if (strcmp((*argv) + 2, "simulate") == 0) {
-        WRITE_SIMULATE = 1;
-      }
-      else if (strcmp((*argv) + 2, "fast-toc") == 0) {
-	FAST_TOC = 1;
-      }
-      else if (strcmp((*argv) + 2, "read-raw") == 0) {
-	READ_RAW = 1;
-      }
-      else if (strcmp((*argv) + 2, "no-mode2-mixed") == 0) {
-	MODE2_MIXED = 0;
-      }
-      else if (strcmp((*argv) + 2, "reload") == 0) {
-	RELOAD = 1;
-      }
-      else if (strcmp((*argv) + 2, "force") == 0) {
-	FORCE = 1;
-      }
-      else if (strcmp((*argv) + 2, "keep") == 0) {
-	KEEP = true;
-      }
-      else if (strcmp((*argv) + 2, "on-the-fly") == 0) {
-	ON_THE_FLY = 1;
-      }
-      else if (strcmp((*argv) + 2, "save") == 0) {
-	SAVE_SETTINGS = 1;
-      }
-      else if (strcmp((*argv) + 2, "tao-source") == 0) {
-	TAO_SOURCE = 1;
-      }
-      else if (strcmp((*argv) + 2, "keepimage") == 0) {
-	KEEPIMAGE = 1;
-      }
-      else if (strcmp((*argv) + 2, "overburn") == 0) {
-	OVERBURN = 1;
-      }
-      else if (strcmp((*argv) + 2, "full-burn") == 0) {
-	FULL_BURN = 1;
-      }
-      else if (strcmp((*argv) + 2, "with-cddb") == 0) {
-        WITH_CDDB = 1;
-      }
-      else if (strcmp((*argv) + 2, "driver") == 0) {
-	if (argc < 2) {
-	  message(-2, "Missing argument after: %s", *argv);
-	  return 1;
-	}
-	else {
-	  DRIVER_ID = argv[1];
-	  argc--, argv++;
-	}
-      }
-      else if (strcmp((*argv) + 2, "source-driver") == 0) {
-	if (argc < 2) {
-	  message(-2, "Missing argument after: %s", *argv);
-	  return 1;
-	}
-	else {
-	  SOURCE_DRIVER_ID = argv[1];
-	  argc--, argv++;
-	}
-      }
-      else if (strcmp((*argv) + 2, "datafile") == 0) {
-	if (argc < 2) {
-	  message(-2, "Missing argument after: %s", *argv);
-	  return 1;
-	}
-	else {
-	  DATA_FILENAME = argv[1];
-	  argc--, argv++;
-	}
-      }
-      else if (strcmp((*argv) + 2, "buffers") == 0) {
-	if (argc < 2) {
-	  message(-2, "Missing argument after: %s", *argv);
-	  return 1;
-	}
-	else {
-	  FIFO_BUFFERS = atoi(argv[1]);
-	  argc--, argv++;
-	}
-      }
-      else if (strcmp((*argv) + 2, "session") == 0) {
-	if (argc < 2) {
-	  message(-2, "Missing argument after: %s", *argv);
-	  return 1;
-	}
-	else {
-	  SESSION = atoi(argv[1]);
-	  argc--, argv++;
-	  if (SESSION < 1) {
-	    message(-2, "Illegal session number: %d", SESSION);
-	    return 1;
-	  }
-	}
-      }
-      else if (strcmp((*argv) + 2, "cddb-servers") == 0) {
-	if (argc < 2) {
-	  message(-2, "Missing argument after: %s", *argv);
-	  return 1;
-	}
-	else {
-	  CDDB_SERVER_LIST = argv[1];
-	  argc--, argv++;
-	}
-      }
-      else if (strcmp((*argv) + 2, "cddb-directory") == 0) {
-	if (argc < 2) {
-	  message(-2, "Missing argument after: %s", *argv);
-	  return 1;
-	}
-	else {
-	  CDDB_LOCAL_DB_DIR = argv[1];
-	  argc--, argv++;
-	}
-      }
-      else if (strcmp((*argv) + 2, "tmpdir") == 0) {
-          if (argc < 2) {
-              message(-2, "Missing argument after: %s", *argv);
-              return 1;
-          } else {
-              TMP_FILE_DIR = argv[1];
-              SETTINGS->set(SET_TMP_FILE_DIR, TMP_FILE_DIR);
-              argc--, argv++;
-          }
-      }
-      else if (strcmp((*argv) + 2, "cddb-timeout") == 0) {
-	if (argc < 2) {
-	  message(-2, "Missing argument after: %s", *argv);
-	  return 1;
-	}
-	else {
-	  CDDB_TIMEOUT = atoi(argv[1]);
-	  argc--, argv++;
-	  if (CDDB_TIMEOUT < 1) {
-	    message(-2, "Illegal CDDB timeout: %d", CDDB_TIMEOUT);
-	    return 1;
-	  }
-	}
-      }
-      else if (strcmp((*argv) + 2, "tao-source-adjust") == 0) {
-	if (argc < 2) {
-	  message(-2, "Missing argument after: %s", *argv);
-	  return 1;
-	}
-	else {
-	  TAO_SOURCE_ADJUST = atoi(argv[1]);
-	  argc--, argv++;
-	  if (TAO_SOURCE_ADJUST < 0 || TAO_SOURCE_ADJUST >= 100) {
-	    message(-2, "Illegal number of TAO link blocks: %d",
-		    TAO_SOURCE_ADJUST);
-	    return 1;
-	  }
-	}
-      }
-      else if (strcmp((*argv) + 2, "buffer-under-run-protection") == 0) {
-	if (argc < 2) {
-	  message(-2, "Missing argument after: %s", *argv);
-	  return 1;
-	}
-	else {
-	  BUFFER_UNDER_RUN_PROTECTION = atoi(argv[1]);
-	  argc--, argv++;
-	  if (BUFFER_UNDER_RUN_PROTECTION < 0 ||
-	      BUFFER_UNDER_RUN_PROTECTION > 1) {
-	    message(-2, "Illegal value for option --buffer-under-run-protection: %d",
-		    BUFFER_UNDER_RUN_PROTECTION);
-	    return 1;
-	  }
-	}
-      }
-      else if (strcmp((*argv) + 2, "write-speed-control") == 0) {
-	if (argc < 2) {
-	  message(-2, "Missing argument after: %s", *argv);
-	  return 1;
-	}
-	else {
-	  WRITE_SPEED_CONTROL = atoi(argv[1]);
-	  argc--, argv++;
-	  if (WRITE_SPEED_CONTROL < 0 || WRITE_SPEED_CONTROL > 1) {
-	    message(-2, "Illegal value for option --write-speed-control: %d",
-		    WRITE_SPEED_CONTROL);
-	    return 1;
-	  }
-	}
-      }
-      else if (strcmp((*argv) + 2, "read-subchan") == 0) {
-	if (argc < 2) {
-	  message(-2, "Missing argument after: %s", *argv);
-	  return 1;
-	}
-	else {
-	  if (strcmp(argv[1], "rw") == 0) {
-	    READ_SUBCHAN_MODE = TrackData::SUBCHAN_RW;
-	  }
-	  else if (strcmp(argv[1], "rw_raw") == 0) {
-	    READ_SUBCHAN_MODE = TrackData::SUBCHAN_RW_RAW;
-	  }
-	  else {
-	    message(-2, "Invalid argument after %s: %s", argv[0], argv[1]);
-	    return 1;
-	  }
 
-	  argc--, argv++;
+    for (i = 0; i < LAST_CMD; i++) {
+	if (strcmp(*argv, cmdInfo[i].str) == 0) {
+	    opts->command = cmdInfo[i].cmd;
+	    break;
 	}
-      }
-      else {
-	message(-2, "Illegal option: %s", *argv);
-	return 1;
-      }
     }
+
+    if (opts->command == UNKNOWN) {
+	log_message(-2, "Illegal command: %s", *argv);
+	return 1;
+    }
+
+    // retrieve settings from $HOME/.cdrdao for given command
+    importSettings(opts, settings);
 
     argc--, argv++;
-  }
 
-  if (COMMAND != DISK_INFO && COMMAND != BLANK && COMMAND != SCAN_BUS &&
-      COMMAND != UNLOCK && COMMAND != COPY_CD && COMMAND != MSINFO &&
-      COMMAND != DISCID &&
-      COMMAND != DRIVE_INFO) {
-    if (argc < 1) {
-      message(-2, "Missing toc-file.");
-      return 1;
+    while (argc > 0 && (*argv)[0] == '-') {
+
+	if ((*argv)[1] != '-') {
+	    switch ((*argv)[1]) {
+	    case 'h':
+		return 1;
+	
+	    case 'v':
+		if ((*argv)[2] != 0) {
+		    opts->verbose = atoi((*argv) + 2);
+		} else {
+		    if (argc < 2) {
+			log_message(-2, "Missing argument after: %s", *argv);
+			return 1;
+		    }  else {
+			opts->verbose = atoi(argv[1]);
+			argc--, argv++;
+		    }
+		}
+		break;
+
+	    case 'n':
+		opts->pause = false;
+		break;
+
+	    default:
+		log_message(-2, "Illegal option: %s", *argv);
+		return 1;
+		break;
+	    }
+	} 
+	else {
+
+	    if (strcmp((*argv) + 2, "help") == 0) {
+		return 1;
+	    }
+	    if (strcmp((*argv) + 2, "device") == 0) {
+		if (argc < 2) {
+		    log_message(-2, "Missing argument after: %s", *argv);
+		    return 1;
+		} else {
+		    opts->scsiDevice = argv[1];
+		    argc--, argv++;
+		}
+	    } 
+	    else if (strcmp((*argv) + 2, "source-device") == 0) {
+		if (argc < 2) {
+		    log_message(-2, "Missing argument after: %s", *argv);
+		    return 1;
+		} else {
+		    opts->sourceScsiDevice = argv[1];
+		    argc--, argv++;
+		}
+	    }
+	    else if (strcmp((*argv) + 2, "rspeed") == 0) {
+		if (argc < 2) {
+		    log_message(-2, "Missing argument after: %s", *argv);
+		    return 1;
+		} else {
+		    opts->readingSpeed = atol(argv[1]);
+		    if (opts->readingSpeed < 0) {
+			log_message(-2, "Illegal reading speed: %s", argv[1]);
+			return 1;
+		    }
+		    argc--, argv++;
+		}
+	    }
+	    else if (strcmp((*argv) + 2, "speed") == 0) {
+		if (argc < 2) {
+		    log_message(-2, "Missing argument after: %s", *argv);
+		    return 1;
+		} else {
+		    opts->writingSpeed = atol(argv[1]);
+		    if (opts->writingSpeed < 0) {
+			log_message(-2, "Illegal writing speed: %s", argv[1]);
+			return 1;
+		    }
+		    argc--, argv++;
+		}
+	    }
+	    else if (strcmp((*argv) + 2, "capacity") == 0) {
+		if (argc < 2) {
+		    log_message(-2, "Missing argument after: %s", *argv);
+		    return 1;
+		} else {
+		    opts->userCapacity = atol(argv[1]);
+		    if (opts->userCapacity < 0) {
+			log_message(-2, "Illegal disk capacity: %s minutes",
+				    argv[1]);
+			return 1;
+		    }
+		    argc--, argv++;
+		}
+	    }
+	    else if (strcmp((*argv) + 2, "blank-mode") == 0) {
+		if (argc < 2) {
+		    log_message(-2, "Missing argument after: %s", *argv);
+		    return 1;
+		} else {
+		    if (strcmp(argv[1], "full") == 0) {
+			opts->blankingMode = CdrDriver::BLANK_FULL;
+		    } else if (strcmp(argv[1], "minimal") == 0) {
+			opts->blankingMode = CdrDriver::BLANK_MINIMAL;
+		    } else {
+			log_message(-2, "Illegal blank mode. Valid values: full minimal");
+			return 1;
+		    }
+		    argc--, argv++;
+		}
+	    }
+	    else if (strcmp((*argv) + 2, "paranoia-mode") == 0) {
+		if (argc < 2) {
+		    log_message(-2, "Missing argument after: %s", *argv);
+		    return 1;
+		} else {
+		    opts->paranoiaMode= atol(argv[1]);
+		    if (opts->paranoiaMode < 0) {
+			log_message(-2, "Illegal paranoia mode: %s", argv[1]);
+			return 1;
+		    }
+		    argc--, argv++;
+		}
+	    }
+	    else if (strcmp((*argv) + 2, "remote") == 0) {
+		if (argc < 2) {
+		    log_message(-2, "Missing argument after: %s", *argv);
+		    return 1;
+		} else {
+		    opts->remoteFd = atol(argv[1]);
+		    if (opts->remoteFd < 0) {
+			log_message(-2, "Invalid remote message file descriptor: %s", argv[1]);
+			return 1;
+		    }
+		    opts->remoteMode = true;
+		    argc--, argv++;
+		}
+	    }
+	    else if (strcmp((*argv) + 2, "eject") == 0) {
+		opts->eject = true;
+	    }
+	    else if (strcmp((*argv) + 2, "swap") == 0) {
+		opts->swap = true;
+	    }
+	    else if (strcmp((*argv) + 2, "query-string") == 0) {
+		opts->printQuery = true;
+	    }
+	    else if (strcmp((*argv) + 2, "multi") == 0) {
+		opts->multiSession = true;
+	    }
+	    else if (strcmp((*argv) + 2, "simulate") == 0) {
+		opts->writeSimulate = true;
+	    }
+	    else if (strcmp((*argv) + 2, "fast-toc") == 0) {
+		opts->fastToc = true;
+	    }
+	    else if (strcmp((*argv) + 2, "read-raw") == 0) {
+		opts->readRaw = true;
+	    }
+	    else if (strcmp((*argv) + 2, "no-mode2-mixed") == 0) {
+		opts->mode2Mixed = false;
+	    }
+	    else if (strcmp((*argv) + 2, "reload") == 0) {
+		opts->reload = true;
+	    }
+	    else if (strcmp((*argv) + 2, "force") == 0) {
+		opts->force = true;
+	    }
+	    else if (strcmp((*argv) + 2, "keep") == 0) {
+		opts->keep = true;
+	    }
+	    else if (strcmp((*argv) + 2, "on-the-fly") == 0) {
+		opts->onTheFly = true;
+	    }
+	    else if (strcmp((*argv) + 2, "save") == 0) {
+		opts->saveSettings = true;
+	    }
+	    else if (strcmp((*argv) + 2, "tao-source") == 0) {
+		opts->taoSource = true;
+	    }
+	    else if (strcmp((*argv) + 2, "keepimage") == 0) {
+		opts->keepImage = true;
+	    }
+	    else if (strcmp((*argv) + 2, "overburn") == 0) {
+		opts->overburn = true;
+	    }
+	    else if (strcmp((*argv) + 2, "full-burn") == 0) {
+		opts->fullBurn = true;
+	    }
+	    else if (strcmp((*argv) + 2, "with-cddb") == 0) {
+		opts->withCddb = true;
+	    }
+	    else if (strcmp((*argv) + 2, "driver") == 0) {
+		if (argc < 2) {
+		    log_message(-2, "Missing argument after: %s", *argv);
+		    return 1;
+		} else {
+		    opts->driverId = argv[1];
+		    argc--, argv++;
+		}
+	    }
+	    else if (strcmp((*argv) + 2, "source-driver") == 0) {
+		if (argc < 2) {
+		    log_message(-2, "Missing argument after: %s", *argv);
+		    return 1;
+		} else {
+		    opts->sourceDriverId = argv[1];
+		    argc--, argv++;
+		}
+	    }
+	    else if (strcmp((*argv) + 2, "datafile") == 0) {
+		if (argc < 2) {
+		    log_message(-2, "Missing argument after: %s", *argv);
+		    return 1;
+		} else {
+		    opts->dataFilename = argv[1];
+		    argc--, argv++;
+		}
+	    }
+	    else if (strcmp((*argv) + 2, "buffers") == 0) {
+		if (argc < 2) {
+		    log_message(-2, "Missing argument after: %s", *argv);
+		    return 1;
+		} else {
+		    opts->fifoBuffers = atoi(argv[1]);
+		    argc--, argv++;
+		}
+	    }
+	    else if (strcmp((*argv) + 2, "session") == 0) {
+		if (argc < 2) {
+		    log_message(-2, "Missing argument after: %s", *argv);
+		    return 1;
+		} else {
+		    opts->session = atoi(argv[1]);
+		    argc--, argv++;
+		    if (opts->session < 1) {
+			log_message(-2, "Illegal session number: %d",
+				    opts->session);
+			return 1;
+		    }
+		}
+	    }
+	    else if (strcmp((*argv) + 2, "cddb-servers") == 0) {
+		if (argc < 2) {
+		    log_message(-2, "Missing argument after: %s", *argv);
+		    return 1;
+		} else {
+		    opts->cddbServerList = argv[1];
+		    argc--, argv++;
+		}
+	    }
+	    else if (strcmp((*argv) + 2, "cddb-directory") == 0) {
+		if (argc < 2) {
+		    log_message(-2, "Missing argument after: %s", *argv);
+		    return 1;
+		} else {
+		    opts->cddbLocalDbDir = argv[1];
+		    argc--, argv++;
+		}
+	    }
+	    else if (strcmp((*argv) + 2, "tmpdir") == 0) {
+		if (argc < 2) {
+		    log_message(-2, "Missing argument after: %s", *argv);
+		    return 1;
+		} else {
+		    opts->tmpFileDir = argv[1];
+		    argc--, argv++;
+		}
+	    }
+	    else if (strcmp((*argv) + 2, "cddb-timeout") == 0) {
+		if (argc < 2) {
+		    log_message(-2, "Missing argument after: %s", *argv);
+		    return 1;
+		} else {
+		    opts->cddbTimeout = atoi(argv[1]);
+		    argc--, argv++;
+		    if (opts->cddbTimeout < 1) {
+			log_message(-2, "Illegal CDDB timeout: %d",
+				    opts->cddbTimeout);
+			return 1;
+		    }
+		}
+	    }
+	    else if (strcmp((*argv) + 2, "tao-source-adjust") == 0) {
+		if (argc < 2) {
+		    log_message(-2, "Missing argument after: %s", *argv);
+		    return 1;
+		} else {
+		    opts->taoSourceAdjust = atoi(argv[1]);
+		    argc--, argv++;
+		    if (opts->taoSourceAdjust < 0 ||
+			opts->taoSourceAdjust >= 100) {
+			log_message(-2, "Illegal number of TAO link blocks: %d",
+				    opts->taoSourceAdjust);
+			return 1;
+		    }
+		}
+	    }
+	    else if (strcmp((*argv) + 2, "buffer-under-run-protection") == 0) {
+		if (argc < 2) {
+		    log_message(-2, "Missing argument after: %s", *argv);
+		    return 1;
+		} else {
+		    int val = atoi(argv[1]);
+		    argc--, argv++;
+		    if (val < 0 || val > 1) {
+			log_message(-2, "Illegal value for option --buffer-under-run-protection: %d", val);
+			return 1;
+		    }
+		    opts->bufferUnderrunProtection = val;
+		}
+	    }
+	    else if (strcmp((*argv) + 2, "write-speed-control") == 0) {
+		if (argc < 2) {
+		    log_message(-2, "Missing argument after: %s", *argv);
+		    return 1;
+		} else {
+		    int val = atoi(argv[1]);
+		    argc--, argv++;
+		    if (val < 0 || val > 1) {
+			log_message(-2, "Illegal value for option --write-speed-control: %d", val);
+			return 1;
+		    }
+		    opts->writeSpeedControl = val;
+		}
+	    }
+	    else if (strcmp((*argv) + 2, "read-subchan") == 0) {
+		if (argc < 2) {
+		    log_message(-2, "Missing argument after: %s", *argv);
+		    return 1;
+		} else {
+		    if (strcmp(argv[1], "rw") == 0) {
+			opts->readSubchanMode = TrackData::SUBCHAN_RW;
+		    } else if (strcmp(argv[1], "rw_raw") == 0) {
+			opts->readSubchanMode = TrackData::SUBCHAN_RW_RAW;
+		    } else {
+			log_message(-2, "Invalid argument after %s: %s",
+				    argv[0], argv[1]);
+			return 1;
+		    }
+
+		    argc--, argv++;
+		}
+	    }
+	    else {
+		log_message(-2, "Illegal option: %s", *argv);
+		return 1;
+	    }
+	}
+
+	argc--, argv++;
     }
-    else if (argc > 1) {
-      message(-2, "Expecting only one toc-file.");
-      return 1;
+
+    if (cmdInfo[opts->command].needTocFile) {
+	if (argc < 1) {
+	    log_message(-2, "Missing toc-file.");
+	    return 1;
+	} else if (argc > 1) {
+	    log_message(-2, "Expecting only one toc-file.");
+	    return 1;
+	}
+	opts->tocFile = *argv;
     }
-    TOC_FILE = *argv;
-  }
 
 
-  return 0;
+    return 0;
 }
 
 // Commit settings to overall system. Export them.
-static void commitSettings(Settings* SETTINGS, const char* settingsPath)
+static void commitSettings(DaoCommandLine* opts, Settings* settings,
+			   const char* settingsPath)
 {
-  if (TMP_FILE_DIR)
-    tempFileManager.setTempDirectory(TMP_FILE_DIR);
+    if (opts->tmpFileDir)
+	tempFileManager.setTempDirectory(opts->tmpFileDir);
 
-  tempFileManager.setKeepTemps(KEEP);
+    tempFileManager.setKeepTemps(opts->keep);
 
-  if (SAVE_SETTINGS && settingsPath != NULL) {
-    // If we're saving our settings, give up root privileges and
-    // exit. The --save option is only compiled in if setreuid() is
-    // available (because it could be used for a local root exploit).
-    if (giveUpRootPrivileges()) {
-      exportSettings(COMMAND);
-      SETTINGS->write(settingsPath);
+    if (opts->saveSettings && settingsPath != NULL) {
+	// If we're saving our settings, give up root privileges and
+	// exit. The --save option is only compiled in if setreuid() is
+	// available (because it could be used for a local root exploit).
+	if (giveUpRootPrivileges()) {
+	    exportSettings(opts, settings);
+	    settings->write(settingsPath);
+	}
+	exit(0);
     }
-    exit(0);
-  }
 }
 
 // Selects driver for device of 'scsiIf'.
-static CdrDriver *selectDriver(Command cmd, ScsiIf *scsiIf,
+static CdrDriver *selectDriver(DaoCommand cmd, ScsiIf *scsiIf,
 			       const char *driverId)
 {
   unsigned long options = 0;
@@ -1224,7 +1192,7 @@ static CdrDriver *selectDriver(Command cmd, ScsiIf *scsiIf,
     ret = CdrDriver::createDriver(s, options, scsiIf);
 
     if (ret == NULL) {
-      message(-2, "%s: Illegal driver ID, available drivers:", s);
+      log_message(-2, "%s: Illegal driver ID, available drivers:", s);
       CdrDriver::printDriverIds();
     }
 
@@ -1255,25 +1223,67 @@ static CdrDriver *selectDriver(Command cmd, ScsiIf *scsiIf,
       ret = CdrDriver::createDriver(id, options, scsiIf);
     }
     else {
-      message(0, "");
-      message(-2, "No driver found for '%s %s', available drivers:\n",
+      log_message(0, "");
+      log_message(-2, "No driver found for '%s %s', available drivers:\n",
 	      scsiIf->vendor(), scsiIf->product());
       CdrDriver::printDriverIds();
 
-      message(0, "\nFor all recent recorder models either the 'generic-mmc' or");
-      message(0, "the 'generic-mmc-raw' driver should work.");
-      message(0, "Use option '--driver' to force usage of a driver, e.g.: --driver generic-mmc");
+      log_message(0, "\nFor all recent recorder models either the 'generic-mmc' or");
+      log_message(0, "the 'generic-mmc-raw' driver should work.");
+      log_message(0, "Use option '--driver' to force usage of a driver, e.g.: --driver generic-mmc");
     }
   }
 
   return ret;
 }
 
+const char* getDefaultDevice(DaoDeviceType req)
+{
+    int i, len;
+    static char buf[128];
+
+    // This function should not be called if the command issues
+    // doesn't actually require a device.
+    assert(req != NO_DEVICE);
+
+    ScsiIf::ScanData* sdata = ScsiIf::scan(&len);
+
+    if (sdata) {
+	for (i = 0; i < len; i++) {
+
+	    ScsiIf testif(sdata[i].dev.c_str());
+
+	    if (testif.init() != 0) {
+		continue;
+	    }
+	    bool rr, rw, rwr, rww;
+
+	    if (!testif.checkMmc(&rr, &rw, &rwr, &rww))
+		continue;
+
+	    if (req == NEED_CDR_R && !rr)
+	      continue;
+	    if (req == NEED_CDR_W && !rw)
+	      continue;
+	    if (req == NEED_CDRW_W && !rww)
+	      continue;
+
+	    strncpy(buf, sdata[i].dev.c_str(), 128);
+	    delete[] sdata;
+	    return buf;
+	}
+	delete[] sdata;
+    }
+
+    return NULL;
+}
+
 #define MAX_RETRY 10
-static CdrDriver *setupDevice(Command cmd, const char *scsiDevice,
+static CdrDriver *setupDevice(DaoCommand cmd, const char *scsiDevice,
 			      const char *driverId, int initDevice,
-			      int checkReady, int checkEmpty, int remote,
-			      int reload)
+			      int checkReady, int checkEmpty,
+			      int readingSpeed,
+			      bool remote, bool reload)
 {
   ScsiIf *scsiIf = NULL;
   CdrDriver *cdr = NULL;
@@ -1287,8 +1297,9 @@ static CdrDriver *setupDevice(Command cmd, const char *scsiDevice,
 
   switch (scsiIf->init()) {
   case 1:
-    message(-2, "Please use option '--device [proto:]bus,id,lun', e.g. "
-            "--device 0,6,0 or --device ATA:0,0,0");
+    log_message(-2, "Please use option '--device {[proto:]bus,id,lun}|device'"
+	    ", e.g. "
+            "--device 0,6,0, --device ATA:0,0,0 or --device /dev/cdrom");
     delete scsiIf;
     return NULL;
     break;
@@ -1297,13 +1308,13 @@ static CdrDriver *setupDevice(Command cmd, const char *scsiDevice,
     break;
   }
   
-  message(2, "%s: %s %s\tRev: %s", scsiDevice, scsiIf->vendor(),
+  log_message(2, "%s: %s %s\tRev: %s", scsiDevice, scsiIf->vendor(),
 	  scsiIf->product(), scsiIf->revision());
 
 
   if (inquiryFailed && driverId == NULL) {
-    message(-2, "Inquiry failed and no driver id is specified.");
-    message(-2, "Please use option --driver to specify a driver id.");
+    log_message(-2, "Inquiry failed and no driver id is specified.");
+    log_message(-2, "Please use option --driver to specify a driver id.");
     delete scsiIf;
     return NULL;
   }
@@ -1313,7 +1324,7 @@ static CdrDriver *setupDevice(Command cmd, const char *scsiDevice,
     return NULL;
   }
 
-  message(2, "Using driver: %s (options 0x%04lx)\n", cdr->driverName(),
+  log_message(2, "Using driver: %s (options 0x%04lx)\n", cdr->driverName(),
 	  cdr->options());
 
   if (!initDevice)
@@ -1322,10 +1333,10 @@ static CdrDriver *setupDevice(Command cmd, const char *scsiDevice,
   while (initTries > 0) {
     // clear unit attention
     cdr->rezeroUnit(0);
-    if (READING_SPEED >= 0) {
-      if (!cdr->rspeed(READING_SPEED)) {
-        message(-2, "Reading speed %d is not supported by device.",
-                READING_SPEED);
+    if (readingSpeed >= 0) {
+      if (!cdr->rspeed(readingSpeed)) {
+        log_message(-2, "Reading speed %d is not supported by device.",
+                readingSpeed);
         exit(1);
       }
     }
@@ -1343,11 +1354,11 @@ static CdrDriver *setupDevice(Command cmd, const char *scsiDevice,
 	  delete scsiIf;
 	  return NULL;
 	}
-	message(-1, "Unit not ready, still trying...");
+	log_message(-1, "Unit not ready, still trying...");
       }
 
       if (ret != 0) {
-	message(-2, "Unit not ready, giving up.");
+	log_message(-2, "Unit not ready, giving up.");
 	delete cdr;
 	delete scsiIf;
 	return NULL;
@@ -1355,18 +1366,18 @@ static CdrDriver *setupDevice(Command cmd, const char *scsiDevice,
 	
       cdr->rezeroUnit(0);
 
-      if (READING_SPEED >= 0) {
-        message(0, "Setting reading speed %d.",
-                READING_SPEED); 
-        if (cdr->rspeed(READING_SPEED) != 0) {
-          message(-2, "Reading speed %d is not supported by device.",
-                  READING_SPEED);
+      if (readingSpeed >= 0) {
+        log_message(0, "Setting reading speed %d.",
+                readingSpeed); 
+        if (cdr->rspeed(readingSpeed) != 0) {
+          log_message(-2, "Reading speed %d is not supported by device.",
+                  readingSpeed);
           exit(1);
         }
       }
 
       if ((di = cdr->diskInfo()) == NULL) {
-	message(-2, "Cannot get disk information.");
+	log_message(-2, "Cannot get disk information.");
 	delete cdr;
 	delete scsiIf;
 	return NULL;
@@ -1377,11 +1388,11 @@ static CdrDriver *setupDevice(Command cmd, const char *scsiDevice,
 	  (!di->valid.append || !di->append) &&
 	  (!remote || reload)) {
 	if (!reload) {
-	  message(0, "Disk seems to be written - hit return to reload disk.");
+	  log_message(0, "Disk seems to be written - hit return to reload disk.");
 	  fgetc(stdin);
 	}
 
-	message(1, "Reloading disk...");
+	log_message(1, "Reloading disk...");
 
 	if (cdr->loadUnload(1) != 0) {
 	  delete cdr;
@@ -1393,7 +1404,7 @@ static CdrDriver *setupDevice(Command cmd, const char *scsiDevice,
 	cdr->rezeroUnit(0); // clear unit attention
 
 	if (cdr->loadUnload(0) != 0) {
-	  message(-2, "Cannot load tray.");
+	  log_message(-2, "Cannot load tray.");
 	  delete cdr;
 	  delete scsiIf;
 	  return NULL;
@@ -1465,25 +1476,25 @@ static CdrDriver *setupDevice(Command cmd, const char *scsiDevice,
 		}
 		if (gotit)	{
 			if (!DeviceIoControl (fh, FSCTL_LOCK_VOLUME, NULL, 0, NULL, 0, &bytes, NULL))	{
-				message (-2, "Couldn't lock device %s!", devstr);
+				log_message(-2, "Couldn't lock device %s!", devstr);
 				CloseHandle (fh);
 				fh = NULL;
 			}
 			else
-				message (2, "OS lock on device %s. Unit won't be accessible while burning.", devstr);
+				log_message(2, "OS lock on device %s. Unit won't be accessible while burning.", devstr);
 		}	else	{
-			message (-2, "Unable to determine drive letter for device %s! No OS level locking.", scsiDevice);
+			log_message(-2, "Unable to determine drive letter for device %s! No OS level locking.", scsiDevice);
 			if (fh) CloseHandle (fh);
 			fh = NULL;
 		}
 	}	else
-		message (2,"You are running Windows 9x. No OS level locking available.");
+		log_message(2,"You are running Windows 9x. No OS level locking available.");
 #endif
 
-  if (READING_SPEED >= 0) {
-    if (cdr->rspeed(READING_SPEED) != 0) {
-      message(-2, "Reading speed %d is not supported by device.",
-              READING_SPEED);
+  if (readingSpeed >= 0) {
+    if (cdr->rspeed(readingSpeed) != 0) {
+      log_message(-2, "Reading speed %d is not supported by device.",
+              readingSpeed);
       exit(1);
     }
   }
@@ -1494,7 +1505,7 @@ static CdrDriver *setupDevice(Command cmd, const char *scsiDevice,
 static void showDriveInfo(const DriveInfo *i)
 {
   if (i == NULL) {
-    message(0, "No drive information available.");
+    log_message(0, "No drive information available.");
     return;
   }
 
@@ -1595,7 +1606,7 @@ static void showToc(const Toc *toc)
   }
 } 
 
-void showData(const Toc *toc, int swap)
+void showData(const Toc *toc, bool swap)
 {
   long length = toc->length().lba();
   Sample buf[SAMPLES_PER_BLOCK];
@@ -1606,13 +1617,13 @@ void showData(const Toc *toc, int swap)
   TocReader reader(toc);
 
   if (reader.openData() != 0) {
-    message(-2, "Cannot open audio data.");
+    log_message(-2, "Cannot open audio data.");
     return;
   }
 
   while (length > 0) {
     if (reader.readSamples(buf, SAMPLES_PER_BLOCK) != SAMPLES_PER_BLOCK) {
-      message(-2, "Read of audio data failed.");
+      log_message(-2, "Read of audio data failed.");
       return;
     }
     lba++;
@@ -1633,9 +1644,9 @@ void showDiskInfo(DiskInfo *di)
 {
   const char *s1, *s2;
 
-  message(2, "That data below may not reflect the real status of the inserted medium");
-  message(2, "if a simulation run was performed before. Reload the medium in this case.");
-  message(2, "");
+  log_message(2, "That data below may not reflect the real status of the inserted medium");
+  log_message(2, "if a simulation run was performed before. Reload the medium in this case.");
+  log_message(2, "");
 
   printf("CD-RW                : ");
   if (di->valid.cdrw)
@@ -1763,10 +1774,10 @@ static void printCddbQuery(Toc *toc)
   cddb.printDbQuery();
 }
 
-static int readCddb(Toc *toc, bool showEntry = false)
+static int readCddb(DaoCommandLine* opts, Toc *toc, bool showEntry = false)
 {
   int err = 0;
-  char *servers = strdupCC(CDDB_SERVER_LIST);
+  char *servers = strdupCC(opts->cddbServerList);
   char *p;
   char *sep = " ,";
   char *user = NULL;
@@ -1778,10 +1789,10 @@ static int readCddb(Toc *toc, bool showEntry = false)
 
   Cddb cddb(toc);
 
-  cddb.timeout(CDDB_TIMEOUT);
+  cddb.timeout(opts->cddbTimeout);
 
-  if (CDDB_LOCAL_DB_DIR != NULL)
-    cddb.localCddbDirectory(CDDB_LOCAL_DB_DIR);
+  if (opts->cddbLocalDbDir != NULL)
+    cddb.localCddbDirectory(opts->cddbLocalDbDir);
 
 
   for (p = strtok(servers, sep); p != NULL; p = strtok(NULL, sep))
@@ -1807,18 +1818,18 @@ static int readCddb(Toc *toc, bool showEntry = false)
   
 
   if (cddb.connectDb(user, host, "cdrdao", VERSION) != 0) {
-    message(-2, "Cannot connect to any CDDB server.");
+    log_message(-2, "Cannot connect to any CDDB server.");
     err = 2; goto fail;
   }
 
 	
   if (cddb.queryDb(&qres) != 0) {
-    message(-2, "Querying of CDDB server failed.");
+    log_message(-2, "Querying of CDDB server failed.");
     err = 2; goto fail;
   }
   
   if (qres == NULL) {
-    message(1, "No CDDB record found for this toc-file.");
+    log_message(1, "No CDDB record found for this toc-file.");
     err = 1; goto fail;
   }
 
@@ -1826,18 +1837,18 @@ static int readCddb(Toc *toc, bool showEntry = false)
     int qcount;
 
     if (qres->next == NULL)
-      message(0, "Found following inexact match:");
+      log_message(0, "Found following inexact match:");
     else
-      message(0, "Found following inexact matches:");
+      log_message(0, "Found following inexact matches:");
     
-    message(0, "\n    DISKID   CATEGORY     TITLE\n");
+    log_message(0, "\n    DISKID   CATEGORY     TITLE\n");
     
     for (qrun = qres, qcount = 0; qrun != NULL; qrun = qrun->next, qcount++) {
-      message(0, "%2d. %-8s %-12s %s", qcount + 1, qrun->diskId,
+      log_message(0, "%2d. %-8s %-12s %s", qcount + 1, qrun->diskId,
 	      qrun->category,  qrun->title);
     }
 
-    message(0, "\n");
+    log_message(0, "\n");
 
     qsel = NULL;
 
@@ -1845,7 +1856,7 @@ static int readCddb(Toc *toc, bool showEntry = false)
       char buf[20];
       int sel;
 
-      message(0, "Select match, 0 for none [0-%d]?", qcount);
+      log_message(0, "Select match, 0 for none [0-%d]?", qcount);
 
       if (fgets(buf, 20, stdin) == NULL)
 	break;
@@ -1869,7 +1880,7 @@ static int readCddb(Toc *toc, bool showEntry = false)
     }
 
     if (qsel == NULL) {
-      message(0, "No match selected.");
+      log_message(0, "No match selected.");
       err = 1; goto fail;
     }
   }
@@ -1878,11 +1889,11 @@ static int readCddb(Toc *toc, bool showEntry = false)
   }
 
 
-  message(1, "Reading CDDB record for: %s-%s-%s", qsel->diskId, qsel->category,
+  log_message(1, "Reading CDDB record for: %s-%s-%s", qsel->diskId, qsel->category,
 	  qsel->title);
 
   if (cddb.readDb(qsel->category, qsel->diskId, &dbEntry) != 0) {
-    message(-2, "Reading of CDDB record failed.");
+    log_message(-2, "Reading of CDDB record failed.");
     err = 2; goto fail;
   }
 
@@ -1906,7 +1917,7 @@ static void scanBus()
 
   if (sdata) {
     for (i = 0; i < len; i++) {
-      message(0, "%s : %s, %s, %s", sdata[i].dev.c_str(), sdata[i].vendor,
+      log_message(0, "%s : %s, %s, %s", sdata[i].dev.c_str(), sdata[i].vendor,
               sdata[i].product, sdata[i].revision);
     }
     delete[] sdata;
@@ -1916,7 +1927,7 @@ static void scanBus()
   sdata = ScsiIf::scan(&len, "ATA");
   if (sdata) {
     for (i = 0; i < len; i++) {
-      message(0, "%-20s %s, %s, %s", sdata[i].dev.c_str(), sdata[i].vendor,
+      log_message(0, "%-20s %s, %s, %s", sdata[i].dev.c_str(), sdata[i].vendor,
               sdata[i].product, sdata[i].revision);
     }
     delete[] sdata;
@@ -1924,7 +1935,7 @@ static void scanBus()
     sdata = ScsiIf::scan(&len, "ATAPI");
     if (sdata) {
       for (i = 0; i < len; i++) {
-        message(0, "%-20s %s, %s, %s", sdata[i].dev.c_str(), sdata[i].vendor,
+        log_message(0, "%-20s %s, %s, %s", sdata[i].dev.c_str(), sdata[i].vendor,
                 sdata[i].product, sdata[i].revision);
       }
       delete[] sdata;
@@ -1933,999 +1944,1050 @@ static void scanBus()
 #endif
 }
 
-static int checkToc(const Toc *toc)
+static int checkToc(const Toc *toc, bool force)
 {
-  int ret = toc->check();
+    int ret = toc->check();
 
-  if (ret != 0) {
-    if (ret == 1) { // only a warning message occured
-      if (FORCE) {
-	ret = 0;
-      }
-      else {
-	message(-2, "The toc check function detected at least one warning.");
-	message(-2, "If you record this toc the resulting CD might be unusable");
-	message(-2, "or the recording process might abort with error.");
-	message(-2, "Use option --force to ignore the warnings.");
-      }
-    }
-  }
+    if (ret == 0 || (ret == 1 && force))
+	return 0;
 
-  return ret;
+    log_message(-2, "The toc check function detected at least one warning.");
+    log_message(-2, "If you record this toc the resulting CD might be unusable");
+    log_message(-2, "or the recording process might abort with error.");
+    log_message(-2, "Use option --force to ignore the warnings.");
+
+    return ret;
 }
 
-static int copyCd(CdrDriver *src, CdrDriver *dst, int session,
-		  const char *dataFilename, int fifoBuffers, int swap,
-		  int eject, int force, int keepimage)
+static int copyCd(DaoCommandLine* opts, CdrDriver *src, CdrDriver *dst)
 {
-  char dataFilenameBuf[50];
-  long pid = getpid();
-  Toc *toc;
-  int ret = 0;
-  DiskInfo *di = NULL;
-  int isAppendable = 0;
+    char dataFilenameBuf[50];
+    long pid = getpid();
+    Toc *toc;
+    int ret = 0;
+    DiskInfo *di = NULL;
+    int isAppendable = 0;
 
-  if (dataFilename == NULL) {
-    // create a unique temporary data file name in current directory
-    sprintf(dataFilenameBuf, "cddata%ld.bin", pid);
-    dataFilename = dataFilenameBuf;
-  }
+    if (opts->dataFilename == NULL) {
+	// create a unique temporary data file name in current directory
+	sprintf(dataFilenameBuf, "cddata%ld.bin", pid);
+	opts->dataFilename = dataFilenameBuf;
+    }
 
-  src->rawDataReading(1);
-  src->taoSource(TAO_SOURCE);
-  if (TAO_SOURCE_ADJUST >= 0)
-    src->taoSourceAdjust(TAO_SOURCE_ADJUST);
+    src->rawDataReading(true);
+    src->taoSource(opts->taoSource);
+    if (opts->taoSourceAdjust >= 0)
+	src->taoSourceAdjust(opts->taoSourceAdjust);
 
-  if ((toc = src->readDisk(session, dataFilename)) == NULL) {
-    unlink(dataFilename);
-    message(-2, "Creation of source CD image failed.");
-    return 1;
-  }
+    if ((toc = src->readDisk(opts->session, opts->dataFilename)) == NULL) {
+	unlink(opts->dataFilename);
+	log_message(-2, "Creation of source CD image failed.");
+	return 1;
+    }
 
-  if (WITH_CDDB) {
-    if (readCddb(toc) == 0)
-      message(2, "CD-TEXT data was added to toc-file.");
-    else
-      message(2, "Reading of CD-TEXT data failed - continuing without CD-TEXT data.");
-  }
+    if (opts->withCddb) {
+	if (readCddb(opts, toc) == 0)
+	    log_message(2, "CD-TEXT data was added to toc-file.");
+	else
+	    log_message(2, "Reading of CD-TEXT data failed - "
+			"continuing without CD-TEXT data.");
+    }
 
-  if (keepimage) {
-    char tocFilename[50];
+    if (opts->keepImage) {
+	char tocFilename[50];
 
-    sprintf(tocFilename, "cd%ld.toc", pid);
+	sprintf(tocFilename, "cd%ld.toc", pid);
     
-    message(2, "Keeping created image file \"%s\".", dataFilename);
-    message(2, "Corresponding toc-file is written to \"%s\".", tocFilename);
+	log_message(2, "Keeping created image file \"%s\".",
+		    opts->dataFilename);
+	log_message(2, "Corresponding toc-file is written to \"%s\".",
+		    tocFilename);
 
-    toc->write(tocFilename);
-  }
+	toc->write(tocFilename);
+    }
 
-  if (checkToc(toc)) {
-    message(-3, "Toc created from source CD image is inconsistent.");
-    toc->print(std::cout);
+    if (checkToc(toc, opts->force)) {
+	log_message(-3, "Toc created from source CD image is inconsistent.");
+	toc->print(std::cout);
+	delete toc;
+	return 1;
+    }
+
+    switch (dst->checkToc(toc)) {
+    case 0: // OK
+	break;
+    case 1: // warning
+	if (!opts->force) {
+	    log_message(-2, "The toc extracted from the source CD is not suitable for");
+	    log_message(-2, "the recorder device and may produce undefined results.");
+	    log_message(-2, "Use option --force to use it anyway.");
+	    delete toc;
+	    return 1;
+	}
+	break;
+    default: // error
+	log_message(-2, "The toc extracted from the source CD is not suitable for this drive.");
+	delete toc;
+	return 1;
+	break;
+    }
+
+    if (src == dst) {
+	log_message(0, "Please insert a recordable medium and hit enter.");
+	getc(stdin);
+    }
+
+    do {
+	if ((di = dst->diskInfo()) == NULL) {
+	    log_message(-2, "Cannot get disk information from recorder device.");
+	    delete toc;
+	    return 1;
+	}
+
+	if (!di->valid.empty) {
+	    log_message(-2, "Cannot determine disk status - hit enter to try again.");
+	    getc(stdin);
+	    isAppendable = 0;
+	} else if (!di->empty && (!di->valid.append || !di->append)) {
+	    log_message(0, "Medium in recorder device is not empty and not appendable.");
+	    log_message(0, "Please insert a recordable medium and hit enter.");
+	    getc(stdin);
+	    isAppendable = 0;
+	} else {
+	    isAppendable = 1;
+	}
+    } while (!isAppendable);
+
+
+    if (dst->preventMediumRemoval(1) != 0) {
+	if (!opts->keepImage) {
+	    if (unlink(opts->dataFilename) != 0)
+		log_message(-2, "Cannot remove CD image file \"%s\": %s",
+			    opts->dataFilename,
+			    strerror(errno));
+	}
+
+	delete toc;
+	return 1;
+    }
+    
+    if (writeDiskAtOnce(toc, dst, opts->fifoBuffers, opts->swap, 0, 0) != 0) {
+	if (dst->simulate())
+	    log_message(-2, "Simulation failed.");
+	else
+	    log_message(-2, "Writing failed.");
+
+	ret = 1;
+    } else {
+	if (dst->simulate())
+	    log_message(1, "Simulation finished successfully.");
+	else
+	    log_message(1, "Writing finished successfully.");
+    }
+
+    if (dst->preventMediumRemoval(0) != 0)
+	ret = 1;
+
+    dst->rezeroUnit(0);
+
+    if (ret == 0 && opts->eject) {
+	dst->loadUnload(1);
+    }
+
+    if (!opts->keepImage) {
+	if (unlink(opts->dataFilename) != 0)
+	    log_message(-2, "Cannot remove CD image file \"%s\": %s",
+			opts->dataFilename,
+			strerror(errno));
+    }
+
     delete toc;
-    return 1;
-  }
 
-  switch (dst->checkToc(toc)) {
-  case 0: // OK
-    break;
-  case 1: // warning
-    if (!force) {
-      message(-2, "The toc extracted from the source CD is not suitable for");
-      message(-2, "the recorder device and may produce undefined results.");
-      message(-2, "Use option --force to use it anyway.");
-      delete toc;
-      return 1;
-    }
-    break;
-  default: // error
-    message(-2, "The toc extracted from the source CD is not suitable for this drive.");
-    delete toc;
-    return 1;
-    break;
-  }
-
-  if (src == dst) {
-    message(0, "Please insert a recordable medium and hit enter.");
-    getc(stdin);
-  }
-
-  do {
-    if ((di = dst->diskInfo()) == NULL) {
-      message(-2, "Cannot get disk information from recorder device.");
-      delete toc;
-      return 1;
-    }
-
-    if (!di->valid.empty) {
-      message(-2, "Cannot determine disk status - hit enter to try again.");
-      getc(stdin);
-      isAppendable = 0;
-    }
-    else if (!di->empty && (!di->valid.append || !di->append)) {
-      message(0, "Medium in recorder device is not empty and not appendable.");
-      message(0, "Please insert a recordable medium and hit enter.");
-      getc(stdin);
-      isAppendable = 0;
-    }
-    else {
-      isAppendable = 1;
-    }
-  } while (!isAppendable);
-
-
-  if (dst->preventMediumRemoval(1) != 0) {
-    if (!keepimage) {
-      if (unlink(dataFilename) != 0)
-	message(-2, "Cannot remove CD image file \"%s\": %s", dataFilename,
-		strerror(errno));
-    }
-
-    delete toc;
-    return 1;
-  }
-
-  if (writeDiskAtOnce(toc, dst, fifoBuffers, swap, 0, 0) != 0) {
-    if (dst->simulate())
-      message(-2, "Simulation failed.");
-    else
-      message(-2, "Writing failed.");
-
-    ret = 1;
-  }
-  else {
-    if (dst->simulate())
-      message(1, "Simulation finished successfully.");
-    else
-      message(1, "Writing finished successfully.");
-  }
-
-  if (dst->preventMediumRemoval(0) != 0)
-    ret = 1;
-
-  dst->rezeroUnit(0);
-
-  if (ret == 0 && eject) {
-    dst->loadUnload(1);
-  }
-
-  if (!keepimage) {
-    if (unlink(dataFilename) != 0)
-      message(-2, "Cannot remove CD image file \"%s\": %s", dataFilename,
-	      strerror(errno));
-  }
-
-  delete toc;
-
-  return ret;
+    return ret;
 }
 
-static int copyCdOnTheFly(CdrDriver *src, CdrDriver *dst, int session,
-			  int fifoBuffers, int swap,
-			  int eject, int force)
+static int copyCdOnTheFly(DaoCommandLine* opts,CdrDriver *src, CdrDriver *dst)
 {
-  Toc *toc = NULL;
-  int pipeFds[2];
-  pid_t pid = -1;
-  int ret = 0;
-  int oldStdin = -1;
+    Toc *toc = NULL;
+    int pipeFds[2];
+    pid_t pid = -1;
+    int ret = 0;
+    int oldStdin = -1;
 
-  if (src == dst)
-    return 1;
+    if (src == dst)
+	return 1;
 
-  if (pipe(pipeFds) != 0) {
-    message(-2, "Cannot create pipe: %s", strerror(errno));
-    return 1;
-  }
+    if (pipe(pipeFds) != 0) {
+	log_message(-2, "Cannot create pipe: %s", strerror(errno));
+	return 1;
+    }
   
-  src->rawDataReading(1);
-  src->taoSource(TAO_SOURCE);
-  if (TAO_SOURCE_ADJUST >= 0)
-    src->taoSourceAdjust(TAO_SOURCE_ADJUST);
+    src->rawDataReading(true);
+    src->taoSource(opts->taoSource);
+    if (opts->taoSourceAdjust >= 0)
+	src->taoSourceAdjust(opts->taoSourceAdjust);
 
-  src->onTheFly(1); // the fd is not used by 'readDiskToc', just need to
-                    // indicate that on-the-fly copying is active for
-                    // automatical selection if the first track's pre-gap
-                    // is padded with zeros in the created Toc.
+    src->onTheFly(1);
+    // the fd is not used by 'readDiskToc', just need to
+    // indicate that on-the-fly copying is active for
+    // automatical selection if the first track's pre-gap
+    // is padded with zeros in the created Toc.
 
-  if ((toc = src->readDiskToc(session, "-")) == NULL) {
-    message(-2, "Creation of source CD toc failed.");
-    ret = 1;
-    goto fail;
-  }
-
-  if (WITH_CDDB) {
-    if (readCddb(toc) != 0) {
-      ret = 1;
-      goto fail;
+    if ((toc = src->readDiskToc(opts->session, "-")) == NULL) {
+	log_message(-2, "Creation of source CD toc failed.");
+	ret = 1;
+	goto fail;
     }
-    else {
-      message(2, "CD-TEXT data was added to toc.");
+
+    if (opts->withCddb) {
+	if (readCddb(opts, toc) != 0) {
+	    ret = 1;
+	    goto fail;
+	} else {
+	    log_message(2, "CD-TEXT data was added to toc.");
+	}
     }
-  }
   
-  if (checkToc(toc) != 0) {
-    message(-3, "Toc created from source CD image is inconsistent - please report.");
-    toc->print(std::cout);
-    ret = 1;
-    goto fail;
-  }
-
-  switch (dst->checkToc(toc)) {
-  case 0: // OK
-    break;
-  case 1: // warning
-    if (!force) {
-      message(-2, "The toc extracted from the source CD is not suitable for");
-      message(-2, "the recorder device and may produce undefined results.");
-      message(-2, "Use option --force to use it anyway.");
-      ret = 1;
-      goto fail;
+    if (checkToc(toc, opts->force) != 0) {
+	log_message(-3, "Toc created from source CD image is inconsistent"
+		    "- please report.");
+	toc->print(std::cout);
+	ret = 1;
+	goto fail;
     }
-    break;
-  default: // error
-    message(-2, "The toc extracted from the source CD is not suitable for this drive.");
-    ret = 1;
-    goto fail;
-    break;
-  }
 
-  if ((pid = fork()) < 0) {
-    message(-2, "Cannot fork reader process: %s", strerror(errno));
-    ret = 1;
-    goto fail;
-  }
+    switch (dst->checkToc(toc)) {
+    case 0: // OK
+	break;
+    case 1: // warning
+	if (!opts->force) {
+	    log_message(-2, "The toc extracted from the source CD is not suitable for");
+	    log_message(-2, "the recorder device and may produce undefined results.");
+	    log_message(-2, "Use option --force to use it anyway.");
+	    ret = 1;
+	    goto fail;
+	}
+	break;
+    default: // error
+	log_message(-2, "The toc extracted from the source CD is not suitable for this drive.");
+	ret = 1;
+	goto fail;
+	break;
+    }
 
-  if (pid == 0) {
-    // we are the reader process
-    setsid();
-    close(pipeFds[0]);
+    if ((pid = fork()) < 0) {
+	log_message(-2, "Cannot fork reader process: %s", strerror(errno));
+	ret = 1;
+	goto fail;
+    }
 
-    src->onTheFly(pipeFds[1]);
+    if (pid == 0) {
+	// we are the reader process
+	setsid();
+	close(pipeFds[0]);
 
-    VERBOSE = 0;
+	src->onTheFly(pipeFds[1]);
+
+	opts->verbose = 0;
 
 #ifdef __CYGWIN__
-    /* Close the SCSI interface and open it again. This will re-init the
-     * ASPI layer which is required for the child process
-     */
+	/* Close the SCSI interface and open it again. This will re-init the
+	 * ASPI layer which is required for the child process
+	 */
 
-    delete src->scsiIf();
+	delete src->scsiIf();
 
-    src->scsiIf(new ScsiIf(SOURCE_SCSI_DEVICE));
+	src->scsiIf(new ScsiIf(SOURCE_SCSI_DEVICE));
     
-    if (src->scsiIf()->init() != 0) {
-      message(-2, "Re-init of SCSI interace failed.");
+	if (src->scsiIf()->init() != 0) {
+	    log_message(-2, "Re-init of SCSI interace failed.");
 
-      // indicate end of data
-      close(pipeFds[1]);
+	    // indicate end of data
+	    close(pipeFds[1]);
 
-      while (1)
-	sleep(10);
-    }    
+	    while (1)
+		sleep(10);
+	}    
 #endif
 
-    if (src->readDisk(session, "-") != NULL)
-      message(1, "CD image reading finished successfully.");
-    else
-      message(-2, "CD image reading failed.");
+	if (src->readDisk(opts->session, "-") != NULL)
+	    log_message(1, "CD image reading finished successfully.");
+	else
+	    log_message(-2, "CD image reading failed.");
 
-    // indicate end of data
+	// indicate end of data
+	close(pipeFds[1]);
+	while (1)
+	    sleep(10);
+    }
+
     close(pipeFds[1]);
-    while (1)
-      sleep(10);
-  }
+    pipeFds[1] = -1;
 
-  close(pipeFds[1]);
-  pipeFds[1] = -1;
+    if ((oldStdin = dup(fileno(stdin))) < 0) {
+	log_message(-2, "Cannot duplicate stdin: %s", strerror(errno));
+	ret = 1;
+	goto fail;
+    }
 
-  if ((oldStdin = dup(fileno(stdin))) < 0) {
-    message(-2, "Cannot duplicate stdin: %s", strerror(errno));
-    ret = 1;
-    goto fail;
-  }
+    if (dup2(pipeFds[0], fileno(stdin)) != 0) {
+	log_message(-2, "Cannot connect pipe to stdin: %s", strerror(errno));
+	close(oldStdin);
+	oldStdin = -1;
+	ret = 1;
+	goto fail;
+    }
 
-  if (dup2(pipeFds[0], fileno(stdin)) != 0) {
-    message(-2, "Cannot connect pipe to stdin: %s", strerror(errno));
-    close(oldStdin);
-    oldStdin = -1;
-    ret = 1;
-    goto fail;
-  }
+    dst->onTheFly(fileno(stdin));
 
-  dst->onTheFly(fileno(stdin));
+    if (dst->preventMediumRemoval(1) != 0) {
+	ret = 1;
+	goto fail;
+    }
 
-  if (dst->preventMediumRemoval(1) != 0) {
-    ret = 1;
-    goto fail;
-  }
+    if (writeDiskAtOnce(toc, dst, opts->fifoBuffers, opts->swap, 0, 0) != 0) {
+	if (dst->simulate())
+	    log_message(-2, "Simulation failed.");
+	else
+	    log_message(-2, "Writing failed.");
 
-  if (writeDiskAtOnce(toc, dst, fifoBuffers, swap, 0, 0) != 0) {
-    if (dst->simulate())
-      message(-2, "Simulation failed.");
-    else
-      message(-2, "Writing failed.");
+	ret = 1;
+    } else {
+	if (dst->simulate())
+	    log_message(1, "Simulation finished successfully.");
+	else
+	    log_message(1, "Writing finished successfully.");
+    }
 
-    ret = 1;
-  }
-  else {
-    if (dst->simulate())
-      message(1, "Simulation finished successfully.");
-    else
-      message(1, "Writing finished successfully.");
-  }
+    dst->rezeroUnit(0);
 
-  dst->rezeroUnit(0);
+    if (dst->preventMediumRemoval(0) != 0)
+	ret = 1;
 
-  if (dst->preventMediumRemoval(0) != 0)
-    ret = 1;
-
-  if (ret == 0 && eject) {
-    dst->loadUnload(1);
-  }
+    if (ret == 0 && opts->eject) {
+	dst->loadUnload(1);
+    }
 
 
 fail:
-  if (pid > 0) {
-    int status;
-    kill(pid, SIGKILL);
-    wait(&status);
-  }
+    if (pid > 0) {
+	int status;
+	kill(pid, SIGKILL);
+	wait(&status);
+    }
 
-  if (oldStdin >= 0) {
-    dup2(oldStdin, fileno(stdin));
-    close(oldStdin);
-  }
+    if (oldStdin >= 0) {
+	dup2(oldStdin, fileno(stdin));
+	close(oldStdin);
+    }
 
-  delete toc;
+    delete toc;
 
-  close(pipeFds[0]);
+    close(pipeFds[0]);
 
-  if (pipeFds[1] >= 0)
-    close(pipeFds[1]);
+    if (pipeFds[1] >= 0)
+	close(pipeFds[1]);
 
-  return ret;
+    return ret;
 }
 
 int main(int argc, char **argv)
 {
-  int exitCode = 0;
-  Toc *toc = NULL;
-  ScsiIf *cdrScsi = NULL;
-  ScsiIf *srcCdrScsi = NULL;
-  CdrDriver *cdr = NULL;
-  CdrDriver *srcCdr = NULL;
-  int delSrcDevice = 0;
-  DiskInfo *di = NULL;
-  DiskInfo *srcDi = NULL;
-  const char *homeDir;
-  char *settingsPath = NULL;
+    int exitCode = 0;
+    Toc *toc = NULL;
+    ScsiIf *cdrScsi = NULL;
+    ScsiIf *srcCdrScsi = NULL;
+    CdrDriver *cdr = NULL;
+    CdrDriver *srcCdr = NULL;
+    int delSrcDevice = 0;
+    DiskInfo *di = NULL;
+    DiskInfo *srcDi = NULL;
+    const char *homeDir;
+    char *settingsPath = NULL;
 
-  PRGNAME = *argv;
+    log_init();
 
-  SETTINGS = new Settings;
+    // Initialize command line options to default values
+    DaoCommandLine options;
+    setOptionDefaults(&options);
+    options.progName = argv[0];
 
-  settingsPath = "/etc/cdrdao.conf";
-  if (SETTINGS->read(settingsPath) == 0)
-    message(3, "Read settings from \"%s\".", settingsPath);
+    Settings* settings = new Settings;
 
-  settingsPath = "/etc/defaults/cdrdao";
-  if (SETTINGS->read(settingsPath) == 0)
-    message(3, "Read settings from \"%s\".", settingsPath);
+    settingsPath = "/etc/cdrdao.conf";
+    if (settings->read(settingsPath) == 0)
+	log_message(3, "Read settings from \"%s\".", settingsPath);
 
-  settingsPath = NULL;
+    settingsPath = "/etc/defaults/cdrdao";
+    if (settings->read(settingsPath) == 0)
+	log_message(3, "Read settings from \"%s\".", settingsPath);
 
-  if ((homeDir = getenv("HOME")) != NULL) {
-    settingsPath = strdup3CC(homeDir, "/.cdrdao", NULL);
+    settingsPath = NULL;
 
-    if (SETTINGS->read(settingsPath) == 0)
-      message(3, "Read settings from \"%s\".", settingsPath);
-  }
-  else {
-    message(-1,
-	    "Environment variable 'HOME' not defined - cannot read .cdrdao.");
-  }
+    if ((homeDir = getenv("HOME")) != NULL) {
+	settingsPath = strdup3CC(homeDir, "/.cdrdao", NULL);
+
+	if (settings->read(settingsPath) == 0)
+	    log_message(3, "Read settings from \"%s\".", settingsPath);
+    } else {
+	log_message(-1, "Environment variable 'HOME' not defined"
+		    "- cannot read .cdrdao.");
+    }
 
 #ifdef UNIXWARE
-  if (getuid() != 0) {
-    message(-2, "You must be root to use cdrdao.");
-    exit(1);
-  }
+    if (getuid() != 0) {
+	log_message(-2, "You must be root to use cdrdao.");
+	exit(1);
+    }
 #endif
 
-  if (parseCmdline(argc - 1, argv + 1) != 0) {
-    VERBOSE = 2;
-    message(0, "");
+    // Parse command line command and options.
+    if (parseCmdline(argc - 1, argv + 1, &options, settings) != 0) {
+	options.verbose = 2;
+	printVersion();
+	printUsage(&options);
+	exit(1);
+    }
+
+    log_set_verbose(options.verbose);
+    commitSettings(&options, settings, settingsPath);
+
     printVersion();
-    printUsage();
-    exit(1);
-  }
 
-  commitSettings(SETTINGS, settingsPath);
+    // Just show version ? We're done.
+    if (options.command == SHOW_VERSION)
+	goto fail;
 
-  printVersion();
+    // ---------------------------------------------------------------------
+    //   Parse and check the toc file
+    // ---------------------------------------------------------------------
+    if (cmdInfo[options.command].tocParse) {
 
-  if (COMMAND != READ_TOC && COMMAND != DISK_INFO && COMMAND != READ_CD &&
-      COMMAND != BLANK && COMMAND != SCAN_BUS && COMMAND != UNLOCK &&
-      COMMAND != DISCID &&
-      COMMAND != COPY_CD && COMMAND != MSINFO && COMMAND != DRIVE_INFO) {
+	// Parse TOC file
+	toc = Toc::read(options.tocFile);
 
-    // Parse TOC file
-    toc = Toc::read(TOC_FILE);
+	if (options.remoteMode) {
+	    unlink(options.tocFile);
+	}
 
-    if (REMOTE_MODE) {
-      unlink(TOC_FILE);
+	// Check and resolve input files paths
+	if (!toc || !toc->resolveFilenames(options.tocFile)) {
+	    exitCode = 1;
+	    goto fail;
+	}
+
+	if (!toc->convertFilesToWav()) {
+	    log_message(-2,
+			"Could not decode audio files from toc file \"%s\".",
+			options.tocFile);
+	    exitCode = 1;
+	    goto fail;
+	}
+
+	toc->recomputeLength();
+
+	if (cmdInfo[options.command].tocCheck) {
+	    if (checkToc(toc, options.force) != 0) {
+		log_message(-2, "Toc file \"%s\" is inconsistent.",
+			    options.tocFile);
+		exitCode = 1;
+		goto fail;
+	    }
+	}
     }
 
-    // Check and resolve input files paths
-    if (!toc || !toc->resolveFilenames(TOC_FILE)) {
-      exitCode = 1; goto fail;
+    // ---------------------------------------------------------------------
+    //   Setup the CD device, obtain disk media information.
+    // ---------------------------------------------------------------------
+
+    if (cmdInfo[options.command].requiredDevice != NO_DEVICE) {
+
+	if (!options.scsiDevice)
+	    options.scsiDevice =
+		getDefaultDevice(cmdInfo[options.command].requiredDevice);
+
+	cdr = setupDevice(options.command,
+			  options.scsiDevice,
+			  options.driverId, 
+			  /* init device? */
+			  (options.command == UNLOCK) ? 0 : 1,
+			  /* check for ready status? */
+			  (options.command == BLANK ||
+			   options.command == DRIVE_INFO ||
+			   options.command == DISCID) ? 0 : 1,
+			  /* reset status of medium if not empty? */
+			  (options.command == SIMULATE ||
+			   options.command == WRITE) ? 1 : 0,
+			  options.readingSpeed,
+			  options.remoteMode,
+			  options.reload);
+
+	if (cdr == NULL) {
+	    log_message(-2, "Cannot setup device %s.", options.scsiDevice);
+	    exitCode = 1; goto fail;
+	}
+
+	cdrScsi = cdr->scsiIf();
+
+	if ((di = cdr->diskInfo()) == NULL) {
+	    log_message(-2, "Cannot get disk information.");
+	    exitCode = 1; goto fail;
+	}
     }
 
-    if (!toc->convertFilesToWav()) {
-      message(-2, "Could not decode audio files from toc file \"%s\".",
-              TOC_FILE);
-      exitCode = 1; goto fail;
-    }
-
-    toc->recomputeLength();
-
-    if (COMMAND != SHOW_TOC && COMMAND != READ_CDDB) {
-      if (checkToc(toc) != 0) {
-	message(-2, "Toc file \"%s\" is inconsistent.", TOC_FILE);
-	exitCode = 1; goto fail;
-      }
-    }
-  }
-
-
-  if (COMMAND == SIMULATE || COMMAND == WRITE || COMMAND == READ_TOC ||
-      COMMAND == DISK_INFO || COMMAND == READ_CD || COMMAND == BLANK ||
-      COMMAND == UNLOCK || COMMAND == COPY_CD || COMMAND == MSINFO ||
-      COMMAND == DISCID ||
-      COMMAND == DRIVE_INFO) {
-    cdr = setupDevice(COMMAND, SCSI_DEVICE, DRIVER_ID, 
-		      /* init device? */
-		      (COMMAND == UNLOCK) ? 0 : 1,
-		      /* check for ready status? */
-              (COMMAND == BLANK || COMMAND == DRIVE_INFO ||
-               COMMAND == DISCID) ? 0 : 1,
-		      /* reset status of medium if not empty? */
-		      (COMMAND == SIMULATE || COMMAND == WRITE) ? 1 : 0,
-		      REMOTE_MODE, RELOAD);
-
-    if (cdr == NULL) {
-      message(-2, "Cannot setup device %s.", SCSI_DEVICE);
-      exitCode = 1; goto fail;
-    }
-
-    cdrScsi = cdr->scsiIf();
-
-    if ((di = cdr->diskInfo()) == NULL) {
-      message(-2, "Cannot get disk information.");
-      exitCode = 1; goto fail;
-    }
-  }
+    // ---------------------------------------------------------------------
+    //   Process fullburn option for writing commands.
+    // ---------------------------------------------------------------------
   
-  if (COMMAND == SIMULATE || COMMAND == WRITE || COMMAND == COPY_CD) {
-    if (FULL_BURN) {
-      if (DRIVER_ID && strcmp(DRIVER_ID, "generic-mmc-raw") != 0) {
-        message(-2, "You must use the generic-mmc-raw driver to use the "
-                "full-burn option.");
-        exitCode = 1; goto fail;
-      } else {
-        int mins = USER_CAPACITY ? USER_CAPACITY :
-          Msf(cdr->diskInfo()->capacity).min();
-        message(2, "Burning entire %d mins disc.", mins);
-      }
+    if (options.command == SIMULATE ||
+	options.command == WRITE ||
+	options.command == COPY_CD) {
+	if (options.fullBurn) {
+	    if (options.driverId &&
+		strcmp(options.driverId, "generic-mmc-raw") != 0) {
+		log_message(-2, "You must use the generic-mmc-raw driver to use the "
+			    "full-burn option.");
+		exitCode = 1; goto fail;
+	    } else {
+		int mins = options.userCapacity ? options.userCapacity :
+		    Msf(cdr->diskInfo()->capacity).min();
+		log_message(2, "Burning entire %d mins disc.", mins);
+	    }
+	}
+	cdr->fullBurn(options.fullBurn);
+	cdr->userCapacity(options.userCapacity);
     }
-    cdr->fullBurn(FULL_BURN);
-    cdr->userCapacity(USER_CAPACITY);
-  }
 
-  if (COMMAND == COPY_CD) {
-      if (SOURCE_SCSI_DEVICE != NULL && 
-          strcmp(SCSI_DEVICE, SOURCE_SCSI_DEVICE) != 0) {
-      delSrcDevice = 1;
-      srcCdr = setupDevice(READ_CD, SOURCE_SCSI_DEVICE, SOURCE_DRIVER_ID,
-			 1, 1, 0, 0, 0);
+    // ---------------------------------------------------------------------
+    //   Setup secondary device for copy command.
+    // ---------------------------------------------------------------------
+  
+    if (options.command == COPY_CD) {
+	if (options.sourceScsiDevice != NULL && 
+	    strcmp(options.scsiDevice, options.sourceScsiDevice) != 0) {
+	    delSrcDevice = 1;
+	    srcCdr = setupDevice(READ_CD, options.sourceScsiDevice,
+				 options.sourceDriverId,
+				 1, 1, 0, options.readingSpeed, false, false);
 
-      if (srcCdr == NULL) {
-	message(-2, "Cannot setup source device %s.", SOURCE_SCSI_DEVICE);
-	exitCode = 1; goto fail;
-      }
+	    if (srcCdr == NULL) {
+		log_message(-2, "Cannot setup source device %s.",
+			    options.sourceScsiDevice);
+		exitCode = 1; goto fail;
+	    }
 
-      srcCdrScsi = srcCdr->scsiIf();
+	    srcCdrScsi = srcCdr->scsiIf();
 
-      if ((srcDi = srcCdr->diskInfo()) == NULL) {
-	message(-2, "Cannot get disk information from source device.");
-	exitCode = 1; goto fail;
-      }
+	    if ((srcDi = srcCdr->diskInfo()) == NULL) {
+		log_message(-2,
+			    "Cannot get disk information from source device.");
+		exitCode = 1; goto fail;
+	    }
+	} else {
+	    srcCdr = cdr;
+	    srcDi = di;
+	}
     }
-    else {
-      srcCdr = cdr;
-      srcDi = di;
-    }
-  }
 
-  if (REMOTE_MODE)
-    PAUSE = 0;
+    if (options.remoteMode)
+	options.pause = false;
 
-  switch (COMMAND) {
-  case READ_CDDB:
-    if ((exitCode = readCddb(toc)) == 0) {
-      message(1, "Writing CD-TEXT populated toc-file \"%s\".", TOC_FILE);
-      if (toc->write(TOC_FILE) != 0)
-	exitCode = 2;
-    }
-    break;
+    // ---------------------------------------------------------------------
+    //   Main command dispatch.
+    // ---------------------------------------------------------------------
 
-  case SCAN_BUS:
-    scanBus();
-    break;
+    switch (options.command) {
+    case READ_CDDB:
+	if ((exitCode = readCddb(&options, toc)) == 0) {
+	    log_message(1, "Writing CD-TEXT populated toc-file \"%s\".",
+			options.tocFile);
+	    if (toc->write(options.tocFile) != 0)
+		exitCode = 2;
+	}
+	break;
 
-  case DRIVE_INFO:
-    showDriveInfo(cdr->driveInfo(true));
-    break;
+    case SCAN_BUS:
+	scanBus();
+	break;
 
-  case SHOW_TOC:
-    showToc(toc);
-    if (toc->check() > 1) {
-      message(-2, "Toc file \"%s\" is inconsistent.", TOC_FILE);
-    }
-    break;
+    case DRIVE_INFO:
+	showDriveInfo(cdr->driveInfo(true));
+	break;
 
-  case TOC_INFO:
-    showTocInfo(toc, TOC_FILE);
-    if (toc->check() > 1) {
-      message(-2, "Toc file \"%s\" is inconsistent.", TOC_FILE);
-    }
-    break;
+    case SHOW_TOC:
+	showToc(toc);
+	if (toc->check() > 1) {
+	    log_message(-2, "Toc file \"%s\" is inconsistent.",
+			options.tocFile);
+	}
+	break;
 
-  case TOC_SIZE:
-    showTocSize(toc, TOC_FILE);
-    if (toc->check() > 1) {
-      message(-2, "Toc file \"%s\" is inconsistent.", TOC_FILE);
-    }
-    break;
+    case TOC_INFO:
+	showTocInfo(toc, options.tocFile);
+	if (toc->check() > 1) {
+	    log_message(-2, "Toc file \"%s\" is inconsistent.",
+			options.tocFile);
+	}
+	break;
 
-  case SHOW_DATA:
-    showData(toc, SWAP);
-    break;
+    case TOC_SIZE:
+	showTocSize(toc, options.tocFile);
+	if (toc->check() > 1) {
+	    log_message(-2, "Toc file \"%s\" is inconsistent.",
+			options.tocFile);
+	}
+	break;
 
-  case READ_TEST:
-    message(1, "Starting read test...");
-    message(2, "Process can be aborted with QUIT signal (usually CTRL-\\).");
-    if (writeDiskAtOnce(toc, NULL, FIFO_BUFFERS, SWAP, 1, WRITING_SPEED) != 0) {
-      message(-2, "Read test failed.");
-      exitCode = 1; goto fail;
-    }
-    break;
+    case SHOW_DATA:
+	showData(toc, options.swap);
+	break;
 
-  case DISK_INFO:
-    showDiskInfo(di);
-    break;
+    case READ_TEST:
+	log_message(1, "Starting read test...");
+	log_message(2, "Process can be aborted with QUIT signal "
+		    "(usually CTRL-\\).");
+	if (writeDiskAtOnce(toc, NULL, options.fifoBuffers,
+			    options.swap, 1,
+			    options.writingSpeed) != 0) {
+	    log_message(-2, "Read test failed.");
+	    exitCode = 1; goto fail;
+	}
+	break;
 
-  case DISCID:
-    if (di->valid.empty && di->empty) {
-      message(-2, "Inserted disk is empty.");
-      exitCode = 1; goto fail;
-    }
-    cdr->subChanReadMode(READ_SUBCHAN_MODE);
-    cdr->rawDataReading(READ_RAW);
-    cdr->mode2Mixed(MODE2_MIXED);
-    cdr->fastTocReading(1);
-    cdr->taoSource(TAO_SOURCE);
-    if (TAO_SOURCE_ADJUST >= 0)
-      cdr->taoSourceAdjust(TAO_SOURCE_ADJUST);
+    case DISK_INFO:
+	showDiskInfo(di);
+	break;
 
-    cdr->force(FORCE);
+    case DISCID:
+	if (di->valid.empty && di->empty) {
+	    log_message(-2, "Inserted disk is empty.");
+	    exitCode = 1; goto fail;
+	}
+	cdr->subChanReadMode(options.readSubchanMode);
+	cdr->rawDataReading(options.readRaw);
+	cdr->mode2Mixed(options.mode2Mixed);
+	cdr->fastTocReading(true);
+	cdr->taoSource(options.taoSource);
+	if (options.taoSourceAdjust >= 0)
+	    cdr->taoSourceAdjust(options.taoSourceAdjust);
 
-    if ((toc = cdr->readDiskToc(SESSION,
-                                (DATA_FILENAME == NULL) ?
-                                "data.wav" : DATA_FILENAME)) == NULL) {
-      cdr->rezeroUnit(0);
-      exitCode = 1; goto fail;
-    }
-    else {
-      cdr->rezeroUnit(0);
+	cdr->force(options.force);
 
-      if (PRINT_QUERY)
-          printCddbQuery(toc);
-      else
-          readCddb(toc, true);
-    }
-    break;
+	if ((toc = cdr->readDiskToc(options.session,
+				    (options.dataFilename == NULL) ?
+				    "data.wav" : options.dataFilename))
+	    == NULL) {
+	    cdr->rezeroUnit(0);
+	    exitCode = 1; goto fail;
+	} else {
+	    cdr->rezeroUnit(0);
+
+	    if (options.printQuery)
+		printCddbQuery(toc);
+	    else
+		readCddb(&options, toc, true);
+	}
+	break;
    
-  case MSINFO:
-    switch (showMultiSessionInfo(di)) {
-    case 0:
-      exitCode = 0;
-      break;
+    case MSINFO:
+	switch (showMultiSessionInfo(di)) {
+	case 0:
+	    log_message(2, "msinfo: Session is appendable");
+	    exitCode = 0;
+	    break;
       
-    case 1: // CD-R is not empty and not appendable
-      exitCode = 2;
-      break;
+	case 1: // CD-R is not empty and not appendable
+	    log_message(2, "msinfo: CD-R is not empty and not appendable");
+	    exitCode = 2;
+	    break;
       
-    case 2: // cannot determine state
-      exitCode = 3;
-      break;
+	case 2: // cannot determine state
+	    log_message(2, "msinfo: cannot determine state");
+	    exitCode = 3;
+	    break;
 
-    default: // everthing else is an error
-      exitCode = 1;
-      break;
-    }
-    break;
+	default: // everthing else is an error
+	    log_message(2, "msinfo: command error");
+	    exitCode = 1;
+	    break;
+	}
+	break;
 
-  case READ_TOC:
-    if (di->valid.empty && di->empty) {
-      message(-2, "Inserted disk is empty.");
-      exitCode = 1; goto fail;
-    }
-    message(1, "Reading toc data...");
 
-    if (access(TOC_FILE, R_OK) == 0) {
-      message(-2, "File \"%s\" exists, will not overwrite.", TOC_FILE);
-      exitCode = 1; goto fail;
-    }
+    case READ_TOC:
+	if (di->valid.empty && di->empty) {
+	    log_message(-2, "Inserted disk is empty.");
+	    exitCode = 1; goto fail;
+	}
+	log_message(1, "Reading toc data...");
 
-    cdr->subChanReadMode(READ_SUBCHAN_MODE);
-    cdr->rawDataReading(READ_RAW);
-    cdr->mode2Mixed(MODE2_MIXED);
-    cdr->fastTocReading(FAST_TOC);
-    cdr->taoSource(TAO_SOURCE);
-    if (TAO_SOURCE_ADJUST >= 0)
-      cdr->taoSourceAdjust(TAO_SOURCE_ADJUST);
+	if (access(options.tocFile, R_OK) == 0) {
+	    log_message(-2, "File \"%s\" exists, will not overwrite.",
+			options.tocFile);
+	    exitCode = 1; goto fail;
+	}
 
-    cdr->force(FORCE);
+	cdr->subChanReadMode(options.readSubchanMode);
+	cdr->rawDataReading(options.readRaw);
+	cdr->mode2Mixed(options.mode2Mixed);
+	cdr->fastTocReading(options.fastToc);
+	cdr->taoSource(options.taoSource);
+	if (options.taoSourceAdjust >= 0)
+	    cdr->taoSourceAdjust(options.taoSourceAdjust);
 
-    if ((toc = cdr->readDiskToc(SESSION,
-				(DATA_FILENAME == NULL) ?
-				"data.wav" : DATA_FILENAME)) == NULL) {
-      cdr->rezeroUnit(0);
-      exitCode = 1; goto fail;
-    }
-    else {
-      cdr->rezeroUnit(0);
+	cdr->force(options.force);
+
+	if ((toc =
+	     cdr->readDiskToc(options.session,
+			      (options.dataFilename == NULL) ?
+			      "data.wav" : options.dataFilename)) == NULL) {
+	    cdr->rezeroUnit(0);
+	    exitCode = 1; goto fail;
+	} else {
+	    cdr->rezeroUnit(0);
 
 #if defined(HAVE_SETEUID) && defined(HAVE_SETEGID)
-      seteuid(getuid());
-      setegid(getgid());
+	    seteuid(getuid());
+	    setegid(getgid());
 #endif
 
-      if (WITH_CDDB) {
-	if (readCddb(toc) == 0) {
-	  message(2, "CD-TEXT data was added to toc-file.");
+	    if (options.withCddb) {
+		if (readCddb(&options, toc) == 0) {
+		    log_message(2, "CD-TEXT data was added to toc-file.");
+		}
+	    }
+
+	    {
+		std::ofstream out(options.tocFile);
+		if (!out) {
+		    log_message(-2, "Cannot open \"%s\" for writing: %s",
+				options.tocFile,
+				strerror(errno));
+		    exitCode = 1; goto fail;
+		}
+		toc->print(out);
+	    }
+
+	    log_message(1, "Reading of toc data finished successfully.");
 	}
-      }
-
-      std::ofstream out(TOC_FILE);
-      if (!out) {
-	message(-2, "Cannot open \"%s\" for writing: %s", TOC_FILE,
-		strerror(errno));
-	exitCode = 1; goto fail;
-      }
-      toc->print(out);
-
-      message(1, "Reading of toc data finished successfully.");
-    }
-    break;
+	break;
     
-  case READ_CD:
-    if (di->valid.empty && di->empty) {
-      message(-2, "Inserted disk is empty.");
-      exitCode = 1; goto fail;
-    }
-    message(1, "Reading toc and track data...");
+    case READ_CD:
+	if (di->valid.empty && di->empty) {
+	    log_message(-2, "Inserted disk is empty.");
+	    exitCode = 1; goto fail;
+	}
+	log_message(1, "Reading toc and track data...");
 
-    if (access(TOC_FILE, R_OK) == 0) {
-      message(-2, "File \"%s\" exists, will not overwrite.", TOC_FILE);
-      exitCode = 1; goto fail;
-    }
+	if (access(options.tocFile, R_OK) == 0) {
+	    log_message(-2, "File \"%s\" exists, will not overwrite.",
+			options.tocFile);
+	    exitCode = 1; goto fail;
+	}
 
-    cdr->subChanReadMode(READ_SUBCHAN_MODE);
-    cdr->rawDataReading(READ_RAW);
-    cdr->mode2Mixed(MODE2_MIXED);
-    cdr->taoSource(TAO_SOURCE);
-    if (TAO_SOURCE_ADJUST >= 0)
-      cdr->taoSourceAdjust(TAO_SOURCE_ADJUST);
+	cdr->subChanReadMode(options.readSubchanMode);
+	cdr->rawDataReading(options.readRaw);
+	cdr->mode2Mixed(options.mode2Mixed);
+	cdr->taoSource(options.taoSource);
+	if (options.taoSourceAdjust >= 0)
+	    cdr->taoSourceAdjust(options.taoSourceAdjust);
 
-    cdr->paranoiaMode(PARANOIA_MODE);
-    cdr->fastTocReading(FAST_TOC);
-    cdr->remote(REMOTE_MODE, REMOTE_FD);
-    cdr->force(FORCE);
+	cdr->paranoiaMode(options.paranoiaMode);
+	cdr->fastTocReading(options.fastToc);
+	cdr->remote(options.remoteMode, options.remoteFd);
+	cdr->force(options.force);
 
-    toc = cdr->readDisk(SESSION,
-			(DATA_FILENAME == NULL) ? "data.bin" : DATA_FILENAME);
+	toc = cdr->readDisk(options.session,
+			    (options.dataFilename == NULL) ? "data.bin" :
+			    options.dataFilename);
       
-    if (toc == NULL) {
-      cdr->rezeroUnit(0);
-      exitCode = 1; goto fail;
-    }
-    else {
-      cdr->rezeroUnit(0);
-
-      if (WITH_CDDB) {
-	if (readCddb(toc) == 0) {
-	  message(2, "CD-TEXT data was added to toc-file.");
+	if (toc == NULL) {
+	    cdr->rezeroUnit(0);
+	    exitCode = 1; goto fail;
 	}
-      }
+	cdr->rezeroUnit(0);
 
-      std::ofstream out(TOC_FILE);
-      if (!out) {
-	message(-2, "Cannot open \"%s\" for writing: %s",
-		TOC_FILE, strerror(errno));
-	exitCode = 1; goto fail;
-      }
-      toc->print(out);
+	if (options.withCddb) {
+	    if (readCddb(&options, toc) == 0) {
+		log_message(2, "CD-TEXT data was added to toc-file.");
+	    }
+	}
 
-      message(1, "Reading of toc and track data finished successfully.");
-    }
-    break;
+	{
+	    std::ofstream out(options.tocFile);
+	    if (!out) {
+		log_message(-2, "Cannot open \"%s\" for writing: %s",
+			    options.tocFile, strerror(errno));
+		exitCode = 1; goto fail;
+	    }
+	    toc->print(out);
+	}
 
-  case WRITE:
-    if (WRITE_SIMULATE == 0)
-      cdr->simulate(0);
-    // fall through
+	log_message(1, "Reading of toc and track data finished successfully.");
+	break;
+
+    case WRITE:
+	if (!options.writeSimulate)
+	    cdr->simulate(false);
+	// fall through
     
-  case SIMULATE:
-    if (di->valid.empty && !di->empty && 
-	(!di->valid.append || !di->append)) {
-      message(-2, "Inserted disk is not empty and not appendable.");
-      exitCode = 1; goto fail;
-    }
+    case SIMULATE:
+	if (di->valid.empty && !di->empty && 
+	    (!di->valid.append || !di->append)) {
+	    log_message(-2, "Inserted disk is not empty and not appendable.");
+	    exitCode = 1; goto fail;
+	}
 
-    if (toc->length().lba() > di->capacity) {
-      message((OVERBURN ? -1 : -2),
-	      "Length of toc (%s, %ld blocks) exceeds capacity ",
-	      toc->length().str(), toc->length().lba());
-      message(0, "of CD-R (%s, %ld blocks).", Msf(di->capacity).str(),
-	      di->capacity);
+	if (toc->length().lba() > di->capacity) {
+	    log_message((options.overburn ? -1 : -2),
+			"Length of toc (%s, %ld blocks) exceeds capacity ",
+			toc->length().str(), toc->length().lba());
+	    log_message(0, "of CD-R (%s, %ld blocks).",
+			Msf(di->capacity).str(),
+			di->capacity);
 
-      if (OVERBURN) {
-	message(-1, "Ignored because of option '--overburn'.");
-	message(-1, "Some drives may fail to record this toc.");
-      }
-      else {
-	message(-2, "Please use option '--overburn' to start recording anyway.");
-	exitCode = 1; goto fail;
-      }
-    }
+	    if (options.overburn) {
+		log_message(-1, "Ignored because of option '--overburn'.");
+		log_message(-1, "Some drives may fail to record this toc.");
+	    } else {
+		log_message(-2, "Please use option '--overburn' to start"
+			    "recording anyway.");
+		exitCode = 1; goto fail;
+	    }
+	}
 
-    if (MULTI_SESSION != 0) {
-      if (cdr->multiSession(1) != 0) {
-	message(-2, "This driver does not support multi session discs.");
-	exitCode = 1; goto fail;
-      }
-    }
+	if (options.multiSession) {
+	    if (cdr->multiSession(1) != 0) {
+		log_message(-2, "This driver does not support "
+			    "multi session discs.");
+		exitCode = 1; goto fail;
+	    }
+	}
 
-    if (WRITING_SPEED >= 0) {
-      if (cdr->speed(WRITING_SPEED) != 0) {
-	message(-2, "Writing speed %d not supported by device.",
-		WRITING_SPEED);
-	exitCode = 1; goto fail;
-      }
-    }
+	if (options.writingSpeed >= 0) {
+	    if (cdr->speed(options.writingSpeed) != 0) {
+		log_message(-2, "Writing speed %d not supported by device.",
+			    options.writingSpeed);
+		exitCode = 1; goto fail;
+	    }
+	}
 
-    cdr->bufferUnderRunProtection(BUFFER_UNDER_RUN_PROTECTION);
-    cdr->writeSpeedControl(WRITE_SPEED_CONTROL);
+	cdr->bufferUnderRunProtection(options.bufferUnderrunProtection);
+	cdr->writeSpeedControl(options.writeSpeedControl);
 
-    cdr->force(FORCE);
-    cdr->remote(REMOTE_MODE, REMOTE_FD);
+	cdr->force(options.force);
+	cdr->remote(options.remoteMode, options.remoteFd);
 
-    switch (cdr->checkToc(toc)) {
-    case 0: // OK
-      break;
-    case 1: // warning
-      if (FORCE == 0 && REMOTE_MODE == 0) {
-	message(-2, "Toc-file \"%s\" may create undefined results.", TOC_FILE);
-	message(-2, "Use option --force to use it anyway.");
-	exitCode = 1; goto fail;
-      }
-      break;
-    default: // error
-      message(-2, "Toc-file \"%s\" is not suitable for this drive.",
-	      TOC_FILE);
-      exitCode = 1; goto fail;
-      break;
-    }
+	switch (cdr->checkToc(toc)) {
+	case 0: // OK
+	    break;
+	case 1: // warning
+	    if (!options.force && !options.remoteMode) {
+		log_message(-2, "Toc-file \"%s\" may create undefined "
+			    "results.", options.tocFile);
+		log_message(-2, "Use option --force to use it anyway.");
+		exitCode = 1; goto fail;
+	    }
+	    break;
+	default: // error
+	    log_message(-2, "Toc-file \"%s\" is not suitable for this drive.",
+			options.tocFile);
+	    exitCode = 1; goto fail;
+	    break;
+	}
 
-    message(1, "Starting write ");
-    if (cdr->simulate()) {
-      message(1, "simulation ");
-    }
-    message(1, "at speed %d...", cdr->speed());
-    if (cdr->multiSession() != 0) {
-      message(1, "Using multi session mode.");
-    }
+	log_message(1, "Starting write ");
+	if (cdr->simulate()) {
+	    log_message(1, "simulation ");
+	}
+	log_message(1, "at speed %d...", cdr->speed());
+	if (cdr->multiSession() != 0) {
+	    log_message(1, "Using multi session mode.");
+	}
 
-    if (PAUSE) {
-      message(1, "Pausing 10 seconds - hit CTRL-C to abort.");
-      sleep(10);
-    }
+	if (options.pause) {
+	    log_message(1, "Pausing 10 seconds - hit CTRL-C to abort.");
+	    sleep(10);
+	}
 
-    message(2, "Process can be aborted with QUIT signal (usually CTRL-\\).");
-    if (cdr->preventMediumRemoval(1) != 0) {
-      exitCode = 1; goto fail;
-    }
+	log_message(2, "Process can be aborted with QUIT signal "
+		    "(usually CTRL-\\).");
+	if (cdr->preventMediumRemoval(1) != 0) {
+	    exitCode = 1; goto fail;
+	}
 
-    if (writeDiskAtOnce(toc, cdr, FIFO_BUFFERS, SWAP, 0, 0) != 0) {
-      if (cdr->simulate()) {
-	message(-2, "Simulation failed.");
-      }
-      else {
-	message(-2, "Writing failed.");
-      }
-      cdr->preventMediumRemoval(0);
-      cdr->rezeroUnit(0);
-      exitCode = 1; goto fail;
-    }
+	if (writeDiskAtOnce(toc, cdr, options.fifoBuffers,
+			    options.swap, 0, 0) != 0) {
+	    if (cdr->simulate()) {
+		log_message(-2, "Simulation failed.");
+	    } else {
+		log_message(-2, "Writing failed.");
+	    }
+	    cdr->preventMediumRemoval(0);
+	    cdr->rezeroUnit(0);
+	    exitCode = 1; goto fail;
+	}
 
-    if (cdr->simulate()) {
-      message(1, "Simulation finished successfully.");
-    }
-    else {
-      message(1, "Writing finished successfully.");
-    }
+	if (cdr->simulate()) {
+	    log_message(1, "Simulation finished successfully.");
+	} else {
+	    log_message(1, "Writing finished successfully.");
+	}
 
-    cdr->rezeroUnit(0);
+	cdr->rezeroUnit(0);
+	if (cdr->preventMediumRemoval(0) != 0) {
+	    exitCode = 1; goto fail;
+	}
 
-    if (cdr->preventMediumRemoval(0) != 0) {
-      exitCode = 1; goto fail;
-    }
+	if (options.eject) {
+	    cdr->loadUnload(1);
+	}
+	break;
 
-    if (EJECT) {
-      cdr->loadUnload(1);
-    }
-    break;
+    case COPY_CD:
+	if (cdr != srcCdr) {
+	    if (di->valid.empty && !di->empty && 
+		(!di->valid.append || !di->append)) {
+		log_message(-2, "Medium in recorder device is not empty"
+			    "and not appendable.");
+		exitCode = 1; goto fail;
+	    }
+	}
 
-  case COPY_CD:
-    if (cdr != srcCdr) {
-      if (di->valid.empty && !di->empty && 
-	  (!di->valid.append || !di->append)) {
-	message(-2,
-		"Medium in recorder device is not empty and not appendable.");
-	exitCode = 1; goto fail;
-      }
-    }
-
-    if (srcDi->valid.empty && srcDi->empty) {
-      message(-2, "Medium in source device is empty.");
-      exitCode = 1; goto fail;
-    }
+	if (srcDi->valid.empty && srcDi->empty) {
+	    log_message(-2, "Medium in source device is empty.");
+	    exitCode = 1; goto fail;
+	}
     
-    cdr->simulate(WRITE_SIMULATE);
-    cdr->force(FORCE);
-    cdr->remote(REMOTE_MODE, REMOTE_FD);
+	cdr->simulate(options.writeSimulate);
+	cdr->force(options.force);
+	cdr->remote(options.remoteMode, options.remoteFd);
 
-    cdr->bufferUnderRunProtection(BUFFER_UNDER_RUN_PROTECTION);
-    cdr->writeSpeedControl(WRITE_SPEED_CONTROL);
+	cdr->bufferUnderRunProtection(options.bufferUnderrunProtection);
+	cdr->writeSpeedControl(options.writeSpeedControl);
     
-    if (MULTI_SESSION != 0) {
-      if (cdr->multiSession(1) != 0) {
-	message(-2, "This driver does not support multi session discs.");
-	exitCode = 1; goto fail;
-      }
-    }
+	if (options.multiSession) {
+	    if (cdr->multiSession(1) != 0) {
+		log_message(-2, "This driver does not support multi"
+			    "session discs.");
+		exitCode = 1; goto fail;
+	    }
+	}
 
-    if (WRITING_SPEED >= 0) {
-      if (cdr->speed(WRITING_SPEED) != 0) {
-	message(-2, "Writing speed %d not supported by device.",
-		WRITING_SPEED);
-	exitCode = 1; goto fail;
-      }
-    }
+	if (options.writingSpeed >= 0) {
+	    if (cdr->speed(options.writingSpeed) != 0) {
+		log_message(-2, "Writing speed %d not supported by device.",
+			    options.writingSpeed);
+		exitCode = 1; goto fail;
+	    }
+	}
 
-    srcCdr->paranoiaMode(PARANOIA_MODE);
-    srcCdr->subChanReadMode(READ_SUBCHAN_MODE);
-    srcCdr->fastTocReading(FAST_TOC);
-    srcCdr->force(FORCE);
+	srcCdr->paranoiaMode(options.paranoiaMode);
+	srcCdr->subChanReadMode(options.readSubchanMode);
+	srcCdr->fastTocReading(options.fastToc);
+	srcCdr->force(options.force);
     
-    if (ON_THE_FLY)
-      message(1, "Starting on-the-fly CD copy ");
-    else
-      message(1, "Starting CD copy ");
-    if (cdr->simulate()) {
-      message(1, "simulation ");
+	if (options.onTheFly)
+	    log_message(1, "Starting on-the-fly CD copy ");
+	else
+	    log_message(1, "Starting CD copy ");
+	if (cdr->simulate()) {
+	    log_message(1, "simulation ");
+	}
+	log_message(1, "at speed %d...", cdr->speed());
+	if (cdr->multiSession() != 0) {
+	    log_message(1, "Using multi session mode.");
+	}
+
+	if (options.onTheFly) {
+	    if (srcCdr == cdr) {
+		log_message(-2, "Two different device are required "
+			    "for on-the-fly copying.");
+		log_message(-2, "Please use option '--source-device x,y,z'.");
+		exitCode = 1; goto fail;
+	    }
+
+	    if (copyCdOnTheFly(&options, srcCdr, cdr) == 0) {
+		log_message(1, "On-the-fly CD copying finished successfully.");
+	    } else {
+		log_message(-2, "On-the-fly CD copying failed.");
+		exitCode = 1; goto fail;
+	    }
+
+	} else {
+	    if (srcCdr != cdr)
+		srcCdr->remote(options.remoteMode, options.remoteFd);
+
+	    if (copyCd(&options, srcCdr, cdr) == 0) {
+		log_message(1, "CD copying finished successfully.");
+	    } else {
+		log_message(-2, "CD copying failed.");
+		exitCode = 1; goto fail;
+	    }
+	}
+	break;
+
+    case BLANK:
+	if (options.writingSpeed >= 0) {
+	    if (cdr->speed(options.writingSpeed) != 0) {
+		log_message(-2, "Blanking speed %d not supported by device.",
+			    options.writingSpeed);
+		exitCode = 1; goto fail;
+	    }
+	}
+
+	cdr->remote(options.remoteMode, options.remoteFd);
+	cdr->simulate(options.writeSimulate);
+
+	log_message(1, "Blanking disk...");
+	if (cdr->blankDisk(options.blankingMode) != 0) {
+	    log_message(-2, "Blanking failed.");
+	    exitCode = 1; goto fail;
+	}
+
+	if (options.eject)
+	    cdr->loadUnload(1);
+	break;
+
+    case UNLOCK:
+	log_message(1, "Trying to unlock drive...");
+
+	cdr->abortDao();
+
+	if (cdr->preventMediumRemoval(0) != 0) {
+	    exitCode = 1; goto fail;
+	}
+
+	if (options.eject)
+	    cdr->loadUnload(1);
+	break;
+
+    case UNKNOWN:
+	assert(0);
+	break;
     }
-    message(1, "at speed %d...", cdr->speed());
-    if (cdr->multiSession() != 0) {
-      message(1, "Using multi session mode.");
-    }
 
-    if (ON_THE_FLY) {
-      if (srcCdr == cdr) {
-	message(-2, "Two different device are required for on-the-fly copying.");
-	message(-2, "Please use option '--source-device x,y,z'.");
-	exitCode = 1; goto fail;
-      }
+ fail:
+    delete cdr;
+    if (delSrcDevice)
+	delete srcCdr;
+    delete cdrScsi;
+    if (delSrcDevice)
+	delete srcCdrScsi;
 
-      if (copyCdOnTheFly(srcCdr, cdr, SESSION, FIFO_BUFFERS, SWAP,
-			 EJECT, FORCE) == 0) {
-	message(1, "On-the-fly CD copying finished successfully.");
-      }
-      else {
-	message(-2, "On-the-fly CD copying failed.");
-	exitCode = 1; goto fail;
-      }
-    }
-    else {
-      if (srcCdr != cdr)
-	srcCdr->remote(REMOTE_MODE, REMOTE_FD);
-
-      if (copyCd(srcCdr, cdr, SESSION, DATA_FILENAME, FIFO_BUFFERS, SWAP,
-		 EJECT, FORCE, KEEPIMAGE) == 0) {
-	message(1, "CD copying finished successfully.");
-      }
-      else {
-	message(-2, "CD copying failed.");
-	exitCode = 1; goto fail;
-      }
-    }
-    break;
-
-  case BLANK:
-    if (WRITING_SPEED >= 0) {
-      if (cdr->speed(WRITING_SPEED) != 0) {
-	message(-2, "Blanking speed %d not supported by device.",
-		WRITING_SPEED);
-	exitCode = 1; goto fail;
-      }
-    }
-
-    cdr->remote(REMOTE_MODE, REMOTE_FD);
-    cdr->simulate(WRITE_SIMULATE);
-
-    message(1, "Blanking disk...");
-    if (cdr->blankDisk(BLANKING_MODE) != 0) {
-      message(-2, "Blanking failed.");
-      exitCode = 1; goto fail;
-    }
-
-    if (EJECT)
-      cdr->loadUnload(1);
-    break;
-
-  case UNLOCK:
-    message(1, "Trying to unlock drive...");
-
-    cdr->abortDao();
-
-    if (cdr->preventMediumRemoval(0) != 0) {
-      exitCode = 1; goto fail;
-    }
-
-    if (EJECT)
-      cdr->loadUnload(1);
-    break;
-
-  case UNKNOWN:
-    // should not happen
-    break;
-  }
-
-fail:
-  delete cdr;
-  if (delSrcDevice)
-    delete srcCdr;
-  delete cdrScsi;
-  if (delSrcDevice)
-    delete srcCdrScsi;
-
-  delete toc;
+    delete toc;
 
 #ifdef __CYGWIN__
-  if (isNT)	{
-		DWORD bytes;
-		if (fh)	{
-			if (!DeviceIoControl (fh, FSCTL_UNLOCK_VOLUME, NULL, 0, NULL, 0, &bytes, NULL))
-				message (-2, "Couldn't unlock device %s!", devstr);
-			else
-				message (2, "Device %s unlocked.", devstr);
-			CloseHandle (fh);
-		}
+    if (isNT) {
+	DWORD bytes;
+	if (fh)	{
+	    if (!DeviceIoControl (fh, FSCTL_UNLOCK_VOLUME, NULL, 0, NULL, 0, &bytes, NULL))
+		log_message(-2, "Couldn't unlock device %s!", devstr);
+	    else
+		log_message(2, "Device %s unlocked.", devstr);
+	    CloseHandle (fh);
 	}
+    }
 #endif
-  exit(exitCode);
+    exit(exitCode);
 }

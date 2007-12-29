@@ -27,7 +27,7 @@
 #include "PQSubChannel16.h"
 
 #include "Toc.h"
-#include "util.h"
+#include "log.h"
 
 CDD2600::CDD2600(ScsiIf *scsiIf, unsigned long options)
   : CdrDriver(scsiIf, options|OPT_DRV_NO_PREGAP_READ), CDD2600Base(this)
@@ -36,7 +36,7 @@ CDD2600::CDD2600(ScsiIf *scsiIf, unsigned long options)
   
   leadInLength_ = leadOutLength_ = 0;
   speed_ = 2;
-  simulate_ = 1;
+  simulate_ = true;
   encodingMode_ = 0;
 
   // reads big endian samples
@@ -89,7 +89,7 @@ int CDD2600::loadUnload(int unload) const
   }
   
   if (sendCmd(cmd, 10, NULL, 0, NULL, 0) != 0) {
-    message(-2, "Cannot load/unload medium.");
+    log_message(-2, "Cannot load/unload medium.");
     return 1;
   }
 
@@ -122,7 +122,7 @@ int CDD2600::modeSelectPlay(int immediate, int sotc, unsigned char volume)
   mp[11] = volume;
 
   if (setModePage(mp, NULL, NULL, 1) != 0) {
-    message(-2, "Cannot set play parameters.");
+    log_message(-2, "Cannot set play parameters.");
     return 1;
   }
 
@@ -142,12 +142,12 @@ int CDD2600::initDao(const Toc *toc)
   diskInfo();
 
   if (!diskInfo_.valid.empty || !diskInfo_.valid.append) {
-    message(-2, "Cannot determine status of inserted medium.");
+    log_message(-2, "Cannot determine status of inserted medium.");
     return 1;
   }
 
   if (!diskInfo_.append) {
-    message(-2, "Inserted medium is not appendable.");
+    log_message(-2, "Inserted medium is not appendable.");
     return 1;
   }
 
@@ -175,7 +175,7 @@ int CDD2600::startDao()
     return 1;
   }
 
-  message(2, "Writing lead-in and gap...");
+  log_message(2, "Writing lead-in and gap...");
 
   lba = diskInfo_.thisSessionLba - 150 - leadInLength_;
 
@@ -186,7 +186,7 @@ int CDD2600::startDao()
     return 1;
   }
 
-  message(5, "Lba after lead-in: %ld", lba);
+  log_message(5, "Lba after lead-in: %ld", lba);
 
   // write gap (2 seconds)
   if (writeZeros(toc_->leadInMode(), TrackData::SUBCHAN_NONE,
@@ -195,7 +195,7 @@ int CDD2600::startDao()
     return 1;
   }
 
-  message(2, "");
+  log_message(2, "");
 
   return 0;
 }
@@ -204,7 +204,7 @@ int CDD2600::finishDao()
 {
   long lba = diskInfo_.thisSessionLba + toc_->length().lba();
 
-  message(2, "Writing lead-out...");
+  log_message(2, "Writing lead-out...");
 
   // write lead-out
   if (writeZeros(toc_->leadOutMode(), TrackData::SUBCHAN_NONE, lba, lba + 150,
@@ -213,13 +213,13 @@ int CDD2600::finishDao()
     return 1;
   }
 
-  message(2, "\nFlushing cache...");
+  log_message(2, "\nFlushing cache...");
   
   if (flushCache() != 0) {
     return 1;
   }
 
-  message(2, "");
+  log_message(2, "");
 
   blockLength_ = MODE1_BLOCK_LEN;
   modeSelectBlockSize(blockLength_, 1);
@@ -264,7 +264,7 @@ int CDD2600::writeData(TrackData::Mode mode, TrackData::SubChannelMode sm,
 
     if (sendCmd(cmd, 10, (unsigned char *)(buf + (nwritten * blockLength_)),
 		writeLen * blockLength_, NULL, 0) != 0) {
-      message(-2, "Write data failed.");
+      log_message(-2, "Write data failed.");
       return 1;
     }
 
@@ -319,7 +319,7 @@ int CDD2600::readIsrc(int trackNr, char *buf)
   cmd[8] = dataLen;
 
   if (sendCmd(cmd, 10, NULL, 0, data, dataLen) != 0) {
-    message(-1, "Cannot read ISRC code.");
+    log_message(-1, "Cannot read ISRC code.");
     return 1;
   }
   else {
@@ -354,7 +354,7 @@ int CDD2600::readCatalog(Toc *toc, long startLba, long endLba)
   cmd[8] = dataLen;
 
   if (sendCmd(cmd, 10, NULL, 0, data, dataLen) != 0) {
-    message(-2, "Cannot read sub channel data.");
+    log_message(-2, "Cannot read sub channel data.");
     return 0;
   }
 
@@ -420,7 +420,7 @@ int CDD2600::readSubChannelData(int *trackNr, int *indexNr, long *relPos,
   cmd[8] = dataLen;
 
   if (sendCmd(cmd, 10, NULL, 0, data, dataLen) != 0) {
-    message(-2, "Cannot read sub Q channel data.");
+    log_message(-2, "Cannot read sub Q channel data.");
     return 1;
   }
 
@@ -460,7 +460,7 @@ void CDD2600::readBlock(unsigned long sector)
   cmd[8] = 2;
 
   if (sendCmd(cmd, 10, NULL, 0, data, dataLen) != 0) {
-    message(-2, "Cannot read block - ignored.");
+    log_message(-2, "Cannot read block - ignored.");
   }
 
   delete[] data;
@@ -481,7 +481,7 @@ int CDD2600::nextWritableAddress(long *lba, int showError)
 
   if (sendCmd(cmd, 10, NULL, 0, data, 6, showError) != 0) {
     if (showError)
-      message(-2, "Cannot retrieve next writable address.");
+      log_message(-2, "Cannot retrieve next writable address.");
     return 1;
   }
 
@@ -528,11 +528,11 @@ DiskInfo *CDD2600::diskInfo()
   cmd[8] = 4;
 
   if (sendCmd(cmd, 10, NULL, 0, data, 4, 0) == 0) {
-    message(5, "First track %u, last track %u", data[2], data[3]);
+    log_message(5, "First track %u, last track %u", data[2], data[3]);
     diskInfo_.lastTrackNr = data[3];
   }
   else {
-    message(5, "READ TOC (format 0) failed.");
+    log_message(5, "READ TOC (format 0) failed.");
   }
 
   if (diskInfo_.lastTrackNr > 0) {
@@ -543,7 +543,7 @@ DiskInfo *CDD2600::diskInfo()
     diskInfo_.diskTocType = 0xff; // undefined
 
     if (diskInfo_.lastTrackNr < 99 && nextWritableAddress(&nwa, 0) == 0) {
-      message(5, "NWA: %ld", nwa);
+      log_message(5, "NWA: %ld", nwa);
       diskInfo_.thisSessionLba = nwa;
       diskInfo_.append = 1;
     }
@@ -565,11 +565,11 @@ DiskInfo *CDD2600::diskInfo()
       diskInfo_.lastSessionLba = (data[8] << 24) | (data[9] << 16) |
                                  (data[10] << 8) | data[11];
 
-      message(5, "First session %u, last session %u, last session start %ld",
+      log_message(5, "First session %u, last session %u, last session start %ld",
 	      data[2], data[3], diskInfo_.lastSessionLba);
     }
     else {
-      message(5, "READ TOC (format 1) failed.");
+      log_message(5, "READ TOC (format 1) failed.");
     }
 
     if (diskInfo_.sessionCnt > 0) {
@@ -613,7 +613,7 @@ DiskInfo *CDD2600::diskInfo()
 	    diskInfo_.append = 1;
 	}
 	else {
-	  message(4, "Did not find BO pointer in session %d.",
+	  log_message(4, "Did not find BO pointer in session %d.",
 		  diskInfo_.sessionCnt);
 	  
 	}
@@ -622,7 +622,7 @@ DiskInfo *CDD2600::diskInfo()
 	delete[] toc;
       }
       else {
-	message(5, "getRawToc failed.");
+	log_message(5, "getRawToc failed.");
       }
     }
   }
@@ -658,13 +658,13 @@ CdRawToc *CDD2600::getRawToc(int sessionNr, int *len)
   cmd[9] |= 2 << 6; // get Q subcodes
 
   if (sendCmd(cmd, 10, NULL, 0, reqData, 4) != 0) {
-    message(-2, "Cannot read raw disk toc.");
+    log_message(-2, "Cannot read raw disk toc.");
     return NULL;
   }
 
   dataLen = ((reqData[0] << 8) | reqData[1]) + 2;
 
-  message(5, "Raw toc data len: %d", dataLen);
+  log_message(5, "Raw toc data len: %d", dataLen);
 
   data = new unsigned char[dataLen];
   
@@ -673,7 +673,7 @@ CdRawToc *CDD2600::getRawToc(int sessionNr, int *len)
   cmd[8] = dataLen;
 
   if (sendCmd(cmd, 10, NULL, 0, data, dataLen) != 0) {
-    message(-2, "Cannot read raw disk toc.");
+    log_message(-2, "Cannot read raw disk toc.");
     delete[] data;
     return NULL;
   }
@@ -685,7 +685,7 @@ CdRawToc *CDD2600::getRawToc(int sessionNr, int *len)
 
   for (i = 0, p = data + 4; i < entries; i++, p += 11 ) {
 #if 0
-    message(0, "%d %02x %02d %2x %02d:%02d:%02d %02x %02d:%02d:%02d",
+    log_message(0, "%d %02x %02d %2x %02d:%02d:%02d %02x %02d:%02d:%02d",
 	    p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7], p[8], p[9], p[10]);
 #endif
     rawToc[i].sessionNr = p[0];
@@ -773,7 +773,7 @@ long CDD2600::readTrackData(TrackData::Mode mode, TrackData::SubChannelMode,
       break;
 
     default:
-      message(-2, "Read error at LBA %ld, len %ld", lba, len);
+      log_message(-2, "Read error at LBA %ld, len %ld", lba, len);
       return -1;
       break;
     }
@@ -828,7 +828,7 @@ long CDD2600::readTrackData(TrackData::Mode mode, TrackData::SubChannelMode,
 	break;
       case TrackData::MODE0:
       case TrackData::AUDIO:
-	message(-3, "CDD2600::readTrackData: Illegal mode.");
+	log_message(-3, "CDD2600::readTrackData: Illegal mode.");
 	return 0;
 	break;
       }
@@ -866,7 +866,7 @@ int CDD2600::readSubChannels(TrackData::SubChannelMode, long lba, long len,
 		  (tries == 1) ? 1 : 0);
 
     if (ret != 0 && tries == 1) {
-      message(-2, "Reading of audio data failed at sector %ld.", lba);
+      log_message(-2, "Reading of audio data failed at sector %ld.", lba);
       return 1;
     }
     
@@ -884,7 +884,7 @@ int CDD2600::readAudioRange(ReadDiskInfo *rinfo, int fd, long start, long end,
   if (!onTheFly_) {
     int t;
 
-    message(1, "Analyzing...");
+    log_message(1, "Analyzing...");
 
     for (t = startTrack; t <= endTrack; t++) {
       long totalProgress;
@@ -895,12 +895,12 @@ int CDD2600::readAudioRange(ReadDiskInfo *rinfo, int fd, long start, long end,
       sendReadCdProgressMsg(RCD_ANALYZING, rinfo->tracks, t + 1, 0,
 			    totalProgress);
 
-      message(2, "Track %d...", t + 1);
+      log_message(2, "Track %d...", t + 1);
       info[t].isrcCode[0] = 0;
       readIsrc(t + 1, info[t].isrcCode);
 
       if (info[t].isrcCode[0] != 0)
-	message(2, "Found ISRC code.");
+	log_message(2, "Found ISRC code.");
 
       totalProgress = (t + 1) * 1000;
       totalProgress /= rinfo->tracks;
@@ -909,7 +909,7 @@ int CDD2600::readAudioRange(ReadDiskInfo *rinfo, int fd, long start, long end,
 			    totalProgress);
     }
 
-    message(1, "Reading...");
+    log_message(1, "Reading...");
   }
 
   return CdrDriver::readAudioRangeParanoia(rinfo, fd, start, end, startTrack,

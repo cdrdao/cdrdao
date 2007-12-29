@@ -66,6 +66,7 @@
 
 /* The following "print" functions send ACSII to stdout */
 extern void sg_print_command(const unsigned char * command);
+extern const char* sg_strcommand(unsigned char opcode);
 extern void sg_print_sense(const char * leadin, 
                            const unsigned char * sense_buffer);
 extern void sg_print_target_status(int target_status);

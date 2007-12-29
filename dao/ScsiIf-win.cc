@@ -28,7 +28,7 @@
 
 #include "winaspi.h"
 #include "ScsiIf.h"
-#include "util.h"
+#include "log.h"
 
 #include "decodeSense.cc"
 
@@ -118,7 +118,7 @@ int ScsiIf::init()
 
   if (!impl_->hinstlib)
   {
-     message (-2, "Can't load WNASPI32.DLL");
+     log_message(-2, "Can't load WNASPI32.DLL");
      return 1;
   }
   else {
@@ -327,7 +327,7 @@ int ScsiIf::inquiry()
   cmd[5] = 0;
 
   if (sendCmd (cmd, 6, NULL, 0, result, 0x2c, 1) != 0) {
-    message (-2, "Inquiry command failed on '%s': ", impl_->dev_);
+    log_message(-2, "Inquiry command failed on '%s': ", impl_->dev_);
     return 1;
   }
 

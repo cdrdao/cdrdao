@@ -33,7 +33,7 @@
 
 #include "Toc.h"
 #include "PQSubChannel16.h"
-#include "util.h"
+#include "log.h"
 #include "port.h"
 
 
@@ -47,7 +47,7 @@ YamahaCDR10x::YamahaCDR10x(ScsiIf *scsiIf, unsigned long options)
   encodingMode_ = 1; 
   
   speed_ = 0;
-  simulate_ = 1;
+  simulate_ = true;
 
   scsiTimeout_ = 0;
 
@@ -133,7 +133,7 @@ int YamahaCDR10x::loadUnload(int unload) const
   }
   
   if (sendCmd(cmd, 6, NULL, 0, NULL, 0) != 0) {
-    message(-2, "Cannot %s medium.", (unload ? "stop & unload" : "start"));
+    log_message(-2, "Cannot %s medium.", (unload ? "stop & unload" : "start"));
     return 1;
   }
 
@@ -149,7 +149,7 @@ int YamahaCDR10x::selectSpeed()
 
   if (getModePage6(0x31/*drive configuration mode page*/, mp, 4,
 		   NULL, NULL, 1) != 0) {
-    message(-2, "Cannot retrieve drive configuration mode page (0x31).");
+    log_message(-2, "Cannot retrieve drive configuration mode page (0x31).");
     return 1;
   }
 
@@ -161,13 +161,13 @@ int YamahaCDR10x::selectSpeed()
   } else if(speed_ == 1) {
 	;  		// read at 1x, write at 1x
   } else {
-	message(-2, "Invalid write speed argument %d. 0, 1, 2 or 4 expected.",
+	log_message(-2, "Invalid write speed argument %d. 0, 1, 2 or 4 expected.",
 		speed_);
 	return 1;
   }
 
   if (setModePage6(mp, NULL, NULL, 1) != 0) {
-    message(-2, "Cannot set drive configuration mode page for cd speed.");
+    log_message(-2, "Cannot set drive configuration mode page for cd speed.");
     return 1;
   }
 
@@ -183,7 +183,7 @@ int YamahaCDR10x::setWriteParameters()
 
   if (getModePage6(0x31/*drive configuration mode page*/, mp, 4,
 		   NULL, NULL, 1) != 0) {
-    message(-2, "Cannot retrieve drive configuration mode page (0x31).");
+    log_message(-2, "Cannot retrieve drive configuration mode page (0x31).");
     return 1;
   }
 
@@ -191,7 +191,7 @@ int YamahaCDR10x::setWriteParameters()
   mp[3] |= (simulate_ ? 1 : 0);
 
   if (setModePage6(mp, NULL, NULL, 1) != 0) {
-    message(-2, "Cannot set drive configuration mode page (0x31).");
+    log_message(-2, "Cannot set drive configuration mode page (0x31).");
     return 1;
   }
 
@@ -199,7 +199,7 @@ int YamahaCDR10x::setWriteParameters()
 
   if (getModePage6(0x32/*write format mode page*/, mp, 8,
 		   NULL, NULL, 1) != 0) {
-    message(-2, "Cannot retrieve write format mode page (0x32).");
+    log_message(-2, "Cannot retrieve write format mode page (0x32).");
     return 1;
   }
 
@@ -208,7 +208,7 @@ int YamahaCDR10x::setWriteParameters()
   mp[3] |= 0x04;	// disc at once (single session)
 
   if (setModePage6(mp, NULL, NULL, 1) != 0) {
-    message(-2, "Cannot set write format mode page (0x32).");
+    log_message(-2, "Cannot set write format mode page (0x32).");
     return 1;
   }
 
@@ -248,7 +248,7 @@ void YamahaCDR10x::cueSheetDataType(TrackData::Mode mode,
     break;
 
   case TrackData::MODE0:
-    message(-3, "Illegal mode in 'YamahaCDR10x::cueSheetDataType()'.");
+    log_message(-3, "Illegal mode in 'YamahaCDR10x::cueSheetDataType()'.");
     *dataType = 0;
     *dataForm = 0;
     break;
@@ -417,11 +417,11 @@ unsigned char *YamahaCDR10x::createCueSheet(long *cueSheetLen)
   cueSheet[n*8+6] = SubChannel::bcd(lostart.sec());
   cueSheet[n*8+7] = SubChannel::bcd(lostart.frac());
 
-  message(4, "\nCue Sheet:");
-  message(4, "CTL/  TNO  INDEX  DATA  DATA  MIN  SEC  FRAME");
-  message(4, "ADR   BCD  BCD    TYPE  Form  BCD  BCD  BCD <- Note");
+  log_message(4, "\nCue Sheet:");
+  log_message(4, "CTL/  TNO  INDEX  DATA  DATA  MIN  SEC  FRAME");
+  log_message(4, "ADR   BCD  BCD    TYPE  Form  BCD  BCD  BCD <- Note");
   for (n = 0; n < len; n++) {
-    message(4, "%02x    %02x    %02x     %02x    %02x   %02x   %02x   %02x",
+    log_message(4, "%02x    %02x    %02x     %02x    %02x   %02x   %02x   %02x",
 	   cueSheet[n*8],
 	   cueSheet[n*8+1], cueSheet[n*8+2], cueSheet[n*8+3], cueSheet[n*8+4],
 	   cueSheet[n*8+5], cueSheet[n*8+6], cueSheet[n*8+7]);
@@ -443,7 +443,7 @@ int YamahaCDR10x::sendCueSheet()
   }
 
   if(cueSheetLen > 32768) {  // Limit imposed by drive.
-    message(-2, "Cue sheet too long for this device: Limit is 32k bytes.");
+    log_message(-2, "Cue sheet too long for this device: Limit is 32k bytes.");
     delete[] cueSheet;
     return 1;
   }
@@ -456,7 +456,7 @@ int YamahaCDR10x::sendCueSheet()
   cmd[8] = cueSheetLen;
 
   if (sendCmd(cmd, 10, cueSheet, cueSheetLen, NULL, 0) != 0) {
-    message(-2, "Cannot send cue sheet.");
+    log_message(-2, "Cannot send cue sheet.");
     delete[] cueSheet;
     return 1;
   }
@@ -513,11 +513,11 @@ int YamahaCDR10x::startDao()
   // so we end up sending a bare e6 command with nine bytes of nulls
 
   if (sendCmd(cmd, 10, NULL, 0, NULL, 0) != 0) {
-	message(-2, "Could not send command 0xE6: WRITE TRACK(10)");
+	log_message(-2, "Could not send command 0xE6: WRITE TRACK(10)");
 	return 1;
   }
 
-  //message(2, "Writing lead-in and gap...");
+  //log_message(2, "Writing lead-in and gap...");
 
   long lba = -150;
 
@@ -535,7 +535,7 @@ int YamahaCDR10x::finishDao()
   const unsigned char *sense;
   int senseLen;
 
-  message(2, "Flushing cache...");
+  log_message(2, "Flushing cache...");
   
   if (flushCache() != 0) {
     return 1;
@@ -586,7 +586,7 @@ DiskInfo *YamahaCDR10x::diskInfo()
   cmd[0] = 0x25; // READ CD-ROM CAPACITY
  
   if (sendCmd(cmd, 10, NULL, 0, data, dataLen) != 0) {
-    message(-1, "Cannot read CD-ROM capacity.");
+    log_message(-1, "Cannot read CD-ROM capacity.");
     return &di;
   }
 
@@ -624,7 +624,7 @@ int YamahaCDR10x::readCatalog(Toc *toc, long startLba, long endLba)
   cmd[8] = 24;   // transfer length
 
   if (sendCmd(cmd, 10, NULL, 0, data, 24) != 0) {
-    message(-2, "Cannot get catalog number.");
+    log_message(-2, "Cannot get catalog number.");
     return 0;
   }
 
@@ -660,7 +660,7 @@ int YamahaCDR10x::readIsrc(int trackNr, char *buf)
   cmd[8] = 24;   // transfer length
 
   if (sendCmd(cmd, 10, NULL, 0, data, 24) != 0) {
-    message(-2, "Cannot get ISRC code.");
+    log_message(-2, "Cannot get ISRC code.");
     return 0;
   }
 
@@ -774,7 +774,7 @@ int YamahaCDR10x::driveInfo(DriveInfo *info, bool showErrorMsg)
 
   if (getModePage6(0x31, mp, 4, NULL, NULL, showErrorMsg) != 0) {
     if (showErrorMsg) {
-      message(-2, "Cannot retrieve drive configuration mode page (0x31).");
+      log_message(-2, "Cannot retrieve drive configuration mode page (0x31).");
     }
     return 1;
   }
@@ -828,7 +828,7 @@ int YamahaCDR10x::writeData(TrackData::Mode mode, TrackData::SubChannelMode sm,
     sum += buf[i];
   }
 
-  message(0, "W: %ld: %ld, %ld, %ld", lba, blockLength, len, sum);
+  log_message(0, "W: %ld: %ld, %ld, %ld", lba, blockLength, len, sum);
 #endif
 
   memset(cmd, 0, 10);
@@ -868,7 +868,7 @@ int YamahaCDR10x::writeData(TrackData::Mode mode, TrackData::SubChannelMode sm,
     } while(retry == 1);
 
     if(retval) {
-      message(-2, "Write data failed.");
+      log_message(-2, "Write data failed.");
       return 1;
     }
 
@@ -953,7 +953,7 @@ long YamahaCDR10x::readTrackData(TrackData::Mode mode,
       break;
 
     default:
-      message(-2, "Read error at LBA %ld, len %ld", lba, len);
+      log_message(-2, "Read error at LBA %ld, len %ld", lba, len);
       return -1;
       break;
     }
@@ -1008,7 +1008,7 @@ long YamahaCDR10x::readTrackData(TrackData::Mode mode,
 	break;
       case TrackData::MODE0:
       case TrackData::AUDIO:
-	message(-3, "YamahaCDR10x::readTrackData: Illegal mode.");
+	log_message(-3, "YamahaCDR10x::readTrackData: Illegal mode.");
 	return 0;
 	break;
       }
@@ -1045,7 +1045,7 @@ int YamahaCDR10x::readAudioRange(ReadDiskInfo *rinfo, int fd, long start,
   if (!onTheFly_) {
     int t;
 
-    message(1, "Analyzing...");
+    log_message(1, "Analyzing...");
     
     for (t = startTrack; t <= endTrack; t++) {
       long totalProgress;
@@ -1055,11 +1055,11 @@ int YamahaCDR10x::readAudioRange(ReadDiskInfo *rinfo, int fd, long start,
       sendReadCdProgressMsg(RCD_ANALYZING, rinfo->tracks, t + 1, 0,
 			    totalProgress);
 
-      message(1, "Track %d...", t + 1);
+      log_message(1, "Track %d...", t + 1);
       info[t].isrcCode[0] = 0;
       readIsrc(t + 1, info[t].isrcCode);
       if (info[t].isrcCode[0] != 0)
-	message(2, "Found ISRC code.");
+	log_message(2, "Found ISRC code.");
 
       totalProgress = (t + 1) * 1000;
       totalProgress /= rinfo->tracks;
@@ -1067,7 +1067,7 @@ int YamahaCDR10x::readAudioRange(ReadDiskInfo *rinfo, int fd, long start,
 			    totalProgress);
     }
 
-    message(1, "Reading...");
+    log_message(1, "Reading...");
   }
 
   return CdrDriver::readAudioRangeParanoia(rinfo, fd, start, end, startTrack,

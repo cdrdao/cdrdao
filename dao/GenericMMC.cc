@@ -27,7 +27,7 @@
 
 #include "port.h"
 #include "Toc.h"
-#include "util.h"
+#include "log.h"
 #include "PQSubChannel16.h"
 #include "PWSubChannel96.h"
 #include "CdTextEncoder.h"
@@ -61,7 +61,7 @@ GenericMMC::GenericMMC(ScsiIf *scsiIf, unsigned long options)
   
   speed_ = 0;
   rspeed_ = 0;
-  simulate_ = 1;
+  simulate_ = true;
   encodingMode_ = 1;
 
   scsiTimeout_ = 0;
@@ -221,7 +221,7 @@ int GenericMMC::loadUnload(int unload) const
   }
   
   if (sendCmd(cmd, 6, NULL, 0, NULL, 0) != 0) {
-    message(-2, "Cannot load/unload medium.");
+    log_message(-2, "Cannot load/unload medium.");
     return 1;
   }
 
@@ -302,7 +302,7 @@ int GenericMMC::blankDisk(BlankingMode mode)
   sendBlankCdProgressMsg(0);
 
   if (sendCmd(cmd, 12, NULL, 0, NULL, 0, 1) != 0) {
-    message(-2, "Cannot erase CD-RW.");
+    log_message(-2, "Cannot erase CD-RW.");
     return 1;
   }
 
@@ -315,7 +315,7 @@ int GenericMMC::blankDisk(BlankingMode mode)
     ret = checkDriveReady();
 
     if (ret == 1) {
-      message(-2, "Test Unit Ready command failed.");
+      log_message(-2, "Test Unit Ready command failed.");
     }
 
     progress += 10;
@@ -331,7 +331,7 @@ int GenericMMC::blankDisk(BlankingMode mode)
 
   time(&endTime);
 
-  message(2, "Blanking time: %ld seconds", endTime - startTime);
+  log_message(2, "Blanking time: %ld seconds", endTime - startTime);
 
   return ret;
 }
@@ -375,7 +375,7 @@ int GenericMMC::selectSpeed()
     cmd[11] = 0x80; // enable Yamaha's force speed
 
   if (sendCmd(cmd, 12, NULL, 0, NULL, 0) != 0) {
-    message(-2, "Cannot set cd speed.");
+    log_message(-2, "Cannot set cd speed.");
     return 1;
   }
 
@@ -399,7 +399,7 @@ int GenericMMC::getSessionInfo()
   cmd[8] = dataLen;
 
   if (sendCmd(cmd, 10, NULL, 0, data, dataLen) != 0) {
-    message(-2, "Cannot retrieve disk information.");
+    log_message(-2, "Cannot retrieve disk information.");
     return 1;
   }
 
@@ -423,9 +423,9 @@ int GenericMMC::getSessionInfo()
   }
 
 
-  message(4, "Lead-in start: %s length: %ld", leadInStart_.str(),
+  log_message(4, "Lead-in start: %s length: %ld", leadInStart_.str(),
 	  leadInLen_);
-  message(4, "Lead-out length: %ld", leadOutLen_);
+  log_message(4, "Lead-out length: %ld", leadOutLen_);
 
   return 0;
 }
@@ -443,7 +443,7 @@ bool GenericMMC::readBufferCapacity(long *capacity, long *available)
   cmd[8] = 12;
 
   if (sendCmd(cmd, 10, NULL, 0, data, 12) != 0) {
-    message(-2, "Read buffer capacity failed.");
+    log_message(-2, "Read buffer capacity failed.");
     return false;
   }
 
@@ -463,7 +463,7 @@ int GenericMMC::performPowerCalibration()
   cmd[0] = 0x54; // SEND OPC INFORMATION
   cmd[1] = 1;
 
-  message(2, "Executing power calibration...");
+  log_message(2, "Executing power calibration...");
 
   if ((ret = sendCmd(cmd, 10, NULL, 0, NULL, 0)) != 0) {
     if (ret == 2) {
@@ -474,21 +474,21 @@ int GenericMMC::performPowerCalibration()
 
       if(senseLen >= 14 && (sense[2] & 0x0f) == 0x5 && sense[7] >= 6 &&
 	   sense[12] == 0x20 && sense[13] == 0x0) {
-	message(2, "Power calibration not supported.");
+	log_message(2, "Power calibration not supported.");
 	return 0;
       }
       else {
-	message(-2, "Power calibration failed.");
+	log_message(-2, "Power calibration failed.");
       }
     }
     else {
-      message(-2, "Power calibration failed.");
+      log_message(-2, "Power calibration failed.");
     }
 
     return 1;
   }
   
-  message(2, "Power calibration successful.");
+  log_message(2, "Power calibration successful.");
 
   return 0;
 }
@@ -504,7 +504,7 @@ int GenericMMC::setWriteParameters(unsigned long variant)
 
   if (getModePage(5/*write parameters mode page*/, mp, 0x38,
 		  mpHeader, blockDesc, 1) != 0) {
-    message(-2, "Cannot retrieve write parameters mode page.");
+    log_message(-2, "Cannot retrieve write parameters mode page.");
     return 1;
   }
 
@@ -522,11 +522,11 @@ int GenericMMC::setWriteParameters(unsigned long variant)
       // This drive has BURN-Proof function.
       // Enable it unless explicitly disabled.
       if (bufferUnderRunProtection()) {
-	message(2, "Turning BURN-Proof on");
+	log_message(2, "Turning BURN-Proof on");
 	mp[2] |= 0x40;
       }
       else {
-	message(2, "Turning BURN-Proof off");
+	log_message(2, "Turning BURN-Proof off");
 	mp[2] &= ~0x40;
       }
     }
@@ -536,13 +536,13 @@ int GenericMMC::setWriteParameters(unsigned long variant)
 
   mp[3] &= 0x3f; // Multi-session: No B0 pointer, next session not allowed
 
-  if (multiSession_ != 0)
+  if (multiSession_)
     mp[3] |= 0x03 << 6; // open next session
   else if (!diskInfo_.empty)
     mp[3] |= 0x01 << 6; // use B0=FF:FF:FF when closing last session of a
                         // multi session CD-R
 
-  message(4, "Multi session mode: %d", mp[3] >> 6);
+  log_message(4, "Multi session mode: %d", mp[3] >> 6);
 
   mp[4] &= 0xf0; // Data Block Type: raw data, block size: 2352 (I think not
                  // used for session at once writing)
@@ -555,7 +555,7 @@ int GenericMMC::setWriteParameters(unsigned long variant)
 		  */
   }
 
-  message(4, "Data block type: %u",  mp[4] & 0x0f);
+  log_message(4, "Data block type: %u",  mp[4] & 0x0f);
 
   mp[8] = sessionFormat();
 
@@ -570,10 +570,10 @@ int GenericMMC::setWriteParameters(unsigned long variant)
     }
   }
 
-  message(4, "Toc type: 0x%x", mp[8]);
+  log_message(4, "Toc type: 0x%x", mp[8]);
 
   if (setModePage(mp, mpHeader, NULL, 0) != 0) {
-    message(-2, "Cannot set write parameters mode page.");
+    log_message(-2, "Cannot set write parameters mode page.");
     return 1;
   }
 
@@ -591,7 +591,7 @@ int GenericMMC::setSimulationMode(int showMessage)
   if (getModePage(5/*write parameters mode page*/, mp, 0x38,
 		  mpHeader, NULL, showMessage) != 0) {
     if (showMessage)
-      message(-2, "Cannot retrieve write parameters mode page.");
+      log_message(-2, "Cannot retrieve write parameters mode page.");
     return 1;
   }
 
@@ -604,7 +604,7 @@ int GenericMMC::setSimulationMode(int showMessage)
 
   if (setModePage(mp, mpHeader, NULL, showMessage) != 0) {
     if (showMessage)
-      message(-2, "Cannot set write parameters mode page.");
+      log_message(-2, "Cannot set write parameters mode page.");
     return 1;
   }
 
@@ -630,25 +630,25 @@ int GenericMMC::getNWA(long *nwa)
   cmd[9] = 0x00; // Control Byte
 
   if (sendCmd(cmd, 10, NULL, 0, info, infoblocklen) != 0) {
-    message(-2, "Cannot get Track Information Block.");
+    log_message(-2, "Cannot get Track Information Block.");
     return 1;
   }
 
 #if 0
-  message(3,"Track Information Block");
-  for (int i=0;i<infoblocklen;i++) message(3,"byte %02x : %02x",i,info[i]);
+  log_message(3,"Track Information Block");
+  for (int i=0;i<infoblocklen;i++) log_message(3,"byte %02x : %02x",i,info[i]);
 #endif
 
   if ((info[6] & 0x40) && (info[7] & 0x01) && !(info[6] & 0xb0))
   {
-      message(4,"Track is Blank, Next Writable Address is valid");
+      log_message(4,"Track is Blank, Next Writable Address is valid");
       lba |= info[12] << 24; // MSB of LBA
       lba |= info[13] << 16;
       lba |= info[14] << 8;
       lba |= info[15];       // LSB of LBA
   }
 
-  message(4, "NWA: %ld", lba);
+  log_message(4, "NWA: %ld", lba);
 
   if (nwa != NULL) 
     *nwa = lba;
@@ -679,7 +679,7 @@ int GenericMMC::getStartOfSession(long *lba)
   mp[2] |= 0x02; // write type: Session-at-once
 
   if (setModePage(mp, mpHeader, NULL, 1) != 0) {
-    message(-2, "Cannot set write parameters mode page.");
+    log_message(-2, "Cannot set write parameters mode page.");
     return 1;
   }
 
@@ -998,11 +998,11 @@ unsigned char *GenericMMC::createCueSheet(unsigned long variant,
   cueSheet[n*8+6] = lostart.sec();
   cueSheet[n*8+7] = lostart.frac();
 
-  message(3, "\nCue Sheet (variant %lx):", variant);
-  message(3, "CTL/  TNO  INDEX  DATA  SCMS  MIN  SEC  FRAME");
-  message(3, "ADR               FORM");
+  log_message(3, "\nCue Sheet (variant %lx):", variant);
+  log_message(3, "CTL/  TNO  INDEX  DATA  SCMS  MIN  SEC  FRAME");
+  log_message(3, "ADR               FORM");
   for (n = 0; n < len; n++) {
-    message(3, "%02x    %02x    %02x     %02x    %02x   %02d   %02d   %02d",
+    log_message(3, "%02x    %02x    %02x     %02x    %02x   %02d   %02d   %02d",
 	   cueSheet[n*8],
 	   cueSheet[n*8+1], cueSheet[n*8+2], cueSheet[n*8+3], cueSheet[n*8+4],
 	   cueSheet[n*8+5], cueSheet[n*8+6], cueSheet[n*8+7]);
@@ -1043,7 +1043,7 @@ int GenericMMC::sendCueSheet()
 	delete[] cueSheet;
       }
       else {
-	message(3, "Drive accepted cue sheet variant %lx.", variant);
+	log_message(3, "Drive accepted cue sheet variant %lx.", variant);
 	delete[] cueSheet;
 	cueSheetSent = 1;
 	break;
@@ -1055,7 +1055,7 @@ int GenericMMC::sendCueSheet()
     return 0;
   }
   else {
-    message(-2,
+    log_message(-2,
 	    "Drive does not accept any cue sheet variant - please report.");
     return 1;
   }
@@ -1075,7 +1075,7 @@ int GenericMMC::initDao(const Toc *toc)
     delete cdTextEncoder_;
     cdTextEncoder_ = new CdTextEncoder(toc_);
     if (cdTextEncoder_->encode() != 0) {
-      message(-2, "CD-TEXT encoding failed.");
+      log_message(-2, "CD-TEXT encoding failed.");
       return 1;
     }
 
@@ -1090,12 +1090,12 @@ int GenericMMC::initDao(const Toc *toc)
   diskInfo();
 
   if (!diskInfo_.valid.empty || !diskInfo_.valid.append) {
-    message(-2, "Cannot determine status of inserted medium.");
+    log_message(-2, "Cannot determine status of inserted medium.");
     return 1;
   }
 
   if (!diskInfo_.append) {
-    message(-2, "Inserted medium is not appendable.");
+    log_message(-2, "Inserted medium is not appendable.");
     return 1;
   }
 
@@ -1129,7 +1129,7 @@ int GenericMMC::startDao()
     }
 
     if (setWriteParameters(variant) == 0) {
-      message(3, "Drive accepted write parameter mode page variant %lx.",
+      log_message(3, "Drive accepted write parameter mode page variant %lx.",
 	      variant);
       writeParametersSet = 1;
       break;
@@ -1137,19 +1137,19 @@ int GenericMMC::startDao()
   }
 
   if (!writeParametersSet) {
-    message(-2, "Cannot setup write parameters for session-at-once mode.");
-    message(-2, "Please try to use the 'generic-mmc-raw' driver.");
+    log_message(-2, "Cannot setup write parameters for session-at-once mode.");
+    log_message(-2, "Please try to use the 'generic-mmc-raw' driver.");
     return 1;
   }
 
   if (!simulate_) {
     if (performPowerCalibration() != 0) {
       if (!force()) {
-	message(-2, "Use option --force to ignore this error.");
+	log_message(-2, "Use option --force to ignore this error.");
 	return 1;
       }
       else {
-	message(-2, "Ignored because of option --force.");
+	log_message(-2, "Ignored because of option --force.");
       }
     }
   }
@@ -1163,7 +1163,7 @@ int GenericMMC::startDao()
   if (sendCueSheet() != 0)
     return 1;
 
-  //message(2, "Writing lead-in and gap...");
+  //log_message(2, "Writing lead-in and gap...");
 
   if (writeCdTextLeadIn() != 0) {
     return 1;
@@ -1202,9 +1202,9 @@ int GenericMMC::finishDao()
   }
 
   if (ret != 0)
-    message(-1, "TEST UNIT READY failed after recording.");
+    log_message(-1, "TEST UNIT READY failed after recording.");
   
-  message(2, "Flushing cache...");
+  log_message(2, "Flushing cache...");
   
   if (flushCache() != 0) {
     return 1;
@@ -1264,7 +1264,7 @@ int GenericMMC::writeData(TrackData::Mode mode, TrackData::SubChannelMode sm,
     sum += buf[i];
   }
 
-  message(0, "W: %ld: %ld, %ld, %ld", lba, blockLength, len, sum);
+  log_message(0, "W: %ld: %ld, %ld, %ld", lba, blockLength, len, sum);
 #endif
 
   memset(cmd, 0, 10);
@@ -1287,14 +1287,14 @@ int GenericMMC::writeData(TrackData::Mode mode, TrackData::SubChannelMode sm,
       waitForBuffer = 0;
 
       if (readBufferCapacity(&bufferCapacity, &available) == 0) {
-	//message(0, "Buffer Capacity: %ld", bufferCapacity);
+	//log_message(0, "Buffer Capacity: %ld", bufferCapacity);
 	if (bufferCapacity < writeLen * blockLength) {
 	  long t = 1000 * writeLen;
 	  t /= speedFrac;
 	  if (t <= 0)
 	    t = 1;
 
-	  message(0, "Waiting for %ld msec at lba %ld", t, lba);
+	  log_message(0, "Waiting for %ld msec at lba %ld", t, lba);
 
 	  mSleep(t);
 	  waitForBuffer = 1;
@@ -1330,7 +1330,7 @@ int GenericMMC::writeData(TrackData::Mode mode, TrackData::SubChannelMode sm,
     } while (retry);
 
     if (ret != 0) {
-      message(-2, "Write data failed.");
+      log_message(-2, "Write data failed.");
       return 1;
     }
 
@@ -1369,9 +1369,9 @@ int GenericMMC::writeCdTextLeadIn()
   assert(cdTextSubChannels != NULL);
   assert(cdTextSubChannelCount > 0);
 
-  message(2, "Writing CD-TEXT lead-in...");
+  log_message(2, "Writing CD-TEXT lead-in...");
 
-  message(4, "Start LBA: %ld, length: %ld", lba, len);
+  log_message(4, "Start LBA: %ld, length: %ld", lba, len);
 
   memset(cmd, 0, 10);
   cmd[0] = 0x2a; // WRITE1
@@ -1398,7 +1398,7 @@ int GenericMMC::writeCdTextLeadIn()
 	scp = 0;
     }
 
-    message(5, "Writing %ld CD-TEXT sub-channels at LBA %ld.", n, lba);
+    log_message(5, "Writing %ld CD-TEXT sub-channels at LBA %ld.", n, lba);
 
     do {
       retry = 0;
@@ -1426,7 +1426,7 @@ int GenericMMC::writeCdTextLeadIn()
     } while (retry);
 
     if (ret != 0) {
-      message(-2, "Writing of CD-TEXT data failed.");
+      log_message(-2, "Writing of CD-TEXT data failed.");
       return 1;
     }
       
@@ -1593,7 +1593,7 @@ int GenericMMC::readCatalog(Toc *toc, long startLba, long endLba)
 	if (toc->catalog(catalog) == 0)
 	  return 1;
 	else
-	  message(-1, "Found illegal MCN data: %s", catalog);
+	  log_message(-1, "Found illegal MCN data: %s", catalog);
       }
     }
   }
@@ -1607,7 +1607,7 @@ int GenericMMC::readCatalog(Toc *toc, long startLba, long endLba)
     cmd[8] = 24;   // transfer length
     
     if (sendCmd(cmd, 10, NULL, 0, data, 24) != 0) {
-      message(-2, "Cannot get catalog number.");
+      log_message(-2, "Cannot get catalog number.");
       return 0;
     }
     
@@ -1644,7 +1644,7 @@ int GenericMMC::readIsrc(int trackNr, char *buf)
   cmd[8] = 24;   // transfer length
 
   if (sendCmd(cmd, 10, NULL, 0, data, 24) != 0) {
-    message(-2, "Cannot get ISRC code.");
+    log_message(-2, "Cannot get ISRC code.");
     return 0;
   }
 
@@ -1819,13 +1819,13 @@ int GenericMMC::readSubChannels(TrackData::SubChannelMode sm,
 	// xxam!
 	int j, k;
 	
-	message(0, "");
+	log_message(0, "");
 	for (j = 0; j < 4; j++) {
 	  for (k = 0; k < 24; k++) {
 	    unsigned char data = buf[j * 24 + k];
-	    message(0, "%02x ", data&0x3f);
+	    log_message(0, "%02x ", data&0x3f);
 	  }
-	  message(0, "");
+	  log_message(0, "");
 	}
       }
 #endif
@@ -1890,13 +1890,13 @@ int GenericMMC::getFeature(unsigned int feature, unsigned char *buf,
 
   if (sendCmd(cmd, 10, NULL, 0, header, 8, showMsg) != 0) {
     if (showMsg)
-      message(-2, "Cannot get feature 0x%x.", feature);
+      log_message(-2, "Cannot get feature 0x%x.", feature);
     return 2;
   }
 
   len = (header[0] << 24) | (header[1] << 16) | (header[2] << 8) | header[3];
 
-  message(4, "getFeature: data len: %lu", len);
+  log_message(4, "getFeature: data len: %lu", len);
 
   if (len < 8)
     return 1; // feature not defined
@@ -1916,7 +1916,7 @@ int GenericMMC::getFeature(unsigned int feature, unsigned char *buf,
 
   if (sendCmd(cmd, 10, NULL, 0, data, len + 8, showMsg) != 0) {
     if (showMsg)
-      message(-2, "Cannot get data for feature 0x%x.", feature);
+      log_message(-2, "Cannot get data for feature 0x%x.", feature);
     
     delete[] data;
     return 2;
@@ -1924,7 +1924,7 @@ int GenericMMC::getFeature(unsigned int feature, unsigned char *buf,
   
   len = (header[0] << 24) | (header[1] << 16) | (header[2] << 8) | header[3];
   
-  message(4, "getFeature: data len: %lu", len);
+  log_message(4, "getFeature: data len: %lu", len);
 
   if (len < 8) {
     delete[] data;
@@ -1954,7 +1954,7 @@ const DriveInfo *GenericMMC::driveInfo(bool showErrorMsg)
 
   if (getModePage(0x2a, mp, 32, NULL, NULL, showErrorMsg) != 0) {
     if (showErrorMsg) {
-      message(-2, "Cannot retrieve drive capabilities mode page.");
+      log_message(-2, "Cannot retrieve drive capabilities mode page.");
     }
     delete driveInfo_;
     driveInfo_ = NULL;
@@ -1973,7 +1973,7 @@ const DriveInfo *GenericMMC::driveInfo(bool showErrorMsg)
 #if 0
   unsigned char cdMasteringFeature[8];
   if (getFeature(0x2e, cdMasteringFeature, 8, 1) == 0) {
-    message(0, "Feature: %x %x %x %x %x %x %x %x", cdMasteringFeature[0],
+    log_message(0, "Feature: %x %x %x %x %x %x %x %x", cdMasteringFeature[0],
 	    cdMasteringFeature[1], cdMasteringFeature[2],
 	    cdMasteringFeature[3], cdMasteringFeature[4],
 	    cdMasteringFeature[5], cdMasteringFeature[6],
@@ -2004,7 +2004,7 @@ TrackData::Mode GenericMMC::getTrackMode(int, long trackStartLba)
   cmd[9] = 0xf8;
 
   if (sendCmd(cmd, 12, NULL, 0, data, AUDIO_BLOCK_LEN) != 0) {
-    message(-2, "Cannot read sector of track.");
+    log_message(-2, "Cannot read sector of track.");
     return TrackData::MODE0;
   }
 
@@ -2017,7 +2017,7 @@ TrackData::Mode GenericMMC::getTrackMode(int, long trackStartLba)
 
   if (mode == TrackData::MODE0) {
     // illegal
-    message(-2, "Found illegal mode in sector %ld.", trackStartLba);
+    log_message(-2, "Found illegal mode in sector %ld.", trackStartLba);
   }
 
   return mode;
@@ -2043,13 +2043,13 @@ CdRawToc *GenericMMC::getRawToc(int sessionNr, int *len)
   cmd[8] = 4;
 
   if (sendCmd(cmd, 10, NULL, 0, reqData, 4) != 0) {
-    message(-2, "Cannot read disk toc.");
+    log_message(-2, "Cannot read disk toc.");
     return NULL;
   }
 
   dataLen = ((reqData[0] << 8) | reqData[1]) + 2;
   
-  message(4, "Raw toc data len: %d", dataLen);
+  log_message(4, "Raw toc data len: %d", dataLen);
 
   data = new unsigned char[dataLen];
   
@@ -2058,7 +2058,7 @@ CdRawToc *GenericMMC::getRawToc(int sessionNr, int *len)
   cmd[8] = dataLen;
 
   if (sendCmd(cmd, 10, NULL, 0, data, dataLen) != 0) {
-    message(-2, "Cannot read disk toc.");
+    log_message(-2, "Cannot read disk toc.");
     delete[] data;
     return NULL;
   }
@@ -2069,7 +2069,7 @@ CdRawToc *GenericMMC::getRawToc(int sessionNr, int *len)
 
   for (i = 0, p = data + 4; i < entries; i++, p += 11 ) {
 #if 0
-    message(5, "%d %02x %02d %2x %02d:%02d:%02d %02d %02d:%02d:%02d",
+    log_message(5, "%d %02x %02d %2x %02d:%02d:%02d %02d %02d:%02d:%02d",
 	    p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7], p[8], p[9], p[10]);
 #endif
     rawToc[i].sessionNr = p[0];
@@ -2182,7 +2182,7 @@ long GenericMMC::readTrackData(TrackData::Mode mode,
     break;
 
   default:
-    message(-2, "Read error at LBA %ld, len %ld", lba, len);
+    log_message(-2, "Read error at LBA %ld, len %ld", lba, len);
     return -2;
     break;
   }
@@ -2218,7 +2218,7 @@ long GenericMMC::readTrackData(TrackData::Mode mode,
 	break;
       case TrackData::MODE0:
       case TrackData::AUDIO:
-	message(-3, "GenericMMC::readTrackData: Illegal mode.");
+	log_message(-3, "GenericMMC::readTrackData: Illegal mode.");
 	return 0;
 	break;
       }
@@ -2240,13 +2240,13 @@ long GenericMMC::readTrackData(TrackData::Mode mode,
     // xxam!
     int j, k;
 
-    message(0, "");
+    log_message(0, "");
     for (j = 0; j < 4; j++) {
       for (k = 0; k < 24; k++) {
 	unsigned char data = sector[AUDIO_BLOCK_LEN + j * 24 + k];
-	message(0, "%02x ", data&0x3f);
+	log_message(0, "%02x ", data&0x3f);
       }
-      message(0, "");
+      log_message(0, "");
     }
 #endif
 
@@ -2271,13 +2271,13 @@ int GenericMMC::readAudioRange(ReadDiskInfo *rinfo, int fd, long start,
       // converted to hex numbers by the drive. Read them with the
       // appropriate command in this case
 
-      message(1, "Analyzing...");
+      log_message(1, "Analyzing...");
 
 
       for (t = startTrack; t <= endTrack; t++) {
 	long totalProgress;
 
-	message(1, "Track %d...", t + 1);
+	log_message(1, "Track %d...", t + 1);
 
 	totalProgress = t * 1000;
 	totalProgress /= rinfo->tracks;
@@ -2294,7 +2294,7 @@ int GenericMMC::readAudioRange(ReadDiskInfo *rinfo, int fd, long start,
 	    unsigned char ctl;
 
 	    if (pregap > 0)
-	      message(2, "Found pre-gap: %s", Msf(pregap).str());
+	      log_message(2, "Found pre-gap: %s", Msf(pregap).str());
 
 	    slba = info[t].start;
 	    if (info[t].mode == info[t + 1].mode)
@@ -2326,7 +2326,7 @@ int GenericMMC::readAudioRange(ReadDiskInfo *rinfo, int fd, long start,
 	info[t].isrcCode[0] = 0;
 	readIsrc(t + 1, info[t].isrcCode);
 	if (info[t].isrcCode[0] != 0)
-	  message(2, "Found ISRC code.");
+	  log_message(2, "Found ISRC code.");
 
 	totalProgress = (t + 1) * 1000;
 	totalProgress /= rinfo->tracks;
@@ -2334,7 +2334,7 @@ int GenericMMC::readAudioRange(ReadDiskInfo *rinfo, int fd, long start,
 			      totalProgress);
       }
 
-      message(1, "Reading...");
+      log_message(1, "Reading...");
     }
   }
 
@@ -2368,7 +2368,7 @@ int GenericMMC::getTrackIndex(long lba, int *trackNr, int *indexNr,
   cmd[8] = 1;
 
   if (sendCmd(cmd, 10, NULL, 0, NULL, 0) != 0) {
-    message(-2, "Cannot play audio block.");
+    log_message(-2, "Cannot play audio block.");
     return 1;
   }
 
@@ -2379,7 +2379,7 @@ int GenericMMC::getTrackIndex(long lba, int *trackNr, int *indexNr,
 
   while (waitLoops > 0) {
     if (sendCmd(cmd, 12, NULL, 0, data, 8, 0) == 0) {
-      //message(0, "%d, %x", waitLoops, data[1]);
+      //log_message(0, "%d, %x", waitLoops, data[1]);
       if ((data[1] >> 5) == 1) // still playing?
 	waitLoops--;
       else
@@ -2409,7 +2409,7 @@ int GenericMMC::getTrackIndex(long lba, int *trackNr, int *indexNr,
   cmd[8] = dataLen;
 
   if (sendCmd(cmd, 10, NULL, 0, data, dataLen) != 0) {
-    message(-2, "Cannot read sub Q channel data.");
+    log_message(-2, "Cannot read sub Q channel data.");
     return 1;
   }
 
@@ -2419,7 +2419,7 @@ int GenericMMC::getTrackIndex(long lba, int *trackNr, int *indexNr,
     *ctl = data[5] & 0x0f;
   }
 
-  //message(0, "%d %d", *trackNr, *indexNr);
+  //log_message(0, "%d %d", *trackNr, *indexNr);
 
   return 0;
 }
@@ -2447,19 +2447,16 @@ int GenericMMC::readCdTest(long lba, long len, int subChanMode) const
   int pqSubChanBcdOk = 0;
   int pqSubChanHexOk = 0;
 
-  //message(0, "readCdTest: %ld %ld %d", lba, len, subChanMode);
+  memset(cmd, 0, sizeof(cmd));
+
+  //log_message(0, "readCdTest: %ld %ld %d", lba, len, subChanMode);
 
   if (len <= 0)
     return 0;
 
   cmd[0] = 0xbe;  // READ CD
-  cmd[1] = 0;
-  cmd[6] = 0;
-  cmd[7] = 0;
   cmd[8] = 1; // transfer length: 1
   cmd[9] = 0xf8;
-  cmd[10] = 0;
-  cmd[11] = 0;
 
   blockLen = AUDIO_BLOCK_LEN;
 
@@ -2545,7 +2542,7 @@ int GenericMMC::readCdTest(long lba, long len, int subChanMode) const
 	if (buf[7] < 100 && buf[8] < 60 && buf[9] < 75) {
 	  long pqlba = Msf(buf[7], buf[8], buf[9]).lba() - 150;
 
-	  //message(0, "readCdTest: pqlba: %ld", pqlba);
+	  //log_message(0, "readCdTest: pqlba: %ld", pqlba);
 	  long diff = pqlba - lba;
 	  if (diff < 0)
 	    diff = -diff;
@@ -2627,25 +2624,25 @@ unsigned long GenericMMC::getReadCapabilities(const CdToc *toc,
       if (!dataPQChecked) {
 	dataPQChecked = 1;
 
-	message(3, "Checking for PQ sub-channel reading support (data track)...");
+	log_message(3, "Checking for PQ sub-channel reading support (data track)...");
 	switch (readCdTest(toc[t].start, tlen, 1)) {
 	case 0:
-	  message(3, "PQ sub-channel reading (data track) not supported.");
+	  log_message(3, "PQ sub-channel reading (data track) not supported.");
 	  break;
 
 	case 1:
-	  message(2, "PQ sub-channel reading (data track) is supported, data format is BCD.");
+	  log_message(2, "PQ sub-channel reading (data track) is supported, data format is BCD.");
 	  caps |= CDR_READ_CAP_DATA_PQ_BCD;
 	  break;
 	  
 	case 2:
-	  message(2, "PQ sub-channel reading (data track) is supported, data format is HEX.");
+	  log_message(2, "PQ sub-channel reading (data track) is supported, data format is HEX.");
 	  caps |= CDR_READ_CAP_DATA_PQ_HEX;
 	  break;
 	  
 	case 3:
-	  message(2, "PQ sub-channel reading (data track) seems to be supported but cannot determine data format.");
-	  message(2, "Please use driver option '--driver generic-mmc:0x1' or '--driver generic-mmc:0x3' to set the data format explicitly.");
+	  log_message(2, "PQ sub-channel reading (data track) seems to be supported but cannot determine data format.");
+	  log_message(2, "Please use driver option '--driver generic-mmc:0x1' or '--driver generic-mmc:0x3' to set the data format explicitly.");
 	  break;
 	}
       }
@@ -2653,26 +2650,26 @@ unsigned long GenericMMC::getReadCapabilities(const CdToc *toc,
       if (!dataRawPWChecked) {
 	dataRawPWChecked = 1;
 
-	message(3, "Checking for raw P-W sub-channel reading support (data track)...");
+	log_message(3, "Checking for raw P-W sub-channel reading support (data track)...");
 	if (readCdTest(toc[t].start, tlen, 2)) {
-	  message(2, "Raw P-W sub-channel reading (data track) is supported.");
+	  log_message(2, "Raw P-W sub-channel reading (data track) is supported.");
 	  caps |= CDR_READ_CAP_DATA_PW_RAW;
 	}
 	else {
-	  message(3, "Raw P-W sub-channel reading (data track) is not supported.");
+	  log_message(3, "Raw P-W sub-channel reading (data track) is not supported.");
 	}
       }
 
       if (!dataCookedRWChecked) {
 	dataCookedRWChecked = 1;
       
-	message(3, "Checking for cooked R-W sub-channel reading support (data track)...");
+	log_message(3, "Checking for cooked R-W sub-channel reading support (data track)...");
 	if (readCdTest(toc[t].start, tlen, 3)) {
-	  message(2, "Cooked R-W sub-channel reading (data track) is supported.");
+	  log_message(2, "Cooked R-W sub-channel reading (data track) is supported.");
 	  caps |= CDR_READ_CAP_DATA_RW_COOKED;
 	}
 	else {
-	  message(3, "Cooked R-W sub-channel reading (data track) is not supported.");
+	  log_message(3, "Cooked R-W sub-channel reading (data track) is not supported.");
 	}
       }
     }
@@ -2681,25 +2678,25 @@ unsigned long GenericMMC::getReadCapabilities(const CdToc *toc,
       if (!audioPQChecked) {
 	audioPQChecked = 1;
 
-	message(3, "Checking for PQ sub-channel reading support (audio track)...");
+	log_message(3, "Checking for PQ sub-channel reading support (audio track)...");
 	switch (readCdTest(toc[t].start, tlen, 1)) {
 	case 0:
-	  message(3, "PQ sub-channel reading (audio track) is not supported.");
+	  log_message(3, "PQ sub-channel reading (audio track) is not supported.");
 	  break;
 
 	case 1:
-	  message(2, "PQ sub-channel reading (audio track) is supported, data format is BCD.");
+	  log_message(2, "PQ sub-channel reading (audio track) is supported, data format is BCD.");
 	  caps |= CDR_READ_CAP_AUDIO_PQ_BCD;
 	  break;
 
 	case 2:
-	  message(2, "PQ sub-channel reading (audio track) is supported, data format is HEX.");
+	  log_message(2, "PQ sub-channel reading (audio track) is supported, data format is HEX.");
 	  caps |= CDR_READ_CAP_AUDIO_PQ_HEX;
 	  break;
 
 	case 3:
-	  message(2, "PQ sub-channel reading (audio track) seems to be supported but cannot determine data format.");
-	  message(2, "Please use driver option '--driver generic-mmc:0x1' or '--driver generic-mmc:0x3' to set the data format explicitly.");
+	  log_message(2, "PQ sub-channel reading (audio track) seems to be supported but cannot determine data format.");
+	  log_message(2, "Please use driver option '--driver generic-mmc:0x1' or '--driver generic-mmc:0x3' to set the data format explicitly.");
 	  break;
 	}
       }
@@ -2707,26 +2704,26 @@ unsigned long GenericMMC::getReadCapabilities(const CdToc *toc,
       if (!audioRawPWChecked) {
 	audioRawPWChecked = 1;
 
-	message(3, "Checking for raw P-W sub-channel reading support (audio track)...");
+	log_message(3, "Checking for raw P-W sub-channel reading support (audio track)...");
 	if (readCdTest(toc[t].start, tlen, 2)) {
-	  message(2, "Raw P-W sub-channel reading (audio track) is supported.");
+	  log_message(2, "Raw P-W sub-channel reading (audio track) is supported.");
 	  caps |= CDR_READ_CAP_AUDIO_PW_RAW;
 	}
 	else {
-	  message(3, "Raw P-W sub-channel reading (audio track) is not supported.");
+	  log_message(3, "Raw P-W sub-channel reading (audio track) is not supported.");
 	}
       }
 
       if (!audioCookedRWChecked) {
 	audioCookedRWChecked = 1;
 
-	message(3, "Checking for cooked R-W sub-channel reading support (audio track)...");
+	log_message(3, "Checking for cooked R-W sub-channel reading support (audio track)...");
 	if (readCdTest(toc[t].start, tlen, 3)) {
-	  message(2, "Cooked R-W sub-channel reading (audio track) is supported.");
+	  log_message(2, "Cooked R-W sub-channel reading (audio track) is supported.");
 	  caps |= CDR_READ_CAP_AUDIO_RW_COOKED;
 	}
 	else {
-	  message(3, "Raw R-W sub-channel reading (audio track) is not supported.");
+	  log_message(3, "Raw R-W sub-channel reading (audio track) is not supported.");
 	}
       }
     }
@@ -2766,34 +2763,34 @@ int GenericMMC::RicohSetWriteOptions(const DriveInfo *di)
     return 0;
 
   if (getModePage(0x30, mp, 14, NULL, NULL, 1) != 0) {
-    message(-2, "Cannot retrieve Ricoh mode page 30.");
+    log_message(-2, "Cannot retrieve Ricoh mode page 30.");
     return 1;
   }
 
   if (di->ricohJustLink) {
     if (bufferUnderRunProtection()) {
-      message(2, "Enabling JustLink.");
+      log_message(2, "Enabling JustLink.");
       mp[3] |= 0x1;
     } 
     else {
-      message(2, "Disabling JustLink.");
+      log_message(2, "Disabling JustLink.");
       mp[3] &= ~0x1;
     }
   }
 
   if (di->ricohJustSpeed) {
     if (writeSpeedControl()) {
-      message(2, "Enabling JustSpeed.");
+      log_message(2, "Enabling JustSpeed.");
       mp[3] &= ~(1 << 5); // clear bit to enable write speed control
     }
     else {
-      message(2, "Disabling JustSpeed.");
+      log_message(2, "Disabling JustSpeed.");
       mp[3] |= (1 << 5);  // set bit to disable write speed control
     }
   }
 
   if (setModePage(mp, NULL, NULL, 1) != 0) {
-    message(-2, "Cannot set Ricoh mode page 30.");
+    log_message(-2, "Cannot set Ricoh mode page 30.");
     return 1;
   }
   

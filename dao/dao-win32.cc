@@ -28,7 +28,7 @@
 #include <sys/types.h>
 
 #include "dao.h"
-#include "util.h"
+#include "log.h"
 
 #define BUFSIZE 150
 
@@ -101,7 +101,7 @@ int writeDiskAtOnce (const Toc *toc, CdrDriver *cdr, int nofBuffers, int swap,
   reader.init(track);
 
   if (reader.openData() != 0) {
-    message(-2, "Opening of track data failed.");
+    log_message(-2, "Opening of track data failed.");
     err = 1;
     goto fail;
   }
@@ -115,10 +115,10 @@ int writeDiskAtOnce (const Toc *toc, CdrDriver *cdr, int nofBuffers, int swap,
       goto fail;
     }
      
-    message(0, "Writing tracks...");
+    log_message(0, "Writing tracks...");
   }
 
-  message(0, "Writing track %02d (mode %s/%s)...", trackNr,
+  log_message(0, "Writing track %02d (mode %s/%s)...", trackNr,
 	  TrackData::mode2String(track->type()),
 	  TrackData::mode2String(dataMode));
 
@@ -129,7 +129,7 @@ int writeDiskAtOnce (const Toc *toc, CdrDriver *cdr, int nofBuffers, int swap,
       rn = reader.readData(encodingMode, encodeLba, (char*)rbuf1, n);
     
       if (rn < 0) {
-	message(-2, "Reading of track data failed.");
+	log_message(-2, "Reading of track data failed.");
 	err = 1;
 	goto fail;
       }
@@ -139,7 +139,7 @@ int writeDiskAtOnce (const Toc *toc, CdrDriver *cdr, int nofBuffers, int swap,
 
 	reader.init(track);
 	if (reader.openData() != 0) {
-	  message(-2, "Opening of track data failed.");
+	  log_message(-2, "Opening of track data failed.");
 	  err = 1;
 	  goto fail;
 	}
@@ -147,7 +147,7 @@ int writeDiskAtOnce (const Toc *toc, CdrDriver *cdr, int nofBuffers, int swap,
 	if (encodingMode != 0)
 	  dataMode = track->type();
 
-	message(0, "Writing track %02d (mode %s/%s)...", trackNr,
+	log_message(0, "Writing track %02d (mode %s/%s)...", trackNr,
 		TrackData::mode2String(track->type()),
 		TrackData::mode2String(dataMode));
 
@@ -163,7 +163,7 @@ int writeDiskAtOnce (const Toc *toc, CdrDriver *cdr, int nofBuffers, int swap,
     {
       if (cdr->writeData(dataMode, lba, (char *) rbuf1, rn) != 0) 
       {
-	message (-2, "Write of audio data failed.");
+	log_message(-2, "Write of audio data failed.");
 	cdr->flushCache();
 	err = 1;
 	goto fail;
@@ -174,14 +174,14 @@ int writeDiskAtOnce (const Toc *toc, CdrDriver *cdr, int nofBuffers, int swap,
 	
 	if (cntMb > lastMb)
 	{
-	  message (0, "Wrote %ld of %ld MB.\r", cnt >> 20, total >> 20);
+	  log_message(0, "Wrote %ld of %ld MB.\r", cnt >> 20, total >> 20);
 	  lastMb = cntMb;
 	}
       }
     }
     else 
     {
-      message (0, "Read %ld of %ld MB.\r", cnt >> 20, total >> 20);
+      log_message(0, "Read %ld of %ld MB.\r", cnt >> 20, total >> 20);
     }
     
     length   -= rn;
@@ -202,9 +202,9 @@ int writeDiskAtOnce (const Toc *toc, CdrDriver *cdr, int nofBuffers, int swap,
   }
 
   if (testMode)
-    message (0, "Read %ld blocks.", blkCount);
+    log_message(0, "Read %ld blocks.", blkCount);
   else
-     message (0, "Wrote %ld blocks.", blkCount);
+     log_message(0, "Wrote %ld blocks.", blkCount);
 
   if (!testMode && daoStarted) 
   {

@@ -24,7 +24,7 @@
 #include <string.h>
 #include <assert.h>
 
-#include "util.h"
+#include "log.h"
 #include "Toc.h"
 #include "CdTextItem.h"
 #include "PWSubChannel96.h"
@@ -167,10 +167,10 @@ int CdTextEncoder::encode()
   calcCrcs();
 
   if (packs_ != NULL) {
-    message(4, "\nCD-TEXT packs:");
+    log_message(4, "\nCD-TEXT packs:");
     CdTextPackEntry *prun;
     for (prun = packs_; prun != NULL; prun = prun->next_) {
-      message(4, "%02x %02x %02x %02x: %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x  CRC: %02x %02x", prun->pack.packType,
+      log_message(4, "%02x %02x %02x %02x: %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x  CRC: %02x %02x", prun->pack.packType,
 	      prun->pack.trackNumber, prun->pack.sequenceNumber,
 	      prun->pack.blockCharacter, prun->pack.data[0],
 	      prun->pack.data[1], prun->pack.data[2], prun->pack.data[3],
@@ -459,18 +459,18 @@ void CdTextEncoder::buildSubChannels()
     int k;
 
     for (j = 0; j < 6; j++) {
-      message(0, "%ld:%d: ", i, j);
+      log_message(0, "%ld:%d: ", i, j);
       for (k = 0; k < 16; k++) {
-	message(0, "%02x ", subChannels_[i]->data()[j * 16 + k]);
+	log_message(0, "%02x ", subChannels_[i]->data()[j * 16 + k]);
       }
-      message(0, "");
+      log_message(0, "");
     }
 
     unsigned char buf1[72];
 
     subChannels_[i]->getRawRWdata(buf1);
 
-    message(0, "Match: %d", memcmp(buf, buf1, 72));
+    log_message(0, "Match: %d", memcmp(buf, buf1, 72));
 #endif
   }
 

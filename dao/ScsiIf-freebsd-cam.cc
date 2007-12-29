@@ -31,7 +31,7 @@
 #include <cam/scsi/scsi_message.h>
 
 #include "ScsiIf.h"
-#include "util.h"
+#include "log.h"
 
 #define DEF_RETRY_COUNT 1
 
@@ -76,13 +76,13 @@ ScsiIf::~ScsiIf()
 int ScsiIf::init()
 {
 	if ((impl_->dev = cam_open_device(impl_->devname, O_RDWR)) == NULL) {
-		message(-2, "%s", cam_errbuf);
+		log_message(-2, "%s", cam_errbuf);
 		return 1;
 	}
   
 	impl_->ccb = cam_getccb(impl_->dev);
 	if (impl_->ccb == NULL) {
-		message(-2, "init: error allocating ccb");
+		log_message(-2, "init: error allocating ccb");
 		return 1;
 	}
 
@@ -142,7 +142,7 @@ int ScsiIf::sendCmd(const unsigned char *cmd, int cmdLen,
 	if ((retval = cam_send_ccb(impl_->dev, impl_->ccb)) < 0
 	||  (impl_->ccb->ccb_h.status & CAM_STATUS_MASK) != CAM_REQ_CMP) {
 		if (retval < 0) {
-			message(-2, "sendCmd: error sending command");
+			log_message(-2, "sendCmd: error sending command");
 			return 1;
 		}
 
@@ -194,7 +194,7 @@ int ScsiIf::inquiry()
 	if (cam_send_ccb(impl_->dev, impl_->ccb) < 0) {
 		if ((impl_->ccb->ccb_h.status & CAM_STATUS_MASK) !=
 		    CAM_SCSI_STATUS_ERROR) {
-			message(-2, "%s", cam_errbuf);
+			log_message(-2, "%s", cam_errbuf);
 			return 1;
 		}
 

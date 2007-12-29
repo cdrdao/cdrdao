@@ -27,7 +27,7 @@
 #include "PQSubChannel16.h"
 
 #include "Toc.h"
-#include "util.h"
+#include "log.h"
 
 PlextorReaderScan::PlextorReaderScan(ScsiIf *scsiIf, unsigned long options)
   : PlextorReader(scsiIf, options)
@@ -205,12 +205,12 @@ int PlextorReaderScan::readAudioRange(ReadDiskInfo *info, int fd, long start,
 	((options_ & OPT_PLEX_USE_PQ) && !(options_ & OPT_PLEX_PQ_BCD))) {
       int t;
 
-      message(1, "Analyzing...");
+      log_message(1, "Analyzing...");
       
       for (t = startTrack; t <= endTrack; t++) {
 	long totalProgress;
 
-	message(1, "Track %d...", t + 1);
+	log_message(1, "Track %d...", t + 1);
 
 	totalProgress = t * 1000;
 	totalProgress /= info->tracks;
@@ -220,7 +220,7 @@ int PlextorReaderScan::readAudioRange(ReadDiskInfo *info, int fd, long start,
 	trackInfo[t].isrcCode[0] = 0;
 	readIsrc(t + 1, trackInfo[t].isrcCode);
 	if (trackInfo[t].isrcCode[0] != 0)
-	  message(2, "Found ISRC code.");
+	  log_message(2, "Found ISRC code.");
 
 	totalProgress = (t + 1) * 1000;
 	totalProgress /= info->tracks;
@@ -228,7 +228,7 @@ int PlextorReaderScan::readAudioRange(ReadDiskInfo *info, int fd, long start,
 			      totalProgress);
       }
 
-      message(1, "Reading...");
+      log_message(1, "Reading...");
     }
   }
 

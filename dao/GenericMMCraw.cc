@@ -28,7 +28,7 @@
 #include "CdTextEncoder.h"
 
 #include "Toc.h"
-#include "util.h"
+#include "log.h"
 #include "port.h"
 
 GenericMMCraw::GenericMMCraw(ScsiIf *scsiIf, unsigned long options) 
@@ -68,11 +68,12 @@ GenericMMCraw::~GenericMMCraw()
   cdTextSubChannelAct_ = 0;
 }
 
-int GenericMMCraw::multiSession(int m)
+int GenericMMCraw::multiSession(bool m)
 {
-  if (m != 0) {
-    return 1; // multi session mode is currently not support for raw writing
-  }
+    if (m) {
+	// multi session mode is currently not support for raw writing
+	return 1;
+    }
 
   return 0;
 }
@@ -136,7 +137,7 @@ int GenericMMCraw::setWriteParameters(int dataBlockType)
 
   if (getModePage(5/*write parameters mode page*/, mp, 0x38,
 		  NULL, NULL, 1) != 0) {
-    message(-2, "Cannot retrieve write parameters mode page.");
+    log_message(-2, "Cannot retrieve write parameters mode page.");
     return 1;
   }
 
@@ -154,11 +155,11 @@ int GenericMMCraw::setWriteParameters(int dataBlockType)
       // This drive has BURN-Proof function.
       // Enable it unless explicitly disabled.
       if (bufferUnderRunProtection()) {
-	message(2, "Turning BURN-Proof on");
+	log_message(2, "Turning BURN-Proof on");
 	mp[2] |= 0x40;
       }
       else {
-	message(2, "Turning BURN-Proof off");
+	log_message(2, "Turning BURN-Proof off");
 	mp[2] &= ~0x40;
       }
     }
@@ -178,7 +179,7 @@ int GenericMMCraw::setWriteParameters(int dataBlockType)
   mp[8] = 0; // session format: CD-DA or CD-ROM
 
   if (setModePage(mp, NULL, NULL, 0) != 0) {
-    //message(-2, "Cannot set write parameters mode page.");
+    //log_message(-2, "Cannot set write parameters mode page.");
     return 1;
   }
 
@@ -223,24 +224,24 @@ int GenericMMCraw::getMultiSessionInfo(int sessionNr, int multi,
     cmd[8] = 4; // data length
     
     if (sendCmd(cmd, 10, NULL, 0, data, 4, 0) != 0) {
-      message(-2, "Cannot read ATIP data.");
+      log_message(-2, "Cannot read ATIP data.");
       return 1;
     }
     
     dataLen = (data[0] << 8) | data[1];
     dataLen += 2;
 
-    message(4, "ATIP data len: %ld", dataLen);
+    log_message(4, "ATIP data len: %ld", dataLen);
 
     if (sessionNr == 1) {
       if (dataLen < 19) {
-	message(-2, "Cannot read ATIP data.");
+	log_message(-2, "Cannot read ATIP data.");
 	return 1;
       }
     }
     else {
       if (dataLen < 15) {
-	message(-2, "Cannot read ATIP data.");
+	log_message(-2, "Cannot read ATIP data.");
 	return 1;
       }
     }      
@@ -252,7 +253,7 @@ int GenericMMCraw::getMultiSessionInfo(int sessionNr, int multi,
     cmd[8] = dataLen;
     
     if (sendCmd(cmd, 10, NULL, 0, buf, dataLen, 0) != 0) {
-      message(-2, "Cannot read ATIP data.");
+      log_message(-2, "Cannot read ATIP data.");
       delete[] buf;
       return 1;
     }
@@ -266,7 +267,7 @@ int GenericMMCraw::getMultiSessionInfo(int sessionNr, int multi,
 	info->atipLeadinStart = Msf(buf[8], buf[9], buf[10]);
       }
       else {
-	message(-2, "Invalid start time of lead-in in ATIP.");
+	log_message(-2, "Invalid start time of lead-in in ATIP.");
 	err = 1;
       }
 
@@ -279,7 +280,7 @@ int GenericMMCraw::getMultiSessionInfo(int sessionNr, int multi,
 	  info->atipA1[2] = buf[18];
 	}
 	else {
-	  message(-2, "ATIP data does not contain point A1 data.");
+	  log_message(-2, "ATIP data does not contain point A1 data.");
 	  err = 1;
 	}
       }
@@ -289,17 +290,17 @@ int GenericMMCraw::getMultiSessionInfo(int sessionNr, int multi,
     buf = NULL;
   }
 
-  message(4, "SI: session nr: %d", info->sessionNr);
-  message(4, "SI: lead-in start: %ld", info->leadInStart);
-  message(4, "SI: lead-in len: %ld", info->leadInLen);
-  message(4, "SI: lead-out len: %ld", info->leadOutLen);
-  message(4, "SI: last lead-out start: %d %d %d", info->lastLeadoutStart.min(),
+  log_message(4, "SI: session nr: %d", info->sessionNr);
+  log_message(4, "SI: lead-in start: %ld", info->leadInStart);
+  log_message(4, "SI: lead-in len: %ld", info->leadInLen);
+  log_message(4, "SI: lead-out len: %ld", info->leadOutLen);
+  log_message(4, "SI: last lead-out start: %d %d %d", info->lastLeadoutStart.min(),
 	  info->lastLeadoutStart.sec(), info->lastLeadoutStart.frac());
-  message(4, "SI: cdrw: %d", info->cdrw);
-  message(4, "SI: atip lead-in start: %d %d %d", info->atipLeadinStart.min(),
+  log_message(4, "SI: cdrw: %d", info->cdrw);
+  log_message(4, "SI: atip lead-in start: %d %d %d", info->atipLeadinStart.min(),
 	  info->atipLeadinStart.sec(), info->atipLeadinStart.frac());
-  message(4, "SI: optimum recording power: %u", info->optimumRecordingPower);
-  message(4, "SI: atip A1: %u %u %u", info->atipA1[0], info->atipA1[1],
+  log_message(4, "SI: optimum recording power: %u", info->optimumRecordingPower);
+  log_message(4, "SI: atip A1: %u %u %u", info->atipA1[0], info->atipA1[1],
 	  info->atipA1[2]);
 
   return err;
@@ -329,7 +330,7 @@ int GenericMMCraw::getSubChannelModeFromToc()
     }
   }
 
-  message(5, "Sub-channel mode requested by toc: %d", mode);
+  log_message(5, "Sub-channel mode requested by toc: %d", mode);
 
   return mode;
 }
@@ -351,14 +352,14 @@ int GenericMMCraw::setSubChannelMode()
       delete cdTextEncoder_;
       cdTextEncoder_ = NULL;
 
-      message(force() ? -1 : -2,
+      log_message(force() ? -1 : -2,
 	      "Cannot write CD-TEXT data because the 96 byte raw P-W sub-channel data mode is not supported.");
 
       if (force()) {
-	message(-1, "Ignored because of --force option.");
+	log_message(-1, "Ignored because of --force option.");
       }
       else {
-	message(-2, "Use option --force to ignore this error.");
+	log_message(-2, "Use option --force to ignore this error.");
 	return 1;
       }
     }
@@ -381,7 +382,7 @@ int GenericMMCraw::setSubChannelMode()
       }
 
       if (subChannel_ == NULL) {
-	message(-2, "Cannot setup sub-channel writing mode for sub-channel data defined in the toc-file.");
+	log_message(-2, "Cannot setup sub-channel writing mode for sub-channel data defined in the toc-file.");
 	return 1;
       }
     }
@@ -402,7 +403,7 @@ int GenericMMCraw::setSubChannelMode()
       subChannelMode_ = 2;
     }
     else {
-      message(-2, "Cannot setup disk-at-once writing for this drive.");
+      log_message(-2, "Cannot setup disk-at-once writing for this drive.");
       return 1;
     }
   }
@@ -416,16 +417,16 @@ int GenericMMCraw::setSubChannelMode()
 
   switch (subChannelMode_) {
   case 1:
-    message(2, "Using 16 byte P-Q sub-channel data mode.");
+    log_message(2, "Using 16 byte P-Q sub-channel data mode.");
     break;
   case 2:
-    message(2, "Using 96 byte packed P-W sub-channel data mode.");
+    log_message(2, "Using 96 byte packed P-W sub-channel data mode.");
     break;
   case 3:
     if (cdTextEncoder_ != NULL)
-      message(2, "Using 96 byte raw P-W sub-channel data mode for CD-TEXT.");
+      log_message(2, "Using 96 byte raw P-W sub-channel data mode for CD-TEXT.");
     else
-      message(2, "Using 96 byte raw P-W sub-channel data mode.");
+      log_message(2, "Using 96 byte raw P-W sub-channel data mode.");
     break;
   }
 
@@ -446,7 +447,7 @@ int GenericMMCraw::initDao(const Toc *toc)
   delete cdTextEncoder_;
   cdTextEncoder_ = new CdTextEncoder(toc);
   if (cdTextEncoder_->encode() != 0) {
-    message(-2, "CD-TEXT encoding failed.");
+    log_message(-2, "CD-TEXT encoding failed.");
     return 1;
   }
 
@@ -461,7 +462,7 @@ int GenericMMCraw::initDao(const Toc *toc)
   blockLength_ = AUDIO_BLOCK_LEN + subChannel_->dataLength();
   blocksPerWrite_ = scsiIf_->maxDataLen() / blockLength_;
   assert(blocksPerWrite_ > 0);
-  message(4, "Block length: %ld", blockLength_);
+  log_message(4, "Block length: %ld", blockLength_);
 
   long cueSheetLen;
   unsigned char *cueSheet = createCueSheet(0, &cueSheetLen);
@@ -514,11 +515,11 @@ int GenericMMCraw::initDao(const Toc *toc)
   if (!simulate_) {
     if (performPowerCalibration() != 0) {
       if (!force()) {
-	message(-2, "Use option --force to ignore this error.");
+	log_message(-2, "Use option --force to ignore this error.");
 	return 1;
       }
       else {
-	message(-2, "Ignored because of option --force.");
+	log_message(-2, "Ignored because of option --force.");
       }
     }
   }
@@ -528,7 +529,7 @@ int GenericMMCraw::initDao(const Toc *toc)
 
 int GenericMMCraw::startDao()
 {
-  message(2, "Writing lead-in and gap...");
+  log_message(2, "Writing lead-in and gap...");
 
   long lba = leadInStart_.lba() - 450150;
   
@@ -557,14 +558,14 @@ int GenericMMCraw::finishDao()
 {
   int ret;
 
-  message(2, "Writing lead-out...");
+  log_message(2, "Writing lead-out...");
 
   long lba = CdrDriver::toc_->length().lba();
 
   writeZeros(CdrDriver::toc_->leadOutMode(), TrackData::SUBCHAN_NONE,
 	     lba, lba + 150, leadOutLen_);
 
-  message(2, "\nFlushing cache...");
+  log_message(2, "\nFlushing cache...");
   
   if (flushCache() != 0) {
     return 1;
@@ -574,7 +575,7 @@ int GenericMMCraw::finishDao()
     mSleep(2000);
 
   if (ret != 0)
-    message(-1, "TEST UNIT READY failed after recording.");
+    log_message(-1, "TEST UNIT READY failed after recording.");
 
   delete cdTextEncoder_, cdTextEncoder_ = NULL;
   delete[] zeroBuffer_, zeroBuffer_ = NULL;
@@ -601,7 +602,7 @@ long GenericMMCraw::nextWritableAddress()
   cmd[8] = 28;
 
   if (sendCmd(cmd, 10, NULL, 0, data, 28) != 0) {
-    message(-2, "Cannt get track information.");
+    log_message(-2, "Cannt get track information.");
     return 0;
   }
 
@@ -631,7 +632,7 @@ int GenericMMCraw::writeData(TrackData::Mode mode,
   long slen = subChannel_->dataLength();
 
   /*
-  message(0, "lba: %ld, len: %ld, bpc: %d, bl: %d ", lba, len, blocksPerCmd,
+  log_message(0, "lba: %ld, len: %ld, bpc: %d, bl: %d ", lba, len, blocksPerCmd,
 	 blockLength_);
    */
 
@@ -667,7 +668,7 @@ int GenericMMCraw::writeData(TrackData::Mode mode,
 
 	unsigned char *actBuf = encodeBuffer_ + i * blockLength_ + AUDIO_BLOCK_LEN;
 
-	//message(0, "Adding CD-TEXT channel %ld for LBA %ld", cdTextSubChannelAct_, lba + i);
+	//log_message(0, "Adding CD-TEXT channel %ld for LBA %ld", cdTextSubChannelAct_, lba + i);
 	for (j = 0; j < dataLen; j++) {
 	  *actBuf |= (*data & 0x3f);
 	  actBuf++;
@@ -707,7 +708,7 @@ int GenericMMCraw::writeData(TrackData::Mode mode,
     int n;
     const char *p;
     for (i = 0; i < writeLen; i++) {
-      message(0, "%ld: ", lba + i);
+      log_message(0, "%ld: ", lba + i);
       SubChannel *chan = subChannel_->makeSubChannel(encodeBuffer_ + i * blockLength_ + AUDIO_BLOCK_LEN);
       chan->print();
       delete chan;
@@ -723,7 +724,7 @@ int GenericMMCraw::writeData(TrackData::Mode mode,
 	sum2 += *(char *)(encodeBuffer_ + i * blockLength_ + n);
       }
 
-      //message(0, "%ld - %ld", sum1, sum2);
+      //log_message(0, "%ld - %ld", sum1, sum2);
       assert(sum1 == sum2);
     }
 #endif
@@ -731,18 +732,18 @@ int GenericMMCraw::writeData(TrackData::Mode mode,
 #if 1
     if (sendCmd(cmd, 10, encodeBuffer_, writeLen * blockLength_,
 		NULL, 0) != 0) {
-      message(-2, "Write data failed.");
+      log_message(-2, "Write data failed.");
       return 1;
     }
 #endif
-    //message(0, ". ");
+    //log_message(0, ". ");
 
     lba += writeLen;
     len -= writeLen;
     buf += writeLen * iblen;
   }
 
-  //message(0, "");
+  //log_message(0, "");
 
   return 0;
 }

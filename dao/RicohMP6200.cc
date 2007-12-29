@@ -29,14 +29,14 @@
 #include "RicohMP6200.h"
 #include "SubChannel.h"
 #include "Toc.h"
-#include "util.h"
+#include "log.h"
 
 RicohMP6200::RicohMP6200(ScsiIf *scsiIf, unsigned long options)
   : GenericMMC(scsiIf, options), CDD2600Base(this)
 {
   driverName_ = "Ricoh MP6200 - Version 0.1(alpha)";
   
-  simulate_ = 1;
+  simulate_ = true;
   encodingMode_ = 0;
 }
 
@@ -61,7 +61,7 @@ int RicohMP6200::setWriteParameters()
 
   if (getModePage(5/*write parameters mode page*/, mp, 0x38, 
 		  NULL, NULL, 1) != 0) {
-    message(-2, "Cannot retrieve write parameters mode page.");
+    log_message(-2, "Cannot retrieve write parameters mode page.");
     return 1;
   }
 
@@ -91,7 +91,7 @@ int RicohMP6200::setWriteParameters()
   }
   
   if (setModePage(mp, NULL, NULL, 1) != 0) {
-    message(-2, "Cannot set write parameters mode page.");
+    log_message(-2, "Cannot set write parameters mode page.");
     return 1;
   }
 
@@ -134,7 +134,7 @@ int RicohMP6200::startDao()
     return 1;
   }
 
-  message(2, "Writing lead-in and gap...");
+  log_message(2, "Writing lead-in and gap...");
 
   // write lead-in
   if (writeZeros(toc_->leadInMode(), TrackData::SUBCHAN_NONE, lba, 0,
@@ -150,7 +150,7 @@ int RicohMP6200::startDao()
     return 1;
   }
 
-  message(2, "");
+  log_message(2, "");
 
   return 0;
 }
@@ -159,7 +159,7 @@ int RicohMP6200::finishDao()
 {
   long lba = toc_->length().lba();
 
-  message(2, "Writing lead-out...");
+  log_message(2, "Writing lead-out...");
 
   // write lead-out
   if (writeZeros(toc_->leadOutMode(), TrackData::SUBCHAN_NONE, lba, lba + 150,
@@ -168,13 +168,13 @@ int RicohMP6200::finishDao()
     return 1;
   }
 
-  message(2, "\nFlushing cache...");
+  log_message(2, "\nFlushing cache...");
   
   if (flushCache() != 0) {
     return 1;
   }
 
-  message(2, "");
+  log_message(2, "");
 
   delete[] zeroBuffer_, zeroBuffer_ = NULL;
 
@@ -213,7 +213,7 @@ int RicohMP6200::writeData(TrackData::Mode mode, TrackData::SubChannelMode sm,
 
     if (sendCmd(cmd, 10, (unsigned char *)(buf + (nwritten * blockLength_)),
 		writeLen * blockLength_, NULL, 0) != 0) {
-      message(-2, "Write data failed.");
+      log_message(-2, "Write data failed.");
       return 1;
     }
 
@@ -242,7 +242,7 @@ int RicohMP6200::loadUnload(int unload) const
   }
   
   if (sendCmd(cmd, 10, NULL, 0, NULL, 0) != 0) {
-    message(-2, "Cannot load/unload medium.");
+    log_message(-2, "Cannot load/unload medium.");
     return 1;
   }
 

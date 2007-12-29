@@ -25,7 +25,7 @@
 #include "CDD2600Base.h"
 #include "SubChannel.h"
 #include "Toc.h"
-#include "util.h"
+#include "log.h"
 
 CDD2600Base::CDD2600Base(CdrDriver *driver)
 {
@@ -59,7 +59,7 @@ int CDD2600Base::modeSelectBlockSize(int blockSize, int showMsg)
 
   if (driver_->sendCmd(cmd, 6, data, 12, NULL, 0, showMsg) != 0) {
     if (showMsg)
-      message(-2, "Cannot set block size to %d.", blockSize);
+      log_message(-2, "Cannot set block size to %d.", blockSize);
     return 1;
   }
 
@@ -88,7 +88,7 @@ int CDD2600Base::modeSelectSpeed(int readSpeed, int writeSpeed, int simulate,
 
   if (driver_->setModePage(mp, NULL, NULL, showMessage) != 0) {
     if (showMessage) {
-      message(-2, "Cannot set speed/simulation mode.");
+      log_message(-2, "Cannot set speed/simulation mode.");
     }
     return 1;
   }
@@ -120,7 +120,7 @@ int CDD2600Base::modeSelectCatalog(const Toc *toc)
   }
 
   if (driver_->setModePage(mp, NULL, NULL, 1) != 0) {
-    message(-2, "Cannot set catalog number.");
+    log_message(-2, "Cannot set catalog number.");
     return 1;
   }
 
@@ -145,14 +145,14 @@ int CDD2600Base::readSessionInfo(long *leadInLen, long *leadOutLen,
 
   if (driver_->sendCmd(cmd, 10, NULL, 0, data, 4, showMessage) != 0) {
     if (showMessage)
-      message(-2, "Cannot read session info.");
+      log_message(-2, "Cannot read session info.");
     return 1;
   }
 
   *leadInLen = (data[0] << 8) | data[1];
   *leadOutLen = (data[2] << 8) | data[3];
 
-  message(4, "Lead-in length: %ld, lead-out length: %ld", *leadInLen,
+  log_message(4, "Lead-in length: %ld, lead-out length: %ld", *leadInLen,
 	  *leadOutLen);
 
   return 0;
@@ -186,7 +186,7 @@ int CDD2600Base::writeSession(const Toc *toc, int multiSession, long lbaOffset)
   dataLen = toc->nofTracks() * 20 + indexCount * 4;
 
   /*
-  message(0, "%d tracks, %d indexes -> dataLen %u", toc->nofTracks(),
+  log_message(0, "%d tracks, %d indexes -> dataLen %u", toc->nofTracks(),
 	  indexCount, dataLen);
   */
 
@@ -284,7 +284,7 @@ int CDD2600Base::writeSession(const Toc *toc, int multiSession, long lbaOffset)
       tp[2] |= 0x04;
     }
 
-    message(4, "Track start: %s(0x%06lx)", start.str(), start.lba());
+    log_message(4, "Track start: %s(0x%06lx)", start.str(), start.lba());
     tp[12] = start.lba() >> 24;
     tp[13] = start.lba() >> 16;
     tp[14] = start.lba() >> 8;
@@ -292,7 +292,7 @@ int CDD2600Base::writeSession(const Toc *toc, int multiSession, long lbaOffset)
 
     for (i = 0; i < n; i++) {
       index = start + t->getIndex(i);
-      message(4, "      index: %s(0x%06lx)", index.str(), index.lba());
+      log_message(4, "      index: %s(0x%06lx)", index.str(), index.lba());
       
       tp[16 + i * 4] = index.lba() >> 24;
       tp[17 + i * 4] = index.lba() >> 16;
@@ -300,7 +300,7 @@ int CDD2600Base::writeSession(const Toc *toc, int multiSession, long lbaOffset)
       tp[19 + i * 4] = index.lba();
     }
 
-    message(4, "      end  : %s(0x%06lx)", end.str(), end.lba());
+    log_message(4, "      end  : %s(0x%06lx)", end.str(), end.lba());
     
     tp[16 + n * 4] = end.lba() >> 24;
     tp[17 + n * 4] = end.lba() >> 16;
@@ -310,10 +310,10 @@ int CDD2600Base::writeSession(const Toc *toc, int multiSession, long lbaOffset)
     tp += tdl;
   }
 
-  //message(0, "tp: %d", tp - data);
+  //log_message(0, "tp: %d", tp - data);
 
   if (driver_->sendCmd(cmd, 10, data, dataLen, NULL, 0) != 0) {
-    message(-2, "Cannot write disk toc.");
+    log_message(-2, "Cannot write disk toc.");
     delete[] data;
     return 1;
   }

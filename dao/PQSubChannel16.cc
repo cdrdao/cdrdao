@@ -23,7 +23,7 @@
 #include <string.h>
 #include <assert.h>
 
-#include "util.h"
+#include "log.h"
 
 PQSubChannel16::PQSubChannel16()
 {
@@ -385,29 +385,29 @@ const char *PQSubChannel16::isrc() const
 void PQSubChannel16::print() const
 {
   if (type_ != QMODE_ILLEGAL) 
-    message(0, "P:%02x ", data_[15]);
+    log_message(0, "P:%02x ", data_[15]);
 
   switch (type_) {
   case QMODE1TOC:
   case QMODE1DATA:
   case QMODE5TOC:
-    message(0, "Q: (%02x) %02x,%02x %02x:%02x:%02x %02x %02x:%02x:%02x ", 
+    log_message(0, "Q: (%02x) %02x,%02x %02x:%02x:%02x %02x %02x:%02x:%02x ", 
 	   data_[0], data_[1], data_[2], data_[3], data_[4], data_[5], 
 	   data_[6], data_[7], data_[8], data_[9]);
     break;
   case QMODE2:
-    message(0, "Q: (%02x) MCN: %s      %02x ", data_[0], catalog(), data_[9]);
+    log_message(0, "Q: (%02x) MCN: %s      %02x ", data_[0], catalog(), data_[9]);
     break;
   case QMODE3:
-    message(0, "Q: (%02x) ISRC: %s      %02x ", data_[0], isrc(), data_[9]);
+    log_message(0, "Q: (%02x) ISRC: %s      %02x ", data_[0], isrc(), data_[9]);
     break;
   case QMODE_ILLEGAL:
-    message(0, "INVALID QMODE: %02x", data_[0]);
+    log_message(0, "INVALID QMODE: %02x", data_[0]);
     break;
   }
 
   if (type_ != QMODE_ILLEGAL) 
-    message(0, "%04x %d", (data_[10] << 8) | data_[11], checkCrc());
+    log_message(0, "%04x %d", (data_[10] << 8) | data_[11], checkCrc());
 }
 
 int PQSubChannel16::checkConsistency()

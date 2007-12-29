@@ -19,8 +19,11 @@
 
 /*
  * $Log: decodeSense.cc,v $
- * Revision 1.1  2000/02/05 01:38:06  llanero
- * Initial revision
+ * Revision 1.2  2007/12/29 12:26:34  poolshark
+ * Complete rewrite of native Linux SG driver for SG 3.0 using SG_IO ioctl. Code cleanup
+ *
+ * Revision 1.1.1.1  2000/02/05 01:38:06  llanero
+ * Uploaded cdrdao 1.1.3 with pre10 patch applied.
  *
  * Revision 1.1  1999/03/14 15:34:03  mueller
  * Initial revision
@@ -80,15 +83,15 @@ static int decodeSense(const unsigned char *buf, int len)
 
   msg = getFromStringTable(SENSE_KEYS, code);
 
-  message(-2, "SCSI command failed:");
-  message(-2, "  sense key 0x%x: %s.", code, 
+  log_message(-2, "SCSI command failed:");
+  log_message(-2, "  sense key 0x%x: %s.", code, 
 	  msg != NULL ? msg : "unknown code");
     
   if (len > 0x0c && buf[7] != 0) {
-    message(-2, "  additional sense code: 0x%x", buf[0x0c]);
+    log_message(-2, "  additional sense code: 0x%x", buf[0x0c]);
   }
   if (len > 0x0d && buf[7] != 0) {
-    message(-2, "  additional sense code qualifier: 0x%x", buf[0x0d]);
+    log_message(-2, "  additional sense code qualifier: 0x%x", buf[0x0d]);
   }
 
   return 1;

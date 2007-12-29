@@ -28,6 +28,7 @@
 #include "Settings.h"
 
 #include "util.h"
+#include "log.h"
 
 
 #ifdef UNIXWARE
@@ -39,24 +40,20 @@ extern "C" {
   
 enum SettingType { SET_INTEGER, SET_STRING };
 
-const char *SET_WRITE_SPEED = "write_speed";
-const char *SET_WRITE_DRIVER = "write_driver";
-const char *SET_WRITE_DEVICE = "write_device";
-const char *SET_WRITE_BUFFERS = "write_buffers";
-
-const char *SET_USER_CAPACITY = "user_capacity";
-const char *SET_FULL_BURN = "full_burn";
-
-const char *SET_READ_SPEED = "read_speed";
-const char *SET_READ_DRIVER = "read_driver";
-const char *SET_READ_DEVICE = "read_device";
-const char *SET_READ_PARANOIA_MODE = "read_paranoia_mode";
-
-const char *SET_CDDB_SERVER_LIST = "cddb_server_list";
-const char *SET_CDDB_TIMEOUT     = "cddb_timeout";
-const char *SET_CDDB_DB_DIR      = "cddb_directory";
-
-const char *SET_TMP_FILE_DIR = "tmp_file_dir";
+const char* Settings::setWriteSpeed       = "write_speed";
+const char* Settings::setWriteDriver      = "write_driver";
+const char* Settings::setWriteDevice      = "write_device";
+const char* Settings::setWriteBuffers     = "write_buffers";
+const char* Settings::setUserCapacity     = "user_capacity";
+const char* Settings::setFullBurn         = "full_burn";
+const char* Settings::setReadSpeed        = "read_speed";
+const char* Settings::setReadDriver       = "read_driver";
+const char* Settings::setReadDevice       = "read_device";
+const char* Settings::setReadParanoiaMode = "read_paranoia_mode";
+const char* Settings::setCddbServerList   = "cddb_server_list";
+const char* Settings::setCddbTimeout      = "cddb_timeout";
+const char* Settings::setCddbDbDir        = "cddb_directory";
+const char* Settings::setTmpFileDir       = "tmp_file_dir";
 
 class SettingEntry {
 public:
@@ -285,7 +282,7 @@ int Settings::write(const char *fname) const
   FILE *fp;
   
   if ((fp = fopen(fname, "w")) == NULL) {
-    message(-2, "Cannot open \"%s\" for writing: %s", fname, strerror(errno));
+    log_message(-2, "Cannot open \"%s\" for writing: %s", fname, strerror(errno));
     return 1;
   }
 

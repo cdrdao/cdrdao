@@ -20,21 +20,6 @@
 #ifndef __SETTINGS_H__
 #define __SETTINGS_H__
 
-extern const char *SET_WRITE_SPEED;
-extern const char *SET_WRITE_DRIVER;
-extern const char *SET_WRITE_DEVICE;
-extern const char *SET_WRITE_BUFFERS;
-extern const char *SET_READ_SPEED;
-extern const char *SET_USER_CAPACITY;
-extern const char *SET_FULL_BURN;
-extern const char *SET_READ_DRIVER;
-extern const char *SET_READ_DEVICE;
-extern const char *SET_READ_PARANOIA_MODE;
-extern const char *SET_CDDB_SERVER_LIST;
-extern const char *SET_CDDB_TIMEOUT;
-extern const char *SET_CDDB_DB_DIR;
-extern const char *SET_TMP_FILE_DIR;
-
 class Settings {
 public:
   Settings();
@@ -48,6 +33,22 @@ public:
 
   void set(const char *, int);
   void set(const char *, const char *);
+
+  // Key name definitions
+  static const char* setWriteSpeed;
+  static const char* setWriteDriver;
+  static const char* setWriteDevice;
+  static const char* setWriteBuffers;
+  static const char* setUserCapacity;
+  static const char* setFullBurn;
+  static const char* setReadSpeed;
+  static const char* setReadDriver;
+  static const char* setReadDevice;
+  static const char* setReadParanoiaMode;
+  static const char* setCddbServerList;
+  static const char* setCddbTimeout;
+  static const char* setCddbDbDir;
+  static const char* setTmpFileDir;
 
 private:
   class SettingsImpl *impl_;

@@ -34,6 +34,7 @@
 #include "PWSubChannel96.h"
 #include "Toc.h"
 #include "util.h"
+#include "log.h"
 #include "CdTextItem.h"
 #include "data.h"
 #include "port.h"
@@ -598,7 +599,7 @@ static int readDriverTable(const char *filename)
   if ((fp = fopen(filename, "r")) == NULL)
     return 1;
 
-  message(4, "Reading driver table from file \"%s\".", filename);
+  log_message(4, "Reading driver table from file \"%s\".", filename);
 
   while (fgets(buf, MAX_DRIVER_TABLE_LINE_LEN, fp) != NULL) {
     lineNr++;
@@ -628,7 +629,7 @@ static int readDriverTable(const char *filename)
 	rw = 2;
       }
       else {
-	message(-1,
+	log_message(-1,
 		"%s:%d: Expecting 'R' or 'W' as first token - line ignored.",
 		filename, lineNr);
       }
@@ -646,7 +647,7 @@ static int readDriverTable(const char *filename)
 	      if (lastDriverName == NULL ||
 		  strcmp(lastDriverName, driver) != 0) {
 		if ((driverName = checkDriverName(driver)) == NULL) {
-		  message(-1, "%s:%d: Driver '%s' not defined - line ignored.",
+		  log_message(-1, "%s:%d: Driver '%s' not defined - line ignored.",
 			  filename, lineNr, driver);
 		  err = 1;
 		}
@@ -657,7 +658,7 @@ static int readDriverTable(const char *filename)
 
 	      while (!err && (p = strtok(NULL, sep)) != NULL) {
 		if ((opt = string2DriverOption(p)) == 0) {
-		  message(-1, "%s:%d: Driver option string '%s' not defined - line ignored.",
+		  log_message(-1, "%s:%d: Driver option string '%s' not defined - line ignored.",
 			  filename, lineNr, p);
 		  err = 1;
 		}
@@ -689,17 +690,17 @@ static int readDriverTable(const char *filename)
 	      }
 	    }
 	    else {
-	      message(-1, "%s:%d: Missing driver name - line ignored.",
+	      log_message(-1, "%s:%d: Missing driver name - line ignored.",
 		      filename, lineNr);
 	    }
 	  }
 	  else {
-	    message(-1, "%s:%d: Missing model name - line ignored.",
+	    log_message(-1, "%s:%d: Missing model name - line ignored.",
 		      filename, lineNr);
 	  }
 	}
 	else {
-	  message(-1, "%s:%d: Missing vendor name - line ignored.",
+	  log_message(-1, "%s:%d: Missing vendor name - line ignored.",
 		      filename, lineNr);
 	}
 
@@ -712,7 +713,7 @@ static int readDriverTable(const char *filename)
 
   fclose(fp);
 
-  message(4, "Found %d valid driver table entries.", count);
+  log_message(4, "Found %d valid driver table entries.", count);
 
   return 0;
 }
@@ -764,7 +765,7 @@ static void initDriverTable()
     return;
 
   if (readDriverTable(DRIVER_TABLE_FILE) != 0) {
-    message(-1, "Cannot read driver table from file \"%s\" - using built-in table.", DRIVER_TABLE_FILE);
+    log_message(2, "Cannot read driver table from file \"%s\" - using built-in table.", DRIVER_TABLE_FILE);
     createDriverTable();
   }
 
@@ -841,7 +842,7 @@ void CdrDriver::printDriverIds()
   DriverTable *run = DRIVERS;
 
   while (run->driverId != NULL) {
-    message(0, "%s", run->driverId);
+    log_message(0, "%s", run->driverId);
     run++;
   }
 }
@@ -868,9 +869,9 @@ CdrDriver::CdrDriver(ScsiIf *scsiIf, unsigned long options)
 
   audioDataByteOrder_ = 0; // default to little endian
 
-  fastTocReading_ = 0;
-  rawDataReading_ = 0;
-  mode2Mixed_ = 1;
+  fastTocReading_ = false;
+  rawDataReading_ = false;
+  mode2Mixed_ = true;
   subChanReadMode_ = TrackData::SUBCHAN_NONE;
   taoSource_ = 0;
   taoSourceAdjust_ = 2; // usually we have 2 unreadable sectors between tracks
@@ -878,9 +879,9 @@ CdrDriver::CdrDriver(ScsiIf *scsiIf, unsigned long options)
   padFirstPregap_ = 1;
   onTheFly_ = 0;
   onTheFlyFd_ = -1;
-  multiSession_ = 0;
+  multiSession_ = false;
   encodingMode_ = 0;
-  force_ = 0;
+  force_ = false;
   remote_ = 0;
   remoteFd_ = -1;
 
@@ -889,7 +890,7 @@ CdrDriver::CdrDriver(ScsiIf *scsiIf, unsigned long options)
   zeroBuffer_ = NULL;
   
   userCapacity_ = 0;
-  fullBurn_ = 0;
+  fullBurn_ = false;
 
   scsiMaxDataLen_ = scsiIf_->maxDataLen();
 
@@ -920,11 +921,11 @@ CdrDriver::~CdrDriver()
 // Sets multi session mode. 0: close session, 1: open next session
 // Return: 0: OK
 //         1: multi session not supported by driver
-int CdrDriver::multiSession(int m)
+int CdrDriver::multiSession(bool m)
 {
-  multiSession_ = m != 0 ? 1 : 0;
+    multiSession_ = m;
 
-  return 0;
+    return 0;
 }
 
 // Sets number of adjust sectors for reading TAO source disks.
@@ -958,7 +959,7 @@ void CdrDriver::remote(int f, int fd)
 
     // switch 'fd' to non blocking IO mode
     if ((flags = fcntl(fd, F_GETFL)) == -1) {
-      message(-1, "Cannot get flags of remote stream: %s", strerror(errno));
+      log_message(-1, "Cannot get flags of remote stream: %s", strerror(errno));
       remote_ = 0;
       remoteFd_ = -1;
       return;
@@ -967,7 +968,7 @@ void CdrDriver::remote(int f, int fd)
     flags |= O_NONBLOCK;
 
     if (fcntl(fd, F_SETFL, flags) < 0) {
-      message(-1, "Cannot set flags of remote stream: %s", strerror(errno));
+      log_message(-1, "Cannot set flags of remote stream: %s", strerror(errno));
       remote_ = 0;
       remoteFd_ = -1;
     }
@@ -1111,7 +1112,7 @@ int CdrDriver::startStopUnit(int startStop) const
   }
 
   if (sendCmd(cmd, 6, NULL, 0, NULL, 0) != 0) {
-    message(-2, "Cannot start/stop unit.");
+    log_message(-2, "Cannot start/stop unit.");
     return 1;
   }
 
@@ -1136,7 +1137,7 @@ int CdrDriver::preventMediumRemoval(int block) const
   }
 
   if (sendCmd(cmd, 6, NULL, 0, NULL, 0) != 0) {
-    message(-2, "Cannot prevent/allow medium removal.");
+    log_message(-2, "Cannot prevent/allow medium removal.");
     return 1;
   }
 
@@ -1157,7 +1158,7 @@ int CdrDriver::rezeroUnit(int showMessage) const
   
   if (sendCmd(cmd, 6, NULL, 0, NULL, 0, showMessage) != 0) {
     if (showMessage)
-      message(-2, "Cannot rezero unit.");
+      log_message(-2, "Cannot rezero unit.");
     return 1;
   }
 
@@ -1199,7 +1200,7 @@ int CdrDriver::readCapacity(long *length, int showMessage)
 
   if (sendCmd(cmd, 10, NULL, 0, data, 8, showMessage) != 0) {
     if (showMessage)
-      message(-2, "Cannot read capacity.");
+      log_message(-2, "Cannot read capacity.");
     return 1;
   }
   
@@ -1211,7 +1212,7 @@ int CdrDriver::readCapacity(long *length, int showMessage)
 
 int CdrDriver::blankDisk(BlankingMode)
 {
-  message(-2, "Blanking is not supported by this driver.");
+  log_message(-2, "Blanking is not supported by this driver.");
   return 1;
 }
 
@@ -1238,7 +1239,7 @@ int CdrDriver::writeData(TrackData::Mode mode, TrackData::SubChannelMode sm,
     sum += buf[i];
   }
 
-  message(0, "W: %ld: %ld, %ld, %ld", lba, blockLength, len, sum);
+  log_message(0, "W: %ld: %ld, %ld, %ld", lba, blockLength, len, sum);
 
 #endif
 
@@ -1259,7 +1260,7 @@ int CdrDriver::writeData(TrackData::Mode mode, TrackData::SubChannelMode sm,
 
     if (sendCmd(cmd, 10, (unsigned char *)buf, writeLen * blockLength,
 		NULL, 0) != 0) {
-      message(-2, "Write data failed.");
+      log_message(-2, "Write data failed.");
       return 1;
     }
 
@@ -1334,7 +1335,7 @@ int CdrDriver::writeZeros(TrackData::Mode m, TrackData::SubChannelMode sm,
     cntMb = cnt >> 20;
 
     if (cntMb > lastMb) {
-      message(1, "Wrote %ld of %ld MB.\r", cntMb, total >> 20);
+      log_message(1, "Wrote %ld of %ld MB.\r", cntMb, total >> 20);
       fflush(stdout);
       lastMb = cntMb;
     }
@@ -1404,7 +1405,7 @@ int CdrDriver::getModePage(int pageCode, unsigned char *buf, long bufLen,
     return 0;
   }
   else {
-    message(-2, "No mode page data received.");
+    log_message(-2, "No mode page data received.");
     delete[] data;
     return 1;
   }
@@ -1526,7 +1527,7 @@ int CdrDriver::getModePage6(int pageCode, unsigned char *buf, long bufLen,
     return 0;
   }
   else {
-    message(-2, "No mode page data received.");
+    log_message(-2, "No mode page data received.");
     delete[] data;
     return 1;
   }
@@ -1609,14 +1610,14 @@ CdToc *CdrDriver::getTocGeneric(int *cdTocLen)
   cmd[8] = 4;
   
   if (sendCmd(cmd, 10, NULL, 0, reqData, 4) != 0) {
-    message(-2, "Cannot read disk toc.");
+    log_message(-2, "Cannot read disk toc.");
     return NULL;
   }
 
   dataLen = (reqData[0] << 8) | reqData[1];
   dataLen += 2;
 
-  message(4, "getTocGeneric: data len %d", dataLen);
+  log_message(4, "getTocGeneric: data len %d", dataLen);
 
   if (dataLen < 12) {
     dataLen = (100 * 8) + 4;
@@ -1630,14 +1631,14 @@ CdToc *CdrDriver::getTocGeneric(int *cdTocLen)
   cmd[8] = dataLen;
   
   if (sendCmd(cmd, 10, NULL, 0, data, dataLen) != 0) {
-    message(-2, "Cannot read disk toc.");
+    log_message(-2, "Cannot read disk toc.");
     delete[] data;
     return NULL;
   }
 
   nTracks = data[3] - data[2] + 1;
   if (nTracks > 99) {
-    message(-2, "Got illegal toc data.");
+    log_message(-2, "Got illegal toc data.");
     delete[] data;
     return NULL;
   }
@@ -1714,11 +1715,11 @@ CdToc *CdrDriver::getToc(int sessionNr, int *cdTocLen)
 
   if (options_ & OPT_DRV_RAW_TOC_BCD) {
     if (isBcd == 0) {
-      message(-2, "The driver option 0x%lx indicates that the raw TOC data",
+      log_message(-2, "The driver option 0x%lx indicates that the raw TOC data",
 	      OPT_DRV_RAW_TOC_BCD);
-      message(-2, "contains BCD values but a non BCD value was found.");
-      message(-2, "Please adjust the driver options.");
-      message(-1, "Using TOC data retrieved with generic method (no multi session support).");
+      log_message(-2, "contains BCD values but a non BCD value was found.");
+      log_message(-2, "Please adjust the driver options.");
+      log_message(-1, "Using TOC data retrieved with generic method (no multi session support).");
 	
       delete[] rawToc;
       *cdTocLen = completeTocLen;
@@ -1788,10 +1789,10 @@ CdToc *CdrDriver::getToc(int sessionNr, int *cdTocLen)
 	}
 	
 	if (i < 0) {
-	  message(-1, "Found bogus toc data (no lead-out entry in raw data).");
-	  message(-1, "Your drive probably does not support raw toc reading.");
-	  message(-1, "Using TOC data retrieved with generic method (no multi session support).");
-	  message(-1, "Use driver option 0x%lx to suppress this message.",
+	  log_message(-1, "Found bogus toc data (no lead-out entry in raw data).");
+	  log_message(-1, "Your drive probably does not support raw toc reading.");
+	  log_message(-1, "Using TOC data retrieved with generic method (no multi session support).");
+	  log_message(-1, "Use driver option 0x%lx to suppress this message.",
 		  OPT_DRV_GET_TOC_GENERIC);
 	
 	  delete[] rawToc;
@@ -1812,7 +1813,7 @@ CdToc *CdrDriver::getToc(int sessionNr, int *cdTocLen)
 	  }
 	}
 	else {
-	  message(-2, "Found bogus toc data (no lead-out entry).");
+	  log_message(-2, "Found bogus toc data (no lead-out entry).");
 	  
 	  delete[] completeToc;
 	  delete[] rawToc;
@@ -1876,10 +1877,10 @@ CdToc *CdrDriver::getToc(int sessionNr, int *cdTocLen)
       }
 
       if (i < 0) {
-	message(-1, "Found bogus toc data (no lead-out entry in raw data).");
-	message(-1, "Your drive probably does not support raw toc reading.");
-	message(-1, "Using TOC data retrieved with generic method (no multi session support).");
-	message(-1, "Use driver option 0x%lx to suppress this message.",
+	log_message(-1, "Found bogus toc data (no lead-out entry in raw data).");
+	log_message(-1, "Your drive probably does not support raw toc reading.");
+	log_message(-1, "Using TOC data retrieved with generic method (no multi session support).");
+	log_message(-1, "Use driver option 0x%lx to suppress this message.",
 		OPT_DRV_GET_TOC_GENERIC);
 	
 	delete[] rawToc;
@@ -1900,7 +1901,7 @@ CdToc *CdrDriver::getToc(int sessionNr, int *cdTocLen)
 	}
       }
       else {
-	message(-1, "Found bogus toc data (no lead-out entry).");
+	log_message(-1, "Found bogus toc data (no lead-out entry).");
 	
 	delete[] rawToc;
 	delete[] completeToc;
@@ -1909,9 +1910,9 @@ CdToc *CdrDriver::getToc(int sessionNr, int *cdTocLen)
     }
     
     if (isBcd == -1) {
-      message(-1, "Could not determine if raw toc data is BCD or HEX. Please report!");
-      message(-1, "Using TOC data retrieved with generic method (no multi session support).");
-      message(-1,
+      log_message(-1, "Could not determine if raw toc data is BCD or HEX. Please report!");
+      log_message(-1, "Using TOC data retrieved with generic method (no multi session support).");
+      log_message(-1,
 	      "Use driver option 0x%lx or 0x%lx to assume BCD or HEX data.",
 	      OPT_DRV_RAW_TOC_BCD, OPT_DRV_RAW_TOC_HEX);
       
@@ -1921,7 +1922,7 @@ CdToc *CdrDriver::getToc(int sessionNr, int *cdTocLen)
     }
   }
 
-  message(4, "Raw toc contains %s values.", isBcd == 0 ? "HEX" : "BCD");
+  log_message(4, "Raw toc contains %s values.", isBcd == 0 ? "HEX" : "BCD");
 
   for (i = 0; i < rawTocLen; i++) {
     if (rawToc[i].sessionNr == sessionNr &&
@@ -1932,10 +1933,10 @@ CdToc *CdrDriver::getToc(int sessionNr, int *cdTocLen)
   }
 
   if (nTracks == 0 || nTracks > 99) {
-    message(-1, "Found bogus toc data (0 or > 99 tracks). Please report!");
-    message(-1, "Your drive probably does not support raw toc reading.");
-    message(-1, "Using TOC data retrieved with generic method (no multi session support).");
-    message(-1, "Use driver option 0x%lx to suppress this message.",
+    log_message(-1, "Found bogus toc data (0 or > 99 tracks). Please report!");
+    log_message(-1, "Your drive probably does not support raw toc reading.");
+    log_message(-1, "Using TOC data retrieved with generic method (no multi session support).");
+    log_message(-1, "Use driver option 0x%lx to suppress this message.",
 	    OPT_DRV_GET_TOC_GENERIC);
 	
     delete[] rawToc;
@@ -1965,10 +1966,10 @@ CdToc *CdrDriver::getToc(int sessionNr, int *cdTocLen)
       }
 
       if (lastTrack != -1 && trackNr != lastTrack + 1) {
-	message(-1, "Found bogus toc data (track number sequence). Please report!");
-	message(-1, "Your drive probably does not support raw toc reading.");
-	message(-1, "Using TOC data retrieved with generic method (no multi session support).");
-	message(-1, "Use driver option 0x%lx to suppress this message.",
+	log_message(-1, "Found bogus toc data (track number sequence). Please report!");
+	log_message(-1, "Your drive probably does not support raw toc reading.");
+	log_message(-1, "Using TOC data retrieved with generic method (no multi session support).");
+	log_message(-1, "Use driver option 0x%lx to suppress this message.",
 		OPT_DRV_GET_TOC_GENERIC);
 	
 	delete[] cdToc;
@@ -2012,10 +2013,10 @@ CdToc *CdrDriver::getToc(int sessionNr, int *cdTocLen)
   }
   
   if (tocEnt != nTracks + 1) {
-    message(-1, "Found bogus toc data (no lead-out pointer for session). Please report!");
-    message(-1, "Your drive probably does not support raw toc reading.");
-    message(-1, "Using TOC data retrieved with generic method (no multi session support).");
-    message(-1, "Use driver option 0x%lx to suppress this message.",
+    log_message(-1, "Found bogus toc data (no lead-out pointer for session). Please report!");
+    log_message(-1, "Your drive probably does not support raw toc reading.");
+    log_message(-1, "Using TOC data retrieved with generic method (no multi session support).");
+    log_message(-1, "Use driver option 0x%lx to suppress this message.",
 	    OPT_DRV_GET_TOC_GENERIC);
 	
     delete[] cdToc;
@@ -2157,14 +2158,14 @@ Toc *CdrDriver::readDiskToc(int session, const char *dataFilename)
   }
 
   if (nofTracks <= 1) {
-    message(-1, "No tracks on disk.");
+    log_message(-1, "No tracks on disk.");
     delete[] cdToc;
     return NULL;
   }
 
-  message(1, "");
+  log_message(1, "");
   printCdToc(cdToc, nofTracks);
-  message(1, "");
+  log_message(1, "");
   //return NULL;
 
   nofTracks -= 1; // do not count lead-out
@@ -2186,7 +2187,7 @@ Toc *CdrDriver::readDiskToc(int session, const char *dataFilename)
     if ((cdToc[i].adrCtl & 0x04) != 0) {
       if ((trackMode = getTrackMode(i + 1, cdToc[i].start)) ==
 	  TrackData::MODE0) {
-	message(-1, "Cannot determine mode of data track %d - asuming MODE1.",
+	log_message(-1, "Cannot determine mode of data track %d - asuming MODE1.",
 		i + 1);
 	trackMode = TrackData::MODE1;
       }
@@ -2216,7 +2217,7 @@ Toc *CdrDriver::readDiskToc(int session, const char *dataFilename)
     }
 
     if (!checkSubChanReadCaps(trackMode, readCapabilities_)) {
-      message(-2, "This drive does not support %s sub-channel reading.",
+      log_message(-2, "This drive does not support %s sub-channel reading.",
 	      TrackData::subChannelMode2String(subChanReadMode_));
       delete[] cdToc;
       delete[] trackInfos;
@@ -2289,13 +2290,13 @@ Toc *CdrDriver::readDiskToc(int session, const char *dataFilename)
 
     Msf trackLength(elba - slba);
 
-    message(1, "Analyzing track %02d (%s): start %s, ", i + 1,
+    log_message(1, "Analyzing track %02d (%s): start %s, ", i + 1,
 	    TrackData::mode2String(trackInfos[i].mode),
 	    Msf(cdToc[i].start).str());
-    message(1, "length %s...", trackLength.str());
+    log_message(1, "length %s...", trackLength.str());
 
     if (pregap > 0) {
-      message(2, "Found pre-gap: %s", Msf(pregap).str());
+      log_message(2, "Found pre-gap: %s", Msf(pregap).str());
     }
 
     isrcCode[0] = 0;
@@ -2326,7 +2327,7 @@ Toc *CdrDriver::readDiskToc(int session, const char *dataFilename)
     }
 
     if (isrcCode[0] != 0) {
-      message(2, "Found ISRC code.");
+      log_message(2, "Found ISRC code.");
       memcpy(trackInfos[i].isrcCode, isrcCode, 13);
     }
 
@@ -2339,16 +2340,16 @@ Toc *CdrDriver::readDiskToc(int session, const char *dataFilename)
       // Check track against TOC control nibbles
       ctlCheckOk = 1;
       if ((trackCtl & 0x01) !=  (cdToc[i].adrCtl & 0x01)) {
-	message(-1, "Pre-emphasis flag of track differs from TOC - toc file contains TOC setting.");
+	log_message(-1, "Pre-emphasis flag of track differs from TOC - toc file contains TOC setting.");
 	ctlCheckOk = 0;
       }
       if ((trackCtl & 0x08) != (cdToc[i].adrCtl & 0x08)) {
-	message(-1, "2-/4-channel-audio  flag of track differs from TOC - toc file contains TOC setting.");
+	log_message(-1, "2-/4-channel-audio  flag of track differs from TOC - toc file contains TOC setting.");
 	ctlCheckOk = 0;
       }
 
       if (ctlCheckOk) {
-	message(2, "Control nibbles of track match CD-TOC settings.");
+	log_message(2, "Control nibbles of track match CD-TOC settings.");
       }
     }
   }
@@ -2373,11 +2374,11 @@ Toc *CdrDriver::readDiskToc(int session, const char *dataFilename)
       readCdTextData(toc);
 
     if (readCatalog(toc, trackInfos[0].start, trackInfos[nofTracks].start))
-      message(2, "Found disk catalogue number.");
+      log_message(2, "Found disk catalogue number.");
   }
 
   // overwrite last time message
-  message (1, "        \t");
+  log_message(1, "        \t");
 
   delete[] cdToc;
   delete[] trackInfos;
@@ -2417,7 +2418,7 @@ int CdrDriver::analyzeTrackSearch(TrackData::Mode, int trackNr, long startLba,
 
   do {
     if ((indexLba = findIndex(trackNr, ind, indexLba, endLba - 1)) > 0) {
-      message(2, "Found index %d at %s", ind, Msf(indexLba).str());
+      log_message(2, "Found index %d at %s", ind, Msf(indexLba).str());
       if (*indexCnt < 98 && indexLba > startLba) {
 	index[*indexCnt] =  Msf(indexLba - startLba);
 	*indexCnt += 1;
@@ -2456,24 +2457,24 @@ long CdrDriver::findIndex(int track, int index, long trackStart,
   long end = trackEnd;
   long mid;
 
-  //message(0, "findIndex: %ld - %ld", trackStart, trackEnd);
+  //log_message(0, "findIndex: %ld - %ld", trackStart, trackEnd);
 
   while (start < end) {
     mid = start + ((end - start) / 2);
     
-    //message(0, "Checking block %ld...", mid);
+    //log_message(0, "Checking block %ld...", mid);
     if (getTrackIndex(mid, &actTrack, &actIndex, NULL) != 0) {
       return 0;
     }
-    //message(0, "Found track %d, index %d", actTrack, actIndex);
+    //log_message(0, "Found track %d, index %d", actTrack, actIndex);
     if ((actTrack < track || actIndex < index) && mid + 1 < trackEnd) {
-      //message(0, "  Checking block %ld...", mid + 1);
+      //log_message(0, "  Checking block %ld...", mid + 1);
       if (getTrackIndex(mid + 1, &actTrack, &actIndex, NULL) != 0) {
 	return 0;
       }
-      //message(0, "  Found track %d, index %d", actTrack, actIndex);
+      //log_message(0, "  Found track %d, index %d", actTrack, actIndex);
       if (actTrack == track && actIndex == index) {
-	//message(0, "Found pregap at %ld", mid + 1);
+	//log_message(0, "Found pregap at %ld", mid + 1);
 	return mid;
       }
       else {
@@ -2537,7 +2538,7 @@ int CdrDriver::analyzeTrackScan(TrackData::Mode, int trackNr, long startLba,
 	  Msf time(chan->min(), chan->sec(), chan->frame()); // track rel time
 
 	  if (timeCnt > 74) {
-	    message(1, "%s\r", time.str());
+	    log_message(1, "%s\r", time.str());
 	    timeCnt = 0;
 	  }
 
@@ -2548,7 +2549,7 @@ int CdrDriver::analyzeTrackScan(TrackData::Mode, int trackNr, long startLba,
 	  }
 	  if (t == trackNr && chan->indexNr() == actIndex + 1) {
 	    actIndex = chan->indexNr();
-	    message(2, "Found index %d at: %s", actIndex, time.str());
+	    log_message(2, "Found index %d at: %s", actIndex, time.str());
 	    if ((*indexCnt) < 98) {
 	      index[*indexCnt] = time;
 	      *indexCnt += 1;
@@ -2559,7 +2560,7 @@ int CdrDriver::analyzeTrackScan(TrackData::Mode, int trackNr, long startLba,
 	      if (pregap != NULL)
 		*pregap = time.lba();
 	      if (crcErrCnt != 0)
-		message(2, "Found %ld Q sub-channels with CRC errors.",
+		log_message(2, "Found %ld Q sub-channels with CRC errors.",
 			crcErrCnt);
 	    
 	      return 0;
@@ -2577,11 +2578,11 @@ int CdrDriver::analyzeTrackScan(TrackData::Mode, int trackNr, long startLba,
 	crcErrCnt++;
 #if 0
 	if (chan->type() == SubChannel::QMODE1DATA) {
-	  message(2, "Q sub-channel data at %02d:%02d:%02d failed CRC check - ignored",
+	  log_message(2, "Q sub-channel data at %02d:%02d:%02d failed CRC check - ignored",
 		 chan->min(), chan->sec(), chan->frame());
 	}
 	else {
-	  message(2, "Q sub-channel data failed CRC check - ignored.");
+	  log_message(2, "Q sub-channel data failed CRC check - ignored.");
 	}
 	chan->print();
 #endif
@@ -2595,7 +2596,7 @@ int CdrDriver::analyzeTrackScan(TrackData::Mode, int trackNr, long startLba,
   }
 
   if (crcErrCnt != 0)
-    message(2, "Found %ld Q sub-channels with CRC errors.", crcErrCnt);
+    log_message(2, "Found %ld Q sub-channels with CRC errors.", crcErrCnt);
 
   return 0;
 }
@@ -2610,8 +2611,8 @@ int CdrDriver::checkToc(const Toc *toc)
   int ret = 0;
 
   if (multiSession_ && toc->tocType() != Toc::CD_ROM_XA) {
-    message(-1, "The toc type should be set to CD_ROM_XA if a multi session");
-    message(-1, "CD is recorded.");
+    log_message(-1, "The toc type should be set to CD_ROM_XA if a multi session");
+    log_message(-1, "CD is recorded.");
     ret = 1;
   }
 
@@ -2623,7 +2624,7 @@ int CdrDriver::checkToc(const Toc *toc)
        run = itr.next(), tracknr++) {
     if (run->subChannelType() != TrackData::SUBCHAN_NONE) {
       if (subChannelEncodingMode(run->subChannelType()) == -1) {
-	message(-2, "Track %d: sub-channel writing mode is not supported by driver.", tracknr);
+	log_message(-2, "Track %d: sub-channel writing mode is not supported by driver.", tracknr);
 	ret = 2;
       }
     }
@@ -2661,12 +2662,12 @@ long CdrDriver::blockSize(TrackData::Mode m,
       bsize = MODE2_BLOCK_LEN;
       break;
     case TrackData::MODE0:
-      message(-3, "Illegal mode in 'CdrDriver::blockSize()'.");
+      log_message(-3, "Illegal mode in 'CdrDriver::blockSize()'.");
       break;
     }
   }
   else {
-    message(-3, "Illegal encoding mode in 'CdrDriver::blockSize()'.");
+    log_message(-3, "Illegal encoding mode in 'CdrDriver::blockSize()'.");
   }
 
   bsize += TrackData::subChannelSize(sm);
@@ -2679,23 +2680,23 @@ void CdrDriver::printCdToc(CdToc *toc, int tocLen)
   int t;
   long len;
 
-  message(1, "Track   Mode    Flags  Start                Length");
-  message(1, "------------------------------------------------------------");
+  log_message(1, "Track   Mode    Flags  Start                Length");
+  log_message(1, "------------------------------------------------------------");
 
   for (t = 0; t < tocLen; t++) {
     if (t == tocLen - 1) {
-      message(1, "Leadout %s   %x      %s(%6ld)",
+      log_message(1, "Leadout %s   %x      %s(%6ld)",
 	      (toc[t].adrCtl & 0x04) != 0 ? "DATA " : "AUDIO",
 	      toc[t].adrCtl & 0x0f,
 	      Msf(toc[t].start).str(), toc[t].start);
     }
     else {
       len = toc[t + 1].start - toc[t].start;
-      message(1, "%2d      %s   %x      %s(%6ld) ", toc[t].track,
+      log_message(1, "%2d      %s   %x      %s(%6ld) ", toc[t].track,
 	      (toc[t].adrCtl & 0x04) != 0 ? "DATA " : "AUDIO",
 	      toc[t].adrCtl & 0x0f,
 	      Msf(toc[t].start).str(), toc[t].start);
-      message(1, "    %s(%6ld)", Msf(len).str(), len);
+      log_message(1, "    %s(%6ld)", Msf(len).str(), len);
     }
   }
 }
@@ -2731,7 +2732,7 @@ TrackData::Mode CdrDriver::getTrackMode(int, long trackStartLba)
   mode = determineSectorMode(data);
 
   if (mode == TrackData::MODE0) {
-    message(-2, "Found illegal mode in sector %ld.", trackStartLba);
+    log_message(-2, "Found illegal mode in sector %ld.", trackStartLba);
   }
 
   return mode;
@@ -2809,7 +2810,7 @@ int CdrDriver::setBlockSize(long blocksize, unsigned char density)
   cmd[4] = 12;
 
   if (sendCmd(cmd, 6, ms, 12, NULL, 0) != 0) {
-    message(-2, "Cannot set block size.");
+    log_message(-2, "Cannot set block size.");
     return 1;
   }
 
@@ -2875,7 +2876,7 @@ unsigned char CdrDriver::sessionFormat()
     break;
   }
 
-  message(3, "Session format: %x", ret);
+  log_message(3, "Session format: %x", ret);
 
   return ret;
 }
@@ -2905,13 +2906,13 @@ CdTextPack *CdrDriver::readCdTextPacks(long *nofPacks)
   data = new unsigned char [len1];
 
   if (sendCmd(cmd, 12, NULL, 0, data, len1) != 0) {
-    message(1, "Cannot read raw CD-TEXT data.");
+    log_message(1, "Cannot read raw CD-TEXT data.");
   }
 
   long i, j;
   unsigned char *p = data + AUDIO_BLOCK_LEN;
 
-  message(0, "Raw CD-TEXT data");
+  log_message(0, "Raw CD-TEXT data");
 
   for (i = 0; i < 15; i++) {
     unsigned char packs[72];
@@ -2920,7 +2921,7 @@ CdTextPack *CdrDriver::readCdTextPacks(long *nofPacks)
     chan.getRawRWdata(packs);
 
     for (j = 0; j < 4; j++) {
-      message(0, "%02x %02x %02x %02x: %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x  CRC: %02x %02x", 
+      log_message(0, "%02x %02x %02x %02x: %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x  CRC: %02x %02x", 
 	      packs[j*18+0], packs[j*18+1], packs[j*18+2], packs[j*18+3], 
 	      packs[j*18+4], packs[j*18+5], packs[j*18+6], packs[j*18+7], 
 	      packs[j*18+8], packs[j*18+9], packs[j*18+10], packs[j*18+11], 
@@ -2934,7 +2935,7 @@ CdTextPack *CdrDriver::readCdTextPacks(long *nofPacks)
   delete[] data;
 
 
-  message(0, "Raw CD-TEXT data - end");
+  log_message(0, "Raw CD-TEXT data - end");
 #endif
 
   memset(cmd, 0, 10);
@@ -2944,19 +2945,19 @@ CdTextPack *CdrDriver::readCdTextPacks(long *nofPacks)
   cmd[8] = 4;
 
   if (sendCmd(cmd, 10, NULL, 0, reqData, 4, 0) != 0) {
-    message(3, "Cannot read CD-TEXT data - maybe not supported by drive.");
+    log_message(3, "Cannot read CD-TEXT data - maybe not supported by drive.");
     return NULL;
   }
 
   long len = ((reqData[0] << 8 ) | reqData[1]) + 2;
 
-  message(4, "CD-TEXT data len: %ld", len);
+  log_message(4, "CD-TEXT data len: %ld", len);
 
   if (len <= 4)
     return NULL;
 
   if (len > scsiMaxDataLen_) {
-    message(-2, "CD-TEXT data too big for maximum SCSI transfer length.");
+    log_message(-2, "CD-TEXT data too big for maximum SCSI transfer length.");
     return NULL;
   }
 
@@ -2966,7 +2967,7 @@ CdTextPack *CdrDriver::readCdTextPacks(long *nofPacks)
   cmd[8] = len;
 
   if (sendCmd(cmd, 10, NULL, 0, data, len, 1) != 0) {
-    message(-2, "Reading of CD-TEXT data failed.");
+    log_message(-2, "Reading of CD-TEXT data failed.");
     delete[] data;
     return NULL;
   }
@@ -3003,7 +3004,7 @@ int CdrDriver::readCdTextData(Toc *toc)
   if (packs == NULL)
     return 1;
 
-  message(1, "Found CD-TEXT data.");
+  log_message(1, "Found CD-TEXT data.");
 
   pos = 0;
   lastType = packs[0].packType;
@@ -3014,7 +3015,7 @@ int CdrDriver::readCdTextData(Toc *toc)
     CdTextPack &p = packs[i];
 
 #if 1
-    message(4, "%02x %02x %02x %02x: %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x  CRC: %02x %02x", p.packType, p.trackNumber,
+    log_message(4, "%02x %02x %02x %02x: %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x  CRC: %02x %02x", p.packType, p.trackNumber,
 	    p.sequenceNumber, p.blockCharacter, p.data[0], p.data[1], 
 	    p.data[2], p.data[3], p.data[4], p.data[5], p.data[6], p.data[7], 
 	    p.data[8], p.data[9], p.data[10], p.data[11],
@@ -3048,7 +3049,7 @@ int CdrDriver::readCdTextData(Toc *toc)
 	}
       }
       else {
-	message(-2, "CD-TEXT: Found invalid pack type: %02x", lastType);
+	log_message(-2, "CD-TEXT: Found invalid pack type: %02x", lastType);
 	delete[] packs;
 	return 1;
       }
@@ -3079,7 +3080,7 @@ int CdrDriver::readCdTextData(Toc *toc)
 	    buf[pos] = 0;
 
 #if 0	
-	    message(0, "%02x %02x: %s", p.packType, p.trackNumber, buf);
+	    log_message(0, "%02x %02x: %s", p.packType, p.trackNumber, buf);
 #endif
 
 	    toc->addCdTextItem(actTrack,
@@ -3099,7 +3100,7 @@ int CdrDriver::readCdTextData(Toc *toc)
       }
     }
     else {
-      message(-2, "CD-TEXT: Found invalid pack type: %02x", p.packType);
+      log_message(-2, "CD-TEXT: Found invalid pack type: %02x", p.packType);
       delete[] packs;
       return 1;
     }
@@ -3141,8 +3142,8 @@ int CdrDriver::readCdTextData(Toc *toc)
     }
   }
   else {
-    message(-1, "Cannot determine language mapping from CD-TEXT data.");
-    message(-1, "Using default mapping.");
+    log_message(-1, "Cannot determine language mapping from CD-TEXT data.");
+    log_message(-1, "Using default mapping.");
   }
 
   return 0;
@@ -3163,25 +3164,25 @@ int CdrDriver::analyzeDataTrack(TrackData::Mode mode, int trackNr,
 
     if ((actLen = readTrackData(mode, TrackData::SUBCHAN_NONE, lba, n,
 				transferBuffer_)) < 0) {
-      message(-2, "Analyzing of track %d failed.", trackNr);
+      log_message(-2, "Analyzing of track %d failed.", trackNr);
       return 1;
     }
 
-    message(1, "%s\r", Msf(lba).str());
+    log_message(1, "%s\r", Msf(lba).str());
 
     if (actLen != n) {
-      //message(0, "Data track pre-gap: %ld", len - actLen);
+      //log_message(0, "Data track pre-gap: %ld", len - actLen);
       *pregap = len - actLen;
 
       if (*pregap > 300) {
-	message(-1,
+	log_message(-1,
 		"The pre-gap of the following track appears to have length %s.",
 		Msf(*pregap).str());
-	message(-1, "This value is probably bogus and may be caused by unexpected");
-	message(-1, "behavior of the drive. Try to verify with other tools how");
-	message(-1, "much data can be read from the current track and compare it");
-	message(-1, "to the value stored in the toc-file. Usually, the pre-gap");
-	message(-1, "should have length 00:02:00.");
+	log_message(-1, "This value is probably bogus and may be caused by unexpected");
+	log_message(-1, "behavior of the drive. Try to verify with other tools how");
+	log_message(-1, "much data can be read from the current track and compare it");
+	log_message(-1, "to the value stored in the toc-file. Usually, the pre-gap");
+	log_message(-1, "should have length 00:02:00.");
       }
 
       return 0;
@@ -3224,14 +3225,14 @@ Toc *CdrDriver::readDisk(int session, const char *dataFilename)
   }
 
   if (nofTracks <= 1) {
-    message(-1, "No tracks on disk.");
+    log_message(-1, "No tracks on disk.");
     delete[] cdToc;
     return NULL;
   }
 
-  message(1, "");
+  log_message(1, "");
   printCdToc(cdToc, nofTracks);
-  message(1, "");
+  log_message(1, "");
   //return NULL;
 
   nofTracks -= 1; // do not count lead-out
@@ -3244,7 +3245,7 @@ Toc *CdrDriver::readDisk(int session, const char *dataFilename)
     if ((cdToc[i].adrCtl & 0x04) != 0) {
       if ((trackMode = getTrackMode(i + 1, cdToc[i].start)) ==
 	  TrackData::MODE0) {
-	message(-1, "Cannot determine mode of data track %d - asuming MODE1.",
+	log_message(-1, "Cannot determine mode of data track %d - asuming MODE1.",
 		i + 1);
 	trackMode = TrackData::MODE1;
       }
@@ -3272,7 +3273,7 @@ Toc *CdrDriver::readDisk(int session, const char *dataFilename)
     }
 
     if (!checkSubChanReadCaps(trackMode, readCapabilities_)) {
-      message(-2, "This drive does not support %s sub-channel reading.",
+      log_message(-2, "This drive does not support %s sub-channel reading.",
 	      TrackData::subChannelMode2String(subChanReadMode_));
       goto fail;
     }
@@ -3318,7 +3319,7 @@ Toc *CdrDriver::readDisk(int session, const char *dataFilename)
     if ((fp = open(dataFilename, O_WRONLY|O_CREAT|O_TRUNC, 0666)) < 0)
 #endif
     {
-      message(-2, "Cannot open \"%s\" for writing: %s", dataFilename,
+      log_message(-2, "Cannot open \"%s\" for writing: %s", dataFilename,
 	      strerror(errno));
       delete[] cdToc;
       return NULL;
@@ -3360,10 +3361,10 @@ Toc *CdrDriver::readDisk(int session, const char *dataFilename)
       }
 
 
-      message(1, "Copying data track %d (%s): start %s, ", trs + 1, 
+      log_message(1, "Copying data track %d (%s): start %s, ", trs + 1, 
 	      TrackData::mode2String(trackInfos[trs].mode),
 	      Msf(cdToc[trs].start).str());
-      message(1, "length %s to \"%s\"...", Msf(elba - slba).str(),
+      log_message(1, "length %s to \"%s\"...", Msf(elba - slba).str(),
 	      trackInfos[trs].filename);
       
       if (readDataTrack(&info, fp, slba, elba, &trackInfos[trs]) != 0)
@@ -3415,9 +3416,9 @@ Toc *CdrDriver::readDisk(int session, const char *dataFilename)
 	}
       }
 
-      message(1, "Copying audio tracks %d-%d: start %s, ", trs + 1, tre,
+      log_message(1, "Copying audio tracks %d-%d: start %s, ", trs + 1, tre,
 	      Msf(slba).str());
-      message(1, "length %s to \"%s\"...", Msf(elba - slba).str(),
+      log_message(1, "length %s to \"%s\"...", Msf(elba - slba).str(),
 	      trackInfos[trs].filename);
 
       if (readAudioRange(&info, fp, slba, elba, trs, tre - 1, trackInfos) != 0)
@@ -3442,7 +3443,7 @@ Toc *CdrDriver::readDisk(int session, const char *dataFilename)
       readCdTextData(toc);
 
     if (readCatalog(toc, trackInfos[0].start, trackInfos[nofTracks].start)) {
-      message(2, "Found disk catalogue number.");
+      log_message(2, "Found disk catalogue number.");
     }
   }
 
@@ -3456,7 +3457,7 @@ fail:
 
   if (!onTheFly_ && fp >= 0) {
     if (close(fp) != 0) {
-      message(-2, "Writing to \"%s\" failed: %s", dataFilename,
+      log_message(-2, "Writing to \"%s\" failed: %s", dataFilename,
 	      strerror(errno));
       delete toc;
       return NULL;
@@ -3691,7 +3692,7 @@ int CdrDriver::readDataTrack(ReadDiskInfo *info, int fd, long start, long end,
     break;
   case TrackData::MODE0:
   case TrackData::AUDIO:
-    message(-3, "CdrDriver::readDataTrack: Illegal mode.");
+    log_message(-3, "CdrDriver::readDataTrack: Illegal mode.");
     return 1;
     break;
   }
@@ -3720,7 +3721,7 @@ int CdrDriver::readDataTrack(ReadDiskInfo *info, int fd, long start, long end,
     foundLECError = 0;
 
     if ((act = readTrackData(mode, subChanReadMode_, lba, n, buf)) == -1) {
-      message(-2, "Read error while copying data from track.");
+      log_message(-2, "Read error while copying data from track.");
       delete[] buf;
       return 1;
     }
@@ -3742,8 +3743,8 @@ int CdrDriver::readDataTrack(ReadDiskInfo *info, int fd, long start, long end,
 	}
       }
       else {
-	message(-2, "L-EC error around sector %ld while copying data from track.", lba);
-	message(-2, "Use option '--read-raw' to ignore L-EC errors.");
+	log_message(-2, "L-EC error around sector %ld while copying data from track.", lba);
+	log_message(-2, "Use option '--read-raw' to ignore L-EC errors.");
 	delete[] buf;
 	return 1;
       }
@@ -3752,7 +3753,7 @@ int CdrDriver::readDataTrack(ReadDiskInfo *info, int fd, long start, long end,
     if (foundLECError) {
       iterationsWithoutError = 0;
 
-      message(2, "Found L-EC error at sector %ld - ignored.", lba);
+      log_message(2, "Found L-EC error at sector %ld - ignored.", lba);
 
       // create a dummy sector for the sector with L-EC errors
       Msf m(lba + 150);
@@ -3770,9 +3771,9 @@ int CdrDriver::readDataTrack(ReadDiskInfo *info, int fd, long start, long end,
 
       if ((ret = fullWrite(fd, buf, blockLen)) != blockLen) {
 	if (ret < 0)
-	  message(-2, "Writing of data failed: %s", strerror(errno));
+	  log_message(-2, "Writing of data failed: %s", strerror(errno));
 	else
-	  message(-2, "Writing of data failed: Disk full");
+	  log_message(-2, "Writing of data failed: Disk full");
 	  
 	delete[] buf;
 	return 1;
@@ -3789,9 +3790,9 @@ int CdrDriver::readDataTrack(ReadDiskInfo *info, int fd, long start, long end,
       if (act > 0) {
 	if ((ret = fullWrite(fd, buf, blockLen * act)) != blockLen * act) {
 	  if (ret < 0)
-	    message(-2, "Writing of data failed: %s", strerror(errno));
+	    log_message(-2, "Writing of data failed: %s", strerror(errno));
 	  else
-	    message(-2, "Writing of data failed: Disk full");
+	    log_message(-2, "Writing of data failed: Disk full");
 	  
 	  delete[] buf;
 	  return 1;
@@ -3802,7 +3803,7 @@ int CdrDriver::readDataTrack(ReadDiskInfo *info, int fd, long start, long end,
 
       if (lba > lastLba + 75) {
 	Msf lbatime(lba);
-	message(1, "%02d:%02d:00\r", lbatime.min(), lbatime.sec());
+	log_message(1, "%02d:%02d:00\r", lbatime.min(), lbatime.sec());
 	lastLba = lba;
 
 	if (remote_) {
@@ -3838,7 +3839,7 @@ int CdrDriver::readDataTrack(ReadDiskInfo *info, int fd, long start, long end,
   // pad remaining blocks with zero data, e.g. for disks written in TAO mode
 
   if (len > 0) {
-    message(-1, "Padding with %ld zero sectors.", len);
+    log_message(-1, "Padding with %ld zero sectors.", len);
 
     if (mode == TrackData::MODE1_RAW || mode == TrackData::MODE2_RAW) {
       memcpy(buf, syncPattern, 12);
@@ -3865,9 +3866,9 @@ int CdrDriver::readDataTrack(ReadDiskInfo *info, int fd, long start, long end,
 
       if ((ret = fullWrite(fd, buf, blockLen)) != blockLen) {
 	if (ret < 0)
-	  message(-2, "Writing of data failed: %s", strerror(errno));
+	  log_message(-2, "Writing of data failed: %s", strerror(errno));
 	else
-	  message(-2, "Writing of data failed: Disk full");
+	  log_message(-2, "Writing of data failed: Disk full");
 	  
 	delete[] buf;
 	return 1;
@@ -3977,7 +3978,7 @@ void CdrDriver::sendReadCdProgressMsg(ReadCdProgressType type, int totalTracks,
 
     if (write(fd, REMOTE_MSG_SYNC_, sizeof(REMOTE_MSG_SYNC_)) != sizeof(REMOTE_MSG_SYNC_) ||
 	write(fd, (const char*)&p, sizeof(p)) != sizeof(p)) {
-      message(-1, "Failed to send read CD remote progress message.");
+      log_message(-1, "Failed to send read CD remote progress message.");
     }
   }
 }
@@ -4002,7 +4003,7 @@ int CdrDriver::sendWriteCdProgressMsg(WriteCdProgressType type,
 
     if (write(fd, REMOTE_MSG_SYNC_, sizeof(REMOTE_MSG_SYNC_)) != sizeof(REMOTE_MSG_SYNC_) ||
 	write(fd, (const char*)&p, sizeof(p)) != sizeof(p)) {
-      message(-1, "Failed to send write CD remote progress message.");
+      log_message(-1, "Failed to send write CD remote progress message.");
       return 1;
     }
   }
@@ -4027,7 +4028,7 @@ int CdrDriver::sendBlankCdProgressMsg(int totalProgress)
 
     if (write(fd, REMOTE_MSG_SYNC_, sizeof(REMOTE_MSG_SYNC_)) != sizeof(REMOTE_MSG_SYNC_) ||
 	write(fd, (const char*)&p, sizeof(p)) != sizeof(p)) {
-      message(-1, "Failed to send write CD remote progress message.");
+      log_message(-1, "Failed to send write CD remote progress message.");
       return 1;
     }
   }
@@ -4100,13 +4101,13 @@ long CdrDriver::audioRead(TrackData::SubChannelMode sm, int byteOrder,
 
     if (startLba > audioReadTrackInfo_[audioReadActTrack_ + 1].start) {
       audioReadActTrack_++;
-      message(1, "Track %d...", audioReadActTrack_ + 1);
+      log_message(1, "Track %d...", audioReadActTrack_ + 1);
     }
 
     if (startLba - audioReadProgress_ > 75) {
       audioReadProgress_ = startLba;
       Msf m(audioReadProgress_);
-      message(1, "%02d:%02d:00\r", m.min(), m.sec());
+      log_message(1, "%02d:%02d:00\r", m.min(), m.sec());
     }
     
     return len;      
@@ -4122,7 +4123,7 @@ long CdrDriver::audioRead(TrackData::SubChannelMode sm, int byteOrder,
 	int t = chan->trackNr() - 1;
 	Msf atime = Msf(chan->amin(), chan->asec(), chan->aframe());
 
-	//message(0, "LastLba: %ld, ActLba: %ld", audioReadActLba_, atime.lba());
+	//log_message(0, "LastLba: %ld, ActLba: %ld", audioReadActLba_, atime.lba());
 
 	if (t >= audioReadStartTrack_ && t <= audioReadEndTrack_ &&
 	    atime.lba() > audioReadActLba_ && 
@@ -4134,14 +4135,14 @@ long CdrDriver::audioRead(TrackData::SubChannelMode sm, int byteOrder,
 	  if (audioReadActLba_ - audioReadProgress_ > 75) {
 	    audioReadProgress_ = audioReadActLba_;
 	    Msf m(audioReadProgress_ - 150);
-	    message(1, "%02d:%02d:00\r", m.min(), m.sec());
+	    log_message(1, "%02d:%02d:00\r", m.min(), m.sec());
 	  }
 
 	  if (t == audioReadActTrack_ &&
 	      chan->indexNr() == audioReadActIndex_ + 1) {
 	  
 	    if (chan->indexNr() > 1) {
-	      message(2, "Found index %d at: %s", chan->indexNr(),
+	      log_message(2, "Found index %d at: %s", chan->indexNr(),
 		      time.str());
 	  
 	      if (audioReadTrackInfo_[t].indexCnt < 98) {
@@ -4151,11 +4152,11 @@ long CdrDriver::audioRead(TrackData::SubChannelMode sm, int byteOrder,
 	    }
 	  }
 	  else if (t == audioReadActTrack_ + 1) {
-	    message(1, "Track %d...", t + 1);
+	    log_message(1, "Track %d...", t + 1);
 	    //chan->print();
 	    if (chan->indexNr() == 0) {
 	      audioReadTrackInfo_[t].pregap = time.lba();
-	      message(2, "Found pre-gap: %s", time.str());
+	      log_message(2, "Found pre-gap: %s", time.str());
 	    }
 	  }
 
@@ -4165,7 +4166,7 @@ long CdrDriver::audioRead(TrackData::SubChannelMode sm, int byteOrder,
       }
       else if (chan->type() == SubChannel::QMODE3) {
 	if (audioReadTrackInfo_[audioReadActTrack_].isrcCode[0] == 0) {
-	  message(2, "Found ISRC code.");
+	  log_message(2, "Found ISRC code.");
 	  strcpy(audioReadTrackInfo_[audioReadActTrack_].isrcCode,
 		 chan->isrc());
 	}
@@ -4209,7 +4210,7 @@ int CdrDriver::readAudioRangeStream(ReadDiskInfo *info, int fd, long start,
 
   len = endLba - startLba + 1;
 
-  message(1, "Track %d...", startTrack + 1);
+  log_message(1, "Track %d...", startTrack + 1);
 
   trackInfo[endTrack].bytesWritten = 0;
 
@@ -4224,9 +4225,9 @@ int CdrDriver::readAudioRangeStream(ReadDiskInfo *info, int fd, long start,
 
     if ((ret = fullWrite(fd, buf, bytesToWrite)) != bytesToWrite) {
       if (ret < 0)
-	message(-2, "Writing of data failed: %s", strerror(errno));
+	log_message(-2, "Writing of data failed: %s", strerror(errno));
       else
-	message(-2, "Writing of data failed: Disk full");
+	log_message(-2, "Writing of data failed: Disk full");
 
       delete[] buf;
       return 1;
@@ -4239,7 +4240,7 @@ int CdrDriver::readAudioRangeStream(ReadDiskInfo *info, int fd, long start,
 
 
   if (audioReadCrcCount_ != 0)
-    message(2, "Found %ld Q sub-channels with CRC errors.", audioReadCrcCount_);
+    log_message(2, "Found %ld Q sub-channels with CRC errors.", audioReadCrcCount_);
 
   delete[] buf;
   return 0;
@@ -4302,7 +4303,7 @@ int CdrDriver::readAudioRangeParanoia(ReadDiskInfo *info, int fd, long start,
 
   len = endLba - startLba + 1;
 
-  message(1, "Track %d...", startTrack + 1);
+  log_message(1, "Track %d...", startTrack + 1);
 
   trackInfo[endTrack].bytesWritten = 0;
 
@@ -4317,9 +4318,9 @@ int CdrDriver::readAudioRangeParanoia(ReadDiskInfo *info, int fd, long start,
 
     if ((ret = fullWrite(fd, buf, AUDIO_BLOCK_LEN)) != AUDIO_BLOCK_LEN) {
       if (ret < 0)
-	message(-2, "Writing of data failed: %s", strerror(errno));
+	log_message(-2, "Writing of data failed: %s", strerror(errno));
       else
-	message(-2, "Writing of data failed: Disk full");
+	log_message(-2, "Writing of data failed: Disk full");
 
       return 1;
     }
@@ -4331,7 +4332,7 @@ int CdrDriver::readAudioRangeParanoia(ReadDiskInfo *info, int fd, long start,
 
 
   if (audioReadCrcCount_ != 0)
-    message(2, "Found %ld Q sub-channels with CRC errors.", audioReadCrcCount_);
+    log_message(2, "Found %ld Q sub-channels with CRC errors.", audioReadCrcCount_);
 
   return 0;
 }

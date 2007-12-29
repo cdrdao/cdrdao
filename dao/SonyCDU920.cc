@@ -28,7 +28,7 @@
 
 #include "port.h"
 #include "Toc.h"
-#include "util.h"
+#include "log.h"
 #include "PQSubChannel16.h"
 
 SonyCDU920::SonyCDU920(ScsiIf *scsiIf, unsigned long options)
@@ -38,7 +38,7 @@ SonyCDU920::SonyCDU920(ScsiIf *scsiIf, unsigned long options)
   driverName_ = "Sony CDU920 - Version 0.1 (data) (alpha)";
   
   speed_ = 2;
-  simulate_ = 1;
+  simulate_ = true;
   encodingMode_ = 1;
 
   scsiTimeout_ = 0;
@@ -111,7 +111,7 @@ int SonyCDU920::loadUnload(int unload) const
   }
   
   if (sendCmd(cmd, 6, NULL, 0, NULL, 0) != 0) {
-    message(-2, "Cannot load/unload medium.");
+    log_message(-2, "Cannot load/unload medium.");
     return 1;
   }
 
@@ -143,7 +143,7 @@ int SonyCDU920::selectSpeed()
   }
 
   if (setModePage6(mp, NULL, NULL, 1) != 0) {
-    message(-2, "Cannot set speed mode page.");
+    log_message(-2, "Cannot set speed mode page.");
     return 1;
   }
 
@@ -158,7 +158,7 @@ int SonyCDU920::getSessionInfo()
   unsigned char mp[32];
 
   if (getModePage6(0x22, mp, 32, NULL, NULL, 1) != 0) {
-    message(-2, "Cannot retrieve CD-R disc information mode page.");
+    log_message(-2, "Cannot retrieve CD-R disc information mode page.");
     return 1;
   }
 
@@ -169,7 +169,7 @@ int SonyCDU920::getSessionInfo()
   else
     leadInLen_ = 0;
 
-  message(4, "Lead-in start: %s length: %ld", leadInStart_.str(),
+  log_message(4, "Lead-in start: %s length: %ld", leadInStart_.str(),
 	  leadInLen_);
 
   return 0;
@@ -189,13 +189,13 @@ int SonyCDU920::setWriteParameters()
   mp[3] = (simulate_ != 0) ? 2 : 0;
   
   if (setModePage6(mp, NULL, NULL, 1) != 0) {
-    message(-2, "Cannot set CD-R mastering information page.");
+    log_message(-2, "Cannot set CD-R mastering information page.");
     return 1;
   }
 
   memset(mp, 0, 32);
   if (getModePage6(0x22, mp, 32, NULL, NULL, 1) != 0) {
-    message(-2, "Cannot retrieve CD-R disc information page.");
+    log_message(-2, "Cannot retrieve CD-R disc information page.");
     return 1;
   }
 
@@ -206,7 +206,7 @@ int SonyCDU920::setWriteParameters()
   mp[19] = 0; // no automatic post-gap; required?
   
   if (setModePage6(mp, NULL, NULL, 1) != 0) {
-    message(-2, "Cannot set CD-R disc information page.");
+    log_message(-2, "Cannot set CD-R disc information page.");
     return 1;
   }
 
@@ -382,11 +382,11 @@ unsigned char *SonyCDU920::createCueSheet(unsigned char leadInDataForm,
   cueSheet[n*8+6] = SubChannel::bcd(lostart.sec());
   cueSheet[n*8+7] = SubChannel::bcd(lostart.frac());
 
-  message(4, "\nCue Sheet:");
-  message(4, "CTL/  TNO  INDEX  DATA  SCMS  MIN  SEC  FRAME");
-  message(4, "ADR               FORM        BCD  BCD  BCD");
+  log_message(4, "\nCue Sheet:");
+  log_message(4, "CTL/  TNO  INDEX  DATA  SCMS  MIN  SEC  FRAME");
+  log_message(4, "ADR               FORM        BCD  BCD  BCD");
   for (n = 0; n < len; n++) {
-    message(4, "%02x    %02x    %02x     %02x    %02x   %02x   %02x   %02x",
+    log_message(4, "%02x    %02x    %02x     %02x    %02x   %02x   %02x   %02x",
 	   cueSheet[n*8],
 	   cueSheet[n*8+1], cueSheet[n*8+2], cueSheet[n*8+3], cueSheet[n*8+4],
 	   cueSheet[n*8+5], cueSheet[n*8+6], cueSheet[n*8+7]);
@@ -407,7 +407,7 @@ int SonyCDU920::sendCueSheet(unsigned char leadInDataForm)
   }
 
   if (cueSheetLen > 3600) {
-    message(-2, "Cue sheet too big. Please remove index marks.");
+    log_message(-2, "Cue sheet too big. Please remove index marks.");
     delete[] cueSheet;
     return 1;
   }
@@ -420,7 +420,7 @@ int SonyCDU920::sendCueSheet(unsigned char leadInDataForm)
   cmd[3] = cueSheetLen;
 
   if (sendCmd(cmd, 10, cueSheet, cueSheetLen, NULL, 0) != 0) {
-    message(-2, "Cannot send cue sheet.");
+    log_message(-2, "Cannot send cue sheet.");
     delete[] cueSheet;
     return 1;
   }
@@ -440,7 +440,7 @@ int SonyCDU920::readBufferCapacity(long *capacity)
   cmd[0] = 0xec; // READ BUFFER CAPACITY
 
   if (sendCmd(cmd, 10, NULL, 0, data, 8) != 0) {
-    message(-2, "Read buffer capacity failed.");
+    log_message(-2, "Read buffer capacity failed.");
     return 1;
   }
 
@@ -540,7 +540,7 @@ int SonyCDU920::writeData(TrackData::Mode mode, TrackData::SubChannelMode sm,
     sum += buf[i];
   }
 
-  message(0, "W: %ld: %ld, %ld, %ld", lba, blockLength, len, sum);
+  log_message(0, "W: %ld: %ld, %ld, %ld", lba, blockLength, len, sum);
 #endif
 
   memset(cmd, 0, 10);
@@ -572,12 +572,12 @@ int SonyCDU920::writeData(TrackData::Mode mode, TrackData::SubChannelMode sm,
         }
 	else {
 	  scsiIf_->printError();
-	  message(-2, "Write data failed.");
+	  log_message(-2, "Write data failed.");
 	  return 1;
 	}
       }
       else {
-	message(-2, "Write data failed.");
+	log_message(-2, "Write data failed.");
 	return 1;
       }
     }
@@ -599,7 +599,7 @@ DiskInfo *SonyCDU920::diskInfo()
 
   memset(mp, 0, 32);
   if (getModePage6(0x22, mp, 32, NULL, NULL, 1) != 0) {
-    message(-2, "Cannot retrieve CD-R disc information mode page.");
+    log_message(-2, "Cannot retrieve CD-R disc information mode page.");
     return &diskInfo_;
   }
 
@@ -647,7 +647,7 @@ int SonyCDU920::readCatalog(Toc *toc, long startLba, long endLba)
   cmd[8] = 24;   // transfer length
 
   if (sendCmd(cmd, 10, NULL, 0, data, 24) != 0) {
-    message(-2, "Cannot get catalog number.");
+    log_message(-2, "Cannot get catalog number.");
     return 0;
   }
 
@@ -683,7 +683,7 @@ int SonyCDU920::readIsrc(int trackNr, char *buf)
   cmd[8] = 24;   // transfer length
 
   if (sendCmd(cmd, 10, NULL, 0, data, 24) != 0) {
-    message(-2, "Cannot get ISRC code.");
+    log_message(-2, "Cannot get ISRC code.");
     return 0;
   }
 
@@ -795,13 +795,13 @@ CdRawToc *SonyCDU920::getRawToc(int sessionNr, int *len)
   cmd[9] = (2 << 6);
 
   if (sendCmd(cmd, 10, NULL, 0, reqData, 4) != 0) {
-    message(-2, "Cannot read disk toc.");
+    log_message(-2, "Cannot read disk toc.");
     return NULL;
   }
 
   dataLen = ((reqData[0] << 8) | reqData[1]) + 2;
   
-  message(4, "Raw toc data len: %d", dataLen);
+  log_message(4, "Raw toc data len: %d", dataLen);
 
   data = new unsigned char[dataLen];
   
@@ -810,7 +810,7 @@ CdRawToc *SonyCDU920::getRawToc(int sessionNr, int *len)
   cmd[8] = dataLen;
 
   if (sendCmd(cmd, 10, NULL, 0, data, dataLen) != 0) {
-    message(-2, "Cannot read disk toc.");
+    log_message(-2, "Cannot read disk toc.");
     delete[] data;
     return NULL;
   }
@@ -821,7 +821,7 @@ CdRawToc *SonyCDU920::getRawToc(int sessionNr, int *len)
 
   for (i = 0, p = data + 4; i < entries; i++, p += 11 ) {
 #if 0
-    message(0, "%d %02x %02d %2x %02d:%02d:%02d %02d %02d:%02d:%02d",
+    log_message(0, "%d %02x %02d %2x %02d:%02d:%02d %02d %02d:%02d:%02d",
 	    p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7], p[8], p[9], p[10]);
 #endif
     rawToc[i].sessionNr = p[0];
@@ -903,7 +903,7 @@ long SonyCDU920::readTrackData(TrackData::Mode mode,
       break;
 
     default:
-      message(-2, "Read error at LBA %ld, len %ld", lba, len);
+      log_message(-2, "Read error at LBA %ld, len %ld", lba, len);
       return -1;
       break;
     }
@@ -928,7 +928,7 @@ long SonyCDU920::readTrackData(TrackData::Mode mode,
 	   (actMode == TrackData::MODE2 ||
 	    actMode == TrackData::MODE2_FORM1 ||
 	    actMode == TrackData::MODE2_FORM2)))) {
-      message(4, "Stopped because sector with not matching mode %s found.",
+      log_message(4, "Stopped because sector with not matching mode %s found.",
 	      TrackData::mode2String(actMode));
       return i;
     }
@@ -960,7 +960,7 @@ long SonyCDU920::readTrackData(TrackData::Mode mode,
 	break;
       case TrackData::MODE0:
       case TrackData::AUDIO:
-	message(-3, "PlextorReader::readTrackData: Illegal mode.");
+	log_message(-3, "PlextorReader::readTrackData: Illegal mode.");
 	return 0;
 	break;
       }

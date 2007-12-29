@@ -46,9 +46,10 @@
 #endif
 
 #include "dao.h"
-
-#include "port.h"
 #include "util.h"
+#include "log.h"
+#include "port.h"
+#include "log.h"
 
 
 #define DEBUG_WRITE 0
@@ -113,7 +114,7 @@ static RETSIGTYPE terminationRequest(int sig)
 
 #if 0
   if (sig == SIGCHLD) {
-    message(0, "SIGCHLD received.");
+    log_message(0, "SIGCHLD received.");
   }
 #endif
 }
@@ -221,13 +222,13 @@ static int writer(const Toc *toc, CdrDriver *cdr, BufferHeader *header,
   int status;
 #endif
 
-  message (3, "Waiting for reader process");
+  log_message(3, "Waiting for reader process");
 
   while (header->buffersFilled == 0) {
     sleep(1);
 
     if (header->readerTerminated) {
-      message(-2, "Reader process terminated abnormally.");
+      log_message(-2, "Reader process terminated abnormally.");
       return 1;
     }
 
@@ -235,10 +236,10 @@ static int writer(const Toc *toc, CdrDriver *cdr, BufferHeader *header,
   // Check if child has terminated
     switch (waitForChild(1, &status)) {
     case 0: // Child exited
-      message(-2, "Reader process terminated abnormally.");
+      log_message(-2, "Reader process terminated abnormally.");
       return 1;
     case 2:
-      message(-2, "wait failed: %s", strerror(errno));
+      log_message(-2, "wait failed: %s", strerror(errno));
       return 2;
     }
 #endif
@@ -248,7 +249,7 @@ static int writer(const Toc *toc, CdrDriver *cdr, BufferHeader *header,
   FILE *fp = fopen("test.out", "w");
 #endif
 
-  message (3, "Awaken, will start writing");
+  log_message(3, "Awaken, will start writing");
 
   if (cdr != NULL) {
     cdr->sendWriteCdProgressMsg(CdrDriver::WCD_LEADIN,
@@ -263,11 +264,11 @@ static int writer(const Toc *toc, CdrDriver *cdr, BufferHeader *header,
   }
 
   do {
-    //message(4, "Slave: waiting for master.");
+    //log_message(4, "Slave: waiting for master.");
 
     while (header->buffersWritten == header->buffersRead) {
       if (header->readerTerminated) {
-	message(-2, "Reader process terminated abnormally.");
+	log_message(-2, "Reader process terminated abnormally.");
 	return 1;
       }
 
@@ -275,10 +276,10 @@ static int writer(const Toc *toc, CdrDriver *cdr, BufferHeader *header,
       // Check if child has terminated
       switch (waitForChild(1, &status)) {
       case 0: // Child exited
-	message(-2, "Reader process terminated abnormally.");
+	log_message(-2, "Reader process terminated abnormally.");
 	return 1;
       case 2:
-	message(-2, "wait failed: %s", strerror(errno));
+	log_message(-2, "wait failed: %s", strerror(errno));
 	return 2;
       }
 #endif
@@ -317,11 +318,11 @@ static int writer(const Toc *toc, CdrDriver *cdr, BufferHeader *header,
 
     if (len == 0) {
       // all data is written
-      message(1, "");
+      log_message(1, "");
       if (cdr == NULL)
-	message(1, "Read %ld blocks.", blkCount);
+	log_message(1, "Read %ld blocks.", blkCount);
       else
-	message(1, "Wrote %ld blocks. Buffer fill min %d%%/max %d%%.",
+	log_message(1, "Wrote %ld blocks. Buffer fill min %d%%/max %d%%.",
 		blkCount, minFill, maxFill);
 
 #if DEBUG_WRITE
@@ -348,7 +349,7 @@ static int writer(const Toc *toc, CdrDriver *cdr, BufferHeader *header,
     blkCount += len;
 
     if (buf.trackNr > 0) {
-      message(1, "Writing track %02d (mode %s/%s %s)...", buf.trackNr,
+      log_message(1, "Writing track %02d (mode %s/%s %s)...", buf.trackNr,
 	      TrackData::mode2String(buf.trackMode),
 	      TrackData::mode2String(dataMode),
 	      TrackData::subChannelMode2String(subChanMode));
@@ -356,12 +357,12 @@ static int writer(const Toc *toc, CdrDriver *cdr, BufferHeader *header,
       actTrackNr = buf.trackNr;
     }
 
-    //message(4, "Slave: writing buffer %p (%ld).", buf, len);
+    //log_message(4, "Slave: writing buffer %p (%ld).", buf, len);
 
 #if DEBUG_WRITE
     if (fp != NULL) {
       if (cdr != NULL) {
-	message(0, "dao: blockSize: %ld", cdr->blockSize(dataMode, subChanMode));
+	log_message(0, "dao: blockSize: %ld", cdr->blockSize(dataMode, subChanMode));
 	
 	fwrite(buf.buffer, cdr->blockSize(dataMode, subChanMode), len, fp);
       }
@@ -375,7 +376,7 @@ static int writer(const Toc *toc, CdrDriver *cdr, BufferHeader *header,
     if (cdr != NULL) {
       blockSignals();
       if (cdr->writeData(dataMode, subChanMode, lba, buf.buffer, len) != 0) {
-	message(-2, "Writing failed - buffer under run?");
+	log_message(-2, "Writing failed - buffer under run?");
 	unblockSignals();
 	return 2;
       }
@@ -387,10 +388,10 @@ static int writer(const Toc *toc, CdrDriver *cdr, BufferHeader *header,
         if (cdr->readBufferCapacity(&totalcap, &availcap)) {
           writerFill = (int)((1.0 - ((double)availcap / (double)totalcap))
                              * 100.0);
-          message(1, "Wrote %ld of %ld MB (Buffers %3d%% %3d%%).\r",
+          log_message(1, "Wrote %ld of %ld MB (Buffers %3d%% %3d%%).\r",
                   cnt >> 20, total >> 20, buffFill, writerFill);
         } else {
-          message(1, "Wrote %ld of %ld MB (Buffer %3d%%).\r",
+          log_message(1, "Wrote %ld of %ld MB (Buffer %3d%%).\r",
                   cnt >> 20, total >> 20, buffFill);
         }
         lastMb = cntMb;
@@ -407,11 +408,11 @@ static int writer(const Toc *toc, CdrDriver *cdr, BufferHeader *header,
     }
     else {
       if (speed > 0) {
-	message(1, "Read %ld of %ld MB (Buffer %3d%%).\r", cnt >> 20, total >> 20, buffFill);
+	log_message(1, "Read %ld of %ld MB (Buffer %3d%%).\r", cnt >> 20, total >> 20, buffFill);
 	mSleep(1000 / speed);
       }
       else {
-	message(1, "Read %ld of %ld MB.\r", cnt >> 20, total >> 20);
+	log_message(1, "Read %ld of %ld MB.\r", cnt >> 20, total >> 20);
       }
     }
 
@@ -420,7 +421,7 @@ static int writer(const Toc *toc, CdrDriver *cdr, BufferHeader *header,
 
   } while (!TERMINATE);
 
-  message(-1, "Writing/simulation/read-test aborted on user request.");
+  log_message(-1, "Writing/simulation/read-test aborted on user request.");
 
   return 2;
 }
@@ -466,7 +467,7 @@ static void *reader(void *args)
     }
     encodingMode = cdr->encodingMode();
   }
-  message(4, "Swap: %d", swap);
+  log_message(4, "Swap: %d", swap);
 
   TrackIterator itr(toc);
   TrackReader reader;
@@ -475,7 +476,7 @@ static void *reader(void *args)
   reader.init(track);
 
   if (reader.openData() != 0) {
-    message(-2, "Opening of track data failed.");
+    log_message(-2, "Opening of track data failed.");
     goto fail;
   }
 
@@ -498,7 +499,7 @@ static void *reader(void *args)
 			   n);
     
       if (rn < 0) {
-	message(-2, "Reading of track data failed.");
+	log_message(-2, "Reading of track data failed.");
 	goto fail;
       }
       
@@ -507,7 +508,7 @@ static void *reader(void *args)
 	reader.init(track);
 
 	if (reader.openData() != 0) {
-	  message(-2, "Opening of track data failed.");
+	  log_message(-2, "Opening of track data failed.");
 	  goto fail;
 	}
 
@@ -566,14 +567,14 @@ static void *reader(void *args)
     if (first > 0) {
       first--;
       if (first == 0 || length == 0) {
-	message (3, "Buffer filled");
+	log_message(3, "Buffer filled");
 
 	header->buffersFilled = 1;
       }
     }
     
     // wait for writing process to finish writing of previous buffer
-    //message(4, "Reader: waiting for Writer.");
+    //log_message(4, "Reader: waiting for Writer.");
     while (header->buffersRead - header->buffersWritten 
 	   == header->nofBuffers &&
 	   header->terminateReader == 0) {
@@ -635,7 +636,7 @@ int writeDiskAtOnce(const Toc *toc, CdrDriver *cdr, int nofBuffers, int swap,
 #if 1
   if (nofBuffers < 10) {
     nofBuffers = 10;
-    message(-1, "Adjusted number of FIFO buffers to 10.");
+    log_message(-1, "Adjusted number of FIFO buffers to 10.");
   }
 #endif
 
@@ -677,7 +678,7 @@ int writeDiskAtOnce(const Toc *toc, CdrDriver *cdr, int nofBuffers, int swap,
 #ifdef USE_POSIX_THREADS
 
   if (pthread_attr_init(&readerThreadAttr) != 0) {
-    message(-2, "pthread_attr_init failed: %s", strerror(errno));
+    log_message(-2, "pthread_attr_init failed: %s", strerror(errno));
     err = 1; goto fail;
   }
   
@@ -690,7 +691,7 @@ int writeDiskAtOnce(const Toc *toc, CdrDriver *cdr, int nofBuffers, int swap,
   rargs.startLba = startLba;
 
   if (pthread_create(&readerThread, &readerThreadAttr, reader, &rargs) != 0) {
-    message(-2, "Cannot create thread: %s", strerror(errno));
+    log_message(-2, "Cannot create thread: %s", strerror(errno));
     pthread_attr_destroy(&readerThreadAttr);
     err = 1; goto fail;
   }
@@ -708,9 +709,9 @@ int writeDiskAtOnce(const Toc *toc, CdrDriver *cdr, int nofBuffers, int swap,
 #ifdef HAVE_MLOCKALL
     if (geteuid() == 0) {
       if (mlockall(MCL_CURRENT|MCL_FUTURE) != 0) {
-	message(-1, "Cannot lock memory pages: %s", strerror(errno));
+	log_message(-1, "Cannot lock memory pages: %s", strerror(errno));
       }
-      message(4, "Reader process memory locked");
+      log_message(4, "Reader process memory locked");
     }
 #endif
 
@@ -725,26 +726,26 @@ int writeDiskAtOnce(const Toc *toc, CdrDriver *cdr, int nofBuffers, int swap,
     reader(&rargs);
   }
   else if (pid < 0) {
-    message(-2, "fork failed: %s", strerror(errno));
+    log_message(-2, "fork failed: %s", strerror(errno));
     err = 1; goto fail;
   }
 #endif /* USE_POSIX_THREADS */
 
   switch (setRealTimeScheduling(5)) {
   case 1:
-    message(-1, "No super user permission to setup real time scheduling.");
+    log_message(-1, "No super user permission to setup real time scheduling.");
     break;
   case 2:
-    message(2, "Real time scheduling not available.");
+    log_message(2, "Real time scheduling not available.");
     break;
   }
 
 #ifdef HAVE_MLOCKALL
   if (geteuid() == 0) {
     if (mlockall(MCL_CURRENT|MCL_FUTURE) != 0) {
-      message(-1, "Cannot lock memory pages: %s", strerror(errno));
+      log_message(-1, "Cannot lock memory pages: %s", strerror(errno));
     }
-    message(4, "Memory locked");
+    log_message(4, "Memory locked");
   }
 #endif
 
@@ -775,7 +776,7 @@ int writeDiskAtOnce(const Toc *toc, CdrDriver *cdr, int nofBuffers, int swap,
     header->terminateReader = 1;
 
     if (pthread_join(readerThread, NULL) != 0) {
-      message(-2, "pthread_join failed: %s", strerror(errno));
+      log_message(-2, "pthread_join failed: %s", strerror(errno));
       err = 1;
     }
 
@@ -829,7 +830,7 @@ static int getSharedMemory(long nofBuffers,
 				  nofBuffers * bufferSize];
 
   if ( (*shmSegment)->buffer == NULL) {
-    message(-2, "Cannot allocated memory for ring buffer.");
+    log_message(-2, "Cannot allocated memory for ring buffer.");
     return 1;
   }
 
@@ -883,9 +884,9 @@ static int getSharedMemory(long nofBuffers,
   struct shminfo info;
 
   if (shmctl(0, IPC_INFO, (struct shmid_ds*)&info) < 0) {
-    message(-1, "Cannot get IPC info: %s", strerror(errno));
+    log_message(-1, "Cannot get IPC info: %s", strerror(errno));
     maxSegmentSize = 4 * 1024 * 1024;
-    message(-1, "Assuming %ld MB shared memory segment size.",
+    log_message(-1, "Assuming %ld MB shared memory segment size.",
 	    maxSegmentSize >> 20);
   }
   else {
@@ -898,11 +899,11 @@ static int getSharedMemory(long nofBuffers,
   maxSegmentSize = 1 * 1024 * 1024; // 1 MB
 #endif
 
-  message(4, "Shm max segement size: %ld (%ld MB)", maxSegmentSize,
+  log_message(4, "Shm max segement size: %ld (%ld MB)", maxSegmentSize,
 	  maxSegmentSize >> 20);
 
   if (maxSegmentSize < sizeof(BufferHeader) + nofBuffers * sizeof(Buffer)) {
-    message(-2, "Shared memory segment cannot hold a single buffer.");
+    log_message(-2, "Shared memory segment cannot hold a single buffer.");
     return 1;
   }
 
@@ -911,7 +912,7 @@ static int getSharedMemory(long nofBuffers,
   long buffersPerSegment = maxSegmentSize / bufferSize;
 
   if (buffersPerSegment == 0) {
-    message(-2, "Shared memory segment cannot hold a single buffer.");
+    log_message(-2, "Shared memory segment cannot hold a single buffer.");
     return 1;
   }
 
@@ -922,7 +923,7 @@ static int getSharedMemory(long nofBuffers,
 
   *shmSegments = new ShmSegment[*nofSegments];
 
-  message(4, "Using %ld shared memory segments.", *nofSegments);
+  log_message(4, "Using %ld shared memory segments.", *nofSegments);
 
   for (i = 0; i < *nofSegments; i++) {
     (*shmSegments)[i].id = -1;
@@ -945,9 +946,9 @@ static int getSharedMemory(long nofBuffers,
 
     (*shmSegments)[i].id = shmget(IPC_PRIVATE, segmentLength, 0600|IPC_CREAT);
     if ((*shmSegments)[i].id < 0) {
-      message(-2, "Cannot create shared memory segment: %s",
+      log_message(-2, "Cannot create shared memory segment: %s",
 	      strerror(errno));
-      message(-2, "Try to reduce the buffer count (option --buffers).");
+      log_message(-2, "Try to reduce the buffer count (option --buffers).");
       return 1;
     }
 
@@ -955,8 +956,8 @@ static int getSharedMemory(long nofBuffers,
     if (((*shmSegments)[i].buffer) == NULL ||
 	((*shmSegments)[i].buffer) == (char *)-1) {
       (*shmSegments)[i].buffer = NULL;
-      message(-2, "Cannot get shared memory: %s", strerror(errno));
-      message(-2, "Try to reduce the buffer count (option --buffers).");
+      log_message(-2, "Cannot get shared memory: %s", strerror(errno));
+      log_message(-2, "Try to reduce the buffer count (option --buffers).");
       return 1;
     }
 
@@ -995,11 +996,11 @@ static void releaseSharedMemory(long nofSegments, ShmSegment *shmSegments)
     if (shmSegments[i].id >= 0) {
       if (shmSegments[i].buffer != NULL) {
 	if (shmdt(shmSegments[i].buffer) != 0) {
-	  message(-2, "shmdt: %s", strerror(errno));
+	  log_message(-2, "shmdt: %s", strerror(errno));
 	}
       }
       if (shmctl(shmSegments[i].id, IPC_RMID, NULL) != 0) {
-	message(-2, "Cannot remove shared memory: %s", strerror(errno));
+	log_message(-2, "Cannot remove shared memory: %s", strerror(errno));
       }
     }
   }

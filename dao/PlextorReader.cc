@@ -28,6 +28,7 @@
 
 #include "Toc.h"
 #include "util.h"
+#include "log.h"
 
 #include "PWSubChannel96.h"
 
@@ -37,7 +38,7 @@ PlextorReader::PlextorReader(ScsiIf *scsiIf, unsigned long options)
   driverName_ = "Plextor CD-ROM Reader - Version 1.3";
   
   speed_ = 0;
-  simulate_ = 0;
+  simulate_ = false;
   audioDataByteOrder_ = 0;
   
   slow_down_on_read_errors = -1;
@@ -121,16 +122,16 @@ PlextorReader::PlextorReader(ScsiIf *scsiIf, unsigned long options)
             WaitMaxSpeed (0);
         if (options & OPT_PLEX_NOSLOW_ON_VIB)
             VibrationsSlowDown (0);
-        message (4, "Plextor features status:");
-        message (4, "  Slowdown on read errors: %s",
+        log_message(4, "Plextor features status:");
+        log_message(4, "  Slowdown on read errors: %s",
             slowdown_msg[slow_down_on_read_errors+1].msg);
-        message (4, "  Slowdown to avoid vibrations: %s",
+        log_message(4, "  Slowdown to avoid vibrations: %s",
             slowdown_msg[slow_down_on_vibrations+1].msg);
-        message (4, "  Transfer data before max speed: %s",
+        log_message(4, "  Transfer data before max speed: %s",
             trbefmax_msg[transfer_data_before_max_speed+1].msg);
     }
-    message(4, "model number %d\n",model_);
-    message(4, "PRODUCT ID: '%s'\n", scsiIf_->product());
+    log_message(4, "model number %d\n",model_);
+    log_message(4, "PRODUCT ID: '%s'\n", scsiIf_->product());
   }
 }
 
@@ -227,10 +228,10 @@ int PlextorReader::speed(int speed)
   }
   
   getModePage6((long)0x31,data,dataLen,NULL,NULL,1);
-  //message(0,"page code %0x\n",data[0]);
-  //message(0,"speed value was %d\n",data[2]);
+  //log_message(0,"page code %0x\n",data[0]);
+  //log_message(0,"speed value was %d\n",data[2]);
   data[2]=speedvalue;
-  //message(0,"new speedvalue %d\n",speedvalue);    
+  //log_message(0,"new speedvalue %d\n",speedvalue);    
   setModePage6(data,NULL,NULL,1);
 
   return 0;  
@@ -243,7 +244,7 @@ DiskInfo *PlextorReader::diskInfo()
 
 int PlextorReader::initDao(const Toc *toc)
 {
-  message(-2, "Writing is not supported by this driver.");
+  log_message(-2, "Writing is not supported by this driver.");
   return 1;
 }
 
@@ -281,7 +282,7 @@ int PlextorReader::readCatalog(Toc *toc, long startLba, long endLba)
   cmd[8] = dataLen;
 
   if (sendCmd(cmd, 10, NULL, 0, data, dataLen) != 0) {
-    message(-2, "Cannot read sub channel data.");
+    log_message(-2, "Cannot read sub channel data.");
     return 0;
   }
 
@@ -315,7 +316,7 @@ void PlextorReader::playAudioBlock(long start, long len)
   cmd[8] = len;
 
   if (sendCmd(cmd, 10, NULL, 0, NULL, 0) != 0) {
-    message(-2, "Cannot play audio block.");
+    log_message(-2, "Cannot play audio block.");
     return;
   }
 }
@@ -361,7 +362,7 @@ int PlextorReader::readIsrc(int trackNr, char *buf)
   cmd[8] = dataLen;
 
   if (sendCmd(cmd, 10, NULL, 0, data, dataLen) != 0) {
-    message(-1, "Cannot read ISRC code.");
+    log_message(-1, "Cannot read ISRC code.");
     return 0;
   }
 
@@ -395,7 +396,7 @@ int PlextorReader::readSubChannelData(int *trackNr, int *indexNr,
   cmd[8] = dataLen;
 
   if (sendCmd(cmd, 10, NULL, 0, data, dataLen) != 0) {
-    message(-2, "Cannot read sub Q channel data.");
+    log_message(-2, "Cannot read sub Q channel data.");
   }
 
   *trackNr = data[6];
@@ -445,13 +446,13 @@ CdRawToc *PlextorReader::getRawToc(int sessionNr, int *len)
   cmd[9] |= 2 << 6; // get Q subcodes
 
   if (sendCmd(cmd, 10, NULL, 0, reqData, 4) != 0) {
-    message(-2, "Cannot read raw disk toc.");
+    log_message(-2, "Cannot read raw disk toc.");
     return NULL;
   }
 
   dataLen = ((reqData[0] << 8) | reqData[1]) + 2;
 
-  message(4, "Raw toc data len: %d", dataLen);
+  log_message(4, "Raw toc data len: %d", dataLen);
 
   data = new unsigned char[dataLen];
   
@@ -460,7 +461,7 @@ CdRawToc *PlextorReader::getRawToc(int sessionNr, int *len)
   cmd[8] = dataLen;
 
   if (sendCmd(cmd, 10, NULL, 0, data, dataLen) != 0) {
-    message(-2, "Cannot read raw disk toc.");
+    log_message(-2, "Cannot read raw disk toc.");
     delete[] data;
     return NULL;
   }
@@ -472,7 +473,7 @@ CdRawToc *PlextorReader::getRawToc(int sessionNr, int *len)
 
   for (i = 0, p = data + 4; i < entries; i++, p += 11 ) {
 #if 0
-    message(0, "%d %02x %02d %2x %02x:%02x:%02x %02x %02x:%02x:%02x",
+    log_message(0, "%d %02x %02d %2x %02x:%02x:%02x %02x %02x:%02x:%02x",
 	    p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7], p[8], p[9], p[10]);
 #endif
     rawToc[i].sessionNr = p[0];
@@ -554,7 +555,7 @@ long PlextorReader::readTrackData(TrackData::Mode mode,
       break;
 
     default:
-      message(-2, "Read error at LBA %ld, len %ld", lba, len);
+      log_message(-2, "Read error at LBA %ld, len %ld", lba, len);
       return -1;
       break;
     }
@@ -579,9 +580,9 @@ long PlextorReader::readTrackData(TrackData::Mode mode,
 	   (actMode == TrackData::MODE2 ||
 	    actMode == TrackData::MODE2_FORM1 ||
 	    actMode == TrackData::MODE2_FORM2)))) {
-      message(4, "Stopped because sector with not matching mode %s found.",
+      log_message(4, "Stopped because sector with not matching mode %s found.",
 	      TrackData::mode2String(actMode));
-      message(4, "%02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x",
+      log_message(4, "%02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x",
 	      sector[0], sector[1], sector[2], sector[3],  sector[4],
 	      sector[5], sector[6], sector[7], sector[8], sector[9],
 	      sector[10], sector[11]);
@@ -615,7 +616,7 @@ long PlextorReader::readTrackData(TrackData::Mode mode,
 	break;
       case TrackData::MODE0:
       case TrackData::AUDIO:
-	message(-3, "PlextorReader::readTrackData: Illegal mode.");
+	log_message(-3, "PlextorReader::readTrackData: Illegal mode.");
 	return 0;
 	break;
       }
@@ -699,11 +700,11 @@ int PlextorReader::readAudioRangePlextor(ReadDiskInfo *rinfo, int fd,
 
   nab=lab-fab;
 
-  message(1, "Reading CDDA tracks in range [%lu,%lu].", fat+1,lat+1);
+  log_message(1, "Reading CDDA tracks in range [%lu,%lu].", fat+1,lat+1);
 
   cat = fat + 1;
  
-  message(2, "Reading CDDA blocks in range [%lu,%lu>"
+  log_message(2, "Reading CDDA blocks in range [%lu,%lu>"
     " (%lu blocks=%lu bytes).",fab,lab,nab,nab*2352);
 
   memset(cmd,0,12);
@@ -743,7 +744,7 @@ int PlextorReader::readAudioRangePlextor(ReadDiskInfo *rinfo, int fd,
     cmd[8] = n >> 8;
     cmd[9] = n;
 
-    message(1, "block %6ld\r",cab);
+    log_message(1, "block %6ld\r",cab);
 
     if (remote_) {
       if (cab > stampLba + 75) {
@@ -820,37 +821,37 @@ int PlextorReader::readAudioRangePlextor(ReadDiskInfo *rinfo, int fd,
 
           if ((chan.indexNr()!=cai) || (chan.trackNr()!=cat))
           {
-            message(2, "(track,index,absolute)=(%2d,%2d,%s)",
+            log_message(2, "(track,index,absolute)=(%2d,%2d,%s)",
               chan.trackNr(),chan.indexNr(),qAbsTime.str());
 
             // first track start?
             if ((chan.trackNr()==1) && (chan.indexNr()==1))
             {
-              message(1, "Found track number %02d at %s (block %d).",
+              log_message(1, "Found track number %02d at %s (block %d).",
 		      chan.trackNr(),qAbsTime.str(),cab);
               if ((qAbsTime.lba()-150)!=info[0].start)
               {
-                message(2, "TOC SAYS TRACK STARTS AT %s!",
+                log_message(2, "TOC SAYS TRACK STARTS AT %s!",
                   Msf(info[0].start).str());
               }
             }
             // next track start?
             else if ((chan.trackNr()==(cat+1)) && (chan.indexNr()==1))
             {
-              message(1, "Found track number %02d at %s.",
+              log_message(1, "Found track number %02d at %s.",
                 chan.trackNr(),qAbsTime.str());
               if ((qAbsTime.lba()-150)!=info[cat].start)
               {
-                message(2, "TOC SAYS TRACK STARTS AT %s!",
+                log_message(2, "TOC SAYS TRACK STARTS AT %s!",
 			Msf(info[cat].start).str());
               }
             }
             // pregap of next track?
             else if ((chan.trackNr()==(cat+1)) && (chan.indexNr()==0))
             {
-              message(2, "Found pregap of track %02d with size %s at ",
+              log_message(2, "Found pregap of track %02d with size %s at ",
 		      chan.trackNr(), qRelTime.str());
-	      message(2, "%s", qAbsTime.str());
+	      log_message(2, "%s", qAbsTime.str());
 	      if (cat <= lat) {
 		info[cat].pregap = qRelTime.lba();
 	      }
@@ -860,7 +861,7 @@ int PlextorReader::readAudioRangePlextor(ReadDiskInfo *rinfo, int fd,
             {
               if (chan.indexNr() > 1)
               {
-		message(2, "Found index number %02d at %s.",
+		log_message(2, "Found index number %02d at %s.",
 			chan.indexNr(),qAbsTime.str());
 
 		int indexCnt = info[cat - 1].indexCnt;
@@ -872,7 +873,7 @@ int PlextorReader::readAudioRangePlextor(ReadDiskInfo *rinfo, int fd,
             }
             else if (chan.trackNr()==0xAA)
             {
-              message(2, "LEAD OUT TRACK ENCOUNTERED!");
+              log_message(2, "LEAD OUT TRACK ENCOUNTERED!");
               n=0;
               i=0;
               rab=0;
@@ -885,7 +886,7 @@ int PlextorReader::readAudioRangePlextor(ReadDiskInfo *rinfo, int fd,
             }
             else
             {
-              message(1, "UNEXPECTED!");
+              log_message(1, "UNEXPECTED!");
             }
             cat=chan.trackNr();
             cai=chan.indexNr();
@@ -896,7 +897,7 @@ int PlextorReader::readAudioRangePlextor(ReadDiskInfo *rinfo, int fd,
 	  // subchannel contains ISRC code
 	  if (info[cat - 1].isrcCode[0] == 0) {
 	    memcpy(info[cat - 1].isrcCode, chan.isrc(), 13);
-	    message(2, "Found ISRC code of track %02d.", cat);
+	    log_message(2, "Found ISRC code of track %02d.", cat);
 	  }
 	}
       }
@@ -922,7 +923,7 @@ int PlextorReader::readAudioRangePlextor(ReadDiskInfo *rinfo, int fd,
           cabGoods++;  
           if (cabRetries)
           {
-            message(1,"block %6ld read and written without errors now. \n", cab);
+            log_message(1,"block %6ld read and written without errors now. \n", cab);
           }
         }
         // we have a fully repaired block
@@ -931,7 +932,7 @@ int PlextorReader::readAudioRangePlextor(ReadDiskInfo *rinfo, int fd,
           // write this block's audio data
           block=repairBlock;
           //fwrite(repairBlock,1,AUDIO_BLOCK_LEN,fd);
-          message(1,"block %6ld written after fully being repaired...", cab);
+          log_message(1,"block %6ld written after fully being repaired...", cab);
         }
         // we have a partially repaired block
         else if (cabRetries>=0)
@@ -939,11 +940,11 @@ int PlextorReader::readAudioRangePlextor(ReadDiskInfo *rinfo, int fd,
           // write this block's audio data
           block=repairBlock;
 	  //fwrite(repairBlock,1,AUDIO_BLOCK_LEN,fd);
-          message(1,"block %6ld written with %4ld erronous bytes in it!", cab, repairErrors);
+          log_message(1,"block %6ld written with %4ld erronous bytes in it!", cab, repairErrors);
         }
         else
         {
-           message(1,"PROGRAM BUG!!!! BUG #1! ENTERED ILLEGAL STATE\n");
+           log_message(1,"PROGRAM BUG!!!! BUG #1! ENTERED ILLEGAL STATE\n");
         }
 
 #if 1 // not if we test please
@@ -952,9 +953,9 @@ int PlextorReader::readAudioRangePlextor(ReadDiskInfo *rinfo, int fd,
 
 	if ((ret = fullWrite(fd, block, AUDIO_BLOCK_LEN)) != AUDIO_BLOCK_LEN) {
 	  if (ret < 0)
-	    message(-2, "Writing of data failed: %s", strerror(errno));
+	    log_message(-2, "Writing of data failed: %s", strerror(errno));
 	  else
-	    message(-2, "Writing of data failed: Disk full");
+	    log_message(-2, "Writing of data failed: Disk full");
 
           delete[] data;
           return 1;
@@ -965,7 +966,7 @@ int PlextorReader::readAudioRangePlextor(ReadDiskInfo *rinfo, int fd,
         repairErrors=-1;
         cabRetries=0;
         // proceed to next audio block
-        //message(0,"PROCEEDING TO NEXT BLOCK");
+        //log_message(0,"PROCEEDING TO NEXT BLOCK");
         cab++;
         rab--;
         if (cabGoods == 1000)
@@ -974,7 +975,7 @@ int PlextorReader::readAudioRangePlextor(ReadDiskInfo *rinfo, int fd,
           {
             overspeed=((overspeed*2)>=20?20:overspeed*2);
             // crank up the speed again
-            // message(0,"Speeding up to %ld overspeed...\r",overspeed);
+            // log_message(0,"Speeding up to %ld overspeed...\r",overspeed);
             speed(overspeed);
             cabGoods=0;
           }
@@ -991,7 +992,7 @@ int PlextorReader::readAudioRangePlextor(ReadDiskInfo *rinfo, int fd,
           memcpy(repairBlock,data+i*blockLength,AUDIO_BLOCK_LEN+1+294+96);
           // slow down to lower error rate (we hope so!?)
           if (overspeed>1) overspeed/=2;
-          // message(0,"Slowing down to %ld...\r",overspeed);
+          // log_message(0,"Slowing down to %ld...\r",overspeed);
           speed(overspeed);
         }
         // iterate through all audio samples, merge all good samples into
@@ -1040,26 +1041,26 @@ int PlextorReader::readAudioRangePlextor(ReadDiskInfo *rinfo, int fd,
               repairErrors++; 
             }
 #if 0
-              message(0,"bits %ld/%ld (bits %ld/%ld of byte %ld) was 1",
+              log_message(0,"bits %ld/%ld (bits %ld/%ld of byte %ld) was 1",
                 j,j+1,7-(j%8),6-(j%8),j/8);
 #endif
           }
 #if 0
           else
           {
-            message(0,"bits %ld/%ld (bits %ld/%ld of byte %ld) were 0",
+            log_message(0,"bits %ld/%ld (bits %ld/%ld of byte %ld) were 0",
               j,j+1,7-(j%8),6-(j%8),j/8);
           }
 #endif
         }
         if (cabRetries==0)
         {
-          message(1,"\nblock %6ld has %3ld error samples\r",
+          log_message(1,"\nblock %6ld has %3ld error samples\r",
             cab,repairErrors);
         }
         else
         {
-          message(1,"block %6ld has %3ld error samples left after %3ld retries\r",
+          log_message(1,"block %6ld has %3ld error samples left after %3ld retries\r",
             cab,repairErrors,cabRetries);
         }
         // increase number of retries
@@ -1133,7 +1134,7 @@ int PlextorReader::readSubChannels(TrackData::SubChannelMode,
 		  (tries == 1) ? 1 : 0);
 
     if (ret != 0 && tries == 1) {
-      message(-2, "Reading of audio data failed at sector %ld.", lba);
+      log_message(-2, "Reading of audio data failed at sector %ld.", lba);
       return 1;
     }
     
@@ -1163,12 +1164,12 @@ int PlextorReader::readAudioRange(ReadDiskInfo *rinfo, int fd, long start,
     unsigned char ctl;
     long slba, elba;
 
-    message(1, "Analyzing...");
+    log_message(1, "Analyzing...");
     
     for (t = startTrack; t <= endTrack; t++) {
       long totalProgress;
 
-      message(1, "Track %d...", t + 1);
+      log_message(1, "Track %d...", t + 1);
 
       totalProgress = t * 1000;
       totalProgress /= rinfo->tracks;
@@ -1178,7 +1179,7 @@ int PlextorReader::readAudioRange(ReadDiskInfo *rinfo, int fd, long start,
 
       if (!fastTocReading_) {
 	if (pregap != 0)
-	  message(2, "Found pre-gap: %s", Msf(pregap).str());
+	  log_message(2, "Found pre-gap: %s", Msf(pregap).str());
 
 	slba = info[t].start;
 	if (info[t].mode == info[t + 1].mode)
@@ -1208,7 +1209,7 @@ int PlextorReader::readAudioRange(ReadDiskInfo *rinfo, int fd, long start,
       info[t].isrcCode[0] = 0;
       readIsrc(t + 1, info[t].isrcCode);
       if (info[t].isrcCode[0] != 0)
-	message(2, "Found ISRC code.");
+	log_message(2, "Found ISRC code.");
 
       totalProgress = (t + 1) * 1000;
       totalProgress /= rinfo->tracks;
@@ -1217,7 +1218,7 @@ int PlextorReader::readAudioRange(ReadDiskInfo *rinfo, int fd, long start,
 			    totalProgress);
     }
 
-    message(1, "Reading...");
+    log_message(1, "Reading...");
   }
 
   return CdrDriver::readAudioRangeParanoia(rinfo, fd, start, end, startTrack,
