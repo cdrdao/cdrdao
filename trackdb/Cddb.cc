@@ -39,6 +39,7 @@
 #include "Toc.h"
 #include "CdTextItem.h"
 #include "util.h"
+#include "log.h"
 
 #include "Cddb.h"
 
@@ -57,7 +58,7 @@ static int parseQueryResult(char *line, char *category, char *diskId,
 
 static RETSIGTYPE alarmHandler(int sig)
 {
-  message(0, "ALARM");
+  log_message(0, "ALARM");
 #if RETSIGTYPE != void
   return 0;
 #endif
@@ -354,7 +355,7 @@ int Cddb::openConnection()
 #endif
   
   if (sigaction(SIGALRM, &newAlarmHandler, &oldAlarmHandler) != 0) {
-    message(-2, "CDDB: Cannot install alarm signal handler: %s",
+    log_message(-2, "CDDB: Cannot install alarm signal handler: %s",
 	    strerror(errno));
     return 1;
   }
@@ -372,18 +373,18 @@ int Cddb::openConnection()
 	server = run->httpProxyServer;
 	port = run->httpProxyPort;
 
-	message(1,
+	log_message(1,
 		"CDDB: Connecting to http://%s:%u%s via proxy %s:%u ...",
 		run->server, run->port, run->httpCgiBin, server, port);
       }
       else {
-	message(1,
+	log_message(1,
 		"CDDB: Connecting to http://%s:%u%s ...", server, port,
 		run->httpCgiBin);
       }
     }
     else {
-      message(1, "CDDB: Connecting to cddbp://%s:%u ...", server, port);
+      log_message(1, "CDDB: Connecting to cddbp://%s:%u ...", server, port);
     }
 
 #ifdef HAVE_INET_ATON
@@ -394,7 +395,7 @@ int Cddb::openConnection()
       if ((hostEnt = gethostbyname(server)) == NULL ||
 	  hostEnt->h_addrtype != AF_INET) {
 	alarm(0);
-	message(-1, "CDDB: Cannot resolve hostname '%s' - skipping.", server);
+	log_message(-1, "CDDB: Cannot resolve hostname '%s' - skipping.", server);
 	continue;
       }
       else {
@@ -407,11 +408,11 @@ int Cddb::openConnection()
     }
 #endif
 
-    message(4, "CDDB: Hostname: %s -> IP: %s", server,
+    log_message(4, "CDDB: Hostname: %s -> IP: %s", server,
 	    inet_ntoa(sockAddr.sin_addr));
 
     if ((fd_ = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-      message(-2, "CDDB: Cannot create socket: %s", strerror(errno));
+      log_message(-2, "CDDB: Cannot create socket: %s", strerror(errno));
       goto fail;
     }
 
@@ -422,13 +423,13 @@ int Cddb::openConnection()
 
     if (connect(fd_, (struct sockaddr*)&sockAddr, sizeof(sockAddr)) == 0) {
       alarm(0);
-      message(1, "CDDB: Ok.");
+      log_message(1, "CDDB: Ok.");
       selectedServer_ = run;
       break;
     }
     else {
       alarm(0);
-      message(-1, "CDDB: Failed to connect to '%s:%u: %s", server, port,
+      log_message(-1, "CDDB: Failed to connect to '%s:%u: %s", server, port,
 	      strerror(errno));
       closeConnection();
     }
@@ -440,7 +441,7 @@ int Cddb::openConnection()
   alarm(0);
 
   if (sigaction(SIGALRM, &oldAlarmHandler, NULL) != 0) {
-    message(-1, "CDDB: Cannot restore alarm signal handler: %s",
+    log_message(-1, "CDDB: Cannot restore alarm signal handler: %s",
 	    strerror(errno));
   }
   
@@ -510,17 +511,17 @@ int Cddb::connectDb(const char *userName, const char *hostName,
   response = getServerResponse(code);
 
   if (response == NULL) {
-    message(-2, "CDDB: EOF while waiting for server greeting.");
+    log_message(-2, "CDDB: EOF while waiting for server greeting.");
     closeConnection();
     return 2;
   }
 
   if (code[0] != 2) {
-    message(-2, "CDDB: Connection to server denied: %s", response);
+    log_message(-2, "CDDB: Connection to server denied: %s", response);
     return 2;
   }
 
-  message(4, "CDDB: Server greeting: %s", response);
+  log_message(4, "CDDB: Server greeting: %s", response);
 
   connected_ = 1;
 
@@ -532,23 +533,23 @@ int Cddb::connectDb(const char *userName, const char *hostName,
   cmdArgs[5] = version;
 
   if (sendCommand(6, cmdArgs) != 0) {
-    message(-2, "CDDB: Failed to send handshake command.");
+    log_message(-2, "CDDB: Failed to send handshake command.");
     return 2;
   }
 
   response = getServerResponse(code);
 
   if (response == NULL) {
-    message(-2, "CDDB: EOF while waiting for server handshake response.");
+    log_message(-2, "CDDB: EOF while waiting for server handshake response.");
     return 2;
   }
 
   if (code[0] != 2) {
-    message(-2, "CDDB: Server handshake failed: %s", response);
+    log_message(-2, "CDDB: Server handshake failed: %s", response);
     return 2;
   }
 
-  message(4, "CDDB: Handshake response: %s", response);
+  log_message(4, "CDDB: Handshake response: %s", response);
 
   return 0;
 }
@@ -672,19 +673,19 @@ int Cddb::queryDb(QueryResults **results)
   args[arg++] = buf;
   
   if (sendCommand(nargs, args) != 0) {
-    message(-2, "CDDB: Failed to send QUERY command.");
+    log_message(-2, "CDDB: Failed to send QUERY command.");
     err = 1; goto fail;
   }
 
   if ((resp = getServerResponse(code)) == NULL) {
-    message(-2, "CDDB: EOF while waiting for QUERY response.");
+    log_message(-2, "CDDB: EOF while waiting for QUERY response.");
     err = 1; goto fail;
   }    
 
-  message(4, "CDDB: QUERY response: %s", resp);
+  log_message(4, "CDDB: QUERY response: %s", resp);
 
   if (code[0] != 2) {
-    message(-2, "CDDB: QUERY failed: %s", resp);
+    log_message(-2, "CDDB: QUERY failed: %s", resp);
     err = 1; goto fail;
   }
   else {
@@ -695,7 +696,7 @@ int Cddb::queryDb(QueryResults **results)
 	appendQueryResult(qcategory, qdiskId, qtitle, 1);
       }
       else {
-	message(-2, "CDDB: Received invalid QUERY response: %s", resp);
+	log_message(-2, "CDDB: Received invalid QUERY response: %s", resp);
 	err = 1; goto fail;
       }
     }
@@ -705,19 +706,19 @@ int Cddb::queryDb(QueryResults **results)
 	     strcmp(resp, ".") != 0) {
 	strcpy(respBuf, resp);
 
-	message(4, "CDDB: Query data: %s", resp);
+	log_message(4, "CDDB: Query data: %s", resp);
 
 	if (parseQueryResult(respBuf, qcategory, qdiskId, qtitle)) {
 	  appendQueryResult(qcategory, qdiskId, qtitle, 0);
 	}
 	else {
-	  message(-2, "CDDB: Received invalid QUERY data: %s", resp);
+	  log_message(-2, "CDDB: Received invalid QUERY data: %s", resp);
 	  err = 1; goto fail;
 	}
       }
 
       if (resp == NULL) {
-	message(-2, "CDDB: EOF while reading QUERY data.");
+	log_message(-2, "CDDB: EOF while reading QUERY data.");
 	err = 1; goto fail;
       }	
     }
@@ -767,28 +768,28 @@ int Cddb::readDb(const char *category, const char *diskId, CddbEntry **entry)
   args[3] = diskId;
 
   if (sendCommand(4, args) != 0) {
-    message(-2, "CDDB: Failed to send READ command.");
+    log_message(-2, "CDDB: Failed to send READ command.");
     goto fail;
   }
   
   if ((resp = getServerResponse(code)) == NULL) {
-    message(-2, "CDDB: EOF while waiting for READ response.");
+    log_message(-2, "CDDB: EOF while waiting for READ response.");
     goto fail;
   }
 
-  message(4, "CDDB: READ response: %s", resp);
+  log_message(4, "CDDB: READ response: %s", resp);
 
   if (code[0] == 2) {
     if ((localRecordFd = createLocalCddbFile(category, diskId)) == -2) {
-      message(-1, "Existing local CDDB record for %s/%s will not be overwritten.", category, diskId);
+      log_message(-1, "Existing local CDDB record for %s/%s will not be overwritten.", category, diskId);
     }
     if (readDbEntry(localRecordFd) != 0) {
-      message(-2, "CDDB: Received invalid database entry.");
+      log_message(-2, "CDDB: Received invalid database entry.");
       goto fail;
     }
   }
   else {
-    message(-2, "CDDB: READ failed: %s", resp);
+    log_message(-2, "CDDB: READ failed: %s", resp);
     goto fail;
   }
   
@@ -834,14 +835,14 @@ void Cddb::shutdown()
 
   if (sendCommand(1, args) == 0) {
     if ((resp = getServerResponse(code)) == NULL) {
-      message(-1, "CDDB: EOF while waiting for QUIT response.");
+      log_message(-1, "CDDB: EOF while waiting for QUIT response.");
     }
     else {
-      message(4, "CDDB: QUIT response: %s", resp);
+      log_message(4, "CDDB: QUIT response: %s", resp);
     }
   }
   else {
-    message(-1, "CDDB: Failed to send QUIT command.");
+    log_message(-1, "CDDB: Failed to send QUIT command.");
   }
 
   closeConnection();
@@ -973,12 +974,12 @@ const char *Cddb::readLine()
     ret = select(fd_ + 1, &readFds, NULL, NULL, &tv);
 
     if (ret == 0) {
-      message(-2, "CDDB: Timeout while reading data.");
+      log_message(-2, "CDDB: Timeout while reading data.");
       return NULL;
     }
     
     if (ret < 0) {
-      message(-2, "CDDB: Error while waiting for data: %s", strerror(errno));
+      log_message(-2, "CDDB: Error while waiting for data: %s", strerror(errno));
       return NULL;
     }
 
@@ -990,7 +991,7 @@ const char *Cddb::readLine()
     }
     
     if (ret < 0) {
-      message(-2, "CDDB: Error while reading data: %s", strerror(errno));
+      log_message(-2, "CDDB: Error while reading data: %s", strerror(errno));
       return NULL;
     }
     
@@ -1019,7 +1020,7 @@ const char *Cddb::readLine()
   for (pos = strlen(s) - 1; pos >= 0 && isspace(s[pos]); pos--) 
     s[pos] = 0;
 
-  message(5, "CDDB: Data read: %s", s);
+  log_message(5, "CDDB: Data read: %s", s);
 
   return s;
 }
@@ -1110,10 +1111,10 @@ int Cddb::sendCommand(int nargs, const char *args[])
     cmd = httpCmd;
     httpCmd = NULL;
 
-    message(4, "CDDB: Sending command '%s'...", cmd);
+    log_message(4, "CDDB: Sending command '%s'...", cmd);
   }
   else {
-    message(4, "CDDB: Sending command '%s'...", cmd);
+    log_message(4, "CDDB: Sending command '%s'...", cmd);
     
     strcat(cmd, "\n");
   }
@@ -1131,25 +1132,25 @@ int Cddb::sendCommand(int nargs, const char *args[])
     ret = select(fd_ + 1, NULL, &writeFds, NULL, &tv);
 
     if (ret == 0) {
-      message(-2, "CDDB: Timeout while sending data.");
+      log_message(-2, "CDDB: Timeout while sending data.");
       err = 1; goto fail;
     }
     
     if (ret < 0) {
-      message(-2, "CDDB: Error while waiting for send: %s", strerror(errno));
+      log_message(-2, "CDDB: Error while waiting for send: %s", strerror(errno));
       err = 1; goto fail;
     }
  
     ret = write(fd_, p, 1);
 
     if (ret < 0) {
-      message(-2, "CDDB: Failed to send command '%s': %s", cmd,
+      log_message(-2, "CDDB: Failed to send command '%s': %s", cmd,
 	      strerror(errno));
       err = 1; goto fail;
     }
 
     if (ret != 1) {
-      message(-2, "CDDB: Failed to send command '%s'.", cmd);
+      log_message(-2, "CDDB: Failed to send command '%s'.", cmd);
       err = 1; goto fail;
     }
 
@@ -1157,7 +1158,7 @@ int Cddb::sendCommand(int nargs, const char *args[])
     p++;
   }
 
-  message(4, "CDDB: Ok.");
+  log_message(4, "CDDB: Ok.");
 
   fail:
   delete[] cmd;
@@ -1307,7 +1308,7 @@ int Cddb::readDbEntry(int localRecordFd)
 
   
   while ((resp = readLine()) != NULL && strcmp(resp, ".") != 0) {
-    message(4, "CDDB: READ data: %s", resp);
+    log_message(4, "CDDB: READ data: %s", resp);
 
     if (localRecordFd >= 0) {
       // save to local CDDB record file
@@ -1388,7 +1389,7 @@ int Cddb::readDbEntry(int localRecordFd)
   }
 
   if (resp == NULL) {
-    message(-2, "CDDB: EOF while reading database entry.");
+    log_message(-2, "CDDB: EOF while reading database entry.");
     goto fail;
   }
 
@@ -1434,18 +1435,18 @@ int Cddb::createLocalCddbFile(const char *category, const char *diskId)
   ret = stat(localCddbDirectory_, &sbuf);
 
   if (ret != 0 && errno == ENOENT) {
-    message(-1, "CDDB: Local CDDB directory \"%s\" does not exist.",
+    log_message(-1, "CDDB: Local CDDB directory \"%s\" does not exist.",
 	    localCddbDirectory_);
     return -1;
   }
   else if (ret == 0) {
     if (!S_ISDIR(sbuf.st_mode)) {
-      message(-2, "CDDB: \"%s\" is not a directory.", localCddbDirectory_);
+      log_message(-2, "CDDB: \"%s\" is not a directory.", localCddbDirectory_);
       return -1;
     }
   }
   else {
-    message(-2, "CDDB: stat of \"%s\" failed: %s", localCddbDirectory_,
+    log_message(-2, "CDDB: stat of \"%s\" failed: %s", localCddbDirectory_,
 	    strerror(errno));
     return -1;
   }
@@ -1456,18 +1457,18 @@ int Cddb::createLocalCddbFile(const char *category, const char *diskId)
 
   if (ret != 0 && errno == ENOENT) {
     if (mkdir(categoryDir, 0777) != 0) {
-      message(-2, "CDDB: Cannot create directory \"%s\": %s", categoryDir,
+      log_message(-2, "CDDB: Cannot create directory \"%s\": %s", categoryDir,
 	      strerror(errno));
       goto fail;
     }
   }
   else if (ret == 0) {
     if (!S_ISDIR(sbuf.st_mode)) {
-      message(-2, "CDDB: \"%s\" is not a directory.", categoryDir);
+      log_message(-2, "CDDB: \"%s\" is not a directory.", categoryDir);
     }
   }
   else {
-    message(-2, "CDDB: stat of \"%s\" failed: %s", categoryDir,
+    log_message(-2, "CDDB: stat of \"%s\" failed: %s", categoryDir,
 	    strerror(errno));
     goto fail;
   }
@@ -1478,7 +1479,7 @@ int Cddb::createLocalCddbFile(const char *category, const char *diskId)
 
   if (ret != 0 && errno == ENOENT) {
     if ((fd = open(recordFile, O_WRONLY|O_CREAT, 0666)) < 0) {
-      message(-2, "CDDB: Cannot create CDDB record file \"%s\": %s",
+      log_message(-2, "CDDB: Cannot create CDDB record file \"%s\": %s",
 	      recordFile, strerror(errno));
       fd = -1;
       goto fail;
@@ -1489,7 +1490,7 @@ int Cddb::createLocalCddbFile(const char *category, const char *diskId)
     goto fail;
   }
   else {
-    message(-2, "CDDB: stat of \"%s\" failed: %s", categoryDir,
+    log_message(-2, "CDDB: stat of \"%s\" failed: %s", categoryDir,
 	    strerror(errno));
     goto fail;
   }

@@ -19,7 +19,7 @@
 
 #include <stdio.h>
 
-#include "util.h"
+#include "log.h"
 #include "FormatOgg.h"
 
 
@@ -72,14 +72,14 @@ FormatSupport::Status FormatOgg::oggInit()
 {
   fin_ = fopen(src_file_, "r");
   if (!fin_) {
-    message(-2, "Could not open input file \"%s\": %s", src_file_,
+    log_message(-2, "Could not open input file \"%s\": %s", src_file_,
             strerror(errno));
     return FS_INPUT_PROBLEM;
   }
 
   int ovret = ov_open(fin_, &vorbisFile_, NULL, 0);
   if (ovret != 0) {
-    message(-2, "Could not open Ogg Vorbis file \"%s\"", src_file_);
+    log_message(-2, "Could not open Ogg Vorbis file \"%s\"", src_file_);
       return FS_WRONG_FORMAT;
   }
 
@@ -89,7 +89,7 @@ FormatSupport::Status FormatOgg::oggInit()
   outFormat_.byte_format = AO_FMT_NATIVE;
   aoDev_ = ao_open_file(ao_driver_id("wav"), dst_file_, 1, &outFormat_, NULL);
   if (!aoDev_) {
-    message(-2, "Could not create output file \"%s\": %s", dst_file_,
+    log_message(-2, "Could not create output file \"%s\": %s", dst_file_,
             strerror(errno));
     return FS_OUTPUT_PROBLEM;
   }

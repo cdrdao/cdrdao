@@ -18,7 +18,7 @@
  */
 
 #include "TempFileManager.h"
-#include "util.h"
+#include "log.h"
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -41,7 +41,7 @@ TempFileManager::~TempFileManager()
 
         for (;i != map_.end(); i++) {
             std::string tmpFile = (*i).second;
-            message(3, "Removing temp file \"%s\"", tmpFile.c_str());
+            log_message(3, "Removing temp file \"%s\"", tmpFile.c_str());
             unlink(tmpFile.c_str());
         }
     }
@@ -54,13 +54,13 @@ bool TempFileManager::setTempDirectory(const char* path)
   int ret = stat(path, &st);
 
   if (ret != 0) {
-    message(-2, "Could not find temporary directory %s.",
+    log_message(-2, "Could not find temporary directory %s.",
             path);
     return false;
   }
 
   if (!S_ISDIR(st.st_mode) || access(path, W_OK) != 0) {
-    message(-2, "No permission for temp directory %s.",
+    log_message(-2, "No permission for temp directory %s.",
             path);
     return false;
   }
@@ -111,7 +111,7 @@ bool TempFileManager::getTempFile(std::string& tempname, const char* key,
     id++;
 
     if (id > 100) {
-      message(-2, "Unable to create temp file in directory %s.",
+      log_message(-2, "Unable to create temp file in directory %s.",
               path_.c_str());
       tempname = "";
       return false;
@@ -122,7 +122,7 @@ bool TempFileManager::getTempFile(std::string& tempname, const char* key,
   map_[key] = fname;
   tempname = map_[key];
 
-  message(3, "Created temp file \"%s\" for file \"%s\"", fname.c_str(), key);
+  log_message(3, "Created temp file \"%s\" for file \"%s\"", fname.c_str(), key);
     
   return false;
 }

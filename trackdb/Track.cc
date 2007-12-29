@@ -26,6 +26,7 @@
 
 #include "Track.h"
 #include "util.h"
+#include "log.h"
 #include "TrackDataList.h"
 #include "CdTextItem.h"
 #include "lec.h"
@@ -179,7 +180,7 @@ void Track::update()
       if (audioCutMode_ == -1)
 	audioCutMode_ = run->audioCutMode();
       else if (audioCutMode_ != run->audioCutMode())
-	message(-3, "Track::update: mixed audio cut mode.");
+	log_message(-3, "Track::update: mixed audio cut mode.");
 
       if (audioCutMode_)
 	blen = SAMPLES_PER_BLOCK;
@@ -391,7 +392,7 @@ int Track::check(int trackNr) const
   int ret = 0;
 
   if (length().lba() - start().lba() < Msf(0, 4, 0).lba()) {
-    message(-1, "Track %d: Length is shorter than 4 seconds.", trackNr);
+    log_message(-1, "Track %d: Length is shorter than 4 seconds.", trackNr);
     ret = 1;
   }
 
@@ -597,7 +598,7 @@ bool Track::resolveFilename(const char* path)
       if (::resolveFilename(rfilename, f, path)) {
         st->effectiveFilename(rfilename.c_str());
       } else {
-        message(-2, "Could not find input file \"%s\".", f);
+        log_message(-2, "Could not find input file \"%s\".", f);
         return false;
       }
     }
@@ -1245,14 +1246,14 @@ void Track::checkConsistency()
   for (run = subTracks_; run != NULL; last = run, run = run->next_) {
     cnt++;
     if (run->pred_ != last) 
-      message(-3, "Track::checkConsistency: wrong pred pointer.");
+      log_message(-3, "Track::checkConsistency: wrong pred pointer.");
   }
 
   if (last != lastSubTrack_)
-    message(-3, "Track::checkConsistency: wrong last pointer.");
+    log_message(-3, "Track::checkConsistency: wrong last pointer.");
 
   if (cnt != nofSubTracks_)
-    message(-3, "Track::checkConsistency: wrong sub track counter.");
+    log_message(-3, "Track::checkConsistency: wrong sub track counter.");
 }
 
 // Inserts 'newSubTrack' after existing sub track 'subTrack'. If 'subTrack'
@@ -1406,7 +1407,7 @@ void Track::encodeZeroData(int encMode, TrackData::Mode mode,
     }
   }
   else {
-    message(-3, "Illegal sector encoding mode in 'Track::encodeZeroData()'.");
+    log_message(-3, "Illegal sector encoding mode in 'Track::encodeZeroData()'.");
   }
 }
 

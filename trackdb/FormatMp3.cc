@@ -29,7 +29,7 @@
 #include <sys/stat.h>
 #include <sys/mman.h>
 
-#include "util.h"
+#include "log.h"
 #include "FormatMp3.h"
 
 
@@ -88,14 +88,14 @@ FormatSupport::Status FormatMp3::madInit()
   struct stat st;
 
   if (stat(src_file_, &st) != 0) {
-    message(-2, "Could not stat input file \"%s\": %s", src_file_,
+    log_message(-2, "Could not stat input file \"%s\": %s", src_file_,
             strerror(errno));
     return FS_INPUT_PROBLEM;
   }
 
   mapped_fd_ = open(src_file_, O_RDONLY);
   if (!mapped_fd_) {
-    message(-2, "Could not open input file \"%s\": %s", src_file_,
+    log_message(-2, "Could not open input file \"%s\": %s", src_file_,
             strerror(errno));
     return FS_INPUT_PROBLEM;
   }
@@ -103,7 +103,7 @@ FormatSupport::Status FormatMp3::madInit()
   length_ = st.st_size;
   start_ = mmap(0, st.st_size, PROT_READ, MAP_SHARED, mapped_fd_, 0);
   if (start_ == MAP_FAILED) {
-    message(-2, "Could not map file \"%s\" into memory: %s", src_file_,
+    log_message(-2, "Could not map file \"%s\" into memory: %s", src_file_,
             strerror(errno));
     return FS_INPUT_PROBLEM;
   }
@@ -118,7 +118,7 @@ FormatSupport::Status FormatMp3::madInit()
   out_ = ao_open_file(ao_driver_id("wav"), dst_file_, 1, &out_format, NULL);
 
   if (!out_) {
-    message(-2, "Could not create output file \"%s\": %s", dst_file_,
+    log_message(-2, "Could not create output file \"%s\": %s", dst_file_,
             strerror(errno));
     return FS_OUTPUT_PROBLEM;
   }
@@ -139,7 +139,7 @@ FormatSupport::Status FormatMp3::madDecodeFrame()
 
     if (stream_.error != MAD_ERROR_BUFLEN &&
         stream_.error != MAD_ERROR_LOSTSYNC) {
-      message(-1, "Decoding error 0x%04x (%s) at byte offset %u",
+      log_message(-1, "Decoding error 0x%04x (%s) at byte offset %u",
               stream_.error, mad_stream_errorstr(&stream_),
               stream_.this_frame - (unsigned char*)start_);
     }

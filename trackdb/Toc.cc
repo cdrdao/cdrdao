@@ -32,6 +32,7 @@
 
 #include "Toc.h"
 #include "util.h"
+#include "log.h"
 #include "TrackDataList.h"
 #include "CdTextItem.h"
 #include "CueParser.h"
@@ -139,7 +140,7 @@ Toc *Toc::read(const char *filename)
   const char *p;
 
   if ((fp = fopen(filename, "r")) == NULL) {
-    message(-2, "Cannot open toc file '%s' for reading: %s",
+    log_message(-2, "Cannot open toc file '%s' for reading: %s",
 	    filename, strerror(errno));
     return NULL;
   }
@@ -181,7 +182,7 @@ int Toc::write(const char *filename) const
   std::ofstream out(filename);
 
   if (!out) {
-    message(-2, "Cannot open file \"%s\" for writing: %s", filename,
+    log_message(-2, "Cannot open file \"%s\" for writing: %s", filename,
 	    strerror(errno));
     return 1;
   }
@@ -720,16 +721,16 @@ void Toc::checkConsistency()
   for (run = tracks_; run != NULL; last = run, run = run->next) {
     cnt++;
     if (run->pred != last) 
-      message(-3, "Toc::checkConsistency: wrong pred pointer.");
+      log_message(-3, "Toc::checkConsistency: wrong pred pointer.");
 
     run->track->checkConsistency();
   }
 
   if (last != lastTrack_)
-    message(-3, "Toc::checkConsistency: wrong last pointer.");
+    log_message(-3, "Toc::checkConsistency: wrong last pointer.");
 
   if (cnt != nofTracks_)
-    message(-3, "Toc::checkConsistency: wrong sub track counter.");
+    log_message(-3, "Toc::checkConsistency: wrong sub track counter.");
 }
 
 
@@ -915,7 +916,7 @@ void Toc::addCdTextItem(int trackNr, CdTextItem *item)
     TrackEntry *track = findTrackByNumber(trackNr);
 
     if (track == NULL) {
-      message(-3, "addCdTextItem: Track %d is not available.", trackNr);
+      log_message(-3, "addCdTextItem: Track %d is not available.", trackNr);
       return;
     }
 
@@ -934,7 +935,7 @@ void Toc::removeCdTextItem(int trackNr, CdTextItem::PackType type, int blockNr)
     TrackEntry *track = findTrackByNumber(trackNr);
 
     if (track == NULL) {
-      message(-3, "addCdTextItem: Track %d is not available.", trackNr);
+      log_message(-3, "addCdTextItem: Track %d is not available.", trackNr);
       return;
     }
 
@@ -1010,9 +1011,9 @@ int Toc::checkCdTextData() const
 
       if (l - 1 != last) {
 	if (last == -1)
-	  message(-2, "CD-TEXT: Language number %d: Language numbers must start at 0.", l);
+	  log_message(-2, "CD-TEXT: Language number %d: Language numbers must start at 0.", l);
 	else
-	  message(-2, "CD-TEXT: Language number %d: Language numbers are not continuously used.", l);
+	  log_message(-2, "CD-TEXT: Language number %d: Language numbers are not continuously used.", l);
 
 	if (err < 2)
 	  err = 2;
@@ -1023,7 +1024,7 @@ int Toc::checkCdTextData() const
   }
 
   if (genreCnt > 0 && genreCnt != languageCnt) {
-    message(-1, "CD-TEXT: %s field not defined for all languages.",
+    log_message(-1, "CD-TEXT: %s field not defined for all languages.",
 	    CdTextItem::packType2String(1, CdTextItem::CDTEXT_GENRE));
     if (err < 1)
       err = 1;
@@ -1066,54 +1067,54 @@ int Toc::checkCdTextData() const
     }
 
     if (titleCnt > 0 && titleCnt != nofTracks_ + 1) {
-      message(-2, "CD-TEXT: Language %d: %s field not defined for all tracks or disk.",
+      log_message(-2, "CD-TEXT: Language %d: %s field not defined for all tracks or disk.",
 	      l, CdTextItem::packType2String(1, CdTextItem::CDTEXT_TITLE));
       if (err < 2)
 	err = 2;
     }
     else if (titleCnt == 0) {
-      message(-1, "CD-TEXT: Language %d: %s field is not defined.",
+      log_message(-1, "CD-TEXT: Language %d: %s field is not defined.",
 	      l, CdTextItem::packType2String(1, CdTextItem::CDTEXT_TITLE));
       if (err < 1)
 	err = 1;
     }
 
     if (performerCnt > 0 && performerCnt != nofTracks_ + 1) {
-      message(-2, "CD-TEXT: Language %d: %s field not defined for all tracks or disk.",
+      log_message(-2, "CD-TEXT: Language %d: %s field not defined for all tracks or disk.",
 	      l, CdTextItem::packType2String(1, CdTextItem::CDTEXT_PERFORMER));
       if (err < 2)
 	err = 2;
     }
     else if (performerCnt == 0) {
-      message(-1, "CD-TEXT: Language %d: %s field is not defined.",
+      log_message(-1, "CD-TEXT: Language %d: %s field is not defined.",
 	      l, CdTextItem::packType2String(1, CdTextItem::CDTEXT_PERFORMER));
       if (err < 1)
 	err = 1;
     }
 
     if (songwriterCnt > 0 && songwriterCnt != nofTracks_ + 1) {
-      message(-2, "CD-TEXT: Language %d: %s field not defined for all tracks or disk.",
+      log_message(-2, "CD-TEXT: Language %d: %s field not defined for all tracks or disk.",
 	      l, CdTextItem::packType2String(1, CdTextItem::CDTEXT_SONGWRITER));
       if (err < 2)
 	err = 2;
     }
 
     if (composerCnt > 0 && composerCnt != nofTracks_ + 1) {
-      message(-2, "CD-TEXT: Language %d: %s field not defined for all tracks or disk.",
+      log_message(-2, "CD-TEXT: Language %d: %s field not defined for all tracks or disk.",
 	      l, CdTextItem::packType2String(1, CdTextItem::CDTEXT_COMPOSER));
       if (err < 2)
 	err = 2;
     }
 
     if (arrangerCnt > 0 && arrangerCnt != nofTracks_ + 1) {
-      message(-2, "CD-TEXT: Language %d: %s field not defined for all tracks or disk.",
+      log_message(-2, "CD-TEXT: Language %d: %s field not defined for all tracks or disk.",
 	      l, CdTextItem::packType2String(1, CdTextItem::CDTEXT_ARRANGER));
       if (err < 2)
 	err = 2;
     }
 
     if (messageCnt > 0 && messageCnt != nofTracks_ + 1) {
-      message(-2, "CD-TEXT: Language %d: %s field not defined for all tracks or disk.",
+      log_message(-2, "CD-TEXT: Language %d: %s field not defined for all tracks or disk.",
 	      l, CdTextItem::packType2String(1, CdTextItem::CDTEXT_MESSAGE));
       if (err < 2)
 	err = 2;
@@ -1122,7 +1123,7 @@ int Toc::checkCdTextData() const
     if ((isrcCnt > 0 && isrcCnt != nofTracks_) ||
 	(isrcCnt == 0 &&
 	 cdtext_.getPack(l, CdTextItem::CDTEXT_UPCEAN_ISRC) != NULL)) {
-      message(-2, "CD-TEXT: Language %d: %s field not defined for all tracks.",
+      log_message(-2, "CD-TEXT: Language %d: %s field not defined for all tracks.",
 	      l, CdTextItem::packType2String(1, CdTextItem::CDTEXT_UPCEAN_ISRC));
       if (err < 2)
 	err = 2;

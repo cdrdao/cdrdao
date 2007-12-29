@@ -31,6 +31,7 @@
 #include "TrackData.h"
 #include "Msf.h"
 #include "util.h"
+#include "log.h"
 
 #ifdef UNIXWARE
 extern "C" {
@@ -234,40 +235,40 @@ int TrackData::determineLength()
     if (mode_ == AUDIO) {
       switch (audioDataLength(filename_, offset_, &len)) {
       case 1:
-	message(-2, "Cannot open audio file \"%s\": %s", filename_,
+	log_message(-2, "Cannot open audio file \"%s\": %s", filename_,
 		strerror(errno));
 	return 1;
 	break;
 
       case 2:
-	message(-2, "Cannot determine length of audio file \"%s\": %s",
+	log_message(-2, "Cannot determine length of audio file \"%s\": %s",
 		filename_, strerror(errno));
 	return 1;
 	break;
 
       case 3:
-	message(-2, "Header of audio file \"%s\" is corrupted.",
+	log_message(-2, "Header of audio file \"%s\" is corrupted.",
 		filename_);
 	return 1;
 	break;
 
       case 4:
-	message(-2, "Invalid offset %ld for audio file \"%s\".", offset_,
+	log_message(-2, "Invalid offset %ld for audio file \"%s\".", offset_,
 		filename_);
 	return 2;
 	break;
       case 5:
 #ifndef HAVE_MP3_SUPPORT
           if (audioFileType(filename_) == MP3) {
-              message (-2, "Can't read file \"%s\": cdrdao was compiled "
-                       "without MP3 support.", filename_);
+              log_message (-2, "Can't read file \"%s\": cdrdao was compiled "
+			   "without MP3 support.", filename_);
               return 4;
           }
 #endif
 #ifndef HAVE_OGG_SUPPORT
           if (audioFileType(filename_) == OGG) {
-              message (-2, "Can't read file \"%s\": cdrdao was compiled "
-                       "without Ogg/Vorbis support.", filename_);
+              log_message (-2, "Can't read file \"%s\": cdrdao was compiled "
+			   "without Ogg/Vorbis support.", filename_);
               return 4;
           }
 #endif
@@ -279,7 +280,7 @@ int TrackData::determineLength()
 	  length_ = len - startPos_;
 	}
 	else {
-	  message(-2,
+	  log_message(-2,
 		  "Start position %lu exceeds available data of file \"%s\".",
 		  startPos_, filename_);
 	  return 2;
@@ -292,12 +293,12 @@ int TrackData::determineLength()
     else {
       switch (dataFileLength(filename_, offset_, &len)) {
       case 1:
-	message(-2, "Cannot open data file \"%s\": %s", filename_,
+	log_message(-2, "Cannot open data file \"%s\": %s", filename_,
 		strerror(errno));
 	return 1;
 	break;
       case 2:
-	message(-2, "Invalid offset %ld for audio file \"%s\".", offset_,
+	log_message(-2, "Invalid offset %ld for audio file \"%s\".", offset_,
 		filename_);
 	return 2;
 	break;
@@ -327,7 +328,7 @@ int TrackData::check(int trackNr) const
     break;
   case FIFO:
     if (access(filename_, R_OK) != 0) {
-      message(-2, "Track %d: Cannot access FIFO \"%s\": %s", trackNr,
+      log_message(-2, "Track %d: Cannot access FIFO \"%s\": %s", trackNr,
 	      filename_, strerror(errno));
       return 2;
     }
@@ -337,36 +338,36 @@ int TrackData::check(int trackNr) const
       unsigned long len = 0;
 
       if (fileType_ == WAVE && subChannelMode_ != SUBCHAN_NONE) {
-	message(-2, "Track %d: WAVE audio files cannot contain sub-channel "
+	log_message(-2, "Track %d: WAVE audio files cannot contain sub-channel "
                 "data.", trackNr);
 	return 2;
       }
 
       switch (audioDataLength(filename_, offset_, &len)) {
       case 1:
-	message(-2, "Track %d: Cannot open audio file \"%s\": %s", trackNr,
+	log_message(-2, "Track %d: Cannot open audio file \"%s\": %s", trackNr,
 		filename_, strerror(errno));
 	return 2;
 	break;
       case 2:
-	message(-2, "Track %d: Cannot access audio file \"%s\": %s", trackNr,
+	log_message(-2, "Track %d: Cannot access audio file \"%s\": %s", trackNr,
 		filename_, strerror(errno));
 	return 2;
 	break;
       case 3:
-	message(-2, "Track %d: %s: Unacceptable WAVE file.", trackNr,
+	log_message(-2, "Track %d: %s: Unacceptable WAVE file.", trackNr,
 		filename_);
 	return 2;
 	break;
       case 4:
-	message(-2, "Track %d: Invalid offset %ld for audio file \"%s\".",
+	log_message(-2, "Track %d: Invalid offset %ld for audio file \"%s\".",
 		trackNr, offset_, filename_);
 	return 2;
 	break;
       }
 
       if (length() == 0) {
-	message(-2, "Track %d: Requested length for audio file \"%s\" is 0.",
+	log_message(-2, "Track %d: Requested length for audio file \"%s\" is 0.",
 		trackNr, filename_);
 	return 2;
       }
@@ -374,7 +375,7 @@ int TrackData::check(int trackNr) const
       if (audioCutMode()) {
 	if (startPos_ + length() > len) {
 	  // requested part exceeds file size
-	  message(-2, "Track %d: Requested length (%lu + %lu samples) exceeds "
+	  log_message(-2, "Track %d: Requested length (%lu + %lu samples) exceeds "
                   "length of audio file \"%s\" (%lu samples at offset %ld).",
 		  trackNr, startPos_, length(), filename_, len, offset_);
 	  return 2;
@@ -382,7 +383,7 @@ int TrackData::check(int trackNr) const
       }
       else {
 	if (length() > len * sizeof(Sample)) {
-	  message(-2, "Track %d: Requested length (%lu bytes) exceeds length of file \"%s\" (%lu bytes at offset %ld).",
+	  log_message(-2, "Track %d: Requested length (%lu bytes) exceeds length of file \"%s\" (%lu bytes at offset %ld).",
 		  trackNr, length(), filename_, len, offset_);
 	  return 2;
 	}
@@ -394,25 +395,25 @@ int TrackData::check(int trackNr) const
 
       switch (dataFileLength(filename_, offset_, &len) != 0) {
       case 1:
-	message(-2, "Track %d: Cannot open data file \"%s\": %s", trackNr,
+	log_message(-2, "Track %d: Cannot open data file \"%s\": %s", trackNr,
 		filename_, strerror(errno));
 	return 2;
 	break;
       case 2:
-	message(-2, "Track %d: Invalid offset %ld for data file \"%s\".",
+	log_message(-2, "Track %d: Invalid offset %ld for data file \"%s\".",
 		trackNr, offset_, filename_);
 	return 2;
 	break;
       }
 
       if (length() == 0) {
-	message(-2, "Track %d: Requested length for data file \"%s\" is 0.",
+	log_message(-2, "Track %d: Requested length for data file \"%s\" is 0.",
 		trackNr, filename_);
 	return 2;
       }
 
       if (length() > len) {
-	message(-2, "Track %d: Requested length (%lu bytes) exceeds length of file \"%s\" (%lu bytes at offset %ld).",
+	log_message(-2, "Track %d: Requested length (%lu bytes) exceeds length of file \"%s\" (%lu bytes at offset %ld).",
 		trackNr, length(), filename_, len, offset_);
 	return 2;
       }
@@ -599,7 +600,7 @@ int TrackData::checkAudioFile(const char *fn, unsigned long *length)
 
   enum FileType ft = audioFileType(fn);
   if (ft != WAVE && ft != RAW) {
-    message(-2, "Checking audio file \"%s\": format not supported", fn);
+    log_message(-2, "Checking audio file \"%s\": format not supported", fn);
     return 1;
   }
   
@@ -618,7 +619,7 @@ int TrackData::checkAudioFile(const char *fn, unsigned long *length)
       return 2;
   } else {
     if (buf.st_size % sizeof(Sample) != 0) {
-      message(-1, "%s: Length is not a multiple of sample size (4).", fn);
+      log_message(-1, "%s: Length is not a multiple of sample size (4).", fn);
     }
 
     *length = buf.st_size / sizeof(Sample);
@@ -653,14 +654,14 @@ int TrackData::waveLength(const char *filename, long offset,
   if ((fp = fopen(filename, "r")) == NULL)
 #endif
   {
-    message(-2, "Cannot open audio file \"%s\" for reading: %s",
+    log_message(-2, "Cannot open audio file \"%s\" for reading: %s",
 	    filename, strerror(errno));
     return 1;
   }
 
   if (offset != 0) {
     if (fseek(fp, offset, SEEK_SET) != 0) {
-      message(-2, "Cannot seek to offset %ld in file \"%s\": %s",
+      log_message(-2, "Cannot seek to offset %ld in file \"%s\": %s",
 	      offset, filename, strerror(errno));
       return 1;
     }
@@ -668,7 +669,7 @@ int TrackData::waveLength(const char *filename, long offset,
 
   if (fread(magic, sizeof(char), 4, fp) != 4 ||
       strncmp("RIFF", magic, 4) != 0) {
-    message(-2, "%s: not a WAVE file.", filename);
+    log_message(-2, "%s: not a WAVE file.", filename);
     fclose(fp);
     return 2;
   }
@@ -677,7 +678,7 @@ int TrackData::waveLength(const char *filename, long offset,
 
   if (fread(magic, sizeof(char), 4, fp) != 4 ||
       strncmp("WAVE", magic, 4) != 0) {
-    message(-2, "%s: not a WAVE file.", filename);
+    log_message(-2, "%s: not a WAVE file.", filename);
     fclose(fp);
     return 2;
   }
@@ -685,7 +686,7 @@ int TrackData::waveLength(const char *filename, long offset,
   // search for format chunk
   for (;;) {
     if (fread(magic, sizeof(char), 4, fp) != 4) {
-      message(-2, "%s: corrupted WAVE file.", filename);
+      log_message(-2, "%s: corrupted WAVE file.", filename);
       fclose(fp);
       return 1;
     }
@@ -700,14 +701,14 @@ int TrackData::waveLength(const char *filename, long offset,
 
     // skip chunk data
     if (fseek(fp, len, SEEK_CUR) != 0) {
-      message(-2, "%s: corrupted WAVE file.", filename);
+      log_message(-2, "%s: corrupted WAVE file.", filename);
       fclose(fp);
       return 1;
     }
   }
 
   if (len < 16) {
-    message(-2, "%s: corrupted WAVE file.", filename);
+    log_message(-2, "%s: corrupted WAVE file.", filename);
     fclose(fp);
     return 1;
   }
@@ -716,14 +717,14 @@ int TrackData::waveLength(const char *filename, long offset,
 
   if (waveFormat != 1) {
     // not PCM format
-    message(-2, "%s: not in PCM format.", filename);
+    log_message(-2, "%s: not in PCM format.", filename);
     fclose(fp);
     return 2;
   }
 
   waveChannels = readShort(fp);
   if (waveChannels != 2) {
-    message(-2, "%s: found %d channel(s), require 2 channels.",
+    log_message(-2, "%s: found %d channel(s), require 2 channels.",
 	    filename, waveChannels);
     fclose(fp);
     return 2;
@@ -731,7 +732,7 @@ int TrackData::waveLength(const char *filename, long offset,
 
   waveRate = readLong(fp);
   if (waveRate != 44100) {
-     message(-2, "%s: found sampling rate %ld, require 44100.",
+     log_message(-2, "%s: found sampling rate %ld, require 44100.",
 	    filename, waveRate);
      fclose(fp);
      return 2;
@@ -742,7 +743,7 @@ int TrackData::waveLength(const char *filename, long offset,
   
   waveBits = readShort(fp);
   if (waveBits != 16) {
-    message(-2, "%s: found %d bits per sample, require 16.",
+    log_message(-2, "%s: found %d bits per sample, require 16.",
 	    filename, waveBits);
     fclose(fp);
     return 2;
@@ -752,7 +753,7 @@ int TrackData::waveLength(const char *filename, long offset,
 
   // skip chunk data
   if (fseek(fp, len, SEEK_CUR) != 0) {
-    message(-2, "%s: corrupted WAVE file.", filename);
+    log_message(-2, "%s: corrupted WAVE file.", filename);
     fclose(fp);
     return 1;
   }
@@ -760,7 +761,7 @@ int TrackData::waveLength(const char *filename, long offset,
   // search wave data chunk
   for (;;) {
     if (fread(magic, sizeof(char), 4, fp) != 4) {
-      message(-2, "%s: corrupted WAVE file.", filename);
+      log_message(-2, "%s: corrupted WAVE file.", filename);
       fclose(fp);
       return 1;
     }
@@ -776,14 +777,14 @@ int TrackData::waveLength(const char *filename, long offset,
      
     // skip chunk data
     if (fseek(fp, len, SEEK_CUR) != 0) {
-      message(-2, "%s: corrupted WAVE file.", filename);
+      log_message(-2, "%s: corrupted WAVE file.", filename);
       fclose(fp);
       return 1;
     }
   }
 
   if ((headerLen = ftell(fp)) < 0) {
-    message(-2, "%s: cannot determine file position: %s",
+    log_message(-2, "%s: cannot determine file position: %s",
 	    filename, strerror(errno));
     fclose(fp);
     return 1;
@@ -792,7 +793,7 @@ int TrackData::waveLength(const char *filename, long offset,
   headerLen -= offset;
 
   if (fstat(fileno(fp), &sbuf) != 0) {
-    message(-2, "Cannot fstat audio file \"%s\": %s", filename,
+    log_message(-2, "Cannot fstat audio file \"%s\": %s", filename,
 	    strerror(errno));
     fclose(fp);
     return 1;
@@ -801,12 +802,12 @@ int TrackData::waveLength(const char *filename, long offset,
   fclose(fp);
 
   if (len + headerLen + offset > sbuf.st_size) {
-    message(-1,	"%s: file length does not match length from WAVE header - using actual length.", filename);
+    log_message(-1,	"%s: file length does not match length from WAVE header - using actual length.", filename);
     len = sbuf.st_size - offset - headerLen;
   }
 
   if (len % sizeof(Sample) != 0) {
-    message(-1,
+    log_message(-1,
 	    "%s: length of data chunk is not a multiple of sample size (4).",
 	    filename);
   }
@@ -857,7 +858,7 @@ int TrackData::audioDataLength(const char *fname, long offset,
     return 5;
   } else {
     if (((buf.st_size - offset) % sizeof(Sample)) != 0) {
-      message(-1,
+      log_message(-1,
 	      "Length of file \"%s\" is not a multiple of sample size (4).",
 	      fname);
     }
@@ -1081,7 +1082,7 @@ int TrackDataReader::openData()
 
       if (trackData_->fileType_ != TrackData::WAVE &&
           trackData_->fileType_ != TrackData::RAW) {
-        message(-2, "Cannot open audio file \"%s\": unsupported format",
+        log_message(-2, "Cannot open audio file \"%s\": unsupported format",
                 trackData_->filename_);
         return 1;
       }
@@ -1092,7 +1093,7 @@ int TrackDataReader::openData()
       if ((fd_ = open(trackData_->filename_, O_RDONLY)) < 0)
 #endif
       {
-	message(-2, "Cannot open audio file \"%s\": %s", trackData_->filename_,
+	log_message(-2, "Cannot open audio file \"%s\": %s", trackData_->filename_,
 		strerror(errno));
 	return 1;
       }
@@ -1100,13 +1101,13 @@ int TrackDataReader::openData()
       if (trackData_->fileType_ == TrackData::WAVE) {
 	if (TrackData::waveLength(trackData_->filename_, trackData_->offset_,
 				  &headerLength) != 0) {
-	  message(-2, "%s: Unacceptable WAVE file.", trackData_->filename_);
+	  log_message(-2, "%s: Unacceptable WAVE file.", trackData_->filename_);
 	  return 1;
 	}
       }
       
       if (lseek(fd_, trackData_->offset_ + headerLength + (trackData_->startPos_ * sizeof(Sample)), SEEK_SET) < 0) {
-	message(-2, "Cannot seek in audio file \"%s\": %s",
+	log_message(-2, "Cannot seek in audio file \"%s\": %s",
 		trackData_->filename_, strerror(errno));
 	return 2;
       }
@@ -1123,14 +1124,14 @@ int TrackDataReader::openData()
       if ((fd_ = open(trackData_->filename_, O_RDONLY)) < 0)
 #endif
       {
-	message(-2, "Cannot open data file \"%s\": %s", trackData_->filename_,
+	log_message(-2, "Cannot open data file \"%s\": %s", trackData_->filename_,
 		strerror(errno));
 	return 1;
       }
 
       if (trackData_->offset_ > 0) {
 	if (lseek(fd_, trackData_->offset_ , SEEK_SET) < 0) {
-	  message(-2, "Cannot seek to offset %ld in file \"%s\": %s",
+	  log_message(-2, "Cannot seek to offset %ld in file \"%s\": %s",
 		  trackData_->offset_, trackData_->filename_, strerror(errno));
 	  return 2;
 	}
@@ -1144,7 +1145,7 @@ int TrackDataReader::openData()
     if ((fd_ = open(trackData_->filename_, O_RDONLY)) < 0)
 #endif
     {
-      message(-2, "Cannot open FIFO \"%s\": %s", trackData_->filename_,
+      log_message(-2, "Cannot open FIFO \"%s\": %s", trackData_->filename_,
               strerror(errno));
 	return 1;
     }
@@ -1213,15 +1214,15 @@ long TrackDataReader::readData(Sample *buffer, long len)
       readLen = fullRead(fd_, buffer, len * sizeof(Sample));
 
       if (readLen < 0) {
-	message(-2, "Read error while reading audio data from file \"%s\": %s",
+	log_message(-2, "Read error while reading audio data from file \"%s\": %s",
 		trackData_->filename_, strerror(errno));
       }
       else if (readLen != (long)(len * sizeof(Sample))) {
 	long pad = len * sizeof(Sample) - readLen;
 
 	if (readUnderRunMsgGiven_ == 0) {
-	  message(-1, "Could not read expected amount of audio data from file \"%s\".", trackData_->filename_);
-	  message(-1, "Padding with zeros.");
+	  log_message(-1, "Could not read expected amount of audio data from file \"%s\".", trackData_->filename_);
+	  log_message(-1, "Padding with zeros.");
 
 	  readUnderRunMsgGiven_ = 1;
 	}
@@ -1237,11 +1238,11 @@ long TrackDataReader::readData(Sample *buffer, long len)
     else {
       readLen = fullRead(fd_, buffer, len);
       if (readLen < 0) {
-	message(-2, "Read error while reading data from file \"%s\": %s",
+	log_message(-2, "Read error while reading data from file \"%s\": %s",
 		trackData_->filename_, strerror(errno));
       }
       else if (readLen != len) {
-	message(-2, "Could not read expected amount of data from file \"%s\".",
+	log_message(-2, "Could not read expected amount of data from file \"%s\".",
 		trackData_->filename_);
 	readLen = -1;
       }
@@ -1295,7 +1296,7 @@ int TrackDataReader::seekSample(unsigned long sample)
 		(sample * sizeof(Sample)) + 
 		(trackData_->startPos_ * sizeof(Sample)),
 		SEEK_SET) < 0) {
-	message(-2, "Cannot seek in audio file \"%s\": %s",
+	log_message(-2, "Cannot seek in audio file \"%s\": %s",
 		trackData_->filename_, strerror(errno));
 	return 10;
       }
@@ -1304,7 +1305,7 @@ int TrackDataReader::seekSample(unsigned long sample)
       // 'sample' has byte as unit
       if (lseek(fd_, trackData_->offset_ + headerLength_ + sample,
 		SEEK_SET) < 0) {
-	message(-2, "Cannot seek in audio file \"%s\": %s",
+	log_message(-2, "Cannot seek in audio file \"%s\": %s",
 		trackData_->filename_, strerror(errno));
 	return 10;
       }

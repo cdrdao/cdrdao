@@ -23,6 +23,7 @@
 #include <stdlib.h>
 #include "Toc.h"
 #include "util.h"
+#include "log.h"
 #include "CdTextItem.h"
 >>
 
@@ -207,8 +208,8 @@ toc > [ Toc *t ]
   (  Catalog string > [ catalog ]
      << if (catalog != NULL) {
           if ($t->catalog(catalog) != 0) {
-            message(-2, "%s:%d: Illegal catalog number: %s.\n",
-                    filename_, $1->getLine(), catalog);
+            log_message(-2, "%s:%d: Illegal catalog number: %s.\n",
+                	filename_, $1->getLine(), catalog);
             error_ = 1;
           }
          delete[] catalog;
@@ -224,8 +225,8 @@ toc > [ Toc *t ]
   ( track > [ tr, lineNr ]
     << if (tr != NULL) {
          if ($t->append(tr) != 0) {
-           message(-2, "%s:%d: First track must not have a pregap.\n",
-                   filename_, lineNr);
+           log_message(-2, "%s:%d: First track must not have a pregap.\n",
+               		filename_, lineNr);
            error_ = 1;
          }
          delete tr, tr = NULL;
@@ -265,8 +266,8 @@ track > [ Track *tr, int lineNr ]
     (  Isrc string > [ isrcCode ]
        << if (isrcCode != NULL) {
             if ($tr->isrc(isrcCode) != 0) {
-              message(-2, "%s:%d: Illegal ISRC code: %s.\n",
-                      filename_, $1->getLine(), isrcCode);
+              log_message(-2, "%s:%d: Illegal ISRC code: %s.\n",
+                          filename_, $1->getLine(), isrcCode);
               error_ = 1;
             }
             delete[] isrcCode;
@@ -286,8 +287,8 @@ track > [ Track *tr, int lineNr ]
 
     { Pregap msf > [ length ] 
       << if (length.lba() == 0) {
-	   message(-2, "%s:%d: Length of pregap is zero.\n",
-	           filename_, $1->getLine());
+	   log_message(-2, "%s:%d: Length of pregap is zero.\n",
+	               filename_, $1->getLine());
 	   error_ = 1;
 	 }
          else {
@@ -309,9 +310,9 @@ track > [ Track *tr, int lineNr ]
     (  subTrack [ trackType, subChanType ] > [ st, lineNr ] 
        << 
           if (st != NULL && $tr->append(*st) == 2) {
-	    message(-2,
+	    log_message(-2,
 		    "%s:%d: Mixing of FILE/AUDIOFILE/SILENCE and DATAFILE/ZERO statements not allowed.", filename_, lineNr);
-	    message(-2,
+	    log_message(-2,
 		    "%s:%d: PREGAP acts as SILENCE in audio tracks.",
 		    filename_, lineNr);
 	    error_ = 1;
@@ -321,7 +322,7 @@ track > [ Track *tr, int lineNr ]
        >>
      | Start << posGiven = 0; >> { msf > [ pos ] << posGiven = 1; >> }
        << if (startPosLine != 0) {
-            message(-2,
+            log_message(-2,
                     "%s:%d: Track start (end of pre-gap) already defined.\n",
                     filename_, $1->getLine());
             error_ = 1;
@@ -337,7 +338,7 @@ track > [ Track *tr, int lineNr ]
        >>
      | End << posGiven = 0; >> { msf > [ pos ] << posGiven = 1; >> }
        << if (endPosLine != 0) {
-            message(-2,
+            log_message(-2,
                     "%s:%d: Track end (start of post-gap) already defined.\n",
                     filename_, $1->getLine());
             error_ = 1;
@@ -355,7 +356,7 @@ track > [ Track *tr, int lineNr ]
 
     // set track start (end of pre-gap) and check for minimal track length
     << if (startPosLine != 0 && $tr->start(startPos) != 0) {
-         message(-2,
+         log_message(-2,
                  "%s:%d: START %s behind or at track end.\n", filename_,
 	         startPosLine, startPos.str());
          error_ = 1;
@@ -366,19 +367,19 @@ track > [ Track *tr, int lineNr ]
       << if ($tr != NULL) {
            switch ($tr->appendIndex(indexIncrement)) {
            case 1:
-             message(-2, "%s:%d: More than 98 index increments.\n",
+             log_message(-2, "%s:%d: More than 98 index increments.\n",
                      filename_, $1->getLine());
              error_ = 1;
              break;
 
            case 2:
-             message(-2, "%s:%d: Index beyond track end.\n",
+             log_message(-2, "%s:%d: Index beyond track end.\n",
                      filename_,  $1->getLine());
              error_ = 1;
              break;
 
            case 3:
-             message(-2, "%s:%d: Index at start of track.\n",
+             log_message(-2, "%s:%d: Index at start of track.\n",
                      filename_,  $1->getLine());
              error_ = 1;
              break;
@@ -391,17 +392,17 @@ track > [ Track *tr, int lineNr ]
     << if (endPosLine != 0) {
          switch ($tr->end(endPos)) {
          case 1:
-           message(-2, "%s:%d: END %s behind or at track end.\n",
+           log_message(-2, "%s:%d: END %s behind or at track end.\n",
                    filename_, endPosLine, endPos.str());
            error_ = 1;
            break;
          case 2:
-	   message(-2, "%s:%d: END %s within pre-gap.\n",
+	   log_message(-2, "%s:%d: END %s within pre-gap.\n",
                    filename_, endPosLine, endPos.str());
            error_ = 1;
            break;
          case 3:
-           message(-2,
+           log_message(-2,
                    "%s:%d: END %s: Cannot create index mark for post-gap.\n",
                    filename_, endPosLine, endPos.str());
            error_ = 1;
@@ -437,12 +438,12 @@ subTrack < [ TrackData::Mode trackType, TrackData::SubChannelMode subChanType ] 
           $lineNr = $1->getLine();
 
           if (trackType != TrackData::AUDIO) {
-            message(-2, "%s:%d: FILE/AUDIOFILE statements are only allowed for audio tracks.", filename_, $1->getLine());
+            log_message(-2, "%s:%d: FILE/AUDIOFILE statements are only allowed for audio tracks.", filename_, $1->getLine());
 	    error_ = 1;
           }
 
           if (subChanType != TrackData::SUBCHAN_NONE) {
-	    message(-2, "%s:%d: FILE/AUDIOFILE statements are only allowed for audio tracks without sub-channel mode.", filename_, $1->getLine());
+	    log_message(-2, "%s:%d: FILE/AUDIOFILE statements are only allowed for audio tracks without sub-channel mode.", filename_, $1->getLine());
 	    error_ = 1;
           }
        >>
@@ -466,18 +467,18 @@ subTrack < [ TrackData::Mode trackType, TrackData::SubChannelMode subChanType ] 
        << $st = new SubTrack(SubTrack::DATA, TrackData(len));
           $lineNr = $1->getLine();
           if (len == 0) {
-	    message(-2, "%s:%d: Length of silence is 0.\n",
+	    log_message(-2, "%s:%d: Length of silence is 0.\n",
 		    filename_, $lineNr);
 	    error_ = 1;
 	  }
 
           if (trackType != TrackData::AUDIO) {
-            message(-2, "%s:%d: SILENCE statements are only allowed for audio tracks.", filename_, $1->getLine());
+            log_message(-2, "%s:%d: SILENCE statements are only allowed for audio tracks.", filename_, $1->getLine());
 	    error_ = 1;
           }
 
           if (subChanType != TrackData::SUBCHAN_NONE) {
-	    message(-2, "%s:%d: SILENCE statements are only allowed for audio tracks without sub-channel mode.", filename_, $1->getLine());
+	    log_message(-2, "%s:%d: SILENCE statements are only allowed for audio tracks without sub-channel mode.", filename_, $1->getLine());
 	    error_ = 1;
           }
        >>
@@ -490,7 +491,7 @@ subTrack < [ TrackData::Mode trackType, TrackData::SubChannelMode subChanType ] 
                                                        len));
           $lineNr = $1->getLine();
           if (len == 0) {
-	    message(-2, "%s:%d: Length of zero data is 0.\n",
+	    log_message(-2, "%s:%d: Length of zero data is 0.\n",
 		    filename_, $lineNr);
 	    error_ = 1;
 	  }
@@ -577,17 +578,17 @@ msf > [ Msf m ]
     integer > [min, minLine] ":" integer > [sec, secLine] 
     ":" integer > [frac, fracLine]
     << if (min < 0) {
-         message(-2, "%s:%d: Illegal minute field: %d\n", filename_,
+         log_message(-2, "%s:%d: Illegal minute field: %d\n", filename_,
 	         minLine, min);
          err = error_ = 1;
        }
        if (sec < 0 || sec > 59) {
-	 message(-2, "%s:%d: Illegal second field: %d\n", filename_,
+	 log_message(-2, "%s:%d: Illegal second field: %d\n", filename_,
 	         secLine, sec);
 	 err = error_ = 1;
        }
        if (frac < 0 || frac > 74) {
-	 message(-2, "%s:%d: Illegal fraction field: %d\n", filename_,
+	 log_message(-2, "%s:%d: Illegal fraction field: %d\n", filename_,
 		 fracLine, frac);
 	 err = error_ = 1;
        }
@@ -698,7 +699,7 @@ binaryData > [ const unsigned char *data, long len ]
     "\{"
     { integer > [ i, lineNr ]
       << if (i < 0 || i > 255) {
-           message(-2, "%s:%d: Illegal binary data: %d", filename_, lineNr, i);
+           log_message(-2, "%s:%d: Illegal binary data: %d", filename_, lineNr, i);
            error_ = 1;
            i = 0;
          }
@@ -708,14 +709,14 @@ binaryData > [ const unsigned char *data, long len ]
       >>
       ( "," integer > [ i, lineNr ]
         << if (i < 0 || i > 255) {
-             message(-2, "%s:%d: Illegal binary data: %d",
+             log_message(-2, "%s:%d: Illegal binary data: %d",
                      filename_, lineNr, i);
              error_ = 1;
              i = 0;
            }
 
 	   if ($len >= MAX_CD_TEXT_DATA_LEN) {
-             message(-2, "%s:%d: Binary data exceeds maximum length (%d).",
+             log_message(-2, "%s:%d: Binary data exceeds maximum length (%d).",
                      filename_, lineNr, MAX_CD_TEXT_DATA_LEN);
              error_ = 1;
            }
@@ -764,7 +765,7 @@ cdTextBlock [ CdTextContainer &container, int isTrack ]
     Language integer > [ blockNr, lineNr ]
     "\{"
     << if (blockNr < 0 || blockNr > 7) {
-         message(-2, "%s:%d: Invalid block number, allowed range: [0..7].",
+         log_message(-2, "%s:%d: Invalid block number, allowed range: [0..7].",
                  filename_, lineNr);
          error_ = 1;
          blockNr = 0;
@@ -775,7 +776,7 @@ cdTextBlock [ CdTextContainer &container, int isTrack ]
            int type = item->packType();
 
            if (isTrack && ((type >= 0x86 && type <= 0x89) || type == 0x8f)) {
-             message(-2, "%s:%d: Invalid CD-TEXT item for a track.",
+             log_message(-2, "%s:%d: Invalid CD-TEXT item for a track.",
                      filename_, lineNr);
              error_ = 1;
              delete item;
@@ -811,14 +812,14 @@ cdTextLanguageMap [ CdTextContainer &container ]
              container.language(blockNr, lang);
            }
            else {
-             message(-2,
+             log_message(-2,
        	             "%s:%d: Invalid language code, allowed range: [0..255].",
 	             filename_, langLine);
              error_ = 1;
            }
          }
          else {
-	   message(-2,
+	   log_message(-2,
                    "%s:%d: Invalid language number, allowed range: [0..7].",
                    filename_, blockNrLine);
            error_ = 1;
@@ -848,7 +849,7 @@ cdTextGlobal [ CdTextContainer &container ]
 <<
 ANTLRTokenType TocLexer::erraction()
 {
-  message(-2, "%s:%d: Illegal token: %s", parser_->filename_,
+  log_message(-2, "%s:%d: Illegal token: %s", parser_->filename_,
 	  _line, _lextext);
   parser_->error_ = 1;
   return Eof;
@@ -864,27 +865,27 @@ void TocParserGram::syn(_ANTLRTokenPtr tok, ANTLRChar *egroup,
   error_ = 1;
   line = LT(1)->getLine();
 
-  message(-2, "%s:%d: syntax error at \"%s\" ", filename_, line,
+  log_message(-2, "%s:%d: syntax error at \"%s\" ", filename_, line,
        	  LT(1)->getType() == Eof ? "EOF" : LT(1)->getText());
   if ( !etok && !eset ) {
-    message(0, "");
+    log_message(0, "");
     return;
   }
   if ( k==1 ) {
-    message(0, "missing ");
+    log_message(0, "missing ");
   }
   else {
-    message(0, "; \"%s\" not ", LT(1)->getText());
-    if ( set_deg(eset)>1 ) message(-2, " in ");
+    log_message(0, "; \"%s\" not ", LT(1)->getText());
+    if ( set_deg(eset)>1 ) log_message(-2, " in ");
   }
   if ( set_deg(eset)>0 )
     edecode(eset);
-  else message(0, "%s ", token_tbl[etok]);
+  else log_message(0, "%s ", token_tbl[etok]);
 
   if ( strlen(egroup) > 0 )
-    message(0, "in %s ", egroup);
+    log_message(0, "in %s ", egroup);
 	
-  message(0, "");
+  log_message(0, "");
 }
 
 

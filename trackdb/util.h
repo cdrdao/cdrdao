@@ -57,8 +57,5 @@ FileExtension fileExtension(const char* fname);
 
 bool resolveFilename(std::string& dest, const char* file, const char* path);
 
-void message(int level, const char *fmt, ...);
-
-
 #endif
 

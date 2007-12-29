@@ -24,7 +24,7 @@
 #include <fstream>
 
 #include "config.h"
-#include "util.h"
+#include "log.h"
 #include "FormatConverter.h"
 #include "TempFileManager.h"
 
@@ -147,7 +147,7 @@ const char* FormatConverter::convert(const char* fn,
   bool exists = tempFileManager.getTempFile(*file, fn, extension);
 
   if (!exists) {
-    message(2, "Decoding file \"%s\"", fn);
+    log_message(2, "Decoding file \"%s\"", fn);
     *err = c->convert(fn, file->c_str());
 
     if (*err != FormatSupport::FS_SUCCESS)
