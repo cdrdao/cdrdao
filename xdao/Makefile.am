@@ -78,6 +78,7 @@ gcdmaster_SOURCES = \
 	DeviceList.h		\
 	ProgressDialog.h	\
 	ConfigManager.h		\
+	PreferencesDialog.h	\
 	Settings.h
 
 EXTRA_gcdmaster_SOURCES =	\
