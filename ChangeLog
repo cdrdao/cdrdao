@@ -5,6 +5,12 @@
  o  Complete rewrite of native Linux SG driver for SG 3.0 using SG_IO
     ioctl. That should make it behave better with ConsoleKit based
     permissions environment.
+
+GCDMaster changes:
+
+ o  Preferences now stored in GConf
+
+ o  Fixed GCC 4.3 compilation issues
 	
 --------------------------------------------------------------------------
   cdrdao 1.2.2 (2006-09-20)
