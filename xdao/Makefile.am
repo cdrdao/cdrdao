@@ -77,6 +77,7 @@ gcdmaster_SOURCES = \
 	xcdrdao.h		\
 	DeviceList.h		\
 	ProgressDialog.h	\
+	ConfigManager.h		\
 	Settings.h
 
 EXTRA_gcdmaster_SOURCES =	\
