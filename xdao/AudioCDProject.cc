@@ -20,6 +20,7 @@
 #include <assert.h>
 #include <gtkmm.h>
 #include <libgnome/gnome-i18n.h>
+#include <cstring>
 
 #include "Toc.h"
 #include "SoundIF.h"

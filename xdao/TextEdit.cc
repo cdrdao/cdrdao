@@ -21,6 +21,7 @@
 
 #include <stddef.h>
 #include <ctype.h>
+#include <cstring>
 
 TextEdit::TextEdit(const char *sample) : Gtk::Entry()
 {

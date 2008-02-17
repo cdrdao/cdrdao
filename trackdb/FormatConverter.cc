@@ -22,6 +22,7 @@
 #include <ao/ao.h>
 #endif
 #include <fstream>
+#include <cstring>
 
 #include "config.h"
 #include "log.h"

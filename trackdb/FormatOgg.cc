@@ -18,6 +18,7 @@
  */
 
 #include <stdio.h>
+#include <cstring>
 
 #include "log.h"
 #include "FormatOgg.h"
