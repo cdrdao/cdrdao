@@ -1369,7 +1369,7 @@ static CdrDriver *setupDevice(DaoCommand cmd, const char *scsiDevice,
       if (readingSpeed >= 0) {
         log_message(0, "Setting reading speed %d.",
                 readingSpeed); 
-        if (cdr->rspeed(readingSpeed) != 0) {
+        if (!cdr->rspeed(readingSpeed)) {
           log_message(-2, "Reading speed %d is not supported by device.",
                   readingSpeed);
           exit(1);
@@ -1492,7 +1492,7 @@ static CdrDriver *setupDevice(DaoCommand cmd, const char *scsiDevice,
 #endif
 
   if (readingSpeed >= 0) {
-    if (cdr->rspeed(readingSpeed) != 0) {
+    if (!cdr->rspeed(readingSpeed)) {
       log_message(-2, "Reading speed %d is not supported by device.",
               readingSpeed);
       exit(1);
