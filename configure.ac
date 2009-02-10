@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_REVISION($Revision: 1.17 $)dnl
+AC_REVISION($Revision: 1.18 $)dnl
 
 AC_INIT(cdrdao, 1.2.3)
 
@@ -95,18 +95,9 @@ AC_CHECK_FUNC(sched_setscheduler,AC_DEFINE(HAVE_SCHED_SETSCHEDULER,1,""),
 AC_CHECK_LIB(socket,socket,[use_libsocket=yes])
 AC_CHECK_LIB(socket,connect,[use_libsocket=yes])
 
-AC_CHECK_LIB(nsl,gethostbyname,[use_libnsl=yes])
-AC_CHECK_LIB(nsl,inet_addr,[use_libnsl=yes])
-AC_CHECK_LIB(nsl,inet_ntoa,[use_libnsl=yes])
-
 dnl Add 'libsocket' if required
 if test "$use_libsocket" = yes; then
   LIBS="$LIBS -lsocket"
-fi
-
-dnl Add 'libnsl' if required
-if test "$use_libnsl" = yes; then
-  LIBS="$LIBS -lnsl"
 fi
 
 dnl Check if libposix4 must be linked
