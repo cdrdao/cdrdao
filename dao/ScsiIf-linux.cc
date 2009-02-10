@@ -352,24 +352,43 @@ ScsiIf::ScanData *ScsiIf::scan(int *len, char* scsi_dev_path)
 
 	// figure out the block device
 	glob_t bglob;
+	char* devname = NULL;
 	sprintf(path, "%s/block:*", pglob.gl_pathv[i]);
-	if (glob(path, 0, NULL, &bglob) != 0)
-	    continue;
-	if (bglob.gl_pathc != 1) {
-	    globfree(&bglob);
-	    continue;
+	if (glob(path, 0, NULL, &bglob) == 0) {
+
+	    if (bglob.gl_pathc != 1) {
+		globfree(&bglob);
+		continue;
+	    }
+
+	    char* match = strrchr(bglob.gl_pathv[0], ':');
+	    if (!match) {
+		globfree(&bglob);
+		continue;
+	    }
+	    devname = (char*)alloca(strlen(match));
+	    strcpy(devname, match+1);
+	} else {
+	    sprintf(path, "%s/block/*", pglob.gl_pathv[i]);
+	    if (glob(path, 0, NULL, &bglob) == 0) {
+		
+		if (bglob.gl_pathc != 1) {
+		    globfree(&bglob);
+		    continue;
+		}
+		char* match = strrchr(bglob.gl_pathv[0], '/');
+		devname = (char*)alloca(strlen(match));
+		strcpy(devname, match + 1);
+	    }
 	}
 
-	char* match = strrchr(bglob.gl_pathv[0], ':');
-	if (!match) {
+	if (devname) {
+	    sdata[matches].dev = "/dev/";
+	    sdata[matches].dev += devname;
 	    globfree(&bglob);
+	} else {
 	    continue;
 	}
-	char* devname = (char*)alloca(strlen(match));
-	strcpy(devname, match+1);
-	sdata[matches].dev = "/dev/";
-	sdata[matches].dev += devname;
-	globfree(&bglob);
 
 	matches++;
 
@@ -381,7 +400,7 @@ ScsiIf::ScanData *ScsiIf::scan(int *len, char* scsi_dev_path)
 	return sdata;
     }
 
-    delete sdata;
+    delete[] sdata;
  fail:
     *len = 0;
     return NULL;
