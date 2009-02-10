@@ -20,7 +20,7 @@
 #include "syn.h"
 #include "hash.h"
 #include "generic.h"
-#define zzcr_attr(attr,tok,t)
+#define zzcr_attr(attr,tok,t) {(attr)->left = 0; (attr)->right = 0;}
 #define zzSET_SIZE 20
 #include "antlr.h"
 #include "tokens.h"

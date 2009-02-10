@@ -272,7 +272,8 @@ char *eclass;
 			if ( q == NULL )
 			{
 				/* if quoted and not an expr look for eclass name */
-				q = (TermEntry *) hash_get(Tname, *((char **)&(e->elem))=StripQuotes((char *)e->elem));
+				e->elem=(void *)StripQuotes((char *)e->elem);
+				q = (TermEntry *) hash_get(Tname, (char *) e->elem);
 				if ( q != NULL ) t = q->token;
 			}
 			else t = q->token;
