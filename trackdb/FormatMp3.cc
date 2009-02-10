@@ -24,6 +24,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <string.h>
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -89,7 +90,7 @@ FormatSupport::Status FormatMp3::madInit()
 
   if (stat(src_file_, &st) != 0) {
     log_message(-2, "Could not stat input file \"%s\": %s", src_file_,
-            strerror(errno));
+		strerror(errno));
     return FS_INPUT_PROBLEM;
   }
 
