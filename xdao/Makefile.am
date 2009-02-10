@@ -89,6 +89,7 @@ EXTRA_gcdmaster_SOURCES =	\
 
 gladedir = $(datadir)/gcdmaster/glade
 glade_DATA = 			\
+	glade/Preferences.glade	\
 	glade/ProjectChooser.glade
 
 gcdmaster_LDADD =					\
