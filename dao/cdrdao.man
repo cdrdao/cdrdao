@@ -801,7 +801,9 @@ is used but it is also possible to modify it manually. Following
 values are defined:
 .IP write_device
 Device used for operations 
-.I simulate, write, copy, blank, disk-info and unlock.
+.I simulate, write, copy, blank, disk-info
+and
+.I unlock.
 Corresponding option:
 .I --device
 .IP write_driver
@@ -854,7 +856,7 @@ Local directory where fetched CDDB records will be stored, used by
 Corresponding option:
 .I --cddb-directory
 .IP tmp_file_dir
-Directory where temporay WAV files will be created from decoding MP3 and Ogg Vorbis files. Corresponding option:
+Directory where temporary WAV files will be created from decoding MP3 and Ogg Vorbis files. Corresponding option:
 .I --tmpdir
 .LP
 .SH BUGS
