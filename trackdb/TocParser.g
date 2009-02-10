@@ -497,6 +497,11 @@ subTrack < [ TrackData::Mode trackType, TrackData::SubChannelMode subChanType ] 
 	  }
        >>
     )
+    << if ($st != NULL && $st->length() == 0) {
+          // try to determine length 
+          $st->determineLength();
+       }
+    >> 
     ;
     // fail action
     << delete $st, $st = NULL;
