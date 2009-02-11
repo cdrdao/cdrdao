@@ -4,11 +4,18 @@
 
  o  Complete rewrite of native Linux SG driver for SG 3.0 using SG_IO
     ioctl. That should make it behave better with ConsoleKit based
-    permissions environment.
+    permissions environment. Cdrdao can now be compiled on Linux
+    without cdrtools by using "--without-scglib".
+
+ o  Fixed bug in Toc file parser track length computation.
+
+ o  Man page typo fixes
 
 GCDMaster changes:
 
- o  Preferences now stored in GConf
+ o  Preferences now stored in GConf, exports schema file
+
+ o  Added simple Preferences dialog to change temporary file directory
 
  o  Fixed GCC 4.3 compilation issues
 	
