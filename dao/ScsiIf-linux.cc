@@ -242,6 +242,8 @@ int ScsiIf::inquiry()
     unsigned char result[0x2c];
     int i;
 
+    memset(result, 0, sizeof(result));
+
     if (sendCmd(cmd, 6, NULL, 0, result, 0x2c, 1) != 0) {
 	log_message(-2, "Inquiry command failed on \"%s\"", impl_->filename_);
 	return 1;
@@ -287,7 +289,7 @@ ScsiIf::ScanData *ScsiIf::scan(int *len, char* scsi_dev_path)
 	goto fail;
     }
 
-    path = (char*)alloca(strlen(SYSFS_SCSI_DEVICES) + 16);
+    path = (char*)alloca(strlen(SYSFS_SCSI_DEVICES) + 64);
     sprintf(path, "%s/*", SYSFS_SCSI_DEVICES);
     if (glob(path, 0, NULL, &pglob) != 0) {
 	log_message(-2, "Unable to glob through sysfs filesystem (%d).",
