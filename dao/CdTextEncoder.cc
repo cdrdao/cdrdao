@@ -228,6 +228,7 @@ void CdTextEncoder::buildPacks(int blockNr, CdTextItem::PackType type)
   int i;
   int n = toc_->nofTracks();
   int tracks;
+  int offset = toc_->firstTrackNo() == 0 ? 0 : toc_->firstTrackNo() - 1;
 
   if ((globalItem = toc_->getCdTextItem(0, blockNr, type)) != NULL) {
     encodeCdTextItem(0, blockNr, globalItem);
@@ -256,7 +257,7 @@ void CdTextEncoder::buildPacks(int blockNr, CdTextItem::PackType type)
 	  item = globalItem;
 
 	if (item != NULL)
-	  encodeCdTextItem(i, blockNr, item);
+	  encodeCdTextItem(offset + i, blockNr, item);
       }
     }
   }
@@ -357,8 +358,8 @@ void CdTextEncoder::buildSizeInfoPacks()
   for (b = 0; b < 8; b++) {
     sizeInfo_[b].characterCode = 0; // ISO/IEC 8859-1
 
-    sizeInfo_[b].firstTrack = 1; // we always start with track 1
-    sizeInfo_[b].lastTrack = toc_->nofTracks();
+    sizeInfo_[b].firstTrack = toc_->firstTrackNo() == 0 ? 1 : toc_->firstTrackNo();
+    sizeInfo_[b].lastTrack = toc_->firstTrackNo() == 0 ? toc_->nofTracks() : toc_->firstTrackNo() + toc_->nofTracks() - 1;
 
     sizeInfo_[b].copyright = 0; // no copy protection
 

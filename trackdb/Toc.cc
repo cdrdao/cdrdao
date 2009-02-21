@@ -49,7 +49,7 @@ extern Toc *parseToc(FILE *fp, const char *filename);
 Toc::Toc() : length_(0)
 {
   tocType_ = CD_DA;
-  nofTracks_ = 0;
+  nofTracks_ = 0; firstTrackNo_ = 0;
   tracks_ = lastTrack_ = NULL;
 
   catalogValid_ = 0;
@@ -64,6 +64,7 @@ Toc::Toc(const Toc &obj) : length_(0), cdtext_(obj.cdtext_)
     memcpy(catalog_, obj.catalog_, 13);
 
   nofTracks_ = 0;
+  firstTrackNo_ = obj.firstTrackNo_;
   tracks_ = lastTrack_ = NULL;
 
   // copy all tracks

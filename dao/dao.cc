@@ -447,7 +447,7 @@ static void *reader(void *args)
   long n, rn;
   int first = header->nofBuffers;
   const Track *track;
-  int trackNr = 1;
+  int trackNr = toc->firstTrackNo() == 0 ? 1 : toc->firstTrackNo();
   TrackData::Mode dataMode;
   TrackData::SubChannelMode subChanMode;
   int encodingMode = 0;

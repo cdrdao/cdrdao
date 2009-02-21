@@ -754,12 +754,27 @@ unsigned char *GenericMMC::createCueSheet(unsigned long variant,
   unsigned char ctl; // control nibbles of cue sheet entry CTL/ADR
   long i;
   unsigned char dataMode;
-  int trackOffset = 0;
-  long lbaOffset = 0;
+  int trackOffset;
+  long lbaOffset;
 
   if (!diskInfo_.empty && diskInfo_.append) {
+    if (toc_->firstTrackNo() != 0 && toc_->firstTrackNo() != diskInfo_.lastTrackNr + 1) {
+      log_message(-2, "Number of first track doesn't match");
+      return NULL;
+    }
+#if 0
+    /* for progress message */
+    toc_->firstTrackNo(diskInfo_.lastTrackNr + 1);
+#endif
     trackOffset = diskInfo_.lastTrackNr;
     lbaOffset = diskInfo_.thisSessionLba;
+  } else {
+    trackOffset = toc_->firstTrackNo() == 0 ? 0 : toc_->firstTrackNo() - 1;
+    lbaOffset = 0;
+  }
+  if (trackOffset + toc_->nofTracks() > 99) {
+    log_message(-2, "Track numbers too large");
+    return NULL;
   }
 
   TrackIterator itr(toc_);
@@ -1096,6 +1111,11 @@ int GenericMMC::initDao(const Toc *toc)
 
   if (!diskInfo_.append) {
     log_message(-2, "Inserted medium is not appendable.");
+    return 1;
+  }
+
+  if ((!diskInfo_.empty && diskInfo_.append) && toc_->firstTrackNo() != 0 ) {
+    log_message(-1, "Cannot choose number of first track in append mode.");
     return 1;
   }
 

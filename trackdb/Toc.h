@@ -40,6 +40,9 @@ public:
   void tocType(TocType);
   TocType tocType() const;
 
+  void firstTrackNo(int i) { firstTrackNo_ = i; }
+  int firstTrackNo() const { return firstTrackNo_; }
+
   int nofTracks() const { return nofTracks_; }
 
   Msf length() const { return length_; }
@@ -142,7 +145,7 @@ private:
 
   TocType tocType_; // type of TOC
 
-  int nofTracks_;
+  int nofTracks_, firstTrackNo_;
   TrackEntry *tracks_;
   TrackEntry *lastTrack_;
 

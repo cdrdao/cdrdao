@@ -123,6 +123,7 @@ public:
 #token BeginString      "\""         << mode(STRING); >>
 #token Integer          "[0-9]+"
 #token TrackDef         "TRACK"
+#token FirstTrackNo     "FIRST_TRACK_NO"
 #token Audio            "AUDIO"
 #token Mode0            "MODE0"
 #token Mode1            "MODE1"
@@ -204,6 +205,7 @@ toc > [ Toc *t ]
        int lineNr = 0;
        char *catalog = NULL;
        Toc::TocType toctype;
+       int firsttrack, firstLine;
     >>
   (  Catalog string > [ catalog ]
      << if (catalog != NULL) {
@@ -219,6 +221,17 @@ toc > [ Toc *t ]
    | tocType > [ toctype ]
      << $t->tocType(toctype); >> 
   )*
+
+  { FirstTrackNo integer > [ firsttrack, firstLine ]
+    << if (firsttrack > 0 && firsttrack < 100) {
+            $t->firstTrackNo(firsttrack);
+       } else {
+         log_message(-2, "%s:%d: Illegal track number: %d\n", filename_,
+	         firstLine, firsttrack);
+            error_ = 1;
+       }
+    >>
+  }
 
   { cdTextGlobal [ $t->cdtext_ ] }
 
