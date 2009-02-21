@@ -52,7 +52,7 @@
 #include "FormatConverter.h"
 
 #ifdef __CYGWIN__
-
+#define NOMINMAX
 #include <windows.h>
 #include <winioctl.h>
 #define IOCTL_SCSI_BASE                 FILE_DEVICE_CONTROLLER

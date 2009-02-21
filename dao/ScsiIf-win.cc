@@ -166,7 +166,7 @@ int ScsiIf::sendCmd (const unsigned char *cmd,     int cmdLen,
               if (dataOut && dataOutLen)
               {
                  impl_->cmd6_.SRB_Flags      = SRBF_WRITE;
-                 impl_->cmd6_.SRB_BufPointer = dataOut;
+                 impl_->cmd6_.SRB_BufPointer = (BYTE*)dataOut;
                  impl_->cmd6_.SRB_BufLen     = dataOutLen;
               }
               else
@@ -213,7 +213,7 @@ int ScsiIf::sendCmd (const unsigned char *cmd,     int cmdLen,
               if (dataOut && dataOutLen)
               {
                  impl_->cmd10_.SRB_Flags      = SRBF_WRITE;
-                 impl_->cmd10_.SRB_BufPointer = dataOut;
+                 impl_->cmd10_.SRB_BufPointer = (BYTE*)dataOut;
                  impl_->cmd10_.SRB_BufLen     = dataOutLen;
               }
               else
@@ -262,7 +262,7 @@ int ScsiIf::sendCmd (const unsigned char *cmd,     int cmdLen,
               if (dataOut && dataOutLen)
               {
                  impl_->cmd12_.SRB_Flags      = SRBF_WRITE;
-                 impl_->cmd12_.SRB_BufPointer = dataOut;
+                 impl_->cmd12_.SRB_BufPointer = (BYTE*)dataOut;
                  impl_->cmd12_.SRB_BufLen     = dataOutLen;
               }
               else

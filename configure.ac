@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_REVISION($Revision: 1.20 $)dnl
+AC_REVISION($Revision: 1.21 $)dnl
 
 AC_INIT(cdrdao, 1.2.3rc1)
 
@@ -264,7 +264,7 @@ else
 	       scsilib_objs="ScsiIf-freebsd-cam.o"
 	       ;;
 
-    *-pc-cygwin32)
+    *-pc-cygwin*)
                 scsilib_libs=""
                 scsilib_objs="ScsiIf-win.o"
                 ;;

@@ -38,7 +38,6 @@
 #endif
 
 #ifdef __CYGWIN__
-#include <vadefs.h>
 #include <windows.h>
 #endif
 
