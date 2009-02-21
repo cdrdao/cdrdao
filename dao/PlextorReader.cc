@@ -52,7 +52,7 @@ PlextorReader::PlextorReader(ScsiIf *scsiIf, unsigned long options)
     struct
     {   
       int number;
-      char *productid; // as obtained through INQUIRY
+      const char *productid; // as obtained through INQUIRY
     } models[] =
       {
       { 1,"CD-ROM PX-4XCH" },
@@ -84,7 +84,7 @@ PlextorReader::PlextorReader(ScsiIf *scsiIf, unsigned long options)
         unsigned char blockdesc[8];
         struct plex_msg {
             int value;
-            char *msg;
+            const char *msg;
         };
         struct plex_msg slowdown_msg[] = {
             { -1, "Unsupported"},

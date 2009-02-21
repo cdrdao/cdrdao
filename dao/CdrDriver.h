@@ -392,7 +392,7 @@ protected:
   unsigned long options_; // driver option flags
   ScsiIf *scsiIf_;
   int scsiMaxDataLen_;
-  char *driverName_;
+  const char *driverName_;
 
   int hostByteOrder_; // 0: little endian, 1: big endian
 

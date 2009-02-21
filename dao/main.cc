@@ -51,12 +51,13 @@
 #include "FormatConverter.h"
 
 #ifdef __CYGWIN__
+
 #include <windows.h>
 #include <winioctl.h>
-#define IOCTL_SCSI_BASE 							FILE_DEVICE_CONTROLLER
-#define IOCTL_SCSI_GET_CAPABILITIES			CTL_CODE(IOCTL_SCSI_BASE, 0x0404, METHOD_BUFFERED, FILE_ANY_ACCESS)
-#define IOCTL_SCSI_PASS_THROUGH_DIRECT	CTL_CODE(IOCTL_SCSI_BASE, 0x0405, METHOD_BUFFERED, FILE_READ_ACCESS | FILE_WRITE_ACCESS)
-#define IOCTL_SCSI_GET_ADDRESS				CTL_CODE(IOCTL_SCSI_BASE, 0x0406, METHOD_BUFFERED, FILE_ANY_ACCESS)
+#define IOCTL_SCSI_BASE                 FILE_DEVICE_CONTROLLER
+#define IOCTL_SCSI_GET_CAPABILITIES     CTL_CODE(IOCTL_SCSI_BASE, 0x0404, METHOD_BUFFERED, FILE_ANY_ACCESS)
+#define IOCTL_SCSI_PASS_THROUGH_DIRECT  CTL_CODE(IOCTL_SCSI_BASE, 0x0405, METHOD_BUFFERED, FILE_READ_ACCESS | FILE_WRITE_ACCESS)
+#define IOCTL_SCSI_GET_ADDRESS          CTL_CODE(IOCTL_SCSI_BASE, 0x0406, METHOD_BUFFERED, FILE_ANY_ACCESS)
 #endif
 
 #ifdef UNIXWARE
@@ -1779,7 +1780,7 @@ static int readCddb(DaoCommandLine* opts, Toc *toc, bool showEntry = false)
   int err = 0;
   char *servers = strdupCC(opts->cddbServerList);
   char *p;
-  char *sep = " ,";
+  const char *sep = " ,";
   char *user = NULL;
   char *host = NULL;
   struct passwd *pwent;
@@ -2303,7 +2304,7 @@ int main(int argc, char **argv)
     DiskInfo *di = NULL;
     DiskInfo *srcDi = NULL;
     const char *homeDir;
-    char *settingsPath = NULL;
+    const char *settingsPath = NULL;
 
     log_init();
 

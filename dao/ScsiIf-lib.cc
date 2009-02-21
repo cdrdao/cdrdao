@@ -23,6 +23,7 @@
 #include <string.h>
 #include <assert.h>
 #include <errno.h>
+#include <fcntl.h>
 
 #include "ScsiIf.h"
 #include "log.h"
@@ -428,7 +429,7 @@ const int ScsiIf::lun ()
 #include "ScsiIf-common.cc"
 //<<<<<<< ScsiIf-lib.cc
 
-#ifndef linux
+#ifdef linux
 
 /* Function for mapping any SCSI device to the corresponding SG device.
  * Taken from D. Gilbert's example code.

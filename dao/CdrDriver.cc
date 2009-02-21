@@ -61,15 +61,15 @@
 typedef CdrDriver *(*CdrDriverConstructor)(ScsiIf *, unsigned long);
 
 struct DriverSelectTable {
-  char *driverId;
-  char *vendor;
-  char *model;
+  const char *driverId;
+  const char *vendor;
+  const char *model;
   unsigned long options;
   struct DriverSelectTable *next;
 };
 
 struct DriverTable {
-  char *driverId;
+  const char *driverId;
   CdrDriverConstructor constructor;
 };
 
@@ -588,7 +588,7 @@ static int readDriverTable(const char *filename)
   int err;
   char buf[MAX_DRIVER_TABLE_LINE_LEN];
   char *p, *l;
-  char *sep = "|";
+  const char *sep = "|";
   char *vendor;
   char *model;
   char *driver;
