@@ -457,6 +457,7 @@ int GenericMMC::performPowerCalibration()
 {
   unsigned char cmd[10];
   int ret;
+  long old_timeout;
 
   memset(cmd, 0, 10);
 
@@ -465,32 +466,28 @@ int GenericMMC::performPowerCalibration()
 
   log_message(2, "Executing power calibration...");
 
-  if ((ret = sendCmd(cmd, 10, NULL, 0, NULL, 0)) != 0) {
-    if (ret == 2) {
-      const unsigned char *sense;
-      int senseLen;
+  old_timeout = scsiIf_->timeout(30);
+  ret = sendCmd(cmd, 10, NULL, 0, NULL, 0);
+  (void)scsiIf_->timeout(old_timeout);
 
-      sense = scsiIf_->getSense(senseLen);
-
-      if(senseLen >= 14 && (sense[2] & 0x0f) == 0x5 && sense[7] >= 6 &&
-	   sense[12] == 0x20 && sense[13] == 0x0) {
-	log_message(2, "Power calibration not supported.");
-	return 0;
-      }
-      else {
-	log_message(-2, "Power calibration failed.");
-      }
-    }
-    else {
-      log_message(-2, "Power calibration failed.");
-    }
-
-    return 1;
+  if (ret == 0) {
+    log_message(2, "Power calibration successful.");
+    return 0;
   }
-  
-  log_message(2, "Power calibration successful.");
+  if (ret == 2) {
+    const unsigned char *sense;
+    int senseLen;
 
-  return 0;
+    sense = scsiIf_->getSense(senseLen);
+
+    if (senseLen >= 14 && (sense[2] & 0x0f) == 0x5 && sense[7] >= 6 &&
+      sense[12] == 0x20 && sense[13] == 0x0) {
+      log_message(2, "Power calibration not supported.");
+      return 0;
+    } /* else fall trough */
+  }
+  log_message(-2, "Power calibration failed.");
+  return 1;
 }
 
 // Sets write parameters via mode page 0x05.
