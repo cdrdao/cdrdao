@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_REVISION($Revision: 1.19 $)dnl
+AC_REVISION($Revision: 1.20 $)dnl
 
 AC_INIT(cdrdao, 1.2.3rc1)
 
@@ -18,17 +18,9 @@ AC_ARG_WITH(linux-qnx-sched,[  --with-linux-qnx-sched  enable QNX real time sche
 
 AC_ARG_WITH(posix-threads,[  --with-posix-threads    use Posix threads for ring buffer (default is YES)],[use_pthreads=$withval],[use_pthreads=default])
 
-AC_ARG_WITH(scglib,[  --with-scglib=sys|pkg   use cdrtools SCSI library (see INSTALL) (default is pkg)],[scglib=$withval],[scglib=pkg])
+AC_ARG_WITH(scglib,[  --with-scglib           use bundled libscg SCSI library (see INSTALL) (default is NO)],[scglib=$withval],[scglib=default])
 
-if test "$scglib" = yes; then
-  scglib=pkg
-fi
-
-AC_ARG_WITH(scglib-inc,[  --with-scglib-inc=dir   set directory for SCSI library include files],[scglib_inc=$withval],[scglib_inc=default])
-
-AC_ARG_WITH(scglib-lib,[  --with-scglib-lib=dir   set directory that contains the SCSI library],[scglib_lib=$withval],[scglib_lib=default])
-
-AC_ARG_WITH(xdao,[  --with-xdao             enable building of gcdmaster (default is YES)],[xdao=$withval],[xdao=default])
+AC_ARG_WITH(xdao,[  --with-xdao             enable build of gcdmaster Gnome GUI front-end (default is YES)],[xdao=$withval],[xdao=default])
 
 AC_ARG_WITH(ogg-support,[  --with-ogg-support      enable OGG format support (default is YES)],[],[with_ogg_support=yes])
 
@@ -236,35 +228,12 @@ fi
 
 dnl Determine source for scsi interface class
 
-if ! test "$scglib" = no; then
-  AC_DEFINE(USE_SCGLIB,1,"")
-  AC_DEFINE(SCSI_ATAPI, 1, "Allow ATAPI support device")
+if test "$scglib" = yes; then
+  scsilib_dir=scsilib
+  scsilib_incl='-I$(srcdir)/../scsilib/export -I$(srcdir)/../scsilib/export/libschily'
+  scsilib_libs="-L../scsilib/export"
+  en_scsilib="yes"
 
-  if test "$scglib" = sys; then
-    if test "$scglib_inc" = default -o "$scglib_lib" = default; then
-      AC_CHECK_LIB(scg, scg_version, [sgsyslib=yes], [sgsyslib=no], -lschily)
-      AC_CHECK_FILE(/usr/include/schily.h, [sgsysinc=yes])
-      AC_CHECK_FILE(/usr/local/include/schily.h, [sgsysinc=yes])
-      AC_CHECK_FILE(/usr/include/schily/schily.h,
-         [sgsysinc=yes; scsilib_incl="-I/usr/include/schily"])
-      AC_CHECK_FILE(/usr/local/include/schily/schily.h,
-         [sgsysinc=yes; scsilib_incl="-I/usr/local/include/schily"])
-    else
-      scsilib_incl="-I$scglib_inc"
-      scsilib_libs="-L$scglib_lib"
-    fi
-    scsilib_dir=""
-    en_custom_libscg=yes
-    en_scsilib="no (using installed libscg)"
-  fi
-
-  if test "$scglib" = pkg; then
-    scsilib_dir=scsilib
-    scsilib_incl='-I$(srcdir)/../scsilib/export -I$(srcdir)/../scsilib/export/libschily'
-    scsilib_libs="-L../scsilib/export"
-    en_scsilib="yes"
-  fi
-  
   scsilib_libs="$scsilib_libs -lscg -lschily"
   scsilib_objs="ScsiIf-lib.o"
   
@@ -279,8 +248,7 @@ if ! test "$scglib" = no; then
 
 else
 
-  en_scsilib="no (using generic sg layer)"
-  en_custom_libscg=no
+  en_scsilib="no (using native interface)"
   scsilib_dir=""
   scsilib_incl=""
   scsilib_libs=""
@@ -302,20 +270,9 @@ else
                 ;;
 
     *)
-       AC_MSG_ERROR([Unsupported operating system: $host_os]) 
+       AC_MSG_ERROR([No native interface for operating system $host_os, use --with-libscg]) 
        ;;
     esac
-fi
-
-dnl If we're using custom libsch/schily libs, make sure it'll compile
-if test "$en_custom_libscg" = yes; then
-  AC_LIBSCG(0.5,[have_scg05=yes],[AC_MSG_ERROR([No cdrtools libraries found. You need to install cdrtools version >= 1.10 (a.k.a. cdrecord-devel). To build the included fallback scsi library, please use --with-scglib=pkg (see INSTALL file)])])
-  AC_LIBSCG(0.7,[have_scg07=yes], [])
-
-  dnl Special case when we're compiling with cdrtools 1.10
-  if test "$have_scg05" = yes -a ! "$have_scg07" = yes; then
-    AC_DEFINE(USE_OLDSCGLIB,1,"")
-  fi
 fi
 
 dnl Selection of buffer code
