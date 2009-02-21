@@ -117,7 +117,7 @@ void offset_adjust_settings(cdrom_paranoia *p, void(*callback)(long,int)){
 	  v=v_next(v);
 	}
 	while(c){
-	  long adj=min(av,cb(c));
+	  long adj=prna_min(av,cb(c));
 	  c_set(c,cb(c)-adj);
 	  c=c_next(c);
 	}

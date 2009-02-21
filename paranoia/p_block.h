@@ -17,8 +17,8 @@
 #define JIGGLE_MODULO        15     /* sectors */
 #define MIN_SILENCE_BOUNDARY 1024   /* 16 bit words */
 
-#define min(x,y) ((x)>(y)?(y):(x))
-#define max(x,y) ((x)<(y)?(y):(x))
+#define prna_min(x,y) ((x)>(y)?(y):(x))
+#define prna_max(x,y) ((x)<(y)?(y):(x))
 
 #include "isort.h"
 

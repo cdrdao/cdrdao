@@ -76,8 +76,8 @@ void sort_setup(sort_info *i,int16_t *vector,long *abspos,
   i->size=size;
   i->abspos=abspos;
 
-  i->lo=min(size,max(sortlo-*abspos,0));
-  i->hi=max(0,min(sorthi-*abspos,size));
+  i->lo=prna_min(size,prna_max(sortlo-*abspos,0));
+  i->hi=prna_max(0,prna_min(sorthi-*abspos,size));
 }
 
 sort_link *sort_getmatch(sort_info *i,long post,long overlap,int value){
@@ -86,10 +86,10 @@ sort_link *sort_getmatch(sort_info *i,long post,long overlap,int value){
   if(i->sortbegin==-1)sort_sort(i,i->lo,i->hi);
   /* Now we reuse lo and hi */
   
-  post=max(0,min(i->size,post));
+  post=prna_max(0,prna_min(i->size,post));
   i->val=value+32768;
-  i->lo=max(0,post-overlap);       /* absolute position */
-  i->hi=min(i->size,post+overlap); /* absolute position */
+  i->lo=prna_max(0,post-overlap);       /* absolute position */
+  i->hi=prna_min(i->size,post+overlap); /* absolute position */
 
   ret=i->head[i->val];
   while(ret){

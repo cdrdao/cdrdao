@@ -283,8 +283,8 @@ static long i_iterate_stage1(cdrom_paranoia *p,c_block *old,c_block *new,
   long matchbegin=-1,matchend=-1,matchoffset;
 
   /* we no longer try to spread the stage one search area by dynoverlap */
-  long searchend=min(ce(old),ce(new));
-  long searchbegin=max(cb(old),cb(new));
+  long searchend=prna_min(ce(old),ce(new));
+  long searchbegin=prna_max(cb(old),cb(new));
   long searchsize=searchend-searchbegin;
   sort_info *i=p->sortcache;
   long ret=0;
@@ -358,8 +358,8 @@ static long i_stage1(cdrom_paranoia *p,c_block *new,
     
     ret++;
 
-    new_v_fragment(p,new,cb(new)+max(0,begin-OVERLAP_ADJ),
-		   cb(new)+min(size,end+OVERLAP_ADJ),
+    new_v_fragment(p,new,cb(new)+prna_max(0,begin-OVERLAP_ADJ),
+		   cb(new)+prna_min(size,end+OVERLAP_ADJ),
 		   (end+OVERLAP_ADJ>=size && new->lastsector));
 
     begin=end;
@@ -388,24 +388,24 @@ static long i_iterate_stage2(cdrom_paranoia *p,v_fragment *v,
       fprintf(stderr,"Stage 2 search: fbv=%ld fev=%ld\n",fb(v),fe(v));
 #endif
 
-  if(min(fe(v)+p->dynoverlap,re(root))-
-    max(fb(v)-p->dynoverlap,rb(root))<=0)return(0);
+  if(prna_min(fe(v)+p->dynoverlap,re(root))-
+    prna_max(fb(v)-p->dynoverlap,rb(root))<=0)return(0);
 
   if(callback)(*callback)(fb(v),PARANOIA_CB_VERIFY);
 
   /* just a bit of v; determine the correct area */
-  fbv=max(fb(v),rb(root)-p->dynoverlap);
+  fbv=prna_max(fb(v),rb(root)-p->dynoverlap);
 
   /* we want to avoid zeroes */
   while(fbv<fe(v) && fv(v)[fbv-fb(v)]==0)fbv++;
   if(fbv==fe(v))return(0);
-  fev=min(min(fbv+256,re(root)+p->dynoverlap),fe(v));
+  fev=prna_min(prna_min(fbv+256,re(root)+p->dynoverlap),fe(v));
   
   {
     /* spread the search area a bit.  We post from root, so containment
        must strictly adhere to root */
-    long searchend=min(fev+p->dynoverlap,re(root));
-    long searchbegin=max(fbv-p->dynoverlap,rb(root));
+    long searchend=prna_min(fev+p->dynoverlap,re(root));
+    long searchbegin=prna_max(fbv-p->dynoverlap,rb(root));
     sort_info *i=p->sortcache;
     long j;
     
@@ -473,8 +473,8 @@ static long i_silence_match(root_block *root, v_fragment *v,
   }
 
   /* do we have an 'effortless' overlap? */
-  begin=max(fb(v),root->silencebegin);
-  end=min(j,re(root));
+  begin=prna_max(fb(v),root->silencebegin);
+  end=prna_min(j,re(root));
   
   if(begin<end){
 
@@ -967,7 +967,7 @@ static void verify_skip_case(cdrom_paranoia *p,void(*callback)(long,int)){
       long cend=ce(graft);
 
       while(gend<cend && (graft->flags[gend-cbegin]&4))gend++;
-      gend=min(gend+OVERLAP_ADJ,cend);
+      gend=prna_min(gend+OVERLAP_ADJ,cend);
 
       if(rv(root)==NULL){
 	int16_t *buff=malloc(cs(graft));

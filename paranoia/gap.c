@@ -169,8 +169,8 @@ void  analyze_rift_silence_f(int16_t *A,int16_t *B,long sizeA,long sizeB,
   *matchA=-1;
   *matchB=-1;
 
-  sizeA=min(sizeA,aoffset+MIN_WORDS_RIFT);
-  sizeB=min(sizeB,boffset+MIN_WORDS_RIFT);
+  sizeA=prna_min(sizeA,aoffset+MIN_WORDS_RIFT);
+  sizeB=prna_min(sizeB,boffset+MIN_WORDS_RIFT);
 
   aoffset++;
   boffset++;
