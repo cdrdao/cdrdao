@@ -1,0 +1,31 @@
+<gconfschemafile>
+  <schemalist>
+    <schema>
+      <key>/schemas/apps/gcdmaster/temp_dir</key>
+      <applyto>/apps/gcdmaster/temp_dir</applyto>
+      <owner>gcdmaster</owner>
+      <type>string</type>
+      <default>/tmp</default>
+      <locale name="C">
+        <short>Temporary files directory</short>
+        <long>
+	  Directory in which temporary decoded audio files are stored
+        </long>
+      </locale>
+    </schema>
+    <schema>
+      <key>/schemas/apps/gcdmaster/manual_devices</key>
+      <applyto>/apps/gcdmaster/manual_devices</applyto>
+      <owner>gcdmaster</owner>
+      <type>list</type>
+      <list_type>string</list_type>
+      <default>[]</default>
+      <locale name="C">
+        <short>Manually configured devices</short>
+        <long>
+	  List of manually configured devices
+        </long>
+      </locale>
+    </schema>
+  </schemalist>
+</gconfschemafile>
