@@ -1248,7 +1248,7 @@ static void convertEscapeSequences(const char *in, char *out)
 static int parseQueryResult(char *line, char *category, char *diskId,
 			    char *title)
 {
-  char *sep = " \t";
+  const char *sep = " \t";
   char *p;
   
   if ((p = strtok(line, sep)) != NULL) {

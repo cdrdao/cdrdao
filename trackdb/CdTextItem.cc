@@ -178,7 +178,7 @@ int CdTextItem::operator!=(const CdTextItem &obj)
 
 const char *CdTextItem::packType2String(int isTrack, int packType)
 {
-  char *ret = "UNKNOWN";
+  const char *ret = "UNKNOWN";
 
   switch (packType) {
   case CDTEXT_TITLE:

@@ -39,7 +39,7 @@
 /* XPM data for track marker */
 #define TRACK_MARKER_XPM_WIDTH 9
 #define TRACK_MARKER_XPM_HEIGHT 12
-static gchar *TRACK_MARKER_XPM_DATA[] = {
+static const gchar *TRACK_MARKER_XPM_DATA[] = {
   "9 12 3 1",
   "       c None",
   "X      c #000000000000",
@@ -58,7 +58,7 @@ static gchar *TRACK_MARKER_XPM_DATA[] = {
   "    X    "};
 
 /* XPM data for index marker */
-static gchar *INDEX_MARKER_XPM_DATA[] = {
+static const gchar *INDEX_MARKER_XPM_DATA[] = {
   "9 12 3 1",
   "       c None",
   "X      c #000000000000",
@@ -77,7 +77,7 @@ static gchar *INDEX_MARKER_XPM_DATA[] = {
   "    X    "};
 
 /* XPM data for extend track marker */
-static gchar *TRACK_EXTEND_XPM_DATA[] = {
+static const gchar *TRACK_EXTEND_XPM_DATA[] = {
   "9 12 3 1",
   "       c None",
   "X      c #000000000000",
@@ -96,7 +96,7 @@ static gchar *TRACK_EXTEND_XPM_DATA[] = {
   "........."};
 
 /* XPM data for extend track marker */
-static gchar *INDEX_EXTEND_XPM_DATA[] = {
+static const gchar *INDEX_EXTEND_XPM_DATA[] = {
   "9 12 3 1",
   "       c None",
   "X      c #000000000000",

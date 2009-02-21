@@ -107,7 +107,8 @@ int ProcessMonitor::statusChanged()
  * Return: newly allocated 'Process' object or NULL on error
  */
 
-Process *ProcessMonitor::start(const char *prg, char *args[], int pipeFdArgNum)
+Process *ProcessMonitor::start(const char *prg, const char **args,
+			       int pipeFdArgNum)
 {
   int pid;
   Process *p;
@@ -143,7 +144,7 @@ Process *ProcessMonitor::start(const char *prg, char *args[], int pipeFdArgNum)
     // close reading end of pipe
     close(pipeFds[0]);
 
-    execvp(prg, args);
+    execvp(prg, (char*const*)args);
 
     log_message(-2, "Cannot execute '%s': %s", prg, strerror(errno));
     _exit(255);

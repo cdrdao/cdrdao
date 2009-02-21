@@ -6,6 +6,8 @@
 #ifndef _ISORT_H_
 #define _ISORT_H_
 
+#include <stdint.h>
+
 typedef struct sort_link{
   struct sort_link *next;
 } sort_link;

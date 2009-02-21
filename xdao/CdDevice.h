@@ -171,7 +171,7 @@ class CdDevice : public sigc::trackable
 
   void createScsiIf();
 
-  static char *DRIVER_NAMES_[];
+  static const char *DRIVER_NAMES_[];
   static CdDevice *DEVICE_LIST_;
 };
 

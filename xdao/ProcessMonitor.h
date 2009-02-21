@@ -18,6 +18,9 @@
  */
 /*
  * $Log: ProcessMonitor.h,v $
+ * Revision 1.4  2009/02/21 13:49:17  poolshark
+ * Compile warning fixes
+ *
  * Revision 1.3  2004/02/12 01:13:31  poolshark
  * Merge from gnome2 branch
  *
@@ -69,7 +72,7 @@ public:
 
   int statusChanged();
 
-  Process *start(const char *, char *args[], int pipeFdArgNum);
+  Process *start(const char *, const char **args, int pipeFdArgNum);
   void stop(Process *);
 
   void remove(Process *);

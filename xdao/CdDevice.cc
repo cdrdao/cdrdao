@@ -52,7 +52,7 @@
 
 CdDevice *CdDevice::DEVICE_LIST_ = NULL;
 
-char *CdDevice::DRIVER_NAMES_[DRIVER_IDS] = {
+const char *CdDevice::DRIVER_NAMES_[DRIVER_IDS] = {
   "Undefined",
   "cdd2600",
   "generic-mmc",
@@ -375,7 +375,7 @@ bool CdDevice::recordDao(Gtk::Window& parent, TocEdit *tocEdit, int simulate,
                         int buffer, int overburn)
 {
   char* tocFileName;
-  char *args[30];
+  const char *args[30];
   int n = 0;
   char devname[30];
   char drivername[50];
@@ -539,7 +539,7 @@ void CdDevice::progress(int *status, int *totalTracks, int *track,
 int CdDevice::extractDao(Gtk::Window& parent, const char *tocFileName,
                          int correction, int readSubChanMode)
 {
-  char *args[30];
+  const char *args[30];
   int n = 0;
   char devname[30];
   char drivername[50];
@@ -650,7 +650,7 @@ int CdDevice::duplicateDao(Gtk::Window& parent, int simulate, int multiSession,
                            int onthefly, int correction, int readSubChanMode, 
 			   CdDevice *readdev)
 {
-  char *args[30];
+  const char *args[30];
   int n = 0;
   char devname[30];
   char drivername[50];
@@ -803,7 +803,7 @@ void CdDevice::abortDaoDuplication()
 int CdDevice::blank(Gtk::Window* parent, int fast, int speed, int eject,
                     int reload)
 {
-  char *args[20];
+  const char *args[20];
   int n = 0;
   char devname[30];
   char drivername[50];
@@ -948,7 +948,7 @@ const char *CdDevice::driverName(int id)
 
 const char *CdDevice::status2string(Status s)
 {
-  char *ret = NULL;
+  const char *ret = NULL;
 
   switch (s) {
   case DEV_READY:
@@ -985,7 +985,7 @@ const char *CdDevice::status2string(Status s)
 
 const char *CdDevice::deviceType2string(DeviceType t)
 {
-  char *ret = NULL;
+  const char *ret = NULL;
 
   switch (t) {
   case CD_R:
