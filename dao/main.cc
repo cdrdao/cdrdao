@@ -20,8 +20,10 @@
 #include <config.h>
 
 #include <sys/types.h>
+
 #include <sys/wait.h>
 #include <sys/utsname.h>
+#include <pwd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -32,7 +34,6 @@
 #include <fstream>
 #include <stdarg.h>
 #include <signal.h>
-#include <pwd.h>
 #include <ctype.h>
 #include <list>
 #include <string>
@@ -1784,7 +1785,6 @@ static int readCddb(DaoCommandLine* opts, Toc *toc, bool showEntry = false)
   char *user = NULL;
   char *host = NULL;
   struct passwd *pwent;
-  struct utsname sinfo;
   Cddb::QueryResults *qres, *qrun, *qsel;
   Cddb::CddbEntry *dbEntry;
 
@@ -1810,11 +1810,14 @@ static int readCddb(DaoCommandLine* opts, Toc *toc, bool showEntry = false)
     user = strdupCC("unknown");
   }
 
-  if (uname(&sinfo) == 0) {
-    host = strdupCC(sinfo.nodename);
-  }
-  else {
-    host = strdupCC("unknown");
+  {
+    struct utsname sinfo;
+    if (uname(&sinfo) == 0) {
+      host = strdupCC(sinfo.nodename);
+    }
+    else {
+      host = strdupCC("unknown");
+    }
   }
   
 
@@ -2198,7 +2201,7 @@ static int copyCdOnTheFly(DaoCommandLine* opts,CdrDriver *src, CdrDriver *dst)
 
 	delete src->scsiIf();
 
-	src->scsiIf(new ScsiIf(SOURCE_SCSI_DEVICE));
+	src->scsiIf(new ScsiIf(opts->sourceScsiDevice));
     
 	if (src->scsiIf()->init() != 0) {
 	    log_message(-2, "Re-init of SCSI interace failed.");
