@@ -224,7 +224,7 @@ int ScsiIf::sendCmd(const unsigned char *cmd, int cmdLen,
   scmd->sense_len = CCS_SENSE_LEN;
   //scmd->target = impl_->scgp_->target;
 	
-  impl_->scgp_->cmdname = " ";
+  impl_->scgp_->cmdname = (char*)" ";
   impl_->scgp_->verbose = 0;
   impl_->scgp_->silent = 1;
   
@@ -310,7 +310,7 @@ static int scanInquiry(SCSI *scgp, unsigned char *buf, ScsiIf::ScanData *sdata)
   cmd->cdb_len = SC_G0_CDBLEN;
   cmd->sense_len = CCS_SENSE_LEN;
   scgp->silent = 1;
-  scgp->cmdname = "inquiry";
+  scgp->cmdname = (char*)"inquiry";
 
 #ifdef SCSI_ATAPI
   int is_atapi = scg_isatapi(scgp);
@@ -430,6 +430,10 @@ const int ScsiIf::lun ()
 //<<<<<<< ScsiIf-lib.cc
 
 #ifdef linux
+
+#include <sys/ioctl.h>
+#include <scsi/scsi.h>
+#include <scsi/sg.h>
 
 /* Function for mapping any SCSI device to the corresponding SG device.
  * Taken from D. Gilbert's example code.
