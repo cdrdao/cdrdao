@@ -1078,3 +1078,15 @@ diff -u -r -3 cdrtools-2.01/include/utypes.h cdrtools-2.01.ossdvd/include/utypes
  /*		if (f < 0 && errno == ENOENT)*/
  /*			goto openpg;*/
  
+--- scsilib/inc/avoffset.c.orig	Sun May  9 13:06:08 2004
++++ scsilib/inc/avoffset.c	Sat Feb 21 17:34:31 2009
+@@ -78,6 +78,9 @@
+ 	signal(SIGBUS, handler);
+ #endif
+ 	signal(SIGSEGV, handler);
++#ifdef	SIGILL
++	signal(SIGILL, handler);
++#endif
+ 
+ 	printf("/*\n");
+ 	printf(" * This file has been generated automatically\n");
