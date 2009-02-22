@@ -77,9 +77,9 @@ libdao_a_DEPENDENCIES =		\
 	@scsilib_objs@
 
 cdrdao_LDADD =						\
-	-L. -ldao					\
-	-L$(top_builddir)/paranoia -lcdda_paranoia	\
-	-L$(top_builddir)/trackdb -ltrackdb		\
+	./libdao.a					\
+	$(top_builddir)/paranoia/libcdda_paranoia.a	\
+	$(top_builddir)/trackdb/libtrackdb.a		\
 	@thread_libs@					\
 	@scsilib_libs@
 

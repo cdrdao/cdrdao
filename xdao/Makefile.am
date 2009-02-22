@@ -95,7 +95,7 @@ glade_DATA = 			\
 gcdmaster_LDADD =					\
 	@sound_if_obj@					\
 	-L$(top_builddir)/dao -ldao			\
-	-L$(top_builddir)/paranoia -lcdda_paranoia	\
+	$(top_builddir)/paranoia/libcdda_paranoia.a	\
 	-L$(top_builddir)/trackdb -ltrackdb		\
 	@scsilib_libs@					\
 	@LIBGUIMM2_LIBS@ @GTKMM2_LIBS@
