@@ -11,9 +11,9 @@ toc2cue_SOURCES = toc2cue.cc
 cue2toc_SOURCES = main.c cue2toc.c cue2toc.h timecode.c timecode.h
 toc2mp3_SOURCES = toc2mp3.cc
 
-toc2cddb_LDADD = -L$(top_builddir)/trackdb -ltrackdb
-toc2cue_LDADD = -L$(top_builddir)/trackdb -ltrackdb
-toc2mp3_LDADD = -L$(top_builddir)/trackdb -ltrackdb @LAME_LIBS@
+toc2cddb_LDADD = $(top_builddir)/trackdb/libtrackdb.a
+toc2cue_LDADD = $(top_builddir)/trackdb/libtrackdb.a
+toc2mp3_LDADD = $(top_builddir)/trackdb/libtrackdb.a @LAME_LIBS@
 
 if COND_MP3
 toc2cddb_LDADD += @MAD_LIBS@
