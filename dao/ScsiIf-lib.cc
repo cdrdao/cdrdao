@@ -427,7 +427,6 @@ const int ScsiIf::lun ()
 }
 
 #include "ScsiIf-common.cc"
-//<<<<<<< ScsiIf-lib.cc
 
 #ifdef linux
 
@@ -578,6 +577,4 @@ const char *ScsiIfImpl::openScsiDevAsSg(const char *devname)
   }
 }
 
-#endif /* linux */
-//=======
-//>>>>>>> 1.6
+#endif
