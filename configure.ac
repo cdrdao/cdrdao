@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_REVISION($Revision: 1.22 $)dnl
+AC_REVISION($Revision: 1.23 $)dnl
 
 AC_INIT(cdrdao, 1.2.3rc1)
 
@@ -259,6 +259,21 @@ else
     *-freebsd*)
 	       scsilib_libs="-lcam"
 	       scsilib_objs="ScsiIf-freebsd-cam.o"
+	       ;;
+
+    *-netbsd*)
+	       scsilib_libs="-lutil"
+	       scsilib_objs="ScsiIf-netbsd.o"
+	       ;;
+
+    *-irix*)
+	       scsilib_libs=""
+	       scsilib_objs="ScsiIf-irix.o"
+	       ;;
+
+    *-darwin*)
+	       scsilib_libs="-framework IOKit -framework CoreFoundation"
+	       scsilib_objs="ScsiIf-osx.o"
 	       ;;
 
     *-pc-cygwin*)

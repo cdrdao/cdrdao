@@ -67,6 +67,9 @@ EXTRA_libdao_a_SOURCES = 	\
 	ScsiIf-common.cc	\
 	ScsiIf-linux.cc		\
 	ScsiIf-freebsd-cam.cc	\
+	ScsiIf-netbsd.cc	\
+	ScsiIf-irix.cc		\
+	ScsiIf-osx.cc		\
 	ScsiIf-nt.cc		\
 	ScsiIf-win.cc
 
