@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_REVISION($Revision: 1.21 $)dnl
+AC_REVISION($Revision: 1.22 $)dnl
 
 AC_INIT(cdrdao, 1.2.3rc1)
 
@@ -238,10 +238,7 @@ if test "$scglib" = yes; then
   scsilib_objs="ScsiIf-lib.o"
   
   case "$host" in
-    *-freebsd2*)
-			       scsilib_libs="$scsilib_libs"
-			       ;;
-    *-freebsd[[34567]]*)
+    *-freebsd*)
 			       scsilib_libs="$scsilib_libs -lcam"
 			       ;;
   esac
@@ -259,7 +256,7 @@ else
 	       scsilib_objs="ScsiIf-linux.o sg_err.o"
 	       ;;
     
-    *-freebsd[[34567]]*)
+    *-freebsd*)
 	       scsilib_libs="-lcam"
 	       scsilib_objs="ScsiIf-freebsd-cam.o"
 	       ;;
@@ -300,7 +297,7 @@ esac
 
 dnl Sound device selection for xcdrdao
 case "$host" in
-  *-linux* | *-freebsd[[4567]]* | *-solaris*)
+  *-linux* | *-freebsd* | *-solaris*)
 	     sound_if_obj=SoundIF-ao.o
 	     ;;
 
