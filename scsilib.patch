@@ -1107,3 +1107,15 @@ diff -u -r -3 cdrtools-2.01/include/utypes.h cdrtools-2.01.ossdvd/include/utypes
  #define SIZEOF_LONG_INT 4
  #define SIZEOF_CHAR_P 4
  #define SIZEOF_UNSIGNED_LONG_INT 4
+--- scsilib/libscg/scsi-bsd.c.orig	Thu Jan 15 00:13:05 2004
++++ scsilib/libscg/scsi-bsd.c	Sat Feb 21 17:18:15 2009
+@@ -674,6 +674,9 @@
+ 	 * system.
+ 	 */
+ 	ccb.ccb_h.func_code = XPT_DEV_MATCH;
++	ccb.ccb_h.path_id = CAM_XPT_PATH_ID;
++	ccb.ccb_h.target_id = CAM_TARGET_WILDCARD;
++	ccb.ccb_h.target_lun = CAM_LUN_WILDCARD;
+ 
+ 	/*
+ 	 * Setup the result buffer.
