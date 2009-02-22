@@ -1090,3 +1090,20 @@ diff -u -r -3 cdrtools-2.01/include/utypes.h cdrtools-2.01.ossdvd/include/utypes
  
  	printf("/*\n");
  	printf(" * This file has been generated automatically\n");
+--- scsilib/include/mconfig.h.orig	2009-02-11 09:54:43.000000000 +0100
++++ scsilib/include/mconfig.h	2009-02-21 17:54:43.000000000 +0100
+@@ -72,12 +72,12 @@
+  * Types/Keywords
+  */
+ 
+-#if defined(__x86_64__) || defined(__ia64__) || defined(__powerpc64__) || defined(__s390x__)
++#if defined(__x86_64__) || defined(__ia64__) || defined(__powerpc64__) || defined(__s390x__) || defined(__sparc64__)
+ #define SIZEOF_LONG_INT 8
+ #define SIZEOF_CHAR_P 8
+ #define SIZEOF_UNSIGNED_LONG_INT 8
+ #define SIZEOF_UNSIGNED_CHAR_P 8
+-#elif defined(__i386__) || defined(__powerpc__) || defined(__s390__)
++#elif defined(__i386__) || defined(__powerpc__) || defined(__s390__) || defined(__sparc__)
+ #define SIZEOF_LONG_INT 4
+ #define SIZEOF_CHAR_P 4
+ #define SIZEOF_UNSIGNED_LONG_INT 4
