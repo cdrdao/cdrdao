@@ -1,7 +1,7 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_REVISION($Revision: 1.23 $)dnl
+AC_REVISION($Revision: 1.24 $)dnl
 
-AC_INIT(cdrdao, 1.2.3rc1)
+AC_INIT(cdrdao, 1.2.3rc2)
 
 AC_CONFIG_SRCDIR(dao/main.cc)
 AM_INIT_AUTOMAKE

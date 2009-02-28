@@ -2,14 +2,30 @@
   cdrdao 1.2.3
 --------------------------------------------------------------------------
 
+ o  By default, cdrdao tries to build with a native SCSI interface. Use
+    "--with-libscg" to use bundled libscg library.
+
  o  Complete rewrite of native Linux SG driver for SG 3.0 using SG_IO
     ioctl. That should make it behave better with ConsoleKit based
     permissions environment. Cdrdao can now be compiled on Linux
     without cdrtools by using "--without-scglib".
 
+ o  Added support for new FIRST_TRACK_NO keyword to allow a CD to start
+    with a track number other than 1. (Edgar Fuss)
+
+ o  Added native interfaces for Irix, Mac OSX and NetBSD. (Edgar Fuss)
+
  o  Fixed bug in Toc file parser track length computation.
 
- o  Man page typo fixes
+ o  Man page typo fixes.
+
+ o  Cygwin compilation fixes. Other various compilation warning fixes.
+
+ o  Some scsilib fixes for FreeBSD, 32-bit and 64-bit SPARC. (Marius
+    Strobl)
+
+ o  Some makefile changes to avoid conflict with installed system libs.
+    (Marius Strobl)
 
 GCDMaster changes:
 
