@@ -2347,7 +2347,7 @@ int main(int argc, char **argv)
 
     // Parse command line command and options.
     if (parseCmdline(argc - 1, argv + 1, &options, settings) != 0) {
-	options.verbose = 2;
+	log_set_verbose(2);
 	printVersion();
 	printUsage(&options);
 	exit(1);
