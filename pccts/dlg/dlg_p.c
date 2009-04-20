@@ -212,10 +212,6 @@ do_conversion()
 #endif
   zzEXIT(zztasp1);
   return;
-fail:
-  zzEXIT(zztasp1);
-  zzsyn(zzMissText, zzBadTok, (ANTLRChar *)"", zzMissSet, zzMissTok, zzErrk, zzBadText);
-  zzresynch(setwd1, 0x8);
   }
 }
 
@@ -382,10 +378,6 @@ and_expr()
   }
   zzEXIT(zztasp1);
   return;
-fail:
-  zzEXIT(zztasp1);
-  zzsyn(zzMissText, zzBadTok, (ANTLRChar *)"", zzMissSet, zzMissTok, zzErrk, zzBadText);
-  zzresynch(setwd2, 0x10);
   }
 }
 
@@ -585,10 +577,6 @@ atom_list()
   }
   zzEXIT(zztasp1);
   return;
-fail:
-  zzEXIT(zztasp1);
-  zzsyn(zzMissText, zzBadTok, (ANTLRChar *)"", zzMissSet, zzMissTok, zzErrk, zzBadText);
-  zzresynch(setwd3, 0x8);
   }
 }
 
@@ -689,10 +677,6 @@ atom()
   &(zzaRet.label));
   zzEXIT(zztasp1);
   return;
-fail:
-  zzEXIT(zztasp1);
-  zzsyn(zzMissText, zzBadTok, (ANTLRChar *)"", zzMissSet, zzMissTok, zzErrk, zzBadText);
-  zzresynch(setwd3, 0x40);
   }
 }
 

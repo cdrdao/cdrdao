@@ -393,7 +393,7 @@ int TrackData::check(int trackNr) const
       // data mode
       unsigned long len;
 
-      switch (dataFileLength(filename_, offset_, &len) != 0) {
+      switch (dataFileLength(filename_, offset_, &len)) {
       case 1:
 	log_message(-2, "Track %d: Cannot open data file \"%s\": %s", trackNr,
 		filename_, strerror(errno));

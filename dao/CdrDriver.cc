@@ -2114,7 +2114,7 @@ int CdrDriver::checkSubChanReadCaps(TrackData::Mode mode, unsigned long caps)
 	ret = 1;
     }
     else {
-      if ((caps & CDR_READ_CAP_DATA_RW_RAW|CDR_READ_CAP_DATA_PW_RAW) != 0)
+	if ((caps & (CDR_READ_CAP_DATA_RW_RAW|CDR_READ_CAP_DATA_PW_RAW)) != 0)
 	ret = 1;
     }
     break;

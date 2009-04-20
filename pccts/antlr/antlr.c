@@ -2809,7 +2809,7 @@ default_exception_handler()
 
   zzEXIT(zztasp1);
   return;
-fail:
+  /* fail: */
   zzEXIT(zztasp1);
   zzsyn(zzMissText, zzBadTok, (ANTLRChar *)"", zzMissSet, zzMissTok, zzErrk, zzBadText);
   zzresynch(setwd9, 0x2);

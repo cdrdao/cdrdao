@@ -633,9 +633,9 @@ determine_session_type(struct trackspec *list)
      */
     if (audio && !mode1 && !mode2)
         return CD_DA;
-    else if (audio && mode1 && !mode2 || !audio && mode1 && !mode2)
+    else if ((audio && mode1 && !mode2) || (!audio && mode1 && !mode2))
         return CD_ROM;
-    else if (audio && !mode1 && mode2 || !audio && !mode1 && mode2)
+    else if ((audio && !mode1 && mode2) || (!audio && !mode1 && mode2))
         return CD_ROM_XA;
     else
         return INVALID;

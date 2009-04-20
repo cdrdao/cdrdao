@@ -2969,6 +2969,10 @@ int main(int argc, char **argv)
     case UNKNOWN:
 	assert(0);
 	break;
+    case SHOW_VERSION:
+    case LAST_CMD:
+	/* To avoid warning */
+	break;
     }
 
  fail:

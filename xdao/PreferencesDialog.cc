@@ -109,6 +109,7 @@ bool PreferencesDialog::saveToGConf()
     } catch (const Glib::Error& error) {
         std::cerr << error.what() << std::endl;
     }
+    return true;
 }
 
 void PreferencesDialog::on_button_apply()

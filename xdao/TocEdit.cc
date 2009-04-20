@@ -441,7 +441,7 @@ void TocEdit::curSignalConversionError(FormatSupport::Status err)
   std::string msg = _("Unable to decode audio file \"");
   msg += cur_->file;
   msg += "\" : ";
-  switch (curState_) {
+  switch (err) {
   case FormatSupport::FS_DISK_FULL:
     msg += _("disk is full");
     break;

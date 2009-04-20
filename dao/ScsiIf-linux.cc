@@ -278,7 +278,7 @@ ScsiIf::ScanData *ScsiIf::scan(int *len, char* scsi_dev_path)
 {
     struct stat st;
     int matches = 0;
-    int i;
+    unsigned i;
     ScanData* sdata = NULL;
     char* path = NULL;
     glob_t pglob;
