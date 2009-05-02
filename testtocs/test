@@ -1,0 +1,36 @@
+#!/usr/bin/perl
+
+use strict;
+
+my $cdrdao = "../dao/cdrdao";
+
+if (! -x $cdrdao) {
+    print "Cannot find cdrdao executable\n";
+    exit 1;
+}
+
+opendir DIRH, "." || die "Could not opendir current dir";
+
+my @all = readdir DIRH;
+closedir DIRh;
+
+foreach my $f (@all) {
+
+    if ($f =~ /(.+)\.toc/) {
+
+	my $basename = $1;
+
+	if ( ! -r "gold/$basename.showtoc") {
+	    next;
+	}
+
+	my $testoutput = `$cdrdao show-toc -v 9 $f 2> /dev/null`;
+	my $goldoutput = `cat gold/$basename.showtoc`;
+
+	if ($testoutput eq $goldoutput) {
+	    print "\033[42mPASS\033[00m: ", $basename, "\n";
+	} else {
+	    print "\033[41mFAIL\033[00m: ", $basename, "\n";
+	}
+    }
+}

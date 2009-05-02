@@ -1,0 +1,17 @@
+TOC TYPE: CD_DA
+TRACK  1  Mode AUDIO:
+          COPY NOT PERMITTED
+          NO PRE-EMPHASIS
+          TWO CHANNEL AUDIO
+          START  00:00:00(     0)
+          INDEX  2 01:00:00(  4500)
+          INDEX  3 02:00:00(  9000)
+          END    03:00:00( 13500)
+
+TRACK  2  Mode AUDIO:
+          COPY NOT PERMITTED
+          NO PRE-EMPHASIS
+          TWO CHANNEL AUDIO
+          PREGAP 00:05:00(   375)
+          START  03:05:00( 13875)
+          END    04:00:00( 18000)

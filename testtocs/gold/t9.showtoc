@@ -1,0 +1,43 @@
+TOC TYPE: CD_DA
+CATALOG NUMBER: 0724385356926
+TRACK  1  Mode AUDIO:
+          ISRC US EM3 96 00078
+          COPY PERMITTED
+          NO PRE-EMPHASIS
+          TWO CHANNEL AUDIO
+          PREGAP 00:05:00(   375)
+          START  00:05:00(   375)
+          END    00:10:00(   750)
+
+TRACK  2  Mode AUDIO:
+          ISRC US EM3 96 00079
+          COPY NOT PERMITTED
+          NO PRE-EMPHASIS
+          TWO CHANNEL AUDIO
+          PREGAP 00:02:00(   150)
+          START  00:12:00(   900)
+          END    00:20:00(  1500)
+
+TRACK  3  Mode AUDIO:
+          COPY PERMITTED
+          NO PRE-EMPHASIS
+          TWO CHANNEL AUDIO
+          PREGAP 00:01:30(   105)
+          START  00:21:30(  1605)
+          END    00:30:00(  2250)
+
+TRACK  4  Mode AUDIO:
+          COPY NOT PERMITTED
+          NO PRE-EMPHASIS
+          TWO CHANNEL AUDIO
+          START  00:30:00(  2250)
+          END    00:40:00(  3000)
+
+TRACK  5  Mode AUDIO:
+          ISRC ED UMA 98 92346
+          COPY NOT PERMITTED
+          NO PRE-EMPHASIS
+          TWO CHANNEL AUDIO
+          PREGAP 00:02:01(   151)
+          START  00:42:01(  3151)
+          END    00:46:01(  3451)

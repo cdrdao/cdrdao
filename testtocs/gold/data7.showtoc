@@ -1,0 +1,11 @@
+TOC TYPE: CD_ROM_XA
+TRACK  1  Mode MODE1:
+          COPY NOT PERMITTED
+          START  00:00:00(     0)
+          END    01:00:00(  4500)
+
+TRACK  2  Mode MODE2_FORM_MIX:
+          COPY NOT PERMITTED
+          PREGAP 00:02:00(   150)
+          START  01:02:00(  4650)
+          END    02:02:00(  9150)
