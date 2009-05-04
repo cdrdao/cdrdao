@@ -1121,10 +1121,12 @@ diff -u -r -3 cdrtools-2.01/include/utypes.h cdrtools-2.01.ossdvd/include/utypes
  	 * Setup the result buffer.
 --- scsilib/RULES/MKLINKS.orig	2004-09-08 12:11:47.000000000 -0400
 +++ scsilib/RULES/MKLINKS	2009-04-22 13:24:30.000000000 -0400
-@@ -105,6 +105,14 @@
+@@ -105,12 +105,26 @@
  ln -s	i586-linux-gcc.rul	m68k-linux-gcc.rul
  ln -s	i586-linux-cc.rul	armv4l-linux-cc.rul
  ln -s	i586-linux-gcc.rul	armv4l-linux-gcc.rul
++ln -s	i586-linux-cc.rul	armv4l-linux-cc.rul
++ln -s	i586-linux-gcc.rul	armv4l-linux-gcc.rul
 +ln -s	i586-linux-cc.rul	armv4tl-linux-cc.rul
 +ln -s	i586-linux-gcc.rul	armv4tl-linux-gcc.rul
 +ln -s	i586-linux-cc.rul	armv5tel-linux-cc.rul
@@ -1135,4 +1137,14 @@ diff -u -r -3 cdrtools-2.01/include/utypes.h cdrtools-2.01.ossdvd/include/utypes
 +ln -s	i586-linux-gcc.rul	armv6l-linux-gcc.rul
  ln -s	i586-linux-cc.rul	mips-linux-cc.rul
  ln -s	i586-linux-gcc.rul	mips-linux-gcc.rul
++ln -s	i586-linux-cc.rul	mips64-linux-cc.rul
++ln -s	i586-linux-gcc.rul	mips64-linux-gcc.rul
  ln -s	i586-linux-cc.rul	mipsel-linux-cc.rul
+ ln -s	i586-linux-gcc.rul	mipsel-linux-gcc.rul
+ ln -s	i586-linux-cc.rul	s390-linux-cc.rul
+ ln -s	i586-linux-gcc.rul	s390-linux-gcc.rul
++ln -s	i586-linux-cc.rul	s390x-linux-cc.rul
++ln -s	i586-linux-gcc.rul	s390x-linux-gcc.rul
+ ln -s	i586-linux-cc.rul	parisc-linux-cc.rul
+ ln -s	i586-linux-gcc.rul	parisc-linux-gcc.rul
+ ln -s	i586-linux-cc.rul	parisc64-linux-cc.rul

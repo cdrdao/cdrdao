@@ -1,0 +1,45 @@
+.TH "TOC2CUE" "1" "2006-11-17" "1.2.2" "CDRDAO"
+
+.SH "NAME"
+toc2cue \- converts a TOC files of
+.I cdrdao(1)
+into a .cue file
+
+.SH "SYNOPSIS"
+.B toc2cue
+.BR [\| \-v
+.IB verbosity_level \|]
+.I input_toc_file output_cue_file
+.PP
+.B toc2cue
+.BR [\| \-V \|]
+
+.SH "DESCRIPTION"
+.B toc2cue
+converts a TOC file of
+.I cdrdao(1)
+into a .cue file.
+
+Please note that the resulting cue file is only valid if the toc-file was created with
+.I cdrdao(1)
+using the commands 'read-toc' or 'read-cd'. For manually created or edited toc-files the cue file may not be correct. This program just checks for the most obvious toc-file features that cannot be converted to a cue file. Furthermore, if the toc-file contains audio tracks the byte order of the image file will be wrong. This will result in static noise when the cue file is used for recording (even with
+.I cdrdao(1)
+itself).
+
+.SH "OPTIONS"
+.TP
+.BI "\-v " verbosity_level
+Sets the verbosity level to use, can be a integer between 1 and 3. By default, only fatal errors are displayed. A verbosity level of 1 shows warnings, 2 warnings and errors, 3 warnings, errors and internal errors.
+.TP
+.B \-V
+Prints the version of toc2cue.
+
+.SH "SEE ALSO"
+.I cdrdao(1)
+
+.SH "AUTHOR"
+.B toc2cue
+was written by Andreas Mueller <andreas@daneb.de> and is part of
+.I cdrdao(1).
+.PP
+This manual page was written by Francois Wendling <frwendling@free.fr> and revised by Daniel Baumann <daniel@debian.org>, for the Debian project (but may be used by others).

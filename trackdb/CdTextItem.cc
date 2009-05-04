@@ -320,13 +320,6 @@ int CdTextItem::isTrackPack(PackType type)
   int ret;
   
   switch (type) {
-  case CDTEXT_TITLE:
-  case CDTEXT_PERFORMER:
-  case CDTEXT_SONGWRITER:
-  case CDTEXT_COMPOSER:
-  case CDTEXT_ARRANGER:
-  case CDTEXT_MESSAGE:
-  case CDTEXT_UPCEAN_ISRC:
   case CDTEXT_DISK_ID:
   case CDTEXT_GENRE:
   case CDTEXT_TOC_INFO1:
@@ -335,7 +328,15 @@ int CdTextItem::isTrackPack(PackType type)
   case CDTEXT_RES2:
   case CDTEXT_RES3:
   case CDTEXT_RES4:
-  case CDTEXT_SIZE_INFO:    ret = 1;
+  case CDTEXT_SIZE_INFO:
+  case CDTEXT_TITLE:
+  case CDTEXT_PERFORMER:
+  case CDTEXT_SONGWRITER:
+  case CDTEXT_COMPOSER:
+  case CDTEXT_ARRANGER:
+  case CDTEXT_MESSAGE:
+  case CDTEXT_UPCEAN_ISRC:
+    ret = 1;
     break;
 
   default:

@@ -2037,6 +2037,8 @@ static int copyCd(DaoCommandLine* opts, CdrDriver *src, CdrDriver *dst)
     }
 
     if (src == dst) {
+	// Unlock src to make swaping possible
+	src->preventMediumRemoval(0);
 	log_message(0, "Please insert a recordable medium and hit enter.");
 	getc(stdin);
     }
@@ -2308,6 +2310,16 @@ int main(int argc, char **argv)
     DiskInfo *srcDi = NULL;
     const char *homeDir;
     const char *settingsPath = NULL;
+
+#if defined(HAVE_SETEUID) && defined(HAVE_SETEGID)
+    if (geteuid() == 0 && getuid() != 0) {
+	uid_t uid = getuid();
+	if (setuid(uid) == -1) {
+	    log_message(-2, "Failed to drop privileges; exiting.");
+	    exit(1);
+        }
+    }
+#endif
 
     log_init();
 
@@ -2649,11 +2661,6 @@ int main(int argc, char **argv)
 	    exitCode = 1; goto fail;
 	} else {
 	    cdr->rezeroUnit(0);
-
-#if defined(HAVE_SETEUID) && defined(HAVE_SETEGID)
-	    seteuid(getuid());
-	    setegid(getgid());
-#endif
 
 	    if (options.withCddb) {
 		if (readCddb(&options, toc) == 0) {

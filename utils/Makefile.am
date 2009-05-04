@@ -35,5 +35,5 @@ toc2mp3_CXXFLAGS = @LAME_CFLAGS@
 
 INCLUDES = -I$(top_builddir)/trackdb
 
-man1_MANS = cue2toc.1
+man1_MANS = cue2toc.1 toc2cddb.1 toc2cue.1
 EXTRA_DIST = $(man1_MANS)

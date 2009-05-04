@@ -28,7 +28,11 @@
  o  Some makefile changes to avoid conflict with installed system libs.
     (Marius Strobl)
 
- o  Added patch to fix ARM scsilib compile (Kedar Sovani)
+ o  Added patch to fix ARM and MIPS scsilib compile (Kedar Sovani, Debian)
+
+ o  Added man pages for toc2cue and toc2cddb, from Debian.
+
+ o  Move privilege drop earlier in main flow (based on Debian patch)
 
 GCDMaster changes:
 

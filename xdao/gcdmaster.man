@@ -1,4 +1,4 @@
-.TH GCDMASTER 1X "Oct 10, 1999"
+.TH GCDMASTER 1 "Oct 10, 1999"
 .SH NAME
 gcdmaster \- Graphical front end to cdrdao for composing audio CDs
 .SH SYNOPSIS
@@ -524,7 +524,7 @@ If selected disk will not be appendable. Otherwise the
 recorded session is kept open.
 
 Note: The drivers 'generic-mmc-raw',
-'sony-cdu920' and 'yamaha-cdr10x' cannot keep the recorded session open.
+ 'sony-cdu920' and 'yamaha-cdr10x' cannot keep the recorded session open.
 
 .TP
 Eject:

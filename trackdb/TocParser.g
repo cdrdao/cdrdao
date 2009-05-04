@@ -511,8 +511,12 @@ subTrack < [ TrackData::Mode trackType, TrackData::SubChannelMode subChanType ] 
        >>
     )
     << if ($st != NULL && $st->length() == 0) {
-          // try to determine length 
-          $st->determineLength();
+         // try to determine length 
+         if ($st->determineLength() != 0) {
+	         log_message(-2, "%s:%d: Cannot determine length of track data specification.",
+		                 filename_, $lineNr);
+	         error_ = 1;
+      	 }
        }
     >> 
     ;
