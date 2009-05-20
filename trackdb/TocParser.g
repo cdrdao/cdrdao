@@ -797,7 +797,7 @@ cdTextBlock [ CdTextContainer &container, int isTrack ]
       << if (item != NULL) {
            int type = item->packType();
 
-           if (isTrack && ((type >= 0x86 && type <= 0x89) || type == 0x8f)) {
+           if (isTrack && ((type > 0x86 && type <= 0x89) || type == 0x8f)) {
              log_message(-2, "%s:%d: Invalid CD-TEXT item for a track.",
                      filename_, lineNr);
              error_ = 1;
