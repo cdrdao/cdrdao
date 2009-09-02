@@ -1587,7 +1587,7 @@ int CdrDriver::setModePage6(const unsigned char *modePage,
 
 // Retrieves TOC data of inserted CD. It won't distinguish between different
 // sessions.
-// The track information is returend either for all sessions or for the
+// The track information is returned either for all sessions or for the
 // first session depending on the drive. 'cdTocLen' is filled with number
 // of entries including the lead-out track.
 // Return: 'NULL' on error, else array of 'CdToc' structures with '*cdTocLen'

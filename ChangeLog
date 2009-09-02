@@ -34,6 +34,8 @@
 
  o  Move privilege drop earlier in main flow (based on Debian patch)
 
+ o  Commited Gentoo patch for CD-TEXT track check fix (Grant, Peter Alfredsen)
+
 GCDMaster changes:
 
  o  Preferences now stored in GConf, exports schema file (Denis Leroy)

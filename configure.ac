@@ -1,7 +1,7 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_REVISION($Revision: 1.24 $)dnl
+AC_REVISION($Revision: 1.25 $)dnl
 
-AC_INIT(cdrdao, 1.2.3rc2)
+AC_INIT(cdrdao, 1.2.3)
 
 AC_CONFIG_SRCDIR(dao/main.cc)
 AM_INIT_AUTOMAKE
@@ -34,6 +34,7 @@ AC_PROG_INSTALL
 AC_PROG_RANLIB
 AC_CHECK_PROG(AR,ar,ar)
 AC_PROG_MAKE_SET
+AC_PATH_TOOL([PKG_CONFIG], [pkg-config])
 
 dnl Checks for header files.
 AC_HEADER_STDC
