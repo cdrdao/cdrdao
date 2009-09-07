@@ -2536,6 +2536,7 @@ int CdrDriver::analyzeTrackScan(TrackData::Mode, int trackNr, long startLba,
 	if (chan->type() == SubChannel::QMODE1DATA) {
 	  int t = chan->trackNr();
 	  Msf time(chan->min(), chan->sec(), chan->frame()); // track rel time
+	  Msf atime(chan->amin(), chan->asec(), chan->aframe()); // abs time
 
 	  if (timeCnt > 74) {
 	    log_message(1, "%s\r", time.str());
@@ -2557,8 +2558,15 @@ int CdrDriver::analyzeTrackScan(TrackData::Mode, int trackNr, long startLba,
 	  }
 	  else if (t == trackNr + 1) {
 	    if (chan->indexNr() == 0) {
-	      if (pregap != NULL)
-		*pregap = time.lba();
+	      if (pregap != NULL) {
+                // don't use time.lba() to calculate pre-gap length; it would
+                // count one frame too many if the CD counts the pre-gap down
+                // to 00:00:00 instead of 00:00:01
+                // Instead, count number of frames until start of Index 01
+                // See http://sourceforge.net/tracker/?func=detail&aid=604751&group_id=2171&atid=102171
+                // atime starts at 02:00, so subtract it
+		*pregap = endLba - (atime.lba() - 150);
+              }
 	      if (crcErrCnt != 0)
 		log_message(2, "Found %ld Q sub-channels with CRC errors.",
 			crcErrCnt);
