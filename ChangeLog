@@ -15,6 +15,9 @@
 
  o  Added native interfaces for Irix, Mac OSX and NetBSD. (Edgar Fuss)
 
+ o  Fixed old pregap length off-by-one error, see bug #604751
+    (Thomas Vander Stichele)
+
  o  Fixed bug in Toc file parser track length computation. (Denis Leroy)
 
  o  Man page typo fixes. (Denis Leroy)
