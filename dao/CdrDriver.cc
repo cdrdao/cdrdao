@@ -4163,8 +4163,16 @@ long CdrDriver::audioRead(TrackData::SubChannelMode sm, int byteOrder,
 	    log_message(1, "Track %d...", t + 1);
 	    //chan->print();
 	    if (chan->indexNr() == 0) {
-	      audioReadTrackInfo_[t].pregap = time.lba();
-	      log_message(2, "Found pre-gap: %s", time.str());
+              // don't use time.lba() to calculate pre-gap length; it would
+              // count one frame too many if the CD counts the pre-gap down
+              // to 00:00:00 instead of 00:00:01
+              // Instead, count number of frames until start of Index 01
+              // See http://sourceforge.net/tracker/?func=detail&aid=604751&group_id=2171&atid=102171
+              // atime starts at 02:00, so subtract it
+	      audioReadTrackInfo_[t].pregap = (startLba + len + 1) - \
+                (atime.lba() - 150);
+	      log_message(2, "Found pre-gap: %s",
+                Msf(audioReadTrackInfo_[t].pregap).str());
 	    }
 	  }
 
