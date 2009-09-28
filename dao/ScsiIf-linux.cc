@@ -195,8 +195,9 @@ int ScsiIf::sendCmd(const uchar *cmd, int cmdLen, const uchar *dataOut,
 	io_hdr.dxfer_direction = SG_DXFER_FROM_DEV;
     }
 
-    log_message(4, "%s: Initiating SCSI command %s",
-		impl_->filename_, sg_strcommand(cmd[0]));
+    log_message(4, "%s: Initiating SCSI command %s%s",
+		impl_->filename_, sg_strcommand(cmd[0]),
+		sg_strcmdopts(cmd));
 
     if (ioctl(impl_->fd_, SG_IO, &io_hdr) < 0) {
 	int errnosave = errno;

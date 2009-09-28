@@ -149,6 +149,25 @@ const char* sg_strcommand(unsigned char opcode)
     return buf;
 }
 
+const char* sg_strcmdopts(const unsigned char* cdb)
+{
+    static char buf[32];
+
+    switch (cdb[0]) {
+    case 0x1a:
+    case 0x5a:
+	snprintf(buf, sizeof(buf), " (page %02x.%02x len %d)", cdb[2] & 0x3f,
+		 cdb[3], cdb[8]);
+	return buf;
+    case 0x43:
+	snprintf(buf, sizeof(buf), " (fmt %d num %d)", cdb[2] & 0x0f,
+		 cdb[6]);
+	return buf;
+    default:
+	return "";
+    }
+}
+
 static const char * statuses[] = {
 /* 0-4 */ "Good", "Check Condition", "Condition Met", unknown, "Busy", 
 /* 5-9 */ unknown, unknown, unknown, "Intermediate", unknown, 
