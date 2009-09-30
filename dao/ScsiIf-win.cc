@@ -29,6 +29,7 @@
 #include "winaspi.h"
 #include "ScsiIf.h"
 #include "log.h"
+#include "util.h"
 
 #include "decodeSense.cc"
 
