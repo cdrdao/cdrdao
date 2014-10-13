@@ -1162,7 +1162,7 @@ genPredTreeMainXX( p, j ,in_and_expr)
     MR_cleanup_pred_trees(p);   /* MR10 */
 
     MR_predContextPresent(p,&allHaveContext,&noneHaveContext);
-    if (!noneHaveContext & !allHaveContext) {
+    if (!noneHaveContext && !allHaveContext) {
       warnFL("predicate contains elements both with and without context",
                 FileStr[j->file],j->line);
     };
