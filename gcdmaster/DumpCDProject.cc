@@ -17,6 +17,7 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+#include "config.h"
 #include "guiUpdate.h"
 #include "Project.h"
 #include "DumpCDProject.h"
@@ -24,12 +25,11 @@
 #include "RecordHDTarget.h"
 #include "DeviceList.h"
 #include "MessageBox.h"
-#include "Settings.h"
 #include "util.h"
 #include "Icons.h"
 
 #include <gtkmm.h>
-#include <gnome.h>
+#include <glibmm/i18n.h>
 
 DumpCDProject::DumpCDProject(Gtk::Window *parent)
     : Project(parent)

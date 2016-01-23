@@ -28,7 +28,7 @@
 #include <assert.h>
 
 #include <gtkmm.h>
-#include <gnome.h>
+#include <glibmm/i18n.h>
 
 #include "TocEdit.h"
 #include "CdDevice.h"
@@ -36,7 +36,6 @@
 #include "xcdrdao.h"
 #include "guiUpdate.h"
 #include "ProgressDialog.h"
-#include "Settings.h"
 #include "ConfigManager.h"
 
 #include "config.h"
@@ -112,10 +111,10 @@ CdDevice::~CdDevice()
   scsiIf_ = NULL;
 }
 
-char *CdDevice::settingString() const
+Glib::ustring CdDevice::settingString() const
 {
   char buf[100];
-  std::string s;
+  Glib::ustring s;
 
   s = "'" + dev_ + "','";
   s += vendor_;
@@ -144,7 +143,7 @@ char *CdDevice::settingString() const
   sprintf(buf, "0x%lx", driverOptions_);
   s += buf;
 
-  return strdupCC(s.c_str());
+  return s;
 }
 
 void CdDevice::driverId(int id)
@@ -264,7 +263,7 @@ bool CdDevice::updateProgress(Glib::IOCondition cond, int fd)
   if (process_ == NULL)
     return false;
 
-  if (!(cond & Gdk::INPUT_READ))
+  if (!(cond & Glib::IO_IN))
     return false;
 
   FD_ZERO(&fds);
@@ -380,7 +379,6 @@ bool CdDevice::recordDao(Gtk::Window& parent, TocEdit *tocEdit, int simulate,
   char devname[30];
   char drivername[50];
   char speedbuf[20];
-  char *execName;
   const char *s;
   char bufferbuf[20];
   int remoteFdArgNum = 0;
@@ -391,8 +389,7 @@ bool CdDevice::recordDao(Gtk::Window& parent, TocEdit *tocEdit, int simulate,
 
   // Create temporary toc file. Get temporary directory from
   // ConfigManager, then append mkstemp template.
-  Glib::ustring tempdir =
-      configManager->client()->get_string("/apps/gcdmaster/temp_dir");
+  Glib::ustring tempdir = configManager->getTempDir();
   int length = tempdir.length();
   tocFileName = (char*)alloca(length + 24);
 
@@ -415,13 +412,10 @@ bool CdDevice::recordDao(Gtk::Window& parent, TocEdit *tocEdit, int simulate,
   }
 
   close(fd);
-  if ((s = gnome_config_get_string(SET_CDRDAO_PATH)) != NULL)
-    execName = strdupCC(s);
-  else
-    execName = strdupCC("cdrdao");
 
+  Glib::ustring execName = configManager->getCdrdaoPath();
 
-  args[n++] = execName;
+  args[n++] = execName.c_str();
 
   if (simulate)
     args[n++] = "simulate";
@@ -481,9 +475,8 @@ bool CdDevice::recordDao(Gtk::Window& parent, TocEdit *tocEdit, int simulate,
   delete scsiIf_;
   scsiIf_ = NULL;
 
-  process_ = PROCESS_MONITOR->start(execName, args, remoteFdArgNum);
+  process_ = PROCESS_MONITOR->start(execName.c_str(), args, remoteFdArgNum);
 
-  delete execName;
   if (process_ != NULL) {
     status_ = DEV_RECORDING;
     action_ = A_RECORD;
@@ -543,7 +536,6 @@ int CdDevice::extractDao(Gtk::Window& parent, const char *tocFileName,
   int n = 0;
   char devname[30];
   char drivername[50];
-  char *execName;
   const char *s; 
   char correctionbuf[20];
   int remoteFdArgNum = 0;
@@ -552,13 +544,10 @@ int CdDevice::extractDao(Gtk::Window& parent, const char *tocFileName,
       || process_ != NULL)
     return 1;
 
-  if ((s = gnome_config_get_string(SET_CDRDAO_PATH)) != NULL)
-    execName = strdupCC(s);
-  else
-    execName = strdupCC("cdrdao");
 
+  Glib::ustring execName = configManager->getCdrdaoPath();
 
-  args[n++] = execName;
+  args[n++] = execName.c_str();
 
   args[n++] = "read-cd";
 
@@ -612,9 +601,7 @@ int CdDevice::extractDao(Gtk::Window& parent, const char *tocFileName,
   delete scsiIf_;
   scsiIf_ = NULL;
 
-  process_ = PROCESS_MONITOR->start(execName, args, remoteFdArgNum);
-
-  delete[] execName;
+  process_ = PROCESS_MONITOR->start(execName.c_str(), args, remoteFdArgNum);
 
   if (process_ != NULL) {
     status_ = DEV_READING;
@@ -657,7 +644,6 @@ int CdDevice::duplicateDao(Gtk::Window& parent, int simulate, int multiSession,
   char r_drivername[50];
   char speedbuf[20];
   char correctionbuf[20];
-  char *execName;
   const char *s;
   char bufferbuf[20];
   int remoteFdArgNum = 0;
@@ -672,12 +658,9 @@ int CdDevice::duplicateDao(Gtk::Window& parent, int simulate, int multiSession,
       || process_ != NULL)
     return 1;
 
-  if ((s = gnome_config_get_string(SET_CDRDAO_PATH)) != NULL)
-    execName = strdupCC(s);
-  else
-    execName = strdupCC("cdrdao");
+  Glib::ustring execName = configManager->getCdrdaoPath();
 
-  args[n++] = execName;
+  args[n++] = execName.c_str();
 
   args[n++] = "copy";
 
@@ -765,9 +748,7 @@ int CdDevice::duplicateDao(Gtk::Window& parent, int simulate, int multiSession,
   delete scsiIf_;
   scsiIf_ = NULL;
 
-  process_ = PROCESS_MONITOR->start(execName, args, remoteFdArgNum);
-
-  delete[] execName;
+  process_ = PROCESS_MONITOR->start(execName.c_str(), args, remoteFdArgNum);
 
   if (process_ != NULL) {
     slaveDevice_ = readdev;
@@ -808,7 +789,6 @@ int CdDevice::blank(Gtk::Window* parent, int fast, int speed, int eject,
   char devname[30];
   char drivername[50];
   char speedbuf[20];
-  char *execName;
   const char *s;
   int remoteFdArgNum = 0;
 
@@ -816,12 +796,9 @@ int CdDevice::blank(Gtk::Window* parent, int fast, int speed, int eject,
       || process_ != NULL)
     return 1;
 
-  if ((s = gnome_config_get_string(SET_CDRDAO_PATH)) != NULL)
-    execName = strdupCC(s);
-  else
-    execName = strdupCC("cdrdao");
+  Glib::ustring execName = configManager->getCdrdaoPath();
 
-  args[n++] = execName;
+  args[n++] = execName.c_str();
 
   args[n++] = "blank";
 
@@ -874,9 +851,7 @@ int CdDevice::blank(Gtk::Window* parent, int fast, int speed, int eject,
   delete scsiIf_;
   scsiIf_ = NULL;
 
-  process_ = PROCESS_MONITOR->start(execName, args, remoteFdArgNum);
-
-  delete[] execName;
+  process_ = PROCESS_MONITOR->start(execName.c_str(), args, remoteFdArgNum);
 
   if (process_ != NULL) {
     status_ = DEV_BLANKING;
@@ -1009,27 +984,17 @@ const char *CdDevice::deviceType2string(DeviceType t)
  */
 void CdDevice::importSettings()
 {
-  int i, n;
-  char *s;
-  char buf[20];
   CdDevice *dev;
 
-  n = gnome_config_get_int(SET_DEVICES_NUM);
+  std::vector<Glib::ustring> settingsStrings = configManager->getConfiguredDevices();
+  std::vector<Glib::ustring>::iterator i;
 
-  if (n > 0) {
-    gnome_config_push_prefix(SET_SECTION_DEVICES);
-    
-    for (i = 0; i < n; i++) {
-      sprintf(buf, "%d", i);
-      s = gnome_config_get_string(buf);
-
-      if (s != NULL) {
-	if ((dev = CdDevice::add(s)) != NULL)
-	  dev->manuallyConfigured(true);
-      }
+  for (i = settingsStrings.begin(); i != settingsStrings.end(); ++i)
+  {
+    if (!i->empty()) {
+      if ((dev = CdDevice::add(i->c_str())) != NULL)
+        dev->manuallyConfigured(true);
     }
-
-    gnome_config_pop_prefix();
   }
 }
 
@@ -1038,33 +1003,24 @@ void CdDevice::importSettings()
  */
 void CdDevice::exportSettings()
 {
-  static const char* pathBase = "/apps/gcdmaster/devices";
-  char* key;
-  char* s;
   CdDevice* drun;
   int n;
 
-  key = (char*)alloca(strlen(pathBase) + 12);
+  std::vector<Glib::ustring> settingStrings;
 
   for (drun = first(), n = 0; drun != NULL; drun = next(drun)) {
 
     if (drun->manuallyConfigured()) {
-      sprintf(key, "%s%d", pathBase, n);
-      s = drun->settingString();
+      settingStrings.push_back(drun->settingString());
 
-      try {
-	Gnome::Conf::Schema sch;
-	sch.set_type(Gnome::Conf::VALUE_STRING);
-	configManager->client()->set(key, sch);
-	configManager->client()->set(key, s);
-      } catch (const Glib::Error& e) {
-	std::cerr << e.what() << std::endl;
-      }
-      // CdDevice::settingString allocates the string. Must delete it
-      // here.
-      delete[] s;
       n++;
     }
+  }
+
+  try {
+    configManager->setConfiguredDevices(settingStrings);
+  } catch (const Glib::Error& e) {
+    std::cerr << e.what() << std::endl;
   }
 }
 
@@ -1211,8 +1167,6 @@ CdDevice *CdDevice::add(const char *setting)
 
   return dev;
 }
-
-
 
 CdDevice *CdDevice::find(const char* dev)
 {

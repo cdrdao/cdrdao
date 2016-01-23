@@ -19,7 +19,7 @@
 
 #include <errno.h>
 #include <gtkmm.h>
-#include <gnome.h>
+#include <glibmm/i18n.h>
 
 #include "config.h"
 
@@ -45,6 +45,8 @@ Project::Project(Gtk::Window* parent)
   progressButton_ = NULL;
   tocEdit_ = NULL;
   saveFileSelector_ = NULL;
+  projectNumber_ = 0;
+  statusbar_ = NULL;
 }
 
 void Project::updateWindowTitle()

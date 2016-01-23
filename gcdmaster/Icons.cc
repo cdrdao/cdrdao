@@ -29,12 +29,15 @@ void Icons::registerStockIcons()
   factory->add_default();
 
   for (unsigned i = 0; i < G_N_ELEMENTS(iconList); i++) {
+    Glib::RefPtr<Gdk::Pixbuf> pixbuf = Gdk::Pixbuf::create_from_inline(-1,
+        iconList[i].pixbuf);
+
     Gtk::IconSource* source = new Gtk::IconSource;
-    Glib::RefPtr<Gdk::Pixbuf> pixbuf =
-        Gdk::Pixbuf::create_from_inline(-1, iconList[i].pixbuf);
     source->set_pixbuf(pixbuf);
-    Gtk::IconSet* set = new Gtk::IconSet;
+
+    Glib::RefPtr<Gtk::IconSet> set = Gtk::IconSet::create();
     set->add_source(*source);
-    factory->add(iconList[i].name, *set);
+
+    factory->add(iconList[i].name, set);
   }
 }

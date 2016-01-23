@@ -18,55 +18,47 @@
  */
 
 #include <iostream>
-#include <gnome.h>
+#include <glibmm/i18n.h>
 
 #include "config.h"
 #include "PreferencesDialog.h"
 #include "MessageBox.h"
 #include "trackdb/TempFileManager.h"
+#include "ConfigManager.h"
+#include "xcdrdao.h"
 
-PreferencesDialog::PreferencesDialog(BaseObjectType* cobject,
-				     const Glib::RefPtr<Gnome::Glade::Xml>&
-				     refGlade)
+PreferencesDialog::PreferencesDialog(BaseObjectType* cobject, const Glib::RefPtr<Gtk::Builder>& refBuilder)
 	: Gtk::Dialog(cobject),
-	  m_refGlade(refGlade)
+	  m_refBuilder(refBuilder)
 {
-    m_refGlade->get_widget("ApplyButton", _applyButton);
-    m_refGlade->get_widget("OkButton", _okButton);
-    m_refGlade->get_widget("CancelButton", _cancelButton);
-    m_refGlade->get_widget("TempDirectory", _tempDirEntry);
-    m_refGlade->get_widget("TempDirDialog", _tempDirDialog);
-    m_refGlade->get_widget("TempDialogButton", _browseButton);
-    m_refGlade->get_widget("TempBrowseCancel", _browseCancel);
-    m_refGlade->get_widget("TempBrowseOpen", _browseOpen);
+    m_refBuilder->get_widget("ApplyButton", _applyButton);
+    m_refBuilder->get_widget("OkButton", _okButton);
+    m_refBuilder->get_widget("CancelButton", _cancelButton);
+    m_refBuilder->get_widget("TempDirectory", _tempDirEntry);
+    m_refBuilder->get_widget("TempDirDialog", _tempDirDialog);
+    m_refBuilder->get_widget("TempDialogButton", _browseButton);
+    m_refBuilder->get_widget("TempBrowseCancel", _browseCancel);
+    m_refBuilder->get_widget("TempBrowseOpen", _browseOpen);
 
-    if (!_applyButton || !_okButton || !_cancelButton || !_tempDirEntry ||
-	!_tempDirDialog || !_browseButton || !_browseCancel || !_browseOpen) {
-        std::cerr << "Unable to create all GUI widgets from glade file\n";
-	exit(1);
-    }
+	if (!_applyButton || !_okButton || !_cancelButton || !_tempDirEntry
+			|| !_tempDirDialog || !_browseButton || !_browseCancel
+			|| !_browseOpen) {
+		std::cerr << "Unable to create all GUI widgets from glade file\n";
+		exit(1);
+	}
 
-    m_refClient = Gnome::Conf::Client::get_default_client();
-    m_refClient->add_dir("/apps/gcdmaster");
-
-    _applyButton->signal_clicked()
-	.connect(sigc::mem_fun(*this,
-			       &PreferencesDialog::on_button_apply));
-    _cancelButton->signal_clicked()
-	.connect(sigc::mem_fun(*this,
-			       &PreferencesDialog::on_button_cancel));
-    _okButton->signal_clicked()
-	.connect(sigc::mem_fun(*this,
-			       &PreferencesDialog::on_button_ok));
-    _browseButton->signal_clicked()
-	.connect(sigc::mem_fun(*this,
-			       &PreferencesDialog::on_button_browse));
-    _browseCancel->signal_clicked()
-	.connect(sigc::mem_fun(*this,
-			       &PreferencesDialog::on_button_browse_cancel));
-    _browseOpen->signal_clicked()
-	.connect(sigc::mem_fun(*this,
-			       &PreferencesDialog::on_button_browse_open));
+	_applyButton->signal_clicked().connect(
+			sigc::mem_fun(*this, &PreferencesDialog::on_button_apply));
+	_cancelButton->signal_clicked().connect(
+			sigc::mem_fun(*this, &PreferencesDialog::on_button_cancel));
+	_okButton->signal_clicked().connect(
+			sigc::mem_fun(*this, &PreferencesDialog::on_button_ok));
+	_browseButton->signal_clicked().connect(
+			sigc::mem_fun(*this, &PreferencesDialog::on_button_browse));
+	_browseCancel->signal_clicked().connect(
+			sigc::mem_fun(*this, &PreferencesDialog::on_button_browse_cancel));
+	_browseOpen->signal_clicked().connect(
+			sigc::mem_fun(*this, &PreferencesDialog::on_button_browse_open));
 
     _tempDirDialog->hide();
 
@@ -86,30 +78,28 @@ void PreferencesDialog::show()
 
 void PreferencesDialog::readFromGConf()
 {
-    const Glib::ustring text =
-	m_refClient->get_string("/apps/gcdmaster/temp_dir");
-    _tempDirEntry->set_text(text);
+  _tempDirEntry->set_text(configManager->getTempDir());
 }
 
 bool PreferencesDialog::saveToGConf()
 {
-    const Glib::ustring text = _tempDirEntry->get_text();
+  const Glib::ustring& text = _tempDirEntry->get_text();
 
-    if (!tempFileManager.setTempDirectory(text.c_str())) {
+  if (!tempFileManager.setTempDirectory(text.c_str())) {
 
-	ErrorBox errBox(_("The directory you entered cannot be used as a "
-			  "temporary files directory."));
-	errBox.run();
-	readFromGConf();
-	return false;
-    }
+    ErrorBox errBox(_("The directory you entered cannot be used as a "
+        "temporary files directory."));
+    errBox.run();
+    readFromGConf();
+    return false;
+  }
 
-    try {
-	m_refClient->set("/apps/gcdmaster/temp_dir", text);
-    } catch (const Glib::Error& error) {
-        std::cerr << error.what() << std::endl;
-    }
-    return true;
+  try {
+    configManager->setTempDir(text);
+  } catch (const Glib::Error& error) {
+    std::cerr << error.what() << std::endl;
+  }
+  return true;
 }
 
 void PreferencesDialog::on_button_apply()

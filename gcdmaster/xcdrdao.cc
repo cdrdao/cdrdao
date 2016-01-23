@@ -23,12 +23,6 @@
 #include <stdlib.h>
 
 #include <gtkmm.h>
-#include <gnome.h>
-#include <gconfmm.h>
-
-#include <gtk/gtk.h>
-
-#include <libgnomeuimm.h>
 
 #include "config.h"
 
@@ -55,8 +49,8 @@ ProcessMonitor*     PROCESS_MONITOR = NULL;
 ProgressDialogPool* PROGRESS_POOL = NULL;
 PreferencesDialog*  preferencesDialog = NULL;
 ConfigManager*      configManager = NULL;
+Glib::RefPtr<Gtk::Application> app;
 
-static int VERBOSE = 0;
 static int PROCESS_MONITOR_SIGNAL_BLOCKED = 0;
 
 void blockProcessMonitorSignals()
@@ -83,19 +77,15 @@ static RETSIGTYPE signalHandler(int sig)
     PROCESS_MONITOR->handleSigChld();
 }
 
-
 int main(int argc, char* argv[])
 {
-  Gnome::Main application("GnomeCDMaster", VERSION,
-                          Gnome::UI::module_info_get(), argc, argv);
-   
-  Gnome::Conf::init();
-
-  // settings
-  CdDevice::importSettings();
+  app = Gtk::Application::create(argc, argv, "Gnome.CDMaster");
 
   // create GConf configuration manager
   configManager = new ConfigManager();
+
+  // settings
+  CdDevice::importSettings();
 
   // setup process monitor
   PROCESS_MONITOR = new ProcessMonitor;
@@ -116,28 +106,27 @@ int main(int argc, char* argv[])
   deviceConfDialog = new DeviceConfDialog;
   PROGRESS_POOL = new ProgressDialogPool;
 
-  // Create Preferences dialog from Glade file.
-  Glib::RefPtr<Gnome::Glade::Xml> refXml;
+  Glib::RefPtr<Gtk::Builder> builder;
   try {
-      refXml = Gnome::Glade::Xml::create(CDRDAO_GLADEDIR "/Preferences.glade");
-  } catch(const Gnome::Glade::XmlError& ex) {
-      std::cerr << ex.what() << std::endl;
-      exit(1);
+    builder = Gtk::Builder::create_from_file(CDRDAO_GLADEDIR "/Preferences.glade");
+  } catch(std::exception& ex) {
+    std::cerr << ex.what() << std::endl;
+    exit(1);
   }
-  refXml->get_widget_derived("PrefDialog", preferencesDialog);
+
+  builder->get_widget_derived("PrefDialog", preferencesDialog);
   if (!preferencesDialog) {
       std::cerr << "Unable to create Preferences dialog from glade file\n" 
-	  CDRDAO_GLADEDIR "/Preferences.glade" << std::endl;
+          CDRDAO_GLADEDIR
+	  "/Preferences.glade" << std::endl;
       exit(1);
   }
 
-  GCDMaster* gcdmaster = new GCDMaster;
-  gcdmaster->show();
+  GCDMaster* gcdmaster = new GCDMaster();
 
   bool openChooser = true;
 
   while (argc > 1) {
-
     if (gcdmaster->openNewProject(argv[1]))
       openChooser = false; 
 
@@ -148,11 +137,12 @@ int main(int argc, char* argv[])
   if (openChooser)
     gcdmaster->newChooserWindow();
 
-  application.run();
+  //Shows the window and returns when it is closed.
+  int retval = app->run(*gcdmaster);
 
   // save settings
   CdDevice::exportSettings();
-  gnome_config_sync();
+  delete configManager;
 
-  return 0;
+  return retval;
 }

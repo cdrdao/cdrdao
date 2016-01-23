@@ -17,6 +17,7 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+#include "config.h"
 #include "guiUpdate.h"
 #include "Project.h"
 #include "DuplicateCDProject.h"
@@ -24,11 +25,12 @@
 #include "RecordCDTarget.h"
 #include "DeviceList.h"
 #include "MessageBox.h"
-#include "Settings.h"
 #include "Icons.h"
+#include "ConfigManager.h"
+#include "xcdrdao.h"
 
 #include <gtkmm.h>
-#include <gnome.h>
+#include <glibmm/i18n.h>
 
 DuplicateCDProject::DuplicateCDProject(Gtk::Window *parent)
     : Project(parent)
@@ -128,7 +130,8 @@ void DuplicateCDProject::start()
       // If the user selects the same device for reading and writing
       // we can't do on the fly copying. More complex situations with
       // multiple target devices are not handled
-      if (gnome_config_get_bool(SET_DUPLICATE_ONTHEFLY_WARNING)) {
+      if (configManager->getDuplicateOnTheFlyWarning()) {
+
         Ask2Box msg(parent_, "Request", 1, 2,
                     _("To duplicate a CD using the same device for reading "
                       "and writing"),
@@ -140,8 +143,7 @@ void DuplicateCDProject::start()
           CDSource->setOnTheFly(false);
           onTheFly = 0;
           if (msg.dontShowAgain()) {
-            gnome_config_set_bool(SET_DUPLICATE_ONTHEFLY_WARNING, FALSE);
-            gnome_config_sync();
+            configManager->setDuplicateOnTheFlyWarning(false);
           }
           break;
         default: // do not proceed

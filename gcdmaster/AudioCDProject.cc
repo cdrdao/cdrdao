@@ -17,10 +17,12 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+#include "config.h"
+
 #include <assert.h>
-#include <gtkmm.h>
-#include <libgnome/gnome-i18n.h>
 #include <cstring>
+#include <gtkmm.h>
+#include <glibmm/i18n.h>
 
 #include "Toc.h"
 #include "SoundIF.h"
@@ -239,7 +241,7 @@ void AudioCDProject::add_menus(Glib::RefPtr<Gtk::UIManager> m_refUIManager)
     connect(sigc::mem_fun(*this, &AudioCDProject::update));
 }
 
-void AudioCDProject::configureAppBar(Gnome::UI::AppBar *s, Gtk::ProgressBar* p,
+void AudioCDProject::configureAppBar(Gtk::Statusbar *s, Gtk::ProgressBar* p,
                                      Gtk::Button *b)
 {
   statusbar_ = s;
@@ -258,7 +260,7 @@ void AudioCDProject::configureAppBar(Gnome::UI::AppBar *s, Gtk::ProgressBar* p,
   progressButton_->signal_clicked().
       connect(sigc::mem_fun(*this, &AudioCDProject::on_cancel_clicked));
   progressbar_->set_pulse_step(0.01);
-};
+}
 
 void AudioCDProject::status(const char* msg)
 {
@@ -306,12 +308,12 @@ bool AudioCDProject::closeProject()
     message += " not saved. Are you sure you want to close it ?";
 
     Gtk::MessageDialog d(*getParentWindow(), message, false,
-                         Gtk::MESSAGE_QUESTION, Gtk::BUTTONS_OK_CANCEL, true);
+                         Gtk::MESSAGE_QUESTION, Gtk::BUTTONS_YES_NO, true);
 
     int ret = d.run();
     d.hide();
 
-    if (ret == Gtk::RESPONSE_CANCEL || ret == Gtk::RESPONSE_DELETE_EVENT)
+    if (ret == Gtk::RESPONSE_NO || ret == Gtk::RESPONSE_DELETE_EVENT)
       return false;
   }
 

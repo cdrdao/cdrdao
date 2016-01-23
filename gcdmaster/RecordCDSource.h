@@ -20,8 +20,6 @@
 #ifndef __RECORD_CD_SOURCE_H
 #define __RECORD_CD_SOURCE_H
 
-#include <libgnomeuimm.h>
-
 class CdDevice;
 class DeviceList;
 
@@ -68,17 +66,16 @@ private:
   Gtk::SpinButton *speedSpinButton_;
   Gtk::CheckButton *speedButton_;
 
-  Gtk::OptionMenu *correctionMenu_;
-  Gtk::OptionMenu *subChanReadModeMenu_;
+  Gtk::ComboBoxText correctionMenu_;
+  Gtk::ComboBoxText subChanReadModeMenu_;
   Gtk::CheckButton *onTheFlyButton_;
   Gtk::CheckButton *continueOnErrorButton_;
   Gtk::CheckButton *ignoreIncorrectTOCButton_;
 
   void moreOptions();
 
-  void setSpeed(int);
-  void setCorrection(int);
-  void setSubChanReadMode(int);
+  void setCorrection();
+  void setSubChanReadMode();
   void speedButtonChanged();
   void speedChanged();
 };

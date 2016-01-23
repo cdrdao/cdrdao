@@ -126,7 +126,7 @@ private:
 
   class QueueJob {
   public:
-    QueueJob(const char* o) { op = o; }
+    QueueJob(const char* o) { op = o; pos = 0; end = 0; len = 0; }
     ~QueueJob() {}
     std::string op;
     std::string file;

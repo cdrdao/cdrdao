@@ -18,7 +18,7 @@
  */
 
 #include <gtkmm.h>
-#include <gnome.h>
+#include <iostream>
 
 #include "xcdrdao.h"
 #include "gcdmaster.h"
@@ -30,68 +30,62 @@
 #define LABEL_PADDING 10
 #define BUTTONS_RELIEF Gtk::RELIEF_NORMAL
 
-
 ProjectChooser::ProjectChooser()
 {
-  Glib::RefPtr<Gnome::Glade::Xml> refXml;
+  Glib::RefPtr<Gtk::Builder> builder;
   try
   {
-    refXml = Gnome::Glade::Xml::create(CDRDAO_GLADEDIR "/ProjectChooser.glade", "mainbox");
+	  builder = Gtk::Builder::create_from_file(CDRDAO_GLADEDIR "/ProjectChooser.glade", "mainbox");
   }
-  catch(const Gnome::Glade::XmlError& ex)
+  catch(const Glib::Exception& ex)
   {
     try
     {
-      refXml = Gnome::Glade::Xml::create("glade/ProjectChooser.glade", "mainbox");
+    	builder = Gtk::Builder::create_from_file("glade/ProjectChooser.glade", "mainbox");
     }
-    catch(const Gnome::Glade::XmlError& ex)
+    catch(const Glib::Exception& ex)
     {
       std::cerr << ex.what() << std::endl;
       return;
     }
   }
 
-  Gtk::HBox* pBox = 0;
-  refXml->get_widget("mainbox", pBox);
+  Gtk::Box* pBox = 0;
+  builder->get_widget("mainbox", pBox);
   if(!pBox)
     return;
 
   Gtk::Image* pImage = 0;
-  refXml->get_widget("AudioImage", pImage);
+  builder->get_widget("AudioImage", pImage);
   if (pImage)
   {
     pImage->set(Icons::AUDIOCD, Gtk::ICON_SIZE_DIALOG);
   }
-  refXml->get_widget("CopyImage", pImage);
+  builder->get_widget("CopyImage", pImage);
   if (pImage)
   {
     pImage->set(Icons::COPYCD, Gtk::ICON_SIZE_DIALOG);
   }
-  refXml->get_widget("DumpImage", pImage);
+  builder->get_widget("DumpImage", pImage);
   if (pImage)
   {
     pImage->set(Icons::DUMPCD, Gtk::ICON_SIZE_DIALOG);
   }
 
-  Gtk::Button* pButton = 0;
-  refXml->get_widget("AudioButton", pButton);
-  if (pButton)
-  {
-    pButton->signal_clicked().
-      connect(ProjectChooser::newAudioCDProject);
-  }
-  refXml->get_widget("CopyButton", pButton);
-  if (pButton)
-  {
-    pButton->signal_clicked().
-      connect(ProjectChooser::newDuplicateCDProject);
-  }
-  refXml->get_widget("DumpButton", pButton);
-  if (pButton)
-  {
-    pButton->signal_clicked().
-      connect(ProjectChooser::newDumpCDProject);
-  }
+	Gtk::Button* pButton = 0;
+	builder->get_widget("AudioButton", pButton);
+	if (pButton) {
+		pButton->signal_clicked().connect(ProjectChooser::newAudioCDProject);
+	}
+	builder->get_widget("CopyButton", pButton);
+	if (pButton) {
+		pButton->signal_clicked().connect(
+				ProjectChooser::newDuplicateCDProject);
+	}
+	builder->get_widget("DumpButton", pButton);
+	if (pButton) {
+		pButton->signal_clicked().connect(ProjectChooser::newDumpCDProject);
+	}
 
   pack_start(*pBox);
 }

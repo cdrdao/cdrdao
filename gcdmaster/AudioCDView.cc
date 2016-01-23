@@ -18,8 +18,8 @@
  */
 
 #include <gtkmm.h>
-#include <gnome.h>
 #include <glibmm/convert.h>
+#include <glibmm/i18n.h>
 #include <iostream>
 
 #include "config.h"
@@ -49,8 +49,7 @@ AudioCDView::AudioCDView(AudioCDProject *project)
   trackInfoDialog_ = 0;
   addSilenceDialog_ = 0;
 
-  std::list<Gtk::TargetEntry> drop_types;
-
+  std::vector<Gtk::TargetEntry> drop_types;
   drop_types.push_back(Gtk::TargetEntry("text/uri-list", Gtk::TargetFlags(0),
                                         TARGET_URI_LIST));
 
@@ -64,11 +63,11 @@ AudioCDView::AudioCDView(AudioCDProject *project)
   sampleDisplay_->set_size_request(200,200);
   
   pack_start(*sampleDisplay_, TRUE, TRUE);
-  sampleDisplay_->modify_font(Pango::FontDescription("Monospace 8"));
+  sampleDisplay_->override_font(Pango::FontDescription("Monospace 8"));
   sampleDisplay_->show();
 
   Gtk::HScrollbar *scrollBar =
-    new Gtk::HScrollbar(*(sampleDisplay_->getAdjustment()));
+    new Gtk::HScrollbar(sampleDisplay_->getAdjustment());
   pack_start(*scrollBar, FALSE, FALSE);
   scrollBar->show();
   
@@ -129,20 +128,20 @@ AudioCDView::AudioCDView(AudioCDProject *project)
 
   setMode(SELECT);
 
-  sampleDisplay_->markerSet.connect(sigc::mem_fun(*this,
-                        &AudioCDView::markerSetCallback));
-  sampleDisplay_->selectionSet.connect(sigc::mem_fun(*this,
-                        &AudioCDView::selectionSetCallback));
-  sampleDisplay_->selectionCleared.connect(sigc::mem_fun(*this,
-                        &AudioCDView::selectionClearedCallback));
-  sampleDisplay_->cursorMoved.connect(sigc::mem_fun(*this,
-  			&AudioCDView::cursorMovedCallback));
-  sampleDisplay_->trackMarkSelected.connect(sigc::mem_fun(*this,
-  			&AudioCDView::trackMarkSelectedCallback));
-  sampleDisplay_->trackMarkMoved.connect(sigc::mem_fun(*this,
-  			&AudioCDView::trackMarkMovedCallback));
-  sampleDisplay_->viewModified.connect(sigc::mem_fun(*this,
-		        &AudioCDView::viewModifiedCallback));
+	sampleDisplay_->markerSet.connect(
+			sigc::mem_fun(*this, &AudioCDView::markerSetCallback));
+	sampleDisplay_->selectionSet.connect(
+			sigc::mem_fun(*this, &AudioCDView::selectionSetCallback));
+	sampleDisplay_->selectionCleared.connect(
+			sigc::mem_fun(*this, &AudioCDView::selectionClearedCallback));
+	sampleDisplay_->cursorMoved.connect(
+			sigc::mem_fun(*this, &AudioCDView::cursorMovedCallback));
+	sampleDisplay_->trackMarkSelected.connect(
+			sigc::mem_fun(*this, &AudioCDView::trackMarkSelectedCallback));
+	sampleDisplay_->trackMarkMoved.connect(
+			sigc::mem_fun(*this, &AudioCDView::trackMarkMovedCallback));
+	sampleDisplay_->viewModified.connect(
+			sigc::mem_fun(*this, &AudioCDView::viewModifiedCallback));
 
   tocEditView_->sampleViewFull();
 }

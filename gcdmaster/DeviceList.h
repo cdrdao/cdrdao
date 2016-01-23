@@ -41,9 +41,7 @@ class DeviceList : public Gtk::Frame
   void importStatus();
 
 private:
-  TocEdit* tocEdit_;
 
-  int speed_;
   CdDevice::DeviceType filterType_;
 
   class ListColumns : public Gtk::TreeModel::ColumnRecord {

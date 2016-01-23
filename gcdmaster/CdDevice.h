@@ -42,7 +42,7 @@ class CdDevice : public sigc::trackable
   CdDevice(const char* dev, const char *vendor, const char *product);
   ~CdDevice();
 
-  char *settingString() const;
+  Glib::ustring settingString() const;
 
   const char *dev() const            { return dev_.c_str(); } 
   const char *vendor() const         { return vendor_.c_str(); }
