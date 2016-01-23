@@ -17,18 +17,18 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+#include "config.h"
 #include <stdio.h>
 #include <limits.h>
 #include <math.h>
 #include <assert.h>
 
 #include <gtkmm.h>
-#include <gnome.h>
+#include <glibmm/i18n.h>
 
 #include "RecordHDTarget.h"
 #include "MessageBox.h"
 #include "xcdrdao.h"
-#include "Settings.h"
 
 #include "CdDevice.h"
 #include "guiUpdate.h"
@@ -36,18 +36,15 @@
 
 RecordHDTarget::RecordHDTarget()
 {
-  Gtk::Table *table;
-  Gtk::Label *label;
-
   active_ = false;
 
   set_spacing(10);
 
   // device settings
-  Gtk::Frame *recordOptionsFrame =
-    manage(new Gtk::Frame(_(" Record Options ")));
+  Gtk::Frame *recordOptionsFrame = manage(
+      new Gtk::Frame(_(" Record Options ")));
 
-  table = manage(new Gtk::Table(2, 2, false));
+  Gtk::Table *table = manage(new Gtk::Table(2, 2, false));
   table->set_row_spacings(2);
   table->set_col_spacings(10);
   table->set_border_width(5);
@@ -56,15 +53,11 @@ RecordHDTarget::RecordHDTarget()
   recordOptionsFrame->show_all();
   pack_start(*recordOptionsFrame, Gtk::PACK_SHRINK);
 
-  label = manage(new Gtk::Label(_("Directory: ")));
+  Gtk::Label *label = manage(new Gtk::Label(_("Directory: ")));
   table->attach(*label, 0, 1, 0, 1, Gtk::FILL);
 
-  dirEntry_ =
-      manage(new Gnome::UI::FileEntry(_("record_hd_target_dir_entry"),
-                                      _("Select Directory for Image")));
-  dirEntry_->set_directory_entry(true);
-  dirEntry_->set_property("use_filechooser", true);
-
+  dirEntry_ = manage(
+      new Gtk::FileChooserButton(Gtk::FILE_CHOOSER_ACTION_SELECT_FOLDER));
   table->attach(*dirEntry_, 1, 2, 0, 1);
 
   label = manage(new Gtk::Label(_("Name: ")));
@@ -73,6 +66,7 @@ RecordHDTarget::RecordHDTarget()
   fileNameEntry_ = manage(new Gtk::Entry);
   table->attach(*fileNameEntry_, 1, 2, 1, 2);
 }
+
 void RecordHDTarget::start()
 {
   active_ = true;
@@ -106,7 +100,6 @@ std::string RecordHDTarget::getFilename()
 
 std::string RecordHDTarget::getPath()
 {
-  Gtk::Entry *entry = static_cast<Gtk::Entry *>(dirEntry_->gtk_entry());
-  return entry->get_text();
+  return dirEntry_->get_filename();
 }
 

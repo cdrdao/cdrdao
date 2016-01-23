@@ -70,8 +70,8 @@ private:
   Gtk::Frame settingFrame_;
   Gtk::Frame addDeviceFrame_;
 
-  Gtk::OptionMenu *driverMenu_;
-  Gtk::OptionMenu *devtypeMenu_;
+  Gtk::ComboBoxText driverMenu_;
+  Gtk::ComboBoxText devtypeMenu_;
 
   Gtk::Entry devEntry_;
   Gtk::Entry vendorEntry_;
@@ -80,8 +80,8 @@ private:
 
   const char *checkString(const std::string &str);
 
-  void setDriverId(int);
-  void setDeviceType(int);
+  void setDriverId();
+  void setDeviceType();
 
   void selectionChanged();
 

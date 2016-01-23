@@ -142,10 +142,15 @@ SampleManagerImpl::SampleManagerImpl(unsigned long blocking) : tocReader_(NULL)
 
   block_ = new Sample[blocking_];
   actBlock_ = endBlock_ = burstBlock_ = 0;
-  length_ = 0;
 
   // allocate space in chunks of 40 minutes
   chunk_ = 40 * 60 * 75 * 588 / blocking;
+
+  curFilename_ = NULL;
+  length_ = 0;
+  percent_ = 0.0;
+  percentStep_ = 0.0;
+
 }
 
 SampleManagerImpl::~SampleManagerImpl()

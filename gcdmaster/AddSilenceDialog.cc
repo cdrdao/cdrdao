@@ -17,13 +17,14 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+#include "config.h"
 #include <stdio.h>
 #include <limits.h>
 #include <math.h>
 #include <assert.h>
 
 #include <gtkmm.h>
-#include <gnome.h>
+#include <glibmm/i18n.h>
 
 #include "AddSilenceDialog.h"
 
@@ -32,7 +33,6 @@
 #include "guiUpdate.h"
 
 #include "Sample.h"
-
 
 AddSilenceDialog::AddSilenceDialog()
 {

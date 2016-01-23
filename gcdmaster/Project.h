@@ -20,7 +20,7 @@
 #ifndef __PROJECT_H__
 #define __PROJECT_H__
 
-#include <libgnomeuimm.h>
+#include <gtkmm.h>
 
 class RecordTocDialog;
 class TocEdit;
@@ -51,7 +51,7 @@ protected:
   Gtk::Window*            parent_;
   TocEdit*                tocEdit_;
   RecordTocDialog*        recordTocDialog_;
-  Gnome::UI::AppBar*      statusbar_;
+  Gtk::Statusbar*         statusbar_;
   Gtk::ProgressBar*       progressbar_;  
   Gtk::Button*            progressButton_;  
   Gtk::FileChooserDialog* saveFileSelector_;

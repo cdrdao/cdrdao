@@ -23,12 +23,12 @@
 #include <assert.h>
 
 #include <gtkmm.h>
-#include <gnome.h>
+#include <glibmm/i18n.h>
 
+#include "config.h"
 #include "RecordTocSource.h"
 #include "MessageBox.h"
 #include "xcdrdao.h"
-#include "Settings.h"
 
 #include "CdDevice.h"
 #include "guiUpdate.h"

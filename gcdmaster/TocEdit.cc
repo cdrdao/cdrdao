@@ -17,10 +17,11 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+#include "config.h"
 #include "TocEdit.h"
 
+#include <glibmm/i18n.h>
 #include <stddef.h>
-#include <gnome.h>
 #include <iostream>
 #include <sstream>
 #include <set>

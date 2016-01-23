@@ -20,8 +20,6 @@
 #ifndef __RECORD_TOC_DIALOG_H
 #define __RECORD_TOC_DIALOG_H
 
-#include <libgnomeuimm.h>
-
 class TocEdit;
 class RecordTocSource;
 class RecordCDTarget;

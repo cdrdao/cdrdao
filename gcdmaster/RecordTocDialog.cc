@@ -18,8 +18,9 @@
  */
 
 #include <gtkmm.h>
-#include <gnome.h>
+#include <glibmm/i18n.h>
 
+#include "config.h"
 #include "RecordTocDialog.h"
 #include "RecordTocSource.h"
 #include "RecordCDSource.h"

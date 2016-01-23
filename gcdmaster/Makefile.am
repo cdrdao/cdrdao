@@ -98,9 +98,9 @@ gcdmaster_LDADD =					\
 	$(top_builddir)/paranoia/libcdda_paranoia.a	\
 	$(top_builddir)/trackdb/libtrackdb.a		\
 	@scsilib_libs@					\
-	@LIBGUIMM2_LIBS@ @GTKMM2_LIBS@
+	@GTKMM_LIBS@
 
-AM_CXXFLAGS = @GTKMM2_CFLAGS@ @LIBGUIMM2_CFLAGS@ @AO_CFLAGS@
+AM_CXXFLAGS = @GTKMM_CFLAGS@ @AO_CFLAGS@
 
 if COND_MP3
 gcdmaster_LDADD += @MAD_LIBS@
@@ -143,6 +143,9 @@ appreg_DATA = gcdmaster.applications
 icondir = $(datadir)/pixmaps
 icon_DATA = gcdmaster.png gcdmaster-doc.png
 
+gsettings_SCHEMAS = org.gnome.gcdmaster.gschema.xml
+@GSETTINGS_RULES@
+
 EXTRA_DIST = \
 	$(man1_MANS)	\
 	$(glade_DATA)	\
@@ -151,8 +154,6 @@ EXTRA_DIST = \
 	$(icon_DATA)	\
 	$(freedesktop_DATA)	\
 	$(appreg_DATA)	\
+	org.gnome.gcdmaster.gschema.xml \
 	BUGS TASKS
 
-schemasdir = @GCONF_SCHEMA_FILE_DIR@
-schemas_in_files = gcdmaster.schemas.in
-schemas_DATA = $(schemas_in_files:.schemas.in=.schemas)

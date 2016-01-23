@@ -22,7 +22,6 @@
 
 #include <gtkmm.h>
 #include <gtk/gtk.h>
-#include <libgnomeuimm.h>
 
 class Toc;
 class Track;
@@ -43,7 +42,7 @@ public:
                  Gtk::Window *parent);
 
   void add_menus (Glib::RefPtr<Gtk::UIManager> m_refUIManager);
-  void configureAppBar (Gnome::UI::AppBar *s, Gtk::ProgressBar* p,
+  void configureAppBar (Gtk::Statusbar *s, Gtk::ProgressBar* p,
                         Gtk::Button *b);
 
   bool            closeProject();

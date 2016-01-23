@@ -17,17 +17,17 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#include <libgnomeuimm.h>
+#include <gtkmm.h>
+#include <glibmm/i18n.h>
 
+#include "config.h"
 #include "guiUpdate.h"
+#include "xcdrdao.h"
+#include "ConfigManager.h"
 #include "DeviceList.h"
 #include "MessageBox.h"
 #include "BlankCDDialog.h"
-#include "Settings.h"
 #include "Icons.h"
-
-#include <gtkmm.h>
-#include <gnome.h>
 
 BlankCDDialog::BlankCDDialog()
 {
@@ -111,10 +111,10 @@ void BlankCDDialog::moreOptions()
                                                 Gtk::MESSAGE_QUESTION,
 						      Gtk::BUTTONS_CLOSE, true);
 
-    Gtk::VBox *vbox = moreOptionsDialog_->get_vbox();
+    Gtk::Box *box = moreOptionsDialog_->get_vbox();
     Gtk::Frame *frame = new Gtk::Frame(_(" More Blank Options "));
-    vbox->pack_start(*frame);
-    vbox = new Gtk::VBox;
+    box->pack_start(*frame);
+    Gtk::VBox* vbox = new Gtk::VBox;
     vbox->set_border_width(10);
     vbox->set_spacing(5);
     frame->add(*vbox);
@@ -132,8 +132,8 @@ void BlankCDDialog::moreOptions()
     Gtk::Label *label = new Gtk::Label(_("Speed: "), 0);
     hbox->pack_start(*label, false, false);
     
-    Gtk::Adjustment *adjustment = new Gtk::Adjustment(1, 1, 20);
-    speedSpinButton_ = new Gtk::SpinButton(*adjustment);
+    Glib::RefPtr<Gtk::Adjustment> adjustment = Gtk::Adjustment::create(1, 1, 20);
+    speedSpinButton_ = new Gtk::SpinButton(adjustment);
     speedSpinButton_->set_digits(0);
     speedSpinButton_->set_sensitive(false);
     adjustment->signal_value_changed().
@@ -243,9 +243,7 @@ void BlankCDDialog::speedButtonChanged()
 void BlankCDDialog::speedChanged()
 {
 //FIXME: get max burn speed from selected burner(s)
-  int new_speed;
-
-  new_speed = speedSpinButton_->get_value_as_int();
+  int new_speed = speedSpinButton_->get_value_as_int();
 
   if ((new_speed % 2) == 1)
   {
@@ -277,21 +275,18 @@ int BlankCDDialog::checkEjectWarning(Gtk::Window *parent)
 {
   // If ejecting the CD after recording is requested issue a warning message
   // because buffer under runs may occur for other devices that are recording.
-  if (getEject())
-  {
-    if (gnome_config_get_bool(SET_RECORD_EJECT_WARNING)) {
-      Ask3Box msg(parent, _("Request"), 1, 2, 
-                  _("Ejecting a CD may block the SCSI bus and"),
-  		  _("cause buffer under runs when other devices"),
-                  _("are still recording."), "",
-                  _("Keep the eject setting anyway?"), NULL);
-  
+  if (getEject()) {
+    if (configManager->getEjectWarning()) {
+      Ask3Box msg(parent, _("Request"), 1, 2,
+          _("Ejecting a CD may block the SCSI bus and"),
+          _("cause buffer under runs when other devices"),
+          _("are still recording."), "", _("Keep the eject setting anyway?"),
+          NULL);
+
       switch (msg.run()) {
       case 1: // keep eject setting
-        if (msg.dontShowAgain())
-        {
-          gnome_config_set_bool(SET_RECORD_EJECT_WARNING, FALSE);
-          gnome_config_sync();
+        if (msg.dontShowAgain()) {
+          configManager->setEjectWarning(false);
         }
         return 1;
         break;
@@ -306,7 +301,7 @@ int BlankCDDialog::checkEjectWarning(Gtk::Window *parent)
     }
     return 1;
   }
-  return 0;  
+  return 0;
 }
 
 bool BlankCDDialog::getReload()
@@ -322,7 +317,7 @@ int BlankCDDialog::checkReloadWarning(Gtk::Window *parent)
   // The same is true for reloading the disk.
   if (getReload())
   {
-    if (gnome_config_get_bool(SET_RECORD_RELOAD_WARNING)) {
+    if (configManager->getReloadWarning()) {
       Ask3Box msg(parent, _("Request"), 1, 2, 
                   _("Reloading a CD may block the SCSI bus and"),
                   _("cause buffer under runs when other devices"),
@@ -333,8 +328,7 @@ int BlankCDDialog::checkReloadWarning(Gtk::Window *parent)
       case 1: // keep reload setting
         if (msg.dontShowAgain())
         {
-      	gnome_config_set_bool(SET_RECORD_RELOAD_WARNING, FALSE);
-          gnome_config_sync();
+          configManager->setReloadWarning(false);
         }
         return 1;
         break;

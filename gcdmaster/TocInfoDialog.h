@@ -51,7 +51,19 @@ private:
 
   TextEdit *catalog_;
 
-  Gtk::OptionMenu *tocType_;
+  //Tree model columns:
+  class ModelColumns : public Gtk::TreeModel::ColumnRecord
+  {
+  public:
+
+    ModelColumns()
+    { add(m_col_id); add(m_col_name); }
+
+    Gtk::TreeModelColumn<int> m_col_id;
+    Gtk::TreeModelColumn<Glib::ustring> m_col_name;
+  };
+
+  Gtk::ComboBoxText tocType_;
   Toc::TocType selectedTocType_;
 
   struct BlockValue {
@@ -60,10 +72,10 @@ private:
   };
 
   struct CdTextPage {
-    Gtk::OptionMenu *language;
+    Gtk::ComboBoxText *language;
     int selectedLanguage;
 
-    Gtk::OptionMenu *genre;
+    Gtk::ComboBoxText *genre;
     int selectedGenre;
     
     Gtk::Label *label;
@@ -99,9 +111,9 @@ private:
   void exportCdText(TocEdit *);
   void exportData(TocEdit *);
 
-  void setSelectedTocType(Toc::TocType);
-  void setSelectedCDTextLanguage(BlockValue);
-  void setSelectedCDTextGenre(BlockValue);
+  void setSelectedTocType();
+  void setSelectedCDTextLanguage(int);
+  void setSelectedCDTextGenre(int);
 };
 
 #endif

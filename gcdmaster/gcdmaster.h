@@ -22,8 +22,6 @@
 
 #include <gtkmm.h>
 #include <gtk/gtk.h>
-#include <libgnomeuimm.h>
-#include <libglademm/xml.h>
 
 #include <list>
 
@@ -32,7 +30,7 @@ class BlankCDDialog;
 #include "Project.h"
 #include "BlankCDDialog.h"
 
-class GCDMaster : public Gnome::UI::App
+class GCDMaster : public Gtk::ApplicationWindow
 {
 public:
   GCDMaster();
@@ -68,22 +66,23 @@ private:
 
   BlankCDDialog blankCDDialog_;
 
+  Gtk::Box box_;
   Gtk::Notebook notebook_;
+  Gtk::HBox* container_;
 
   Glib::RefPtr<Gtk::UIManager> m_refUIManager;
   Glib::RefPtr<Gtk::ActionGroup> m_refActionGroup;
 
-  Gnome::UI::AppBar* statusbar_;  
+  Gtk::Statusbar* statusbar_;  
   Gtk::ProgressBar* progressbar_;  
   Gtk::Button* progressButton_;  
-  Gnome::UI::About* about_;
-
-  Glib::RefPtr<Gnome::Glade::Xml> m_refPreferencesXml;
+  Gtk::AboutDialog* about_;
 
   Gtk::FileChooserDialog* readFileSelector_;
   void createMenus();
   void createStatusbar();
   void aboutDialog();
+  void on_about_ok(int);
 };
 
 #endif

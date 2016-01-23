@@ -17,6 +17,7 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+#include "config.h"
 #include <stdio.h>
 #include <limits.h>
 #include <math.h>
@@ -24,12 +25,11 @@
 #include <string>
 
 #include <gtkmm.h>
-#include <gnome.h>
+#include <glibmm/i18n.h>
 
 #include "DeviceList.h"
 #include "MessageBox.h"
 #include "xcdrdao.h"
-#include "Settings.h"
 
 #include "CdDevice.h"
 #include "guiUpdate.h"
@@ -39,8 +39,6 @@
 
 DeviceList::DeviceList(CdDevice::DeviceType filterType)
 {
-  Gtk::HBox *hbox;
-
   filterType_ = filterType;
 
   listModel_ = Gtk::ListStore::create(listColumns_);
@@ -56,15 +54,15 @@ DeviceList::DeviceList(CdDevice::DeviceType filterType)
   Gtk::HBox *listHBox = new Gtk::HBox;
   Gtk::VBox *listVBox = new Gtk::VBox;
 
-  hbox = new Gtk::HBox;
+  Gtk::HBox *hbox = new Gtk::HBox;
   hbox->pack_start(list_, TRUE, TRUE);
 
-  Gtk::Adjustment *adjust = new Gtk::Adjustment(0.0, 0.0, 0.0);
+  Glib::RefPtr<Gtk::Adjustment> adjust = Gtk::Adjustment::create(0.0, 0.0, 0.0);
 
-  Gtk::VScrollbar *scrollBar = new Gtk::VScrollbar(*adjust);
+  Gtk::VScrollbar *scrollBar = new Gtk::VScrollbar(adjust);
   hbox->pack_start(*scrollBar, FALSE, FALSE);
 
-  list_.set_vadjustment(*adjust);
+  list_.set_vadjustment(adjust);
 
   listHBox->pack_start(*hbox, TRUE, TRUE, 5);
   listVBox->pack_start(*listHBox, TRUE, TRUE, 5);

@@ -23,15 +23,12 @@
 #include <assert.h>
 
 #include <gtkmm.h>
-#include <gnome.h>
-#include <libgnomemm.h>
-#include <libgnomeuimm.h>
 
 #include "RecordCDTarget.h"
 #include "MessageBox.h"
 #include "xcdrdao.h"
-#include "Settings.h"
 
+#include "ConfigManager.h"
 #include "CdDevice.h"
 #include "guiUpdate.h"
 #include "TocEdit.h"
@@ -66,8 +63,8 @@ RecordCDTarget::RecordCDTarget(Gtk::Window *parent)
   label->show();
   hbox->pack_start(*label, false, false);
   
-  Gtk::Adjustment *adjustment = new Gtk::Adjustment(1, 1, 48);
-  speedSpinButton_ = new Gtk::SpinButton(*adjustment);
+  Glib::RefPtr<Gtk::Adjustment> adjustment = Gtk::Adjustment::create(1, 1, 48);
+  speedSpinButton_ = new Gtk::SpinButton(adjustment);
   speedSpinButton_->set_digits(0);
   speedSpinButton_->show();
   speedSpinButton_->set_sensitive(false);
@@ -87,8 +84,8 @@ RecordCDTarget::RecordCDTarget(Gtk::Window *parent)
   label->show();
   hbox->pack_start(*label, false, false);
 
-  adjustment = new Gtk::Adjustment(1, 1, 999);
-  copiesSpinButton_ = new Gtk::SpinButton(*adjustment);
+  adjustment = Gtk::Adjustment::create(1, 1, 999);
+  copiesSpinButton_ = new Gtk::SpinButton(adjustment);
   copiesSpinButton_->set_digits(0);
   copiesSpinButton_->show();
   hbox->pack_start(*copiesSpinButton_, false, false, 10);
@@ -149,10 +146,10 @@ void RecordCDTarget::moreOptions()
                                                 Gtk::MESSAGE_QUESTION,
 						      Gtk::BUTTONS_CLOSE, true);
 
-    Gtk::VBox *vbox = moreOptionsDialog_->get_vbox();
+    Gtk::Box *box = moreOptionsDialog_->get_vbox();
     Gtk::Frame *frame = new Gtk::Frame(" More Target Options ");
-    vbox->pack_start(*frame);
-    vbox = new Gtk::VBox;
+    box->pack_start(*frame);
+    Gtk::VBox* vbox = new Gtk::VBox;
     vbox->set_border_width(10);
     vbox->set_spacing(5);
     frame->add(*vbox);
@@ -179,8 +176,8 @@ void RecordCDTarget::moreOptions()
     Gtk::Label *label = new Gtk::Label("Buffer: ", 0);
     hbox->pack_start(*label, false, false);
 
-    Gtk::Adjustment *adjustment = new Gtk::Adjustment(10, 10, 1000);
-    bufferSpinButton_ = new Gtk::SpinButton(*adjustment);
+    Glib::RefPtr<Gtk::Adjustment> adjustment = Gtk::Adjustment::create(10, 10, 1000);
+    bufferSpinButton_ = new Gtk::SpinButton(adjustment);
     hbox->pack_start(*bufferSpinButton_, false, false, 10);
 
     label = new Gtk::Label("audio seconds ");
@@ -265,19 +262,18 @@ int RecordCDTarget::checkEjectWarning(Gtk::Window *parent)
   // because buffer under runs may occur for other devices that are recording.
   if (getEject())
   {
-    if (gnome_config_get_bool(SET_RECORD_EJECT_WARNING)) {
-      Ask3Box msg(parent, "Request", 1, 2, 
+    if (configManager->getEjectWarning()) {
+      Ask3Box msg(parent, "Request", 1, 2,
     		"Ejecting a CD may block the SCSI bus and",
   		  "cause buffer under runs when other devices",
     		"are still recording.", "",
   	  	"Keep the eject setting anyway?", NULL);
-  
+
       switch (msg.run()) {
       case 1: // keep eject setting
         if (msg.dontShowAgain())
         {
-          gnome_config_set_bool(SET_RECORD_EJECT_WARNING, FALSE);
-          gnome_config_sync();
+          configManager->setEjectWarning(false);
         }
         return 1;
         break;
@@ -308,7 +304,7 @@ int RecordCDTarget::checkReloadWarning(Gtk::Window *parent)
   // The same is true for reloading the disk.
   if (getReload())
   {
-    if (gnome_config_get_bool(SET_RECORD_RELOAD_WARNING)) {
+    if (configManager->getReloadWarning()) {
       Ask3Box msg(parent, "Request", 1, 2, 
   		"Reloading a CD may block the SCSI bus and",
   		"cause buffer under runs when other devices",
@@ -319,8 +315,7 @@ int RecordCDTarget::checkReloadWarning(Gtk::Window *parent)
       case 1: // keep reload setting
         if (msg.dontShowAgain())
         {
-      	gnome_config_set_bool(SET_RECORD_RELOAD_WARNING, FALSE);
-          gnome_config_sync();
+          configManager->setReloadWarning(false);
         }
         return 1;
         break;

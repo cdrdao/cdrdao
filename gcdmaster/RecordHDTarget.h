@@ -20,8 +20,6 @@
 #ifndef __RECORD_HD_TARGET_H
 #define __RECORD_HD_TARGET_H
 
-#include <libgnomeuimm.h>
-
 class TocEdit;
 class CdDevice;
 class DeviceList;
@@ -31,8 +29,6 @@ class RecordHDTarget : public Gtk::VBox
 public:
   RecordHDTarget();
 
-  Gtk::Window *parent; // the dialog where the vbox is placed
-  
   void start();
   void stop();
 
@@ -45,9 +41,7 @@ public:
 private:
   bool active_;
 
-  int speed_;
-
-  Gnome::UI::FileEntry *dirEntry_;
+  Gtk::FileChooserButton *dirEntry_;
   Gtk::Entry *fileNameEntry_;
 
 };

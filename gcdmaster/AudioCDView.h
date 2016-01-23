@@ -22,7 +22,6 @@
 
 #include <gtkmm.h>
 #include <gtk/gtk.h>
-#include <libgnomeuimm.h>
 
 #include "AddFileDialog.h"
 #include "GenericView.h"

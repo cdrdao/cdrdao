@@ -55,7 +55,6 @@
 #include <sys/ioctl.h>
 #include <sys/types.h>
 
-#include <gnome.h>
 
 #include "SoundIF.h"
 

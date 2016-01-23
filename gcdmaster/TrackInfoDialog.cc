@@ -17,10 +17,10 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+#include "config.h"
 #include "TrackInfoDialog.h"
 
-#include <gnome.h>
-
+#include <glibmm/i18n.h>
 #include <stdio.h>
 #include <stddef.h>
 #include <string.h>
@@ -202,9 +202,7 @@ TrackInfoDialog::TrackInfoDialog()
 
   for (i = 0; i < 8; i++) {
     vbox = createCdTextPage(i);
-    notebook->pages().
-        push_back(Gtk::Notebook_Helpers::TabElem(*vbox,
-                                                 *(cdTextPages_[i].label)));
+    notebook->append_page(*vbox, *(cdTextPages_[i].label));
   }
 
   vbox1 = manage(new Gtk::VBox);

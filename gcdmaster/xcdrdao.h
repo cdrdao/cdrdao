@@ -20,6 +20,8 @@
 #ifndef __XCDRDAO_H__
 #define __XCDRDAO_H__
 
+#include <gtkmm.h>
+
 //
 // GLOBAL objects.
 //
@@ -31,6 +33,7 @@ extern class ProcessMonitor*     PROCESS_MONITOR;
 extern class ProgressDialogPool* PROGRESS_POOL;
 extern class PreferencesDialog*  preferencesDialog;
 extern class ConfigManager*      configManager;
+extern Glib::RefPtr<Gtk::Application> app;
 
 void blockProcessMonitorSignals();
 void unblockProcessMonitorSignals();

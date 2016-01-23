@@ -17,6 +17,7 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+#include "config.h"
 #include <stdio.h>
 #include <limits.h>
 #include <math.h>
@@ -24,7 +25,7 @@
 #include <ctype.h>
 
 #include <gtkmm.h>
-#include <gnome.h>
+#include <glibmm/i18n.h>
 
 #include "DeviceConfDialog.h"
 
@@ -63,39 +64,23 @@ DeviceConfDialog::DeviceConfDialog()
   list_.append_column(_("Model"), listColumns_.model);
   list_.append_column(_("Status"), listColumns_.status);
 
-  selectedRow_ = list_.get_selection()->get_selected();
-  list_.get_selection()->signal_changed().
-      connect(mem_fun(*this, &DeviceConfDialog::selectionChanged));
-
-  Gtk::Menu *dmenu = manage(new Gtk::Menu);
-  Gtk::MenuItem *mi;
+  if (list_.get_selection()) {
+    selectedRow_ = list_.get_selection()->get_selected();
+    list_.get_selection()->signal_changed().
+        connect(mem_fun(*this, &DeviceConfDialog::selectionChanged));
+  }
 
   for (i = 0; i <= CdDevice::maxDriverId(); i++) {
-    mi = manage(new Gtk::MenuItem(CdDevice::driverName(i)));
-    mi->signal_activate().connect(bind(mem_fun(*this,
-                                            &DeviceConfDialog::setDriverId),
-                                       i));
-    mi->show();
-    dmenu->append(*mi);
+    driverMenu_.append(CdDevice::driverName(i));
   }
-
-  driverMenu_ = manage(new Gtk::OptionMenu);
-  driverMenu_->set_menu(*dmenu);
-
-  Gtk::Menu *tmenu = manage(new Gtk::Menu);
+  driverMenu_.signal_changed().connect(
+      sigc::mem_fun(*this, &DeviceConfDialog::setDriverId));
 
   for (i = 0; i <= MAX_DEVICE_TYPE_ID; i++) {
-    mi = manage(new
-                Gtk::MenuItem(CdDevice::deviceType2string(ID2DEVICE_TYPE[i])));
-    mi->signal_activate().connect(bind(mem_fun(*this,
-                                            &DeviceConfDialog::setDeviceType),
-                                       i));
-    mi->show();
-    tmenu->append(*mi);
+    devtypeMenu_.append(CdDevice::deviceType2string(ID2DEVICE_TYPE[i]));
   }
-
-  devtypeMenu_ = manage(new Gtk::OptionMenu);
-  devtypeMenu_->set_menu(*tmenu);
+  devtypeMenu_.signal_changed().connect(
+      sigc::mem_fun(*this, &DeviceConfDialog::setDeviceType));
 
   devEntry_.set_max_length(32);
   vendorEntry_.set_max_length(8);
@@ -114,11 +99,11 @@ DeviceConfDialog::DeviceConfDialog()
 
   hbox->pack_start(list_, Gtk::PACK_EXPAND_WIDGET);
 
-  Gtk::Adjustment *adjust = manage(new Gtk::Adjustment(0.0, 0.0, 0.0));
-  Gtk::VScrollbar *scrollBar = manage(new Gtk::VScrollbar(*adjust));
+  Glib::RefPtr<Gtk::Adjustment> adjust = Gtk::Adjustment::create(0.0, 0.0, 0.0);
+  Gtk::VScrollbar *scrollBar = manage(new Gtk::VScrollbar(adjust));
   hbox->pack_start(*scrollBar, Gtk::PACK_SHRINK);
 
-  list_.set_vadjustment(*adjust);
+  list_.set_vadjustment(adjust);
 
   listBox->pack_start(*hbox, Gtk::PACK_EXPAND_WIDGET);
 
@@ -151,11 +136,11 @@ DeviceConfDialog::DeviceConfDialog()
   
   label = manage(new Gtk::Label(_("Device Type:")));
   table->attach(*label, 0, 1, 0, 1);
-  table->attach(*devtypeMenu_, 1, 2, 0, 1);
+  table->attach(devtypeMenu_, 1, 2, 0, 1);
 
   label = manage(new Gtk::Label(_("Driver:")));
   table->attach(*label, 0, 1, 1, 2);
-  table->attach(*driverMenu_, 1, 2, 1, 2);
+  table->attach(driverMenu_, 1, 2, 1, 2);
 
   label = manage(new Gtk::Label(_("Driver Options:")));
   table->attach(*label, 0, 1, 2, 3);
@@ -407,20 +392,20 @@ void DeviceConfDialog::importConfiguration(Gtk::TreeIter row)
   if (selectedRow_) {
 
     data = (*selectedRow_)[listColumns_.data];
-    driverMenu_->set_sensitive(true);
-    driverMenu_->set_history(data->driverId);
-    devtypeMenu_->set_sensitive(true);
-    devtypeMenu_->set_history(data->deviceType);
+    driverMenu_.set_sensitive(true);
+    driverMenu_.set_active(data->driverId);
+    devtypeMenu_.set_sensitive(true);
+    devtypeMenu_.set_active(data->deviceType);
     driverOptionsEntry_.set_sensitive(true);
     sprintf(buf, "0x%lx", data->options);
     driverOptionsEntry_.set_text(buf);
 
   } else {
 
-    driverMenu_->set_history(0);
-    driverMenu_->set_sensitive(false);
-    devtypeMenu_->set_history(0);
-    devtypeMenu_->set_sensitive(false);
+    driverMenu_.set_active(0);
+    driverMenu_.set_sensitive(false);
+    devtypeMenu_.set_active(0);
+    devtypeMenu_.set_sensitive(false);
     driverOptionsEntry_.set_text("");
     driverOptionsEntry_.set_sensitive(false);
   }
@@ -488,23 +473,21 @@ void DeviceConfDialog::exportData()
 
 
 
-void DeviceConfDialog::setDriverId(int id)
+void DeviceConfDialog::setDriverId(void)
 {
-  DeviceData *data;
-
+  int id = driverMenu_.get_active_row_number();
   if (selectedRow_ && id >= 0 && id <= CdDevice::maxDriverId()) {
-    data = (*selectedRow_)[listColumns_.data];
+    DeviceData *data = (*selectedRow_)[listColumns_.data];
     if (data)
       data->driverId = id;
   }
 }
 
-void DeviceConfDialog::setDeviceType(int id)
+void DeviceConfDialog::setDeviceType(void)
 {
-  DeviceData *data;
-
-  if (selectedRow_ && id >= 0 && id <= CdDevice::maxDriverId()) {
-    data = (*selectedRow_)[listColumns_.data];
+  int id = devtypeMenu_.get_active_row_number();
+  if (selectedRow_ && id >= 0 && id <= MAX_DEVICE_TYPE_ID) {
+    DeviceData *data = (*selectedRow_)[listColumns_.data];
     if (data)
       data->deviceType = id;
   }

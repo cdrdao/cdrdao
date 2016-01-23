@@ -28,7 +28,6 @@
 
 #include <stdio.h>
 #include <gtkmm.h>
-#include <gnome.h>
 #include <sys/ioctl.h>
 #include <sys/types.h>
 #include <fcntl.h>

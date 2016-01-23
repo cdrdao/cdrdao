@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+
+  <schema path="/org/gnome/GCDMaster/" id="org.gnome.gcdmaster">
+    <key type="s" name="cdrdao-path">
+      <default>'cdrdao'</default>
+      <summary>path to cdrdao executable</summary> 
+    </key>
+    <key type="s" name="temp-dir">
+      <default>''</default>
+      <summary>directory for temporary files</summary> 
+    </key>    
+    <key type="b" name="record-eject-warning">
+      <default>true</default>
+      <summary>eject warning</summary>
+    </key>
+    <key type="b" name="record-reload-warning">
+      <default>true</default>
+      <summary>reload warning</summary>
+    </key>
+    <key type="b" name="duplicate-on-the-fly-warning">
+      <default>true</default>
+      <summary>on-the-fly warning</summary>
+    </key>
+    <key type="as" name="configured-devices">
+      <default>[]</default>
+      <summary>Configured devices</summary>
+    </key>
+  </schema>
+
+</schemalist>
