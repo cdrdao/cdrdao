@@ -209,7 +209,7 @@ en_toc2cue=yes
 en_cue2toc=yes
 en_toc2mp3=no
 
-AC_PATH_LAME(3.92, [utiltools="$utiltools toc2mp3" en_toc2mp3=yes],
+AC_PATH_LAME(3.100, [utiltools="$utiltools toc2mp3" en_toc2mp3=yes],
         [echo "Building of toc2mp3 disabled"])
 
 dnl Determine whether we're building the gcdaster GUI front-end
