@@ -4,5 +4,5 @@ antlr_SOURCES = antlr.c dumpcycles.c err.c fset.c hash.c misc.c scan.c bits.c du
 
 AM_CFLAGS = -DUSER_ZZSYN  -DZZLEXBUFSIZE=32000
 
-INCLUDES = -I../h
+AM_CPPFLAGS = -I../h
 

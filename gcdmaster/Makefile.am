@@ -120,7 +120,7 @@ gcdmaster_DEPENDENCIES = \
 	$(top_builddir)/trackdb/libtrackdb.a		\
 	@sound_if_obj@
 
-INCLUDES =					\
+AM_CPPFLAGS =					\
 	-I$(srcdir)/../trackdb			\
 	-I$(srcdir)/../paranoia			\
 	-I$(srcdir)/../dao			\
