@@ -1,7 +1,7 @@
-if COND_XDAO
-MAYBE_XDAO = xdao
+if COND_GCDMASTER
+MAYBE_GCDMASTER = gcdmaster
 else
-MAYBE_XDAO = 
+MAYBE_GCDMASTER =
 endif
 
 if COND_SCSILIB
@@ -16,9 +16,9 @@ else
 MAYBE_PCCTS =
 endif
 
-SUBDIRS = $(MAYBE_SCSILIB) $(MAYBE_PCCTS) trackdb utils paranoia dao $(MAYBE_XDAO)
+SUBDIRS = $(MAYBE_SCSILIB) $(MAYBE_PCCTS) trackdb utils paranoia dao $(MAYBE_GCDMASTER)
 
-DIST_SUBDIRS = trackdb utils paranoia dao xdao pccts
+DIST_SUBDIRS = trackdb utils paranoia dao gcdmaster pccts
 
 EXTRA_DIST =		\
 	AUTHORS		\
