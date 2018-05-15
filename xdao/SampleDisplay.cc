@@ -768,7 +768,7 @@ bool SampleDisplay::handleLeaveEvent(GdkEventCrossing *event)
 void SampleDisplay::redraw(gint x, gint y, gint width, gint height,
 			   int drawMask)
 {
-  if (pixmap_ == 0)
+  if (!pixmap_)
     return;
 
   get_window()->draw_drawable(drawGc_, pixmap_, x, y, x, y, width, height);
@@ -820,7 +820,7 @@ void SampleDisplay::updateSamples()
 
   Toc *toc = tocEdit_->toc();
 
-  if (pixmap_ == 0)
+  if (!pixmap_)
     return;
 
   gint halfHeight = chanHeight_ / 2;
@@ -1084,7 +1084,7 @@ void SampleDisplay::updateSamples()
 
 void SampleDisplay::drawCursor(gint x)
 {
-  if (pixmap_ == 0)
+  if (!pixmap_)
     return;
 
   if (x < sampleStartX_ || x > sampleEndX_)
@@ -1118,7 +1118,7 @@ void SampleDisplay::drawTimeTick(gint x, gint y, unsigned long sample)
 {
   char buf[50];
 
-  if (pixmap_ == 0)
+  if (!pixmap_)
     return;
 
   unsigned long min = sample / (60 * 44100);
