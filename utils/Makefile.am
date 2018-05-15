@@ -33,7 +33,7 @@ toc2mp3_LDADD += @AO_LIBS@
 
 toc2mp3_CXXFLAGS = @LAME_CFLAGS@
 
-INCLUDES = -I$(top_builddir)/trackdb
+AM_CPPFLAGS = -I$(top_builddir)/trackdb
 
 man1_MANS = cue2toc.1 toc2cddb.1 toc2cue.1
 EXTRA_DIST = $(man1_MANS)

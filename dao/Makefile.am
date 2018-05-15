@@ -112,7 +112,7 @@ install-data-hook:
 	cd $(DESTDIR)$(datadir)/cdrdao && \
 	mv cdrdao.drivers drivers
 
-INCLUDES =						\
+AM_CPPFLAGS =						\
 	-I$(srcdir)/../trackdb				\
 	-I$(srcdir)/../paranoia				\
 	@scsilib_incl@

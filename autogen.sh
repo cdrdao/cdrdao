@@ -3,11 +3,13 @@
 
 cleanup() {
     echo Cleaning up.
-    make clean
-    make distclean
+    make clean > /dev/null >& /dev/null
+    make distclean > /dev/null >& /dev/null
     find . -name Makefile.in -exec rm {} \;
-    rm aclocal.m4 configure
-    rm -r autom4te.cache
+    rm -f Makefile dao/Makefile gcdmaster/Makefile pccts/antlr/Makefile pccts/dlg/Makefile trackdb/Makefile utils/Makefile
+    find . -name .deps -exec rm -r {} \;
+    rm -f aclocal.m4 configure config.h config.log stamp-h1 specs/cdrdao.fedora.spec config.status gcdmaster/gcdmaster.schemas
+    rm -fr autom4te.cache
     rm -rf scsilib
 }
 
