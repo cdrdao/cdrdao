@@ -121,7 +121,7 @@ GCDMaster has the following configuration options :
      --with-mp3-support   Use the libmad library to add MP3 files support
                           to GCDMAster.
 
-     --without-xdao       Disable build of gcdmaster completely.
+     --without-gcdmaster  Disable build of gcdmaster completely.
 
 
 1.5.  Misc configuration options
