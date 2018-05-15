@@ -229,64 +229,44 @@ fi
 
 dnl Determine source for scsi interface class
 
-if test "$scglib" = yes; then
-  scsilib_dir=scsilib
-  scsilib_incl='-I$(srcdir)/../scsilib/export -I$(srcdir)/../scsilib/export/libschily'
-  scsilib_libs="-L../scsilib/export"
-  en_scsilib="yes"
+scsilib_libs=""
 
-  scsilib_libs="$scsilib_libs -lscg -lschily"
-  scsilib_objs="ScsiIf-lib.o"
-  
-  case "$host" in
-    *-freebsd*)
-			       scsilib_libs="$scsilib_libs -lcam"
-			       ;;
-  esac
+case "$host" in
+  *-linux*)
+      scsilib_libs=""
+      scsilib_objs="ScsiIf-linux.o sg_err.o"
+      ;;
 
-else
+  *-freebsd*)
+      scsilib_libs="-lcam"
+      scsilib_objs="ScsiIf-freebsd-cam.o"
+      ;;
 
-  en_scsilib="no (using native interface)"
-  scsilib_dir=""
-  scsilib_incl=""
-  scsilib_libs=""
+  *-netbsd*)
+      scsilib_libs="-lutil"
+      scsilib_objs="ScsiIf-netbsd.o"
+      ;;
 
-  case "$host" in
-    *-linux*)
-	       scsilib_libs=""
-	       scsilib_objs="ScsiIf-linux.o sg_err.o"
-	       ;;
-    
-    *-freebsd*)
-	       scsilib_libs="-lcam"
-	       scsilib_objs="ScsiIf-freebsd-cam.o"
-	       ;;
+  *-irix*)
+      scsilib_libs=""
+      scsilib_objs="ScsiIf-irix.o"
+      ;;
 
-    *-netbsd*)
-	       scsilib_libs="-lutil"
-	       scsilib_objs="ScsiIf-netbsd.o"
-	       ;;
+  *-darwin*)
+      scsilib_libs="-framework IOKit -framework CoreFoundation"
+      scsilib_objs="ScsiIf-osx.o"
+      ;;
 
-    *-irix*)
-	       scsilib_libs=""
-	       scsilib_objs="ScsiIf-irix.o"
-	       ;;
+  *-pc-cygwin*)
+      scsilib_libs=""
+      scsilib_objs="ScsiIf-win.o"
+      ;;
 
-    *-darwin*)
-	       scsilib_libs="-framework IOKit -framework CoreFoundation"
-	       scsilib_objs="ScsiIf-osx.o"
-	       ;;
+  *)
+      AC_MSG_ERROR([No native interface for operating system $host_os, use --with-libscg])
+      ;;
+esac
 
-    *-pc-cygwin*)
-                scsilib_libs=""
-                scsilib_objs="ScsiIf-win.o"
-                ;;
-
-    *)
-       AC_MSG_ERROR([No native interface for operating system $host_os, use --with-libscg]) 
-       ;;
-    esac
-fi
 
 dnl Selection of buffer code
 case "$host" in
@@ -374,8 +354,6 @@ AC_SUBST(en_toc2mp3)
 AC_SUBST(en_toc2cue)
 AC_SUBST(en_cue2toc)
 AC_SUBST(en_cdrdao)
-AC_SUBST(scsilib_dir)
-AC_SUBST(scsilib_incl)
 AC_SUBST(scsilib_libs)
 AC_SUBST(scsilib_objs)
 AC_SUBST(pcctsinc)
@@ -388,7 +366,6 @@ AC_SUBST(dlg_path)
 
 AM_CONDITIONAL([COND_GCDMASTER], [test "$en_gcdmaster" = yes])
 AM_CONDITIONAL([COND_TOC2MP3], [test "$en_toc2mp3" = yes])
-AM_CONDITIONAL([COND_SCSILIB], [test "$en_scsilib" = yes])
 AM_CONDITIONAL([COND_PCCTS], [test "$en_pccts" = yes])
 AM_CONDITIONAL([COND_MP3], [test "$with_mp3_support" = yes])
 AM_CONDITIONAL([COND_OGG], [test "$with_ogg_support" = yes])
@@ -412,7 +389,6 @@ AC_OUTPUT
 
 echo
 echo "------------------------------------------------------"
-echo "  Building scsilib   : $en_scsilib"
 echo "  Building pccts     : $en_pccts"
 echo "  Building cdrdao    : $en_cdrdao"
 echo "     OGG support     : $with_ogg_support"
