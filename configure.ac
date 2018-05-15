@@ -20,7 +20,7 @@ AC_ARG_WITH(posix-threads,[  --with-posix-threads    use Posix threads for ring 
 
 AC_ARG_WITH(scglib,[  --with-scglib           use bundled libscg SCSI library (see INSTALL) (default is NO)],[scglib=$withval],[scglib=default])
 
-AC_ARG_WITH(xdao,[  --with-xdao             enable build of gcdmaster Gnome GUI front-end (default is YES)],[xdao=$withval],[xdao=default])
+AC_ARG_WITH(gcdmaster,[  --with-gcdmaster             enable build of gcdmaster Gnome GUI front-end (default is YES)],[gcdmaster=$withval],[gcdmaster=default])
 
 AC_ARG_WITH(ogg-support,[  --with-ogg-support      enable OGG format support (default is YES)],[],[with_ogg_support=yes])
 
@@ -213,18 +213,18 @@ AC_PATH_LAME(3.92, [utiltools="$utiltools toc2mp3" en_toc2mp3=yes],
         [echo "Building of toc2mp3 disabled"])
 
 dnl Determine whether we're building the gcdaster GUI front-end
-en_xdao=no
-if test "$xdao" = default; then
-  xdao=yes
+en_gcdmaster=no
+if test "$gcdmaster" = default; then
+  gcdmaster=yes
 fi
-if test "$xdao" = yes; then
-  en_xdao=yes
+if test "$gcdmaster" = yes; then
+  en_gcdmaster=yes
   PKG_CHECK_MODULES(SIGCPP2, sigc++-2.0 >= 2.0.0,[],
-        [echo "Building of gcdmaster disabled"; en_xdao=no])
+        [echo "Building of gcdmaster disabled"; en_gcdmaster=no])
   PKG_CHECK_MODULES(GTKMM2, gtkmm-2.4 >= 2.4.0,[],
-        [echo "Building of gcdmaster disabled"; en_xdao=no])
+        [echo "Building of gcdmaster disabled"; en_gcdmaster=no])
   PKG_CHECK_MODULES(LIBGUIMM2, libgnomeuimm-2.6 >= 2.6.0,[],
-        [echo "Building of gcdmaster disabled"; en_xdao=no])
+        [echo "Building of gcdmaster disabled"; en_gcdmaster=no])
 fi
 
 dnl Determine source for scsi interface class
@@ -347,9 +347,9 @@ if test "$with_mp3_support" = yes; then
 fi
 
 dnl Check for libao support
-if test "$with_mp3_support" = yes || test "$with_ogg_support" = yes || test "$en_xdao" = yes; then
+if test "$with_mp3_support" = yes || test "$with_ogg_support" = yes || test "$en_gcdmaster" = yes; then
 PKG_CHECK_MODULES(AO, ao >= 0.8, [AC_DEFINE(HAVE_AO,1,"")],
-        [echo "Building of gcdmaster disabled"; en_xdao=no])
+        [echo "Building of gcdmaster disabled"; en_gcdmaster=no])
 fi
 
 if test "$with_ogg_support" = yes; then
@@ -369,7 +369,7 @@ case "$host" in
 esac
 
 
-AC_SUBST(en_xdao)
+AC_SUBST(en_gcdmaster)
 AC_SUBST(en_toc2mp3)
 AC_SUBST(en_toc2cue)
 AC_SUBST(en_cue2toc)
@@ -386,7 +386,7 @@ AC_SUBST(mydefs)
 AC_SUBST(antlr_path)
 AC_SUBST(dlg_path)
 
-AM_CONDITIONAL([COND_XDAO], [test "$en_xdao" = yes])
+AM_CONDITIONAL([COND_GCDMASTER], [test "$en_gcdmaster" = yes])
 AM_CONDITIONAL([COND_TOC2MP3], [test "$en_toc2mp3" = yes])
 AM_CONDITIONAL([COND_SCSILIB], [test "$en_scsilib" = yes])
 AM_CONDITIONAL([COND_PCCTS], [test "$en_pccts" = yes])
@@ -397,9 +397,9 @@ AC_CONFIG_FILES([
         trackdb/Makefile
         dao/Makefile
         utils/Makefile
-        xdao/Makefile
-	xdao/gcdmaster.schemas
-        xdao/stock/Makefile
+        gcdmaster/Makefile
+	gcdmaster/gcdmaster.schemas
+        gcdmaster/stock/Makefile
         paranoia/Makefile
         pccts/Makefile
         pccts/antlr/Makefile
@@ -420,5 +420,5 @@ echo "     MP3 support     : $with_mp3_support"
 echo "  Building toc2cue   : $en_toc2cue"
 echo "  Building cue2toc   : $en_cue2toc"
 echo "  Building toc2mp3   : $en_toc2mp3"
-echo "  Building gcdmaster : $en_xdao"
+echo "  Building gcdmaster : $en_gcdmaster"
 echo "------------------------------------------------------"
