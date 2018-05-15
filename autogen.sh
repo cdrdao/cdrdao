@@ -3,6 +3,8 @@
 
 cleanup() {
     echo Cleaning up.
+    make clean
+    make distclean
     find . -name Makefile.in -exec rm {} \;
     rm aclocal.m4 configure
     rm -r autom4te.cache
