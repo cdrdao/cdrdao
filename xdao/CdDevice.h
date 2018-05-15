@@ -20,7 +20,7 @@
 #ifndef __CD_DEVICE_H__
 #define __CD_DEVICE_H__
 
-#include <sigc++/object.h>
+// #include <sigc++/object.h>
 #include <gdk/gdk.h>
 #include <string>
 
