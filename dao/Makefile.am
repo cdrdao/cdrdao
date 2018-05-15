@@ -114,8 +114,7 @@ install-data-hook:
 
 AM_CPPFLAGS =						\
 	-I$(srcdir)/../trackdb				\
-	-I$(srcdir)/../paranoia				\
-	@scsilib_incl@
+	-I$(srcdir)/../paranoia
 
 AM_CXXFLAGS = -DDRIVER_TABLE_FILE=\"$(DRIVER_TABLE_FILE)\"
 

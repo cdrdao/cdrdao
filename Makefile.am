@@ -4,19 +4,13 @@ else
 MAYBE_GCDMASTER =
 endif
 
-if COND_SCSILIB
-MAYBE_SCSILIB = scsilib
-else
-MAYBE_SCSILIB =
-endif
-
 if COND_PCCTS
 MAYBE_PCCTS = pccts
 else
 MAYBE_PCCTS =
 endif
 
-SUBDIRS = $(MAYBE_SCSILIB) $(MAYBE_PCCTS) trackdb utils paranoia dao $(MAYBE_GCDMASTER)
+SUBDIRS = $(MAYBE_PCCTS) trackdb utils paranoia dao $(MAYBE_GCDMASTER)
 
 DIST_SUBDIRS = trackdb utils paranoia dao gcdmaster pccts
 
@@ -30,7 +24,6 @@ EXTRA_DIST =		\
 	README		\
 	README.PlexDAE	\
 	README.Win32	\
-	scsilib		\
 	specs/*.in	\
 	aspi.reg	\
 	cdrdao.lsm	\

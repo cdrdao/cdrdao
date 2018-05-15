@@ -10,22 +10,11 @@ cleanup() {
     find . -name .deps -exec rm -r {} \;
     rm -f aclocal.m4 configure config.h config.log stamp-h1 specs/cdrdao.fedora.spec config.status gcdmaster/gcdmaster.schemas
     rm -fr autom4te.cache
-    rm -rf scsilib
 }
 
 if (( $# > 0 )) && [[ "$1" == "clean" ]]; then
     cleanup
     exit 0
-fi
-
-# This deletes the (old) scsilib dir and unpacks the latest version
-if test -e scsilib.tar.gz ; then
-  rm -rf scsilib
-  echo "Unpacking scsilib.tar.gz"
-  tar xzf scsilib.tar.gz
-  find scsilib -exec chmod +w {} \;
-  echo "Patching scsilib"
-  patch -s -d scsilib -p1 < scsilib.patch
 fi
 
 # Minimum version
