@@ -1,6 +1,19 @@
 #! /bin/sh
 # Run this to generate the configure script and unpack needed packages
 
+cleanup() {
+    echo Cleaning up.
+    find . -name Makefile.in -exec rm {} \;
+    rm aclocal.m4 configure
+    rm -r autom4te.cache
+    rm -rf scsilib
+}
+
+if (( $# > 0 )) && [[ "$1" == "clean" ]]; then
+    cleanup
+    exit 0
+fi
+
 # This deletes the (old) scsilib dir and unpacks the latest version
 if test -e scsilib.tar.gz ; then
   rm -rf scsilib
