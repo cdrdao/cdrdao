@@ -220,9 +220,7 @@ if test "$gcdmaster" = yes; then
   en_gcdmaster=yes
   PKG_CHECK_MODULES(SIGCPP2, sigc++-2.0 >= 2.0.0,[],
         [echo "Building of gcdmaster disabled"; en_gcdmaster=no])
-  PKG_CHECK_MODULES(GTKMM2, gtkmm-2.4 >= 2.4.0,[],
-        [echo "Building of gcdmaster disabled"; en_gcdmaster=no])
-  PKG_CHECK_MODULES(LIBGUIMM2, libgnomeuimm-2.6 >= 2.6.0,[],
+  PKG_CHECK_MODULES(GTKMM3, gtkmm-3.0 >= 3.0.0,[],
         [echo "Building of gcdmaster disabled"; en_gcdmaster=no])
 fi
 
