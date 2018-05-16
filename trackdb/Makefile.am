@@ -42,10 +42,12 @@ PCCTS_GEN_FILES = \
 	TocLexerBase.cpp	\
 	TocLexerBase.h		\
 	TocParserGram.h		\
-	TocParserTokens.h
+	TocParserTokens.h	\
+	AParser.cpp		\
+	DLexerBase.cpp		\
+	ATokenBuffer.cpp
 
-
-nodist_libtrackdb_a_SOURCES = ${PCCTS_GEN_FILES} AParser.cpp DLexerBase.cpp ATokenBuffer.cpp
+nodist_libtrackdb_a_SOURCES = ${PCCTS_GEN_FILES}
 
 AM_CPPFLAGS = -I@pcctsinc@
 ANTLR = @antlr_path@
@@ -56,6 +58,15 @@ TocParser.cpp: $(srcdir)/TocParser.g
 	$(DLG) -C2 -CC -cl TocLexerBase TocLexer.dlg 
 
 TocParserGram.cpp TocLexerBase.cpp: TocParser.cpp
+
+AParser.cpp: @pcctsinc@/$@
+	cp @pcctsinc@/$@ .
+
+DLexerBase.cpp: @pcctsinc@/$@
+	cp @pcctsinc@/$@ .
+
+ATokenBuffer.cpp: @pcctsinc@/$@
+	cp @pcctsinc@/$@ .
 
 AM_CXXFLAGS = @AO_CFLAGS@
 
