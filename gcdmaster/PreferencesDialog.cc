@@ -46,9 +46,6 @@ PreferencesDialog::PreferencesDialog(BaseObjectType* cobject,
 	exit(1);
     }
 
-    m_refClient = Gnome::Conf::Client::get_default_client();
-    m_refClient->add_dir("/apps/gcdmaster");
-
     _applyButton->signal_clicked()
 	.connect(sigc::mem_fun(*this,
 			       &PreferencesDialog::on_button_apply));
@@ -86,8 +83,7 @@ void PreferencesDialog::show()
 
 void PreferencesDialog::readFromGConf()
 {
-    const Glib::ustring text =
-	m_refClient->get_string("/apps/gcdmaster/temp_dir");
+    const Glib::ustring text = configManager->get_string("temp_dir");
     _tempDirEntry->set_text(text);
 }
 
@@ -105,7 +101,7 @@ bool PreferencesDialog::saveToGConf()
     }
 
     try {
-	m_refClient->set("/apps/gcdmaster/temp_dir", text);
+	configManager->set("temp_dir", text);
     } catch (const Glib::Error& error) {
         std::cerr << error.what() << std::endl;
     }

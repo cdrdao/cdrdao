@@ -24,7 +24,6 @@
 #include <assert.h>
 
 #include <gtkmm.h>
-#include <gnome.h>
 
 #include "config.h"
 #include "AddFileDialog.h"

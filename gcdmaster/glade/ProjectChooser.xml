@@ -1,0 +1,730 @@
+<?xml version="1.0"?>
+<!--*- mode: xml -*-->
+<interface>
+  <object class="GtkUIManager" id="uimanager1">
+    <child>
+      <object class="GtkActionGroup" id="actiongroup1">
+        <child>
+          <object class="GtkAction" id="file1">
+            <property name="name">file1</property>
+          </object>
+        </child>
+        <child>
+          <object class="GtkAction" id="new1">
+            <property name="name">new1</property>
+            <property name="label" translatable="yes">_Nuevo</property>
+            <signal handler="on_new1_activate" last_modification_time="Mon, 14 Jun 2004 15:31:47 GMT" name="activate"/>
+          </object>
+        </child>
+        <child>
+          <object class="GtkAction" id="open1">
+            <property name="name">open1</property>
+            <signal handler="on_open1_activate" last_modification_time="Mon, 14 Jun 2004 15:31:47 GMT" name="activate"/>
+          </object>
+        </child>
+        <child>
+          <object class="GtkAction" id="save1">
+            <property name="name">save1</property>
+            <signal handler="on_save1_activate" last_modification_time="Mon, 14 Jun 2004 15:31:47 GMT" name="activate"/>
+          </object>
+        </child>
+        <child>
+          <object class="GtkAction" id="save_as1">
+            <property name="name">save_as1</property>
+            <signal handler="on_save_as1_activate" last_modification_time="Mon, 14 Jun 2004 15:31:47 GMT" name="activate"/>
+          </object>
+        </child>
+        <child>
+          <object class="GtkAction" id="quit1">
+            <property name="name">quit1</property>
+            <signal handler="on_quit1_activate" last_modification_time="Mon, 14 Jun 2004 15:31:47 GMT" name="activate"/>
+          </object>
+        </child>
+        <child>
+          <object class="GtkAction" id="edit1">
+            <property name="name">edit1</property>
+          </object>
+        </child>
+        <child>
+          <object class="GtkAction" id="cut1">
+            <property name="name">cut1</property>
+            <signal handler="on_cut1_activate" last_modification_time="Mon, 14 Jun 2004 15:31:47 GMT" name="activate"/>
+          </object>
+        </child>
+        <child>
+          <object class="GtkAction" id="copy1">
+            <property name="name">copy1</property>
+            <signal handler="on_copy1_activate" last_modification_time="Mon, 14 Jun 2004 15:31:47 GMT" name="activate"/>
+          </object>
+        </child>
+        <child>
+          <object class="GtkAction" id="paste1">
+            <property name="name">paste1</property>
+            <signal handler="on_paste1_activate" last_modification_time="Mon, 14 Jun 2004 15:31:47 GMT" name="activate"/>
+          </object>
+        </child>
+        <child>
+          <object class="GtkAction" id="clear1">
+            <property name="name">clear1</property>
+            <signal handler="on_clear1_activate" last_modification_time="Mon, 14 Jun 2004 15:31:47 GMT" name="activate"/>
+          </object>
+        </child>
+        <child>
+          <object class="GtkAction" id="properties1">
+            <property name="name">properties1</property>
+            <signal handler="on_properties1_activate" last_modification_time="Mon, 14 Jun 2004 15:31:47 GMT" name="activate"/>
+          </object>
+        </child>
+        <child>
+          <object class="GtkAction" id="preferences1">
+            <property name="name">preferences1</property>
+            <signal handler="on_preferences1_activate" last_modification_time="Mon, 14 Jun 2004 15:31:47 GMT" name="activate"/>
+          </object>
+        </child>
+        <child>
+          <object class="GtkAction" id="view1">
+            <property name="name">view1</property>
+          </object>
+        </child>
+        <child>
+          <object class="GtkAction" id="help1">
+            <property name="name">help1</property>
+          </object>
+        </child>
+        <child>
+          <object class="GtkAction" id="about1">
+            <property name="name">about1</property>
+            <signal handler="on_about1_activate" last_modification_time="Mon, 14 Jun 2004 15:31:47 GMT" name="activate"/>
+          </object>
+        </child>
+      </object>
+    </child>
+    <ui>
+      <menubar name="menubar1">
+        <menu action="file1">
+          <menuitem action="new1"/>
+          <menuitem action="open1"/>
+          <menuitem action="save1"/>
+          <menuitem action="save_as1"/>
+          <separator/>
+          <menuitem action="quit1"/>
+        </menu>
+        <menu action="edit1">
+          <menuitem action="cut1"/>
+          <menuitem action="copy1"/>
+          <menuitem action="paste1"/>
+          <menuitem action="clear1"/>
+          <separator/>
+          <menuitem action="properties1"/>
+          <separator/>
+          <menuitem action="preferences1"/>
+        </menu>
+        <menu action="view1"/>
+        <menu action="help1">
+          <menuitem action="about1"/>
+        </menu>
+      </menubar>
+    </ui>
+  </object>
+  <object class="GtkWindow" id="app1">
+    <property name="visible">True</property>
+    <property name="type">GTK_WINDOW_TOPLEVEL</property>
+    <property name="window_position">GTK_WIN_POS_NONE</property>
+    <property name="modal">False</property>
+    <property name="resizable">True</property>
+    <property name="destroy_with_parent">False</property>
+    <property name="decorated">True</property>
+    <property name="skip_taskbar_hint">False</property>
+    <property name="skip_pager_hint">False</property>
+    <property name="type_hint">GDK_WINDOW_TYPE_HINT_NORMAL</property>
+    <property name="gravity">GDK_GRAVITY_NORTH_WEST</property>
+    <property name="enable_layout_config">True</property>
+    <child internal-child="dock">
+      <object class="BonoboDock" id="bonobodock1">
+        <property name="visible">True</property>
+        <property name="allow_floating">True</property>
+        <child>
+          <object class="BonoboDockItem" id="bonobodockitem1">
+            <property name="visible">True</property>
+            <property name="shadow_type">GTK_SHADOW_NONE</property>
+            <child>
+              <object class="GtkMenuBar" constructor="uimanager1" id="menubar1">
+                <property name="visible">True</property>
+              </object>
+            </child>
+          </object>
+          <packing>
+            <property name="placement">BONOBO_DOCK_TOP</property>
+            <property name="band">0</property>
+            <property name="position">0</property>
+            <property name="offset">0</property>
+            <property name="behavior">BONOBO_DOCK_ITEM_BEH_EXCLUSIVE|BONOBO_DOCK_ITEM_BEH_NEVER_VERTICAL|BONOBO_DOCK_ITEM_BEH_LOCKED</property>
+          </packing>
+        </child>
+        <child>
+          <object class="BonoboDockItem" id="bonobodockitem2">
+            <property name="visible">True</property>
+            <property name="shadow_type">GTK_SHADOW_OUT</property>
+            <child>
+              <object class="GtkToolbar" id="toolbar1">
+                <property name="visible">True</property>
+                <property name="orientation">GTK_ORIENTATION_HORIZONTAL</property>
+                <property name="toolbar_style">GTK_TOOLBAR_ICONS</property>
+                <property name="tooltips">True</property>
+                <property name="show_arrow">True</property>
+                <child>
+                  <object class="GtkToolButton" id="toolbutton1">
+                    <property name="visible">True</property>
+                    <property name="tooltip-text" translatable="yes">Archivo nuevo</property>
+                    <property name="stock_id">gtk-new</property>
+                    <property name="visible_horizontal">True</property>
+                    <property name="visible_vertical">True</property>
+                    <property name="is_important">False</property>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="homogeneous">True</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkToolButton" id="toolbutton2">
+                    <property name="visible">True</property>
+                    <property name="tooltip-text" translatable="yes">Abrir un archivo</property>
+                    <property name="stock_id">gtk-open</property>
+                    <property name="visible_horizontal">True</property>
+                    <property name="visible_vertical">True</property>
+                    <property name="is_important">False</property>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="homogeneous">True</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkToolButton" id="toolbutton3">
+                    <property name="visible">True</property>
+                    <property name="tooltip-text" translatable="yes">Guardar archivo</property>
+                    <property name="stock_id">gtk-save</property>
+                    <property name="visible_horizontal">True</property>
+                    <property name="visible_vertical">True</property>
+                    <property name="is_important">False</property>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="homogeneous">True</property>
+                  </packing>
+                </child>
+              </object>
+            </child>
+          </object>
+          <packing>
+            <property name="placement">BONOBO_DOCK_TOP</property>
+            <property name="band">1</property>
+            <property name="position">0</property>
+            <property name="offset">0</property>
+            <property name="behavior">BONOBO_DOCK_ITEM_BEH_EXCLUSIVE|BONOBO_DOCK_ITEM_BEH_LOCKED</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkHBox" id="mainbox">
+            <property name="visible">True</property>
+            <property name="homogeneous">False</property>
+            <property name="spacing">10</property>
+            <child>
+              <object class="GtkImage" id="image1">
+                <property name="visible">True</property>
+                <property name="xalign">0.5</property>
+                <property name="yalign">0.5</property>
+                <property name="xpad">0</property>
+                <property name="ypad">0</property>
+              </object>
+              <packing>
+                <property name="padding">0</property>
+                <property name="expand">True</property>
+                <property name="fill">True</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkVBox" id="vbox3">
+                <property name="border_width">10</property>
+                <property name="visible">True</property>
+                <property name="homogeneous">False</property>
+                <property name="spacing">10</property>
+                <child>
+                  <object class="GtkLabel" id="label2">
+                    <property name="visible">True</property>
+                    <property name="label" translatable="yes">&lt;b&gt;New Project&lt;/b&gt;</property>
+                    <property name="use_underline">False</property>
+                    <property name="use_markup">True</property>
+                    <property name="justify">GTK_JUSTIFY_LEFT</property>
+                    <property name="wrap">False</property>
+                    <property name="selectable">False</property>
+                    <property name="xalign">0</property>
+                    <property name="yalign">0.5</property>
+                    <property name="xpad">0</property>
+                    <property name="ypad">0</property>
+                  </object>
+                  <packing>
+                    <property name="padding">0</property>
+                    <property name="expand">False</property>
+                    <property name="fill">False</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton" id="DataButton">
+                    <property name="can_focus">True</property>
+                    <property name="relief">GTK_RELIEF_NONE</property>
+                    <property name="focus_on_click">True</property>
+                    <child>
+                      <object class="GtkHBox" id="hbox4">
+                        <property name="visible">True</property>
+                        <property name="homogeneous">False</property>
+                        <property name="spacing">10</property>
+                        <child>
+                          <object class="GtkImage" id="DataImage">
+                            <property name="visible">True</property>
+                            <property name="xalign">0</property>
+                            <property name="yalign">0</property>
+                            <property name="xpad">0</property>
+                            <property name="ypad">0</property>
+                          </object>
+                          <packing>
+                            <property name="padding">0</property>
+                            <property name="expand">False</property>
+                            <property name="fill">False</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkVBox" id="vbox4">
+                            <property name="visible">True</property>
+                            <property name="homogeneous">False</property>
+                            <property name="spacing">0</property>
+                            <child>
+                              <object class="GtkLabel" id="label3">
+                                <property name="visible">True</property>
+                                <property name="label" translatable="yes">&lt;b&gt;Data&lt;/b&gt;</property>
+                                <property name="use_underline">False</property>
+                                <property name="use_markup">True</property>
+                                <property name="justify">GTK_JUSTIFY_LEFT</property>
+                                <property name="wrap">False</property>
+                                <property name="selectable">False</property>
+                                <property name="xalign">0</property>
+                                <property name="yalign">0.5</property>
+                                <property name="xpad">0</property>
+                                <property name="ypad">0</property>
+                              </object>
+                              <packing>
+                                <property name="padding">0</property>
+                                <property name="expand">False</property>
+                                <property name="fill">False</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="label5">
+                                <property name="visible">True</property>
+                                <property name="label" translatable="yes">Store files in a CD</property>
+                                <property name="use_underline">False</property>
+                                <property name="use_markup">False</property>
+                                <property name="justify">GTK_JUSTIFY_LEFT</property>
+                                <property name="wrap">False</property>
+                                <property name="selectable">False</property>
+                                <property name="xalign">0</property>
+                                <property name="yalign">0.5</property>
+                                <property name="xpad">0</property>
+                                <property name="ypad">0</property>
+                              </object>
+                              <packing>
+                                <property name="padding">0</property>
+                                <property name="expand">False</property>
+                                <property name="fill">False</property>
+                              </packing>
+                            </child>
+                          </object>
+                          <packing>
+                            <property name="padding">0</property>
+                            <property name="expand">False</property>
+                            <property name="fill">False</property>
+                          </packing>
+                        </child>
+                      </object>
+                    </child>
+                  </object>
+                  <packing>
+                    <property name="padding">0</property>
+                    <property name="expand">False</property>
+                    <property name="fill">False</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton" id="AudioButton">
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="relief">GTK_RELIEF_NONE</property>
+                    <property name="focus_on_click">True</property>
+                    <child>
+                      <object class="GtkHBox" id="hbox5">
+                        <property name="visible">True</property>
+                        <property name="homogeneous">False</property>
+                        <property name="spacing">10</property>
+                        <child>
+                          <object class="GtkImage" id="AudioImage">
+                            <property name="visible">True</property>
+                            <property name="xalign">0</property>
+                            <property name="yalign">0</property>
+                            <property name="xpad">0</property>
+                            <property name="ypad">0</property>
+                          </object>
+                          <packing>
+                            <property name="padding">0</property>
+                            <property name="expand">False</property>
+                            <property name="fill">False</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkVBox" id="vbox5">
+                            <property name="visible">True</property>
+                            <property name="homogeneous">False</property>
+                            <property name="spacing">0</property>
+                            <child>
+                              <object class="GtkLabel" id="label6">
+                                <property name="visible">True</property>
+                                <property name="label" translatable="yes">&lt;b&gt;Audio&lt;/b&gt;</property>
+                                <property name="use_underline">False</property>
+                                <property name="use_markup">True</property>
+                                <property name="justify">GTK_JUSTIFY_LEFT</property>
+                                <property name="wrap">False</property>
+                                <property name="selectable">False</property>
+                                <property name="xalign">0</property>
+                                <property name="yalign">0.5</property>
+                                <property name="xpad">0</property>
+                                <property name="ypad">0</property>
+                              </object>
+                              <packing>
+                                <property name="padding">0</property>
+                                <property name="expand">False</property>
+                                <property name="fill">False</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="label7">
+                                <property name="visible">True</property>
+                                <property name="label" translatable="yes">Create an audio CD from audio files</property>
+                                <property name="use_underline">False</property>
+                                <property name="use_markup">False</property>
+                                <property name="justify">GTK_JUSTIFY_LEFT</property>
+                                <property name="wrap">False</property>
+                                <property name="selectable">False</property>
+                                <property name="xalign">0</property>
+                                <property name="yalign">0.5</property>
+                                <property name="xpad">0</property>
+                                <property name="ypad">0</property>
+                              </object>
+                              <packing>
+                                <property name="padding">0</property>
+                                <property name="expand">False</property>
+                                <property name="fill">False</property>
+                              </packing>
+                            </child>
+                          </object>
+                          <packing>
+                            <property name="padding">0</property>
+                            <property name="expand">False</property>
+                            <property name="fill">False</property>
+                          </packing>
+                        </child>
+                      </object>
+                    </child>
+                  </object>
+                  <packing>
+                    <property name="padding">0</property>
+                    <property name="expand">False</property>
+                    <property name="fill">False</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton" id="VideoButton">
+                    <property name="can_focus">True</property>
+                    <property name="relief">GTK_RELIEF_NONE</property>
+                    <property name="focus_on_click">True</property>
+                    <child>
+                      <object class="GtkHBox" id="hbox7">
+                        <property name="visible">True</property>
+                        <property name="homogeneous">False</property>
+                        <property name="spacing">10</property>
+                        <child>
+                          <object class="GtkImage" id="VideoImage">
+                            <property name="visible">True</property>
+                            <property name="xalign">0</property>
+                            <property name="yalign">0</property>
+                            <property name="xpad">0</property>
+                            <property name="ypad">0</property>
+                          </object>
+                          <packing>
+                            <property name="padding">0</property>
+                            <property name="expand">False</property>
+                            <property name="fill">False</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkVBox" id="vbox7">
+                            <property name="visible">True</property>
+                            <property name="homogeneous">False</property>
+                            <property name="spacing">0</property>
+                            <child>
+                              <object class="GtkLabel" id="label10">
+                                <property name="visible">True</property>
+                                <property name="label" translatable="yes">&lt;b&gt;Video&lt;/b&gt;</property>
+                                <property name="use_underline">False</property>
+                                <property name="use_markup">True</property>
+                                <property name="justify">GTK_JUSTIFY_LEFT</property>
+                                <property name="wrap">False</property>
+                                <property name="selectable">False</property>
+                                <property name="xalign">0</property>
+                                <property name="yalign">0.5</property>
+                                <property name="xpad">0</property>
+                                <property name="ypad">0</property>
+                              </object>
+                              <packing>
+                                <property name="padding">0</property>
+                                <property name="expand">False</property>
+                                <property name="fill">False</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="label11">
+                                <property name="visible">True</property>
+                                <property name="label" translatable="yes">Create a Video CD from mpeg files</property>
+                                <property name="use_underline">False</property>
+                                <property name="use_markup">False</property>
+                                <property name="justify">GTK_JUSTIFY_LEFT</property>
+                                <property name="wrap">False</property>
+                                <property name="selectable">False</property>
+                                <property name="xalign">0</property>
+                                <property name="yalign">0.5</property>
+                                <property name="xpad">0</property>
+                                <property name="ypad">0</property>
+                              </object>
+                              <packing>
+                                <property name="padding">0</property>
+                                <property name="expand">False</property>
+                                <property name="fill">False</property>
+                              </packing>
+                            </child>
+                          </object>
+                          <packing>
+                            <property name="padding">0</property>
+                            <property name="expand">False</property>
+                            <property name="fill">False</property>
+                          </packing>
+                        </child>
+                      </object>
+                    </child>
+                  </object>
+                  <packing>
+                    <property name="padding">0</property>
+                    <property name="expand">False</property>
+                    <property name="fill">False</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton" id="CopyButton">
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="relief">GTK_RELIEF_NONE</property>
+                    <property name="focus_on_click">True</property>
+                    <child>
+                      <object class="GtkHBox" id="hbox6">
+                        <property name="visible">True</property>
+                        <property name="homogeneous">False</property>
+                        <property name="spacing">10</property>
+                        <child>
+                          <object class="GtkImage" id="CopyImage">
+                            <property name="visible">True</property>
+                            <property name="xalign">0</property>
+                            <property name="yalign">0</property>
+                            <property name="xpad">0</property>
+                            <property name="ypad">0</property>
+                          </object>
+                          <packing>
+                            <property name="padding">0</property>
+                            <property name="expand">False</property>
+                            <property name="fill">False</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkVBox" id="vbox6">
+                            <property name="visible">True</property>
+                            <property name="homogeneous">False</property>
+                            <property name="spacing">0</property>
+                            <child>
+                              <object class="GtkLabel" id="label8">
+                                <property name="visible">True</property>
+                                <property name="label" translatable="yes">&lt;b&gt;Copy&lt;/b&gt;</property>
+                                <property name="use_underline">False</property>
+                                <property name="use_markup">True</property>
+                                <property name="justify">GTK_JUSTIFY_LEFT</property>
+                                <property name="wrap">False</property>
+                                <property name="selectable">False</property>
+                                <property name="xalign">0</property>
+                                <property name="yalign">0.5</property>
+                                <property name="xpad">0</property>
+                                <property name="ypad">0</property>
+                              </object>
+                              <packing>
+                                <property name="padding">0</property>
+                                <property name="expand">False</property>
+                                <property name="fill">False</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="label9">
+                                <property name="visible">True</property>
+                                <property name="label" translatable="yes">Make an exact copy of a CD</property>
+                                <property name="use_underline">False</property>
+                                <property name="use_markup">False</property>
+                                <property name="justify">GTK_JUSTIFY_LEFT</property>
+                                <property name="wrap">False</property>
+                                <property name="selectable">False</property>
+                                <property name="xalign">0</property>
+                                <property name="yalign">0.5</property>
+                                <property name="xpad">0</property>
+                                <property name="ypad">0</property>
+                              </object>
+                              <packing>
+                                <property name="padding">0</property>
+                                <property name="expand">False</property>
+                                <property name="fill">False</property>
+                              </packing>
+                            </child>
+                          </object>
+                          <packing>
+                            <property name="padding">0</property>
+                            <property name="expand">False</property>
+                            <property name="fill">False</property>
+                          </packing>
+                        </child>
+                      </object>
+                    </child>
+                  </object>
+                  <packing>
+                    <property name="padding">0</property>
+                    <property name="expand">False</property>
+                    <property name="fill">False</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton" id="DumpButton">
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="relief">GTK_RELIEF_NONE</property>
+                    <property name="focus_on_click">True</property>
+                    <child>
+                      <object class="GtkHBox" id="hbox8">
+                        <property name="visible">True</property>
+                        <property name="homogeneous">False</property>
+                        <property name="spacing">10</property>
+                        <child>
+                          <object class="GtkImage" id="DumpImage">
+                            <property name="visible">True</property>
+                            <property name="xalign">0</property>
+                            <property name="yalign">0</property>
+                            <property name="xpad">0</property>
+                            <property name="ypad">0</property>
+                          </object>
+                          <packing>
+                            <property name="padding">0</property>
+                            <property name="expand">False</property>
+                            <property name="fill">False</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkVBox" id="vbox8">
+                            <property name="visible">True</property>
+                            <property name="homogeneous">False</property>
+                            <property name="spacing">0</property>
+                            <child>
+                              <object class="GtkLabel" id="label12">
+                                <property name="visible">True</property>
+                                <property name="label" translatable="yes">&lt;b&gt;Image&lt;/b&gt;</property>
+                                <property name="use_underline">False</property>
+                                <property name="use_markup">True</property>
+                                <property name="justify">GTK_JUSTIFY_LEFT</property>
+                                <property name="wrap">False</property>
+                                <property name="selectable">False</property>
+                                <property name="xalign">0</property>
+                                <property name="yalign">0.5</property>
+                                <property name="xpad">0</property>
+                                <property name="ypad">0</property>
+                              </object>
+                              <packing>
+                                <property name="padding">0</property>
+                                <property name="expand">False</property>
+                                <property name="fill">False</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="label13">
+                                <property name="visible">True</property>
+                                <property name="label" translatable="yes">Create a file image from a CD</property>
+                                <property name="use_underline">False</property>
+                                <property name="use_markup">False</property>
+                                <property name="justify">GTK_JUSTIFY_LEFT</property>
+                                <property name="wrap">False</property>
+                                <property name="selectable">False</property>
+                                <property name="xalign">0</property>
+                                <property name="yalign">0.5</property>
+                                <property name="xpad">0</property>
+                                <property name="ypad">0</property>
+                              </object>
+                              <packing>
+                                <property name="padding">0</property>
+                                <property name="expand">False</property>
+                                <property name="fill">False</property>
+                              </packing>
+                            </child>
+                          </object>
+                          <packing>
+                            <property name="padding">0</property>
+                            <property name="expand">False</property>
+                            <property name="fill">False</property>
+                          </packing>
+                        </child>
+                      </object>
+                    </child>
+                  </object>
+                  <packing>
+                    <property name="padding">0</property>
+                    <property name="expand">False</property>
+                    <property name="fill">False</property>
+                  </packing>
+                </child>
+              </object>
+              <packing>
+                <property name="padding">0</property>
+                <property name="expand">False</property>
+                <property name="fill">True</property>
+              </packing>
+            </child>
+          </object>
+        </child>
+      </object>
+      <packing>
+        <property name="padding">0</property>
+        <property name="expand">True</property>
+        <property name="fill">True</property>
+      </packing>
+    </child>
+    <child internal-child="appbar">
+      <object class="GnomeAppBar" id="appbar1">
+        <property name="visible">True</property>
+        <property name="has_progress">True</property>
+        <property name="has_status">True</property>
+      </object>
+      <packing>
+        <property name="padding">0</property>
+        <property name="expand">True</property>
+        <property name="fill">True</property>
+      </packing>
+    </child>
+  </object>
+</interface>

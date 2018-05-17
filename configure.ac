@@ -218,6 +218,7 @@ if test "$gcdmaster" = default; then
 fi
 if test "$gcdmaster" = yes; then
   en_gcdmaster=yes
+  GLIB_GSETTINGS
   PKG_CHECK_MODULES(SIGCPP2, sigc++-2.0 >= 2.0.0,[],
         [echo "Building of gcdmaster disabled"; en_gcdmaster=no])
   PKG_CHECK_MODULES(GTKMM3, gtkmm-3.0 >= 3.0.0,[],

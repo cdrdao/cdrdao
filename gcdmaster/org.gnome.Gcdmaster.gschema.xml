@@ -1,0 +1,14 @@
+<schemalist>
+  <schema id="org.gnome.Gcdmaster" path="/org/gnome/Gcdmaster/">
+    <key name="temp-dir" type="s">
+      <default>'/tmp'</default>
+      <summary>Temporary files directory</summary>
+      <description>Directory in which temporary decoded audio files are stored</description>
+    </key>
+    <key name="manual-devices" type="as">
+      <default>[]</default>
+      <summary>Manually configured devices</summary>
+      <description>List of manually configured devices</description>
+    </key>
+  </schema>
+</schemalist>

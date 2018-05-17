@@ -1,40 +1,18 @@
 #include "Icons.h"
 #include "stock/pixbufs.h"
 
-Gtk::StockID Icons::PLAY("gcdmaster-play");
-Gtk::StockID Icons::STOP("gcdmaster-stop");
-Gtk::StockID Icons::PAUSE("gcdmaster-pause");
-Gtk::StockID Icons::GCDMASTER("gcdmaster-gcdmaster");
-Gtk::StockID Icons::OPEN("gcdmaster-open");
-Gtk::StockID Icons::AUDIOCD("gcdmaster-audiocd");
-Gtk::StockID Icons::COPYCD("gcdmaster-copycd");
-Gtk::StockID Icons::DUMPCD("gcdmaster-dumpcd");
-Gtk::StockID Icons::RECORD("gcdmaster-record");
+const char* Icons::PLAY = "gcdmaster-play";
+const char* Icons::STOP = "gcdmaster-stop";
+const char* Icons::PAUSE = "gcdmaster-pause";
+const char* Icons::GCDMASTER = "gcdmaster-gcdmaster";
+const char* Icons::OPEN = "gcdmaster-open";
+const char* Icons::AUDIOCD = "gcdmaster-audiocd";
+const char* Icons::COPYCD = "gcdmaster-copycd";
+const char* Icons::DUMPCD = "gcdmaster-dumpcd";
+const char* Icons::RECORD = "gcdmaster-record";
 
-struct Icons::IconEntry Icons::iconList[] = {
-  { Icons::PLAY,      play_pixbuf },
-  { Icons::STOP,      stop_pixbuf },
-  { Icons::PAUSE,     pause_pixbuf },
-  { Icons::GCDMASTER, gcdmaster_pixbuf },
-  { Icons::OPEN,      open_pixbuf },
-  { Icons::AUDIOCD,   audiocd_pixbuf },
-  { Icons::COPYCD,    copycd_pixbuf},
-  { Icons::DUMPCD,    dumpcd_pixbuf},
-  { Icons::RECORD,    record_pixbuf}
-};
 
-void Icons::registerStockIcons()
+void Icons::registerIcons()
 {
-  Glib::RefPtr<Gtk::IconFactory> factory = Gtk::IconFactory::create();
-  factory->add_default();
-
-  for (unsigned i = 0; i < G_N_ELEMENTS(iconList); i++) {
-    Gtk::IconSource* source = new Gtk::IconSource;
-    Glib::RefPtr<Gdk::Pixbuf> pixbuf =
-        Gdk::Pixbuf::create_from_inline(-1, iconList[i].pixbuf);
-    source->set_pixbuf(pixbuf);
-    Gtk::IconSet* set = new Gtk::IconSet;
-    set->add_source(*source);
-    factory->add(iconList[i].name, *set);
-  }
+    Gtk::IconTheme::get_default()->append_search_path(GCDMASTER_ICONDIR);
 }

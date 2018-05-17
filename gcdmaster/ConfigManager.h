@@ -20,7 +20,8 @@
 #ifndef __CONFIG_MANAGER_H
 #define __CONFIG_MANAGER_H
 
-#include <gconfmm.h>
+#include <glibmm.h>
+#include <giomm.h>
 
 class ConfigManager
 {
@@ -28,10 +29,11 @@ class ConfigManager
     ConfigManager();
     virtual ~ConfigManager() {}
 
-    Glib::RefPtr<Gnome::Conf::Client> client() { return client_; }
+    void set(const Glib::ustring key, const Glib::ustring value);
+    Glib::ustring get_string(const Glib::ustring key);
 
  protected:
-    Glib::RefPtr<Gnome::Conf::Client> client_;
+    Glib::RefPtr<Gio::Settings> client_;
 };
 
 #endif

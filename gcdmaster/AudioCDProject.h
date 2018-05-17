@@ -22,7 +22,6 @@
 
 #include <gtkmm.h>
 #include <gtk/gtk.h>
-#include <libgnomeuimm.h>
 
 class Toc;
 class Track;

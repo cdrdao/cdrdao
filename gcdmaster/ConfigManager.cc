@@ -21,6 +21,15 @@
 
 ConfigManager::ConfigManager()
 {
-    client_ = Gnome::Conf::Client::get_default_client();
-    client_->add_dir("/apps/gcdmaster");
+    client_ = Gio::Settings::create("org.gnome.Gcdmaster");
+}
+
+void ConfigManager::set(const Glib::ustring key, const Glib::ustring value)
+{
+    client_->set_string(key, value);
+}
+
+Glib::ustring ConfigManager::get_string(const Glib::ustring key)
+{
+    return client_->get_string(key);
 }

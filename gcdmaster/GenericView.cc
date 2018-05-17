@@ -22,12 +22,12 @@
 
 GenericView::GenericView()
 {
-  tocEditView_ = (TocEditView*)0;
+  tocEditView_ = (TocEditView*)NULL;
 }
 
 GenericView::~GenericView()
 {
-  tocEditView_ = (TocEditView*)0;
+  tocEditView_ = (TocEditView*)NULL;
 }
 
 TocEditView *GenericView::tocEditView() const

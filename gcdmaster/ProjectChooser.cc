@@ -36,7 +36,8 @@ ProjectChooser::ProjectChooser()
   Glib::RefPtr<Gnome::Glade::Xml> refXml;
   try
   {
-    refXml = Gnome::Glade::Xml::create(CDRDAO_GLADEDIR "/ProjectChooser.glade", "mainbox");
+    refXml = Gnome::Glade::Xml::create(GCDMASTER_GLADEDIR "/ProjectChooser.glade",
+                                       "mainbox");
   }
   catch(const Gnome::Glade::XmlError& ex)
   {

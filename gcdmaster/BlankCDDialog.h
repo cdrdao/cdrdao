@@ -20,7 +20,7 @@
 #ifndef __BLANK_CD_DIALOG_H
 #define __BLANK_CD_DIALOG_H
 
-#include <libgnomeuimm.h>
+#include <gtkmm.h>
 
 class Project;
 

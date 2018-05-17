@@ -23,37 +23,33 @@
 #include <stdlib.h>
 
 #include <gtkmm.h>
-#include <gnome.h>
-#include <gconfmm.h>
-
-#include <gtk/gtk.h>
-
-#include <libgnomeuimm.h>
 
 #include "config.h"
 
-#include "xcdrdao.h"
-#include "TocEdit.h"
-#include "TrackInfoDialog.h"
-#include "AddSilenceDialog.h"
-#include "AddFileDialog.h"
-#include "DeviceConfDialog.h"
-#include "PreferencesDialog.h"
-#include "ProgressDialog.h"
-#include "guiUpdate.h"
-#include "CdDevice.h"
+//#include "xcdrdao.h"
+//#include "TocEdit.h"
+//#include "TrackInfoDialog.h"
+//#include "AddSilenceDialog.h"
+//#include "AddFileDialog.h"
+//#include "DeviceConfDialog.h"
+//#include "PreferencesDialog.h"
+///#include "ProgressDialog.h"
+//#include "guiUpdate.h"
+//#include "CdDevice.h"
 #include "ProcessMonitor.h"
-#include "ProjectChooser.h"
+//#include "ProjectChooser.h"
 #include "ConfigManager.h"
+#include "Icons.h"
 
 #include "gcdmaster.h"
 
 #include "port.h"
 
-DeviceConfDialog*   deviceConfDialog = NULL;
+//DeviceConfDialog*   deviceConfDialog = NULL;
 ProcessMonitor*     PROCESS_MONITOR = NULL;
-ProgressDialogPool* PROGRESS_POOL = NULL;
-PreferencesDialog*  preferencesDialog = NULL;
+//ProgressDialogPool* PROGRESS_POOL = NULL;
+
+//PreferencesDialog*  preferencesDialog = NULL;
 ConfigManager*      configManager = NULL;
 
 static int VERBOSE = 0;
@@ -86,73 +82,73 @@ static RETSIGTYPE signalHandler(int sig)
 
 int main(int argc, char* argv[])
 {
-  Gnome::Main application("GnomeCDMaster", VERSION,
-                          Gnome::UI::module_info_get(), argc, argv);
+  auto app = Gtk::Application::create(argc, argv, "app.gcdmaster");
    
-  Gnome::Conf::init();
-
   // settings
-  CdDevice::importSettings();
+  // CdDevice::importSettings();
 
-  // create GConf configuration manager
+  // create configuration manager
   configManager = new ConfigManager();
+
+  // Register gcdmaster icons
+  Icons::registerIcons();
 
   // setup process monitor
   PROCESS_MONITOR = new ProcessMonitor;
   installSignalHandler(SIGCHLD, signalHandler);
 
   // setup periodic GUI updates
-  Glib::signal_timeout().connect(sigc::ptr_fun(&guiUpdatePeriodic), 2000);
+//  Glib::signal_timeout().connect(sigc::ptr_fun(&guiUpdatePeriodic), 2000);
 
   installSignalHandler(SIGPIPE, SIG_IGN);
 
   // scan for SCSI devices
-  CdDevice::scan();
+  // CdDevice::scan();
 
   // this forces a CdDevice::updateDeviceStatus() so
   // when gcdmaster is first show we already have the device status
-  guiUpdatePeriodic();
+//  guiUpdatePeriodic();
 
-  deviceConfDialog = new DeviceConfDialog;
-  PROGRESS_POOL = new ProgressDialogPool;
+//  deviceConfDialog = new DeviceConfDialog;
+//  PROGRESS_POOL = new ProgressDialogPool;
 
   // Create Preferences dialog from Glade file.
-  Glib::RefPtr<Gnome::Glade::Xml> refXml;
-  try {
-      refXml = Gnome::Glade::Xml::create(CDRDAO_GLADEDIR "/Preferences.glade");
-  } catch(const Gnome::Glade::XmlError& ex) {
-      std::cerr << ex.what() << std::endl;
-      exit(1);
-  }
-  refXml->get_widget_derived("PrefDialog", preferencesDialog);
-  if (!preferencesDialog) {
-      std::cerr << "Unable to create Preferences dialog from glade file\n" 
-	  CDRDAO_GLADEDIR "/Preferences.glade" << std::endl;
-      exit(1);
-  }
+  // Glib::RefPtr<Gnome::Glade::Xml> refXml;
+  // try {
+  //     refXml = Gnome::Glade::Xml::create(GCDMASTER_GLADEDIR "/Preferences.glade");
+  // } catch(const Gnome::Glade::XmlError& ex) {
+  //     std::cerr << ex.what() << std::endl;
+  //     exit(1);
+  // }
+  // refXml->get_widget_derived("PrefDialog", preferencesDialog);
+  // if (!preferencesDialog) {
+  //     std::cerr << "Unable to create Preferences dialog from glade file\n" 
+  //         CDRDAO_GLADEDIR "/Preferences.glade" << std::endl;
+  //     exit(1);
+  // }
 
-  GCDMaster* gcdmaster = new GCDMaster;
-  gcdmaster->show();
+  GCDMaster gcdmaster;
+//  gcdmaster->show();
 
   bool openChooser = true;
 
-  while (argc > 1) {
+  // while (argc > 1) {
 
-    if (gcdmaster->openNewProject(argv[1]))
-      openChooser = false; 
+  //   if (gcdmaster->openNewProject(argv[1]))
+  //     openChooser = false; 
 
-    argv++;
-    argc--;
-  }
+  //   argv++;
+  //   argc--;
+  // }
 
-  if (openChooser)
-    gcdmaster->newChooserWindow();
+  // if (openChooser)
+  //   gcdmaster->newChooserWindow();
 
-  application.run();
+  app->run(gcdmaster);
 
   // save settings
-  CdDevice::exportSettings();
-  gnome_config_sync();
+  // CdDevice::exportSettings();
+//  gnome_config_sync();
 
   return 0;
 }

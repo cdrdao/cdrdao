@@ -28,7 +28,6 @@
 #include <assert.h>
 
 #include <gtkmm.h>
-#include <gnome.h>
 
 #include "TocEdit.h"
 #include "CdDevice.h"
@@ -392,7 +391,7 @@ bool CdDevice::recordDao(Gtk::Window& parent, TocEdit *tocEdit, int simulate,
   // Create temporary toc file. Get temporary directory from
   // ConfigManager, then append mkstemp template.
   Glib::ustring tempdir =
-      configManager->client()->get_string("/apps/gcdmaster/temp_dir");
+      configManager->get_string("temp_dir");
   int length = tempdir.length();
   tocFileName = (char*)alloca(length + 24);
 
@@ -1038,7 +1037,7 @@ void CdDevice::importSettings()
  */
 void CdDevice::exportSettings()
 {
-  static const char* pathBase = "/apps/gcdmaster/devices";
+  static const char* pathBase = "/org/gnome/gcdmaster/devices";
   char* key;
   char* s;
   CdDevice* drun;
@@ -1053,10 +1052,7 @@ void CdDevice::exportSettings()
       s = drun->settingString();
 
       try {
-	Gnome::Conf::Schema sch;
-	sch.set_type(Gnome::Conf::VALUE_STRING);
-	configManager->client()->set(key, sch);
-	configManager->client()->set(key, s);
+          configManager->set(key, s);
       } catch (const Glib::Error& e) {
 	std::cerr << e.what() << std::endl;
       }

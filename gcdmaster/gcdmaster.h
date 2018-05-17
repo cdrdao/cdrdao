@@ -21,9 +21,6 @@
 #define __GCDMASTER_H__
 
 #include <gtkmm.h>
-#include <gtk/gtk.h>
-#include <libgnomeuimm.h>
-#include <libglademm/xml.h>
 
 #include <list>
 
@@ -32,16 +29,16 @@ class BlankCDDialog;
 #include "Project.h"
 #include "BlankCDDialog.h"
 
-class GCDMaster : public Gnome::UI::App
+class GCDMaster : public Gtk::Window
 {
 public:
   GCDMaster();
 
-  bool closeProject();
+//  bool closeProject();
   void closeChooser();
   bool on_delete_event(GdkEventAny* e);
-  bool openNewProject(const char*);
-  void openProject();
+//bool openNewProject(const char*);
+//void openProject();
   void newChooserWindow();
   void newAudioCDProject2();
   void newAudioCDProject(const char *name, TocEdit *tocEdit,
@@ -62,7 +59,7 @@ public:
   static std::list<GCDMaster *> apps;
 
 private:
-  Project* project_;
+//  Project* project_;
   ProjectChooser* chooser_;
   gint project_number;
 
@@ -73,12 +70,12 @@ private:
   Glib::RefPtr<Gtk::UIManager> m_refUIManager;
   Glib::RefPtr<Gtk::ActionGroup> m_refActionGroup;
 
-  Gnome::UI::AppBar* statusbar_;  
+  //Gnome::UI::AppBar* statusbar_;  
   Gtk::ProgressBar* progressbar_;  
   Gtk::Button* progressButton_;  
-  Gnome::UI::About* about_;
+  //Gnome::UI::About* about_;
 
-  Glib::RefPtr<Gnome::Glade::Xml> m_refPreferencesXml;
+  //Glib::RefPtr<Gnome::Glade::Xml> m_refPreferencesXml;
 
   Gtk::FileChooserDialog* readFileSelector_;
   void createMenus();
