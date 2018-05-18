@@ -144,7 +144,7 @@ int main(int argc, char* argv[])
   // if (openChooser)
   //   gcdmaster->newChooserWindow();
 
-  app->run(gcdmaster);
+  gcdmaster.run(argc, argv);
 
   // save settings
   // CdDevice::exportSettings();

@@ -29,58 +29,86 @@ class BlankCDDialog;
 #include "Project.h"
 #include "BlankCDDialog.h"
 
-class GCDMaster : public Gtk::Window
+/*
+ * Main app window. Just a placeholder for the projects.\
+ */
+
+class GCDMasterWindow : public Gtk::ApplicationWindow
+{
+public:
+    GCDMasterWindow(BaseObjectType* cobject,
+                    const Glib::RefPtr<Gtk::Builder>& builder);
+
+    static GCDMasterWindow&* create();
+
+protected:
+    Gtk::Notebook notebook_;
+};
+
+
+/* 
+ * Main GCDMaster application
+ */
+
+class GCDMaster : public Gtk::Application
 {
 public:
   GCDMaster();
 
+private:
+  gint project_number_;
+  GCDMasterWindow window_;
+
+  // Override default signal handlers.
+  void on_startup() override;
+  void on_action_quit();
+  void on_action_preferences();
+
 //  bool closeProject();
-  void closeChooser();
-  bool on_delete_event(GdkEventAny* e);
+//  void closeChooser();
+//  bool on_delete_event(GdkEventAny* e);
 //bool openNewProject(const char*);
 //void openProject();
-  void newChooserWindow();
-  void newAudioCDProject2();
-  void newAudioCDProject(const char *name, TocEdit *tocEdit,
-                         const char* tracks = NULL);
-  void newDuplicateCDProject();
-  void newDumpCDProject();
+  /* void newChooserWindow(); */
+  /* void newAudioCDProject2(); */
+  /* void newAudioCDProject(const char *name, TocEdit *tocEdit, */
+  /*                        const char* tracks = NULL); */
+  /* void newDuplicateCDProject(); */
+  /* void newDumpCDProject(); */
 
-  void update(unsigned long level);
+  /* void update(unsigned long level); */
 
-  void configureDevices();
-  void configurePreferences();
-  void blankCDRW();
+  /* void configureDevices(); */
+  /* void configurePreferences(); */
+  /* void blankCDRW(); */
 
-  void registerStockIcons();
+  /* void registerStockIcons(); */
 
-  static void appClose();
+  /* static void appClose(); */
 
-  static std::list<GCDMaster *> apps;
+  /* static std::list<GCDMaster *> apps; */
 
-private:
 //  Project* project_;
-  ProjectChooser* chooser_;
-  gint project_number;
+  /* ProjectChooser* chooser_; */
 
-  BlankCDDialog blankCDDialog_;
+  /* BlankCDDialog blankCDDialog_; */
 
-  Gtk::Notebook notebook_;
+  /* Gtk::Notebook notebook_; */
 
-  Glib::RefPtr<Gtk::UIManager> m_refUIManager;
-  Glib::RefPtr<Gtk::ActionGroup> m_refActionGroup;
+  /* Glib::RefPtr<Gtk::UIManager> m_refUIManager; */
+  /* Glib::RefPtr<Gtk::ActionGroup> m_refActionGroup; */
 
-  //Gnome::UI::AppBar* statusbar_;  
-  Gtk::ProgressBar* progressbar_;  
-  Gtk::Button* progressButton_;  
-  //Gnome::UI::About* about_;
+  /* //Gnome::UI::AppBar* statusbar_;   */
+  /* Gtk::ProgressBar* progressbar_;   */
+  /* Gtk::Button* progressButton_;   */
+  /* //Gnome::UI::About* about_; */
 
-  //Glib::RefPtr<Gnome::Glade::Xml> m_refPreferencesXml;
+  /* //Glib::RefPtr<Gnome::Glade::Xml> m_refPreferencesXml; */
 
-  Gtk::FileChooserDialog* readFileSelector_;
-  void createMenus();
-  void createStatusbar();
-  void aboutDialog();
+  /* Gtk::FileChooserDialog* readFileSelector_; */
+  /* void createMenus(); */
+  /* void createStatusbar(); */
+  /* void aboutDialog(); */
 };
 
 #endif

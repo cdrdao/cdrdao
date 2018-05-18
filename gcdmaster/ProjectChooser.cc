@@ -18,7 +18,6 @@
  */
 
 #include <gtkmm.h>
-#include <gnome.h>
 
 #include "xcdrdao.h"
 #include "gcdmaster.h"

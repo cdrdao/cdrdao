@@ -85,13 +85,20 @@ gcdmaster_SOURCES = \
 	ConfigManager.cc	\
 	Icons.cc		\
 	ProcessMonitor.cc	\
+	gcdmaster.cc		\
 	main.cc
+
+nodist_gcdmaster_SOURCES =	\
+	resources.c
 
 EXTRA_gcdmaster_SOURCES =	\
 	SoundIF-ao.cc 		\
 	SoundIF-linux.cc 	\
 	SoundIF-none.cc 	\
 	SoundIF-solaris.cc
+
+resources.c: ui/gcdmaster.gresource.xml ui/*.ui
+	glib-compile-resources --target=$@ --sourcedir=ui  --generate-source $<
 
 gladedir = $(datadir)/gcdmaster/glade
 glade_DATA = 			\
@@ -107,6 +114,7 @@ gcdmaster_LDADD =					\
 	@GTKMM3_LIBS@
 
 AM_CXXFLAGS = @GTKMM3_CFLAGS@ @AO_CFLAGS@
+AM_CFLAGS = @GTK3_CFLAGS@
 
 if COND_MP3
 gcdmaster_LDADD += @MAD_LIBS@
@@ -166,3 +174,5 @@ gsettings_SCHEMAS = org.gnome.Gcdmaster.gschema.xml
 
 # include the appropriate makefile rules for schema handling
 @GSETTINGS_RULES@
+
+CLEANFILES = resources.c
