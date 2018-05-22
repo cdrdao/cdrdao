@@ -3,5 +3,6 @@
   <gresource prefix="/org/gnome/gcdmaster">
     <file preprocess="xml-stripblanks">app_menu.ui</file>
     <file preprocess="xml-stripblanks">main_window.ui</file>
+    <file preprocess="xml-stripblanks">chooser.ui</file>
   </gresource>
 </gresources>

@@ -24,27 +24,10 @@
 
 #include <list>
 
-class ProjectChooser;
 class BlankCDDialog;
 #include "Project.h"
 #include "BlankCDDialog.h"
-
-/*
- * Main app window. Just a placeholder for the projects.\
- */
-
-class GCDMasterWindow : public Gtk::ApplicationWindow
-{
-public:
-    GCDMasterWindow(BaseObjectType* cobject,
-                    const Glib::RefPtr<Gtk::Builder>& builder);
-
-    static GCDMasterWindow&* create();
-
-protected:
-    Gtk::Notebook notebook_;
-};
-
+#include "ProjectChooser.h"
 
 /* 
  * Main GCDMaster application
@@ -55,12 +38,18 @@ class GCDMaster : public Gtk::Application
 public:
   GCDMaster();
 
+  static Glib::RefPtr<GCDMaster> create();
+
+  void newChooserWindow();
+
 private:
   gint project_number_;
-  GCDMasterWindow window_;
+  Gtk::ApplicationWindow* window_;
+  Gtk::Notebook* notebook_;
 
   // Override default signal handlers.
   void on_startup() override;
+  void on_activate() override;
   void on_action_quit();
   void on_action_preferences();
 
@@ -69,7 +58,6 @@ private:
 //  bool on_delete_event(GdkEventAny* e);
 //bool openNewProject(const char*);
 //void openProject();
-  /* void newChooserWindow(); */
   /* void newAudioCDProject2(); */
   /* void newAudioCDProject(const char *name, TocEdit *tocEdit, */
   /*                        const char* tracks = NULL); */
@@ -86,10 +74,10 @@ private:
 
   /* static void appClose(); */
 
-  /* static std::list<GCDMaster *> apps; */
+  static std::list<GCDMaster *> apps;
 
 //  Project* project_;
-  /* ProjectChooser* chooser_; */
+  ProjectChooser* chooser_;
 
   /* BlankCDDialog blankCDDialog_; */
 

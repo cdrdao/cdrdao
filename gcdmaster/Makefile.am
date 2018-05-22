@@ -85,6 +85,7 @@ gcdmaster_SOURCES = \
 	ConfigManager.cc	\
 	Icons.cc		\
 	ProcessMonitor.cc	\
+	ProjectChooser.cc	\
 	gcdmaster.cc		\
 	main.cc
 
@@ -176,3 +177,6 @@ gsettings_SCHEMAS = org.gnome.Gcdmaster.gschema.xml
 @GSETTINGS_RULES@
 
 CLEANFILES = resources.c
+
+check-syntax:
+	g++ $(CXXFLAGS) -o /dev/null -S ${CHK_SOURCES}

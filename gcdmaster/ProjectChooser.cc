@@ -30,68 +30,21 @@
 #define BUTTONS_RELIEF Gtk::RELIEF_NORMAL
 
 
-ProjectChooser::ProjectChooser()
+ProjectChooser::ProjectChooser(BaseObjectType* cobject,
+                               const Glib::RefPtr<Gtk::Builder>& rb) :
+    Gtk::VBox(cobject)
 {
-  Glib::RefPtr<Gnome::Glade::Xml> refXml;
-  try
-  {
-    refXml = Gnome::Glade::Xml::create(GCDMASTER_GLADEDIR "/ProjectChooser.glade",
-                                       "mainbox");
-  }
-  catch(const Gnome::Glade::XmlError& ex)
-  {
-    try
-    {
-      refXml = Gnome::Glade::Xml::create("glade/ProjectChooser.glade", "mainbox");
-    }
-    catch(const Gnome::Glade::XmlError& ex)
-    {
-      std::cerr << ex.what() << std::endl;
-      return;
-    }
-  }
+}
 
-  Gtk::HBox* pBox = 0;
-  refXml->get_widget("mainbox", pBox);
-  if(!pBox)
-    return;
+ProjectChooser* ProjectChooser::create()
+{
+    auto builder =
+        Gtk::Builder::create_from_resource("/org/gnome/gcdmaster/chooser.ui");
 
-  Gtk::Image* pImage = 0;
-  refXml->get_widget("AudioImage", pImage);
-  if (pImage)
-  {
-    pImage->set(Icons::AUDIOCD, Gtk::ICON_SIZE_DIALOG);
-  }
-  refXml->get_widget("CopyImage", pImage);
-  if (pImage)
-  {
-    pImage->set(Icons::COPYCD, Gtk::ICON_SIZE_DIALOG);
-  }
-  refXml->get_widget("DumpImage", pImage);
-  if (pImage)
-  {
-    pImage->set(Icons::DUMPCD, Gtk::ICON_SIZE_DIALOG);
-  }
+    ProjectChooser* chooser = NULL;
+    builder->get_widget_derived("chooser_box", chooser);
+    if (!chooser)
+        throw std::runtime_error("No \"chooser_box\" object in chooser.ui");
 
-  Gtk::Button* pButton = 0;
-  refXml->get_widget("AudioButton", pButton);
-  if (pButton)
-  {
-    pButton->signal_clicked().
-      connect(ProjectChooser::newAudioCDProject);
-  }
-  refXml->get_widget("CopyButton", pButton);
-  if (pButton)
-  {
-    pButton->signal_clicked().
-      connect(ProjectChooser::newDuplicateCDProject);
-  }
-  refXml->get_widget("DumpButton", pButton);
-  if (pButton)
-  {
-    pButton->signal_clicked().
-      connect(ProjectChooser::newDumpCDProject);
-  }
-
-  pack_start(*pBox);
+    return chooser;
 }

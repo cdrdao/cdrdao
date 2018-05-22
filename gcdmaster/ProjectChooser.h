@@ -25,10 +25,13 @@
 class ProjectChooser : public Gtk::VBox
 {
  public:
-  ProjectChooser();
+    ProjectChooser(BaseObjectType* cobject,
+                   const Glib::RefPtr<Gtk::Builder>& builder);
 
-  sigc::signal0<void> newAudioCDProject;
-  sigc::signal0<void> newDuplicateCDProject;
-  sigc::signal0<void> newDumpCDProject;
+    static ProjectChooser* create();
+
+    sigc::signal0<void> newAudioCDProject;
+    sigc::signal0<void> newDuplicateCDProject;
+    sigc::signal0<void> newDumpCDProject;
 };
 #endif

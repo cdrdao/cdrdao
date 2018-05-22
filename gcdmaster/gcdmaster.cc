@@ -36,28 +36,7 @@
 #include "Icons.h"
 
 // Static class members
-// std::list<GCDMaster *> GCDMaster::apps;
-
-GCDMasterWindow::GCDMasterWindow(BaseObjectType* cobject,
-                                 const Glib::RefPtr<Gtk::Builder>& builder) :
-    Gtk::ApplicationWindow(cobject),
-    builder_(builder),
-    notebook_(NULL)
-{
-}
-
-GCDMasterWindow* GCDMasterWindow::create()
-{
-    auto builder =
-        Gtk::Builder::create_from_resource("/org/gnome/gcdmaster/main_window.ui");
-
-    GCDMasterWindow* window = NULL;
-    builder->get_widget_derived("app_window", window);
-    if (!window)
-        throw std::runtime_error("No \"app_window\" object in main_window.ui");
-
-    return window;
-}
+std::list<GCDMaster *> GCDMaster::apps;
 
 GCDMaster::GCDMaster() : Gtk::Application("org.gnome.gcdmaster")
 {
@@ -66,10 +45,7 @@ GCDMaster::GCDMaster() : Gtk::Application("org.gnome.gcdmaster")
   project_number_ = 0;
 //  about_ = 0;
 //  project_ = 0;
-//  chooser_ = 0;
-
-//  set_resizable();
-//  set_wmclass("gcdmaster", "GCDMaster");
+  chooser_ = NULL;
 
 //   readFileSelector_ =
 //     new Gtk::FileChooserDialog("Please select a project",
@@ -105,7 +81,7 @@ GCDMaster::GCDMaster() : Gtk::Application("org.gnome.gcdmaster")
 //  createMenus();
 //  createStatusbar();
 
-//  apps.push_back(this);
+  apps.push_back(this);
 }
 
 // void GCDMaster::createMenus()
@@ -335,28 +311,26 @@ GCDMaster::GCDMaster() : Gtk::Application("org.gnome.gcdmaster")
 //   return;
 // }
 
-// void GCDMaster::newChooserWindow()
-// {
-//   if (project_ || chooser_) {
+void GCDMaster::newChooserWindow()
+{
+    if (chooser_) {
+        GCDMaster *gcdmaster = new GCDMaster;
+        gcdmaster->newChooserWindow();
 
-//     GCDMaster *gcdmaster = new GCDMaster;
-//     gcdmaster->newChooserWindow();
-//     gcdmaster->show();
+    } else {
 
-//   } else {
-
-//     chooser_ = new ProjectChooser();
-//     chooser_->newAudioCDProject.connect(sigc::mem_fun(*this,
+        chooser_ = ProjectChooser::create();
+//        chooser_->newAudioCDProject.connect(sigc::mem_fun(*this,
 //                                         &GCDMaster::newAudioCDProject2));
 //     chooser_->newDuplicateCDProject.connect(sigc::mem_fun(*this,
 //                                         &GCDMaster::newDuplicateCDProject));
 //     chooser_->newDumpCDProject.connect(sigc::mem_fun(*this,
 //                                         &GCDMaster::newDumpCDProject));
-//     chooser_->show();
-//     notebook_.set_show_tabs(false);
-//     notebook_.append_page(*chooser_);
-//   }
-// }
+        chooser_->show();
+        notebook_->set_show_tabs(false);
+        notebook_->append_page(*chooser_);
+    }
+}
 
 // void GCDMaster::newAudioCDProject(const char *name, TocEdit *tocEdit,
 //                                   const char* tracks)
@@ -499,6 +473,12 @@ GCDMaster::GCDMaster() : Gtk::Application("org.gnome.gcdmaster")
 //   }
 // }
 
+Glib::RefPtr<GCDMaster> GCDMaster::create()
+{
+    return Glib::RefPtr<GCDMaster>(new GCDMaster());
+}
+
+
 void GCDMaster::on_startup()
 {
     printf("on_startup()\n");
@@ -506,13 +486,7 @@ void GCDMaster::on_startup()
     // Call the base class implementation
     Gtk::Application::on_startup();
 
-    // Add actions
-    add_action("preferences",
-               sigc::mem_fun(*this, &GCDMaster::on_action_preferences));
-    add_action("quit", sigc::mem_fun(*this, &GCDMaster::on_action_quit));
-    set_accel_for_action("app.quit", "<Ctrl>Q");
-
-  // Configure Menu
+    // Configure Menu
     auto builder = Gtk::Builder::create();
     try {
         builder->add_from_resource("/org/gnome/gcdmaster/app_menu.ui");
@@ -520,6 +494,12 @@ void GCDMaster::on_startup()
         std::cerr << "on_startup() menu: " << ex.what() << std::endl;
         return;
     }
+
+    // Add actions
+    add_action("preferences",
+               sigc::mem_fun(*this, &GCDMaster::on_action_preferences));
+    add_action("quit", sigc::mem_fun(*this, &GCDMaster::on_action_quit));
+    set_accel_for_action("app.quit", "<Ctrl>Q");
 
     auto object = builder->get_object("appmenu");
     auto app_menu = Glib::RefPtr<Gio::MenuModel>::cast_dynamic(object);
@@ -530,20 +510,46 @@ void GCDMaster::on_startup()
         return;
     }
 
-    window_.present();
-    window_.set_title("Gnome CD Master");
-    add_window(window_);
 }
 
 void GCDMaster::on_action_quit()
 {
-  auto windows = get_windows();
-  for (auto window : windows)
-    window->hide();
+    printf("on_action_quit()\n");
+    auto windows = get_windows();
+    for (auto window : windows)
+        window->hide();
 
-  quit();
+    quit();
 }
 
 void GCDMaster::on_action_preferences()
 {
+}
+
+void GCDMaster::on_activate()
+{
+    printf("on_activate()\n");
+
+    // Configure Menu
+    auto builder = Gtk::Builder::create();
+    try {
+        builder->add_from_resource("/org/gnome/gcdmaster/main_window.ui");
+    } catch (const Glib::Error& ex) {
+        std::cerr << "on_startup() menu: " << ex.what() << std::endl;
+        return;
+    }
+
+    builder->get_widget("app_window", window_);
+    add_window(*window_);
+    window_->set_title("Gnome CD Master");
+    window_->set_resizable();
+    window_->present();
+
+    builder->get_widget("notebook", notebook_);
+    if (!notebook_) {
+        std::cerr << "On_activate() : no notebook in main window.\n";
+        quit();
+        return;
+    }
+    notebook_->set_show_border(false);
 }

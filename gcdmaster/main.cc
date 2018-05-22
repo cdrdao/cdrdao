@@ -127,7 +127,7 @@ int main(int argc, char* argv[])
   //     exit(1);
   // }
 
-  GCDMaster gcdmaster;
+  auto gcdmaster = GCDMaster::create();
 //  gcdmaster->show();
 
   bool openChooser = true;
@@ -141,10 +141,10 @@ int main(int argc, char* argv[])
   //   argc--;
   // }
 
-  // if (openChooser)
-  //   gcdmaster->newChooserWindow();
+  if (openChooser)
+      gcdmaster->newChooserWindow();
 
-  gcdmaster.run(argc, argv);
+  gcdmaster->run(argc, argv);
 
   // save settings
   // CdDevice::exportSettings();
