@@ -20,8 +20,6 @@
 #ifndef __RECORD_HD_TARGET_H
 #define __RECORD_HD_TARGET_H
 
-#include <libgnomeuimm.h>
-
 class TocEdit;
 class CdDevice;
 class DeviceList;

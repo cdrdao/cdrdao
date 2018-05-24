@@ -14,5 +14,6 @@ const char* Icons::RECORD = "gcdmaster-record";
 
 void Icons::registerIcons()
 {
+    printf("Adding Icon path %s\n", GCDMASTER_ICONDIR);
     Gtk::IconTheme::get_default()->append_search_path(GCDMASTER_ICONDIR);
 }

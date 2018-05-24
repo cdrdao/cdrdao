@@ -29,6 +29,31 @@ class BlankCDDialog;
 #include "BlankCDDialog.h"
 #include "ProjectChooser.h"
 
+/*
+ * Application Window class
+ */
+
+class GCDWindow : public Gtk::ApplicationWindow
+{
+public:
+    GCDWindow(BaseObjectType* cobject,
+              const Glib::RefPtr<Gtk::Builder>& builder);
+
+    enum class What { CHOOSER, AUDIOCD, DUPLICATE, BLANKCD, DUMP };
+
+    static GCDWindow* create(Glib::RefPtr<Gtk::Builder> b, What what);
+
+    Gtk::VBox* project() { return project_; }
+
+protected:
+    void set_project(Gtk::VBox* project);
+
+private:
+    Gtk::VBox* project_;
+    Gtk::Notebook* notebook_;
+    Gtk::MenuButton* gears_;
+};
+
 /* 
  * Main GCDMaster application
  */
@@ -38,14 +63,14 @@ class GCDMaster : public Gtk::Application
 public:
   GCDMaster();
 
-  static Glib::RefPtr<GCDMaster> create();
-
   void newChooserWindow();
+  void newDuplicateCDProject();
+  void newDumpCDProject();
+  void newAudioCDProject();
 
 private:
   gint project_number_;
-  Gtk::ApplicationWindow* window_;
-  Gtk::Notebook* notebook_;
+  Glib::RefPtr<Gtk::Builder> builder_;
 
   // Override default signal handlers.
   void on_startup() override;
@@ -61,7 +86,6 @@ private:
   /* void newAudioCDProject2(); */
   /* void newAudioCDProject(const char *name, TocEdit *tocEdit, */
   /*                        const char* tracks = NULL); */
-  /* void newDuplicateCDProject(); */
   /* void newDumpCDProject(); */
 
   /* void update(unsigned long level); */
@@ -74,10 +98,7 @@ private:
 
   /* static void appClose(); */
 
-  static std::list<GCDMaster *> apps;
-
 //  Project* project_;
-  ProjectChooser* chooser_;
 
   /* BlankCDDialog blankCDDialog_; */
 

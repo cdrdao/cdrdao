@@ -21,32 +21,32 @@
 
 #include "xcdrdao.h"
 #include "gcdmaster.h"
-#include "DeviceConfDialog.h"
-#include "ProgressDialog.h"
-#include "ProcessMonitor.h"
-#include "CdDevice.h"
+// #include "DeviceConfDialog.h"
+// #include "ProgressDialog.h"
+// #include "ProcessMonitor.h"
+// #include "CdDevice.h"
 #include "TocEdit.h"
 
 #include "util.h"
 
 void guiUpdate(unsigned long level)
 {
-  std::list<GCDMaster*>::iterator i = GCDMaster::apps.begin();
-  for (; i != GCDMaster::apps.end(); i++) {
-    (*i)->update(level);
-  }
+  // std::list<GCDMaster*>::iterator i = GCDMaster::apps.begin();
+  // for (; i != GCDMaster::apps.end(); i++) {
+  //   (*i)->update(level);
+  // }
 
-  if (deviceConfDialog != NULL)
-    deviceConfDialog->update(level);
+  // if (deviceConfDialog != NULL)
+  //   deviceConfDialog->update(level);
 
-  if (PROGRESS_POOL != NULL)
-    PROGRESS_POOL->update(level);
+  // if (PROGRESS_POOL != NULL)
+  //   PROGRESS_POOL->update(level);
 }
 
 bool guiUpdatePeriodic()
 {
-  if (CdDevice::updateDeviceStatus())
-    guiUpdate(UPD_CD_DEVICE_STATUS);
+  // if (CdDevice::updateDeviceStatus())
+  //   guiUpdate(UPD_CD_DEVICE_STATUS);
 
   return true;
 }

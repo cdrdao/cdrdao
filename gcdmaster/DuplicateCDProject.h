@@ -20,30 +20,35 @@
 #ifndef __DUPLICATECDPROJECT_H__
 #define __DUPLICATECDPROJECT_H__
 
+#include <gtkmm.h>
+
 class RecordCDSource;
 class RecordCDTarget;
 
 class DuplicateCDProject : public Project
 {
 public:
-  DuplicateCDProject(Gtk::Window *parent);
-  ~DuplicateCDProject();
-  bool closeProject();
+    DuplicateCDProject(Gtk::Window* parent);
+    virtual ~DuplicateCDProject();
 
- protected:
-  virtual void createToolbar() {};
+    static DuplicateCDProject* create(Glib::RefPtr<Gtk::Builder>& builder,
+                                      Gtk::Window* parent);
+//    bool closeProject();
+/* protected: */
+/*     virtual void createToolbar() {}; */
 
 private:
-  RecordCDSource *CDSource;
-  RecordCDTarget *CDTarget;
+    RecordCDSource *CDSource;
+    RecordCDTarget *CDTarget;
 
-  Gtk::RadioButton *simulate_rb;
-  Gtk::RadioButton *simulateBurn_rb;
-  Gtk::RadioButton *burn_rb;
+    Gtk::Label label_;
+    /* Gtk::RadioButton *simulate_rb; */
+    /* Gtk::RadioButton *simulateBurn_rb; */
+    /* Gtk::RadioButton *burn_rb; */
 
-  void start();
-  void recordToc2CD() {}
-  void projectInfo() {}
-  void update(unsigned long level);
+    /* void start(); */
+    /* void recordToc2CD() {} */
+    /* void projectInfo() {} */
+    /* void update(unsigned long level); */
 };
 #endif

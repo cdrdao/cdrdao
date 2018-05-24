@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+  <!-- interface-requires gtk+ 3.8 -->
+  <object class="GtkApplicationWindow" id="app_window">
+    <property name="default-width">350</property>
+    <property name="default-height">250</property>
+    <child type="titlebar">
+      <object class="GtkHeaderBar" id="header">
+        <property name="title" translatable="yes">Gnome CD Master</property>
+        <property name="visible">True</property>
+        <property name="show-close-button">True</property>
+        <property name="decoration-layout">menu:close</property>
+        <child>
+          <object class="GtkMenuButton" id="gears">
+            <property name="visible">True</property>
+            <property name="direction">none</property>
+            <property name="use-popover">True</property>
+            <style>
+              <class name="image-button"/>
+            </style>
+          </object>
+          <packing>
+            <property name="pack-type">end</property>
+          </packing>
+        </child>
+      </object>
+    </child>
+    <child>
+      <object class="GtkNotebook" id="notebook">
+        <property name="visible">True</property>
+      </object>
+    </child>
+  </object>
+</interface>

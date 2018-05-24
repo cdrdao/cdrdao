@@ -20,7 +20,6 @@
 #include "TocEdit.h"
 
 #include <stddef.h>
-#include <gnome.h>
 #include <iostream>
 #include <sstream>
 #include <set>
@@ -392,7 +391,7 @@ bool TocEdit::curInsertFile()
   TrackDataList list;
   list.append(data);
   if (toc_->insertTrackData(cur_->pos, &list) != 0) {
-    signalError(_("Cannot insert file into a data track"));
+    signalError("Cannot insert file into a data track");
     delete data;
     return false;
   }
@@ -416,14 +415,14 @@ int TocEdit::curCreateAudioData(TrackData **data)
 
   switch (TrackData::checkAudioFile(cur_->cfile.c_str(), &len)) {
   case 1:
-    msg = _("Could not open file \"");
+    msg = "Could not open file \"";
     msg += cur_->cfile;
     msg += "\"";
     signalError(msg.c_str());
     return 1; // Cannot open file
 
   case 2:
-    msg = _("Could not open file \"");
+    msg = "Could not open file \"";
     msg += cur_->cfile;
     msg += "\" : wrong file format";
     signalError(msg.c_str());
@@ -438,18 +437,18 @@ int TocEdit::curCreateAudioData(TrackData **data)
 
 void TocEdit::curSignalConversionError(FormatSupport::Status err)
 {
-  std::string msg = _("Unable to decode audio file \"");
+  std::string msg = "Unable to decode audio file \"";
   msg += cur_->file;
   msg += "\" : ";
   switch (err) {
   case FormatSupport::FS_DISK_FULL:
-    msg += _("disk is full");
+    msg += "disk is full";
     break;
   case FormatSupport::FS_OUTPUT_PROBLEM:
-    msg += _("error creating output file");
+    msg += "error creating output file";
     break;
   default:
-    msg += _("read error or wrong file format");
+    msg += "read error or wrong file format";
   }
   signalError(msg.c_str());
 }
@@ -647,11 +646,11 @@ bool TocEdit::queueThread()
 
     TrackData::FileType ctype = TrackData::audioFileType(cur_->cfile.c_str());
     if (ctype != TrackData::RAW && ctype != TrackData::WAVE) {
-      std::string msg = _("Cannot decode file");
+      std::string msg = "Cannot decode file";
       msg += " \"";
       msg += cur_->cfile;
       msg += "\" : ";
-      msg += _("unsupported audio format");
+      msg += "unsupported audio format";
       signalError(msg.c_str());
       curState_ = TE_IDLE;
       return true;
@@ -699,7 +698,7 @@ bool TocEdit::queueThread()
     if (result != 0) {
 
       if (result < 0)
-        signalError(_("An error occured while reading audio data"));
+        signalError("An error occured while reading audio data");
 
       else {
         // Post operating code here.

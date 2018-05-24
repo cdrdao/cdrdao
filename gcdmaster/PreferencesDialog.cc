@@ -18,7 +18,6 @@
  */
 
 #include <iostream>
-#include <gnome.h>
 
 #include "config.h"
 #include "PreferencesDialog.h"

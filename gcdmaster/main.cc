@@ -39,7 +39,6 @@
 #include "ProcessMonitor.h"
 //#include "ProjectChooser.h"
 #include "ConfigManager.h"
-#include "Icons.h"
 
 #include "gcdmaster.h"
 
@@ -90,9 +89,6 @@ int main(int argc, char* argv[])
   // create configuration manager
   configManager = new ConfigManager();
 
-  // Register gcdmaster icons
-  Icons::registerIcons();
-
   // setup process monitor
   PROCESS_MONITOR = new ProcessMonitor;
   installSignalHandler(SIGCHLD, signalHandler);
@@ -127,24 +123,9 @@ int main(int argc, char* argv[])
   //     exit(1);
   // }
 
-  auto gcdmaster = GCDMaster::create();
-//  gcdmaster->show();
+  GCDMaster gcdmaster;
 
-  bool openChooser = true;
-
-  // while (argc > 1) {
-
-  //   if (gcdmaster->openNewProject(argv[1]))
-  //     openChooser = false; 
-
-  //   argv++;
-  //   argc--;
-  // }
-
-  if (openChooser)
-      gcdmaster->newChooserWindow();
-
-  gcdmaster->run(argc, argv);
+  gcdmaster.run(argc, argv);
 
   // save settings
   // CdDevice::exportSettings();

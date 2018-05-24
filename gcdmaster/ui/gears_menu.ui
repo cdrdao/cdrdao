@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<interface>
+  <menu id="gears-menu">
+    <section>
+      <item>
+        <attribute name="label" translatable="yes">_Open…</attribute>
+        <attribute name="action">win.open</attribute>
+      </item>
+      <submenu>
+        <attribute name="label" translatable="yes">Open _With</attribute>
+        <link name="submenu" id="open-with-menu">
+        </link>
+      </submenu>
+    </section>
+    <section>
+      <item>
+        <attribute name="label" translatable="yes">_Save</attribute>
+        <attribute name="action">win.save</attribute>
+      </item>
+      <item>
+        <attribute name="label" translatable="yes">Save _As…</attribute>
+        <attribute name="action">win.save-as</attribute>
+      </item>
+    </section>
+    <section>
+      <item>
+        <attribute name="label" translatable="yes">_Print…</attribute>
+        <attribute name="action">win.print</attribute>
+      </item>
+      <item>
+        <attribute name="label" translatable="yes">Set as Wa_llpaper</attribute>
+        <attribute name="action">win.set-wallpaper</attribute>
+      </item>
+    </section>
+    <section>
+      <item>
+        <attribute name="label" translatable="yes">Sli_deshow</attribute>
+        <attribute name="action">win.view-slideshow</attribute>
+      </item>
+      <item>
+        <attribute name="label" translatable="yes">S_ide Pane</attribute>
+        <attribute name="action">win.view-sidebar</attribute>
+      </item>
+      <item>
+        <attribute name="label" translatable="yes">Image _Gallery</attribute>
+        <attribute name="action">win.view-gallery</attribute>
+      </item>
+      <item>
+        <attribute name="label" translatable="yes">S_tatus Bar</attribute>
+        <attribute name="action">win.view-statusbar</attribute>
+      </item>
+    </section>
+    <section>
+      <item>
+        <attribute name="label" translatable="yes">Prope_rties</attribute>
+        <attribute name="action">win.properties</attribute>
+      </item>
+    </section>
+    <section id="plugins-section"/>
+  </menu>
+</interface>

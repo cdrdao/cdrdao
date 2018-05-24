@@ -20,8 +20,6 @@
 #ifndef __RECORD_CD_SOURCE_H
 #define __RECORD_CD_SOURCE_H
 
-#include <libgnomeuimm.h>
-
 class CdDevice;
 class DeviceList;
 

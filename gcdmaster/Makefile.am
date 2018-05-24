@@ -82,11 +82,19 @@ bin_PROGRAMS = gcdmaster
 # 	Settings.h
 
 gcdmaster_SOURCES = \
+	AudioCDProject.cc	\
 	ConfigManager.cc	\
-	Icons.cc		\
+	DumpCDProject.cc	\
+	DuplicateCDProject.cc	\
 	ProcessMonitor.cc	\
+	Project.cc		\
 	ProjectChooser.cc	\
+	SampleManager.cc	\
+	TocEdit.cc		\
+	TocEditView.cc		\
+	TrackDataScrap.cc	\
 	gcdmaster.cc		\
+	guiUpdate.cc		\
 	main.cc
 
 nodist_gcdmaster_SOURCES =	\
@@ -179,4 +187,4 @@ gsettings_SCHEMAS = org.gnome.Gcdmaster.gschema.xml
 CLEANFILES = resources.c
 
 check-syntax:
-	g++ $(CXXFLAGS) -o /dev/null -S ${CHK_SOURCES}
+	$(CXXCOMPILE) -o /dev/null -S ${CHK_SOURCES}
