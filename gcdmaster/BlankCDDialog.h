@@ -26,11 +26,11 @@ class Project;
 
 class DeviceList;
 
-class BlankCDDialog : public Gtk::Window {
+class BlankCDDialog : public Gtk::ApplicationWindow {
 public:
   BlankCDDialog();
 
-  void start(Gtk::Window& parent);
+  void start(Gtk::Window* parent);
   void update(unsigned long level);
 
 private:

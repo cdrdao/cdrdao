@@ -17,17 +17,14 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#include <libgnomeuimm.h>
 
 #include "guiUpdate.h"
 #include "DeviceList.h"
 #include "MessageBox.h"
 #include "BlankCDDialog.h"
 #include "Settings.h"
-#include "Icons.h"
 
 #include <gtkmm.h>
-#include <gnome.h>
 
 BlankCDDialog::BlankCDDialog()
 {
@@ -154,11 +151,11 @@ void BlankCDDialog::moreOptions()
   moreOptionsDialog_->hide();
 }
 
-void BlankCDDialog::start(Gtk::Window& parent)
+void BlankCDDialog::start(Gtk::Window* parent)
 {
   present();
   active_ = true;
-  parent_ = &parent;
+  parent_ = parent;
   update(UPD_CD_DEVICES);
 }
 

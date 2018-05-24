@@ -109,6 +109,7 @@ void GCDWindow::set_project(Gtk::VBox* project)
 GCDMaster::GCDMaster() : Gtk::Application("org.gnome.gcdmaster")
 {
     builder_ = Gtk::Builder::create();
+    about_ = NULL;
 //  set_title(APP_NAME);
 
   project_number_ = 0;
@@ -211,7 +212,7 @@ GCDMaster::GCDMaster() : Gtk::Application("org.gnome.gcdmaster")
 
 //   // Help
 //   m_refActionGroup->add( Gtk::Action::create("HelpMenu", "_Help") );
-// //FIXME: llanero Gtk::Stock::ABOUT ???
+
 //   m_refActionGroup->add( Gtk::Action::create("About", "About"),
 //                          sigc::mem_fun(*this, &GCDMaster::aboutDialog) );
 
@@ -438,24 +439,6 @@ void GCDMaster::newDuplicateCDProject()
     window->show_all_children();
     window->present();
 }
-
-//     project_ = new DuplicateCDProject(this);
-//     project_->show();
-//     if (chooser_)
-//       closeChooser();
-//     notebook_.remove_page();
-//     notebook_.set_show_tabs(false);
-//     notebook_.append_page(*project_);
-//     set_title("Duplicate CD");
-
-//   } else {
-
-//     GCDMaster *gcdmaster = new GCDMaster;
-//     gcdmaster->newDuplicateCDProject();
-//     gcdmaster->show();
-//   }
-// }
-
 void GCDMaster::newDumpCDProject()
 {
     auto window = GCDWindow::create(builder_, GCDWindow::What::DUMP);
@@ -464,26 +447,6 @@ void GCDMaster::newDumpCDProject()
     window->show_all_children();
     window->present();
 }
-
-// {
-//   if (!project_) {
-
-//     project_ = new DumpCDProject(this);
-//     project_->show();
-//     if (chooser_)
-//       closeChooser();
-//     notebook_.remove_page();
-//     notebook_.set_show_tabs(false);
-//     notebook_.append_page(*project_);
-//     set_title("Dump CD to disk");
-
-//   } else {
-
-//     GCDMaster *gcdmaster = new GCDMaster;
-//     gcdmaster->newDumpCDProject();
-//     gcdmaster->show();
-//   }
-// }
 
 // void GCDMaster::update(unsigned long level)
 // {
@@ -501,11 +464,6 @@ void GCDMaster::newDumpCDProject()
 // void GCDMaster::configurePreferences()
 // {
 // //    preferencesDialog->show_all();
-// }
-
-// void GCDMaster::blankCDRW()
-// {
-//   blankCDDialog_.start(*this);
 // }
 
 // void GCDMaster::createStatusbar()
@@ -526,29 +484,6 @@ void GCDMaster::newDumpCDProject()
 //   container->set_border_width(2);
 //   container->show_all();
 //   install_menu_hints();
-// }
-
-// void GCDMaster::aboutDialog()
-// {
-//   if (about_) {
-//       // "About" dialog hasn't been closed, so just raise it
-//       about_->present();
-
-//   } else {
-
-//     std::vector<std::string> authors;
-//     authors.push_back("Andreas Mueller <mueller@daneb.ping.de>");
-//     authors.push_back("Manuel Clos <llanero@jazzfree.com>");
-//     authors.push_back("Denis Leroy <denis@poolshark.org>");
-//     std::vector<std::string> comments;
-
-//     about_ = new Gnome::UI::About("gcdmaster", VERSION,
-//                                   "(C) Andreas Mueller",
-//                                   authors, comments);
-
-//     about_->set_transient_for(*this);
-//     about_->show();
-//   }
 // }
 
 void GCDMaster::on_startup()
@@ -577,6 +512,10 @@ void GCDMaster::on_startup()
                sigc::mem_fun(this, &GCDMaster::newDuplicateCDProject));
     add_action("new-dump-cd",
                sigc::mem_fun(this, &GCDMaster::newDumpCDProject));
+    add_action("about",
+               sigc::mem_fun(this, &GCDMaster::on_action_about));
+    add_action("blank-cdrw",
+               sigc::mem_fun(this, &GCDMaster::on_action_blank_cdrw));
 
     auto object = builder_->get_object("app-menu");
     auto app_menu = Glib::RefPtr<Gio::MenuModel>::cast_dynamic(object);
@@ -606,4 +545,44 @@ void GCDMaster::on_activate()
 {
     printf("on_activate()\n");
     newChooserWindow();
+}
+
+void GCDMaster::on_action_about()
+{
+    if (about_) {
+        // "About" dialog hasn't been closed, so just raise it
+        about_->run();
+        about_->hide();
+
+    } else {
+
+        about_ = new Gtk::AboutDialog();
+
+        std::vector<Glib::ustring> authors;
+        authors.push_back("Andreas Mueller <mueller@daneb.ping.de>");
+        authors.push_back("Manuel Clos <llanero@jazzfree.com>");
+        authors.push_back("Denis Leroy <denis@poolshark.org> (maintainer)");
+        about_->set_authors(authors);
+
+        about_->set_program_name("gcdmaster");
+        about_->set_version(VERSION);
+
+        about_->set_website("hhttps://github.com/cdrdao/cdrdao/wiki");
+        about_->set_comments("A Gnome Audio CD Mastering Tool");
+        about_->set_copyright("Copyright \xc2\xa9 2000-2018 Andreas Mueller, Manuel Clos, Denis Leroy");
+        about_->set_logo(Gdk::Pixbuf::create_from_resource("/org/gnome/gcdmaster/gcdmaster.png"));
+        about_->set_wrap_license(true);
+        about_->set_license_type(Gtk::LICENSE_GPL_2_0);
+
+        auto windows = get_windows();
+        about_->set_transient_for(*windows[0]);
+
+        about_->run();
+        about_->hide();
+    }
+}
+
+void GCDMaster::on_action_blank_cdrw()
+{
+//    blankCDDialog_->start(NULL);
 }

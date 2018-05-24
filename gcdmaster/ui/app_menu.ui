@@ -3,12 +3,27 @@
   <!-- interface-requires gtk+ 3.0 -->
   <menu id="app-menu">
     <section>
+      <submenu>
+        <attribute name="label" translatable="yes">_New...</attribute>
+        <item>
+          <attribute name="label" translatable="yes">Audio CD Project</attribute>
+          <attribute name="action">app.new-audio-cd</attribute>
+        </item>
+        <item>
+          <attribute name="label" translatable="yes">Duplicate a CD</attribute>
+          <attribute name="action">app.new-duplicate-cd</attribute>
+        </item>
+        <item>
+          <attribute name="label" translatable="yes">Dump a CD to disk</attribute>
+          <attribute name="action">app.new-dump-cd</attribute>
+        </item>
+      </submenu>
+    </section>
+    <section>
       <item>
         <attribute name="label" translatable="yes">_Preferences</attribute>
         <attribute name="action">app.preferences</attribute>
       </item>
-    </section>
-    <section>
       <item>
         <attribute name="label" translatable="yes">_About</attribute>
         <attribute name="action">app.about</attribute>

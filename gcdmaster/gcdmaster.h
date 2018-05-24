@@ -77,6 +77,8 @@ private:
   void on_activate() override;
   void on_action_quit();
   void on_action_preferences();
+  void on_action_about();
+  void on_action_blank_cdrw();
 
 //  bool closeProject();
 //  void closeChooser();
@@ -100,7 +102,7 @@ private:
 
 //  Project* project_;
 
-  /* BlankCDDialog blankCDDialog_; */
+  BlankCDDialog* blankCDDialog_;
 
   /* Gtk::Notebook notebook_; */
 
@@ -110,14 +112,13 @@ private:
   /* //Gnome::UI::AppBar* statusbar_;   */
   /* Gtk::ProgressBar* progressbar_;   */
   /* Gtk::Button* progressButton_;   */
-  /* //Gnome::UI::About* about_; */
+  Gtk::AboutDialog* about_;
 
   /* //Glib::RefPtr<Gnome::Glade::Xml> m_refPreferencesXml; */
 
   /* Gtk::FileChooserDialog* readFileSelector_; */
   /* void createMenus(); */
   /* void createStatusbar(); */
-  /* void aboutDialog(); */
 };
 
 #endif
