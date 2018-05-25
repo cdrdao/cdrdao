@@ -24,7 +24,7 @@
 #include <iostream>
 
 #include <gtkmm.h>
-#include <gnome.h>
+#include <glibmm/i18n.h>
 
 #include "TocEdit.h"
 #include "SampleDisplay.h"
@@ -124,11 +124,10 @@ SampleDisplay::SampleDisplay():
 	trackExtendPixmap_(NULL),
 	indexExtendPixmap_(NULL),
 	drawGc_(NULL)
-		
 {
-  adjustment_ = new Gtk::Adjustment(0.0, 0.0, 1.0);
-  adjustment_->signal_value_changed().connect(mem_fun(*this,
-                                                   &SampleDisplay::scrollTo));
+    auto adjustment_ = Gtk::Adjustment::create(0.0, 0.0, 1.0);
+    adjustment_->signal_value_changed().connect(mem_fun(*this,
+                                                        &SampleDisplay::scrollTo));
 
   trackManager_ = NULL;
 
@@ -155,8 +154,7 @@ SampleDisplay::SampleDisplay():
   selectedTrack_ = 0;
   selectedIndex_ = 0;
 
-  signal_expose_event().connect(mem_fun(*this,
-                                     &SampleDisplay::handleExposeEvent));
+  signal_draw().connect(mem_fun(*this, &SampleDisplay::handleExposeEvent));
   signal_configure_event().
     connect(mem_fun(*this, &SampleDisplay::handleConfigureEvent));
   signal_motion_notify_event().
@@ -493,29 +491,17 @@ bool SampleDisplay::handleConfigureEvent(GdkEventConfigure *event)
                         / Pango::SCALE);
 
     trackMarkerPixmap_ =
-        Gdk::Pixmap::create_from_xpm(window, mask,
-                                     get_style()->get_white(),
-                                     TRACK_MARKER_XPM_DATA);
+        Gdk::Pixbuf::create_from_xpm_data(TRACK_MARKER_XPM_DATA);
     indexMarkerPixmap_ =
-        Gdk::Pixmap::create_from_xpm(window, mask,
-                                     get_style()->get_white(),
-                                     INDEX_MARKER_XPM_DATA);
+        Gdk::Pixbuf::create_from_xpm_data(INDEX_MARKER_XPM_DATA);
     trackMarkerSelectedPixmap_ =
-        Gdk::Pixmap::create_from_xpm(window, mask,
-                                       markerColor_,
-                                       TRACK_MARKER_XPM_DATA);
+        Gdk::Pixbuf::create_from_xpm_data(TRACK_MARKER_XPM_DATA);
     indexMarkerSelectedPixmap_ = 
-        Gdk::Pixmap::create_from_xpm(window, mask,
-                                     markerColor_,
-                                     INDEX_MARKER_XPM_DATA);
+        Gdk::Pixbuf::create_from_xpm_data(INDEX_MARKER_XPM_DATA);
     trackExtendPixmap_ =
-        Gdk::Pixmap::create_from_xpm(window, mask,
-                                     get_style()->get_white(),
-                                     TRACK_EXTEND_XPM_DATA);
+        Gdk::Pixbuf::create_from_xpm_data(TRACK_EXTEND_XPM_DATA);
     indexExtendPixmap_ =
-        Gdk::Pixmap::create_from_xpm(window, mask,
-                                     get_style()->get_white(),
-                                     INDEX_EXTEND_XPM_DATA);
+        Gdk::Pixbuf::create_from_xpm_data(INDEX_EXTEND_XPM_DATA);
 
     trackMarkerWidth_ = ((metrics.get_approximate_digit_width() /
                           Pango::SCALE) * 5) + TRACK_MARKER_XPM_WIDTH + 2;
@@ -547,7 +533,7 @@ bool SampleDisplay::handleConfigureEvent(GdkEventConfigure *event)
   sampleEndX_ = width_ - 10;
   sampleWidthX_ = sampleEndX_ - sampleStartX_ + 1;
   
-  pixmap_ = Gdk::Pixmap::create(get_window(), get_width(), get_height(), -1);
+  pixmap_ = Gdk::Pixbuf::create(get_window(), get_width(), get_height(), -1);
 
   if (width_ > 100 && height_ > 100)
     updateSamples();
@@ -1219,7 +1205,7 @@ void SampleDisplay::drawTrackMarker(int mode, gint x, int trackNr,
 
     sprintf(buf, "%d.%d", trackNr, indexNr);
 
-    Glib::RefPtr<Gdk::Pixmap> marker;
+    Glib::RefPtr<Gdk::Pixbuf> marker;
 
     if (extend) {
       marker = (indexNr == 1 ? trackExtendPixmap_ : indexExtendPixmap_);

@@ -20,8 +20,7 @@
 #include "CdTextDialog.h"
 
 #include <gtkmm.h>
-#include <gnome.h>
-#include <libgnomeuimm.h>
+#include <glibmm/i18n.h>
 
 #include <stddef.h>
 #include <string.h>
@@ -89,9 +88,10 @@ CdTextDialog::CdTextDialog()
       swin->add(*vbox1);
 
       sprintf(buf, " %d ", i);
-      languages_->pages().
-        push_back(Gtk::Notebook_Helpers::TabElem(*swin,
-                                                 *(page_[i].tabLabel)));
+      languages_->append_page(*swin, *(page_[i].tabLabel));
+//      languages_->pages().
+//        push_back(Gtk::Notebook_Helpers::TabElem(*swin,
+//                                                 *(page_[i].tabLabel)));
     }
   }
 

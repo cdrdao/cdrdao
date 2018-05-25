@@ -82,22 +82,29 @@ bin_PROGRAMS = gcdmaster
 # 	Settings.h
 
 gcdmaster_SOURCES = \
+	AddFileDialog.cc	\
+	AddSilenceDialog.cc	\
 	AudioCDProject.cc	\
 	BlankCDDialog.cc	\
 	CdDevice.cc		\
+	CdTextDialog.cc		\
 	ConfigManager.cc	\
 	DeviceList.cc		\
 	DumpCDProject.cc	\
 	DuplicateCDProject.cc	\
+	GenericView.cc		\
 	MessageBox.cc		\
 	ProcessMonitor.cc	\
 	ProgressDialog.cc	\
 	Project.cc		\
 	ProjectChooser.cc	\
 	SampleManager.cc	\
+	TextEdit.cc		\
 	TocEdit.cc		\
 	TocEditView.cc		\
 	TrackDataScrap.cc	\
+	TrackInfoDialog.cc	\
+	TrackManager.cc		\
 	gcdmaster.cc		\
 	guiUpdate.cc		\
 	main.cc

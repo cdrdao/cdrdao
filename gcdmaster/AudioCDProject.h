@@ -38,10 +38,15 @@ public:
     virtual ~AudioCDProject();
 
     static AudioCDProject* create(Glib::RefPtr<Gtk::Builder>& builder,
-                                  Gtk::Window* parent);
+                                  Gtk::ApplicationWindow* parent);
+
+    bool            appendTrack(const char* file) { return false; }
+    bool            appendTracks(std::list<std::string>&) { return false; }
+    bool            appendFiles(std::list<std::string>&) { return false; }
+    bool            insertFiles(std::list<std::string>&) { return false; }
 
 protected:
-    AudioCDProject(Gtk::Window *parent);
+    AudioCDProject(Gtk::ApplicationWindow *parent);
 
 private:
     Gtk::Label label_;
@@ -64,11 +69,6 @@ private:
 /*   unsigned long   playPosition(); */
 
 /*   unsigned long   getDelay(); */
-
-/*   bool            appendTrack(const char* file); */
-/*   bool            appendTracks(std::list<std::string>&); */
-/*   bool            appendFiles(std::list<std::string>&); */
-/*   bool            insertFiles(std::list<std::string>&); */
 
 /*   PlayStatus      playStatus() { return playStatus_; } */
 

@@ -29,7 +29,7 @@
 
 #include <gtkmm.h>
 
-DumpCDProject::DumpCDProject(Gtk::Window* parent) :
+DumpCDProject::DumpCDProject(Gtk::ApplicationWindow* parent) :
     Project(parent),
     label_("Dump CD Project")
 {
@@ -41,7 +41,8 @@ DumpCDProject::~DumpCDProject()
 }
 
 DumpCDProject*
-DumpCDProject::create(Glib::RefPtr<Gtk::Builder>& builder, Gtk::Window* parent)
+DumpCDProject::create(Glib::RefPtr<Gtk::Builder>& builder,
+                      Gtk::ApplicationWindow* parent)
 {
     DumpCDProject* project = new DumpCDProject(parent);
     return project;

@@ -33,7 +33,7 @@
 // #include "TocEditView.h"
 // #include "RecordTocDialog.h"
 
-Project::Project(Gtk::Window* parent)
+Project::Project(Gtk::ApplicationWindow* parent)
 {
   parent_ = parent;
   new_ = true;

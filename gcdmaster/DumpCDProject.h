@@ -31,12 +31,12 @@ public:
   virtual ~DumpCDProject();
 
   static DumpCDProject* create(Glib::RefPtr<Gtk::Builder>& builder,
-                               Gtk::Window* parent);
+                               Gtk::ApplicationWindow* parent);
 
 //  bool closeProject();
 
 protected:
-  DumpCDProject(Gtk::Window *parent);
+  DumpCDProject(Gtk::ApplicationWindow *parent);
 //  virtual void createToolbar() {};
 
 private:

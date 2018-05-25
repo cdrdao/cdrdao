@@ -19,7 +19,8 @@
 
 #include "TrackInfoDialog.h"
 
-#include <gnome.h>
+#include <gtkmm.h>
+#include <glibmm/i18n.h>
 
 #include <stdio.h>
 #include <stddef.h>
@@ -202,10 +203,12 @@ TrackInfoDialog::TrackInfoDialog()
 
   for (i = 0; i < 8; i++) {
     vbox = createCdTextPage(i);
-    notebook->pages().
-        push_back(Gtk::Notebook_Helpers::TabElem(*vbox,
-                                                 *(cdTextPages_[i].label)));
+    notebook->append_page(*vbox, *(cdTextPages_[i].label));
   }
+//    notebook->pages().
+//        push_back(Gtk::Notebook_Helpers::TabElem(*vbox,
+//                                                 *(cdTextPages_[i].label)));
+//  }
 
   vbox1 = manage(new Gtk::VBox);
   vbox1->pack_start(*notebook, TRUE, TRUE, 5);

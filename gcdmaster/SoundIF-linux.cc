@@ -27,12 +27,14 @@
 # endif
 
 #include <stdio.h>
-#include <gtkmm.h>
-#include <gnome.h>
 #include <sys/ioctl.h>
 #include <sys/types.h>
 #include <fcntl.h>
 
+#include <gtkmm.h>
+#include <glibmm/i18n.h>
+
+#include "log.h"
 #include "SoundIF.h"
 #include "Sample.h"
 #include "util.h"

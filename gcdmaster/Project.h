@@ -28,7 +28,7 @@ class TocEdit;
 class Project : public Gtk::VBox
 {
 public:
-  Project(Gtk::Window* parent);
+  Project(Gtk::ApplicationWindow* parent);
 
   void         readToc(char *name);
   void         statusMessage(const char *fmt, ...);
@@ -40,7 +40,7 @@ public:
   /* int          projectNumber(); */
   /* TocEdit*     tocEdit(); */
 
-  /* Gtk::Window* getParentWindow() { return parent_; }; */
+  Gtk::ApplicationWindow* getParentWindow() { return parent_; };
 
   /* virtual void update(unsigned long level) = 0; */
 
@@ -48,7 +48,7 @@ protected:
   int  projectNumber_;
   bool new_; // If it is a new project (not saved)
 
-  Gtk::Window*            parent_;
+  Gtk::ApplicationWindow* parent_;
   TocEdit*                tocEdit_;
   RecordTocDialog*        recordTocDialog_;
   /* //Gnome::UI::AppBar*      statusbar_; */

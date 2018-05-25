@@ -24,7 +24,7 @@
 #include <ctype.h>
 
 #include <gtkmm.h>
-#include <gnome.h>
+#include <glibmm/i18n.h>
 
 #include "DeviceConfDialog.h"
 
@@ -79,7 +79,7 @@ DeviceConfDialog::DeviceConfDialog()
     dmenu->append(*mi);
   }
 
-  driverMenu_ = manage(new Gtk::OptionMenu);
+  driverMenu_ = manage(new Gtk::ComboBox);
   driverMenu_->set_menu(*dmenu);
 
   Gtk::Menu *tmenu = manage(new Gtk::Menu);
@@ -94,7 +94,7 @@ DeviceConfDialog::DeviceConfDialog()
     tmenu->append(*mi);
   }
 
-  devtypeMenu_ = manage(new Gtk::OptionMenu);
+  devtypeMenu_ = manage(new Gtk::ComboBox);
   devtypeMenu_->set_menu(*tmenu);
 
   devEntry_.set_max_length(32);
@@ -114,11 +114,11 @@ DeviceConfDialog::DeviceConfDialog()
 
   hbox->pack_start(list_, Gtk::PACK_EXPAND_WIDGET);
 
-  Gtk::Adjustment *adjust = manage(new Gtk::Adjustment(0.0, 0.0, 0.0));
-  Gtk::VScrollbar *scrollBar = manage(new Gtk::VScrollbar(*adjust));
+  auto adjust = Gtk::Adjustment::create(0.0, 0.0, 0.0);
+  Gtk::VScrollbar *scrollBar = manage(new Gtk::VScrollbar(adjust));
   hbox->pack_start(*scrollBar, Gtk::PACK_SHRINK);
 
-  list_.set_vadjustment(*adjust);
+  list_.set_vadjustment(adjust);
 
   listBox->pack_start(*hbox, Gtk::PACK_EXPAND_WIDGET);
 

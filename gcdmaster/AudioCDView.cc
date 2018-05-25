@@ -18,8 +18,8 @@
  */
 
 #include <gtkmm.h>
-#include <gnome.h>
 #include <glibmm/convert.h>
+#include <glibmm/i18n.h>
 #include <iostream>
 
 #include "config.h"

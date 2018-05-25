@@ -28,11 +28,11 @@ class RecordCDTarget;
 class DuplicateCDProject : public Project
 {
 public:
-    DuplicateCDProject(Gtk::Window* parent);
+    DuplicateCDProject(Gtk::ApplicationWindow* parent);
     virtual ~DuplicateCDProject();
 
     static DuplicateCDProject* create(Glib::RefPtr<Gtk::Builder>& builder,
-                                      Gtk::Window* parent);
+                                      Gtk::ApplicationWindow* parent);
 //    bool closeProject();
 /* protected: */
 /*     virtual void createToolbar() {}; */

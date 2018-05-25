@@ -70,8 +70,8 @@ private:
   Gtk::Frame settingFrame_;
   Gtk::Frame addDeviceFrame_;
 
-  Gtk::OptionMenu *driverMenu_;
-  Gtk::OptionMenu *devtypeMenu_;
+  Gtk::ComboBox *driverMenu_;
+  Gtk::ComboBox *devtypeMenu_;
 
   Gtk::Entry devEntry_;
   Gtk::Entry vendorEntry_;

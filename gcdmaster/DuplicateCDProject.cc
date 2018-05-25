@@ -28,7 +28,7 @@
 
 #include <gtkmm.h>
 
-DuplicateCDProject::DuplicateCDProject(Gtk::Window* parent) :
+DuplicateCDProject::DuplicateCDProject(Gtk::ApplicationWindow* parent) :
     Project(parent),
     label_("Duplicate CD Project")
 {
@@ -40,7 +40,8 @@ DuplicateCDProject::~DuplicateCDProject()
 }
 
 DuplicateCDProject*
-DuplicateCDProject::create(Glib::RefPtr<Gtk::Builder>& builder, Gtk::Window* parent)
+DuplicateCDProject::create(Glib::RefPtr<Gtk::Builder>& builder,
+                           Gtk::ApplicationWindow* parent)
 {
     DuplicateCDProject* project = new DuplicateCDProject(parent);
     return project;

@@ -23,7 +23,7 @@
 #include <assert.h>
 
 #include <gtkmm.h>
-#include <gnome.h>
+#include <glibmm/i18n.h>
 
 #include "AddSilenceDialog.h"
 

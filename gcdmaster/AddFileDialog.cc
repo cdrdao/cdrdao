@@ -24,6 +24,7 @@
 #include <assert.h>
 
 #include <gtkmm.h>
+#include <glibmm/i18n.h>
 
 #include "config.h"
 #include "AddFileDialog.h"
@@ -44,8 +45,8 @@ AddFileDialog::AddFileDialog(AudioCDProject *project)
   set_transient_for(*project->getParentWindow ());
   mode(M_APPEND_TRACK);
 
-  Gtk::FileFilter* filter_tocs = new Gtk::FileFilter;
-  manage(filter_tocs);
+  auto filter_tocs = Gtk::FileFilter::create();
+
   std::string fname = "Audio Files (wav";
 #ifdef HAVE_MP3_SUPPORT
   fname = fname + ", mp3, m3u";
@@ -64,13 +65,13 @@ AddFileDialog::AddFileDialog(AudioCDProject *project)
   filter_tocs->add_pattern("*.mp3");
   filter_tocs->add_pattern("*.m3u");
 #endif
-  add_filter(*filter_tocs);
+  add_filter(filter_tocs);
 
-  Gtk::FileFilter* filter_all = new Gtk::FileFilter;
-  manage(filter_all);
+  auto filter_all = Gtk::FileFilter::create();
+
   filter_all->set_name("Any files");
   filter_all->add_pattern("*");
-  add_filter(*filter_all);
+  add_filter(filter_all);
 
   add_button(Gtk::Stock::CLOSE, Gtk::RESPONSE_CANCEL);
   add_button(Gtk::Stock::ADD, Gtk::RESPONSE_OK);
@@ -138,11 +139,11 @@ bool AddFileDialog::on_delete_event(GdkEventAny*)
 
 bool AddFileDialog::applyAction()
 {
-  std::list<Glib::ustring> sfiles = get_filenames();
-  std::list<std::string> files;
+    std::vector<std::string> sfiles = get_filenames();
+    std::list<std::string> files;
 
-  for (std::list<Glib::ustring>::const_iterator i = sfiles.begin();
-       i != sfiles.end(); i++) {
+    for (std::vector<std::string>::const_iterator i = sfiles.begin();
+         i != sfiles.end(); i++) {
 
     const char *s = stripCwd((*i).c_str());
 

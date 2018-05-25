@@ -21,8 +21,7 @@
 #define __SAMPLE_DISPLAY_H
 
 #include <gtkmm.h>
-#include <gdkmm.h>
-#include <pangomm.h>
+
 #include <gtk/gtk.h>
 
 #include "TrackManager.h"
@@ -75,13 +74,13 @@ private:
 
   Gtk::Adjustment *adjustment_;
 
-  Glib::RefPtr<Gdk::Pixmap> pixmap_;
-  Glib::RefPtr<Gdk::Pixmap> trackMarkerPixmap_;
-  Glib::RefPtr<Gdk::Pixmap> indexMarkerPixmap_;
-  Glib::RefPtr<Gdk::Pixmap> trackMarkerSelectedPixmap_;
-  Glib::RefPtr<Gdk::Pixmap> indexMarkerSelectedPixmap_;
-  Glib::RefPtr<Gdk::Pixmap> trackExtendPixmap_;
-  Glib::RefPtr<Gdk::Pixmap> indexExtendPixmap_;
+  Glib::RefPtr<Gdk::Pixbuf> pixmap_;
+  Glib::RefPtr<Gdk::Pixbuf> trackMarkerPixmap_;
+  Glib::RefPtr<Gdk::Pixbuf> indexMarkerPixmap_;
+  Glib::RefPtr<Gdk::Pixbuf> trackMarkerSelectedPixmap_;
+  Glib::RefPtr<Gdk::Pixbuf> indexMarkerSelectedPixmap_;
+  Glib::RefPtr<Gdk::Pixbuf> trackExtendPixmap_;
+  Glib::RefPtr<Gdk::Pixbuf> indexExtendPixmap_;
 
   Glib::RefPtr<Gdk::GC> drawGc_;
   Gdk::Color sampleColor_;

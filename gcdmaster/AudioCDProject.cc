@@ -21,7 +21,7 @@
 
 #include "AudioCDProject.h"
 
-AudioCDProject::AudioCDProject(Gtk::Window* parent) :
+AudioCDProject::AudioCDProject(Gtk::ApplicationWindow* parent) :
     Project(parent),
     label_("Audio CD Project")
 {
@@ -33,7 +33,8 @@ AudioCDProject::~AudioCDProject()
 }
 
 AudioCDProject*
-AudioCDProject::create(Glib::RefPtr<Gtk::Builder>& builder, Gtk::Window* parent)
+AudioCDProject::create(Glib::RefPtr<Gtk::Builder>& builder,
+                       Gtk::ApplicationWindow* parent)
 {
     AudioCDProject* project = new AudioCDProject(parent);
     return project;
