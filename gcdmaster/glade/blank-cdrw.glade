@@ -1,17 +1,5 @@
 <?xml version="1.0"?>
-<GTK-Interface>
-
-<project>
-  <name>blank-cdrw</name>
-  <program_name>blank-cdrw</program_name>
-  <directory></directory>
-  <source_directory>src</source_directory>
-  <pixmaps_directory>pixmaps</pixmaps_directory>
-  <language>C++</language>
-  <gnome_support>True</gnome_support>
-  <gettext_support>True</gettext_support>
-  <output_main_file>False</output_main_file>
-</project>
+<glade-interface>
 
 <widget>
   <class>GtkWindow</class>
@@ -248,4 +236,4 @@
   </widget>
 </widget>
 
-</GTK-Interface>
+</glade-interface>

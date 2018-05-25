@@ -110,6 +110,7 @@ GCDMaster::GCDMaster() : Gtk::Application("org.gnome.gcdmaster")
 {
     builder_ = Gtk::Builder::create();
     about_ = NULL;
+    blankCDDialog_ = NULL;
 //  set_title(APP_NAME);
 
   project_number_ = 0;
@@ -584,5 +585,13 @@ void GCDMaster::on_action_about()
 
 void GCDMaster::on_action_blank_cdrw()
 {
-//    blankCDDialog_->start(NULL);
+    printf("on_action_blank_cdrw()\n");
+    if (!blankCDDialog_) {
+        blankCDDialog_ = new BlankCDDialog();
+        add_window(*blankCDDialog_);
+
+        auto windows = get_windows();
+        blankCDDialog_->start(windows[0]);
+    }
+    blankCDDialog_->present();
 }

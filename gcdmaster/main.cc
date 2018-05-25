@@ -33,8 +33,8 @@
 //#include "AddFileDialog.h"
 //#include "DeviceConfDialog.h"
 //#include "PreferencesDialog.h"
-///#include "ProgressDialog.h"
-//#include "guiUpdate.h"
+#include "ProgressDialog.h"
+#include "guiUpdate.h"
 //#include "CdDevice.h"
 #include "ProcessMonitor.h"
 //#include "ProjectChooser.h"
@@ -46,7 +46,7 @@
 
 //DeviceConfDialog*   deviceConfDialog = NULL;
 ProcessMonitor*     PROCESS_MONITOR = NULL;
-//ProgressDialogPool* PROGRESS_POOL = NULL;
+ProgressDialogPool* PROGRESS_POOL = NULL;
 
 //PreferencesDialog*  preferencesDialog = NULL;
 ConfigManager*      configManager = NULL;
@@ -94,7 +94,7 @@ int main(int argc, char* argv[])
   installSignalHandler(SIGCHLD, signalHandler);
 
   // setup periodic GUI updates
-//  Glib::signal_timeout().connect(sigc::ptr_fun(&guiUpdatePeriodic), 2000);
+  Glib::signal_timeout().connect(sigc::ptr_fun(&guiUpdatePeriodic), 2000);
 
   installSignalHandler(SIGPIPE, SIG_IGN);
 

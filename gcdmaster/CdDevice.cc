@@ -28,6 +28,7 @@
 #include <assert.h>
 
 #include <gtkmm.h>
+#include <glibmm/i18n.h>
 
 #include "TocEdit.h"
 #include "CdDevice.h"
@@ -263,7 +264,7 @@ bool CdDevice::updateProgress(Glib::IOCondition cond, int fd)
   if (process_ == NULL)
     return false;
 
-  if (!(cond & Gdk::INPUT_READ))
+  if (!(cond & Glib::IO_IN))
     return false;
 
   FD_ZERO(&fds);
@@ -414,9 +415,9 @@ bool CdDevice::recordDao(Gtk::Window& parent, TocEdit *tocEdit, int simulate,
   }
 
   close(fd);
-  if ((s = gnome_config_get_string(SET_CDRDAO_PATH)) != NULL)
-    execName = strdupCC(s);
-  else
+//  if ((s = gnome_config_get_string(SET_CDRDAO_PATH)) != NULL)
+//    execName = strdupCC(s);
+//  else
     execName = strdupCC("cdrdao");
 
 
@@ -551,9 +552,9 @@ int CdDevice::extractDao(Gtk::Window& parent, const char *tocFileName,
       || process_ != NULL)
     return 1;
 
-  if ((s = gnome_config_get_string(SET_CDRDAO_PATH)) != NULL)
-    execName = strdupCC(s);
-  else
+//  if ((s = gnome_config_get_string(SET_CDRDAO_PATH)) != NULL)
+//    execName = strdupCC(s);
+//  else
     execName = strdupCC("cdrdao");
 
 
@@ -671,9 +672,9 @@ int CdDevice::duplicateDao(Gtk::Window& parent, int simulate, int multiSession,
       || process_ != NULL)
     return 1;
 
-  if ((s = gnome_config_get_string(SET_CDRDAO_PATH)) != NULL)
-    execName = strdupCC(s);
-  else
+//  if ((s = gnome_config_get_string(SET_CDRDAO_PATH)) != NULL)
+//    execName = strdupCC(s);
+//  else
     execName = strdupCC("cdrdao");
 
   args[n++] = execName;
@@ -815,9 +816,9 @@ int CdDevice::blank(Gtk::Window* parent, int fast, int speed, int eject,
       || process_ != NULL)
     return 1;
 
-  if ((s = gnome_config_get_string(SET_CDRDAO_PATH)) != NULL)
-    execName = strdupCC(s);
-  else
+//  if ((s = gnome_config_get_string(SET_CDRDAO_PATH)) != NULL)
+//    execName = strdupCC(s);
+//  else
     execName = strdupCC("cdrdao");
 
   args[n++] = execName;
@@ -1008,28 +1009,28 @@ const char *CdDevice::deviceType2string(DeviceType t)
  */
 void CdDevice::importSettings()
 {
-  int i, n;
-  char *s;
-  char buf[20];
-  CdDevice *dev;
+  // int i, n;
+  // char *s;
+  // char buf[20];
+  // CdDevice *dev;
 
-  n = gnome_config_get_int(SET_DEVICES_NUM);
+  // n = gnome_config_get_int(SET_DEVICES_NUM);
 
-  if (n > 0) {
-    gnome_config_push_prefix(SET_SECTION_DEVICES);
+  // if (n > 0) {
+  //   gnome_config_push_prefix(SET_SECTION_DEVICES);
     
-    for (i = 0; i < n; i++) {
-      sprintf(buf, "%d", i);
-      s = gnome_config_get_string(buf);
+  //   for (i = 0; i < n; i++) {
+  //     sprintf(buf, "%d", i);
+  //     s = gnome_config_get_string(buf);
 
-      if (s != NULL) {
-	if ((dev = CdDevice::add(s)) != NULL)
-	  dev->manuallyConfigured(true);
-      }
-    }
+  //     if (s != NULL) {
+  //       if ((dev = CdDevice::add(s)) != NULL)
+  //         dev->manuallyConfigured(true);
+  //     }
+  //   }
 
-    gnome_config_pop_prefix();
-  }
+  //   gnome_config_pop_prefix();
+  // }
 }
 
 

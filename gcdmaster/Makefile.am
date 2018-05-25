@@ -83,10 +83,15 @@ bin_PROGRAMS = gcdmaster
 
 gcdmaster_SOURCES = \
 	AudioCDProject.cc	\
+	BlankCDDialog.cc	\
+	CdDevice.cc		\
 	ConfigManager.cc	\
+	DeviceList.cc		\
 	DumpCDProject.cc	\
 	DuplicateCDProject.cc	\
+	MessageBox.cc		\
 	ProcessMonitor.cc	\
+	ProgressDialog.cc	\
 	Project.cc		\
 	ProjectChooser.cc	\
 	SampleManager.cc	\
@@ -106,7 +111,7 @@ EXTRA_gcdmaster_SOURCES =	\
 	SoundIF-none.cc 	\
 	SoundIF-solaris.cc
 
-resources.c: ui/gcdmaster.gresource.xml ui/*.ui
+resources.c: ui/gcdmaster.gresource.xml ui/*.ui ui/*.png
 	glib-compile-resources --target=$@ --sourcedir=ui  --generate-source $<
 
 gladedir = $(datadir)/gcdmaster/glade

@@ -22,7 +22,7 @@
 #include <ctype.h>
 
 #include <gtkmm.h>
-#include <gnome.h>
+#include <glibmm/i18n.h>
 
 #include "ProgressDialog.h"
 #include "MessageBox.h"

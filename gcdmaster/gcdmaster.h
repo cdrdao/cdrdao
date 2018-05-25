@@ -24,7 +24,6 @@
 
 #include <list>
 
-class BlankCDDialog;
 #include "Project.h"
 #include "BlankCDDialog.h"
 #include "ProjectChooser.h"

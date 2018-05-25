@@ -11,6 +11,22 @@
         <property name="show-close-button">True</property>
         <property name="decoration-layout">menu:close</property>
         <child>
+          <object class="GtkButton" id="blank_button">
+            <property name="tooltip-text">Blank CD-RW</property>
+            <property name="visible">True</property>
+            <property name="can_focus">True</property>
+            <property name="receives_default">True</property>
+            <property name="border_width">0</property>
+            <property name="relief">none</property>
+            <property name="image">blank_img</property>
+            <property name="action-name">app.blank-cdrw</property>
+          </object>
+          <packing>
+            <property name="pack_type">end</property>
+            <property name="position">1</property>
+          </packing>
+        </child>
+        <child>
           <object class="GtkMenuButton" id="gears">
             <property name="visible">True</property>
             <property name="direction">none</property>
@@ -31,4 +47,9 @@
       </object>
     </child>
   </object>
-</interface>
+  <object class="GtkImage" id="blank_img">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="resource">/org/gnome/gcdmaster/blank.png</property>
+  </object>
+ </interface>

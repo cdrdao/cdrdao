@@ -9,5 +9,6 @@
     <file>dumpcd.png</file>
     <file>copycd.png</file>
     <file>gcdmaster.png</file>
+    <file>blank.png</file>
   </gresource>
 </gresources>

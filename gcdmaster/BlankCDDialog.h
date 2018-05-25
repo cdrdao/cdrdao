@@ -22,11 +22,10 @@
 
 #include <gtkmm.h>
 
-class Project;
-
 class DeviceList;
 
-class BlankCDDialog : public Gtk::ApplicationWindow {
+class BlankCDDialog : public Gtk::ApplicationWindow
+{
 public:
   BlankCDDialog();
 
@@ -55,10 +54,10 @@ private:
   void speedButtonChanged();
   void speedChanged();
   bool getEject();
-  int checkEjectWarning(Gtk::Window *);
+  int  checkEjectWarning(Gtk::Window *);
   bool getReload();
-  int checkReloadWarning(Gtk::Window *);
-  int getSpeed();
+  int  checkReloadWarning(Gtk::Window *);
+  int  getSpeed();
 
   bool on_delete_event(GdkEventAny*);
 };

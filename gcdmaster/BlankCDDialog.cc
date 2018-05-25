@@ -25,6 +25,7 @@
 #include "Settings.h"
 
 #include <gtkmm.h>
+#include <glibmm/i18n.h>
 
 BlankCDDialog::BlankCDDialog()
 {
@@ -32,6 +33,8 @@ BlankCDDialog::BlankCDDialog()
   vbox->set_border_width(10);
   vbox->set_spacing(10);
   add(*vbox);
+
+  set_size_request(500,400);
 
   active_ = false;
   moreOptionsDialog_ = 0;
@@ -41,16 +44,16 @@ BlankCDDialog::BlankCDDialog()
   vbox->pack_start(*Devices, true, true);
 
   // device settings
-  Gtk::Frame *blankOptionsFrame = new Gtk::Frame(_(" Blank Options "));
+  Gtk::Frame *blankOptionsFrame = new Gtk::Frame(" Blank Options ");
   Gtk::VBox *frameBox = new Gtk::VBox;
   frameBox->set_border_width(5);
   frameBox->set_spacing(5);
   blankOptionsFrame->add(*frameBox);
 
   fastBlank_rb =
-    new Gtk::RadioButton(_("Fast Blank - does not erase contents"), 0);
+    new Gtk::RadioButton("Fast Blank - does not erase contents", 0);
   fullBlank_rb =
-    new Gtk::RadioButton(_("Full Blank - erases contents, slower"), 0);
+    new Gtk::RadioButton("Full Blank - erases contents, slower", 0);
 
   Gtk::RadioButton::Group rb_group = fastBlank_rb->get_group();
   fullBlank_rb->set_group(rb_group);
@@ -61,7 +64,7 @@ BlankCDDialog::BlankCDDialog()
   Gtk::Image *moreOptionsPixmap =
       manage(new Gtk::Image(Gtk::StockID(Gtk::Stock::PROPERTIES),
                             Gtk::ICON_SIZE_SMALL_TOOLBAR));
-  Gtk::Label *moreOptionsLabel = manage(new Gtk::Label(_("More Options")));
+  Gtk::Label *moreOptionsLabel = manage(new Gtk::Label("More Options"));
   Gtk::HBox *moreOptionsBox = manage(new Gtk::HBox);
   moreOptionsBox->set_border_width(2);
   Gtk::Button *moreOptionsButton = manage(new Gtk::Button());
@@ -76,9 +79,9 @@ BlankCDDialog::BlankCDDialog()
 
   vbox->pack_start(*blankOptionsFrame, false, false);
 
-  Gtk::Image *pixmap = manage(new Gtk::Image(Icons::GCDMASTER,
-                                             Gtk::ICON_SIZE_DIALOG));
-  Gtk::Label *startLabel = manage(new Gtk::Label(_("Start")));
+  Gtk::Image *pixmap = new Gtk::Image;
+  pixmap->set_from_resource("/org/gnome/gcdmaster/gcdmaster.png");
+  Gtk::Label *startLabel = manage(new Gtk::Label("Start"));
   Gtk::VBox *startBox = manage(new Gtk::VBox);
   Gtk::Button *button = manage(new Gtk::Button());
   startBox->pack_start(*pixmap, false, false);
@@ -104,40 +107,40 @@ BlankCDDialog::BlankCDDialog()
 void BlankCDDialog::moreOptions()
 {
   if (!moreOptionsDialog_) {
-	  moreOptionsDialog_ = new Gtk::MessageDialog(*this, _("Blank options"), false, 
-                                                Gtk::MESSAGE_QUESTION,
+	  moreOptionsDialog_ = new Gtk::MessageDialog(*this, "Blank options", false, 
+                                                      Gtk::MESSAGE_QUESTION,
 						      Gtk::BUTTONS_CLOSE, true);
 
-    Gtk::VBox *vbox = moreOptionsDialog_->get_vbox();
-    Gtk::Frame *frame = new Gtk::Frame(_(" More Blank Options "));
+    Gtk::Box *vbox = moreOptionsDialog_->get_vbox();
+    Gtk::Frame *frame = new Gtk::Frame(" More Blank Options ");
     vbox->pack_start(*frame);
     vbox = new Gtk::VBox;
     vbox->set_border_width(10);
     vbox->set_spacing(5);
     frame->add(*vbox);
 
-    ejectButton_ = new Gtk::CheckButton(_("Eject the CD after blanking"), 0);
+    ejectButton_ = new Gtk::CheckButton("Eject the CD after blanking", 0);
     ejectButton_->set_active(false);
     vbox->pack_start(*ejectButton_);
 
     reloadButton_ =
-      new Gtk::CheckButton(_("Reload the CD after writing, if necessary"), 0);
+      new Gtk::CheckButton("Reload the CD after writing, if necessary", 0);
     reloadButton_->set_active(false);
     vbox->pack_start(*reloadButton_);
 
     Gtk::HBox *hbox = new Gtk::HBox;
-    Gtk::Label *label = new Gtk::Label(_("Speed: "), 0);
+    Gtk::Label *label = new Gtk::Label("Speed: ", 0);
     hbox->pack_start(*label, false, false);
-    
-    Gtk::Adjustment *adjustment = new Gtk::Adjustment(1, 1, 20);
-    speedSpinButton_ = new Gtk::SpinButton(*adjustment);
+
+    auto adjustment = Gtk::Adjustment::create(1, 1, 20);
+    speedSpinButton_ = new Gtk::SpinButton(adjustment);
     speedSpinButton_->set_digits(0);
     speedSpinButton_->set_sensitive(false);
     adjustment->signal_value_changed().
       connect(mem_fun(*this, &BlankCDDialog::speedChanged));
     hbox->pack_start(*speedSpinButton_, false, false, 10);
   
-    speedButton_ = new Gtk::CheckButton(_("Use max."), 0);
+    speedButton_ = new Gtk::CheckButton("Use max.", 0);
     speedButton_->set_active(true);
     speedButton_->signal_toggled().
       connect(mem_fun(*this, &BlankCDDialog::speedButtonChanged));
@@ -172,7 +175,7 @@ void BlankCDDialog::update(unsigned long level)
   if (!active_)
     return;
 
-  set_title(_("Blank CD Rewritable"));
+  set_title("Blank CD Rewritable");
 
   if (level & UPD_CD_DEVICES)
     Devices->import();
@@ -193,7 +196,7 @@ void BlankCDDialog::startAction()
 {
   if (Devices->selection().empty()) {
     Gtk::MessageDialog d(*this,
-                         _("Please select at least one recorder device"),
+                         "Please select at least one recorder device",
                          Gtk::MESSAGE_WARNING);
     d.run();
     return;
@@ -215,7 +218,7 @@ void BlankCDDialog::startAction()
   
   if (writeDevice) {
     if (writeDevice->blank(parent_, fast, burnSpeed, eject, reload) != 0) {
-      Gtk::MessageDialog d(*this, _("Cannot start blanking"),
+      Gtk::MessageDialog d(*this, "Cannot start blanking",
                            Gtk::MESSAGE_ERROR);
       d.run();
     } else
@@ -276,7 +279,8 @@ int BlankCDDialog::checkEjectWarning(Gtk::Window *parent)
   // because buffer under runs may occur for other devices that are recording.
   if (getEject())
   {
-    if (gnome_config_get_bool(SET_RECORD_EJECT_WARNING)) {
+//if (gnome_config_get_bool(SET_RECORD_EJECT_WARNING)) {
+      {
       Ask3Box msg(parent, _("Request"), 1, 2, 
                   _("Ejecting a CD may block the SCSI bus and"),
   		  _("cause buffer under runs when other devices"),
@@ -287,8 +291,8 @@ int BlankCDDialog::checkEjectWarning(Gtk::Window *parent)
       case 1: // keep eject setting
         if (msg.dontShowAgain())
         {
-          gnome_config_set_bool(SET_RECORD_EJECT_WARNING, FALSE);
-          gnome_config_sync();
+//          gnome_config_set_bool(SET_RECORD_EJECT_WARNING, FALSE);
+//          gnome_config_sync();
         }
         return 1;
         break;
@@ -319,7 +323,8 @@ int BlankCDDialog::checkReloadWarning(Gtk::Window *parent)
   // The same is true for reloading the disk.
   if (getReload())
   {
-    if (gnome_config_get_bool(SET_RECORD_RELOAD_WARNING)) {
+//    if (gnome_config_get_bool(SET_RECORD_RELOAD_WARNING)) {
+      {
       Ask3Box msg(parent, _("Request"), 1, 2, 
                   _("Reloading a CD may block the SCSI bus and"),
                   _("cause buffer under runs when other devices"),
@@ -330,8 +335,8 @@ int BlankCDDialog::checkReloadWarning(Gtk::Window *parent)
       case 1: // keep reload setting
         if (msg.dontShowAgain())
         {
-      	gnome_config_set_bool(SET_RECORD_RELOAD_WARNING, FALSE);
-          gnome_config_sync();
+//      	gnome_config_set_bool(SET_RECORD_RELOAD_WARNING, FALSE);
+//          gnome_config_sync();
         }
         return 1;
         break;
