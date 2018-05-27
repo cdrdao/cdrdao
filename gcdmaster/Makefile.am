@@ -20,7 +20,6 @@ bin_PROGRAMS = gcdmaster
 # 	guiUpdate.cc 		\
 # 	Icons.cc		\
 # 	MessageBox.cc 		\
-# 	PreferencesDialog.cc	\
 # 	ProcessMonitor.cc 	\
 # 	ProgressDialog.cc 	\
 # 	Project.cc 		\
@@ -94,6 +93,7 @@ gcdmaster_SOURCES = \
 	DuplicateCDProject.cc	\
 	GenericView.cc		\
 	MessageBox.cc		\
+	PreferencesDialog.cc	\
 	ProcessMonitor.cc	\
 	ProgressDialog.cc	\
 	Project.cc		\

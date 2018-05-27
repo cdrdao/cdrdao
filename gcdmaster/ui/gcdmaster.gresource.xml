@@ -5,6 +5,7 @@
     <file preprocess="xml-stripblanks">gears_menu.ui</file>
     <file preprocess="xml-stripblanks">chooser.ui</file>
     <file preprocess="xml-stripblanks">window.ui</file>
+    <file preprocess="xml-stripblanks">preferences.ui</file>
     <file>audiocd.png</file>
     <file>dumpcd.png</file>
     <file>copycd.png</file>

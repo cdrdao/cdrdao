@@ -113,8 +113,6 @@ private:
   /* Gtk::Button* progressButton_;   */
   Gtk::AboutDialog* about_;
 
-  /* //Glib::RefPtr<Gnome::Glade::Xml> m_refPreferencesXml; */
-
   /* Gtk::FileChooserDialog* readFileSelector_; */
   /* void createMenus(); */
   /* void createStatusbar(); */

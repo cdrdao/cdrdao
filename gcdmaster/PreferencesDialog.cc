@@ -18,26 +18,28 @@
  */
 
 #include <iostream>
+#include <gtkmm.h>
+#include <glibmm/i18n.h>
 
 #include "config.h"
+#include "xcdrdao.h"
 #include "PreferencesDialog.h"
+#include "ConfigManager.h"
 #include "MessageBox.h"
 #include "trackdb/TempFileManager.h"
 
 PreferencesDialog::PreferencesDialog(BaseObjectType* cobject,
-				     const Glib::RefPtr<Gnome::Glade::Xml>&
-				     refGlade)
-	: Gtk::Dialog(cobject),
-	  m_refGlade(refGlade)
+				     const Glib::RefPtr<Gtk::Builder>& builder) :
+	Gtk::ApplicationWindow(cobject)
 {
-    m_refGlade->get_widget("ApplyButton", _applyButton);
-    m_refGlade->get_widget("OkButton", _okButton);
-    m_refGlade->get_widget("CancelButton", _cancelButton);
-    m_refGlade->get_widget("TempDirectory", _tempDirEntry);
-    m_refGlade->get_widget("TempDirDialog", _tempDirDialog);
-    m_refGlade->get_widget("TempDialogButton", _browseButton);
-    m_refGlade->get_widget("TempBrowseCancel", _browseCancel);
-    m_refGlade->get_widget("TempBrowseOpen", _browseOpen);
+    builder->get_widget("ApplyButton", _applyButton);
+    builder->get_widget("OkButton", _okButton);
+    builder->get_widget("CancelButton", _cancelButton);
+    builder->get_widget("TempDirectory", _tempDirEntry);
+    builder->get_widget("TempDirDialog", _tempDirDialog);
+    builder->get_widget("TempDialogButton", _browseButton);
+    builder->get_widget("TempBrowseCancel", _browseCancel);
+    builder->get_widget("TempBrowseOpen", _browseOpen);
 
     if (!_applyButton || !_okButton || !_cancelButton || !_tempDirEntry ||
 	!_tempDirDialog || !_browseButton || !_browseCancel || !_browseOpen) {
@@ -67,17 +69,30 @@ PreferencesDialog::PreferencesDialog(BaseObjectType* cobject,
     _tempDirDialog->hide();
 
     readFromGConf();
-    Gtk::Dialog::hide();
+    hide();
 }
 
 PreferencesDialog::~PreferencesDialog()
 {
 }
 
+PreferencesDialog* PreferencesDialog::create(Glib::RefPtr<Gtk::Builder>& builder)
+{
+    builder->add_from_resource("/org/gnome/gcdmaster/preferences.ui");
+
+    PreferencesDialog* pd;
+    builder->get_widget_derived("preferences", pd);
+    if (!pd)
+        throw std::runtime_error("No \"preferences\" resource");
+
+    printf("Preferences window created.\n");
+    return pd;
+}
+
 void PreferencesDialog::show()
 {
     readFromGConf();
-    Gtk::Dialog::show();
+    Gtk::ApplicationWindow::show();
 }
 
 void PreferencesDialog::readFromGConf()

@@ -24,7 +24,6 @@
 #include "xcdrdao.h"
 #include "guiUpdate.h"
 //#include "DeviceConfDialog.h"
-//#include "PreferencesDialog.h"
 #include "ProjectChooser.h"
 #include "gcdmaster.h"
 #include "TocEdit.h"
@@ -111,9 +110,8 @@ GCDMaster::GCDMaster() : Gtk::Application("org.gnome.gcdmaster")
     builder_ = Gtk::Builder::create();
     about_ = NULL;
     blankCDDialog_ = NULL;
-//  set_title(APP_NAME);
 
-  project_number_ = 0;
+    project_number_ = 0;
 //  about_ = 0;
 //  project_ = 0;
 

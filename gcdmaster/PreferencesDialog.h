@@ -22,12 +22,16 @@
 
 #include <gtkmm.h>
 
-class PreferencesDialog : public Gtk::Dialog
+#include "gcdmaster.h"
+
+class PreferencesDialog : public Gtk::ApplicationWindow
 {
  public:
     PreferencesDialog(BaseObjectType* cobject,
-		      const Glib::RefPtr<Gnome::Glade::Xml>&);
+		      const Glib::RefPtr<Gtk::Builder>& builder);
     virtual ~PreferencesDialog();
+
+    static PreferencesDialog* create(Glib::RefPtr<Gtk::Builder>& builder);
 
     void show();
 
@@ -40,8 +44,6 @@ class PreferencesDialog : public Gtk::Dialog
     void on_button_browse();
     void on_button_browse_cancel();
     void on_button_browse_open();
-
-    //Glib::RefPtr<Gnome::Glade::Xml> m_refGlade;
 
     Gtk::Button* _applyButton;
     Gtk::Button* _cancelButton;
