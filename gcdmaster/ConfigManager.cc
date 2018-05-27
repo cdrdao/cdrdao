@@ -21,7 +21,7 @@
 
 ConfigManager::ConfigManager()
 {
-    client_ = Gio::Settings::create("org.gnome.Gcdmaster");
+    client_ = Gio::Settings::create("org.gnome.gcdmaster");
 }
 
 void ConfigManager::set(const Glib::ustring key, const Glib::ustring value)

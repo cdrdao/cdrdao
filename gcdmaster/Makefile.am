@@ -188,10 +188,10 @@ EXTRA_DIST = \
 	$(freedesktop_DATA)	\
 	$(appreg_DATA)	\
 	BUGS TASKS 	\
-	org.gnome.Gcdmaster.gschema.xml
+	org.gnome.gcdmaster.gschema.xml
 
 # gsettings_SCHEMAS is a list of all the schemas you want to install
-gsettings_SCHEMAS = org.gnome.Gcdmaster.gschema.xml
+gsettings_SCHEMAS = org.gnome.gcdmaster.gschema.xml
 
 # include the appropriate makefile rules for schema handling
 @GSETTINGS_RULES@

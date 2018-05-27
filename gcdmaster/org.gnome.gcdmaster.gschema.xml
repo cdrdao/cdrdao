@@ -1,5 +1,5 @@
 <schemalist>
-  <schema id="org.gnome.Gcdmaster" path="/org/gnome/Gcdmaster/">
+  <schema id="org.gnome.gcdmaster" path="/org/gnome/gcdmaster/">
     <key name="temp-dir" type="s">
       <default>'/tmp'</default>
       <summary>Temporary files directory</summary>
