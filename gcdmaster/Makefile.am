@@ -7,7 +7,7 @@ bin_PROGRAMS = gcdmaster
 # 	AddSilenceDialog.cc 	\
 # 	AudioCDProject.cc 	\
 # 	AudioCDView.cc 		\
-# 	BlankCDDialog.cc 	\
+# 	BlankCDWindow.cc 	\
 # 	CdDevice.cc 		\
 # 	CdTextDialog.cc 	\
 # 	ConfigManager.cc	\
@@ -58,7 +58,7 @@ bin_PROGRAMS = gcdmaster
 # 	GenericView.h		\
 # 	RecordHDTarget.h	\
 # 	TocInfoDialog.h		\
-# 	BlankCDDialog.h		\
+# 	BlankCDWindow.h		\
 # 	guiUpdate.h		\
 # 	RecordTocDialog.h	\
 # 	TrackDataScrap.h	\
@@ -84,7 +84,7 @@ gcdmaster_SOURCES = \
 	AddFileDialog.cc	\
 	AddSilenceDialog.cc	\
 	AudioCDProject.cc	\
-	BlankCDDialog.cc	\
+	BlankCDWindow.cc	\
 	CdDevice.cc		\
 	CdTextDialog.cc		\
 	ConfigManager.cc	\

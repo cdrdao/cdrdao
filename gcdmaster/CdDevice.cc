@@ -392,7 +392,7 @@ bool CdDevice::recordDao(Gtk::Window& parent, TocEdit *tocEdit, int simulate,
   // Create temporary toc file. Get temporary directory from
   // ConfigManager, then append mkstemp template.
   Glib::ustring tempdir =
-      configManager->get_string("temp_dir");
+      configManager->get_string("temp-dir");
   int length = tempdir.length();
   tocFileName = (char*)alloca(length + 24);
 

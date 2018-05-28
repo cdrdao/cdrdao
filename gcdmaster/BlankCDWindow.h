@@ -24,17 +24,16 @@
 
 class DeviceList;
 
-class BlankCDDialog : public Gtk::ApplicationWindow
+class BlankCDWindow : public Gtk::ApplicationWindow
 {
 public:
-  BlankCDDialog();
+  BlankCDWindow();
 
-  void start(Gtk::Window* parent);
+  void start();
   void update(unsigned long level);
 
 private:
   DeviceList *Devices;
-  Gtk::Window* parent_;
 
   bool active_;
   int speed_;

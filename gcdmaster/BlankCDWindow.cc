@@ -21,13 +21,13 @@
 #include "guiUpdate.h"
 #include "DeviceList.h"
 #include "MessageBox.h"
-#include "BlankCDDialog.h"
+#include "BlankCDWindow.h"
 #include "Settings.h"
 
 #include <gtkmm.h>
 #include <glibmm/i18n.h>
 
-BlankCDDialog::BlankCDDialog()
+BlankCDWindow::BlankCDWindow()
 {
   Gtk::VBox *vbox = new Gtk::VBox;
   vbox->set_border_width(10);
@@ -72,7 +72,7 @@ BlankCDDialog::BlankCDDialog()
   moreOptionsBox->pack_start(*moreOptionsLabel, false, false, 4);
   moreOptionsButton->add(*moreOptionsBox);
   moreOptionsButton->signal_clicked().
-    connect(mem_fun(*this, &BlankCDDialog::moreOptions));
+    connect(mem_fun(*this, &BlankCDWindow::moreOptions));
   moreOptionsBox = manage(new Gtk::HBox);
   frameBox->pack_start(*moreOptionsBox);
   moreOptionsBox->pack_end(*moreOptionsButton, false, false);
@@ -88,7 +88,7 @@ BlankCDDialog::BlankCDDialog()
   startBox->pack_start(*startLabel, false, false);
 
   button->add(*startBox);
-  button->signal_clicked().connect(mem_fun(*this, &BlankCDDialog::startAction));
+  button->signal_clicked().connect(mem_fun(*this, &BlankCDWindow::startAction));
 
   Gtk::HBox *hbox2 = manage(new Gtk::HBox);
   hbox2->set_spacing(20);
@@ -97,14 +97,14 @@ BlankCDDialog::BlankCDDialog()
 
   Gtk::Button* cancel_but =
     manage(new Gtk::Button(Gtk::StockID(Gtk::Stock::CANCEL)));
-  cancel_but->signal_clicked().connect(mem_fun(*this, &BlankCDDialog::stop));
+  cancel_but->signal_clicked().connect(mem_fun(*this, &BlankCDWindow::stop));
   hbox2->pack_start(*cancel_but);
   vbox->pack_start(*hbox2, Gtk::PACK_SHRINK);
 
   show_all_children();
 }
 
-void BlankCDDialog::moreOptions()
+void BlankCDWindow::moreOptions()
 {
   if (!moreOptionsDialog_) {
 	  moreOptionsDialog_ = new Gtk::MessageDialog(*this, "Blank options", false, 
@@ -137,13 +137,13 @@ void BlankCDDialog::moreOptions()
     speedSpinButton_->set_digits(0);
     speedSpinButton_->set_sensitive(false);
     adjustment->signal_value_changed().
-      connect(mem_fun(*this, &BlankCDDialog::speedChanged));
+      connect(mem_fun(*this, &BlankCDWindow::speedChanged));
     hbox->pack_start(*speedSpinButton_, false, false, 10);
   
     speedButton_ = new Gtk::CheckButton("Use max.", 0);
     speedButton_->set_active(true);
     speedButton_->signal_toggled().
-      connect(mem_fun(*this, &BlankCDDialog::speedButtonChanged));
+      connect(mem_fun(*this, &BlankCDWindow::speedButtonChanged));
     hbox->pack_start(*speedButton_, true, true);
     vbox->pack_start(*hbox);
     moreOptionsDialog_->show_all_children();
@@ -154,15 +154,14 @@ void BlankCDDialog::moreOptions()
   moreOptionsDialog_->hide();
 }
 
-void BlankCDDialog::start(Gtk::Window* parent)
+void BlankCDWindow::start()
 {
   present();
   active_ = true;
-  parent_ = parent;
   update(UPD_CD_DEVICES);
 }
 
-void BlankCDDialog::stop()
+void BlankCDWindow::stop()
 {
   hide();
   if (moreOptionsDialog_)
@@ -170,7 +169,7 @@ void BlankCDDialog::stop()
   active_ = false;
 }
 
-void BlankCDDialog::update(unsigned long level)
+void BlankCDWindow::update(unsigned long level)
 {
   if (!active_)
     return;
@@ -186,13 +185,13 @@ void BlankCDDialog::update(unsigned long level)
   }
 }
 
-bool BlankCDDialog::on_delete_event(GdkEventAny*)
+bool BlankCDWindow::on_delete_event(GdkEventAny*)
 {
   stop();
   return 1;
 }
 
-void BlankCDDialog::startAction()
+void BlankCDWindow::startAction()
 {
   if (Devices->selection().empty()) {
     Gtk::MessageDialog d(*this,
@@ -217,7 +216,7 @@ void BlankCDDialog::startAction()
   CdDevice *writeDevice = CdDevice::find(targetData.c_str());
   
   if (writeDevice) {
-    if (writeDevice->blank(parent_, fast, burnSpeed, eject, reload) != 0) {
+    if (writeDevice->blank(NULL, fast, burnSpeed, eject, reload) != 0) {
       Gtk::MessageDialog d(*this, "Cannot start blanking",
                            Gtk::MESSAGE_ERROR);
       d.run();
@@ -228,7 +227,7 @@ void BlankCDDialog::startAction()
   stop();
 }
 
-void BlankCDDialog::speedButtonChanged()
+void BlankCDWindow::speedButtonChanged()
 {
   if (speedButton_->get_active())
   {
@@ -240,7 +239,7 @@ void BlankCDDialog::speedButtonChanged()
   }
 }
 
-void BlankCDDialog::speedChanged()
+void BlankCDWindow::speedChanged()
 {
 //FIXME: get max burn speed from selected burner(s)
   int new_speed;
@@ -265,7 +264,7 @@ void BlankCDDialog::speedChanged()
   speed_ = new_speed;
 }
 
-bool BlankCDDialog::getEject()
+bool BlankCDWindow::getEject()
 {
   if (moreOptionsDialog_)
     return ejectButton_->get_active() ? 1 : 0;
@@ -273,7 +272,7 @@ bool BlankCDDialog::getEject()
     return 0; 
 }
 
-int BlankCDDialog::checkEjectWarning(Gtk::Window *parent)
+int BlankCDWindow::checkEjectWarning(Gtk::Window *parent)
 {
   // If ejecting the CD after recording is requested issue a warning message
   // because buffer under runs may occur for other devices that are recording.
@@ -310,7 +309,7 @@ int BlankCDDialog::checkEjectWarning(Gtk::Window *parent)
   return 0;  
 }
 
-bool BlankCDDialog::getReload()
+bool BlankCDWindow::getReload()
 {
   if (moreOptionsDialog_)
     return reloadButton_->get_active() ? 1 : 0;
@@ -318,7 +317,7 @@ bool BlankCDDialog::getReload()
     return 0; 
 }
 
-int BlankCDDialog::checkReloadWarning(Gtk::Window *parent)
+int BlankCDWindow::checkReloadWarning(Gtk::Window *parent)
 {
   // The same is true for reloading the disk.
   if (getReload())
@@ -354,7 +353,7 @@ int BlankCDDialog::checkReloadWarning(Gtk::Window *parent)
   return 0;
 }
 
-int BlankCDDialog::getSpeed()
+int BlankCDWindow::getSpeed()
 {
   if (moreOptionsDialog_)
   {

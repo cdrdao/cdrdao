@@ -24,14 +24,14 @@
 
 #include "gcdmaster.h"
 
-class PreferencesDialog : public Gtk::ApplicationWindow
+class PreferencesDialog : public Gtk::Dialog
 {
  public:
     PreferencesDialog(BaseObjectType* cobject,
 		      const Glib::RefPtr<Gtk::Builder>& builder);
     virtual ~PreferencesDialog();
 
-    static PreferencesDialog* create(Glib::RefPtr<Gtk::Builder>& builder);
+    static Glib::RefPtr<PreferencesDialog> create(Glib::RefPtr<Gtk::Builder>& builder);
 
     void show();
 
@@ -41,18 +41,11 @@ class PreferencesDialog : public Gtk::ApplicationWindow
     void on_button_apply();
     void on_button_cancel();
     void on_button_ok();
-    void on_button_browse();
-    void on_button_browse_cancel();
-    void on_button_browse_open();
 
-    Gtk::Button* _applyButton;
-    Gtk::Button* _cancelButton;
-    Gtk::Button* _okButton;
-    Gtk::Entry*  _tempDirEntry;
-    Gtk::FileChooserDialog* _tempDirDialog;
-    Gtk::Button* _browseButton;
-    Gtk::Button* _browseCancel;
-    Gtk::Button* _browseOpen;
+    Gtk::Button* applyButton_;
+    Gtk::Button* cancelButton_;
+    Gtk::Button* okButton_;
+    Gtk::FileChooserButton* tempDirEntry_;
 };
 
 #endif

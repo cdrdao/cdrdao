@@ -21,16 +21,16 @@
 
 #include "config.h"
 
+#include "gcdmaster.h"
 #include "xcdrdao.h"
 #include "guiUpdate.h"
 //#include "DeviceConfDialog.h"
 #include "ProjectChooser.h"
-#include "gcdmaster.h"
 #include "TocEdit.h"
 #include "util.h"
 #include "AudioCDProject.h"
 #include "DuplicateCDProject.h"
-#include "BlankCDDialog.h"
+#include "BlankCDWindow.h"
 #include "DumpCDProject.h"
 
 GCDWindow* GCDWindow::create(Glib::RefPtr<Gtk::Builder> builder, GCDWindow::What what)
@@ -105,14 +105,12 @@ void GCDWindow::set_project(Gtk::VBox* project)
     notebook_->append_page(*project);
 }
 
-GCDMaster::GCDMaster() : Gtk::Application("org.gnome.gcdmaster")
+GCDMaster::GCDMaster() : Gtk::Application("org.gnome.gcdmaster"),
+                         aboutDialog_(), blankCDWindow_()
 {
     builder_ = Gtk::Builder::create();
-    about_ = NULL;
-    blankCDDialog_ = NULL;
 
     project_number_ = 0;
-//  about_ = 0;
 //  project_ = 0;
 
 //   readFileSelector_ =
@@ -198,22 +196,8 @@ GCDMaster::GCDMaster() : Gtk::Application("org.gnome.gcdmaster")
 //                          "Erase a CD-RW"),
 //                          sigc::mem_fun(*this, &GCDMaster::blankCDRW) );
 
-//   // Settings
-//   m_refActionGroup->add( Gtk::Action::create("SettingsMenu", "_Settings") );
-//   m_refActionGroup->add( Gtk::Action::create("ConfigureDevices", Gtk::Stock::PREFERENCES,
-//                          "Configure Devices...",
-//                          "Configure the read and recording devices"),
-//                          sigc::mem_fun(*this, &GCDMaster::configureDevices) );
-// //  m_refActionGroup->add( Gtk::Action::create("Preferences", Gtk::Stock::PREFERENCES,
-// //					     _("_Preferences..."),
-// //					     _("Set various preferences and parameters")),
-// //			 sigc::mem_fun(*this, &GCDMaster::configurePreferences));
-
 //   // Help
 //   m_refActionGroup->add( Gtk::Action::create("HelpMenu", "_Help") );
-
-//   m_refActionGroup->add( Gtk::Action::create("About", "About"),
-//                          sigc::mem_fun(*this, &GCDMaster::aboutDialog) );
 
 //   m_refUIManager = Gtk::UIManager::create();
 //   m_refUIManager->insert_action_group(m_refActionGroup);
@@ -452,17 +436,12 @@ void GCDMaster::newDumpCDProject()
 //   if (project_)
 //     project_->update(level);
 
-//   blankCDDialog_.update(level);
+//   blankCDWindow_.update(level);
 // }
 
 // void GCDMaster::configureDevices()
 // {
 // //  deviceConfDialog->start();
-// }
-
-// void GCDMaster::configurePreferences()
-// {
-// //    preferencesDialog->show_all();
 // }
 
 // void GCDMaster::createStatusbar()
@@ -538,6 +517,15 @@ void GCDMaster::on_action_quit()
 
 void GCDMaster::on_action_preferences()
 {
+    printf("on_action_preferences()\n");
+    if (!preferencesDialog_) {
+        preferencesDialog_ = PreferencesDialog::create(builder_);
+
+    }
+    auto windows = get_windows();
+    preferencesDialog_->set_transient_for(*windows[0]);
+    preferencesDialog_->run();
+    preferencesDialog_->hide();
 }
 
 void GCDMaster::on_activate()
@@ -548,48 +536,46 @@ void GCDMaster::on_activate()
 
 void GCDMaster::on_action_about()
 {
-    if (about_) {
+    if (aboutDialog_) {
         // "About" dialog hasn't been closed, so just raise it
-        about_->run();
-        about_->hide();
+        aboutDialog_->run();
+        aboutDialog_->hide();
 
     } else {
 
-        about_ = new Gtk::AboutDialog();
+        aboutDialog_ = Glib::RefPtr<Gtk::AboutDialog>(new Gtk::AboutDialog());
 
         std::vector<Glib::ustring> authors;
         authors.push_back("Andreas Mueller <mueller@daneb.ping.de>");
         authors.push_back("Manuel Clos <llanero@jazzfree.com>");
         authors.push_back("Denis Leroy <denis@poolshark.org> (maintainer)");
-        about_->set_authors(authors);
+        aboutDialog_->set_authors(authors);
 
-        about_->set_program_name("gcdmaster");
-        about_->set_version(VERSION);
+        aboutDialog_->set_program_name("gcdmaster");
+        aboutDialog_->set_version(VERSION);
 
-        about_->set_website("hhttps://github.com/cdrdao/cdrdao/wiki");
-        about_->set_comments("A Gnome Audio CD Mastering Tool");
-        about_->set_copyright("Copyright \xc2\xa9 2000-2018 Andreas Mueller, Manuel Clos, Denis Leroy");
-        about_->set_logo(Gdk::Pixbuf::create_from_resource("/org/gnome/gcdmaster/gcdmaster.png"));
-        about_->set_wrap_license(true);
-        about_->set_license_type(Gtk::LICENSE_GPL_2_0);
+        aboutDialog_->set_website("hhttps://github.com/cdrdao/cdrdao/wiki");
+        aboutDialog_->set_comments("A Gnome Audio CD Mastering Tool");
+        aboutDialog_->set_copyright("Copyright \xc2\xa9 2000-2018 Andreas Mueller, Manuel Clos, Denis Leroy");
+        aboutDialog_->set_logo(Gdk::Pixbuf::create_from_resource("/org/gnome/gcdmaster/gcdmaster.png"));
+        aboutDialog_->set_wrap_license(true);
+        aboutDialog_->set_license_type(Gtk::LICENSE_GPL_2_0);
 
         auto windows = get_windows();
-        about_->set_transient_for(*windows[0]);
+        aboutDialog_->set_transient_for(*windows[0]);
 
-        about_->run();
-        about_->hide();
+        aboutDialog_->run();
+        aboutDialog_->hide();
     }
 }
 
 void GCDMaster::on_action_blank_cdrw()
 {
     printf("on_action_blank_cdrw()\n");
-    if (!blankCDDialog_) {
-        blankCDDialog_ = new BlankCDDialog();
-        add_window(*blankCDDialog_);
-
-        auto windows = get_windows();
-        blankCDDialog_->start(windows[0]);
+    if (!blankCDWindow_) {
+        blankCDWindow_ = new BlankCDWindow();
+        add_window(*blankCDWindow_);
+        blankCDWindow_->start();
     }
-    blankCDDialog_->present();
+    blankCDWindow_->present();
 }

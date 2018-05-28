@@ -30,53 +30,53 @@
 
 PreferencesDialog::PreferencesDialog(BaseObjectType* cobject,
 				     const Glib::RefPtr<Gtk::Builder>& builder) :
-	Gtk::ApplicationWindow(cobject)
+	Gtk::Dialog(cobject)
 {
-    builder->get_widget("ApplyButton", _applyButton);
-    builder->get_widget("OkButton", _okButton);
-    builder->get_widget("CancelButton", _cancelButton);
-    builder->get_widget("TempDirectory", _tempDirEntry);
-    builder->get_widget("TempDirDialog", _tempDirDialog);
-    builder->get_widget("TempDialogButton", _browseButton);
-    builder->get_widget("TempBrowseCancel", _browseCancel);
-    builder->get_widget("TempBrowseOpen", _browseOpen);
+    builder->get_widget("ApplyButton", applyButton_);
+    builder->get_widget("OkButton", okButton_);
+    builder->get_widget("CancelButton", cancelButton_);
+    builder->get_widget("TempDirectory", tempDirEntry_);
+    // builder->get_widget("TempDirDialog", _tempDirDialog);
+    // builder->get_widget("TempDialogButton", _browseButton);
+    // builder->get_widget("TempBrowseCancel", _browseCancel);
+    // builder->get_widget("TempBrowseOpen", _browseOpen);
 
-    if (!_applyButton || !_okButton || !_cancelButton || !_tempDirEntry ||
-	!_tempDirDialog || !_browseButton || !_browseCancel || !_browseOpen) {
+    if (!applyButton_ || !okButton_ || !cancelButton_ || !tempDirEntry_) {
         std::cerr << "Unable to create all GUI widgets from glade file\n";
-	exit(1);
+        exit(1);
     }
 
-    _applyButton->signal_clicked()
-	.connect(sigc::mem_fun(*this,
-			       &PreferencesDialog::on_button_apply));
-    _cancelButton->signal_clicked()
-	.connect(sigc::mem_fun(*this,
-			       &PreferencesDialog::on_button_cancel));
-    _okButton->signal_clicked()
-	.connect(sigc::mem_fun(*this,
-			       &PreferencesDialog::on_button_ok));
-    _browseButton->signal_clicked()
-	.connect(sigc::mem_fun(*this,
-			       &PreferencesDialog::on_button_browse));
-    _browseCancel->signal_clicked()
-	.connect(sigc::mem_fun(*this,
-			       &PreferencesDialog::on_button_browse_cancel));
-    _browseOpen->signal_clicked()
-	.connect(sigc::mem_fun(*this,
-			       &PreferencesDialog::on_button_browse_open));
+    applyButton_->signal_clicked()
+        .connect(sigc::mem_fun(*this,
+                               &PreferencesDialog::on_button_apply));
+    cancelButton_->signal_clicked()
+        .connect(sigc::mem_fun(*this,
+                               &PreferencesDialog::on_button_cancel));
+    okButton_->signal_clicked()
+        .connect(sigc::mem_fun(*this,
+                               &PreferencesDialog::on_button_ok));
+    // _browseButton->signal_clicked()
+    //     .connect(sigc::mem_fun(*this,
+    //     		       &PreferencesDialog::on_button_browse));
+    // _browseCancel->signal_clicked()
+    //     .connect(sigc::mem_fun(*this,
+    //     		       &PreferencesDialog::on_button_browse_cancel));
+    // _browseOpen->signal_clicked()
+    //     .connect(sigc::mem_fun(*this,
+    //     		       &PreferencesDialog::on_button_browse_open));
 
-    _tempDirDialog->hide();
+    // _tempDirDialog->hide();
 
     readFromGConf();
-    hide();
+    // hide();
 }
 
 PreferencesDialog::~PreferencesDialog()
 {
 }
 
-PreferencesDialog* PreferencesDialog::create(Glib::RefPtr<Gtk::Builder>& builder)
+Glib::RefPtr<PreferencesDialog>
+PreferencesDialog::create(Glib::RefPtr<Gtk::Builder>& builder)
 {
     builder->add_from_resource("/org/gnome/gcdmaster/preferences.ui");
 
@@ -86,24 +86,25 @@ PreferencesDialog* PreferencesDialog::create(Glib::RefPtr<Gtk::Builder>& builder
         throw std::runtime_error("No \"preferences\" resource");
 
     printf("Preferences window created.\n");
-    return pd;
+    return Glib::RefPtr<PreferencesDialog>(pd);
 }
 
 void PreferencesDialog::show()
 {
     readFromGConf();
-    Gtk::ApplicationWindow::show();
+    Gtk::Dialog::show();
 }
 
 void PreferencesDialog::readFromGConf()
 {
-    const Glib::ustring text = configManager->get_string("temp_dir");
-    _tempDirEntry->set_text(text);
+    const Glib::ustring text = configManager->get_string("temp-dir");
+    printf("Setting temp-dir to %s\n", text.c_str());
+    tempDirEntry_->set_filename(text);
 }
 
 bool PreferencesDialog::saveToGConf()
 {
-    const Glib::ustring text = _tempDirEntry->get_text();
+    const Glib::ustring text = tempDirEntry_->get_filename();
 
     if (!tempFileManager.setTempDirectory(text.c_str())) {
 
@@ -115,7 +116,7 @@ bool PreferencesDialog::saveToGConf()
     }
 
     try {
-	configManager->set("temp_dir", text);
+	configManager->set("temp-dir", text);
     } catch (const Glib::Error& error) {
         std::cerr << error.what() << std::endl;
     }
@@ -137,20 +138,4 @@ void PreferencesDialog::on_button_ok()
 {
     if (saveToGConf())
 	hide();
-}
-
-void PreferencesDialog::on_button_browse()
-{
-    _tempDirDialog->show();
-}
-
-void PreferencesDialog::on_button_browse_cancel()
-{
-    _tempDirDialog->hide();
-}
-
-void PreferencesDialog::on_button_browse_open()
-{
-    _tempDirEntry->set_text(_tempDirDialog->get_filename());
-    _tempDirDialog->hide();
 }

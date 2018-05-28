@@ -25,8 +25,9 @@
 #include <list>
 
 #include "Project.h"
-#include "BlankCDDialog.h"
+#include "BlankCDWindow.h"
 #include "ProjectChooser.h"
+#include "PreferencesDialog.h"
 
 /*
  * Application Window class
@@ -93,7 +94,6 @@ private:
 
   /* void configureDevices(); */
   /* void configurePreferences(); */
-  /* void blankCDRW(); */
 
   /* void registerStockIcons(); */
 
@@ -101,7 +101,12 @@ private:
 
 //  Project* project_;
 
-  BlankCDDialog* blankCDDialog_;
+  // Dialogs
+  Glib::RefPtr<PreferencesDialog> preferencesDialog_;
+  Glib::RefPtr<Gtk::AboutDialog> aboutDialog_;
+
+  // Windows
+  BlankCDWindow* blankCDWindow_;
 
   /* Gtk::Notebook notebook_; */
 
@@ -111,7 +116,6 @@ private:
   /* //Gnome::UI::AppBar* statusbar_;   */
   /* Gtk::ProgressBar* progressbar_;   */
   /* Gtk::Button* progressButton_;   */
-  Gtk::AboutDialog* about_;
 
   /* Gtk::FileChooserDialog* readFileSelector_; */
   /* void createMenus(); */
