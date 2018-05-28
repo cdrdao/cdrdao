@@ -20,13 +20,17 @@
 #include "guiUpdate.h"
 #include "Project.h"
 #include "DuplicateCDProject.h"
-// #include "RecordCDSource.h"
-// #include "RecordCDTarget.h"
-// #include "DeviceList.h"
-// #include "MessageBox.h"
-// #include "Settings.h"
+#include "xcdrdao.h"
+#include "ConfigManager.h"
+#include "RecordCDSource.h"
+#include "RecordCDTarget.h"
+#include "DeviceList.h"
+#include "MessageBox.h"
+
 
 #include <gtkmm.h>
+#include <glibmm/i18n.h>
+
 
 DuplicateCDProject::DuplicateCDProject(Gtk::ApplicationWindow* parent) :
     Project(parent),
@@ -112,109 +116,107 @@ DuplicateCDProject::create(Glib::RefPtr<Gtk::Builder>& builder,
 //   delete CDTarget;
 // }
 
-// void DuplicateCDProject::start()
-// {
-//   DeviceList *sourceList = CDSource->getDeviceList();
-//   DeviceList *targetList = CDTarget->getDeviceList();
+void DuplicateCDProject::start()
+{
+    DeviceList *sourceList = CDSource->getDeviceList();
+    DeviceList *targetList = CDTarget->getDeviceList();
 
-//   std::string sourceData = sourceList->selection();
-//   std::string targetData = targetList->selection();
+    std::string sourceData = sourceList->selection();
+    std::string targetData = targetList->selection();
 
-//   if (sourceData.empty()) {
-//     Gtk::MessageDialog d(*parent_, _("Please select one reader device"),
-//                            Gtk::MESSAGE_INFO);
-//       d.run();
-//       return;
-//   }
+    if (sourceData.empty()) {
+        Gtk::MessageDialog d(*parent_, _("Please select one reader device"),
+                             Gtk::MESSAGE_INFO);
+        d.run();
+        return;
+    }
 
-//   if (targetData.empty()) {
-//     Gtk::MessageDialog d(*parent_,
-//                          _("Please select at least one recorder device"),
-//                            Gtk::MESSAGE_INFO);
-//       d.run();
-//       return;
-//   }
+    if (targetData.empty()) {
+        Gtk::MessageDialog d(*parent_,
+                             _("Please select at least one recorder device"),
+                             Gtk::MESSAGE_INFO);
+        d.run();
+        return;
+    }
 
-//   //Read options
-//   int onTheFly = CDSource->getOnTheFly();
-//   if (onTheFly) {
-//     // We can't make on the fly copy with the same device, check that
-//     // We can only have one source device selected
+    //Read options
+    int onTheFly = CDSource->getOnTheFly();
+    if (onTheFly) {
+        // We can't make on the fly copy with the same device, check that
+        // We can only have one source device selected
 
-//     if (sourceData == targetData) {
+        if (sourceData == targetData) {
 
-//       // If the user selects the same device for reading and writing
-//       // we can't do on the fly copying. More complex situations with
-//       // multiple target devices are not handled
-//       if (gnome_config_get_bool(SET_DUPLICATE_ONTHEFLY_WARNING)) {
-//         Ask2Box msg(parent_, "Request", 1, 2,
-//                     _("To duplicate a CD using the same device for reading "
-//                       "and writing"),
-//                     _("you need to copy the CD to disk before burning"), "",
-//                     _("Proceed and copy to disk before burning?"), NULL);
+            // If the user selects the same device for reading and writing
+            // we can't do on the fly copying. More complex situations with
+            // multiple target devices are not handled
+            if (configManager->get_bool("onthefly-warning")) {
+                Ask2Box msg(parent_, "Request", 1, 2,
+                            _("To duplicate a CD using the same device for reading "
+                              "and writing"),
+                            _("you need to copy the CD to disk before burning"), "",
+                            _("Proceed and copy to disk before burning?"), NULL);
 
-//         switch (msg.run()) {
-//         case 1: // proceed without on the fly
-//           CDSource->setOnTheFly(false);
-//           onTheFly = 0;
-//           if (msg.dontShowAgain()) {
-//             gnome_config_set_bool(SET_DUPLICATE_ONTHEFLY_WARNING, FALSE);
-//             gnome_config_sync();
-//           }
-//           break;
-//         default: // do not proceed
-//           return;
-//           break;
-//         }
-//       } else {
-//         CDSource->setOnTheFly(false);
-//         onTheFly = 0;
-//       }
-//     }
-//   }
+         switch (msg.run()) {
+         case 1: // proceed without on the fly
+           CDSource->setOnTheFly(false);
+           onTheFly = 0;
+           if (msg.dontShowAgain())
+               configManager->set("onthefly-warning", false);
+           break;
+         default: // do not proceed
+             return;
+             break;
+         }
+            } else {
+                CDSource->setOnTheFly(false);
+                onTheFly = 0;
+            }
+        }
+    }
 
-//   int correction = CDSource->getCorrection();
-//   int subChanReadMode = CDSource->getSubChanReadMode();
+    int correction = CDSource->getCorrection();
+    int subChanReadMode = CDSource->getSubChanReadMode();
 
-//   // Record options
-//   int simulate;
-//   if (simulate_rb->get_active())
-//     simulate = 1;
-//   else if (simulateBurn_rb->get_active())
-//     simulate = 2;
-//   else
-//     simulate = 0;
+    // Record options
+    int simulate;
+    if (simulate_rb->get_active())
+        simulate = 1;
+    else if (simulateBurn_rb->get_active())
+        simulate = 2;
+    else
+        simulate = 0;
 
-//   int multiSession = CDTarget->getMultisession();
-//   int burnSpeed = CDTarget->getSpeed();
-//   int eject = CDTarget->checkEjectWarning(parent_);
-//   if (eject == -1)
-//     return;
+    int multiSession = CDTarget->getMultisession();
+    int burnSpeed = CDTarget->getSpeed();
+    int eject = CDTarget->checkEjectWarning(parent_);
+    if (eject == -1)
+        return;
 
-//   int reload = CDTarget->checkReloadWarning(parent_);
-//   if (reload == -1)
-//     return;
+    int reload = CDTarget->checkReloadWarning(parent_);
+    if (reload == -1)
+        return;
 
-//   int buffer = CDTarget->getBuffer();
+    int buffer = CDTarget->getBuffer();
 
-//   CdDevice *readDevice = CdDevice::find(sourceData.c_str());
-//   if (readDevice == NULL)
-//     return;
+    CdDevice *readDevice = CdDevice::find(sourceData.c_str());
+    if (readDevice == NULL)
+        return;
 
-//   CdDevice *writeDevice = CdDevice::find(targetData.c_str());
-//   if (writeDevice == NULL)
-//     return;
+    CdDevice *writeDevice = CdDevice::find(targetData.c_str());
+    if (writeDevice == NULL)
+        return;
   
-//   if (writeDevice->duplicateDao(*parent_, simulate, multiSession, burnSpeed,
-//                                 eject, reload, buffer, onTheFly, correction,
-//                                 subChanReadMode, readDevice) != 0) {
-//     Gtk::MessageDialog md(*parent_, _("Cannot start disk-at-once duplication"),
-//                           Gtk::MESSAGE_ERROR);
-//     md.run();
-//   } else {
-//     guiUpdate(UPD_CD_DEVICE_STATUS);
-//   }
-// }
+    if (writeDevice->duplicateDao(*parent_, simulate, multiSession, burnSpeed,
+                                  eject, reload, buffer, onTheFly, correction,
+                                  subChanReadMode, readDevice) != 0) {
+        Gtk::MessageDialog md(*parent_, _("Cannot start disk-at-once duplication"),
+                              Gtk::MESSAGE_ERROR);
+        md.run();
+    } else {
+        guiUpdate(UPD_CD_DEVICE_STATUS);
+    }
+}
 
 // bool DuplicateCDProject::closeProject()
 // {

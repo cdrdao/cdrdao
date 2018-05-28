@@ -23,6 +23,8 @@
 #include "MessageBox.h"
 #include "BlankCDWindow.h"
 #include "Settings.h"
+#include "xcdrdao.h"
+#include "ConfigManager.h"
 
 #include <gtkmm.h>
 #include <glibmm/i18n.h>
@@ -274,39 +276,35 @@ bool BlankCDWindow::getEject()
 
 int BlankCDWindow::checkEjectWarning(Gtk::Window *parent)
 {
-  // If ejecting the CD after recording is requested issue a warning message
-  // because buffer under runs may occur for other devices that are recording.
-  if (getEject())
-  {
-//if (gnome_config_get_bool(SET_RECORD_EJECT_WARNING)) {
-      {
-      Ask3Box msg(parent, _("Request"), 1, 2, 
-                  _("Ejecting a CD may block the SCSI bus and"),
-  		  _("cause buffer under runs when other devices"),
-                  _("are still recording."), "",
-                  _("Keep the eject setting anyway?"), NULL);
-  
-      switch (msg.run()) {
-      case 1: // keep eject setting
-        if (msg.dontShowAgain())
-        {
-//          gnome_config_set_bool(SET_RECORD_EJECT_WARNING, FALSE);
-//          gnome_config_sync();
+  // If ejecting the CD after recording is requested issue a warning
+  // message because buffer under runs may occur for other devices
+  // that are recording.
+    if (getEject()) {
+        if (configManager->get_bool("eject-warning")) {
+            Ask3Box msg(parent, _("Request"), 1, 2,
+                        _("Ejecting a CD may block the SCSI bus and"),
+                        _("cause buffer under runs when other devices"),
+                        _("are still recording."), "",
+                        _("Keep the eject setting anyway?"), NULL);
+
+            switch (msg.run()) {
+            case 1: // keep eject setting
+                if (msg.dontShowAgain())
+                    configManager->set("eject-warning", false);
+                return 1;
+                break;
+            case 2: // don't keep eject setting
+                ejectButton_->set_active(false);
+                return 0;
+                break;
+            default: // cancel
+                return -1;
+                break;
+            }
         }
         return 1;
-        break;
-      case 2: // don't keep eject setting
-        ejectButton_->set_active(false);
-        return 0;
-        break;
-      default: // cancel
-        return -1;
-        break;
-      }
     }
-    return 1;
-  }
-  return 0;  
+    return 0;
 }
 
 bool BlankCDWindow::getReload()
@@ -314,43 +312,38 @@ bool BlankCDWindow::getReload()
   if (moreOptionsDialog_)
     return reloadButton_->get_active() ? 1 : 0;
   else
-    return 0; 
+    return 0;
 }
 
 int BlankCDWindow::checkReloadWarning(Gtk::Window *parent)
 {
-  // The same is true for reloading the disk.
-  if (getReload())
-  {
-//    if (gnome_config_get_bool(SET_RECORD_RELOAD_WARNING)) {
-      {
-      Ask3Box msg(parent, _("Request"), 1, 2, 
-                  _("Reloading a CD may block the SCSI bus and"),
-                  _("cause buffer under runs when other devices"),
-                  _("are still recording."), "",
-                  _("Keep the reload setting anyway?"), NULL);
+    // The same is true for reloading the disk.
+    if (getReload()) {
+        if (configManager->get_bool("reload-warning")) {
+            Ask3Box msg(parent, _("Request"), 1, 2,
+                        _("Reloading a CD may block the SCSI bus and"),
+                        _("cause buffer under runs when other devices"),
+                        _("are still recording."), "",
+                        _("Keep the reload setting anyway?"), NULL);
 
-      switch (msg.run()) {
-      case 1: // keep reload setting
-        if (msg.dontShowAgain())
-        {
-//      	gnome_config_set_bool(SET_RECORD_RELOAD_WARNING, FALSE);
-//          gnome_config_sync();
+            switch (msg.run()) {
+            case 1: // keep reload setting
+                if (msg.dontShowAgain())
+                    configManager->set("reload-warning", false);
+                return 1;
+                break;
+            case 2: // don't keep reload setting
+                reloadButton_->set_active(false);
+                return 0;
+                break;
+            default: // cancel
+                return -1;
+                break;
+            }
         }
         return 1;
-        break;
-      case 2: // don't keep reload setting
-        reloadButton_->set_active(false);
-        return 0;
-        break;
-      default: // cancel
-        return -1;
-        break;
-      }
     }
-    return 1;
-  }
-  return 0;
+    return 0;
 }
 
 int BlankCDWindow::getSpeed()

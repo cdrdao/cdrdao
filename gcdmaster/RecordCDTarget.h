@@ -21,7 +21,6 @@
 #define __RECORD_CD_TARGET_H
 
 #include <gtkmm.h>
-#include <gtk/gtk.h>
 
 class TocEdit;
 class CdDevice;

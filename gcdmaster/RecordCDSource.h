@@ -20,65 +20,66 @@
 #ifndef __RECORD_CD_SOURCE_H
 #define __RECORD_CD_SOURCE_H
 
+#include <gtkmm.h>
+
 class CdDevice;
 class DeviceList;
 
-class RecordCDSource : public Gtk::VBox {
+class RecordCDSource : public Gtk::VBox
+{
 public:
-  RecordCDSource(Gtk::Window *);
-  ~RecordCDSource();
+    RecordCDSource(Gtk::Window *);
+    ~RecordCDSource();
 
-  void start();
-  void stop();
+    void start();
+    void stop();
 
-  void update(unsigned long level);
+    void update(unsigned long level);
 
-  bool getOnTheFly();
-  void setOnTheFly(bool);
-  int getCorrection();
-  int getSubChanReadMode();
-  DeviceList *getDeviceList() { return DEVICES;}
-  void onTheFlyOption(bool);
+    bool getOnTheFly();
+    void setOnTheFly(bool);
+    int getCorrection();
+    int getSubChanReadMode();
+    DeviceList *getDeviceList() { return DEVICES;}
+    void onTheFlyOption(bool);
 
-  struct CorrectionTable {
-    int correction;
-    const char *name;
-  };
+    struct CorrectionTable {
+        int correction;
+        const char *name;
+    };
 
-  struct SubChanReadModeTable {
-    int mode;
-    const char *name;
-  };
+    struct SubChanReadModeTable {
+        int mode;
+        const char *name;
+    };
 
 private:
-  DeviceList *DEVICES;
+    DeviceList *DEVICES;
 
-  int active_;
-  int correction_;
-  int speed_;
-  int subChanReadMode_;
+    int active_;
+    int correction_;
+    int speed_;
+    int subChanReadMode_;
 
-//  bool onTheFly_;
+    Gtk::Window *parent_;
+    Gtk::MessageDialog *moreOptionsDialog_;
 
-  Gtk::Window *parent_;
-  Gtk::MessageDialog *moreOptionsDialog_;
+    Gtk::SpinButton *speedSpinButton_;
+    Gtk::CheckButton *speedButton_;
 
-  Gtk::SpinButton *speedSpinButton_;
-  Gtk::CheckButton *speedButton_;
+    Gtk::ComboBox *correctionMenu_;
+    Gtk::ComboBox *subChanReadModeMenu_;
+    Gtk::CheckButton *onTheFlyButton_;
+    Gtk::CheckButton *continueOnErrorButton_;
+    Gtk::CheckButton *ignoreIncorrectTOCButton_;
 
-  Gtk::OptionMenu *correctionMenu_;
-  Gtk::OptionMenu *subChanReadModeMenu_;
-  Gtk::CheckButton *onTheFlyButton_;
-  Gtk::CheckButton *continueOnErrorButton_;
-  Gtk::CheckButton *ignoreIncorrectTOCButton_;
+    void moreOptions();
 
-  void moreOptions();
-
-  void setSpeed(int);
-  void setCorrection(int);
-  void setSubChanReadMode(int);
-  void speedButtonChanged();
-  void speedChanged();
+    void setSpeed(int);
+    void setCorrection(int);
+    void setSubChanReadMode(int);
+    void speedButtonChanged();
+    void speedChanged();
 };
 
 #endif

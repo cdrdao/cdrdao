@@ -29,7 +29,27 @@ void ConfigManager::set(const Glib::ustring key, const Glib::ustring value)
     client_->set_string(key, value);
 }
 
+void ConfigManager::set(const Glib::ustring key, Glib::StringArrayHandle sa)
+{
+    client_->set_string_array(key, sa);
+}
+
+void ConfigManager::set(const Glib::ustring key, bool value)
+{
+    client_->set_boolean(key, value);
+}
+
 Glib::ustring ConfigManager::get_string(const Glib::ustring key)
 {
     return client_->get_string(key);
+}
+
+Glib::StringArrayHandle ConfigManager::get_string_array(const Glib::ustring key)
+{
+    return client_->get_string_array(key);
+}
+
+bool ConfigManager::get_bool(const Glib::ustring key)
+{
+    return client_->get_boolean(key);
 }

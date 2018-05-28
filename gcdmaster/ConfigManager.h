@@ -30,7 +30,12 @@ class ConfigManager
     virtual ~ConfigManager() {}
 
     void set(const Glib::ustring key, const Glib::ustring value);
+    void set(const Glib::ustring key, const bool value);
+    void set(const Glib::ustring key, Glib::StringArrayHandle array);
+
     Glib::ustring get_string(const Glib::ustring key);
+    Glib::StringArrayHandle get_string_array(const Glib::ustring key);
+    bool get_bool(const Glib::ustring key);
 
  protected:
     Glib::RefPtr<Gio::Settings> client_;

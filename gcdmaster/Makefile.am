@@ -31,7 +31,6 @@ bin_PROGRAMS = gcdmaster
 # 	RecordTocSource.cc 	\
 # 	SampleDisplay.cc 	\
 # 	SampleManager.cc 	\
-# 	Settings.cc 		\
 # 	TextEdit.cc 		\
 # 	TocEdit.cc 		\
 # 	TocEditView.cc 		\
@@ -77,8 +76,7 @@ bin_PROGRAMS = gcdmaster
 # 	DeviceList.h		\
 # 	ProgressDialog.h	\
 # 	ConfigManager.h		\
-# 	PreferencesDialog.h	\
-# 	Settings.h
+# 	PreferencesDialog.h
 
 gcdmaster_SOURCES = \
 	AddFileDialog.cc	\
@@ -98,6 +96,8 @@ gcdmaster_SOURCES = \
 	ProgressDialog.cc	\
 	Project.cc		\
 	ProjectChooser.cc	\
+	RecordCDSource.cc	\
+	RecordCDTarget.cc	\
 	SampleManager.cc	\
 	TextEdit.cc		\
 	TocEdit.cc		\

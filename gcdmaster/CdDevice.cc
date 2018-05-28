@@ -368,6 +368,18 @@ bool CdDevice::ejectCd(bool load)
   return success;
 }
 
+static char* allocate_cdrdao_path()
+{
+    char* exec_name = NULL;
+    Glib::ustring cdrdao_path = configManager->get_string("cdrdao-path");
+    if (!cdrdao_path.empty())
+        exec_name = strdupCC(cdrdao_path.c_str());
+    else
+        exec_name = strdupCC("cdrdao");
+
+    return exec_name;
+}
+
 // Starts a 'cdrdao' for recording given toc. Returns false if an
 // error occured and the process was not successfully launched.
 bool CdDevice::recordDao(Gtk::Window& parent, TocEdit *tocEdit, int simulate,
@@ -413,15 +425,9 @@ bool CdDevice::recordDao(Gtk::Window& parent, TocEdit *tocEdit, int simulate,
     log_message(-2, _("Cannot write temporary toc-file."));
     return false;
   }
-
   close(fd);
-//  if ((s = gnome_config_get_string(SET_CDRDAO_PATH)) != NULL)
-//    execName = strdupCC(s);
-//  else
-    execName = strdupCC("cdrdao");
 
-
-  args[n++] = execName;
+  args[n++] = allocate_cdrdao_path();
 
   if (simulate)
     args[n++] = "simulate";
@@ -552,13 +558,7 @@ int CdDevice::extractDao(Gtk::Window& parent, const char *tocFileName,
       || process_ != NULL)
     return 1;
 
-//  if ((s = gnome_config_get_string(SET_CDRDAO_PATH)) != NULL)
-//    execName = strdupCC(s);
-//  else
-    execName = strdupCC("cdrdao");
-
-
-  args[n++] = execName;
+  args[n++] = allocate_cdrdao_path();
 
   args[n++] = "read-cd";
 
@@ -672,12 +672,7 @@ int CdDevice::duplicateDao(Gtk::Window& parent, int simulate, int multiSession,
       || process_ != NULL)
     return 1;
 
-//  if ((s = gnome_config_get_string(SET_CDRDAO_PATH)) != NULL)
-//    execName = strdupCC(s);
-//  else
-    execName = strdupCC("cdrdao");
-
-  args[n++] = execName;
+  args[n++] = allocate_cdrdao_path();
 
   args[n++] = "copy";
 
@@ -816,12 +811,7 @@ int CdDevice::blank(Gtk::Window* parent, int fast, int speed, int eject,
       || process_ != NULL)
     return 1;
 
-//  if ((s = gnome_config_get_string(SET_CDRDAO_PATH)) != NULL)
-//    execName = strdupCC(s);
-//  else
-    execName = strdupCC("cdrdao");
-
-  args[n++] = execName;
+  args[n++] = allocate_cdrdao_path();
 
   args[n++] = "blank";
 
@@ -1009,28 +999,19 @@ const char *CdDevice::deviceType2string(DeviceType t)
  */
 void CdDevice::importSettings()
 {
-  // int i, n;
-  // char *s;
-  // char buf[20];
-  // CdDevice *dev;
+    char *s;
+    CdDevice *dev;
 
-  // n = gnome_config_get_int(SET_DEVICES_NUM);
+    Glib::StringArrayHandle sa = configManager->get_string_array("manual-devices");
 
-  // if (n > 0) {
-  //   gnome_config_push_prefix(SET_SECTION_DEVICES);
-    
-  //   for (i = 0; i < n; i++) {
-  //     sprintf(buf, "%d", i);
-  //     s = gnome_config_get_string(buf);
-
-  //     if (s != NULL) {
-  //       if ((dev = CdDevice::add(s)) != NULL)
-  //         dev->manuallyConfigured(true);
-  //     }
-  //   }
-
-  //   gnome_config_pop_prefix();
-  // }
+    if (!sa.empty()) {
+        for (auto s : sa) {
+            if (!s.empty()) {
+                if ((dev = CdDevice::add(s.c_str())) != NULL)
+                    dev->manuallyConfigured(true);
+            }
+        }
+    }
 }
 
 
@@ -1038,31 +1019,21 @@ void CdDevice::importSettings()
  */
 void CdDevice::exportSettings()
 {
-  static const char* pathBase = "/org/gnome/gcdmaster/devices";
-  char* key;
-  char* s;
-  CdDevice* drun;
-  int n;
+    CdDevice* drun;
+    int n;
 
-  key = (char*)alloca(strlen(pathBase) + 12);
+    std::vector<std::string> sa;
 
-  for (drun = first(), n = 0; drun != NULL; drun = next(drun)) {
-
-    if (drun->manuallyConfigured()) {
-      sprintf(key, "%s%d", pathBase, n);
-      s = drun->settingString();
-
-      try {
-          configManager->set(key, s);
-      } catch (const Glib::Error& e) {
-	std::cerr << e.what() << std::endl;
-      }
-      // CdDevice::settingString allocates the string. Must delete it
-      // here.
-      delete[] s;
-      n++;
+    for (drun = first(), n = 0; drun != NULL; drun = next(drun)) {
+        if (drun->manuallyConfigured()) {
+            char* s = drun->settingString();
+            sa[n] = s;
+            delete[] s;
+            n++;
+        }
     }
-  }
+
+    configManager->set("manual-devices", sa);
 }
 
 CdDevice *CdDevice::add(const char* dev, const char *vendor,

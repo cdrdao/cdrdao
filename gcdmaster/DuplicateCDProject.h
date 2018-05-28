@@ -42,11 +42,11 @@ private:
     RecordCDTarget *CDTarget;
 
     Gtk::Label label_;
-    /* Gtk::RadioButton *simulate_rb; */
-    /* Gtk::RadioButton *simulateBurn_rb; */
-    /* Gtk::RadioButton *burn_rb; */
+    Gtk::RadioButton *simulate_rb;
+    Gtk::RadioButton *simulateBurn_rb;
+    Gtk::RadioButton *burn_rb;
 
-    /* void start(); */
+    void start();
     /* void recordToc2CD() {} */
     /* void projectInfo() {} */
     /* void update(unsigned long level); */

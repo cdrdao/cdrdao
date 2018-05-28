@@ -10,5 +10,22 @@
       <summary>Manually configured devices</summary>
       <description>List of manually configured devices</description>
     </key>
+    <key name="cdrdao-path" type="s">
+      <summary>Path of cdrdao executable</summary>
+      <default>''</default>
+      <description>Absoluate path of cdrdao executable to use instead of default system</description>
+    </key>
+    <key name="eject-warning" type="b">
+      <default>true</default>
+      <summary>Show the CD ejection warning dialog after recording</summary>
+    </key>
+    <key name="reload-warning" type="b">
+      <default>true</default>
+      <summary>Show the CD reloading warning dialog</summary>
+    </key>
+    <key name="onthefly-warning" type="b">
+      <default>true</default>
+      <summary>Show the same target CD duplication on-the-fly warning dialog</summary>
+    </key>
   </schema>
 </schemalist>

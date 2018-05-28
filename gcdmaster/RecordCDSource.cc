@@ -24,7 +24,7 @@
 #include <unistd.h>
 
 #include <gtkmm.h>
-#include <gnome.h>
+#include <glibmm/i18n.h>
 
 #include "RecordCDSource.h"
 #include "xcdrdao.h"
@@ -59,7 +59,6 @@ RecordCDSource::RecordCDSource(Gtk::Window *parent)
 {
   parent_ = parent;
   active_ = 0;
-//  onTheFly_ = 0;
   correction_ = 0;
   speed_ = 1;
   subChanReadMode_ = 0;
@@ -89,8 +88,8 @@ RecordCDSource::RecordCDSource(Gtk::Window *parent)
   label->show();
   hbox->pack_start(*label, false, false);
 
-  Gtk::Adjustment *adjustment = new Gtk::Adjustment(1, 1, 50);
-  speedSpinButton_ = new Gtk::SpinButton(*adjustment);
+  Glib::RefPtr<Gtk::Adjustment> adjustment = Gtk::Adjustment::create(1, 1, 50);
+  speedSpinButton_ = new Gtk::SpinButton(adjustment);
   speedSpinButton_->set_digits(0);
   speedSpinButton_->show();
   speedSpinButton_->set_sensitive(false);
@@ -183,7 +182,7 @@ void RecordCDSource::moreOptions()
                                                 Gtk::MESSAGE_QUESTION,
                                                 Gtk::BUTTONS_CLOSE, true);
 
-    Gtk::VBox *vbox = moreOptionsDialog_->get_vbox();
+    Gtk::Box *vbox = moreOptionsDialog_->get_vbox();
     Gtk::Frame *frame = new Gtk::Frame(_(" More Source Options "));
     vbox->pack_start(*frame);
     vbox = new Gtk::VBox;
@@ -212,10 +211,9 @@ void RecordCDSource::moreOptions()
       menu->append(*mitem);
     }
   
-    correctionMenu_ = new Gtk::OptionMenu;
-    correctionMenu_->set_menu(*menu);
-  
-    correctionMenu_->set_history(correction_);
+    correctionMenu_ = new Gtk::ComboBox;
+//    correctionMenu_->set_menu(*menu);
+//    correctionMenu_->set_history(correction_);
   
     Gtk::Alignment *align;
 
@@ -234,9 +232,9 @@ void RecordCDSource::moreOptions()
       menu->append(*mitem);
     }
 
-    subChanReadModeMenu_ = new Gtk::OptionMenu;
-    subChanReadModeMenu_->set_menu(*menu);
-    subChanReadModeMenu_->set_history(subChanReadMode_);
+    subChanReadModeMenu_ = new Gtk::ComboBox;
+//    subChanReadModeMenu_->set_menu(*menu);
+//    subChanReadModeMenu_->set_history(subChanReadMode_);
 
     label = new Gtk::Label(_("Sub-Channel Reading Mode:"));
     align = new Gtk::Alignment(0, 0.5, 0, 1);
