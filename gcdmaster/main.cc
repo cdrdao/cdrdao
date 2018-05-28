@@ -26,18 +26,16 @@
 
 #include "config.h"
 
-//#include "xcdrdao.h"
+#include "xcdrdao.h"
 //#include "TocEdit.h"
 //#include "TrackInfoDialog.h"
 //#include "AddSilenceDialog.h"
 //#include "AddFileDialog.h"
 //#include "DeviceConfDialog.h"
-//#include "PreferencesDialog.h"
 #include "ProgressDialog.h"
 #include "guiUpdate.h"
-//#include "CdDevice.h"
+#include "CdDevice.h"
 #include "ProcessMonitor.h"
-//#include "ProjectChooser.h"
 #include "ConfigManager.h"
 
 #include "gcdmaster.h"
@@ -48,7 +46,6 @@
 ProcessMonitor*     PROCESS_MONITOR = NULL;
 ProgressDialogPool* PROGRESS_POOL = NULL;
 
-//PreferencesDialog*  preferencesDialog = NULL;
 ConfigManager*      configManager = NULL;
 
 static int VERBOSE = 0;
@@ -83,53 +80,37 @@ int main(int argc, char* argv[])
 {
   auto app = Gtk::Application::create(argc, argv, "app.gcdmaster");
    
-  // settings
-  // CdDevice::importSettings();
-
   // create configuration manager
   configManager = new ConfigManager();
 
-  // setup process monitor
+  // Settings.
+  CdDevice::importSettings();
+
+  // Setup process monitor
   PROCESS_MONITOR = new ProcessMonitor;
   installSignalHandler(SIGCHLD, signalHandler);
 
-  // setup periodic GUI updates
+  // Setup periodic GUI updates.
   Glib::signal_timeout().connect(sigc::ptr_fun(&guiUpdatePeriodic), 2000);
 
   installSignalHandler(SIGPIPE, SIG_IGN);
 
-  // scan for SCSI devices
-  // CdDevice::scan();
+  // Scan for SCSI devices.
+  CdDevice::scan();
 
-  // this forces a CdDevice::updateDeviceStatus() so
-  // when gcdmaster is first show we already have the device status
-//  guiUpdatePeriodic();
+  // This forces a CdDevice::updateDeviceStatus() so when gcdmaster is
+  // first show we already have the device status.
+  guiUpdatePeriodic();
 
 //  deviceConfDialog = new DeviceConfDialog;
-//  PROGRESS_POOL = new ProgressDialogPool;
-
-  // Create Preferences dialog from Glade file.
-  // Glib::RefPtr<Gnome::Glade::Xml> refXml;
-  // try {
-  //     refXml = Gnome::Glade::Xml::create(GCDMASTER_GLADEDIR "/Preferences.glade");
-  // } catch(const Gnome::Glade::XmlError& ex) {
-  //     std::cerr << ex.what() << std::endl;
-  //     exit(1);
-  // }
-  // refXml->get_widget_derived("PrefDialog", preferencesDialog);
-  // if (!preferencesDialog) {
-  //     std::cerr << "Unable to create Preferences dialog from glade file\n" 
-  //         CDRDAO_GLADEDIR "/Preferences.glade" << std::endl;
-  //     exit(1);
-  // }
+  PROGRESS_POOL = new ProgressDialogPool;
 
   GCDMaster gcdmaster;
 
   gcdmaster.run(argc, argv);
 
-  // save settings
-  // CdDevice::exportSettings();
-//  gnome_config_sync();
+  // Save settings.
+  CdDevice::exportSettings();
 
   return 0;
 }
