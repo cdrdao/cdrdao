@@ -176,6 +176,8 @@ void BlankCDWindow::update(unsigned long level)
   if (!active_)
     return;
 
+  printf("BlankCDWindow update (%d)\n", level);
+
   set_title("Blank CD Rewritable");
 
   if (level & UPD_CD_DEVICES)

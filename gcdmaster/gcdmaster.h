@@ -45,6 +45,8 @@ public:
 
     Gtk::VBox* project() { return project_; }
 
+    void update(unsigned long level);
+
 protected:
     void set_project(Gtk::VBox* project);
 
@@ -68,6 +70,8 @@ public:
   void newDumpCDProject();
   void newAudioCDProject();
 
+  void update(unsigned long level);
+
 private:
   gint project_number_;
   Glib::RefPtr<Gtk::Builder> builder_;
@@ -89,8 +93,6 @@ private:
   /* void newAudioCDProject(const char *name, TocEdit *tocEdit, */
   /*                        const char* tracks = NULL); */
   /* void newDumpCDProject(); */
-
-  /* void update(unsigned long level); */
 
   /* void configureDevices(); */
   /* void configurePreferences(); */

@@ -26,10 +26,9 @@
 // Warning: those may be shared by multiple open project windows.
 //
 
-extern class DeviceConfDialog*   deviceConfDialog;
 extern class ProcessMonitor*     PROCESS_MONITOR;
 extern class ProgressDialogPool* PROGRESS_POOL;
-extern class PreferencesDialog*  preferencesDialog;
+extern class GCDMaster*          gcdmaster;
 extern class ConfigManager*      configManager;
 
 void blockProcessMonitorSignals();

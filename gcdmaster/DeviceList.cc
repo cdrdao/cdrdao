@@ -45,8 +45,7 @@ DeviceList::DeviceList(CdDevice::DeviceType filterType)
 
   listModel_ = Gtk::ListStore::create(listColumns_);
   list_.set_model(listModel_);
-  list_.append_column(_("Vendor"), listColumns_.vendor);
-  list_.append_column(_("Model"), listColumns_.model);
+  list_.append_column(_("Device"), listColumns_.description);
   list_.append_column(_("Status"), listColumns_.status);
 
   Gtk::VBox *contents = new Gtk::VBox;
@@ -99,8 +98,7 @@ void DeviceList::appendTableEntry(CdDevice *dev)
   Gtk::TreeIter newiter = listModel_->append();
   Gtk::TreeModel::Row row = *newiter;
   row[listColumns_.dev] = dev->dev();
-  row[listColumns_.vendor] = dev->vendor();
-  row[listColumns_.model] = dev->product();
+  row[listColumns_.description] = dev->description();
   row[listColumns_.status] = CdDevice::status2string(dev->status());
 
   if (dev->status() == CdDevice::DEV_READY)
@@ -109,41 +107,43 @@ void DeviceList::appendTableEntry(CdDevice *dev)
 
 void DeviceList::import()
 {
-  CdDevice *drun;
-  unsigned int i;
+    CdDevice *drun;
+    unsigned int i;
 
-  listModel_->clear();
+    listModel_->clear();
 
-  for (drun = CdDevice::first(); drun != NULL; drun = CdDevice::next(drun)) {
-    switch (filterType_) {
-    case CdDevice::CD_ROM:
-      if (drun->driverId() > 0 &&
-          (drun->deviceType() == CdDevice::CD_ROM ||
-           drun->deviceType() == CdDevice::CD_R ||
-           drun->deviceType() == CdDevice::CD_RW)) {
-        appendTableEntry(drun);
-      }
-      break;
-    case CdDevice::CD_R:
-      if (drun->driverId() > 0 &&
-          (drun->deviceType() == CdDevice::CD_R ||
-           drun->deviceType() == CdDevice::CD_RW)) {
-        appendTableEntry(drun);
-      }
-      break;
-    case CdDevice::CD_RW:
-      if (drun->driverId() > 0 &&
-          (drun->deviceType() == CdDevice::CD_RW)) {
-        appendTableEntry(drun);
-      }
-      break;
+    for (i = 0; i < CdDevice::count(); i++) {
+        drun = CdDevice::at(i);
+
+        switch (filterType_) {
+        case CdDevice::CD_ROM:
+            if (drun->driverId() > 0 &&
+                (drun->deviceType() == CdDevice::CD_ROM ||
+                 drun->deviceType() == CdDevice::CD_R ||
+                 drun->deviceType() == CdDevice::CD_RW)) {
+                appendTableEntry(drun);
+            }
+            break;
+        case CdDevice::CD_R:
+            if (drun->driverId() > 0 &&
+                (drun->deviceType() == CdDevice::CD_R ||
+                 drun->deviceType() == CdDevice::CD_RW)) {
+                appendTableEntry(drun);
+            }
+            break;
+        case CdDevice::CD_RW:
+            if (drun->driverId() > 0 &&
+                (drun->deviceType() == CdDevice::CD_RW)) {
+                appendTableEntry(drun);
+            }
+            break;
+        }
     }
-  }
 
-  if (listModel_->children().size() > 0) {
-    list_.columns_autosize();
-    list_.get_selection()->select(Gtk::TreeModel::Path((unsigned)1));
-  }
+    if (listModel_->children().size() > 0) {
+        list_.columns_autosize();
+        list_.get_selection()->select(Gtk::TreeModel::Path((unsigned)1));
+    }
 }
 
 void DeviceList::importStatus()

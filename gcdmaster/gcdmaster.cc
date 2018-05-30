@@ -105,6 +105,10 @@ void GCDWindow::set_project(Gtk::VBox* project)
     notebook_->append_page(*project);
 }
 
+void GCDWindow::update(unsigned long level)
+{
+}
+
 GCDMaster::GCDMaster() : Gtk::Application("org.gnome.gcdmaster"),
                          aboutDialog_(), blankCDWindow_()
 {
@@ -431,13 +435,19 @@ void GCDMaster::newDumpCDProject()
     window->present();
 }
 
-// void GCDMaster::update(unsigned long level)
-// {
-//   if (project_)
-//     project_->update(level);
+void GCDMaster::update(unsigned long level)
+ {
+     for (auto window : get_windows()) {
+         GCDWindow* gw = dynamic_cast<GCDWindow*>(window);
+         gw->update(level);
+     }
 
-//   blankCDWindow_.update(level);
-// }
+     if (blankCDWindow_)
+         blankCDWindow_->update(level);
+
+     if (preferencesDialog_)
+         preferencesDialog_->update(level);
+ }
 
 // void GCDMaster::configureDevices()
 // {

@@ -22,8 +22,6 @@
 
 #include <gtkmm.h>
 
-#include "gcdmaster.h"
-
 class PreferencesDialog : public Gtk::Dialog
 {
  public:
@@ -34,6 +32,7 @@ class PreferencesDialog : public Gtk::Dialog
     static Glib::RefPtr<PreferencesDialog> create(Glib::RefPtr<Gtk::Builder>& builder);
 
     void show();
+    void update(unsigned long level);
 
  protected:
     void readFromGConf();
@@ -41,11 +40,34 @@ class PreferencesDialog : public Gtk::Dialog
     void on_button_apply();
     void on_button_cancel();
     void on_button_ok();
+    void rescan_action();
+    void import_devices();
+    void import_status();
 
     Gtk::Button* applyButton_;
     Gtk::Button* cancelButton_;
     Gtk::Button* okButton_;
     Gtk::FileChooserButton* tempDirEntry_;
+
+    struct DeviceData {
+        std::string dev;
+        int driverId;
+        int deviceType;
+        unsigned long options;
+    };
+
+    class ListColumns : public Gtk::TreeModel::ColumnRecord
+    {
+    public:
+        ListColumns() { add(dev); add(description);  add(status); };
+        Gtk::TreeModelColumn<std::string> dev;
+        Gtk::TreeModelColumn<std::string> description;
+        Gtk::TreeModelColumn<std::string> status;
+        Gtk::TreeModelColumn<DeviceData*> data;
+    };
+    Gtk::TreeView* deviceList_;
+    Glib::RefPtr<Gtk::ListStore> deviceListModel_;
+    ListColumns deviceListColumns_;
 };
 
 #endif

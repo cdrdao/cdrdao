@@ -23,7 +23,9 @@
 
 #include "config.h"
 #include "xcdrdao.h"
+#include "guiUpdate.h"
 #include "PreferencesDialog.h"
+#include "CdDevice.h"
 #include "ConfigManager.h"
 #include "MessageBox.h"
 #include "trackdb/TempFileManager.h"
@@ -32,16 +34,14 @@ PreferencesDialog::PreferencesDialog(BaseObjectType* cobject,
 				     const Glib::RefPtr<Gtk::Builder>& builder) :
 	Gtk::Dialog(cobject)
 {
-    builder->get_widget("ApplyButton", applyButton_);
-    builder->get_widget("OkButton", okButton_);
-    builder->get_widget("CancelButton", cancelButton_);
-    builder->get_widget("TempDirectory", tempDirEntry_);
-    // builder->get_widget("TempDirDialog", _tempDirDialog);
-    // builder->get_widget("TempDialogButton", _browseButton);
-    // builder->get_widget("TempBrowseCancel", _browseCancel);
-    // builder->get_widget("TempBrowseOpen", _browseOpen);
+    builder->get_widget("apply-button", applyButton_);
+    builder->get_widget("ok-button", okButton_);
+    builder->get_widget("cancel-button", cancelButton_);
+    builder->get_widget("temp-directory", tempDirEntry_);
+    builder->get_widget("device-tree", deviceList_);
 
-    if (!applyButton_ || !okButton_ || !cancelButton_ || !tempDirEntry_) {
+    if (!applyButton_ || !okButton_ || !cancelButton_ || !tempDirEntry_ ||
+        !deviceList_) {
         std::cerr << "Unable to create all GUI widgets from glade file\n";
         exit(1);
     }
@@ -55,20 +55,22 @@ PreferencesDialog::PreferencesDialog(BaseObjectType* cobject,
     okButton_->signal_clicked()
         .connect(sigc::mem_fun(*this,
                                &PreferencesDialog::on_button_ok));
-    // _browseButton->signal_clicked()
-    //     .connect(sigc::mem_fun(*this,
-    //     		       &PreferencesDialog::on_button_browse));
-    // _browseCancel->signal_clicked()
-    //     .connect(sigc::mem_fun(*this,
-    //     		       &PreferencesDialog::on_button_browse_cancel));
-    // _browseOpen->signal_clicked()
-    //     .connect(sigc::mem_fun(*this,
-    //     		       &PreferencesDialog::on_button_browse_open));
 
-    // _tempDirDialog->hide();
+    Gtk::Button* button = NULL;
+    builder->get_widget("rescan-button", button);
+    if (button)
+        button->signal_clicked().
+            connect(sigc::mem_fun(*this, &PreferencesDialog::rescan_action));
+
+    // Setup Device List treeview.
+    deviceListModel_ = Gtk::ListStore::create(deviceListColumns_);
+    deviceList_->set_model(deviceListModel_);
+    deviceList_->append_column(_("Device"), deviceListColumns_.description);
+    deviceList_->append_column(_("Status"), deviceListColumns_.status);
+    deviceList_->get_column(0)->set_expand();
 
     readFromGConf();
-    // hide();
+    import_devices();
 }
 
 PreferencesDialog::~PreferencesDialog()
@@ -123,6 +125,21 @@ bool PreferencesDialog::saveToGConf()
     return true;
 }
 
+void PreferencesDialog::update(unsigned long level)
+{
+    if (!is_visible()) {
+        printf("Preferences dialog ignored (%d)\n", level);
+        return;
+    }
+
+    printf("Preferences dialog update (%d)\n", level);
+
+    if (level & UPD_CD_DEVICES)
+        import_devices();
+    else if (level & UPD_CD_DEVICE_STATUS)
+        import_status();
+}
+
 void PreferencesDialog::on_button_apply()
 {
     saveToGConf();
@@ -138,4 +155,43 @@ void PreferencesDialog::on_button_ok()
 {
     if (saveToGConf())
 	hide();
+}
+
+void PreferencesDialog::import_devices()
+{
+    deviceListModel_->clear();
+
+    for (int i = 0; i < CdDevice::count(); i++) {
+        auto dev = CdDevice::at(i);
+
+        Gtk::TreeIter iter = deviceListModel_->append();
+        Gtk::TreeModel::Row row = *iter;
+        row[deviceListColumns_.dev] = dev->dev();
+        row[deviceListColumns_.description] = dev->description();
+        row[deviceListColumns_.status] = CdDevice::status2string(dev->status());
+
+        if (dev->status() == CdDevice::DEV_READY)
+            deviceList_->get_selection()->select(iter);
+    }
+}
+
+void PreferencesDialog::import_status()
+{
+    CdDevice* dev;
+    DeviceData* data;
+
+    Gtk::TreeNodeChildren ch = deviceListModel_->children();
+    for (unsigned i = 0; i < ch.size(); i++) {
+        Gtk::TreeRow row = ch[i];
+        data = row[deviceListColumns_.data];
+        if (data && (dev = CdDevice::find(data->dev.c_str()))) {
+            row[deviceListColumns_.status] = CdDevice::status2string(dev->status());
+        }
+    }
+}
+
+void PreferencesDialog::rescan_action()
+{
+    CdDevice::scan();
+    guiUpdate(UPD_CD_DEVICES);
 }

@@ -49,12 +49,11 @@ private:
   class ListColumns : public Gtk::TreeModel::ColumnRecord {
   public:
     ListColumns() {
-      add(dev); add(vendor); add(model); add(status); 
+      add(dev); add(description);  add(status);
     };
 
     Gtk::TreeModelColumn<std::string> dev;
-    Gtk::TreeModelColumn<std::string> vendor;
-    Gtk::TreeModelColumn<std::string> model;
+    Gtk::TreeModelColumn<std::string> description;
     Gtk::TreeModelColumn<std::string> status;
   };
 

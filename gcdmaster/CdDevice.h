@@ -20,11 +20,10 @@
 #ifndef __CD_DEVICE_H__
 #define __CD_DEVICE_H__
 
-// #include <sigc++/object.h>
-#include <gdk/gdk.h>
-#include <string>
+#include <gtkmm.h>
 
-#include "Project.h"
+#include <vector>
+#include <string>
 
 class TocEdit;
 class Process;
@@ -32,147 +31,141 @@ class ScsiIf;
 
 class CdDevice : public sigc::trackable
 {
- public:
-  enum Status { DEV_READY, DEV_RECORDING, DEV_READING, DEV_WAITING, DEV_BUSY,
-                DEV_NO_DISK, DEV_BLANKING, DEV_FAULT, DEV_UNKNOWN };
-  enum DeviceType { CD_R, CD_RW, CD_ROM };
+public:
+    enum Status { DEV_READY, DEV_RECORDING, DEV_READING, DEV_WAITING, DEV_BUSY,
+                  DEV_NO_DISK, DEV_BLANKING, DEV_FAULT, DEV_UNKNOWN };
+    enum DeviceType { CD_R, CD_RW, CD_ROM };
 
-  enum Action { A_RECORD, A_READ, A_DUPLICATE, A_BLANK, A_NONE };
+    enum Action { A_RECORD, A_READ, A_DUPLICATE, A_BLANK, A_NONE };
 
-  CdDevice(const char* dev, const char *vendor, const char *product);
-  ~CdDevice();
+    CdDevice(const char* dev, const char *vendor, const char *product);
+    ~CdDevice();
 
-  char *settingString() const;
+    char *settingString() const;
 
-  const char *dev() const            { return dev_.c_str(); } 
-  const char *vendor() const         { return vendor_.c_str(); }
-  const char *product() const        { return product_.c_str(); }
+    const char *dev() const            { return dev_.c_str(); }
+    const char *vendor() const         { return vendor_.c_str(); }
+    const char *product() const        { return product_.c_str(); }
+    const char *description() const    { return description_.c_str(); }
 
-  Status status() const              { return status_; }
-  Process *process() const           { return process_; }
+    Status status() const              { return status_; }
+    Process *process() const           { return process_; }
 
-  int exitStatus() const;
+    int exitStatus() const;
 
-  void status(Status);
-  int updateStatus();
+    void status(Status);
+    int updateStatus();
 
-  Action action() const              { return action_; }
+    Action action() const              { return action_; }
 
-  bool updateProgress(Glib::IOCondition, int fd);
+    bool updateProgress(Glib::IOCondition, int fd);
 
-  int autoSelectDriver();
+    int autoSelectDriver();
 
-  int driverId() const                 { return driverId_; }
-  void driverId(int);
+    int driverId() const                 { return driverId_; }
+    void driverId(int);
 
-  DeviceType deviceType() const;
-  void deviceType(DeviceType);
+    DeviceType deviceType() const;
+    void deviceType(DeviceType);
 
-  unsigned long driverOptions() const;
-  void driverOptions(unsigned long);
+    unsigned long driverOptions() const;
+    void driverOptions(unsigned long);
 
-  bool manuallyConfigured() const       { return manuallyConfigured_; }
-  void manuallyConfigured(bool b)       { manuallyConfigured_ = b; }
+    bool manuallyConfigured() const       { return manuallyConfigured_; }
+    void manuallyConfigured(bool b)       { manuallyConfigured_ = b; }
 
-  bool ejectCd(bool load=false);
-  bool loadCd() { return ejectCd(true); }
+    bool ejectCd(bool load=false);
+    bool loadCd() { return ejectCd(true); }
 
-  bool recordDao(Gtk::Window& parent, TocEdit *, int simulate,
-                 int multiSession, int speed, int eject, int reload,
-                 int buffer, int overburn);
-  void abortDaoRecording();
+    bool recordDao(Gtk::Window& parent, TocEdit *, int simulate,
+                   int multiSession, int speed, int eject, int reload,
+                   int buffer, int overburn);
+    void abortDaoRecording();
 
-  int extractDao(Gtk::Window& parent, const char *tocFileName, int correction,
-                 int readSubChanMode);
-  void abortDaoReading();
+    int extractDao(Gtk::Window& parent, const char *tocFileName, int correction,
+                   int readSubChanMode);
+    void abortDaoReading();
 
-  int duplicateDao(Gtk::Window& parent, int simulate, int multiSession, 
-                   int speed, int eject, int reload, int buffer, int onthefly,
-                   int correction, int readSubChanMode, CdDevice *readdev);
-  void abortDaoDuplication();
+    int duplicateDao(Gtk::Window& parent, int simulate, int multiSession,
+                     int speed, int eject, int reload, int buffer, int onthefly,
+                     int correction, int readSubChanMode, CdDevice *readdev);
+    void abortDaoDuplication();
 
-  int blank(Gtk::Window* parent, int fast, int speed, int eject, int reload);
-  void abortBlank();
+    int blank(Gtk::Window* parent, int fast, int speed, int eject, int reload);
+    void abortBlank();
     
-  int progressStatusChanged();
-  void progress(int *status, int *totalTracks, int *track,
-                int *trackProgress, int *totalProgress,
-                int *bufferFill, int *writerFill) const;
+    int progressStatusChanged();
+    void progress(int *status, int *totalTracks, int *track,
+                  int *trackProgress, int *totalProgress,
+                  int *bufferFill, int *writerFill) const;
   
-  static int maxDriverId();
-  static const char *driverName(int id);
-  static int driverName2Id(const char *);
+    static int maxDriverId();
+    static const char *driverName(int id);
+    static int driverName2Id(const char *);
 
-  static const char *status2string(Status);
-  static const char *deviceType2string(DeviceType);
+    static const char *status2string(Status);
+    static const char *deviceType2string(DeviceType);
 
-  static void importSettings();
-  static void exportSettings();
+    static void importSettings();
+    static void exportSettings();
 
-  static CdDevice *add(const char* scsidev, const char *vendor,
-                       const char *product);
+    static CdDevice *add(const char* scsidev, const char *vendor,
+                         const char *product);
 
-  static CdDevice *add(const char *setting);
+    static CdDevice *add(const char *setting);
 
-  static CdDevice *find(const char* dev);
+    static CdDevice *find(const char* dev);
   
-  static void scan();
+    static void scan();
 
-  static void remove(const char* dev);
+    static void remove(const char* dev);
 
-  static void clear();
+    static void clear();
+    static int count();
+    static CdDevice* at(int pos);
 
-  static CdDevice *first();
-  static CdDevice *next(const CdDevice *);
+    static int updateDeviceStatus();
 
-  static int updateDeviceStatus();
 
-  /* not used anymore since Gtk::Main::input signal will call
-   * CdDevice::updateProgress directly.
+private:
+    std::string dev_; // SCSI device
+    std::string vendor_;
+    std::string product_;
+    std::string description_;
 
-   static int updateDeviceProgress();
-  */
+    DeviceType deviceType_;
 
-  static int count();
+    int driverId_;
+    unsigned long driverOptions_;
 
- private:
-  std::string dev_; // SCSI device
-  std::string vendor_;
-  std::string product_;
+    bool manuallyConfigured_;
 
-  DeviceType deviceType_;
+    ScsiIf *scsiIf_;
+    int scsiIfInitFailed_;
+    Status status_;
 
-  int driverId_;
-  unsigned long driverOptions_;
+    enum Action action_;
 
-  bool manuallyConfigured_;
+    int exitStatus_;
 
-  ScsiIf *scsiIf_;
-  int scsiIfInitFailed_;
-  Status status_;
+    int progressStatusChanged_;
+    int progressStatus_;
+    int progressTotalTracks_;
+    int progressTrack_;
+    int progressTotal_;
+    int progressTrackRelative_;
+    int progressBufferFill_;
+    int progressWriterFill_;
 
-  enum Action action_;
+    Process *process_;
 
-  int exitStatus_;
+    CdDevice *next_;
+    CdDevice *slaveDevice_; // slave device (used when copying etc.)
 
-  int progressStatusChanged_;
-  int progressStatus_;
-  int progressTotalTracks_;
-  int progressTrack_;
-  int progressTotal_;
-  int progressTrackRelative_;
-  int progressBufferFill_;
-  int progressWriterFill_;
+    void createScsiIf();
 
-  Process *process_;
-
-  CdDevice *next_;
-  CdDevice *slaveDevice_; // slave device (used when copying etc.)
-
-  void createScsiIf();
-
-  static const char *DRIVER_NAMES_[];
-  static CdDevice *DEVICE_LIST_;
+    static const char *DRIVER_NAMES_[];
+    static std::vector<CdDevice*> DEVICE_LIST_;
 };
 
 #endif

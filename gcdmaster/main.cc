@@ -42,11 +42,10 @@
 
 #include "port.h"
 
-//DeviceConfDialog*   deviceConfDialog = NULL;
 ProcessMonitor*     PROCESS_MONITOR = NULL;
 ProgressDialogPool* PROGRESS_POOL = NULL;
-
 ConfigManager*      configManager = NULL;
+GCDMaster*          gcdmaster = NULL;
 
 static int VERBOSE = 0;
 static int PROCESS_MONITOR_SIGNAL_BLOCKED = 0;
@@ -102,12 +101,12 @@ int main(int argc, char* argv[])
   // first show we already have the device status.
   guiUpdatePeriodic();
 
-//  deviceConfDialog = new DeviceConfDialog;
   PROGRESS_POOL = new ProgressDialogPool;
 
-  GCDMaster gcdmaster;
+  GCDMaster gcdmaster_;
+  gcdmaster = &gcdmaster_;
 
-  gcdmaster.run(argc, argv);
+  gcdmaster_.run(argc, argv);
 
   // Save settings.
   CdDevice::exportSettings();
