@@ -82,26 +82,23 @@ int main(int argc, char* argv[])
   // create configuration manager
   configManager = new ConfigManager();
 
-  // Settings.
-  CdDevice::importSettings();
-
   // Setup process monitor
   PROCESS_MONITOR = new ProcessMonitor;
   installSignalHandler(SIGCHLD, signalHandler);
+  PROGRESS_POOL = new ProgressDialogPool;
 
   // Setup periodic GUI updates.
   Glib::signal_timeout().connect(sigc::ptr_fun(&guiUpdatePeriodic), 2000);
 
   installSignalHandler(SIGPIPE, SIG_IGN);
 
-  // Scan for SCSI devices.
+  // Setup devices configuration.
+  CdDevice::importSettings();
   CdDevice::scan();
 
   // This forces a CdDevice::updateDeviceStatus() so when gcdmaster is
   // first show we already have the device status.
   guiUpdatePeriodic();
-
-  PROGRESS_POOL = new ProgressDialogPool;
 
   GCDMaster gcdmaster_;
   gcdmaster = &gcdmaster_;

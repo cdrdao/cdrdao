@@ -99,7 +99,7 @@ void DeviceList::appendTableEntry(CdDevice *dev)
   Gtk::TreeModel::Row row = *newiter;
   row[listColumns_.dev] = dev->dev();
   row[listColumns_.description] = dev->description();
-  row[listColumns_.status] = CdDevice::status2string(dev->status());
+  row[listColumns_.status] = CdDevice::statusNames[dev->status()];
 
   if (dev->status() == CdDevice::DEV_READY)
     list_.get_selection()->select(newiter);
@@ -162,7 +162,7 @@ void DeviceList::importStatus()
       else
         list_.get_column(i)->set_clickable(false);
 
-      row[listColumns_.status] = CdDevice::status2string(cddev->status());
+      row[listColumns_.status] = CdDevice::statusNames[cddev->status()];
     }
   }
 

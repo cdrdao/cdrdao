@@ -33,8 +33,8 @@ class CdDevice : public sigc::trackable
 {
 public:
     enum Status { DEV_READY, DEV_RECORDING, DEV_READING, DEV_WAITING, DEV_BUSY,
-                  DEV_NO_DISK, DEV_BLANKING, DEV_FAULT, DEV_UNKNOWN };
-    enum DeviceType { CD_R, CD_RW, CD_ROM };
+                  DEV_NO_DISK, DEV_BLANKING, DEV_FAULT, DEV_UNKNOWN, DEV_LAST };
+    enum DeviceType { CD_R = 0, CD_RW = 1, CD_ROM = 2, CD_LAST = 3 };
 
     enum Action { A_RECORD, A_READ, A_DUPLICATE, A_BLANK, A_NONE };
 
@@ -99,12 +99,13 @@ public:
                   int *trackProgress, int *totalProgress,
                   int *bufferFill, int *writerFill) const;
   
-    static int maxDriverId();
+    static std::vector<std::string> statusNames;
+    static std::vector<std::string> devtypeNames;
+    static std::vector<std::string> driverNames;
+
     static const char *driverName(int id);
     static int driverName2Id(const char *);
-
-    static const char *status2string(Status);
-    static const char *deviceType2string(DeviceType);
+    static DeviceType devtypeName2Id(const std::string);
 
     static void importSettings();
     static void exportSettings();
@@ -164,8 +165,10 @@ private:
 
     void createScsiIf();
 
-    static const char *DRIVER_NAMES_[];
+    static bool init_;
+    static const char *driver_names_[];
     static std::vector<CdDevice*> DEVICE_LIST_;
+    static void init();
 };
 
 #endif

@@ -39,9 +39,10 @@ PreferencesDialog::PreferencesDialog(BaseObjectType* cobject,
     builder->get_widget("cancel-button", cancelButton_);
     builder->get_widget("temp-directory", tempDirEntry_);
     builder->get_widget("device-tree", deviceList_);
+    builder->get_widget("driver-options", driverOptionsEntry_);
 
     if (!applyButton_ || !okButton_ || !cancelButton_ || !tempDirEntry_ ||
-        !deviceList_) {
+        !deviceList_ || !driverOptionsEntry_) {
         std::cerr << "Unable to create all GUI widgets from glade file\n";
         exit(1);
     }
@@ -69,7 +70,28 @@ PreferencesDialog::PreferencesDialog(BaseObjectType* cobject,
     deviceList_->append_column(_("Status"), deviceListColumns_.status);
     deviceList_->get_column(0)->set_expand();
 
-    readFromGConf();
+    selectedRow_ = deviceList_->get_selection()->get_selected();
+    deviceList_->get_selection()->signal_changed().
+        connect(mem_fun(*this, &PreferencesDialog::on_selection_changed));
+
+    // Populate Driver Combo box
+    builder->get_widget("driver-list", driverMenu_);
+    if (driverMenu_) {
+        for (auto str : CdDevice::driverNames)
+            driverMenu_->append(str.c_str());
+        driverMenu_->signal_changed().connect(mem_fun(*this,
+                                               &PreferencesDialog::on_driver_changed));
+    }
+    // Populate Device type combo box
+    builder->get_widget("device-type-list", devtypeMenu_);
+    if (devtypeMenu_) {
+        for (auto str : CdDevice::devtypeNames)
+            devtypeMenu_->append(str);
+        devtypeMenu_->signal_changed().
+            connect(mem_fun(*this,&PreferencesDialog::on_dev_type_changed));
+    }
+
+    read_from_settings();
     import_devices();
 }
 
@@ -93,18 +115,18 @@ PreferencesDialog::create(Glib::RefPtr<Gtk::Builder>& builder)
 
 void PreferencesDialog::show()
 {
-    readFromGConf();
+    read_from_settings();
     Gtk::Dialog::show();
 }
 
-void PreferencesDialog::readFromGConf()
+void PreferencesDialog::read_from_settings()
 {
     const Glib::ustring text = configManager->get_string("temp-dir");
     printf("Setting temp-dir to %s\n", text.c_str());
     tempDirEntry_->set_filename(text);
 }
 
-bool PreferencesDialog::saveToGConf()
+bool PreferencesDialog::save_to_settings()
 {
     const Glib::ustring text = tempDirEntry_->get_filename();
 
@@ -113,7 +135,7 @@ bool PreferencesDialog::saveToGConf()
 	ErrorBox errBox(_("The directory you entered cannot be used as a "
 			  "temporary files directory."));
 	errBox.run();
-	readFromGConf();
+	read_from_settings();
 	return false;
     }
 
@@ -142,38 +164,123 @@ void PreferencesDialog::update(unsigned long level)
 
 void PreferencesDialog::on_button_apply()
 {
-    saveToGConf();
+    if (selectedRow_)
+        export_selected_row(selectedRow_);
+    export_devices();
+    save_to_settings();
+    guiUpdate(UPD_CD_DEVICES);
 }
 
 void PreferencesDialog::on_button_cancel()
 {
-    readFromGConf();
+    read_from_settings();
     hide();
 }
 
 void PreferencesDialog::on_button_ok()
 {
-    if (saveToGConf())
-	hide();
+    if (selectedRow_)
+        export_selected_row(selectedRow_);
+    save_to_settings();
+    export_devices();
+    hide();
+}
+
+void PreferencesDialog::on_selection_changed()
+{
+    Gtk::TreeIter new_sel = deviceList_->get_selection()->get_selected();
+
+    if ((bool)selectedRow_ != (bool)new_sel || selectedRow_ != new_sel) {
+        if (selectedRow_)
+            export_selected_row(selectedRow_);
+        selectedRow_ = new_sel;
+        import_selected_row(selectedRow_);
+    }
+    printf("Device list selection changed\n");
+}
+
+void PreferencesDialog::on_driver_changed()
+{
+    DeviceData* data;
+
+    printf("Device driver changed\n");
+    if (selectedRow_ && (data = (*selectedRow_)[deviceListColumns_.data])) {
+        data->driverId = CdDevice::driverName2Id(driverMenu_->get_active_text().c_str());
+    }
+}
+
+void PreferencesDialog::on_dev_type_changed()
+{
+    DeviceData* data;
+
+    printf("Device type changed\n");
+    if (selectedRow_ && (data = (*selectedRow_)[deviceListColumns_.data])) {
+        data->deviceType = CdDevice::devtypeName2Id(devtypeMenu_->get_active_text());
+    }
+
+}
+
+void PreferencesDialog::append_entry(CdDevice* dev)
+{
+    DeviceData* data;
+
+    data = new DeviceData;
+    data->dev = dev->dev();
+    data->driverId = dev->driverId();
+    data->options = dev->driverOptions();
+    data->deviceType = dev->deviceType();
+
+    Gtk::TreeIter iter = deviceListModel_->append();
+    Gtk::TreeModel::Row row = *iter;
+    row[deviceListColumns_.dev] = dev->dev();
+    row[deviceListColumns_.description] = dev->description();
+    row[deviceListColumns_.status] = CdDevice::statusNames[dev->status()];
+    row[deviceListColumns_.data] = data;
 }
 
 void PreferencesDialog::import_devices()
 {
+    deviceList_->get_selection()->unselect_all();
+    selectedRow_ = deviceList_->get_selection()->get_selected();
     deviceListModel_->clear();
 
     for (int i = 0; i < CdDevice::count(); i++) {
-        auto dev = CdDevice::at(i);
+        append_entry(CdDevice::at(i));
+    }
 
-        Gtk::TreeIter iter = deviceListModel_->append();
-        Gtk::TreeModel::Row row = *iter;
-        row[deviceListColumns_.dev] = dev->dev();
-        row[deviceListColumns_.description] = dev->description();
-        row[deviceListColumns_.status] = CdDevice::status2string(dev->status());
-
-        if (dev->status() == CdDevice::DEV_READY)
-            deviceList_->get_selection()->select(iter);
+    if (deviceListModel_->children().size() > 0) {
+        deviceList_->columns_autosize();
+        deviceList_->get_selection()->select(Gtk::TreeModel::Path((unsigned)1));
     }
 }
+
+void PreferencesDialog::export_devices()
+{
+    DeviceData* data;
+    CdDevice* dev;
+
+    Gtk::TreeNodeChildren ch = deviceListModel_->children();
+    for (auto i = 0; i < ch.size(); i++) {
+        Gtk::TreeRow row = ch[i];
+        data = row[deviceListColumns_.data];
+        if (data && (dev = CdDevice::find(data->dev.c_str()))) {
+
+            if (dev->driverId() != data->driverId) {
+                dev->driverId(data->driverId);
+                dev->manuallyConfigured(true);
+            }
+            if (dev->deviceType() != data->deviceType) {
+                dev->deviceType(data->deviceType);
+                dev->manuallyConfigured(true);
+            }
+            if (dev->driverOptions() != data->options) {
+                dev->driverOptions(data->options);
+                dev->manuallyConfigured(true);
+            }
+        }
+    }
+}
+
 
 void PreferencesDialog::import_status()
 {
@@ -185,8 +292,42 @@ void PreferencesDialog::import_status()
         Gtk::TreeRow row = ch[i];
         data = row[deviceListColumns_.data];
         if (data && (dev = CdDevice::find(data->dev.c_str()))) {
-            row[deviceListColumns_.status] = CdDevice::status2string(dev->status());
+            row[deviceListColumns_.status] = CdDevice::statusNames[dev->status()];
         }
+    }
+}
+
+void PreferencesDialog::export_selected_row(Gtk::TreeIter row)
+{
+    DeviceData* data;
+
+    if (row) {
+        data = (*row)[deviceListColumns_.data];
+
+        if (data)
+            data->options = strtoul(driverOptionsEntry_->get_text().c_str(), NULL, 0);
+    }
+}
+
+void PreferencesDialog::import_selected_row(Gtk::TreeIter row)
+{
+    char buf[48];
+    DeviceData* data;
+
+    if (selectedRow_) {
+        data = (*selectedRow_)[deviceListColumns_.data];
+        driverMenu_->set_sensitive(true);
+        driverMenu_->set_active_text(CdDevice::driverNames[data->driverId]);
+        devtypeMenu_->set_sensitive(true);
+        devtypeMenu_->set_active_text(CdDevice::devtypeNames[data->deviceType]);
+        driverOptionsEntry_->set_sensitive(true);
+        sprintf(buf, "0x%lx", data->options);
+        driverOptionsEntry_->set_text(buf);
+
+    } else {
+        driverMenu_->set_sensitive(false);
+        devtypeMenu_->set_sensitive(false);
+        driverOptionsEntry_->set_sensitive(false);
     }
 }
 

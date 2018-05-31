@@ -22,6 +22,8 @@
 
 #include <gtkmm.h>
 
+#include "CdDevice.h"
+
 class PreferencesDialog : public Gtk::Dialog
 {
  public:
@@ -35,14 +37,24 @@ class PreferencesDialog : public Gtk::Dialog
     void update(unsigned long level);
 
  protected:
-    void readFromGConf();
-    bool saveToGConf();
+    void read_from_settings();
+    bool save_to_settings();
     void on_button_apply();
     void on_button_cancel();
     void on_button_ok();
+    void on_selection_changed();
+    void on_driver_changed();
+    void on_dev_type_changed();
     void rescan_action();
+
+    // import/export, as in transferring the gui data to and from the
+    // CdDevice list.
     void import_devices();
+    void export_devices();
     void import_status();
+    void import_selected_row(Gtk::TreeIter);
+    void export_selected_row(Gtk::TreeIter);
+    void append_entry(CdDevice* dev);
 
     Gtk::Button* applyButton_;
     Gtk::Button* cancelButton_;
@@ -52,14 +64,14 @@ class PreferencesDialog : public Gtk::Dialog
     struct DeviceData {
         std::string dev;
         int driverId;
-        int deviceType;
+        CdDevice::DeviceType deviceType;
         unsigned long options;
     };
 
     class ListColumns : public Gtk::TreeModel::ColumnRecord
     {
     public:
-        ListColumns() { add(dev); add(description);  add(status); };
+        ListColumns() { add(dev); add(description);  add(status); add(data); };
         Gtk::TreeModelColumn<std::string> dev;
         Gtk::TreeModelColumn<std::string> description;
         Gtk::TreeModelColumn<std::string> status;
@@ -68,6 +80,10 @@ class PreferencesDialog : public Gtk::Dialog
     Gtk::TreeView* deviceList_;
     Glib::RefPtr<Gtk::ListStore> deviceListModel_;
     ListColumns deviceListColumns_;
+    Gtk::TreeIter selectedRow_;
+    Gtk::Entry* driverOptionsEntry_;
+    Gtk::ComboBoxText* driverMenu_;
+    Gtk::ComboBoxText* devtypeMenu_;
 };
 
 #endif
