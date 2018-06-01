@@ -28,7 +28,7 @@ class DeviceList;
 class RecordCDSource : public Gtk::VBox
 {
 public:
-    RecordCDSource(Gtk::Window *);
+    RecordCDSource(Gtk::ApplicationWindow *);
     ~RecordCDSource();
 
     void start();
@@ -61,14 +61,14 @@ private:
     int speed_;
     int subChanReadMode_;
 
-    Gtk::Window *parent_;
+    Gtk::ApplicationWindow *parent_;
     Gtk::MessageDialog *moreOptionsDialog_;
 
     Gtk::SpinButton *speedSpinButton_;
     Gtk::CheckButton *speedButton_;
 
-    Gtk::ComboBox *correctionMenu_;
-    Gtk::ComboBox *subChanReadModeMenu_;
+    Gtk::ComboBoxText *correctionMenu_;
+    Gtk::ComboBoxText *subChanReadModeMenu_;
     Gtk::CheckButton *onTheFlyButton_;
     Gtk::CheckButton *continueOnErrorButton_;
     Gtk::CheckButton *ignoreIncorrectTOCButton_;
@@ -76,8 +76,8 @@ private:
     void moreOptions();
 
     void setSpeed(int);
-    void setCorrection(int);
-    void setSubChanReadMode(int);
+    void setCorrection();
+    void setSubChanReadMode();
     void speedButtonChanged();
     void speedChanged();
 };

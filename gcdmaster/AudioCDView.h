@@ -21,6 +21,7 @@
 #define __AUDIO_CD_VIEW_H__
 
 #include <gtkmm.h>
+#include <glibmm/i18n.h>
 
 #include "AddFileDialog.h"
 #include "GenericView.h"

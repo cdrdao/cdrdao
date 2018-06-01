@@ -36,7 +36,7 @@
 GCDWindow* GCDWindow::create(Glib::RefPtr<Gtk::Builder> builder, GCDWindow::What what)
 {
     GCDWindow* window = NULL;
-    Gtk::VBox* project = NULL;
+    Project* project = NULL;
 
     builder->add_from_resource("/org/gnome/gcdmaster/window.ui");
     builder->get_widget_derived("app_window", window);
@@ -55,7 +55,7 @@ GCDWindow* GCDWindow::create(Glib::RefPtr<Gtk::Builder> builder, GCDWindow::What
         project = DumpCDProject::create(builder, window);
         break;
     case What::AUDIOCD:
-        project = AudioCDProject::create(builder, window);
+        project = AudioCDProject::create(builder, 0, NULL, NULL, window);
         break;
     default:
         throw std::runtime_error("create arg");
@@ -96,7 +96,7 @@ GCDWindow::GCDWindow(BaseObjectType* cobject,
     set_icon(Gdk::Pixbuf::create_from_resource("/org/gnome/gcdmaster/gcdmaster.png"));
 }
 
-void GCDWindow::set_project(Gtk::VBox* project)
+void GCDWindow::set_project(Project* project)
 {
     project_ = project;
     while (notebook_->get_n_pages() > 0)
@@ -107,6 +107,7 @@ void GCDWindow::set_project(Gtk::VBox* project)
 
 void GCDWindow::update(unsigned long level)
 {
+    project_->update(level);
 }
 
 GCDMaster::GCDMaster() : Gtk::Application("org.gnome.gcdmaster"),
@@ -439,7 +440,8 @@ void GCDMaster::update(unsigned long level)
  {
      for (auto window : get_windows()) {
          GCDWindow* gw = dynamic_cast<GCDWindow*>(window);
-         gw->update(level);
+         if (gw)
+             gw->update(level);
      }
 
      if (blankCDWindow_)

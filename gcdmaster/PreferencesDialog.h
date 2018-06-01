@@ -42,6 +42,7 @@ class PreferencesDialog : public Gtk::Dialog
     void on_button_apply();
     void on_button_cancel();
     void on_button_ok();
+    void on_button_reset();
     void on_selection_changed();
     void on_driver_changed();
     void on_dev_type_changed();
@@ -56,9 +57,6 @@ class PreferencesDialog : public Gtk::Dialog
     void export_selected_row(Gtk::TreeIter);
     void append_entry(CdDevice* dev);
 
-    Gtk::Button* applyButton_;
-    Gtk::Button* cancelButton_;
-    Gtk::Button* okButton_;
     Gtk::FileChooserButton* tempDirEntry_;
 
     struct DeviceData {

@@ -24,6 +24,7 @@
 
 #include "config.h"
 #include "xcdrdao.h"
+#include "gcdmaster.h"
 #include "guiUpdate.h"
 #include "MessageBox.h"
 #include "SampleDisplay.h"
@@ -54,7 +55,7 @@ AudioCDView::AudioCDView(AudioCDProject *project)
   drop_types.push_back(Gtk::TargetEntry("text/uri-list", Gtk::TargetFlags(0),
                                         TARGET_URI_LIST));
 
-  drag_dest_set(drop_types);
+//  drag_dest_set(drop_types);
   signal_drag_data_received().
       connect(sigc::mem_fun(*this, &AudioCDView::drag_data_received_cb));
 
@@ -64,11 +65,11 @@ AudioCDView::AudioCDView(AudioCDProject *project)
   sampleDisplay_->set_size_request(200,200);
   
   pack_start(*sampleDisplay_, TRUE, TRUE);
-  sampleDisplay_->modify_font(Pango::FontDescription("Monospace 8"));
+//  sampleDisplay_->modify_font(Pango::FontDescription("Monospace 8"));
   sampleDisplay_->show();
 
-  Gtk::HScrollbar *scrollBar =
-    new Gtk::HScrollbar(*(sampleDisplay_->getAdjustment()));
+  Gtk::HScrollbar *scrollBar; // =
+//    new Gtk::HScrollbar(*(sampleDisplay_->getAdjustment()));
   pack_start(*scrollBar, FALSE, FALSE);
   scrollBar->show();
   
@@ -574,9 +575,9 @@ void AudioCDView::trackInfo()
 
   } else {
 
-    Gtk::MessageDialog md(*project_->getParentWindow (), _("Please select a track first"),
-                          Gtk::MESSAGE_INFO);
-    md.run();
+      Gtk::MessageDialog md(*project_->getParentWindow(),
+                            _("Please select a track first"));
+      md.run();
   }
 }
 

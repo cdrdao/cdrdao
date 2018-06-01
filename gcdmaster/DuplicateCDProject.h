@@ -24,16 +24,17 @@
 
 class RecordCDSource;
 class RecordCDTarget;
+class GCDWindow;
 
 class DuplicateCDProject : public Project
 {
 public:
-    DuplicateCDProject(Gtk::ApplicationWindow* parent);
+    DuplicateCDProject(GCDWindow* parent);
     virtual ~DuplicateCDProject();
 
     static DuplicateCDProject* create(Glib::RefPtr<Gtk::Builder>& builder,
-                                      Gtk::ApplicationWindow* parent);
-//    bool closeProject();
+                                      GCDWindow* parent);
+    bool closeProject();
 /* protected: */
 /*     virtual void createToolbar() {}; */
 
@@ -41,7 +42,6 @@ private:
     RecordCDSource *CDSource;
     RecordCDTarget *CDTarget;
 
-    Gtk::Label label_;
     Gtk::RadioButton *simulate_rb;
     Gtk::RadioButton *simulateBurn_rb;
     Gtk::RadioButton *burn_rb;
@@ -49,6 +49,6 @@ private:
     void start();
     /* void recordToc2CD() {} */
     /* void projectInfo() {} */
-    /* void update(unsigned long level); */
+    void update(unsigned long level);
 };
 #endif

@@ -24,39 +24,42 @@
 
 class RecordTocDialog;
 class TocEdit;
+class GCDWindow;
 
 class Project : public Gtk::VBox
 {
 public:
-  Project(Gtk::ApplicationWindow* parent);
+    Project(BaseObjectType* cobject,
+            const Glib::RefPtr<Gtk::Builder>& builder);
+    Project(GCDWindow*);
 
-  void         readToc(char *name);
-  void         statusMessage(const char *fmt, ...);
-  void         tocBlockedMsg(const char *);
-  /* virtual bool closeProject() = 0;  */
-  /* virtual void saveProject(); */
-  /* virtual void saveAsProject(); */
-  /* virtual void recordToc2CD() = 0; */
-  /* int          projectNumber(); */
-  /* TocEdit*     tocEdit(); */
+    void         readToc(char *name);
+    void         statusMessage(const char *fmt, ...);
+    void         tocBlockedMsg(const char *);
+    /* virtual bool closeProject() = 0;  */
+    virtual void saveProject();
+    virtual void saveAsProject();
+    /* virtual void recordToc2CD() = 0; */
+    int          projectNumber();
+    TocEdit*     tocEdit();
 
-  Gtk::ApplicationWindow* getParentWindow() { return parent_; };
+    GCDWindow* getParentWindow() { return parent_; };
+    void setParentWindow(GCDWindow* w) { parent_ = w; }
 
-  /* virtual void update(unsigned long level) = 0; */
+    virtual void update(unsigned long level) = 0;
 
 protected:
-  int  projectNumber_;
-  bool new_; // If it is a new project (not saved)
+    int  projectNumber_;
+    bool new_; // If it is a new project (not saved)
 
-  Gtk::ApplicationWindow* parent_;
-  TocEdit*                tocEdit_;
-  RecordTocDialog*        recordTocDialog_;
-  /* //Gnome::UI::AppBar*      statusbar_; */
-  Gtk::ProgressBar*       progressbar_;
-  Gtk::Button*            progressButton_; 
-  Gtk::FileChooserDialog* saveFileSelector_;
+    GCDWindow* parent_;
+    TocEdit* tocEdit_;
+    RecordTocDialog* recordTocDialog_;
+    Gtk::ProgressBar* progressbar_;
+    Gtk::Button* progressButton_;
+    Gtk::FileChooserDialog* saveFileSelector_;
 
-  /* void updateWindowTitle(); */
-  /* virtual void projectInfo() = 0; */
+    void updateWindowTitle();
+    /* virtual void projectInfo() = 0; */
 };
 #endif

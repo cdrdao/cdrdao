@@ -19,6 +19,7 @@
 
 #include "guiUpdate.h"
 #include "Project.h"
+#include "gcdmaster.h"
 #include "DuplicateCDProject.h"
 #include "xcdrdao.h"
 #include "ConfigManager.h"
@@ -31,90 +32,78 @@
 #include <gtkmm.h>
 #include <glibmm/i18n.h>
 
-
-DuplicateCDProject::DuplicateCDProject(Gtk::ApplicationWindow* parent) :
-    Project(parent),
-    label_("Duplicate CD Project")
-{
-    pack_start(label_);
-}
-
-DuplicateCDProject::~DuplicateCDProject()
-{
-}
-
 DuplicateCDProject*
 DuplicateCDProject::create(Glib::RefPtr<Gtk::Builder>& builder,
-                           Gtk::ApplicationWindow* parent)
+                           GCDWindow* parent)
 {
     DuplicateCDProject* project = new DuplicateCDProject(parent);
     return project;
 }
 
 
-// DuplicateCDProject::DuplicateCDProject(Gtk::Window *parent)
-//     : Project(parent)
-// {
-//   Gtk::VBox *vbox = new Gtk::VBox;
-//   vbox->set_border_width(10);
-//   vbox->set_spacing(10);
-//   Gtk::HBox *hbox = manage(new Gtk::HBox);
-//   hbox->set_spacing(10);
-//   vbox->pack_start(*hbox);
-//   pack_start(*vbox);
-//   parent_ = parent;
+DuplicateCDProject::DuplicateCDProject(GCDWindow *parent)
+    : Project(parent)
+{
+    Gtk::VBox *vbox = manage(new Gtk::VBox);
+    vbox->set_border_width(10);
+    vbox->set_spacing(10);
+    Gtk::HBox *hbox = manage(new Gtk::HBox);
+    hbox->set_spacing(10);
+    vbox->pack_start(*hbox);
+    pack_start(*vbox);
+    parent_ = parent;
 
-//   CDSource = new RecordCDSource(parent_);
-//   CDSource->start();
-//   CDTarget = new RecordCDTarget(parent_);
-//   CDTarget->start();
+    CDSource = new RecordCDSource(parent_);
+    CDSource->start();
+    CDTarget = new RecordCDTarget(parent_);
+    CDTarget->start();
 
-//   hbox->pack_start(*CDSource);
-//   hbox->pack_start(*CDTarget);
+    hbox->pack_start(*CDSource);
+    hbox->pack_start(*CDTarget);
 
-//   hbox = manage(new Gtk::HBox);
-//   hbox->set_spacing(10);
+    hbox = manage(new Gtk::HBox);
+    hbox->set_spacing(10);
 
-//   Gtk::VBox *frameBox = new Gtk::VBox;
-//   simulate_rb = new Gtk::RadioButton(_("Simulate"), 0);
-//   simulateBurn_rb = new Gtk::RadioButton(_("Simulate and Burn"), 0);
-//   burn_rb = new Gtk::RadioButton(_("Burn"), 0);
+    Gtk::VBox *frameBox = new Gtk::VBox;
+    simulate_rb = new Gtk::RadioButton(_("Simulate"), 0);
+    simulateBurn_rb = new Gtk::RadioButton(_("Simulate and Burn"), 0);
+    burn_rb = new Gtk::RadioButton(_("Burn"), 0);
 
-//   frameBox->pack_start(*simulate_rb);
-//   frameBox->pack_start(*simulateBurn_rb);
-//   Gtk::RadioButton::Group rb_group = simulate_rb->get_group();
-//   simulateBurn_rb->set_group(rb_group);
-//   frameBox->pack_start(*burn_rb);
-//   burn_rb->set_group(rb_group);
+    frameBox->pack_start(*simulate_rb);
+    frameBox->pack_start(*simulateBurn_rb);
+    Gtk::RadioButton::Group rb_group = simulate_rb->get_group();
+    simulateBurn_rb->set_group(rb_group);
+    frameBox->pack_start(*burn_rb);
+    burn_rb->set_group(rb_group);
 
-//   hbox->pack_start(*frameBox, true, false);
+    hbox->pack_start(*frameBox, true, false);
 
-//   Gtk::Image *pixmap = manage(new Gtk::Image(Icons::GCDMASTER,
-//                                              Gtk::ICON_SIZE_DIALOG));
-//   Gtk::Label *startLabel = manage(new Gtk::Label(_("Start")));
-//   Gtk::VBox *startBox = manage(new Gtk::VBox);
-//   Gtk::Button *button = manage(new Gtk::Button());
-//   startBox->pack_start(*pixmap, false, false);
-//   startBox->pack_start(*startLabel, false, false);
+    Gtk::Image *pixmap = manage(new Gtk::Image);
+    pixmap->set_from_resource("/org/gnome/gcdmaster/copycd.png");
+    Gtk::Label *startLabel = manage(new Gtk::Label(_("Start")));
+    Gtk::VBox *startBox = manage(new Gtk::VBox);
+    Gtk::Button *button = manage(new Gtk::Button());
+    startBox->pack_start(*pixmap, false, false);
+    startBox->pack_start(*startLabel, false, false);
 
-//   button->add(*startBox);
-//   button->signal_clicked().connect(mem_fun(*this, &DuplicateCDProject::start));
+    button->add(*startBox);
+    button->signal_clicked().connect(mem_fun(*this, &DuplicateCDProject::start));
 
-//   hbox->pack_start(*button, true, false);
+    hbox->pack_start(*button, true, false);
 
-//   Gtk::HBox *hbox2 = new Gtk::HBox;
-//   hbox2->pack_start(*hbox, true, false);
-//   vbox->pack_start(*hbox2, Gtk::PACK_SHRINK);
+    Gtk::HBox *hbox2 = new Gtk::HBox;
+    hbox2->pack_start(*hbox, true, false);
+    vbox->pack_start(*hbox2, Gtk::PACK_SHRINK);
 
-//   guiUpdate(UPD_ALL);
-//   show_all();
-// }
+    guiUpdate(UPD_ALL);
+    show_all();
+}
 
-// DuplicateCDProject::~DuplicateCDProject()
-// {
-//   delete CDSource;
-//   delete CDTarget;
-// }
+DuplicateCDProject::~DuplicateCDProject()
+{
+    delete CDSource;
+    delete CDTarget;
+}
 
 void DuplicateCDProject::start()
 {
@@ -157,17 +146,17 @@ void DuplicateCDProject::start()
                             _("you need to copy the CD to disk before burning"), "",
                             _("Proceed and copy to disk before burning?"), NULL);
 
-         switch (msg.run()) {
-         case 1: // proceed without on the fly
-           CDSource->setOnTheFly(false);
-           onTheFly = 0;
-           if (msg.dontShowAgain())
-               configManager->set("onthefly-warning", false);
-           break;
-         default: // do not proceed
-             return;
-             break;
-         }
+                switch (msg.run()) {
+                case 1: // proceed without on the fly
+                    CDSource->setOnTheFly(false);
+                    onTheFly = 0;
+                    if (msg.dontShowAgain())
+                        configManager->set("onthefly-warning", false);
+                    break;
+                default: // do not proceed
+                    return;
+                    break;
+                }
             } else {
                 CDSource->setOnTheFly(false);
                 onTheFly = 0;
@@ -218,27 +207,27 @@ void DuplicateCDProject::start()
     }
 }
 
-// bool DuplicateCDProject::closeProject()
-// {
-//   return true;  // Close the project
-// }
+bool DuplicateCDProject::closeProject()
+{
+    return true;  // Close the project
+}
 
-// void DuplicateCDProject::update(unsigned long level)
-// {
-//   CDSource->update(level);
-//   CDTarget->update(level);
+void DuplicateCDProject::update(unsigned long level)
+{
+    CDSource->update(level);
+    CDTarget->update(level);
 
-//   if (level & UPD_CD_DEVICE_STATUS)
-//   {
-//     DeviceList *sourceList = CDSource->getDeviceList();
-//     DeviceList *targetList = CDTarget->getDeviceList();
+    if (level & UPD_CD_DEVICE_STATUS)
+    {
+        DeviceList *sourceList = CDSource->getDeviceList();
+        DeviceList *targetList = CDTarget->getDeviceList();
 
-//     targetList->selectOne();
+        targetList->selectOne();
 
-//     if (targetList->selection().empty()) {
-//       sourceList->selectOne();
-//     } else {
-//       sourceList->selectOneBut(targetList->selection().c_str());
-//     }
-//   }
-// }
+        if (targetList->selection().empty()) {
+            sourceList->selectOne();
+        } else {
+            sourceList->selectOneBut(targetList->selection().c_str());
+        }
+    }
+}

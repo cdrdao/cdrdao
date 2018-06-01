@@ -31,7 +31,7 @@
 
 ProjectChooser::ProjectChooser(BaseObjectType* cobject,
                                const Glib::RefPtr<Gtk::Builder>& builder) :
-    Gtk::VBox(cobject)
+    Project(cobject, builder)
 {
     Gtk::Button* button;
 
@@ -82,4 +82,8 @@ void ProjectChooser::on_new_dump_cd(void)
 {
     window_->get_application()->activate_action("new-dump-cd");
     window_->hide();
+}
+
+void ProjectChooser::update(unsigned long level)
+{
 }

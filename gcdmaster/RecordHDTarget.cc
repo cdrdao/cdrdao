@@ -23,7 +23,7 @@
 #include <assert.h>
 
 #include <gtkmm.h>
-#include <gnome.h>
+#include <glibmm/i18n.h>
 
 #include "RecordHDTarget.h"
 #include "MessageBox.h"
@@ -38,8 +38,6 @@ RecordHDTarget::RecordHDTarget()
 {
   Gtk::Table *table;
   Gtk::Label *label;
-
-  active_ = false;
 
   set_spacing(10);
 
@@ -59,11 +57,8 @@ RecordHDTarget::RecordHDTarget()
   label = manage(new Gtk::Label(_("Directory: ")));
   table->attach(*label, 0, 1, 0, 1, Gtk::FILL);
 
-  dirEntry_ =
-      manage(new Gnome::UI::FileEntry(_("record_hd_target_dir_entry"),
-                                      _("Select Directory for Image")));
-  dirEntry_->set_directory_entry(true);
-  dirEntry_->set_property("use_filechooser", true);
+  dirEntry_ = new Gtk::FileChooserButton(Gtk::FILE_CHOOSER_ACTION_SELECT_FOLDER);
+  dirEntry_->set_title(_("Select Directory for Image"));
 
   table->attach(*dirEntry_, 1, 2, 0, 1);
 
@@ -73,25 +68,20 @@ RecordHDTarget::RecordHDTarget()
   fileNameEntry_ = manage(new Gtk::Entry);
   table->attach(*fileNameEntry_, 1, 2, 1, 2);
 }
+
 void RecordHDTarget::start()
 {
-  active_ = true;
   update(UPD_ALL);
   show();
 }
 
 void RecordHDTarget::stop()
 {
-  if (active_) {
     hide();
-    active_ = false;
-  }
 }
 
 void RecordHDTarget::update(unsigned long level)
 {
-  if (!active_)
-    return;
 }
 
 void RecordHDTarget::cancelAction()
@@ -106,7 +96,6 @@ std::string RecordHDTarget::getFilename()
 
 std::string RecordHDTarget::getPath()
 {
-  Gtk::Entry *entry = static_cast<Gtk::Entry *>(dirEntry_->gtk_entry());
-  return entry->get_text();
+  return dirEntry_->get_filename();
 }
 

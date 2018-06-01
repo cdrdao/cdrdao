@@ -174,6 +174,8 @@ int CdDevice::autoSelectDriver()
     unsigned long options = 0;
     const char *driverName;
 
+    manuallyConfigured_ = false;
+
     driverName = CdrDriver::selectDriver(1, vendor_.c_str(), product_.c_str(),
                                          &options);
 

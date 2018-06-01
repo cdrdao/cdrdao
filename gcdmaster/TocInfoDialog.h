@@ -21,7 +21,6 @@
 #define __TOC_INFO_DIALOG_H__
 
 #include <gtkmm.h>
-#include <gtk/gtk.h>
 
 #include "Toc.h"
 
@@ -51,7 +50,7 @@ private:
 
   TextEdit *catalog_;
 
-  Gtk::OptionMenu *tocType_;
+  Gtk::ComboBoxText *tocType_;
   Toc::TocType selectedTocType_;
 
   struct BlockValue {
@@ -60,10 +59,10 @@ private:
   };
 
   struct CdTextPage {
-    Gtk::OptionMenu *language;
+    Gtk::ComboBoxText *language;
     int selectedLanguage;
 
-    Gtk::OptionMenu *genre;
+    Gtk::ComboBoxText *genre;
     int selectedGenre;
     
     Gtk::Label *label;

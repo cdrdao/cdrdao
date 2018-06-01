@@ -55,7 +55,7 @@ static RecordCDSource::SubChanReadModeTable SUBCHAN_READ_MODE_TABLE[MAX_SUBCHAN_
 };
 
 
-RecordCDSource::RecordCDSource(Gtk::Window *parent)
+RecordCDSource::RecordCDSource(Gtk::ApplicationWindow *parent)
 {
   parent_ = parent;
   active_ = 0;
@@ -168,90 +168,83 @@ void RecordCDSource::update(unsigned long level)
 
 void RecordCDSource::moreOptions()
 {
-  if (!moreOptionsDialog_)
-  {
-    Gtk::Table *table;
-    Gtk::Label *label;
+    if (!moreOptionsDialog_)
+    {
+        Gtk::Table *table;
+        Gtk::Label *label;
 
-    table = new Gtk::Table(2, 4, false);
-    table->set_row_spacings(2);
-    table->set_col_spacings(10);
-    table->set_border_width(5);
+        table = new Gtk::Table(2, 4, false);
+        table->set_row_spacings(2);
+        table->set_col_spacings(10);
+        table->set_border_width(5);
 
-    moreOptionsDialog_ = new Gtk::MessageDialog(*parent_, _("Source options"),false, 
-                                                Gtk::MESSAGE_QUESTION,
-                                                Gtk::BUTTONS_CLOSE, true);
+        moreOptionsDialog_ = new Gtk::MessageDialog(*parent_, _("Source options"),
+                                                    false,
+                                                    Gtk::MESSAGE_QUESTION,
+                                                    Gtk::BUTTONS_CLOSE, true);
 
-    Gtk::Box *vbox = moreOptionsDialog_->get_vbox();
-    Gtk::Frame *frame = new Gtk::Frame(_(" More Source Options "));
-    vbox->pack_start(*frame);
-    vbox = new Gtk::VBox;
-    vbox->set_border_width(10);
-    vbox->set_spacing(5);
-    frame->add(*vbox);
+        Gtk::Box *vbox = moreOptionsDialog_->get_vbox();
+        Gtk::Frame *frame = new Gtk::Frame(_(" More Source Options "));
+        vbox->pack_start(*frame);
+        vbox = new Gtk::VBox;
+        vbox->set_border_width(10);
+        vbox->set_spacing(5);
+        frame->add(*vbox);
 
-    vbox->pack_start(*table);
+        vbox->pack_start(*table);
 
-    continueOnErrorButton_ =
-      new Gtk::CheckButton(_("Continue if errors found"), 0);
-    continueOnErrorButton_->set_active(false);
-    table->attach(*continueOnErrorButton_, 0, 1, 0, 1);
+        continueOnErrorButton_ =
+            new Gtk::CheckButton(_("Continue if errors found"), 0);
+        continueOnErrorButton_->set_active(false);
+        table->attach(*continueOnErrorButton_, 0, 1, 0, 1);
 
-    ignoreIncorrectTOCButton_ = new Gtk::CheckButton(_("Ignore incorrect TOC"),
-                                                     0);
-    ignoreIncorrectTOCButton_->set_active(false);
-    table->attach(*ignoreIncorrectTOCButton_, 0, 1, 1, 2);
+        ignoreIncorrectTOCButton_ = new Gtk::CheckButton(_("Ignore incorrect TOC"),
+                                                         0);
+        ignoreIncorrectTOCButton_->set_active(false);
+        table->attach(*ignoreIncorrectTOCButton_, 0, 1, 1, 2);
 
-    Gtk::Menu *menu = manage(new Gtk::Menu);
-    Gtk::MenuItem *mitem;
-	
-    for (int i = 0; i <= MAX_CORRECTION_ID; i++) {
-      mitem = manage(new Gtk::MenuItem(CORRECTION_TABLE[i].name));
-      mitem->signal_activate().connect(bind(mem_fun(*this, &RecordCDSource::setCorrection), i));
-      menu->append(*mitem);
-    }
+        correctionMenu_ = new Gtk::ComboBoxText;
+        for (int i = 0; i <= MAX_CORRECTION_ID; i++) {
+            correctionMenu_->append(CORRECTION_TABLE[i].name);
+        }
+        correctionMenu_->signal_changed().
+            connect(mem_fun(*this, &RecordCDSource::setCorrection));
+        correctionMenu_->set_active_text(CORRECTION_TABLE[correction_].name);
   
-    correctionMenu_ = new Gtk::ComboBox;
-//    correctionMenu_->set_menu(*menu);
-//    correctionMenu_->set_history(correction_);
-  
-    Gtk::Alignment *align;
+        Gtk::Alignment *align;
 
-    label = new Gtk::Label(_("Audio Correction Method:"));
-    align = new Gtk::Alignment(0, 0.5, 0, 1);
-    align->add(*label);
-    table->attach(*align, 0, 1, 2, 3, Gtk::FILL);
-    table->attach(*correctionMenu_, 1, 2, 2, 3);
+        label = new Gtk::Label(_("Audio Correction Method:"));
+        align = new Gtk::Alignment(0, 0.5, 0, 1);
+        align->add(*label);
+        table->attach(*align, 0, 1, 2, 3, Gtk::FILL);
+        table->attach(*correctionMenu_, 1, 2, 2, 3);
 
-    menu = manage(new Gtk::Menu);
+        subChanReadModeMenu_ = new Gtk::ComboBoxText;
+        for (int i = 0; i <= MAX_SUBCHAN_READ_MODE_ID; i++) {
+            subChanReadModeMenu_->append(SUBCHAN_READ_MODE_TABLE[i].name);
+        }
+        subChanReadModeMenu_->signal_changed().
+            connect(mem_fun(*this, &RecordCDSource::setSubChanReadMode));
+        subChanReadModeMenu_->set_active_text(SUBCHAN_READ_MODE_TABLE[subChanReadMode_].name);
 
-    for (int i = 0; i <= MAX_SUBCHAN_READ_MODE_ID; i++) {
-      mitem = manage(new Gtk::MenuItem(SUBCHAN_READ_MODE_TABLE[i].name));
-      mitem->signal_activate().
-        connect(bind(mem_fun(*this, &RecordCDSource::setSubChanReadMode), i));
-      menu->append(*mitem);
+        label = new Gtk::Label(_("Sub-Channel Reading Mode:"));
+        align = new Gtk::Alignment(0, 0.5, 0, 1);
+        align->add(*label);
+        table->attach(*align, 0, 1, 3, 4, Gtk::FILL);
+        table->attach(*subChanReadModeMenu_, 1, 2, 3, 4);
     }
 
-    subChanReadModeMenu_ = new Gtk::ComboBox;
-//    subChanReadModeMenu_->set_menu(*menu);
-//    subChanReadModeMenu_->set_history(subChanReadMode_);
-
-    label = new Gtk::Label(_("Sub-Channel Reading Mode:"));
-    align = new Gtk::Alignment(0, 0.5, 0, 1);
-    align->add(*label);
-    table->attach(*align, 0, 1, 3, 4, Gtk::FILL);
-    table->attach(*subChanReadModeMenu_, 1, 2, 3, 4);
-  }
-
-  moreOptionsDialog_->show_all();
-  moreOptionsDialog_->run();
-  moreOptionsDialog_->hide();
+    moreOptionsDialog_->show_all();
+    moreOptionsDialog_->run();
+    moreOptionsDialog_->hide();
 }
 
-void RecordCDSource::setCorrection(int s)
+void RecordCDSource::setCorrection()
 {
-  if (s >= 0 && s <= MAX_CORRECTION_ID)
-    correction_ = s;
+    // DENIS todo
+    int s = 0;
+    if (s >= 0 && s <= MAX_CORRECTION_ID)
+        correction_ = s;
 }
 
 bool RecordCDSource::getOnTheFly()
@@ -270,10 +263,12 @@ int RecordCDSource::getCorrection()
   return CORRECTION_TABLE[correction_].correction;
 }
 
-void RecordCDSource::setSubChanReadMode(int m)
+void RecordCDSource::setSubChanReadMode()
 {
-  if (m >= 0 && m <= MAX_SUBCHAN_READ_MODE_ID)
-    subChanReadMode_ = m;
+    // DENIS todo
+    int m;
+    if (m >= 0 && m <= MAX_SUBCHAN_READ_MODE_ID)
+        subChanReadMode_ = m;
 }
 
 int RecordCDSource::getSubChanReadMode()

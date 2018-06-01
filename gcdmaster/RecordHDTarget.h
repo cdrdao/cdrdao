@@ -29,8 +29,6 @@ class RecordHDTarget : public Gtk::VBox
 public:
   RecordHDTarget();
 
-  Gtk::Window *parent; // the dialog where the vbox is placed
-  
   void start();
   void stop();
 
@@ -41,11 +39,9 @@ public:
   std::string getPath();
 
 private:
-  bool active_;
-
   int speed_;
 
-  Gnome::UI::FileEntry *dirEntry_;
+  Gtk::FileChooserButton *dirEntry_;
   Gtk::Entry *fileNameEntry_;
 
 };

@@ -20,14 +20,13 @@
 #include "TocInfoDialog.h"
 
 #include <gtkmm.h>
-#include <gnome.h>
+#include <glibmm/i18n.h>
 
 #include <stdio.h>
 #include <stddef.h>
 #include <ctype.h>
 
 #include "TocEdit.h"
-//#include "TocEditView.h"
 #include "guiUpdate.h"
 #include "Toc.h"
 #include "CdTextItem.h"
@@ -41,7 +40,7 @@ struct LanguageCode {
 };
 
 static LanguageCode CD_TEXT_LANGUAGE_CODES[MAX_CD_TEXT_LANGUAGE_CODES] = {
-  { -1, "Unknown" }, 
+  { -1, "Unknown" },
   { -1, "Undefined" },
   { 0x75, "Chinese" },
   { 0x06, "Czech" },
@@ -120,9 +119,9 @@ TocInfoDialog::TocInfoDialog(Gtk::Window* parent)
   selectedTocType_ = Toc::CD_DA;
 
   nofTracks_ = manage(new Gtk::Label("99"));
-  nofTracks_->set_alignment(Gtk::ALIGN_LEFT);
+  nofTracks_->set_alignment(Gtk::ALIGN_START);
   tocLength_ = manage(new Gtk::Label("100:00:00"));
-  tocLength_->set_alignment(Gtk::ALIGN_LEFT);
+  tocLength_->set_alignment(Gtk::ALIGN_END);
 
   catalog_ = manage(new TextEdit("1234567890123"));
   catalog_->set_max_length(13);
@@ -131,32 +130,11 @@ TocInfoDialog::TocInfoDialog(Gtk::Window* parent)
   catalog_->space(0);
   catalog_->digits(1);
 
-  Gtk::Menu *menu = manage(new Gtk::Menu);
-  Gtk::MenuItem *mi;
-
-  mi = manage(new Gtk::MenuItem("CD-DA"));
-  mi->signal_activate().
-    connect(bind(mem_fun(*this, &TocInfoDialog::setSelectedTocType), Toc::CD_DA));
-  menu->append(*mi);
-
-  mi = manage(new Gtk::MenuItem("CD-ROM"));
-  mi->signal_activate().
-    connect(bind(mem_fun(*this, &TocInfoDialog::setSelectedTocType),Toc::CD_ROM));
-  menu->append(*mi);
-
-  mi = manage(new Gtk::MenuItem("CD-ROM-XA"));
-  mi->signal_activate().
-    connect(bind(mem_fun(*this, &TocInfoDialog::setSelectedTocType),
-                 Toc::CD_ROM_XA));
-  menu->append(*mi);
-
-  mi = manage(new Gtk::MenuItem("CD-I"));
-  mi->signal_activate().
-    connect(bind(mem_fun(*this, &TocInfoDialog::setSelectedTocType), Toc::CD_I));
-  menu->append(*mi);
-
-  tocType_ = manage(new Gtk::OptionMenu);
-  tocType_->set_menu(*menu);
+  tocType_ = manage(new Gtk::ComboBoxText);
+  tocType_->append("CD-DA");
+  tocType_->append("CD-ROM");
+  tocType_->append("CD-ROM-XA");
+  tocType_->append("CD-I");
 
   contents->set_spacing(10);
 
@@ -174,7 +152,7 @@ TocInfoDialog::TocInfoDialog(Gtk::Window* parent)
   table->attach(*tocLength_, 1, 2, 1, 2, Gtk::FILL | Gtk::SHRINK);
   frame->add(*table);
   contents->pack_start(*frame, false, false);
-  
+
   // Sub-channel frame
   frame = manage(new Gtk::Frame(_(" Sub-Channel ")));
   table = manage(new Gtk::Table(2, 2, false));
@@ -197,7 +175,7 @@ TocInfoDialog::TocInfoDialog(Gtk::Window* parent)
 
   for (i = 0; i < 8; i++) {
     vbox = createCdTextPage(i);
-    notebook->pages().push_back(Gtk::Notebook_Helpers::TabElem(*vbox, *(cdTextPages_[i].label)));
+//    notebook->pages().push_back(Gtk::Notebook_Helpers::TabElem(*vbox, *(cdTextPages_[i].label)));
   }
 
   vbox1 = manage(new Gtk::VBox);
@@ -261,8 +239,8 @@ void TocInfoDialog::setSelectedCDTextLanguage(BlockValue val)
 
   if (val.value == 0) {
     // cannot set to 'unknown', restore old setting
-    if (cdTextPages_[val.block].selectedLanguage != 0) 
-      cdTextPages_[val.block].language->set_history(cdTextPages_[val.block].selectedLanguage);
+//    if (cdTextPages_[val.block].selectedLanguage != 0)
+//      cdTextPages_[val.block].language->set_history(cdTextPages_[val.block].selectedLanguage);
 
     return;
   }
@@ -279,15 +257,15 @@ void TocInfoDialog::setSelectedCDTextLanguage(BlockValue val)
     }
 
     if (found ||
-	(val.block > 0 && 
+	(val.block > 0 &&
 	 cdTextPages_[val.block - 1].selectedLanguage == 1)) {
       // reset to old value if the same language is already used or
       // if the language of the previous block is undefined
-      cdTextPages_[val.block].language->set_history(cdTextPages_[val.block].selectedLanguage);
+//      cdTextPages_[val.block].language->set_history(cdTextPages_[val.block].selectedLanguage);
       return;
     }
   }
-    
+
   cdTextPages_[val.block].selectedLanguage = val.value;
 }
 
@@ -298,8 +276,8 @@ void TocInfoDialog::setSelectedCDTextGenre(BlockValue val)
 
   if (val.value == 0) {
     // cannot set to 'unknown', restore old setting
-    if (cdTextPages_[val.block].selectedGenre != 0) 
-      cdTextPages_[val.block].genre->set_history(cdTextPages_[val.block].selectedGenre);
+//    if (cdTextPages_[val.block].selectedGenre != 0)
+//      cdTextPages_[val.block].genre->set_history(cdTextPages_[val.block].selectedGenre);
 
     return;
   }
@@ -314,20 +292,15 @@ void TocInfoDialog::createCdTextLanguageMenu(int n)
 
   bval.block = n;
 
-  Gtk::Menu *menu = manage(new Gtk::Menu);
-  Gtk::MenuItem *mi;
+  cdTextPages_[n].language = manage(new Gtk::ComboBoxText);
 
   for (i = 0; i < MAX_CD_TEXT_LANGUAGE_CODES; i++) {
     bval.value = i;
-
-    mi = manage(new Gtk::MenuItem(CD_TEXT_LANGUAGE_CODES[i].name));
-    mi->signal_activate().connect(bind(mem_fun(*this, &TocInfoDialog::setSelectedCDTextLanguage), bval));
-    mi->show();
-    menu->append(*mi);
+    cdTextPages_[n].language->append(CD_TEXT_LANGUAGE_CODES[i].name);
   }
 
-  cdTextPages_[n].language = manage(new Gtk::OptionMenu);
-  cdTextPages_[n].language->set_menu(*menu);
+  cdTextPages_[n].language->signal_changed().
+      connect(bind(mem_fun(*this, &TocInfoDialog::setSelectedCDTextLanguage), bval));
 }
 
 void TocInfoDialog::createCdTextGenreMenu(int n)
@@ -337,20 +310,19 @@ void TocInfoDialog::createCdTextGenreMenu(int n)
 
   bval.block = n;
 
-  Gtk::Menu *menu = manage(new Gtk::Menu);
-  Gtk::MenuItem *mi;
+  Gtk::ComboBoxText* cbt = manage(new Gtk::ComboBoxText);
 
   for (i = 0; i < MAX_CD_TEXT_GENRE_CODES; i++) {
     bval.value = i;
 
-    mi = manage(new Gtk::MenuItem(CD_TEXT_GENRE_CODES[i].name));
-    mi->signal_activate().connect(bind(mem_fun(*this, &TocInfoDialog::setSelectedCDTextGenre), bval));
-    mi->show();
-    menu->append(*mi);
+    cbt->append(CD_TEXT_GENRE_CODES[i].name);
   }
 
-  cdTextPages_[n].genre = manage(new Gtk::OptionMenu);
-  cdTextPages_[n].genre->set_menu(*menu);
+  cbt->signal_changed().
+      connect(bind(mem_fun(*this, &TocInfoDialog::setSelectedCDTextGenre), bval));
+
+  cdTextPages_[n].genre = cbt;
+
 }
 
 
@@ -491,7 +463,7 @@ Gtk::VBox *TocInfoDialog::createCdTextPage(int n)
   hbox->show();
 
   vbox1->show();
-  
+
   return vbox1;
 }
 
@@ -512,7 +484,7 @@ void TocInfoDialog::clear()
   nofTracks_->set_text("");
   tocLength_->set_text("");
 
-  tocType_->set_history(0);
+//  tocType_->set_history(0);
   selectedTocType_ = Toc::CD_DA;
 
   catalog_->set_text("");
@@ -582,10 +554,10 @@ void TocInfoDialog::clearCdText()
     cdTextPages_[l].upcEan->set_text("");
     cdTextPages_[l].upcEan->set_editable(false);
 
-    cdTextPages_[l].language->set_history(1);
+//    cdTextPages_[l].language->set_history(1);
     cdTextPages_[l].selectedLanguage = 1;
 
-    cdTextPages_[l].genre->set_history(1);
+//    cdTextPages_[l].genre->set_history(1);
     cdTextPages_[l].selectedGenre = 1;
   }
 }
@@ -632,7 +604,7 @@ const char *TocInfoDialog::checkString(const std::string &str)
     *p = 0;
     p--;
   }
-  
+
   return s;
 }
 
@@ -667,60 +639,60 @@ int TocInfoDialog::getCdTextGenreIndex(int code1, int code2)
 void TocInfoDialog::importCdText(const Toc *toc)
 {
   int l;
-  const CdTextItem *item; 
+  const CdTextItem *item;
 
   for (l = 0; l < 8; l++) {
     if ((item = toc->getCdTextItem(0, l, CdTextItem::CDTEXT_TITLE))
-	!= NULL) 
+	!= NULL)
       cdTextPages_[l].title->set_text((const char*)(item->data()));
     else
       cdTextPages_[l].title->set_text("");
     cdTextPages_[l].title->set_editable(true);
 
     if ((item = toc->getCdTextItem(0, l, CdTextItem::CDTEXT_PERFORMER))
-	!= NULL) 
+	!= NULL)
       cdTextPages_[l].performer->set_text((const char*)(item->data()));
     else
       cdTextPages_[l].performer->set_text("");
     cdTextPages_[l].performer->set_editable(true);
 
     if ((item = toc->getCdTextItem(0, l, CdTextItem::CDTEXT_SONGWRITER))
-	!= NULL) 
+	!= NULL)
       cdTextPages_[l].songwriter->set_text((const char*)(item->data()));
     else
       cdTextPages_[l].songwriter->set_text("");
     cdTextPages_[l].songwriter->set_editable(true);
 
     if ((item = toc->getCdTextItem(0, l, CdTextItem::CDTEXT_COMPOSER))
-	!= NULL) 
+	!= NULL)
       cdTextPages_[l].composer->set_text((const char*)(item->data()));
     else
       cdTextPages_[l].composer->set_text("");
     cdTextPages_[l].composer->set_editable(true);
 
     if ((item = toc->getCdTextItem(0, l, CdTextItem::CDTEXT_ARRANGER))
-	!= NULL) 
+	!= NULL)
       cdTextPages_[l].arranger->set_text((const char*)(item->data()));
     else
       cdTextPages_[l].arranger->set_text("");
     cdTextPages_[l].arranger->set_editable(true);
 
     if ((item = toc->getCdTextItem(0, l, CdTextItem::CDTEXT_MESSAGE))
-	!= NULL) 
+	!= NULL)
       cdTextPages_[l].message->set_text((const char*)(item->data()));
     else
       cdTextPages_[l].message->set_text("");
     cdTextPages_[l].message->set_editable(true);
 
     if ((item = toc->getCdTextItem(0, l, CdTextItem::CDTEXT_DISK_ID))
-	!= NULL) 
+	!= NULL)
       cdTextPages_[l].catalog->set_text((const char*)(item->data()));
     else
       cdTextPages_[l].catalog->set_text("");
     cdTextPages_[l].catalog->set_editable(true);
 
     if ((item = toc->getCdTextItem(0, l, CdTextItem::CDTEXT_UPCEAN_ISRC))
-	!= NULL) 
+	!= NULL)
       cdTextPages_[l].upcEan->set_text((const char*)(item->data()));
     else
       cdTextPages_[l].upcEan->set_text("");
@@ -755,10 +727,10 @@ void TocInfoDialog::importCdText(const Toc *toc)
       cdTextPages_[l].selectedGenre = 1; // not used
       cdTextPages_[l].genreInfo->set_text("");
     }
-    cdTextPages_[l].genre->set_history(cdTextPages_[l].selectedGenre);
+//    cdTextPages_[l].genre->set_history(cdTextPages_[l].selectedGenre);
 
     cdTextPages_[l].selectedLanguage = getCdTextLanguageIndex(toc->cdTextLanguage(l));
-    cdTextPages_[l].language->set_history(cdTextPages_[l].selectedLanguage);
+//    cdTextPages_[l].language->set_history(cdTextPages_[l].selectedLanguage);
   }
 }
 
@@ -788,20 +760,20 @@ void TocInfoDialog::importData(const Toc *toc)
 
   catalog_->set_editable(true);
 
-  switch (toc->tocType()) {
-  case Toc::CD_DA:
-    tocType_->set_history(0);
-    break;
-  case Toc::CD_ROM:
-    tocType_->set_history(1);
-    break;
-  case Toc::CD_ROM_XA:
-    tocType_->set_history(2);
-    break;
-  case Toc::CD_I:
-    tocType_->set_history(3);
-    break;
-  }
+  // switch (toc->tocType()) {
+  // case Toc::CD_DA:
+  //   tocType_->set_history(0);
+  //   break;
+  // case Toc::CD_ROM:
+  //   tocType_->set_history(1);
+  //   break;
+  // case Toc::CD_ROM_XA:
+  //   tocType_->set_history(2);
+  //   break;
+  // case Toc::CD_I:
+  //   tocType_->set_history(3);
+  //   break;
+  // }
   selectedTocType_ = toc->tocType();
 
   importCdText(toc);
@@ -811,7 +783,7 @@ void TocInfoDialog::exportData(TocEdit *tocEdit)
 {
   const char *s, *s1;
   Toc *toc = tocEdit->toc();
-  
+
   if (toc->tocType() != selectedTocType_) {
     tocEdit->setTocType(selectedTocType_);
   }
@@ -836,7 +808,7 @@ void TocInfoDialog::exportCdText(TocEdit *tocEdit)
   const char *s;
   const Toc *toc = tocEdit->toc();
 
-  const CdTextItem *item; 
+  const CdTextItem *item;
   CdTextItem *newItem;
 
   for (l = 0; l < 8; l++) {
@@ -850,7 +822,7 @@ void TocInfoDialog::exportCdText(TocEdit *tocEdit)
 	!= NULL) {
       if (newItem == NULL)
 	tocEdit->setCdTextItem(0, CdTextItem::CDTEXT_TITLE, l, NULL);
-      else if (*newItem != *item) 
+      else if (*newItem != *item)
 	tocEdit->setCdTextItem(0, CdTextItem::CDTEXT_TITLE, l, s);
     }
     else if (newItem != NULL) {
@@ -870,7 +842,7 @@ void TocInfoDialog::exportCdText(TocEdit *tocEdit)
 	!= NULL) {
       if (newItem == NULL)
 	tocEdit->setCdTextItem(0, CdTextItem::CDTEXT_PERFORMER, l, NULL);
-      else if (*newItem != *item) 
+      else if (*newItem != *item)
 	tocEdit->setCdTextItem(0, CdTextItem::CDTEXT_PERFORMER, l, s);
     }
     else if (newItem != NULL) {
@@ -891,7 +863,7 @@ void TocInfoDialog::exportCdText(TocEdit *tocEdit)
       if (newItem == NULL)
 	tocEdit->setCdTextItem(0, CdTextItem::CDTEXT_SONGWRITER, l,
 			       NULL);
-      else if (*newItem != *item) 
+      else if (*newItem != *item)
 	tocEdit->setCdTextItem(0, CdTextItem::CDTEXT_SONGWRITER, l, s);
     }
     else if (newItem != NULL) {
@@ -911,7 +883,7 @@ void TocInfoDialog::exportCdText(TocEdit *tocEdit)
 	!= NULL) {
       if (newItem == NULL)
 	tocEdit->setCdTextItem(0, CdTextItem::CDTEXT_COMPOSER, l, NULL);
-      else if (*newItem != *item) 
+      else if (*newItem != *item)
 	tocEdit->setCdTextItem(0, CdTextItem::CDTEXT_COMPOSER, l, s);
     }
     else if (newItem != NULL) {
@@ -931,7 +903,7 @@ void TocInfoDialog::exportCdText(TocEdit *tocEdit)
 	!= NULL) {
       if (newItem == NULL)
 	tocEdit->setCdTextItem(0, CdTextItem::CDTEXT_ARRANGER, l, NULL);
-      else if (*newItem != *item) 
+      else if (*newItem != *item)
 	tocEdit->setCdTextItem(0, CdTextItem::CDTEXT_ARRANGER, l, s);
     }
     else if (newItem != NULL) {
@@ -951,7 +923,7 @@ void TocInfoDialog::exportCdText(TocEdit *tocEdit)
 	!= NULL) {
       if (newItem == NULL)
 	tocEdit->setCdTextItem(0, CdTextItem::CDTEXT_MESSAGE, l, NULL);
-      else if (*newItem != *item) 
+      else if (*newItem != *item)
 	tocEdit->setCdTextItem(0, CdTextItem::CDTEXT_MESSAGE, l, s);
     }
     else if (newItem != NULL) {
@@ -971,7 +943,7 @@ void TocInfoDialog::exportCdText(TocEdit *tocEdit)
       if (newItem == NULL)
 	tocEdit->setCdTextItem(0, CdTextItem::CDTEXT_DISK_ID, l,
 			       NULL);
-      else if (*newItem != *item) 
+      else if (*newItem != *item)
 	tocEdit->setCdTextItem(0, CdTextItem::CDTEXT_DISK_ID, l, s);
     }
     else if (newItem != NULL) {
@@ -991,7 +963,7 @@ void TocInfoDialog::exportCdText(TocEdit *tocEdit)
       if (newItem == NULL)
 	tocEdit->setCdTextItem(0, CdTextItem::CDTEXT_UPCEAN_ISRC, l,
 			       NULL);
-      else if (*newItem != *item) 
+      else if (*newItem != *item)
 	tocEdit->setCdTextItem(0, CdTextItem::CDTEXT_UPCEAN_ISRC, l, s);
     }
     else if (newItem != NULL) {
@@ -1015,7 +987,7 @@ void TocInfoDialog::exportCdText(TocEdit *tocEdit)
 	  != NULL) {
 	if (newItem == NULL)
 	  tocEdit->setCdTextGenreItem(l, -1, -1, NULL);
-	else if (*newItem != *item) 
+	else if (*newItem != *item)
 	  tocEdit->setCdTextGenreItem(l, code1, code2, s);
       }
       else if (newItem != NULL) {
@@ -1029,7 +1001,7 @@ void TocInfoDialog::exportCdText(TocEdit *tocEdit)
     if (cdTextPages_[l].selectedLanguage != 0) {
       int langCode = CD_TEXT_LANGUAGE_CODES[cdTextPages_[l].selectedLanguage].code;
 
-      if (langCode != toc->cdTextLanguage(l)) 
+      if (langCode != toc->cdTextLanguage(l))
 	tocEdit->setCdTextLanguage(l, langCode);
     }
   }

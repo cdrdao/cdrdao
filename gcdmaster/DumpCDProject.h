@@ -28,25 +28,21 @@ class RecordHDTarget;
 class DumpCDProject : public Project
 {
 public:
-  virtual ~DumpCDProject();
+    virtual ~DumpCDProject();
 
-  static DumpCDProject* create(Glib::RefPtr<Gtk::Builder>& builder,
-                               Gtk::ApplicationWindow* parent);
+    static DumpCDProject* create(Glib::RefPtr<Gtk::Builder>& builder,
+                                 GCDWindow* parent);
 
-//  bool closeProject();
+    bool closeProject();
 
 protected:
-  DumpCDProject(Gtk::ApplicationWindow *parent);
-//  virtual void createToolbar() {};
+    DumpCDProject(GCDWindow *parent);
 
 private:
-  Gtk::Label label_;
-  /* RecordCDSource *CDSource; */
-  /* RecordHDTarget *HDTarget; */
+    RecordCDSource *CDSource;
+    RecordHDTarget *HDTarget;
 
-  /* void start(); */
-  /* void recordToc2CD() {} */
-  /* void projectInfo() {} */
-  /* void update(unsigned long level); */
+    void start();
+    void update(unsigned long level);
 };
 #endif

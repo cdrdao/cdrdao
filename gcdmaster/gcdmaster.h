@@ -43,15 +43,15 @@ public:
 
     static GCDWindow* create(Glib::RefPtr<Gtk::Builder> b, What what);
 
-    Gtk::VBox* project() { return project_; }
+    Project* project() { return project_; }
 
     void update(unsigned long level);
 
 protected:
-    void set_project(Gtk::VBox* project);
+    void set_project(Project* project);
 
 private:
-    Gtk::VBox* project_;
+    Project* project_;
     Gtk::Notebook* notebook_;
     Gtk::MenuButton* gears_;
 };

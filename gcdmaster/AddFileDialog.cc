@@ -26,6 +26,7 @@
 #include <gtkmm.h>
 #include <glibmm/i18n.h>
 
+#include "gcdmaster.h"
 #include "config.h"
 #include "AddFileDialog.h"
 #include "guiUpdate.h"
@@ -42,7 +43,7 @@ AddFileDialog::AddFileDialog(AudioCDProject *project)
   project_ = project;
 
   set_select_multiple(true);
-  set_transient_for(*project->getParentWindow ());
+  set_transient_for(*(project->getParentWindow()));
   mode(M_APPEND_TRACK);
 
   auto filter_tocs = Gtk::FileFilter::create();

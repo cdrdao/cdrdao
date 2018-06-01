@@ -22,8 +22,6 @@
 
 #include <gtkmm.h>
 
-#include <gtk/gtk.h>
-
 #include "TrackManager.h"
 
 class Toc;
@@ -82,7 +80,7 @@ private:
   Glib::RefPtr<Gdk::Pixbuf> trackExtendPixmap_;
   Glib::RefPtr<Gdk::Pixbuf> indexExtendPixmap_;
 
-  Glib::RefPtr<Gdk::GC> drawGc_;
+//  Glib::RefPtr<Gdk::GC> drawGc_;
   Gdk::Color sampleColor_;
   Gdk::Color middleLineColor_;
   Gdk::Color cursorColor_;

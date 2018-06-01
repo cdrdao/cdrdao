@@ -24,7 +24,7 @@
 
 class GCDWindow;
 
-class ProjectChooser : public Gtk::VBox
+class ProjectChooser : public Project
 {
  public:
     ProjectChooser(BaseObjectType* cobject,
@@ -40,5 +40,7 @@ protected:
     void on_new_audio_cd();
     void on_new_duplicate_cd();
     void on_new_dump_cd();
+
+    void update(unsigned long level);
 };
 #endif

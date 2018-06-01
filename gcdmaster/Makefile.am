@@ -6,14 +6,12 @@ bin_PROGRAMS = gcdmaster
 # 	AddFileDialog.cc 	\
 # 	AddSilenceDialog.cc 	\
 # 	AudioCDProject.cc 	\
-# 	AudioCDView.cc 		\
 # 	BlankCDWindow.cc 	\
 # 	CdDevice.cc 		\
 # 	CdTextDialog.cc 	\
 # 	ConfigManager.cc	\
 # 	DeviceConfDialog.cc 	\
 # 	DeviceList.cc 		\
-# 	DumpCDProject.cc 	\
 # 	DuplicateCDProject.cc 	\
 # 	gcdmaster.cc 		\
 # 	GenericView.cc 		\
@@ -26,21 +24,15 @@ bin_PROGRAMS = gcdmaster
 # 	ProjectChooser.cc 	\
 # 	RecordCDSource.cc 	\
 # 	RecordCDTarget.cc 	\
-# 	RecordHDTarget.cc 	\
-# 	RecordTocDialog.cc 	\
-# 	RecordTocSource.cc 	\
-# 	SampleDisplay.cc 	\
 # 	SampleManager.cc 	\
 # 	TextEdit.cc 		\
 # 	TocEdit.cc 		\
 # 	TocEditView.cc 		\
-# 	TocInfoDialog.cc 	\
 # 	TrackDataScrap.cc 	\
 # 	TrackInfoDialog.cc 	\
 # 	TrackManager.cc 	\
 # 	xcdrdao.cc		\
 # 	AddFileDialog.h		\
-# 	DumpCDProject.h		\
 # 	ProjectChooser.h	\
 # 	SoundIF.h		\
 # 	AddSilenceDialog.h	\
@@ -53,21 +45,15 @@ bin_PROGRAMS = gcdmaster
 # 	AudioCDProject.h	\
 # 	RecordCDTarget.h	\
 # 	TocEditView.h		\
-# 	AudioCDView.h		\
 # 	GenericView.h		\
-# 	RecordHDTarget.h	\
-# 	TocInfoDialog.h		\
 # 	BlankCDWindow.h		\
 # 	guiUpdate.h		\
-# 	RecordTocDialog.h	\
 # 	TrackDataScrap.h	\
 # 	CdDevice.h		\
 # 	Icons.h			\
-# 	RecordTocSource.h	\
 # 	TrackInfoDialog.h	\
 # 	CdTextDialog.h		\
 # 	MessageBox.h		\
-# 	SampleDisplay.h		\
 # 	TrackManager.h		\
 # 	DeviceConfDialog.h	\
 # 	ProcessMonitor.h	\
@@ -82,6 +68,7 @@ gcdmaster_SOURCES = \
 	AddFileDialog.cc	\
 	AddSilenceDialog.cc	\
 	AudioCDProject.cc	\
+	AudioCDView.cc		\
 	BlankCDWindow.cc	\
 	CdDevice.cc		\
 	CdTextDialog.cc		\
@@ -98,10 +85,15 @@ gcdmaster_SOURCES = \
 	ProjectChooser.cc	\
 	RecordCDSource.cc	\
 	RecordCDTarget.cc	\
+	RecordHDTarget.cc	\
+	RecordTocDialog.cc	\
+	RecordTocSource.cc	\
+	SampleDisplay.cc	\
 	SampleManager.cc	\
 	TextEdit.cc		\
 	TocEdit.cc		\
 	TocEditView.cc		\
+	TocInfoDialog.cc	\
 	TrackDataScrap.cc	\
 	TrackInfoDialog.cc	\
 	TrackManager.cc		\

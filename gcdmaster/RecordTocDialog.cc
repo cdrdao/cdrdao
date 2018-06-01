@@ -18,6 +18,7 @@
  */
 
 #include <gtkmm.h>
+#include <glibmm/i18n.h>
 
 #include "RecordTocDialog.h"
 #include "RecordTocSource.h"
@@ -28,7 +29,6 @@
 #include "DeviceList.h"
 #include "MessageBox.h"
 #include "TocEdit.h"
-#include "Icons.h"
 
 RecordTocDialog::RecordTocDialog(TocEdit *tocEdit)
 {
@@ -71,8 +71,9 @@ RecordTocDialog::RecordTocDialog(TocEdit *tocEdit)
 
   hbox->pack_start(*frameBox, true, false);
 
-  Gtk::Image *pixmap = manage(new Gtk::Image(Icons::GCDMASTER,
-                                             Gtk::ICON_SIZE_DIALOG));
+  Gtk::Image *pixmap = manage(new Gtk::Image);
+  pixmap->set_from_resource("/org/gnome/gcdmaster/gcdmaster.png");
+
   Gtk::Label *startLabel = manage(new Gtk::Label(_("Start")));
   Gtk::VBox *startBox = manage(new Gtk::VBox);
   Gtk::Button *button = manage(new Gtk::Button());

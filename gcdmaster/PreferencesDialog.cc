@@ -34,28 +34,34 @@ PreferencesDialog::PreferencesDialog(BaseObjectType* cobject,
 				     const Glib::RefPtr<Gtk::Builder>& builder) :
 	Gtk::Dialog(cobject)
 {
-    builder->get_widget("apply-button", applyButton_);
-    builder->get_widget("ok-button", okButton_);
-    builder->get_widget("cancel-button", cancelButton_);
+    Gtk::Button *applyButton, *cancelButton, *okButton, *resetButton;
+
+    builder->get_widget("apply-button", applyButton);
+    builder->get_widget("ok-button", okButton);
+    builder->get_widget("cancel-button", cancelButton);
+    builder->get_widget("reset-button", resetButton);
     builder->get_widget("temp-directory", tempDirEntry_);
     builder->get_widget("device-tree", deviceList_);
     builder->get_widget("driver-options", driverOptionsEntry_);
 
-    if (!applyButton_ || !okButton_ || !cancelButton_ || !tempDirEntry_ ||
+    if (!applyButton || !okButton || !cancelButton || !tempDirEntry_ ||
         !deviceList_ || !driverOptionsEntry_) {
         std::cerr << "Unable to create all GUI widgets from glade file\n";
         exit(1);
     }
 
-    applyButton_->signal_clicked()
+    applyButton->signal_clicked()
         .connect(sigc::mem_fun(*this,
                                &PreferencesDialog::on_button_apply));
-    cancelButton_->signal_clicked()
+    cancelButton->signal_clicked()
         .connect(sigc::mem_fun(*this,
                                &PreferencesDialog::on_button_cancel));
-    okButton_->signal_clicked()
+    okButton->signal_clicked()
         .connect(sigc::mem_fun(*this,
                                &PreferencesDialog::on_button_ok));
+    resetButton->signal_clicked()
+        .connect(sigc::mem_fun(*this,
+                               &PreferencesDialog::on_button_reset));
 
     Gtk::Button* button = NULL;
     builder->get_widget("rescan-button", button);
@@ -184,6 +190,15 @@ void PreferencesDialog::on_button_ok()
     save_to_settings();
     export_devices();
     hide();
+}
+
+void PreferencesDialog::on_button_reset()
+{
+    for (int i = 0; i < CdDevice::count(); i++)
+        CdDevice::at(i)->autoSelectDriver();
+    import_devices();
+    save_to_settings();
+    guiUpdate(UPD_CD_DEVICES);
 }
 
 void PreferencesDialog::on_selection_changed()
@@ -326,8 +341,11 @@ void PreferencesDialog::import_selected_row(Gtk::TreeIter row)
 
     } else {
         driverMenu_->set_sensitive(false);
+        driverMenu_->set_active_text("");
         devtypeMenu_->set_sensitive(false);
+        devtypeMenu_->set_active_text("");
         driverOptionsEntry_->set_sensitive(false);
+        driverOptionsEntry_->set_text("");
     }
 }
 
