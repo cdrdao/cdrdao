@@ -2368,8 +2368,6 @@ int main(int argc, char **argv)
     log_set_verbose(options.verbose);
     commitSettings(&options, settings, settingsPath);
 
-    printVersion();
-
     // Just show version ? We're done.
     if (options.command == SHOW_VERSION)
 	goto fail;
