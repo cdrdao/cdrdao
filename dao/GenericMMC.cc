@@ -210,8 +210,19 @@ int GenericMMC::loadUnload(int unload) const
 {
   unsigned char cmd[6];
 
+  // First send an ALLOW MEDIUM REMOVAL command
+  // sg_utils equivalent:
+  //   sg_prevent --allow <dev>
+  //
   memset(cmd, 0, 6);
+  cmd[0] = 0x1e; // PREVENT ALLOW MEDIUM REMOVAL
+  sendCmd(cmd, 6, NULL, 0, NULL, 0);
 
+  // Next, the START/STOP unit.
+  // sg_utils Equivalent:
+  //    sg_start --eject <dev>
+  //
+  memset(cmd, 0, 6);
   cmd[0] = 0x1b; // START/STOP UNIT
   if (unload) {
     cmd[4] = 0x02; // LoUnlo=1, Start=0
