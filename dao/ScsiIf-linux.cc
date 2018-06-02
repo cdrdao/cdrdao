@@ -198,21 +198,21 @@ int ScsiIf::sendCmd(const uchar *cmd, int cmdLen, const uchar *dataOut,
 	io_hdr.dxfer_direction = SG_DXFER_FROM_DEV;
     }
 
-    log_message(4, "%s: Initiating SCSI command %s%s",
+    log_message(5, "%s: Initiating SCSI command %s%s",
 		impl_->filename_, sg_strcommand(cmd[0]),
 		sg_strcmdopts(cmd));
 
     if (ioctl(impl_->fd_, SG_IO, &io_hdr) < 0) {
 	int errnosave = errno;
-	log_message((showMsg ? -2 : 3), "%s: SCSI command %s (0x%02x) "
-		    "failed: %s.", impl_->filename_,
+	log_message((showMsg ? -2 : 3), "[SCSI] %s (0x%02x) "
+		    "failed: %s.",
 		    sg_strcommand(cmd[0]), cmd[0],
 		    strerror(errnosave));
 	return 1;
     }
 
-    log_message(4, "%s: SCSI command %s (0x%02x) executed in %u ms, status=%d",
-		impl_->filename_, sg_strcommand(cmd[0]),
+    log_message(4, "[SCSI] %s (0x%02x) executed in %u ms, status=%d",
+		sg_strcommand(cmd[0]),
 		cmd[0], io_hdr.duration, io_hdr.status);
 
     impl_->last_sense_buffer_length = io_hdr.sb_len_wr;
