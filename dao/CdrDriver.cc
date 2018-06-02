@@ -765,7 +765,7 @@ static void initDriverTable()
     return;
 
   if (readDriverTable(DRIVER_TABLE_FILE) != 0) {
-    log_message(2, "Cannot read driver table from file \"%s\" - using built-in table.", DRIVER_TABLE_FILE);
+    log_message(3, "Cannot read driver table from file \"%s\" - using built-in table.", DRIVER_TABLE_FILE);
     createDriverTable();
   }
 
