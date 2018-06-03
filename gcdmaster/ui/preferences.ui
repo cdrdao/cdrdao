@@ -391,7 +391,7 @@
               <object class="GtkLabel">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="label" translatable="yes">Devices</property>
+                <property name="label" translatable="yes">Device Settings</property>
                 <property name="justify">center</property>
               </object>
               <packing>

@@ -307,6 +307,10 @@ bool CdDevice::updateProgress(Glib::IOCondition cond, int fd)
 
         int msgsize = read(fd, (char *)&msg, sizeof(msg));
         if (msgsize >= PSGMSG_MINSIZE) {
+            printf("Read ProgressMsg %d %d %d %d %d %d %d\n",
+                   msg.status, msg.totalTracks, msg.track,
+                   msg.trackProgress, msg.totalProgress,
+                   msg.bufferFillRate, msg.writerFillRate);
             if (msg.status >= PGSMSG_MIN && msg.status <= PGSMSG_MAX &&
                 msg.track >= 0 &&
                 msg.totalProgress >= 0 && msg.totalProgress <= 1000 &&
@@ -379,11 +383,17 @@ bool CdDevice::ejectCd(bool load)
 static char* allocate_cdrdao_path()
 {
     char* exec_name = NULL;
-    Glib::ustring cdrdao_path = configManager->get_string("cdrdao-path");
-    if (!cdrdao_path.empty())
-        exec_name = strdupCC(cdrdao_path.c_str());
-    else
-        exec_name = strdupCC("cdrdao");
+    const char* env_name = NULL;
+
+    if ((env_name = getenv("CDRDAO_PATH"))) {
+        exec_name = strdupCC(env_name);
+    } else {
+        Glib::ustring cdrdao_path = configManager->get_string("cdrdao-path");
+        if (!cdrdao_path.empty())
+            exec_name = strdupCC(cdrdao_path.c_str());
+        else
+            exec_name = strdupCC("cdrdao");
+    }
 
     return exec_name;
 }
@@ -400,7 +410,6 @@ bool CdDevice::recordDao(Gtk::Window& parent, TocEdit *tocEdit, int simulate,
     char devname[30];
     char drivername[50];
     char speedbuf[20];
-    char *execName;
     const char *s;
     char bufferbuf[20];
     int remoteFdArgNum = 0;
@@ -495,9 +504,9 @@ bool CdDevice::recordDao(Gtk::Window& parent, TocEdit *tocEdit, int simulate,
     delete scsiIf_;
     scsiIf_ = NULL;
 
-    process_ = PROCESS_MONITOR->start(execName, args, remoteFdArgNum);
+    process_ = PROCESS_MONITOR->start(args[0], args, remoteFdArgNum);
 
-    delete execName;
+    delete args[0];
     if (process_ != NULL) {
         status_ = DEV_RECORDING;
         action_ = A_RECORD;
@@ -557,7 +566,6 @@ int CdDevice::extractDao(Gtk::Window& parent, const char *tocFileName,
     int n = 0;
     char devname[30];
     char drivername[50];
-    char *execName;
     const char *s;
     char correctionbuf[20];
     int remoteFdArgNum = 0;
@@ -620,9 +628,9 @@ int CdDevice::extractDao(Gtk::Window& parent, const char *tocFileName,
     delete scsiIf_;
     scsiIf_ = NULL;
 
-    process_ = PROCESS_MONITOR->start(execName, args, remoteFdArgNum);
+    process_ = PROCESS_MONITOR->start(args[0], args, remoteFdArgNum);
 
-    delete[] execName;
+    delete[] args[0];
 
     if (process_ != NULL) {
         status_ = DEV_READING;
@@ -665,7 +673,6 @@ int CdDevice::duplicateDao(Gtk::Window& parent, int simulate, int multiSession,
     char r_drivername[50];
     char speedbuf[20];
     char correctionbuf[20];
-    char *execName;
     const char *s;
     char bufferbuf[20];
     int remoteFdArgNum = 0;
@@ -768,9 +775,9 @@ int CdDevice::duplicateDao(Gtk::Window& parent, int simulate, int multiSession,
     delete scsiIf_;
     scsiIf_ = NULL;
 
-    process_ = PROCESS_MONITOR->start(execName, args, remoteFdArgNum);
+    process_ = PROCESS_MONITOR->start(args[0], args, remoteFdArgNum);
 
-    delete[] execName;
+    delete[] args[0];
 
     if (process_ != NULL) {
         slaveDevice_ = readdev;
@@ -811,7 +818,6 @@ int CdDevice::blank(Gtk::Window* parent, int fast, int speed, int eject,
     char devname[30];
     char drivername[50];
     char speedbuf[20];
-    char *execName;
     const char *s;
     int remoteFdArgNum = 0;
 
@@ -872,9 +878,9 @@ int CdDevice::blank(Gtk::Window* parent, int fast, int speed, int eject,
     delete scsiIf_;
     scsiIf_ = NULL;
 
-    process_ = PROCESS_MONITOR->start(execName, args, remoteFdArgNum);
+    process_ = PROCESS_MONITOR->start(args[0], args, remoteFdArgNum);
 
-    delete[] execName;
+    delete[] args[0];
 
     if (process_ != NULL) {
         status_ = DEV_BLANKING;

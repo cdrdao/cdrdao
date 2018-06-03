@@ -144,6 +144,7 @@ Process *ProcessMonitor::start(const char *prg, const char **args,
     // close reading end of pipe
     close(pipeFds[0]);
 
+    printf("Forked %s\n", prg);
     execvp(prg, (char*const*)args);
 
     log_message(-2, "Cannot execute '%s': %s", prg, strerror(errno));
