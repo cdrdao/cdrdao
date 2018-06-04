@@ -41,7 +41,8 @@ public:
 
     enum class What { CHOOSER, AUDIOCD, DUPLICATE, BLANKCD, DUMP };
 
-    static GCDWindow* create(Glib::RefPtr<Gtk::Builder> b, What what);
+    static GCDWindow* create(Glib::RefPtr<Gtk::Builder> b, What what,
+                             const char*, TocEdit*);
 
     Project* project() { return project_; }
 
@@ -68,7 +69,8 @@ public:
   void newChooserWindow();
   void newDuplicateCDProject();
   void newDumpCDProject();
-  void newAudioCDProject();
+  void newEmptyAudioCDProject();
+  void newAudioCDProject(const char* name = NULL, TocEdit* tocEdit = NULL);
 
   void update(unsigned long level);
 
@@ -87,11 +89,8 @@ private:
 //  bool closeProject();
 //  void closeChooser();
 //  bool on_delete_event(GdkEventAny* e);
-//bool openNewProject(const char*);
+  bool openNewProject(const char*);
 //void openProject();
-  /* void newAudioCDProject2(); */
-  /* void newAudioCDProject(const char *name, TocEdit *tocEdit, */
-  /*                        const char* tracks = NULL); */
   /* void newDumpCDProject(); */
 
   /* void configureDevices(); */

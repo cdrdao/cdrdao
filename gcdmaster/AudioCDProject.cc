@@ -104,11 +104,13 @@ AudioCDProject::AudioCDProject(int number, const char *name, TocEdit *tocEdit,
 
     updateWindowTitle();
 
+    add_menus();
+
     guiUpdate(UPD_ALL);
     show_all();
 }
 
-void AudioCDProject::add_menus(Glib::RefPtr<Gtk::UIManager> m_refUIManager)
+void AudioCDProject::add_menus()
 {
     m_refActionGroup = Gtk::ActionGroup::create("AudioCDProject");
 
@@ -176,7 +178,7 @@ void AudioCDProject::add_menus(Glib::RefPtr<Gtk::UIManager> m_refUIManager)
                                                _("Zoom Fit")),
                            sigc::mem_fun(*this, &AudioCDProject::on_zoom_fit_clicked) );
 
-    m_refUIManager->insert_action_group(m_refActionGroup);
+    // m_refUIManager->insert_action_group(m_refActionGroup);
 
     // Merge menuitems
     try
@@ -228,7 +230,7 @@ void AudioCDProject::add_menus(Glib::RefPtr<Gtk::UIManager> m_refUIManager)
             "  </toolbar>"
             "</ui>";
 
-        m_refUIManager->add_ui_from_string(ui_info);
+        //m_refUIManager->add_ui_from_string(ui_info);
     }
     catch(const Glib::Error& ex)
     {
@@ -243,7 +245,7 @@ void AudioCDProject::add_menus(Glib::RefPtr<Gtk::UIManager> m_refUIManager)
     action = m_refActionGroup->get_action ("Stop");
     action->set_sensitive(false);
 
-    audioCDView_->add_menus (m_refUIManager);
+    // audioCDView_->add_menus (m_refUIManager);
     audioCDView_->signal_tocModified.
         connect(sigc::mem_fun(*this, &AudioCDProject::update));
 }
@@ -282,7 +284,7 @@ void AudioCDProject::errorDialog(const char* msg)
 
 void AudioCDProject::progress(double val)
 {
-    progressbar_->set_fraction(val);
+//    progressbar_->set_fraction(val);
 }
 
 void AudioCDProject::fullView()

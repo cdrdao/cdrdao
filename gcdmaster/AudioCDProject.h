@@ -56,7 +56,7 @@ public:
   enum PlayStatus {PLAYING, PAUSED, STOPPED};
 
 
-  void add_menus (Glib::RefPtr<Gtk::UIManager> m_refUIManager);
+  void add_menus();
 //  void configureAppBar (Gnome::UI::AppBar *s, Gtk::ProgressBar* p,
 //                        Gtk::Button *b);
 

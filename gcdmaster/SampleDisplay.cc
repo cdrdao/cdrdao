@@ -123,9 +123,8 @@ SampleDisplay::SampleDisplay():
 	indexMarkerSelectedPixmap_(NULL),
 	trackExtendPixmap_(NULL),
 	indexExtendPixmap_(NULL)
-//	drawGc_(NULL)
 {
-    auto adjustment_ = Gtk::Adjustment::create(0.0, 0.0, 1.0);
+    adjustment_ = Gtk::Adjustment::create(0.0, 0.0, 1.0);
     adjustment_->signal_value_changed().connect(mem_fun(*this,
                                                         &SampleDisplay::scrollTo));
 
@@ -468,74 +467,73 @@ gint SampleDisplay::sample2pixel(unsigned long sample)
 
 bool SampleDisplay::handleConfigureEvent(GdkEventConfigure *event)
 {
-  // Glib::RefPtr<Pango::Context> context = get_pango_context();
-  // Pango::FontMetrics metrics = context->get_metrics(get_style()->get_font());
+    printf("handleConfigureEvent\n");
+    Glib::RefPtr<Pango::Context> context = get_pango_context();
+    Pango::FontMetrics metrics = context->get_metrics(get_style_context()->get_font());
 
-  // if (!drawGc_) {
-  //   Glib::RefPtr<Gdk::Bitmap> mask;
-  //   // mask = Gdk::Bitmap::create(NULL, get_width(), get_height());
-  //   Glib::RefPtr<const Gdk::Drawable> window(get_window());
+    if (!cr_ && get_window()) {
+        cr_ = get_window()->create_cairo_context();
 
-  //   drawGc_ = Gdk::GC::create(get_window());
+        getColor("darkslateblue", &sampleColor_);
+        getColor("red3", &middleLineColor_);
+        getColor("gold2", &cursorColor_);
+        getColor("red", &markerColor_);
+        getColor("#ffc0e0", &selectionBackgroundColor_);
 
-  //   getColor("darkslateblue", &sampleColor_);
-  //   getColor("red3", &middleLineColor_);
-  //   getColor("gold2", &cursorColor_);
-  //   getColor("red", &markerColor_);
-  //   getColor("#ffc0e0", &selectionBackgroundColor_);
+        timeLineHeight_ = ((metrics.get_ascent() + metrics.get_descent())
+                           / Pango::SCALE);
+        trackLineHeight_ = ((metrics.get_ascent() + metrics.get_descent())
+                            / Pango::SCALE);
 
-  //   timeLineHeight_ = ((metrics.get_ascent() + metrics.get_descent())
-  //                      / Pango::SCALE);
-  //   trackLineHeight_ = ((metrics.get_ascent() + metrics.get_descent())
-  //                       / Pango::SCALE);
+        trackMarkerPixmap_ =
+            Gdk::Pixbuf::create_from_xpm_data(TRACK_MARKER_XPM_DATA);
+        indexMarkerPixmap_ =
+            Gdk::Pixbuf::create_from_xpm_data(INDEX_MARKER_XPM_DATA);
+        trackMarkerSelectedPixmap_ =
+            Gdk::Pixbuf::create_from_xpm_data(TRACK_MARKER_XPM_DATA);
+        indexMarkerSelectedPixmap_ =
+            Gdk::Pixbuf::create_from_xpm_data(INDEX_MARKER_XPM_DATA);
+        trackExtendPixmap_ =
+            Gdk::Pixbuf::create_from_xpm_data(TRACK_EXTEND_XPM_DATA);
+        indexExtendPixmap_ =
+            Gdk::Pixbuf::create_from_xpm_data(INDEX_EXTEND_XPM_DATA);
 
-  //   trackMarkerPixmap_ =
-  //       Gdk::Pixbuf::create_from_xpm_data(TRACK_MARKER_XPM_DATA);
-  //   indexMarkerPixmap_ =
-  //       Gdk::Pixbuf::create_from_xpm_data(INDEX_MARKER_XPM_DATA);
-  //   trackMarkerSelectedPixmap_ =
-  //       Gdk::Pixbuf::create_from_xpm_data(TRACK_MARKER_XPM_DATA);
-  //   indexMarkerSelectedPixmap_ =
-  //       Gdk::Pixbuf::create_from_xpm_data(INDEX_MARKER_XPM_DATA);
-  //   trackExtendPixmap_ =
-  //       Gdk::Pixbuf::create_from_xpm_data(TRACK_EXTEND_XPM_DATA);
-  //   indexExtendPixmap_ =
-  //       Gdk::Pixbuf::create_from_xpm_data(INDEX_EXTEND_XPM_DATA);
+        trackMarkerWidth_ = ((metrics.get_approximate_digit_width() /
+                              Pango::SCALE) * 5) + TRACK_MARKER_XPM_WIDTH + 2;
+        trackManager_ = new TrackManager(TRACK_MARKER_XPM_WIDTH);
+    }
 
-  //   trackMarkerWidth_ = ((metrics.get_approximate_digit_width() /
-  //                         Pango::SCALE) * 5) + TRACK_MARKER_XPM_WIDTH + 2;
-  //   trackManager_ = new TrackManager(TRACK_MARKER_XPM_WIDTH);
-  // }
+     width_ = get_width();
+     height_ = get_height();
+     printf("%d %d\n", width_, height_);
 
-  // width_ = get_width();
-  // height_ = get_height();
+     // Don't even try to do anything smart if we haven't received a
+     // reasonable window size yet. This will keep pixmap_ to NULL. This
+     // is important because during startup we don't control how the
+     // configure_event are timed wrt to gcdmaster bringup.
+     if (width_ <= 1 || height_ <= 1)
+         return true;
 
-  // // Don't even try to do anything smart if we haven't received a
-  // // reasonable window size yet. This will keep pixmap_ to NULL. This
-  // // is important because during startup we don't control how the
-  // // configure_event are timed wrt to gcdmaster bringup.
-  // if (width_ <= 1 || height_ <= 1)
-  //   return true;
+     chanHeight_ = (height_ - timeLineHeight_ - trackLineHeight_ - 2) / 2;
 
-  // chanHeight_ = (height_ - timeLineHeight_ - trackLineHeight_ - 2) / 2;
+     lcenter_ = chanHeight_ / 2 + trackLineHeight_;
+     rcenter_ = lcenter_ + timeLineHeight_ + chanHeight_;
 
-  // lcenter_ = chanHeight_ / 2 + trackLineHeight_;
-  // rcenter_ = lcenter_ + timeLineHeight_ + chanHeight_;
+     trackLineY_ = trackLineHeight_ - 1;
 
-  // trackLineY_ = trackLineHeight_ - 1;
+     timeLineY_ = chanHeight_ + timeLineHeight_ + trackLineHeight_;
+     timeTickWidth_ = ((metrics.get_approximate_digit_width() /
+                        Pango::SCALE) * 13) + 3;
 
-  // timeLineY_ = chanHeight_ + timeLineHeight_ + trackLineHeight_;
-  // timeTickWidth_ = ((metrics.get_approximate_digit_width() /
-  //                    Pango::SCALE) * 13) + 3;
+     sampleStartX_ = 10;
+     sampleEndX_ = width_ - 10;
+     sampleWidthX_ = sampleEndX_ - sampleStartX_ + 1;
 
-  // sampleStartX_ = 10;
-  // sampleEndX_ = width_ - 10;
-  // sampleWidthX_ = sampleEndX_ - sampleStartX_ + 1;
+     pixmap_ = Gdk::Pixbuf::create(get_window(), 0, 0, get_width(), get_height());
+     Gdk::Cairo::set_source_pixbuf(cr_, pixmap_, 0, 0);
 
-  // pixmap_ = Gdk::Pixbuf::create(get_window(), get_width(), get_height(), -1);
-
-  // if (width_ > 100 && height_ > 100)
-  //   updateSamples();
+     if (width_ > 100 && height_ > 100)
+         updateSamples();
 
     return true;
 }
@@ -753,30 +751,35 @@ bool SampleDisplay::handleLeaveEvent(GdkEventCrossing *event)
 void SampleDisplay::redraw(gint x, gint y, gint width, gint height,
 			   int drawMask)
 {
-  // if (!pixmap_)
-  //   return;
+    if (!pixmap_)
+        return;
 
-  // get_window()->draw_drawable(drawGc_, pixmap_, x, y, x, y, width, height);
+    cr_->paint();
 
-  // if ((drawMask & 0x02) == 0)
-  //   drawMarker();
+    if ((drawMask & 0x02) == 0)
+        drawMarker();
 
-  // if ((drawMask & 0x01) == 0 && cursorDrawn_) {
-  //   cursorDrawn_ = false;
-  //   drawCursor(cursorX_);
-  // }
+    if ((drawMask & 0x01) == 0 && cursorDrawn_) {
+        cursorDrawn_ = false;
+        drawCursor(cursorX_);
+    }
 }
 
 void SampleDisplay::drawMarker()
 {
-  // if (markerSet_) {
-  //   drawGc_->set_foreground(markerColor_);
+    if (markerSet_) {
+        cr_->save();
+        Gdk::Cairo::set_source_color(cr_, markerColor_);
 
-  //   markerX_ = sample2pixel(markerSample_);
-  //   if (markerX_ >= 0)
-  //     get_window()->draw_line(drawGc_, markerX_, trackLineY_,
-  //       		     markerX_, height_ - 1);
-  // }
+        markerX_ = sample2pixel(markerSample_);
+        if (markerX_ >= 0) {
+            printf("Marker at %d\n", markerX_);
+            cr_->move_to(markerX_, trackLineY_);
+            cr_->line_to(markerX_, height_ - 1);
+            cr_->stroke();
+        }
+        cr_->restore();
+    }
 }
 
 void SampleDisplay::setMarker(unsigned long sample)
@@ -1055,8 +1058,8 @@ void SampleDisplay::updateSamples()
   //       	     sampleEndX_ + 1, rcenter_ + halfHeight);
   // pixmap_->draw_line(drawGc_, sampleStartX_ - 1, rcenter_ + halfHeight,
   //       	     sampleStartX_ - 1, rcenter_ - halfHeight);
-  // pixmap_->draw_line(drawGc_, sampleEndX_ + 1, rcenter_ + halfHeight,
-  //       	     sampleEndX_ + 1, rcenter_ - halfHeight);
+//    pixmap_->draw_line(drawGc_, sampleEndX_ + 1, rcenter_ + halfHeight,
+//                       sampleEndX_ + 1, rcenter_ - halfHeight);
 
   // drawTimeLine();
 

@@ -65,11 +65,13 @@ AudioCDView::AudioCDView(AudioCDProject *project)
   sampleDisplay_->set_size_request(200,200);
   
   pack_start(*sampleDisplay_, TRUE, TRUE);
-//  sampleDisplay_->modify_font(Pango::FontDescription("Monospace 8"));
+  Pango::FontDescription sdfont;
+  sdfont.set_family("Monospace");
+  sampleDisplay_->override_font(sdfont);
   sampleDisplay_->show();
 
-  Gtk::HScrollbar *scrollBar; // =
-//    new Gtk::HScrollbar(*(sampleDisplay_->getAdjustment()));
+  Gtk::HScrollbar *scrollBar =
+      new Gtk::HScrollbar(sampleDisplay_->getAdjustment());
   pack_start(*scrollBar, FALSE, FALSE);
   scrollBar->show();
   
@@ -901,4 +903,9 @@ unsigned long AudioCDView::string2sample(const char *str)
     n = 0;
 
   return Msf(m, s, f).samples() + n;
+}
+
+TocEditView* AudioCDView::tocEditView() const
+{
+    return tocEditView_;
 }

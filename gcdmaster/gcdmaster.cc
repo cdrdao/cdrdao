@@ -33,7 +33,8 @@
 #include "BlankCDWindow.h"
 #include "DumpCDProject.h"
 
-GCDWindow* GCDWindow::create(Glib::RefPtr<Gtk::Builder> builder, GCDWindow::What what)
+GCDWindow* GCDWindow::create(Glib::RefPtr<Gtk::Builder> builder, GCDWindow::What what,
+                             const char* proj_name = NULL, TocEdit* toc = NULL)
 {
     GCDWindow* window = NULL;
     Project* project = NULL;
@@ -55,7 +56,7 @@ GCDWindow* GCDWindow::create(Glib::RefPtr<Gtk::Builder> builder, GCDWindow::What
         project = DumpCDProject::create(builder, window);
         break;
     case What::AUDIOCD:
-        project = AudioCDProject::create(builder, 0, NULL, NULL, window);
+        project = AudioCDProject::create(builder, 0, proj_name, toc, window);
         break;
     default:
         throw std::runtime_error("create arg");
@@ -262,44 +263,44 @@ GCDMaster::GCDMaster() : Gtk::Application("org.gnome.gcdmaster"),
 //   set_toolbar(dynamic_cast<Gtk::Toolbar&>(*pToolbar));
 // }
 
-// bool GCDMaster::openNewProject(const char* s)
-// {
-//   TocEdit* tocEdit;
+bool GCDMaster::openNewProject(const char* s)
+{
+    TocEdit* tocEdit;
 
-//   if (s == NULL || *s == 0 || s[strlen(s) - 1] == '/')
-//     return false;
+    if (s == NULL || *s == 0 || s[strlen(s) - 1] == '/')
+        return false;
 
-//   FileExtension type = fileExtension(s);
-//   switch (type) {
+    FileExtension type = fileExtension(s);
+    switch (type) {
 
-//   case FE_M3U:
-//     newAudioCDProject("", NULL, s);
-//     break;
+//    case FE_M3U:
+//        newAudioCDProject("", NULL, s);
+//        break;
 
-//   case FE_TOC:
-//     tocEdit = new TocEdit(NULL, NULL);
-//     if (tocEdit->readToc(stripCwd(s)) == 0)
-//       newAudioCDProject(stripCwd(s), tocEdit);
-//     else
-//       return false;
-//     break;
+    case FE_TOC:
+        tocEdit = new TocEdit(NULL, NULL);
+        if (tocEdit->readToc(stripCwd(s)) == 0)
+            newAudioCDProject(stripCwd(s), tocEdit);
+        else
+            return false;
+        break;
 
-//   case FE_CUE:
-//     tocEdit = new TocEdit(NULL, NULL);
-//     if (tocEdit->readToc(stripCwd(s)) == 0)
-//       newAudioCDProject("", tocEdit);
-//     else
-//       return false;
-//     break;
+    case FE_CUE:
+        tocEdit = new TocEdit(NULL, NULL);
+        if (tocEdit->readToc(stripCwd(s)) == 0)
+            newAudioCDProject("", tocEdit);
+        else
+            return false;
+        break;
 
-//   default:
-//     printf("Could not open \"%s\": format not supported.\n", s);
-//     return false;
-//     break;
-//   }
+    default:
+        printf("Could not open \"%s\": format not supported.\n", s);
+        return false;
+        break;
+    }
 
-//   return true;
-// }
+    return true;
+}
 
 // void GCDMaster::openProject()
 // {
@@ -377,42 +378,20 @@ void GCDMaster::newChooserWindow()
     auto chooser = dynamic_cast<ProjectChooser*>(window->project());
 }
 
-void GCDMaster::newAudioCDProject()
+void GCDMaster::newEmptyAudioCDProject()
 {
-    auto window = GCDWindow::create(builder_, GCDWindow::What::AUDIOCD);
+    newAudioCDProject(NULL, NULL);
+}
+
+void GCDMaster::newAudioCDProject(const char* name, TocEdit* tocEdit)
+{
+    auto window = GCDWindow::create(builder_, GCDWindow::What::AUDIOCD,
+                                    name, tocEdit);
     add_window(*window);
 
     window->show_all_children();
     window->present();
 }
-
-// void GCDMaster::newAudioCDProject(const char *name, TocEdit *tocEdit,
-//                                   const char* tracks)
-// {
-//   if (!project_) {
-
-//     AudioCDProject* p = new AudioCDProject(project_number++, name, tocEdit,
-//                                            this);
-//     p->add_menus(m_refUIManager);
-//     p->configureAppBar(statusbar_, progressbar_, progressButton_);
-
-//     project_ = p;
-//     project_->show();
-//     if (chooser_)
-//       closeChooser();
-//     notebook_.remove_page();
-//     notebook_.set_show_tabs(false);
-//     notebook_.append_page(*project_);
-//     if (tracks)
-//       p->appendTrack(tracks);
-
-//   } else {
-
-//     GCDMaster *gcdmaster = new GCDMaster;
-//     gcdmaster->newAudioCDProject(name, tocEdit, tracks);
-//     gcdmaster->show();
-//   }
-// }
 
 // void GCDMaster::newAudioCDProject2()
 // {
@@ -497,7 +476,7 @@ void GCDMaster::on_startup()
     add_action("quit", sigc::mem_fun(*this, &GCDMaster::on_action_quit));
     set_accel_for_action("app.quit", "<Ctrl>Q");
     add_action("new-audio-cd",
-               sigc::mem_fun(this, &GCDMaster::newAudioCDProject));
+               sigc::mem_fun(this, &GCDMaster::newEmptyAudioCDProject));
     add_action("new-duplicate-cd",
                sigc::mem_fun(this, &GCDMaster::newDuplicateCDProject));
     add_action("new-dump-cd",
@@ -543,7 +522,8 @@ void GCDMaster::on_action_preferences()
 void GCDMaster::on_activate()
 {
     printf("on_activate()\n");
-    newChooserWindow();
+//    newChooserWindow();
+    openNewProject("/home/denis/tmp/foo.toc");
 }
 
 void GCDMaster::on_action_about()

@@ -44,7 +44,7 @@ public:
   void setRegion(unsigned long start, unsigned long end);
   int  getRegion(unsigned long *start, unsigned long *end);
   void clearRegion();
-  Gtk::Adjustment *getAdjustment() { return adjustment_; }
+  Glib::RefPtr<Gtk::Adjustment> getAdjustment() { return adjustment_; }
   void updateTrackMarks();
   void setCursor(int, unsigned long);
 
@@ -70,7 +70,7 @@ protected:
 private:
   enum DragMode { DRAG_NONE, DRAG_SAMPLE_MARKER, DRAG_TRACK_MARKER };
 
-  Gtk::Adjustment *adjustment_;
+  Glib::RefPtr<Gtk::Adjustment> adjustment_;
 
   Glib::RefPtr<Gdk::Pixbuf> pixmap_;
   Glib::RefPtr<Gdk::Pixbuf> trackMarkerPixmap_;
@@ -80,7 +80,8 @@ private:
   Glib::RefPtr<Gdk::Pixbuf> trackExtendPixmap_;
   Glib::RefPtr<Gdk::Pixbuf> indexExtendPixmap_;
 
-//  Glib::RefPtr<Gdk::GC> drawGc_;
+  Cairo::RefPtr<Cairo::Context> cr_;
+
   Gdk::Color sampleColor_;
   Gdk::Color middleLineColor_;
   Gdk::Color cursorColor_;

@@ -24,7 +24,6 @@
 #include <glibmm/i18n.h>
 
 #include "AddFileDialog.h"
-#include "GenericView.h"
 #include <list>
 
 class SampleDisplay;
@@ -33,12 +32,13 @@ class TrackInfoDialog;
 class AddFileDialog;
 class AddSilenceDialog;
 class Track;
+class TocEditView;
 
 enum {
   TARGET_URI_LIST,
 };
 
-class AudioCDView : public GenericView
+class AudioCDView : public Gtk::VBox
 {
 public:
   AudioCDView(AudioCDProject *project);
@@ -58,9 +58,12 @@ public:
 
   sigc::signal1<void, unsigned long> signal_tocModified;
 
+  virtual TocEditView* tocEditView() const;
+
  protected:
   static const char* sample2string(unsigned long sample);
   static unsigned long string2sample(const char* s);
+  TocEditView* tocEditView_;
 
 private:
   AudioCDProject *project_;

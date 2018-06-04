@@ -2,68 +2,6 @@ SUBDIRS = stock
 
 bin_PROGRAMS = gcdmaster
 
-# gcdmaster_SOURCES = \
-# 	AddFileDialog.cc 	\
-# 	AddSilenceDialog.cc 	\
-# 	AudioCDProject.cc 	\
-# 	BlankCDWindow.cc 	\
-# 	CdDevice.cc 		\
-# 	CdTextDialog.cc 	\
-# 	ConfigManager.cc	\
-# 	DeviceConfDialog.cc 	\
-# 	DeviceList.cc 		\
-# 	DuplicateCDProject.cc 	\
-# 	gcdmaster.cc 		\
-# 	GenericView.cc 		\
-# 	guiUpdate.cc 		\
-# 	Icons.cc		\
-# 	MessageBox.cc 		\
-# 	ProcessMonitor.cc 	\
-# 	ProgressDialog.cc 	\
-# 	Project.cc 		\
-# 	ProjectChooser.cc 	\
-# 	RecordCDSource.cc 	\
-# 	RecordCDTarget.cc 	\
-# 	SampleManager.cc 	\
-# 	TextEdit.cc 		\
-# 	TocEdit.cc 		\
-# 	TocEditView.cc 		\
-# 	TrackDataScrap.cc 	\
-# 	TrackInfoDialog.cc 	\
-# 	TrackManager.cc 	\
-# 	xcdrdao.cc		\
-# 	AddFileDialog.h		\
-# 	ProjectChooser.h	\
-# 	SoundIF.h		\
-# 	AddSilenceDialog.h	\
-# 	DuplicateCDProject.h	\
-# 	Project.h		\
-# 	TextEdit.h		\
-# 	gcdmaster.h		\
-# 	RecordCDSource.h	\
-# 	TocEdit.h		\
-# 	AudioCDProject.h	\
-# 	RecordCDTarget.h	\
-# 	TocEditView.h		\
-# 	GenericView.h		\
-# 	BlankCDWindow.h		\
-# 	guiUpdate.h		\
-# 	TrackDataScrap.h	\
-# 	CdDevice.h		\
-# 	Icons.h			\
-# 	TrackInfoDialog.h	\
-# 	CdTextDialog.h		\
-# 	MessageBox.h		\
-# 	TrackManager.h		\
-# 	DeviceConfDialog.h	\
-# 	ProcessMonitor.h	\
-# 	SampleManager.h		\
-# 	xcdrdao.h		\
-# 	DeviceList.h		\
-# 	ProgressDialog.h	\
-# 	ConfigManager.h		\
-# 	PreferencesDialog.h
-
 gcdmaster_SOURCES = \
 	AddFileDialog.cc	\
 	AddSilenceDialog.cc	\
@@ -76,7 +14,6 @@ gcdmaster_SOURCES = \
 	DeviceList.cc		\
 	DumpCDProject.cc	\
 	DuplicateCDProject.cc	\
-	GenericView.cc		\
 	MessageBox.cc		\
 	PreferencesDialog.cc	\
 	ProcessMonitor.cc	\
