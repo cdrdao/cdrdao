@@ -36,9 +36,9 @@ public:
   void setTocEdit(TocEdit *);
   bool getSelection(unsigned long* start, unsigned long* end);
   void setSelectedTrackMarker(int trackNr, int indexNr);
-  void setMarker(unsigned long sample);
-  void clearMarker();
-  int  getMarker(unsigned long *);
+  void set_marker(unsigned long sample);
+  void clear_marker();
+  int  get_marker(unsigned long *);
   void setView(unsigned long start, unsigned long end);
   void getView(unsigned long *start, unsigned long *end);
   void setRegion(unsigned long start, unsigned long end);
@@ -143,6 +143,8 @@ private:
   unsigned long selectionEndSample_;
   gint selectionStart_;
   gint selectionEnd_;
+  gint selection_drag_x_;
+  gint selection_drag_w_;
 
   bool regionSet_;
   unsigned long regionStartSample_;

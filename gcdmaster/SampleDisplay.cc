@@ -323,14 +323,14 @@ bool SampleDisplay::getSelection(unsigned long *start, unsigned long *end)
   return false;
 }
 
-int SampleDisplay::getMarker(unsigned long *sample)
+int SampleDisplay::get_marker(unsigned long *sample)
 {
-  if (markerSet_) {
-    *sample = markerSample_;
-    return 1;
-  }
+    if (markerSet_) {
+        *sample = markerSample_;
+        return 1;
+    }
 
-  return 0;
+    return 0;
 }
 
 void SampleDisplay::setSelectedTrackMarker(int trackNr, int indexNr)
@@ -348,11 +348,9 @@ void SampleDisplay::setRegion(unsigned long start, unsigned long end)
 
     if (end <= start || end >= toc->length().samples()) {
         regionSet_ = false;
-        printf("Region cleared\n");
     } else {
         regionStartSample_ = start;
         regionEndSample_ = end;
-        printf("Region set to [%d,%d]\n", start, end);
         regionSet_ = true;
     }
 
@@ -363,7 +361,6 @@ void SampleDisplay::clearRegion()
 {
     bool wasSet = regionSet_;
     regionSet_ = false;
-    printf("Region cleared\n");
     if (wasSet) {
         setView(minSample_, maxSample_);
     }
@@ -388,10 +385,10 @@ void SampleDisplay::setCursor(int ctrl, unsigned long sample)
         cursorControlExtern_ = true;
 
         gint x = sample2pixel(sample);
-        // if (x >= 0)
-        //     drawCursor(x);
-        // else
-        //     undrawCursor();
+        if (x >= 0)
+            set_cursor(x);
+        else
+            unset_cursor();
     }
 }
 
@@ -539,6 +536,12 @@ bool SampleDisplay::on_draw(const Cairo::RefPtr<Cairo::Context>& cr)
 
     if (draw_samples_) {
         draw_surface(cr);
+
+        if (dragMode_ == DRAG_SAMPLE_MARKER) {
+            cr->set_source_rgba(1.0, 0.0, 0.0, 0.5);
+            cr->rectangle(selection_drag_x_, 0, selection_drag_w_, h - 1);
+            cr->fill();
+        }
     }
 
     draw_marker(cr);
@@ -666,7 +669,6 @@ bool SampleDisplay::on_motion_notify (GdkEventMotion *event)
 
         if (selectionEnd_ > dragStart_) {
             if (x < selectionEnd_) {
-                redraw(x + 1, 0, selectionEnd_ - x, height_);
                 if (x < dragStart_) {
                     dw = dragStart_ - x + 1;
                     dx = x;
@@ -679,7 +681,7 @@ bool SampleDisplay::on_motion_notify (GdkEventMotion *event)
         }
         else if (selectionEnd_ < dragStart_) {
             if (x > selectionEnd_) {
-                redraw(selectionEnd_, 0, x - selectionEnd_, height_);
+
                 if (x > dragStart_) {
                     dw = x - dragStart_ + 1;
                     dx = dragStart_;
@@ -692,23 +694,12 @@ bool SampleDisplay::on_motion_notify (GdkEventMotion *event)
         }
 
         if (dw != 0) {
-            Cairo::RectangleInt rectangle = { dx, 0, dw, height_ - 1 };
-            auto region = Cairo::Region::create(rectangle);
-            auto ctxt = get_window()->begin_draw_frame(region);
-            auto cr = ctxt->get_cairo_context();
-
-            cr->set_source(surface_, 0.0, 0.0);
-            cr->rectangle(dx, 0, dw, height_ - 1);
-            cr->fill();
-            cr->set_source_rgba(1.0, 0.0, 0.0, 0.2);
-            cr->set_operator(Cairo::OPERATOR_XOR)
-            cr->rectangle(dx, 0, dw, height_ - 1);
-            cr->fill();
-
-            get_window()->end_draw_frame(ctxt);
+            selection_drag_x_ = dx;
+            selection_drag_w_ = dw;
+            redraw(dx, 0, dw, height_ - 1);
         }
-
         selectionEnd_ = x;
+
     } else if (dragMode_ == DRAG_TRACK_MARKER) {
         if (x < dragStopMin_)
             x = dragStopMin_;
@@ -733,7 +724,6 @@ bool SampleDisplay::on_motion_notify (GdkEventMotion *event)
 
 bool SampleDisplay::on_enter_notify(GdkEventCrossing *event)
 {
-    printf("Enter event\n");
     if (cursorControlExtern_)
         return true;
 
@@ -743,7 +733,6 @@ bool SampleDisplay::on_enter_notify(GdkEventCrossing *event)
 
 bool SampleDisplay::on_leave_notify(GdkEventCrossing *event)
 {
-    printf("Leave event\n");
     if (cursorControlExtern_)
         return true;
 
@@ -751,21 +740,9 @@ bool SampleDisplay::on_leave_notify(GdkEventCrossing *event)
     return true;
 }
 
-// drawMask: 0x01: do not draw cursor
-//           0x02: do not draw marker
 void SampleDisplay::redraw(gint x, gint y, gint width, gint height)
 {
     get_window()->invalidate_rect(Gdk::Rectangle(x, y, width, height), true);
-
-    // cr_->paint();
-
-    // if ((drawMask & 0x02) == 0)
-    //     drawMarker();
-
-    // if ((drawMask & 0x01) == 0 && cursorDrawn_) {
-    //     cursorDrawn_ = false;
-    //     drawCursor(cursorX_);
-    // }
 }
 
 void SampleDisplay::draw_marker(const Cairo::RefPtr<Cairo::Context>& cr)
@@ -773,27 +750,26 @@ void SampleDisplay::draw_marker(const Cairo::RefPtr<Cairo::Context>& cr)
     if (markerSet_) {
         markerX_ = sample2pixel(markerSample_);
         if (markerX_ >= 0) {
-            printf("Marker at %d\n", markerX_);
             setColor(markerColor_, cr);
             drawLine(markerX_, trackLineY_, markerX_, height_ - 1, cr);
         }
     }
 }
 
-void SampleDisplay::setMarker(unsigned long sample)
+void SampleDisplay::set_marker(unsigned long sample)
 {
     if (markerSet_)
-        redraw(markerX_, 0, 1, height_);
+        redraw(markerX_ > 1 ? markerX_ - 1 : 0, 0, 2, height_);
 
     markerSample_ = sample;
     markerSet_ = true;
-//    drawMarker();
+    redraw(markerSample_ > 1 ? markerSample_ - 1 : 0, 0, 2, height_);
 }
 
-void SampleDisplay::clearMarker()
+void SampleDisplay::clear_marker()
 {
     if (markerSet_)
-        redraw(markerX_, 0, 1, height_);
+        redraw(markerX_ > 1 ? markerX_ - 1 : 0, 0, 2, height_);
 
     markerSet_ = false;
 }
@@ -801,8 +777,6 @@ void SampleDisplay::clearMarker()
 
 void SampleDisplay::updateSamples()
 {
-    printf("udpateSamples\n");
-
     if (tocEdit_ == NULL)
         return;
 
@@ -1073,17 +1047,14 @@ void SampleDisplay::set_cursor(gint x)
     if (x < sampleStartX_ || x > sampleEndX_)
         return;
 
-    printf("Drawing cursor %d\n", x);
-
     if (cursorDrawn_ && cursorX_ != x) {
-        printf("Clearing cursor at %d\n", cursorX_);
-        redraw(cursorX_, 0, 1, height_);
+        redraw(cursorX_ > 1 ? cursorX_ - 1 : 0, 0, 2, height_);
     }
 
     if (!cursorDrawn_ || cursorX_ != x) {
         cursorDrawn_ = false;
         cursorX_ = x;
-        redraw(cursorX_, 0, 1, height_);
+        redraw(cursorX_ > 1 ? cursorX_ -1  : 0, 0, 2, height_);
     }
 
     cursorX_ = x;
@@ -1117,7 +1088,7 @@ void SampleDisplay::drawTimeTick(gint x, gint y, unsigned long sample)
 
     setColor(black_);
     drawLine(x, y - timeLineHeight_, x, y);
-    drawText(buf, x + 3, y - timeLineHeight_ + 1);
+    drawText(buf, x + 3, y - timeLineHeight_);
 }
 
 void SampleDisplay::drawTimeLine()
@@ -1223,6 +1194,7 @@ void SampleDisplay::drawTrackMarker(int mode, gint x, int trackNr,
 
     setColor(black_);
     drawPixmap(marker, x - 4, trackLineY_ - TRACK_MARKER_XPM_HEIGHT);
+    setColor(black_);
     drawText(buf, x + TRACK_MARKER_XPM_WIDTH / 2 + 2,
              trackLineY_ - trackLineHeight_ + 2);
 }

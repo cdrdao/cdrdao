@@ -298,11 +298,11 @@ void AudioCDView::update(unsigned long level)
 
     if (tocEditView_->sampleMarker(&marker)) {
       markerPos_->set_text(sample2string(marker));
-      sampleDisplay_->setMarker(marker);
+      sampleDisplay_->set_marker(marker);
     }
     else {
       markerPos_->set_text("");
-      sampleDisplay_->clearMarker();
+      sampleDisplay_->clear_marker();
     }
   }
 
@@ -416,7 +416,7 @@ int AudioCDView::getMarker(unsigned long *sample)
   if (tocEditView_->tocEdit()->lengthSample() == 0)
     return 0;
 
-  if (sampleDisplay_->getMarker(sample) == 0) {
+  if (sampleDisplay_->get_marker(sample) == 0) {
     project_->statusMessage(_("Please set marker."));
     return 0;
   }
