@@ -59,20 +59,32 @@ public:
   sigc::signal2<void, unsigned long, unsigned long> viewModified;
   
 protected:
-  bool handleConfigureEvent(GdkEventConfigure *);
-  bool handleExposeEvent(GdkEventExpose *event);
-  bool handleMotionNotifyEvent(GdkEventMotion *event);
-  bool handleButtonPressEvent(GdkEventButton*);
-  bool handleButtonReleaseEvent(GdkEventButton*);
-  bool handleEnterEvent(GdkEventCrossing*);
-  bool handleLeaveEvent(GdkEventCrossing*);
+  bool on_configure(GdkEventConfigure *);
+  bool on_motion_notify(GdkEventMotion *event);
+  bool on_button_press(GdkEventButton*);
+  bool on_button_release(GdkEventButton*);
+  bool on_enter_notify(GdkEventCrossing*);
+  bool on_leave_notify(GdkEventCrossing*);
+
+  bool on_draw(const Cairo::RefPtr<Cairo::Context>& cr) override;
+
+  void setColor(Gdk::RGBA c, Cairo::RefPtr<Cairo::Context> cr =
+                             Cairo::RefPtr<Cairo::Context>());
+  void drawLine(gint, gint, gint, gint, Cairo::RefPtr<Cairo::Context> cr =
+                             Cairo::RefPtr<Cairo::Context>());
+  void drawRectangle(gint, gint, gint, gint);
+  void drawPixmap(Glib::RefPtr<Gdk::Pixbuf>, gint, gint);
+  void drawText(const char* text, gint, gint);
+  void draw_surface(const Cairo::RefPtr<Cairo::Context>& cr);
 
 private:
   enum DragMode { DRAG_NONE, DRAG_SAMPLE_MARKER, DRAG_TRACK_MARKER };
 
   Glib::RefPtr<Gtk::Adjustment> adjustment_;
 
-  Glib::RefPtr<Gdk::Pixbuf> pixmap_;
+  Cairo::RefPtr<Cairo::ImageSurface> surface_;
+  Cairo::RefPtr<Cairo::Context> surface_cr_;
+  
   Glib::RefPtr<Gdk::Pixbuf> trackMarkerPixmap_;
   Glib::RefPtr<Gdk::Pixbuf> indexMarkerPixmap_;
   Glib::RefPtr<Gdk::Pixbuf> trackMarkerSelectedPixmap_;
@@ -80,13 +92,16 @@ private:
   Glib::RefPtr<Gdk::Pixbuf> trackExtendPixmap_;
   Glib::RefPtr<Gdk::Pixbuf> indexExtendPixmap_;
 
-  Cairo::RefPtr<Cairo::Context> cr_;
+  Gdk::RGBA sampleColor_;
+  Gdk::RGBA middleLineColor_;
+  Gdk::RGBA cursorColor_;
+  Gdk::RGBA markerColor_;
+  Gdk::RGBA selectionBackgroundColor_;
+  Gdk::RGBA white_;
+  Gdk::RGBA black_;
 
-  Gdk::Color sampleColor_;
-  Gdk::Color middleLineColor_;
-  Gdk::Color cursorColor_;
-  Gdk::Color markerColor_;
-  Gdk::Color selectionBackgroundColor_;
+  bool draw_me_;
+  bool draw_samples_;
 
   gint width_;
   gint height_;
@@ -142,15 +157,15 @@ private:
   gint dragLastX_;
 
   void scrollTo();
-  void redraw(gint x, gint y, gint width, gint height, int);
+  void redraw(gint x, gint y, gint width, gint height);
   void readSamples(long startBlock, long endBlock);
   void updateSamples();
-  void drawCursor(gint);
-  void undrawCursor();
-  void getColor(const char *, Gdk::Color *);
+  void draw_cursor(const Cairo::RefPtr<Cairo::Context>& cr);
+  void set_cursor(gint);
+  void unset_cursor();
   unsigned long pixel2sample(gint x);
   gint sample2pixel(unsigned long);
-  void drawMarker();
+  void draw_marker(const Cairo::RefPtr<Cairo::Context>& cr);
   void removeMarker();
   void drawTimeTick(gint x, gint y, unsigned long sample);
   void drawTimeLine();

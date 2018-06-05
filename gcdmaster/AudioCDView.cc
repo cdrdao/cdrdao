@@ -64,16 +64,14 @@ AudioCDView::AudioCDView(AudioCDProject *project)
 
   sampleDisplay_->set_size_request(200,200);
   
-  pack_start(*sampleDisplay_, TRUE, TRUE);
+  pack_start(*sampleDisplay_);
   Pango::FontDescription sdfont;
   sdfont.set_family("Monospace");
   sampleDisplay_->override_font(sdfont);
-  sampleDisplay_->show();
 
   Gtk::HScrollbar *scrollBar =
       new Gtk::HScrollbar(sampleDisplay_->getAdjustment());
-  pack_start(*scrollBar, FALSE, FALSE);
-  scrollBar->show();
+  pack_start(*scrollBar, Gtk::PACK_SHRINK);
   
   Gtk::Label *label;
   Gtk::HBox *selectionInfoBox = new Gtk::HBox;
@@ -105,30 +103,21 @@ AudioCDView::AudioCDView(AudioCDProject *project)
   label = new Gtk::Label(_("Cursor: "));
   selectionInfoBox->pack_start(*label, FALSE, FALSE);
   selectionInfoBox->pack_start(*cursorPos_);
-  label->show();
-  cursorPos_->show();
 
   label = new Gtk::Label(_("Marker: "));
   selectionInfoBox->pack_start(*label, FALSE, FALSE);
   selectionInfoBox->pack_start(*markerPos_);
-  label->show();
-  markerPos_->show();
 
   label = new Gtk::Label(_("Selection: "));
   selectionInfoBox->pack_start(*label, FALSE, FALSE);
   selectionInfoBox->pack_start(*selectionStartPos_);
-  label->show();
-  selectionStartPos_->show();
 
   label = new Gtk::Label(" - ");
   selectionInfoBox->pack_start(*label, FALSE, FALSE);
   selectionInfoBox->pack_start(*selectionEndPos_);
-  label->show();
-  selectionEndPos_->show();
   
   selectionInfoBox->set_border_width(2);
   pack_start(*selectionInfoBox, FALSE, FALSE);
-  selectionInfoBox->show();
 
   setMode(SELECT);
 
@@ -148,6 +137,7 @@ AudioCDView::AudioCDView(AudioCDProject *project)
 		        &AudioCDView::viewModifiedCallback));
 
   tocEditView_->sampleViewFull();
+  show_all_children();
 }
 
 AudioCDView::~AudioCDView()

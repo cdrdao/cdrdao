@@ -115,65 +115,85 @@ static const gchar *INDEX_EXTEND_XPM_DATA[] = {
   "........."};
 
 
-SampleDisplay::SampleDisplay():
-	pixmap_(NULL),
-	trackMarkerPixmap_(NULL),
-	indexMarkerPixmap_(NULL),
-	trackMarkerSelectedPixmap_(NULL),
-	indexMarkerSelectedPixmap_(NULL),
-	trackExtendPixmap_(NULL),
-	indexExtendPixmap_(NULL)
+SampleDisplay::SampleDisplay() :
+    trackMarkerPixmap_(NULL),
+    indexMarkerPixmap_(NULL),
+    trackMarkerSelectedPixmap_(NULL),
+    indexMarkerSelectedPixmap_(NULL),
+    trackExtendPixmap_(NULL),
+    indexExtendPixmap_(NULL),
+    sampleColor_("darkslateblue"),
+    middleLineColor_("red3"),
+    cursorColor_("gold2"),
+    markerColor_("red"),
+    selectionBackgroundColor_("#ffc0e0"),
+    white_("white"),
+    black_("black")
 {
     adjustment_ = Gtk::Adjustment::create(0.0, 0.0, 1.0);
     adjustment_->signal_value_changed().connect(mem_fun(*this,
                                                         &SampleDisplay::scrollTo));
 
-  trackManager_ = NULL;
+    trackManager_ = NULL;
 
-  width_ = height_ = chanHeight_ = lcenter_ = rcenter_ = 0;
-  timeLineHeight_ = timeLineY_ = 0;
-  timeTickWidth_ = 0;
-  timeTickSep_ = 20;
-  sampleStartX_ = sampleEndX_ = sampleWidthX_ = 0;
-  minSample_ = maxSample_ = resolution_ = 0;
-  tocEdit_ = NULL;
+    width_ = height_ = chanHeight_ = lcenter_ = rcenter_ = 0;
+    timeLineHeight_ = timeLineY_ = 0;
+    timeTickWidth_ = 0;
+    timeTickSep_ = 20;
+    sampleStartX_ = sampleEndX_ = sampleWidthX_ = 0;
+    minSample_ = maxSample_ = resolution_ = 0;
+    tocEdit_ = NULL;
 
-  chanSep_ = 10;
+    chanSep_ = 10;
 
-  cursorControlExtern_ = false;
-  cursorDrawn_ = false;
-  cursorX_ = 0;
+    cursorControlExtern_ = false;
+    cursorDrawn_ = false;
+    cursorX_ = 0;
 
-  markerSet_ = false;
-  selectionSet_ = false;
-  regionSet_ = false;
-  dragMode_ = DRAG_NONE;
+    markerSet_ = false;
+    selectionSet_ = false;
+    regionSet_ = false;
+    dragMode_ = DRAG_NONE;
 
-  pickedTrackMarker_ = NULL;
-  selectedTrack_ = 0;
-  selectedIndex_ = 0;
+    pickedTrackMarker_ = NULL;
+    selectedTrack_ = 0;
+    selectedIndex_ = 0;
 
-//  signal_draw().connect(mem_fun(*this, &SampleDisplay::handleExposeEvent));
-  signal_configure_event().
-    connect(mem_fun(*this, &SampleDisplay::handleConfigureEvent));
-  signal_motion_notify_event().
-    connect(mem_fun(*this, &SampleDisplay::handleMotionNotifyEvent));
-  signal_button_press_event().
-    connect(mem_fun(*this, &SampleDisplay::handleButtonPressEvent));
-  signal_button_release_event().
-    connect(mem_fun(*this,	&SampleDisplay::handleButtonReleaseEvent));
-  signal_enter_notify_event().
-    connect(mem_fun(*this, &SampleDisplay::handleEnterEvent));
-  signal_leave_notify_event().
-    connect(mem_fun(*this, &SampleDisplay::handleLeaveEvent));
+    signal_configure_event().
+        connect(mem_fun(*this, &SampleDisplay::on_configure));
+    signal_motion_notify_event().
+        connect(mem_fun(*this, &SampleDisplay::on_motion_notify));
+    signal_button_press_event().
+        connect(mem_fun(*this, &SampleDisplay::on_button_press));
+    signal_button_release_event().
+        connect(mem_fun(*this,	&SampleDisplay::on_button_release));
+    signal_enter_notify_event().
+        connect(mem_fun(*this, &SampleDisplay::on_enter_notify));
+    signal_leave_notify_event().
+        connect(mem_fun(*this, &SampleDisplay::on_leave_notify));
 
-  set_events(Gdk::EXPOSURE_MASK
-             | Gdk::LEAVE_NOTIFY_MASK
-             | Gdk::ENTER_NOTIFY_MASK
-             | Gdk::BUTTON_PRESS_MASK
-             | Gdk::BUTTON_RELEASE_MASK
-             | Gdk::POINTER_MOTION_MASK
-             | Gdk::POINTER_MOTION_HINT_MASK);
+    set_events(Gdk::EXPOSURE_MASK
+               | Gdk::LEAVE_NOTIFY_MASK
+               | Gdk::ENTER_NOTIFY_MASK
+               | Gdk::BUTTON_PRESS_MASK
+               | Gdk::BUTTON_RELEASE_MASK
+               | Gdk::POINTER_MOTION_MASK
+               | Gdk::POINTER_MOTION_HINT_MASK);
+
+    trackMarkerPixmap_ =
+        Gdk::Pixbuf::create_from_xpm_data(TRACK_MARKER_XPM_DATA);
+    indexMarkerPixmap_ =
+        Gdk::Pixbuf::create_from_xpm_data(INDEX_MARKER_XPM_DATA);
+    trackMarkerSelectedPixmap_ =
+            Gdk::Pixbuf::create_from_xpm_data(TRACK_MARKER_XPM_DATA);
+    indexMarkerSelectedPixmap_ =
+        Gdk::Pixbuf::create_from_xpm_data(INDEX_MARKER_XPM_DATA);
+    trackExtendPixmap_ =
+            Gdk::Pixbuf::create_from_xpm_data(TRACK_EXTEND_XPM_DATA);
+    indexExtendPixmap_ =
+        Gdk::Pixbuf::create_from_xpm_data(INDEX_EXTEND_XPM_DATA);
+
+    trackManager_ = new TrackManager(TRACK_MARKER_XPM_WIDTH);
 }
 
 void SampleDisplay::setTocEdit(TocEdit *t)
@@ -231,60 +251,59 @@ void SampleDisplay::updateToc(unsigned long smin, unsigned long smax)
 
 void SampleDisplay::setView(unsigned long start, unsigned long end)
 {
-  // if (tocEdit_ == NULL)
-  //   return;
+    printf("::setView %d %d\n", start, end);
+    if (tocEdit_ == NULL)
+        return;
 
-  // Toc *toc = tocEdit_->toc();
+    Toc *toc = tocEdit_->toc();
 
-  // if (end < start)
-  //   end = start;
+    if (end < start)
+        end = start;
 
-  // unsigned long len = end - start + 1;
+    unsigned long len = end - start + 1;
 
-  // if (len < 3 && toc != NULL) {
-  //   end = start + 2;
+    if (len < 3 && toc != NULL) {
+        end = start + 2;
 
-  //   if (end >= toc->length().samples()) {
-  //     if (toc->length().samples() != 0)
-  //       end = toc->length().samples() - 1;
-  //     else
-  //       end = 0;
+        if (end >= toc->length().samples()) {
+            if (toc->length().samples() != 0)
+                end = toc->length().samples() - 1;
+            else
+                end = 0;
 
-  //     if (end <= 2)
-  //       start = 0;
-  //     else
-  //       start = end - 2;
-  //   }
+            if (end <= 2)
+                start = 0;
+            else
+                start = end - 2;
+        }
 
-  //   len = (end == 0 ? 0 : 3);
-  // }
+        len = (end == 0 ? 0 : 3);
+    }
 
-  // minSample_ = start;
-  // maxSample_ = end;
+    minSample_ = start;
+    maxSample_ = end;
 
-  // updateSamples();
-  // redraw(0, 0, width_, height_, 0);
+    updateSamples();
+    redraw(0, 0, width_, height_);
 
-  // GtkAdjustment *adjust = adjustment_->gobj();
-  // if (toc == NULL) {
-  //   adjust->lower = 0.0;
-  //   adjust->upper = 1.0;
-  //   adjust->value = 0.0;
-  //   adjust->page_size = 0.0;
-  // }
-  // else {
-  //   adjust->lower = 0.0;
-  //   adjust->upper = toc->length().samples();
-  //   adjust->value = minSample_;
+    if (toc == NULL) {
+        adjustment_->set_lower(0.0);
+        adjustment_->set_upper(1.0);
+        adjustment_->set_value(0.0);
+        adjustment_->set_page_size(0.0);
+    } else {
+        adjustment_->set_lower(0.0);
+        adjustment_->set_upper(toc->length().samples());
+        adjustment_->set_value(minSample_);
 
-  //   adjust->step_increment = len / 4;
-  //   if (adjust->step_increment == 0.0)
-  //     adjust->step_increment = 1.0;
+        adjustment_->set_step_increment(len / 4);
+        if (adjustment_->get_step_increment() == 0.0)
+            adjustment_->set_step_increment(1.);
 
-  //   adjust->page_increment = len / 1.1;
-  //   adjust->page_size = len;
-  // }
-  // adjustment_->changed();
+        adjustment_->set_page_increment(len / 1.1);
+        adjustment_->set_page_size(len);
+    }
+    adjustment_->changed();
 }
 
 void SampleDisplay::getView(unsigned long *start, unsigned long *end)
@@ -322,30 +341,32 @@ void SampleDisplay::setSelectedTrackMarker(int trackNr, int indexNr)
 
 void SampleDisplay::setRegion(unsigned long start, unsigned long end)
 {
-  if (tocEdit_ == NULL)
-    return;
+    if (tocEdit_ == NULL)
+        return;
 
-  Toc *toc = tocEdit_->toc();
+    Toc *toc = tocEdit_->toc();
 
-  if (end <= start || end >= toc->length().samples()) {
-    regionSet_ = false;
-  }
-  else {
-    regionStartSample_ = start;
-    regionEndSample_ = end;
-    regionSet_ = true;
-  }
+    if (end <= start || end >= toc->length().samples()) {
+        regionSet_ = false;
+        printf("Region cleared\n");
+    } else {
+        regionStartSample_ = start;
+        regionEndSample_ = end;
+        printf("Region set to [%d,%d]\n", start, end);
+        regionSet_ = true;
+    }
 
-  setView(minSample_, maxSample_);
+    setView(minSample_, maxSample_);
 }
 
 void SampleDisplay::clearRegion()
 {
-  bool wasSet = regionSet_;
-  regionSet_ = false;
-  if (wasSet) {
-    setView(minSample_, maxSample_);
-  }
+    bool wasSet = regionSet_;
+    regionSet_ = false;
+    printf("Region cleared\n");
+    if (wasSet) {
+        setView(minSample_, maxSample_);
+    }
 }
 
 int SampleDisplay::getRegion(unsigned long *start, unsigned long *end)
@@ -361,53 +382,45 @@ int SampleDisplay::getRegion(unsigned long *start, unsigned long *end)
 
 void SampleDisplay::setCursor(int ctrl, unsigned long sample)
 {
-  if (ctrl == 0) {
-    cursorControlExtern_ = false;
-  }
-  else {
-    cursorControlExtern_ = true;
+    if (ctrl == 0) {
+        cursorControlExtern_ = false;
+    } else {
+        cursorControlExtern_ = true;
 
-    gint x = sample2pixel(sample);
-    if (x >= 0)
-      drawCursor(x);
-    else
-      undrawCursor();
-  }
-}
-
-void SampleDisplay::getColor(const char *colorName, Gdk::Color *color)
-{
-  // if (!color->parse(colorName) || !get_colormap()->alloc_color(*color)) {
-  //   log_message(-1, _("Cannot allocate color \"%s\""), colorName);
-  //   *color = get_style()->get_black();
-  // }
+        gint x = sample2pixel(sample);
+        // if (x >= 0)
+        //     drawCursor(x);
+        // else
+        //     undrawCursor();
+    }
 }
 
 void SampleDisplay::scrollTo()
 {
-  // unsigned long minSample, maxSample;
+    unsigned long minSample, maxSample;
 
-  // if (tocEdit_ == NULL)
-  //   return;
+    if (tocEdit_ == NULL)
+        return;
 
-  // Toc *toc = tocEdit_->toc();
-  // GtkAdjustment *adjust = adjustment_->gobj();
+    Toc *toc = tocEdit_->toc();
 
-  // if (adjust->page_size == 0.0)
-  //   return;
 
-  // minSample = (unsigned long)adjust->value;
-  // maxSample = (unsigned long)(adjust->value + adjust->page_size) - 1;
+    if (adjustment_->get_page_size() == 0.0)
+        return;
 
-  // if (maxSample >= toc->length().samples()) {
-  //   maxSample = toc->length().samples() - 1;
-  //   if (maxSample <= (unsigned long)(adjust->page_size - 1))
-  //     minSample = 0;
-  //   else
-  //     minSample = maxSample - (unsigned long)(adjust->page_size - 1);
-  // }
+    minSample = (unsigned long)adjustment_->get_value();
+    maxSample = (unsigned long)(adjustment_->get_value() +
+                                adjustment_->get_page_size()) - 1;
 
-  // viewModified(minSample, maxSample);
+    if (maxSample >= toc->length().samples()) {
+        maxSample = toc->length().samples() - 1;
+        if (maxSample <= (unsigned long)(adjustment_->get_page_size() - 1))
+            minSample = 0;
+        else
+            minSample = maxSample - (unsigned long)(adjustment_->get_page_size() - 1);
+    }
+
+    viewModified(minSample, maxSample);
 }
 
 unsigned long SampleDisplay::pixel2sample(gint x)
@@ -465,89 +478,76 @@ gint SampleDisplay::sample2pixel(unsigned long sample)
   return (gint)(sampleStartX_ + val + 0.5);
 }
 
-bool SampleDisplay::handleConfigureEvent(GdkEventConfigure *event)
+bool SampleDisplay::on_configure(GdkEventConfigure *event)
 {
-    printf("handleConfigureEvent\n");
+    auto w = get_allocation().get_width();
+    auto h = get_allocation().get_height();
+    if (w == width_ && h == height_)
+        return false;
+    width_ = w; height_ = h;
+    printf("Windows resized to [%d,%d]\n", width_, height_);
+
     Glib::RefPtr<Pango::Context> context = get_pango_context();
     Pango::FontMetrics metrics = context->get_metrics(get_style_context()->get_font());
 
-    if (!cr_ && get_window()) {
-        cr_ = get_window()->create_cairo_context();
+    timeLineHeight_ = ((metrics.get_ascent() + metrics.get_descent())
+                       / Pango::SCALE);
+    trackLineHeight_ = ((metrics.get_ascent() + metrics.get_descent())
+                        / Pango::SCALE);
 
-        getColor("darkslateblue", &sampleColor_);
-        getColor("red3", &middleLineColor_);
-        getColor("gold2", &cursorColor_);
-        getColor("red", &markerColor_);
-        getColor("#ffc0e0", &selectionBackgroundColor_);
+    trackMarkerWidth_ = ((metrics.get_approximate_digit_width() /
+                          Pango::SCALE) * 5) + TRACK_MARKER_XPM_WIDTH + 2;
 
-        timeLineHeight_ = ((metrics.get_ascent() + metrics.get_descent())
-                           / Pango::SCALE);
-        trackLineHeight_ = ((metrics.get_ascent() + metrics.get_descent())
-                            / Pango::SCALE);
+    // Don't even try to do anything smart if we haven't received a
+    // reasonable window size yet. This will keep pixmap_ to NULL. This
+    // is important because during startup we don't control how the
+    // configure_event are timed wrt to gcdmaster bringup.
+    draw_me_ = (width_ > 1 && height_ > 1);
+    if (!draw_me_)
+        return true;
 
-        trackMarkerPixmap_ =
-            Gdk::Pixbuf::create_from_xpm_data(TRACK_MARKER_XPM_DATA);
-        indexMarkerPixmap_ =
-            Gdk::Pixbuf::create_from_xpm_data(INDEX_MARKER_XPM_DATA);
-        trackMarkerSelectedPixmap_ =
-            Gdk::Pixbuf::create_from_xpm_data(TRACK_MARKER_XPM_DATA);
-        indexMarkerSelectedPixmap_ =
-            Gdk::Pixbuf::create_from_xpm_data(INDEX_MARKER_XPM_DATA);
-        trackExtendPixmap_ =
-            Gdk::Pixbuf::create_from_xpm_data(TRACK_EXTEND_XPM_DATA);
-        indexExtendPixmap_ =
-            Gdk::Pixbuf::create_from_xpm_data(INDEX_EXTEND_XPM_DATA);
+    chanHeight_ = (height_ - timeLineHeight_ - trackLineHeight_ - 2) / 2;
 
-        trackMarkerWidth_ = ((metrics.get_approximate_digit_width() /
-                              Pango::SCALE) * 5) + TRACK_MARKER_XPM_WIDTH + 2;
-        trackManager_ = new TrackManager(TRACK_MARKER_XPM_WIDTH);
+    lcenter_ = chanHeight_ / 2 + trackLineHeight_;
+    rcenter_ = lcenter_ + timeLineHeight_ + chanHeight_;
+
+    trackLineY_ = trackLineHeight_ - 1;
+
+    timeLineY_ = chanHeight_ + timeLineHeight_ + trackLineHeight_;
+    timeTickWidth_ = ((metrics.get_approximate_digit_width() /
+                       Pango::SCALE) * 13) + 3;
+
+    sampleStartX_ = 10;
+    sampleEndX_ = width_ - 10;
+    sampleWidthX_ = sampleEndX_ - sampleStartX_ + 1;
+
+    draw_samples_ = (width_ > 100 && height_ > 100);
+
+    if (draw_samples_) {
+        surface_ = Cairo::ImageSurface::create(Cairo::FORMAT_ARGB32, width_, height_);
+        surface_cr_ = Cairo::Context::create(surface_);
+        updateSamples();
     }
-
-     width_ = get_width();
-     height_ = get_height();
-     printf("%d %d\n", width_, height_);
-
-     // Don't even try to do anything smart if we haven't received a
-     // reasonable window size yet. This will keep pixmap_ to NULL. This
-     // is important because during startup we don't control how the
-     // configure_event are timed wrt to gcdmaster bringup.
-     if (width_ <= 1 || height_ <= 1)
-         return true;
-
-     chanHeight_ = (height_ - timeLineHeight_ - trackLineHeight_ - 2) / 2;
-
-     lcenter_ = chanHeight_ / 2 + trackLineHeight_;
-     rcenter_ = lcenter_ + timeLineHeight_ + chanHeight_;
-
-     trackLineY_ = trackLineHeight_ - 1;
-
-     timeLineY_ = chanHeight_ + timeLineHeight_ + trackLineHeight_;
-     timeTickWidth_ = ((metrics.get_approximate_digit_width() /
-                        Pango::SCALE) * 13) + 3;
-
-     sampleStartX_ = 10;
-     sampleEndX_ = width_ - 10;
-     sampleWidthX_ = sampleEndX_ - sampleStartX_ + 1;
-
-     pixmap_ = Gdk::Pixbuf::create(get_window(), 0, 0, get_width(), get_height());
-     Gdk::Cairo::set_source_pixbuf(cr_, pixmap_, 0, 0);
-
-     if (width_ > 100 && height_ > 100)
-         updateSamples();
 
     return true;
 }
 
-
-bool SampleDisplay::handleExposeEvent (GdkEventExpose *event)
+bool SampleDisplay::on_draw(const Cairo::RefPtr<Cairo::Context>& cr)
 {
-  redraw(event->area.x, event->area.y, event->area.width, event->area.height,
-	 0);
+    const int w = get_allocation().get_width();
+    const int h = get_allocation().get_height();
 
-  return false;
+    if (draw_samples_) {
+        draw_surface(cr);
+    }
+
+    draw_marker(cr);
+    draw_cursor(cr);
+
+    return false;
 }
 
-bool SampleDisplay::handleButtonPressEvent(GdkEventButton *event)
+bool SampleDisplay::on_button_press(GdkEventButton *event)
 {
   gint x = (gint)event->x;
   gint y = (gint)event->y;
@@ -574,625 +574,615 @@ bool SampleDisplay::handleButtonPressEvent(GdkEventButton *event)
 	dragStopMax_ += sampleStartX_;
       }
     }
-
   }
 
   return true;
 }
 
-bool SampleDisplay::handleButtonReleaseEvent(GdkEventButton *event)
+bool SampleDisplay::on_button_release(GdkEventButton *event)
 {
-  gint x = (gint)event->x;
+    gint x = (gint)event->x;
 
-  if (cursorControlExtern_)
-    return false;
+    if (cursorControlExtern_)
+        return false;
 
-  if (x < sampleStartX_) {
-    x = sampleStartX_;
-  }
-  else if (x > sampleEndX_) {
-    x = sampleEndX_;
-  }
+    if (x < sampleStartX_) {
+        x = sampleStartX_;
+    }
+    else if (x > sampleEndX_) {
+        x = sampleEndX_;
+    }
 
-  if (event->button == 1 && dragMode_ != DRAG_NONE) {
+    if (event->button == 1 && dragMode_ != DRAG_NONE) {
+        if (dragMode_ == DRAG_SAMPLE_MARKER) {
+            if (dragStart_ - x >= -5 && dragStart_ - x <= 5) {
+                selectionSet_ = false;
+                selectionCleared();
+                markerSet(pixel2sample(dragStart_));
+            }
+            else {
+                selectionSet_ = true;
+                if (x > dragStart_) {
+                    selectionStartSample_ = pixel2sample(dragStart_);
+                    selectionEndSample_ = pixel2sample(x);
+                    selectionStart_ = dragStart_;
+                    selectionEnd_ = x;
+                }
+                else {
+                    selectionEndSample_ = pixel2sample(dragStart_);
+                    selectionStartSample_ = pixel2sample(x);
+                    selectionEnd_ = dragStart_;
+                    selectionStart_ = x;
+                }
+                selectionSet(selectionStartSample_, selectionEndSample_);
+            }
+        }
+        else if (dragMode_ == DRAG_TRACK_MARKER) {
+            if (dragStart_ - x >= -5 && dragStart_ - x <= 5) {
+                trackManager_->select(pickedTrackMarker_);
+                selectedTrack_ = pickedTrackMarker_->trackNr;
+                selectedIndex_ = pickedTrackMarker_->indexNr;
+                drawTrackLine();
+                trackMarkSelected(pickedTrackMarker_->track, selectedTrack_,
+                                  selectedIndex_);
+            }
+            else {
+                selectedTrack_ = pickedTrackMarker_->trackNr;
+                selectedIndex_ = pickedTrackMarker_->indexNr;
+                trackMarkMoved(pickedTrackMarker_->track, selectedTrack_,
+                               selectedIndex_, pixel2sample(x));
+            }
+            pickedTrackMarker_ = NULL;
+        }
+
+        dragMode_ = DRAG_NONE;
+        set_cursor(x);
+        redraw(0, 0, width_, height_);
+    }
+
+    return true;
+}
+
+bool SampleDisplay::on_motion_notify (GdkEventMotion *event)
+{
+    gint x, y;
+    GdkModifierType state;
+
+    if (cursorControlExtern_)
+        return TRUE;
+
+    x = (gint)event->x;
+    y = (gint)event->y;
+    state = (GdkModifierType) event->state;
+
     if (dragMode_ == DRAG_SAMPLE_MARKER) {
-      if (dragStart_ - x >= -5 && dragStart_ - x <= 5) {
-        selectionSet_ = false;
-        selectionCleared();
-	markerSet(pixel2sample(dragStart_));
-      }
-      else {
-	selectionSet_ = true;
-	if (x > dragStart_) {
-	  selectionStartSample_ = pixel2sample(dragStart_);
-	  selectionEndSample_ = pixel2sample(x);
-	  selectionStart_ = dragStart_;
-	  selectionEnd_ = x;
-	}
-	else {
-	  selectionEndSample_ = pixel2sample(dragStart_);
-	  selectionStartSample_ = pixel2sample(x);
-	  selectionEnd_ = dragStart_;
-	  selectionStart_ = x;
-	}
-	selectionSet(selectionStartSample_, selectionEndSample_);
-      }
+        gint dw = 0;
+        gint dx = 0;
+
+        if (x < sampleStartX_)
+            x = sampleStartX_;
+        else if (x > sampleEndX_)
+            x = sampleEndX_;
+
+        if (selectionEnd_ > dragStart_) {
+            if (x < selectionEnd_) {
+                redraw(x + 1, 0, selectionEnd_ - x, height_);
+                if (x < dragStart_) {
+                    dw = dragStart_ - x + 1;
+                    dx = x;
+                }
+            }
+            else {
+                dw = x - selectionEnd_;
+                dx = selectionEnd_ + 1;
+            }
+        }
+        else if (selectionEnd_ < dragStart_) {
+            if (x > selectionEnd_) {
+                redraw(selectionEnd_, 0, x - selectionEnd_, height_);
+                if (x > dragStart_) {
+                    dw = x - dragStart_ + 1;
+                    dx = dragStart_;
+                }
+            }
+            else {
+                dw = selectionEnd_ - x;
+                dx = x;
+            }
+        }
+
+        if (dw != 0) {
+            Cairo::RectangleInt rectangle = { dx, 0, dw, height_ - 1 };
+            auto region = Cairo::Region::create(rectangle);
+            auto ctxt = get_window()->begin_draw_frame(region);
+            auto cr = ctxt->get_cairo_context();
+
+            cr->set_source(surface_, 0.0, 0.0);
+            cr->rectangle(dx, 0, dw, height_ - 1);
+            cr->fill();
+            cr->set_source_rgba(1.0, 0.0, 0.0, 0.2);
+            cr->set_operator(Cairo::OPERATOR_XOR)
+            cr->rectangle(dx, 0, dw, height_ - 1);
+            cr->fill();
+
+            get_window()->end_draw_frame(ctxt);
+        }
+
+        selectionEnd_ = x;
+    } else if (dragMode_ == DRAG_TRACK_MARKER) {
+        if (x < dragStopMin_)
+            x = dragStopMin_;
+
+        if (x > dragStopMax_)
+            x = dragStopMax_;
+
+        if (dragLastX_ > 0) {
+            drawTrackMarker(2, dragLastX_, 0, 0, 0, 0);
+        }
+        drawTrackMarker(1, x, pickedTrackMarker_->trackNr,
+                        pickedTrackMarker_->indexNr, 0, 0);
+        dragLastX_ = x;
+        set_cursor(x);
     }
-    else if (dragMode_ == DRAG_TRACK_MARKER) {
-      if (dragStart_ - x >= -5 && dragStart_ - x <= 5) {
-	trackManager_->select(pickedTrackMarker_);
-	selectedTrack_ = pickedTrackMarker_->trackNr;
-	selectedIndex_ = pickedTrackMarker_->indexNr;
-	drawTrackLine();
-	trackMarkSelected(pickedTrackMarker_->track, selectedTrack_,
-			  selectedIndex_);
-      }
-      else {
-	selectedTrack_ = pickedTrackMarker_->trackNr;
-	selectedIndex_ = pickedTrackMarker_->indexNr;
-	trackMarkMoved(pickedTrackMarker_->track, selectedTrack_,
-		       selectedIndex_, pixel2sample(x));
-      }
-      pickedTrackMarker_ = NULL;
+    else {
+        set_cursor(x);
     }
 
-    dragMode_ = DRAG_NONE;
-    drawCursor(x);
-    redraw(0, 0, width_, height_, 0);
-  }
-
-  return true;
-}
-
-bool SampleDisplay::handleMotionNotifyEvent (GdkEventMotion *event)
-{
-  gint x, y;
-  GdkModifierType state;
-
-  if (cursorControlExtern_)
     return TRUE;
-
-  // if (event->is_hint)
-  //   gdk_window_get_pointer (event->window, &x, &y, &state);
-  // else {
-  //   x = (gint)event->x;
-  //   y = (gint)event->y;
-  //   state = (GdkModifierType) event->state;
-  // }
-
-
-  if (dragMode_ == DRAG_SAMPLE_MARKER) {
-    gint dw = 0;
-    gint dx = 0;
-
-    if (x < sampleStartX_)
-      x = sampleStartX_;
-    else if (x > sampleEndX_)
-      x = sampleEndX_;
-
-    if (selectionEnd_ > dragStart_) {
-      if (x < selectionEnd_) {
-	redraw(x + 1, 0, selectionEnd_ - x, height_, 0x01);
-	if (x < dragStart_) {
-	  dw = dragStart_ - x + 1;
-	  dx = x;
-	}
-      }
-      else {
-	dw = x - selectionEnd_;
-	dx = selectionEnd_ + 1;
-      }
-    }
-    else if (selectionEnd_ < dragStart_) {
-      if (x > selectionEnd_) {
-	redraw(selectionEnd_, 0, x - selectionEnd_, height_, 0x01);
-	if (x > dragStart_) {
-	  dw = x - dragStart_ + 1;
-	  dx = dragStart_;
-	}
-      }
-      else {
-	dw = selectionEnd_ - x;
-	dx = x;
-      }
-    }
-
-    if (dw != 0) {
-      // drawGc_->set_foreground(cursorColor_);
-      // drawGc_->set_function(Gdk::XOR);
-      // get_window()->draw_rectangle(drawGc_, TRUE, dx, 0, dw, height_ - 1);
-      // drawGc_->set_function(Gdk::COPY);
-    }
-
-    selectionEnd_ = x;
-  }
-  else if (dragMode_ == DRAG_TRACK_MARKER) {
-    if (x < dragStopMin_)
-      x = dragStopMin_;
-
-    if (x > dragStopMax_)
-      x = dragStopMax_;
-
-    if (dragLastX_ > 0) {
-      drawTrackMarker(2, dragLastX_, 0, 0, 0, 0);
-    }
-    drawTrackMarker(1, x, pickedTrackMarker_->trackNr,
-		    pickedTrackMarker_->indexNr, 0, 0);
-    dragLastX_ = x;
-    drawCursor(x);
-  }
-  else {
-    drawCursor(x);
-  }
-
-  return TRUE;
 }
 
-bool SampleDisplay::handleEnterEvent(GdkEventCrossing *event)
+bool SampleDisplay::on_enter_notify(GdkEventCrossing *event)
 {
-  if (cursorControlExtern_)
-    return true;
+    printf("Enter event\n");
+    if (cursorControlExtern_)
+        return true;
 
-  drawCursor((gint)event->x);
-  return true;
+    set_cursor((gint)event->x);
+    return true;
 }
 
-bool SampleDisplay::handleLeaveEvent(GdkEventCrossing *event)
+bool SampleDisplay::on_leave_notify(GdkEventCrossing *event)
 {
-  if (cursorControlExtern_)
-    return true;
+    printf("Leave event\n");
+    if (cursorControlExtern_)
+        return true;
 
-  undrawCursor();
-  return true;
+    unset_cursor();
+    return true;
 }
 
 // drawMask: 0x01: do not draw cursor
 //           0x02: do not draw marker
-void SampleDisplay::redraw(gint x, gint y, gint width, gint height,
-			   int drawMask)
+void SampleDisplay::redraw(gint x, gint y, gint width, gint height)
 {
-    if (!pixmap_)
-        return;
+    get_window()->invalidate_rect(Gdk::Rectangle(x, y, width, height), true);
 
-    cr_->paint();
+    // cr_->paint();
 
-    if ((drawMask & 0x02) == 0)
-        drawMarker();
+    // if ((drawMask & 0x02) == 0)
+    //     drawMarker();
 
-    if ((drawMask & 0x01) == 0 && cursorDrawn_) {
-        cursorDrawn_ = false;
-        drawCursor(cursorX_);
-    }
+    // if ((drawMask & 0x01) == 0 && cursorDrawn_) {
+    //     cursorDrawn_ = false;
+    //     drawCursor(cursorX_);
+    // }
 }
 
-void SampleDisplay::drawMarker()
+void SampleDisplay::draw_marker(const Cairo::RefPtr<Cairo::Context>& cr)
 {
     if (markerSet_) {
-        cr_->save();
-        Gdk::Cairo::set_source_color(cr_, markerColor_);
-
         markerX_ = sample2pixel(markerSample_);
         if (markerX_ >= 0) {
             printf("Marker at %d\n", markerX_);
-            cr_->move_to(markerX_, trackLineY_);
-            cr_->line_to(markerX_, height_ - 1);
-            cr_->stroke();
+            setColor(markerColor_, cr);
+            drawLine(markerX_, trackLineY_, markerX_, height_ - 1, cr);
         }
-        cr_->restore();
     }
 }
 
 void SampleDisplay::setMarker(unsigned long sample)
 {
-  if (markerSet_)
-    redraw(markerX_, 0, 1, height_, 0x02);
+    if (markerSet_)
+        redraw(markerX_, 0, 1, height_);
 
-  markerSample_ = sample;
-  markerSet_ = true;
-  drawMarker();
+    markerSample_ = sample;
+    markerSet_ = true;
+//    drawMarker();
 }
 
 void SampleDisplay::clearMarker()
 {
-  if (markerSet_)
-    redraw(markerX_, 0, 1, height_, 0x02);
+    if (markerSet_)
+        redraw(markerX_, 0, 1, height_);
 
-  markerSet_ = false;
+    markerSet_ = false;
 }
 
 
 void SampleDisplay::updateSamples()
 {
-  // if (tocEdit_ == NULL)
-  //   return;
+    printf("udpateSamples\n");
 
-  // Toc *toc = tocEdit_->toc();
+    if (tocEdit_ == NULL)
+        return;
 
-  // if (!pixmap_)
-  //   return;
+    Toc *toc = tocEdit_->toc();
 
-  // gint halfHeight = chanHeight_ / 2;
+    gint halfHeight = chanHeight_ / 2;
 
-  // // drawGc_->set_foreground(get_style()->get_white());
-  // // pixmap_->draw_rectangle(drawGc_, TRUE, 0, 0, width_, height_);
+    setColor(white_);
+    drawRectangle(0, 0, width_, height_);
 
-  // long res = (maxSample_ - minSample_ + 1)/sampleWidthX_;
-  // long bres = res / tocEdit_->sampleManager()->blocking();
-  // gint i;
-  // double pos;
-  // long j;
-  // unsigned long s;
-  // short lnegsum, lpossum, rnegsum, rpossum;
-  // gint regionStart = -1;
-  // gint regionEnd = -1;
-  // int regionActive = 0;
+    long res = (maxSample_ - minSample_ + 1)/sampleWidthX_;
+    long bres = res / tocEdit_->sampleManager()->blocking();
+    gint i;
+    double pos;
+    long j;
+    unsigned long s;
+    short lnegsum, lpossum, rnegsum, rpossum;
+    gint regionStart = -1;
+    gint regionEnd = -1;
+    int regionActive = 0;
 
-  // if (regionSet_) {
-  //   if (regionStartSample_ <= maxSample_ &&
-  //       regionEndSample_ >= minSample_) {
+    if (regionSet_) {
+        if (regionStartSample_ <= maxSample_ &&
+            regionEndSample_ >= minSample_) {
 
-  //     if (regionStartSample_ > minSample_)
-  //       regionStart = sample2pixel(regionStartSample_);
-  //     else
-  //       regionStart = sampleStartX_;
+            if (regionStartSample_ > minSample_)
+                regionStart = sample2pixel(regionStartSample_);
+            else
+                regionStart = sampleStartX_;
 
-  //     if (regionEndSample_ < maxSample_)
-  //       regionEnd = sample2pixel(regionEndSample_);
-  //     else
-  //       regionEnd = sampleEndX_;
-  //   }
+            if (regionEndSample_ < maxSample_)
+                regionEnd = sample2pixel(regionEndSample_);
+            else
+                regionEnd = sampleEndX_;
+        }
 
-  //   if (regionStart >= 0 && regionEnd >= regionStart) {
-  //     drawGc_->set_foreground(selectionBackgroundColor_);
-  //     pixmap_->draw_rectangle(drawGc_, TRUE,
-  //       		      regionStart, lcenter_ - halfHeight,
-  //       		      regionEnd - regionStart + 1, chanHeight_);
-  //     pixmap_->draw_rectangle(drawGc_, TRUE,
-  //       		      regionStart, rcenter_ - halfHeight,
-  //       		      regionEnd - regionStart + 1, chanHeight_);
-  //   }
-  // }
+        if (regionStart >= 0 && regionEnd >= regionStart) {
+            setColor(selectionBackgroundColor_);
+            drawRectangle(regionStart, lcenter_ - halfHeight,
+                          regionEnd - regionStart + 1, chanHeight_);
+            drawRectangle(regionStart, rcenter_ - halfHeight,
+                          regionEnd - regionStart + 1, chanHeight_);
+        }
+    }
 
-  // drawGc_->set_foreground(sampleColor_);
+    setColor(sampleColor_);
 
-  // if (bres > 0) {
-  //   for (s = minSample_, i = sampleStartX_;
-  //        s < maxSample_ && i <= sampleEndX_;
-  //        s += res, i++) {
-  //     lnegsum = lpossum = rnegsum = rpossum = 0;
+    if (bres > 0) {
+        for (s = minSample_, i = sampleStartX_;
+             s < maxSample_ && i <= sampleEndX_;
+             s += res, i++) {
+            lnegsum = lpossum = rnegsum = rpossum = 0;
 
-  //     if (regionStart != -1 && i >= regionStart && regionActive == 0) {
-  //       regionActive = 1;
-  //       drawGc_->set_foreground(markerColor_);
-  //     }
-  //     else if (regionActive == 1 && i > regionEnd) {
-  //       regionActive = 2;
-  //       drawGc_->set_foreground(sampleColor_);
-  //     }
+            if (regionStart != -1 && i >= regionStart && regionActive == 0) {
+                regionActive = 1;
+                setColor(markerColor_);
+            }
+            else if (regionActive == 1 && i > regionEnd) {
+                regionActive = 2;
+                setColor(sampleColor_);
+            }
 
-  //     tocEdit_->sampleManager()->getPeak(s, s + res, &lnegsum, &lpossum,
-  //       				 &rnegsum, &rpossum);
+            tocEdit_->sampleManager()->getPeak(s, s + res, &lnegsum, &lpossum,
+                                               &rnegsum, &rpossum);
 
-  //     pos = double(lnegsum) * halfHeight;
-  //     pos /= SHRT_MAX;
-  //     if (pos != 0)
-  //       pixmap_->draw_line(drawGc_, i, lcenter_, i, lcenter_ - (gint)pos);
+            pos = double(lnegsum) * halfHeight;
+            pos /= SHRT_MAX;
+            if (pos != 0)
+                drawLine(i, lcenter_, i, lcenter_ - (gint)pos);
 
-  //     pos = double(lpossum) * halfHeight;
-  //     pos /= SHRT_MAX;
-  //     if (pos != 0)
-  //       pixmap_->draw_line(drawGc_, i, lcenter_, i, lcenter_ - (gint)pos);
+            pos = double(lpossum) * halfHeight;
+            pos /= SHRT_MAX;
+            if (pos != 0)
+                drawLine(i, lcenter_, i, lcenter_ - (gint)pos);
 
-  //     pos = double(rnegsum) * halfHeight;
-  //     pos /= SHRT_MAX;
-  //     if (pos != 0)
-  //       pixmap_->draw_line(drawGc_, i, rcenter_, i, rcenter_ - (gint)pos);
+            pos = double(rnegsum) * halfHeight;
+            pos /= SHRT_MAX;
+            if (pos != 0)
+                drawLine(i, rcenter_, i, rcenter_ - (gint)pos);
 
-  //     pos = double(rpossum) * halfHeight;
-  //     pos /= SHRT_MAX;
-  //     if (pos != 0)
-  //       pixmap_->draw_line(drawGc_, i, rcenter_, i, rcenter_ - (gint)pos);
-  //   }
-  // }
-  // else if (maxSample_ > 0 && res >= 1) {
+            pos = double(rpossum) * halfHeight;
+            pos /= SHRT_MAX;
+            if (pos != 0)
+                drawLine(i, rcenter_, i, rcenter_ - (gint)pos);
+        }
+    }
+    else if (maxSample_ > 0 && res >= 1) {
 
-  //   TocReader reader(toc);
+        TocReader reader(toc);
 
-  //   if (reader.openData() == 0) {
-  //     Sample *sampleBuf = new Sample[tocEdit_->sampleManager()->blocking()];
-  //     double dres = double(maxSample_ - minSample_ + 1)/double(sampleWidthX_);
-  //     double ds;
+        if (reader.openData() == 0) {
+            Sample *sampleBuf = new Sample[tocEdit_->sampleManager()->blocking()];
+            double dres = double(maxSample_ - minSample_ + 1)/double(sampleWidthX_);
+            double ds;
 
-  //     for (ds = minSample_, i = sampleStartX_;
-  //          ds < maxSample_ && i <= sampleEndX_;
-  //          ds += dres, i++) {
+            for (ds = minSample_, i = sampleStartX_;
+                 ds < maxSample_ && i <= sampleEndX_;
+                 ds += dres, i++) {
 
-  //       lnegsum = lpossum = rnegsum = rpossum = 0;
+                lnegsum = lpossum = rnegsum = rpossum = 0;
 
-  //       if (reader.seekSample((long)ds) == 0 &&
-  //           reader.readSamples(sampleBuf, res) == res) {
-  //         for (j = 0; j < res; j++) {
-  //           if (sampleBuf[j].left() < lnegsum)
-  //             lnegsum = sampleBuf[j].left();
+                if (reader.seekSample((long)ds) == 0 &&
+                    reader.readSamples(sampleBuf, res) == res) {
+                    for (j = 0; j < res; j++) {
+                        if (sampleBuf[j].left() < lnegsum)
+                            lnegsum = sampleBuf[j].left();
 
-  //           if (sampleBuf[j].left() > lpossum)
-  //             lpossum = sampleBuf[j].left();
+                        if (sampleBuf[j].left() > lpossum)
+                            lpossum = sampleBuf[j].left();
 
-  //           if (sampleBuf[j].right() < rnegsum)
-  //             rnegsum = sampleBuf[j].right();
+                        if (sampleBuf[j].right() < rnegsum)
+                            rnegsum = sampleBuf[j].right();
 
-  //           if (sampleBuf[j].right() > rpossum)
-  //             rpossum = sampleBuf[j].right();
-  //         }
-  //       }
+                        if (sampleBuf[j].right() > rpossum)
+                            rpossum = sampleBuf[j].right();
+                    }
+                }
 
-  //       if (regionStart != -1 && i >= regionStart && regionActive == 0) {
-  //         regionActive = 1;
-  //         drawGc_->set_foreground(markerColor_);
-  //       }
-  //       else if (regionActive == 1 && i > regionEnd) {
-  //         regionActive = 2;
-  //         drawGc_->set_foreground(sampleColor_);
-  //       }
+                if (regionStart != -1 && i >= regionStart && regionActive == 0) {
+                    regionActive = 1;
+                    setColor(markerColor_);
+                }
+                else if (regionActive == 1 && i > regionEnd) {
+                    regionActive = 2;
+                    setColor(sampleColor_);
+                }
 
-  //       pos = double(lnegsum) * halfHeight;
-  //       pos /= SHRT_MAX;
-  //       if (pos != 0)
-  //         pixmap_->draw_line(drawGc_, i, lcenter_, i, lcenter_ - (gint)pos);
+                pos = double(lnegsum) * halfHeight;
+                pos /= SHRT_MAX;
+                if (pos != 0)
+                    drawLine(i, lcenter_, i, lcenter_ - (gint)pos);
 
-  //       pos = double(lpossum) * halfHeight;
-  //       pos /= SHRT_MAX;
-  //       if (pos != 0)
-  //         pixmap_->draw_line(drawGc_, i, lcenter_, i, lcenter_ - (gint)pos);
+                pos = double(lpossum) * halfHeight;
+                pos /= SHRT_MAX;
+                if (pos != 0)
+                    drawLine(i, lcenter_, i, lcenter_ - (gint)pos);
 
-  //       pos = double(rnegsum) * halfHeight;
-  //       pos /= SHRT_MAX;
-  //       if (pos != 0)
-  //         pixmap_->draw_line(drawGc_, i, rcenter_, i, rcenter_ - (gint)pos);
+                pos = double(rnegsum) * halfHeight;
+                pos /= SHRT_MAX;
+                if (pos != 0)
+                    drawLine(i, rcenter_, i, rcenter_ - (gint)pos);
 
-  //       pos = double(rpossum) * halfHeight;
-  //       pos /= SHRT_MAX;
-  //       if (pos != 0)
-  //         pixmap_->draw_line(drawGc_, i, rcenter_, i, rcenter_ - (gint)pos);
-  //     }
+                pos = double(rpossum) * halfHeight;
+                pos /= SHRT_MAX;
+                if (pos != 0)
+                    drawLine(i, rcenter_, i, rcenter_ - (gint)pos);
+            }
 
-  //     delete[] sampleBuf;
-  //     reader.closeData();
-  //   }
-  // }
-  // else if (toc != NULL && maxSample_ > minSample_ + 1) {
+            delete[] sampleBuf;
+            reader.closeData();
+        }
+    }
+    else if (toc != NULL && maxSample_ > minSample_ + 1) {
 
-  //   TocReader reader(toc);
+        TocReader reader(toc);
 
-  //   if (reader.openData() == 0) {
-  //     long len = maxSample_ - minSample_ + 1;
-  //     Sample *sampleBuf = new Sample[len];
+        if (reader.openData() == 0) {
+            long len = maxSample_ - minSample_ + 1;
+            Sample *sampleBuf = new Sample[len];
 
-  //     double pres = double(sampleWidthX_ - 1) / double(len - 1);
-  //     double di;
-  //     gint pos1;
-  //     gint lastPosLeft, lastPosRight;
+            double pres = double(sampleWidthX_ - 1) / double(len - 1);
+            double di;
+            gint pos1;
+            gint lastPosLeft, lastPosRight;
 
-  //     if (reader.seekSample(minSample_) == 0 &&
-  //         reader.readSamples(sampleBuf, len) == len) {
+            if (reader.seekSample(minSample_) == 0 &&
+                reader.readSamples(sampleBuf, len) == len) {
 
-  //       for (j = 1, di = sampleStartX_ + pres;
-  //            j < len && di < sampleEndX_ + 1; j++, di += pres) {
-  //         if (regionStart != -1 && regionActive == 0 &&
-  //             minSample_ + j - 1 >= regionStartSample_ &&
-  //             minSample_ + j <= regionEndSample_) {
-  //           regionActive = 1;
-  //           drawGc_->set_foreground(markerColor_);
-  //         }
-  //         else if (regionActive == 1 && minSample_ + j > regionEndSample_) {
-  //           regionActive = 2;
-  //           drawGc_->set_foreground(sampleColor_);
-  //         }
+                for (j = 1, di = sampleStartX_ + pres;
+                     j < len && di < sampleEndX_ + 1; j++, di += pres) {
+                    if (regionStart != -1 && regionActive == 0 &&
+                        minSample_ + j - 1 >= regionStartSample_ &&
+                        minSample_ + j <= regionEndSample_) {
+                        regionActive = 1;
+                        setColor(markerColor_);
+                    }
+                    else if (regionActive == 1 && minSample_ + j > regionEndSample_) {
+                        regionActive = 2;
+                        setColor(sampleColor_);
+                    }
 
-  //         pos = sampleBuf[j - 1].left() * halfHeight;
-  //         pos /= SHRT_MAX;
+                    pos = sampleBuf[j - 1].left() * halfHeight;
+                    pos /= SHRT_MAX;
 
-  //         pos1 = sampleBuf[j].left() * halfHeight;
-  //         pos1 /= SHRT_MAX;
-  //         lastPosLeft = pos1;
+                    pos1 = sampleBuf[j].left() * halfHeight;
+                    pos1 /= SHRT_MAX;
+                    lastPosLeft = pos1;
 
-  //         if (pos != 0 || pos1 != 0)
-  //           pixmap_->draw_line(drawGc_, long(di - pres), lcenter_ - (gint)pos,
-  //       		       long(di), lcenter_ - pos1);
+                    if (pos != 0 || pos1 != 0)
+                        drawLine(long(di - pres), lcenter_ - (gint)pos,
+                                 long(di), lcenter_ - pos1);
 
-  //         pos = sampleBuf[j - 1].right() * halfHeight;
-  //         pos /= SHRT_MAX;
+                    pos = sampleBuf[j - 1].right() * halfHeight;
+                    pos /= SHRT_MAX;
 
-  //         pos1 = sampleBuf[j].right() * halfHeight;
-  //         pos1 /= SHRT_MAX;
-  //         lastPosRight = pos1;
+                    pos1 = sampleBuf[j].right() * halfHeight;
+                    pos1 /= SHRT_MAX;
+                    lastPosRight = pos1;
 
-  //         if (pos != 0 || pos1 != 0)
-  //           pixmap_->draw_line(drawGc_, long(di - pres), rcenter_ - (gint)pos,
-  //       		       long(di), rcenter_ - pos1);
+                    if (pos != 0 || pos1 != 0)
+                        drawLine(long(di - pres), rcenter_ - (gint)pos,
+                                 long(di), rcenter_ - pos1);
+                }
 
-  //       }
+                if (0 && (gint)di < sampleEndX_) {
+                    pos = sampleBuf[len -1].left() * halfHeight;
+                    pos /= SHRT_MAX;
+                    if (pos != 0 || lastPosLeft != 0)
+                        drawLine(long(di), lcenter_ - lastPosLeft,
+                                 sampleEndX_, lcenter_ - (gint)pos);
 
-  //       if (&pixmap_ == 0)
-  //         std::cout << "null !!" << std::endl;
+                    pos = sampleBuf[len - 1].right() * halfHeight;
+                    pos /= SHRT_MAX;
+                    if (pos != 0 || lastPosRight != 0)
+                        drawLine(long(di), rcenter_ - lastPosRight,
+                                 sampleEndX_, rcenter_ - (gint)pos);
+                }
+            }
+            delete[] sampleBuf;
+        }
+    }
 
-  //       if (0 && (gint)di < sampleEndX_) {
-  //         pos = sampleBuf[len -1].left() * halfHeight;
-  //         pos /= SHRT_MAX;
-  //         if (pos != 0 || lastPosLeft != 0)
-  //           pixmap_->draw_line(drawGc_, long(di), lcenter_ - lastPosLeft,
-  //       		       sampleEndX_, lcenter_ - (gint)pos);
+    setColor(middleLineColor_);
 
-  //         pos = sampleBuf[len - 1].right() * halfHeight;
-  //         pos /= SHRT_MAX;
-  //         if (pos != 0 || lastPosRight != 0)
-  //           pixmap_->draw_line(drawGc_, long(di), rcenter_ - lastPosRight,
-  //       		       sampleEndX_, rcenter_ - (gint)pos);
-  //       }
-  //     }
-  //     delete[] sampleBuf;
-  //   }
+    drawLine(sampleStartX_, lcenter_,	sampleEndX_, lcenter_);
+    drawLine(sampleStartX_, rcenter_, sampleEndX_, rcenter_);
 
-  // }
+    setColor(black_);
 
+    drawLine(sampleStartX_ - 1, lcenter_ - halfHeight,
+             sampleEndX_ + 1, lcenter_ - halfHeight);
+    drawLine(sampleStartX_ - 1, lcenter_ + halfHeight,
+             sampleEndX_ + 1, lcenter_ + halfHeight);
+    drawLine(sampleStartX_ - 1, lcenter_ - halfHeight,
+             sampleStartX_ - 1, lcenter_ + halfHeight);
+    drawLine(sampleEndX_ + 1, lcenter_ - halfHeight,
+             sampleEndX_ + 1, lcenter_ + halfHeight);
 
-  // drawGc_->set_foreground(middleLineColor_);
+    drawLine(sampleStartX_ - 1, rcenter_ - halfHeight,
+             sampleEndX_ + 1, rcenter_ - halfHeight);
+    drawLine(sampleStartX_ - 1, rcenter_ + halfHeight,
+             sampleEndX_ + 1, rcenter_ + halfHeight);
+    drawLine(sampleStartX_ - 1, rcenter_ + halfHeight,
+             sampleStartX_ - 1, rcenter_ - halfHeight);
+    drawLine(sampleEndX_ + 1, rcenter_ + halfHeight,
+             sampleEndX_ + 1, rcenter_ - halfHeight);
 
-  // pixmap_->draw_line(drawGc_, sampleStartX_, lcenter_,	sampleEndX_, lcenter_);
-  // pixmap_->draw_line(drawGc_, sampleStartX_, rcenter_, sampleEndX_, rcenter_);
+    drawTimeLine();
 
-  // drawGc_->set_foreground(get_style()->get_black());
-
-  // pixmap_->draw_line(drawGc_, sampleStartX_ - 1, lcenter_ - halfHeight,
-  //       	     sampleEndX_ + 1, lcenter_ - halfHeight);
-  // pixmap_->draw_line(drawGc_, sampleStartX_ - 1, lcenter_ + halfHeight,
-  //       	     sampleEndX_ + 1, lcenter_ + halfHeight);
-  // pixmap_->draw_line(drawGc_, sampleStartX_ - 1, lcenter_ - halfHeight,
-  //       	sampleStartX_ - 1, lcenter_ + halfHeight);
-  // pixmap_->draw_line(drawGc_, sampleEndX_ + 1, lcenter_ - halfHeight,
-  //       	     sampleEndX_ + 1, lcenter_ + halfHeight);
-
-  // pixmap_->draw_line(drawGc_, sampleStartX_ - 1, rcenter_ - halfHeight,
-  //       	     sampleEndX_ + 1, rcenter_ - halfHeight);
-  // pixmap_->draw_line(drawGc_, sampleStartX_ - 1, rcenter_ + halfHeight,
-  //       	     sampleEndX_ + 1, rcenter_ + halfHeight);
-  // pixmap_->draw_line(drawGc_, sampleStartX_ - 1, rcenter_ + halfHeight,
-  //       	     sampleStartX_ - 1, rcenter_ - halfHeight);
-//    pixmap_->draw_line(drawGc_, sampleEndX_ + 1, rcenter_ + halfHeight,
-//                       sampleEndX_ + 1, rcenter_ - halfHeight);
-
-  // drawTimeLine();
-
-  // trackManager_->update(toc, minSample_, maxSample_, sampleWidthX_);
-  // if (selectedTrack_ > 0) {
-  //   trackManager_->select(selectedTrack_, selectedIndex_);
-  // }
-  // drawTrackLine();
+    trackManager_->update(toc, minSample_, maxSample_, sampleWidthX_);
+    if (selectedTrack_ > 0) {
+        trackManager_->select(selectedTrack_, selectedIndex_);
+    }
+    drawTrackLine();
 }
 
-void SampleDisplay::drawCursor(gint x)
+void SampleDisplay::draw_cursor(const Cairo::RefPtr<Cairo::Context>& cr)
 {
-  // if (!pixmap_)
-  //   return;
-
-  // if (x < sampleStartX_ || x > sampleEndX_)
-  //   return;
-
-  // if (cursorDrawn_ && cursorX_ != x) {
-  //   redraw(cursorX_, 0, 1, height_, 0x01);
-  // }
-
-  // if (!cursorDrawn_ || cursorX_ != x) {
-  //   drawGc_->set_foreground(cursorColor_);
-  //   get_window()->draw_line(drawGc_, x, trackLineY_, x, height_ - 1);
-  // }
-
-  // cursorDrawn_ = true;
-  // cursorX_ = x;
-
-  // if (cursorControlExtern_ == false)
-  //   cursorMoved(pixel2sample(x));
+    if (!cursorDrawn_) {
+        cursorDrawn_ = true;
+        setColor(cursorColor_, cr);
+        drawLine(cursorX_, trackLineY_, cursorX_, height_ - 1, cr);
+    }
 }
 
-void SampleDisplay::undrawCursor()
+void SampleDisplay::set_cursor(gint x)
 {
-  if (cursorDrawn_) {
-    redraw(cursorX_, 0, 1, height_, 0x01);
-    cursorDrawn_ = false;
-  }
+    if (x < sampleStartX_ || x > sampleEndX_)
+        return;
+
+    printf("Drawing cursor %d\n", x);
+
+    if (cursorDrawn_ && cursorX_ != x) {
+        printf("Clearing cursor at %d\n", cursorX_);
+        redraw(cursorX_, 0, 1, height_);
+    }
+
+    if (!cursorDrawn_ || cursorX_ != x) {
+        cursorDrawn_ = false;
+        cursorX_ = x;
+        redraw(cursorX_, 0, 1, height_);
+    }
+
+    cursorX_ = x;
+
+    if (cursorControlExtern_ == false)
+        cursorMoved(pixel2sample(x));
+}
+
+void SampleDisplay::unset_cursor()
+{
+    if (cursorDrawn_) {
+        redraw(cursorX_, 0, 1, height_);
+        cursorDrawn_ = false;
+    }
 }
 
 void SampleDisplay::drawTimeTick(gint x, gint y, unsigned long sample)
 {
-  // char buf[50];
+    char buf[50];
 
-  // if (!pixmap_)
-  //   return;
+    unsigned long min = sample / (60 * 44100);
+    sample %= 60 * 44100;
 
-  // unsigned long min = sample / (60 * 44100);
-  // sample %= 60 * 44100;
+    unsigned long sec = sample / 44100;
+    sample %= 44100;
 
-  // unsigned long sec = sample / 44100;
-  // sample %= 44100;
+    unsigned long frame = sample / 588;
+    sample %= 588;
 
-  // unsigned long frame = sample / 588;
-  // sample %= 588;
+    sprintf(buf, "%lu:%02lu:%02lu.%03lu", min, sec, frame, sample);
 
-  // sprintf(buf, "%lu:%02lu:%02lu.%03lu", min, sec, frame, sample);
-
-  // drawGc_->set_foreground(get_style()->get_black());
-
-  // pixmap_->draw_line(drawGc_, x, y - timeLineHeight_, x, y);
-
-  // Glib::RefPtr<Pango::Layout> playout =
-  //   Pango::Layout::create(get_pango_context());
-  // playout->set_text(buf);
-  // pixmap_->draw_layout(drawGc_, x + 3, y - timeLineHeight_ + 1, playout);
+    setColor(black_);
+    drawLine(x, y - timeLineHeight_, x, y);
+    drawText(buf, x + 3, y - timeLineHeight_ + 1);
 }
 
 void SampleDisplay::drawTimeLine()
 {
-  if (tocEdit_ == NULL)
-    return;
+    if (tocEdit_ == NULL)
+        return;
 
-  Toc *toc = tocEdit_->toc();
+    Toc *toc = tocEdit_->toc();
 
-  if (toc->length().lba() == 0)
-    return;
+    if (toc->length().lba() == 0)
+        return;
 
-  gint sep = timeTickWidth_ + timeTickSep_;
-  unsigned long maxNofTicks = (sampleWidthX_ + timeTickSep_) / sep;
-  gint x;
+    gint sep = timeTickWidth_ + timeTickSep_;
+    unsigned long maxNofTicks = (sampleWidthX_ + timeTickSep_) / sep;
+    gint x;
 
-  unsigned long len = maxSample_ - minSample_ + 1;
-  unsigned long dt;
-  unsigned long dtx;
-  unsigned long startSample;
-  unsigned long s;
+    unsigned long len = maxSample_ - minSample_ + 1;
+    unsigned long dt;
+    unsigned long dtx;
+    unsigned long startSample;
+    unsigned long s;
 
-  if ((s = len / (60 * 44100)) > 1) {
-    dt = 60 * 44100;
-  }
-  else if ((s = len / 44100) > 1) {
-    dt = 44100;
-  }
-  else if ((s = len / 588) > 1) {
-    dt = 588;
-  }
-  else {
-    dt = 1;
-    s = len;
-  }
-
-  if (s > maxNofTicks) {
-    dtx = s / maxNofTicks;
-    if (s % maxNofTicks != 0)
-      dtx++;
-    dtx *= dt;
-  }
-  else {
-    dtx = dt;
-  }
-
-  if (dt > 1) {
-    if (minSample_ % dt == 0) {
-      startSample = minSample_;
+    if ((s = len / (60 * 44100)) > 1) {
+        dt = 60 * 44100;
+    }
+    else if ((s = len / 44100) > 1) {
+        dt = 44100;
+    }
+    else if ((s = len / 588) > 1) {
+        dt = 588;
     }
     else {
-      startSample = minSample_ / dt;
-      startSample = startSample * dt + dt;
+        dt = 1;
+        s = len;
     }
-  }
-  else {
-    startSample = minSample_;
-  }
 
-  for (s = startSample; s < maxSample_; s += dtx) {
-    x = sample2pixel(s);
+    if (s > maxNofTicks) {
+        dtx = s / maxNofTicks;
+        if (s % maxNofTicks != 0)
+            dtx++;
+        dtx *= dt;
+    }
+    else {
+        dtx = dt;
+    }
 
-    if (x + timeTickWidth_ <= sampleEndX_)
-      drawTimeTick(x, timeLineY_, s);
-  }
+    if (dt > 1) {
+        if (minSample_ % dt == 0) {
+            startSample = minSample_;
+        }
+        else {
+            startSample = minSample_ / dt;
+            startSample = startSample * dt + dt;
+        }
+    }
+    else {
+        startSample = minSample_;
+    }
+
+    for (s = startSample; s < maxSample_; s += dtx) {
+        x = sample2pixel(s);
+
+        if (x + timeTickWidth_ <= sampleEndX_)
+            drawTimeTick(x, timeLineY_, s);
+    }
 }
 
 // Draws track marker.
@@ -1202,58 +1192,39 @@ void SampleDisplay::drawTimeLine()
 void SampleDisplay::drawTrackMarker(int mode, gint x, int trackNr,
 				    int indexNr, int selected, int extend)
 {
-  // if (mode < 2) {
-  //   char buf[20];
+    if (mode == 2) {
+        redraw(x - 4, trackLineY_ - trackLineHeight_, trackMarkerWidth_,
+               trackLineHeight_);
+        return;
+    }
 
-  //   sprintf(buf, "%d.%d", trackNr, indexNr);
+    char buf[20];
+    sprintf(buf, "%d.%d", trackNr, indexNr);
 
-  //   Glib::RefPtr<Gdk::Pixbuf> marker;
+    Glib::RefPtr<Gdk::Pixbuf> marker;
 
-  //   if (extend) {
-  //     marker = (indexNr == 1 ? trackExtendPixmap_ : indexExtendPixmap_);
-  //   }
-  //   else {
-  //     if (selected)
-  //       marker = (indexNr == 1 ? trackMarkerSelectedPixmap_ :
-  //                 indexMarkerSelectedPixmap_);
-  //     else
-  //       marker = (indexNr == 1 ? trackMarkerPixmap_ : indexMarkerPixmap_);
-  //   }
+    if (extend) {
+        marker = (indexNr == 1 ? trackExtendPixmap_ : indexExtendPixmap_);
+    } else {
+        if (selected)
+            marker = (indexNr == 1 ? trackMarkerSelectedPixmap_ :
+                      indexMarkerSelectedPixmap_);
+        else
+            marker = (indexNr == 1 ? trackMarkerPixmap_ : indexMarkerPixmap_);
+    }
 
-  //   Glib::RefPtr<Gdk::Window> win = get_window();
-  //   Glib::RefPtr<Gdk::Drawable> dr = win;
+    if (selected)
+        setColor(markerColor_);
+    else
+        setColor(white_);
 
-  //   if (mode == 0)
-  //     dr = pixmap_;
+    drawRectangle(x-4, trackLineY_ - trackLineHeight_,
+                  trackMarkerWidth_, trackLineHeight_);
 
-  //   if (mode == 0) {
-  //     if (selected)
-  //       drawGc_->set_foreground(markerColor_);
-  //     else
-  //       drawGc_->set_foreground(get_style()->get_white());
-
-  //     dr->draw_rectangle(drawGc_, TRUE,  x-4, trackLineY_ - trackLineHeight_,
-  //       		trackMarkerWidth_, trackLineHeight_);
-  //   }
-
-  //   drawGc_->set_foreground(get_style()->get_black());
-
-  //   dr->draw_drawable(drawGc_, marker, 0, 0,
-  //       	   x - 4, trackLineY_ - TRACK_MARKER_XPM_HEIGHT,
-  //       	   TRACK_MARKER_XPM_WIDTH, TRACK_MARKER_XPM_HEIGHT);
-
-  //   Glib::RefPtr<Pango::Layout> playout =
-  //     Pango::Layout::create(get_pango_context());
-  //   playout->set_text(buf);
-  //   dr->draw_layout(drawGc_,
-  //       	    x + TRACK_MARKER_XPM_WIDTH / 2 + 2,
-  //                   trackLineY_ - trackLineHeight_ + 2,
-  //                   playout);
-  // }
-  // else {
-  //   redraw(x - 4, trackLineY_ - trackLineHeight_, trackMarkerWidth_,
-  //          trackLineHeight_, 0x03);
-  // }
+    setColor(black_);
+    drawPixmap(marker, x - 4, trackLineY_ - TRACK_MARKER_XPM_HEIGHT);
+    drawText(buf, x + TRACK_MARKER_XPM_WIDTH / 2 + 2,
+             trackLineY_ - trackLineHeight_ + 2);
 }
 
 void SampleDisplay::drawTrackLine()
@@ -1287,21 +1258,68 @@ void SampleDisplay::drawTrackLine()
 
 void SampleDisplay::updateTrackMarks()
 {
-  // if (tocEdit_ == NULL)
-  //   return;
+    if (tocEdit_ == NULL)
+        return;
 
-  // Toc *toc = tocEdit_->toc();
+    Toc *toc = tocEdit_->toc();
 
-  // drawGc_->set_foreground(get_style()->get_white());
-  // pixmap_->draw_rectangle(drawGc_, TRUE,
-  //       		  sampleStartX_ - 4, trackLineY_ - trackLineHeight_,
-  //       		  width_ - sampleStartX_, trackLineHeight_);
+    setColor(white_);
+    drawRectangle(sampleStartX_ - 4, trackLineY_ - trackLineHeight_,
+                  width_ - sampleStartX_, trackLineHeight_);
 
-  // trackManager_->update(toc, minSample_, maxSample_, sampleWidthX_);
-  // if (selectedTrack_ > 0) {
-  //   trackManager_->select(selectedTrack_, selectedIndex_);
-  // }
-  // drawTrackLine();
+    trackManager_->update(toc, minSample_, maxSample_, sampleWidthX_);
+    if (selectedTrack_ > 0) {
+        trackManager_->select(selectedTrack_, selectedIndex_);
+    }
+    drawTrackLine();
 
-  // redraw(0, 0, width_, height_, 0x03);
+    redraw(0, 0, width_, height_);
+}
+
+void SampleDisplay::setColor(Gdk::RGBA c, Cairo::RefPtr<Cairo::Context> cr)
+{
+    if (!cr)
+        cr = surface_cr_;
+    cr->set_source_rgb(c.get_red(), c.get_green(), c.get_blue());
+}
+
+void SampleDisplay::drawLine(gint x1, gint y1, gint x2, gint y2,
+                             Cairo::RefPtr<Cairo::Context> cr)
+{
+    if (!cr)
+        cr = surface_cr_;
+    cr->set_line_width(1.0);
+    cr->move_to(x1, y1);
+    cr->line_to(x2, y2);
+    cr->stroke();
+}
+
+void SampleDisplay::drawRectangle(gint x1, gint y1, gint w, gint h)
+{
+    surface_cr_->rectangle((double)x1, (double)y1, (double)w, (double)h);
+    surface_cr_->fill();
+}
+
+void SampleDisplay::drawPixmap(Glib::RefPtr<Gdk::Pixbuf> pixbuf,
+                               gint x, gint y)
+{
+    Gdk::Cairo::set_source_pixbuf(surface_cr_, pixbuf, x, y);
+    surface_cr_->paint();
+}
+
+void SampleDisplay::drawText(const char* text, gint x, gint y)
+{
+    Pango::FontDescription font;
+    font.set_family("Monospace");
+
+    auto layout = create_pango_layout(text);
+    layout->set_font_description(font);
+    surface_cr_->move_to(x, y);
+    layout->show_in_cairo_context(surface_cr_);
+}
+
+void SampleDisplay::draw_surface(const Cairo::RefPtr<Cairo::Context>& cr)
+{
+    cr->set_source(surface_, 0.0, 0.0);
+    cr->paint();
 }

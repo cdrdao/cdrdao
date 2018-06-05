@@ -40,7 +40,6 @@ void guiUpdate(unsigned long level)
 
 bool guiUpdatePeriodic()
 {
-    printf("guiUpdatePeriodic\n");
     if (CdDevice::updateDeviceStatus())
         guiUpdate(UPD_CD_DEVICE_STATUS);
 
