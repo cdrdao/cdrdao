@@ -85,6 +85,8 @@ private:
   void on_action_preferences();
   void on_action_about();
   void on_action_blank_cdrw();
+  void on_action_open();
+  void on_open(const type_vec_files& files, const Glib::ustring& hint) override;
 
 //  bool closeProject();
 //  void closeChooser();
@@ -108,6 +110,13 @@ private:
 
   // Windows
   BlankCDWindow* blankCDWindow_;
+
+  Gtk::FileChooserDialog m_open_file_chooser;
+  Glib::RefPtr<Gtk::FileFilter> open_filter_;
+  Glib::RefPtr<Gtk::FileFilter> all_filter_;
+
+  int argc_;
+  char** argv_;
 
   /* Gtk::Notebook notebook_; */
 

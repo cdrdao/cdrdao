@@ -18,6 +18,7 @@
  */
 
 #include <gtkmm.h>
+#include <glibmm/i18n.h>
 
 #include "config.h"
 
@@ -51,9 +52,11 @@ GCDWindow* GCDWindow::create(Glib::RefPtr<Gtk::Builder> builder, GCDWindow::What
         break;
     case What::DUPLICATE:
         project = DuplicateCDProject::create(builder, window);
+        window->gears_->hide();
         break;
     case What::DUMP:
         project = DumpCDProject::create(builder, window);
+        window->gears_->hide();
         break;
     case What::AUDIOCD:
         project = AudioCDProject::create(builder, 0, proj_name, toc, window);
@@ -111,44 +114,15 @@ void GCDWindow::update(unsigned long level)
     project_->update(level);
 }
 
-GCDMaster::GCDMaster() : Gtk::Application("org.gnome.gcdmaster"),
-                         aboutDialog_(), blankCDWindow_()
+GCDMaster::GCDMaster() :
+    Gtk::Application("org.gnome.gcdmaster", Gio::APPLICATION_HANDLES_OPEN),
+    aboutDialog_(),
+    blankCDWindow_(),
+    m_open_file_chooser(_("Please select a project"), Gtk::FILE_CHOOSER_ACTION_OPEN)
 {
     builder_ = Gtk::Builder::create();
 
     project_number_ = 0;
-//  project_ = 0;
-
-//   readFileSelector_ =
-//     new Gtk::FileChooserDialog("Please select a project",
-//                                Gtk::FILE_CHOOSER_ACTION_OPEN);
-//   readFileSelector_->set_transient_for(*this);
-//   readFileSelector_->add_button(Gtk::Stock::CANCEL, Gtk::RESPONSE_CANCEL);
-//   readFileSelector_->add_button(Gtk::Stock::OPEN, Gtk::RESPONSE_OK);
-
-//   Gtk::FileFilter* filter_tocs = new Gtk::FileFilter;
-//   manage(filter_tocs);
-// #ifdef HAVE_MP3_SUPPORT
-//   filter_tocs->set_name("Content Files (*.toc, *.cue, *.m3u)");
-// #else
-//   filter_tocs->set_name("Content Files (*.toc, *.cue)");
-// #endif
-//   filter_tocs->add_pattern("*.toc");
-//   filter_tocs->add_pattern("*.cue");
-// #ifdef HAVE_MP3_SUPPORT
-//   filter_tocs->add_pattern("*.m3u");
-// #endif
-//   readFileSelector_->add_filter(*filter_tocs);
-
-//   Gtk::FileFilter* filter_all = new Gtk::FileFilter;
-//   manage(filter_all);
-//   filter_all->set_name("Any files");
-//   filter_all->add_pattern("*");
-//   readFileSelector_->add_filter(*filter_all);
-
-//    Icons::registerStockIcons();
-//  notebook_.set_show_border(false);
-//  set_contents(notebook_);
 
 //  createMenus();
 //  createStatusbar();
@@ -430,11 +404,6 @@ void GCDMaster::update(unsigned long level)
          preferencesDialog_->update(level);
  }
 
-// void GCDMaster::configureDevices()
-// {
-// //  deviceConfDialog->start();
-// }
-
 // void GCDMaster::createStatusbar()
 // {
 //   Gtk::HBox *container = new Gtk::HBox;
@@ -475,6 +444,8 @@ void GCDMaster::on_startup()
                sigc::mem_fun(*this, &GCDMaster::on_action_preferences));
     add_action("quit", sigc::mem_fun(*this, &GCDMaster::on_action_quit));
     set_accel_for_action("app.quit", "<Ctrl>Q");
+    add_action("new",
+               sigc::mem_fun(this, &GCDMaster::newChooserWindow));
     add_action("new-audio-cd",
                sigc::mem_fun(this, &GCDMaster::newEmptyAudioCDProject));
     add_action("new-duplicate-cd",
@@ -485,6 +456,31 @@ void GCDMaster::on_startup()
                sigc::mem_fun(this, &GCDMaster::on_action_about));
     add_action("blank-cdrw",
                sigc::mem_fun(this, &GCDMaster::on_action_blank_cdrw));
+    add_action("open",
+               sigc::mem_fun(this, &GCDMaster::on_action_open));
+
+    set_accel_for_action("app.new", "<Primary>n");
+    set_accel_for_action("app.open", "<Primary>o");
+
+    // Configure file chooser
+    all_filter_ = Gtk::FileFilter::create();
+    all_filter_->set_name("Any files");
+    all_filter_->add_pattern("*");
+    open_filter_ = Gtk::FileFilter::create();
+#ifdef HAVE_MP3_SUPPORT
+    open_filter_->set_name("Content Files (*.toc, *.cue, *.m3u)");
+#else
+    open_filter_->set_name("Content Files (*.toc, *.cue)");
+#endif
+    open_filter_->add_pattern("*.toc");
+    open_filter_->add_pattern("*.cue");
+#ifdef HAVE_MP3_SUPPORT
+    open_filter_->add_pattern("*.m3u");
+#endif
+    m_open_file_chooser.add_filter(open_filter_);
+    m_open_file_chooser.add_filter(all_filter_);
+    m_open_file_chooser.add_button(Gtk::Stock::CANCEL, Gtk::RESPONSE_CANCEL);
+    m_open_file_chooser.add_button(Gtk::Stock::OPEN, Gtk::RESPONSE_OK);
 
     auto object = builder_->get_object("app-menu");
     auto app_menu = Glib::RefPtr<Gio::MenuModel>::cast_dynamic(object);
@@ -496,9 +492,30 @@ void GCDMaster::on_startup()
     }
 }
 
+void GCDMaster::on_open(const type_vec_files& files, const Glib::ustring& hint)
+{
+    printf("on_open()\n");
+    for (auto i : files) {
+        openNewProject(i->get_path().c_str());
+    }
+}
+
+void GCDMaster::on_action_open()
+{
+    auto windows = get_windows();
+    m_open_file_chooser.set_transient_for(*windows[0]);
+    m_open_file_chooser.present();
+    int result = m_open_file_chooser.run();
+    m_open_file_chooser.hide();
+
+    if (result == Gtk::RESPONSE_OK) {
+        auto s = m_open_file_chooser.get_filename();
+        openNewProject(s.c_str());
+    }
+}
+
 void GCDMaster::on_action_quit()
 {
-    printf("on_action_quit()\n");
     auto windows = get_windows();
     for (auto window : windows)
         window->hide();
@@ -508,7 +525,6 @@ void GCDMaster::on_action_quit()
 
 void GCDMaster::on_action_preferences()
 {
-    printf("on_action_preferences()\n");
     if (!preferencesDialog_) {
         preferencesDialog_ = PreferencesDialog::create(builder_);
 
@@ -519,11 +535,11 @@ void GCDMaster::on_action_preferences()
     preferencesDialog_->hide();
 }
 
+// Called only when gcdmaster is called without open arguments.
+//
 void GCDMaster::on_activate()
 {
-    printf("on_activate()\n");
-//    newChooserWindow();
-    openNewProject("/home/denis/tmp/foo.toc");
+    newChooserWindow();
 }
 
 void GCDMaster::on_action_about()

@@ -18,6 +18,10 @@
           <attribute name="action">app.new-dump-cd</attribute>
         </item>
       </submenu>
+      <item>
+        <attribute name="label" translatable="yes">_Open Project</attribute>
+        <attribute name="action">app.open</attribute>
+      </item>
     </section>
     <section>
       <item>
