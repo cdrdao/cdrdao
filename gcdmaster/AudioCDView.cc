@@ -267,6 +267,7 @@ void AudioCDView::add_menus(Glib::RefPtr<Gtk::UIManager> m_refUIManager)
 
 void AudioCDView::update(unsigned long level)
 {
+    printf("update %0x\n", level);
   if (level & (UPD_TOC_DIRTY | UPD_TOC_DATA)) {
     cursorPos_->set_text("");
   }
@@ -567,7 +568,7 @@ void AudioCDView::trackInfo()
 
   } else {
 
-      Gtk::MessageDialog md(*project_->getParentWindow(),
+      Gtk::MessageDialog md(*project_->get_parent_window(),
                             _("Please select a track first"));
       md.run();
   }
@@ -833,7 +834,7 @@ void AudioCDView::appendSilence()
 {
   if (addSilenceDialog_ == 0) {
     addSilenceDialog_ = new AddSilenceDialog();
-    addSilenceDialog_->set_transient_for(*project_->getParentWindow ());
+    addSilenceDialog_->set_transient_for(*project_->get_parent_window ());
     addSilenceDialog_->signal_tocModified.
       connect(sigc::mem_fun(*this, &AudioCDView::update));
     addSilenceDialog_->signal_fullView.

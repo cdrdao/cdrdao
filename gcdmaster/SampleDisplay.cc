@@ -221,6 +221,8 @@ void SampleDisplay::updateToc(unsigned long smin, unsigned long smax)
   if (tocEdit_ == NULL)
     return;
 
+  printf("UpdateToc %ld %ld\n", smin, smax);
+
   Toc *toc = tocEdit_->toc();
 
   if (smin <= smax) {
@@ -287,23 +289,11 @@ void SampleDisplay::setView(unsigned long start, unsigned long end)
     redraw(0, 0, width_, height_);
 
     if (toc == NULL) {
-        adjustment_->set_lower(0.0);
-        adjustment_->set_upper(1.0);
-        adjustment_->set_value(0.0);
-        adjustment_->set_page_size(0.0);
+        adjustment_->configure(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
     } else {
-        adjustment_->set_lower(0.0);
-        adjustment_->set_upper(toc->length().samples());
-        adjustment_->set_value(minSample_);
-
-        adjustment_->set_step_increment(len / 4);
-        if (adjustment_->get_step_increment() == 0.0)
-            adjustment_->set_step_increment(1.);
-
-        adjustment_->set_page_increment(len / 1.1);
-        adjustment_->set_page_size(len);
+        adjustment_->configure(minSample_, 0.0, toc->length().samples(),
+                               len / 4, len / 1.1, len);
     }
-    adjustment_->changed();
 }
 
 void SampleDisplay::getView(unsigned long *start, unsigned long *end)

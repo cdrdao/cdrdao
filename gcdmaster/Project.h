@@ -43,10 +43,13 @@ public:
     int          projectNumber();
     TocEdit*     tocEdit();
 
-    GCDWindow* getParentWindow() { return parent_; };
-    void setParentWindow(GCDWindow* w) { parent_ = w; }
+    GCDWindow* get_parent_window() { return parent_; };
+    void set_parent_window(GCDWindow* w) { parent_ = w; }
+    void set_status_target(Gtk::Label* label);
 
     virtual void update(unsigned long level) = 0;
+
+    virtual void add_actions(Gtk::ApplicationWindow* w) {}
 
 protected:
     int  projectNumber_;
@@ -58,6 +61,7 @@ protected:
     Gtk::ProgressBar* progressbar_;
     Gtk::Button* progressButton_;
     Gtk::FileChooserDialog* saveFileSelector_;
+    Gtk::Label* status_label_;
 
     void updateWindowTitle();
     /* virtual void projectInfo() = 0; */

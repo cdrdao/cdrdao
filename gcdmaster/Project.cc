@@ -143,6 +143,11 @@ TocEdit *Project::tocEdit()
     return tocEdit_;
 }
 
+void Project::set_status_target(Gtk::Label* w)
+{
+    status_label_ = w;
+}
+
 void Project::statusMessage(const char *fmt, ...)
 {
     va_list args;
@@ -150,8 +155,8 @@ void Project::statusMessage(const char *fmt, ...)
 
     char *s = g_strdup_vprintf(fmt, args);
 
-    printf("STATUS BAR: %s\n", s);
-//    statusbar_->push(s);
+    if (status_label_)
+        status_label_->set_text(s);
 
     free(s);
 

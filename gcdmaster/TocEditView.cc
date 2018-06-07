@@ -136,6 +136,7 @@ void TocEditView::sampleView(unsigned long *smin, unsigned long *smax) const
 void TocEditView::sampleViewFull()
 {
   sampleViewMin_ = 0;
+  printf("sampleviewfull\n");
 
   if ((sampleViewMax_ = tocEdit_->lengthSample()) > 0)
     sampleViewMax_ -= 1;

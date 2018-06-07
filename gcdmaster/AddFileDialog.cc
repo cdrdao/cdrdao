@@ -43,7 +43,7 @@ AddFileDialog::AddFileDialog(AudioCDProject *project)
   project_ = project;
 
   set_select_multiple(true);
-  set_transient_for(*(project->getParentWindow()));
+  set_transient_for(*(project->get_parent_window()));
   mode(M_APPEND_TRACK);
 
   auto filter_tocs = Gtk::FileFilter::create();

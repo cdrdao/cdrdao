@@ -102,153 +102,181 @@ AudioCDProject::AudioCDProject(int number, const char *name, TocEdit *tocEdit,
     hbox_.pack_start(*audioCDView_, TRUE, TRUE);
     audioCDView_->tocEditView()->sampleViewFull();
 
+    add_actions();
     updateWindowTitle();
-
-    add_menus();
 
     guiUpdate(UPD_ALL);
     show_all();
 }
 
-void AudioCDProject::add_menus()
+void AudioCDProject::add_actions()
 {
-    m_refActionGroup = Gtk::ActionGroup::create("AudioCDProject");
+    m_action_group = Gio::SimpleActionGroup::create();
+    m_action_group->add_action("zoom-in",
+                               sigc::mem_fun(*this, &AudioCDProject::on_zoom_in_clicked));
+    m_action_group->add_action("zoom-out",
+                               sigc::mem_fun(*this, &AudioCDProject::on_zoom_out_clicked));
+    m_action_group->add_action("save",
+                               sigc::mem_fun(*this, &Project::saveProject));
+    m_action_group->add_action("save-as",
+                               sigc::mem_fun(*this, &Project::saveAsProject));
+    m_action_group->add_action("project-info",
+                               sigc::mem_fun(*this, &AudioCDProject::projectInfo));
+    m_action_group->add_action("cd-text",
+                               sigc::mem_fun(*this, &AudioCDProject::cdTextDialog));
+    m_action_group->add_action("record",
+                               sigc::mem_fun(*this, &AudioCDProject::recordToc2CD));
+    m_action_group->add_action("play",
+                               sigc::mem_fun(*this, &AudioCDProject::on_play_clicked));
+    m_action_group->add_action("stop",
+                               sigc::mem_fun(*this, &AudioCDProject::on_stop_clicked));
+    m_action_group->add_action("pause",
+                               sigc::mem_fun(*this, &AudioCDProject::on_pause_clicked));
+    m_action_group->add_action("zoom-fit",
+                               sigc::mem_fun(*this, &AudioCDProject::on_zoom_fit_clicked));
 
-    m_refActionGroup->add( Gtk::Action::create("Save", Gtk::Stock::SAVE),
-                           sigc::mem_fun(*this, &Project::saveProject) );
+    insert_action_group("box", m_action_group);
 
-    m_refActionGroup->add( Gtk::Action::create("SaveAs", Gtk::Stock::SAVE_AS),
-                           sigc::mem_fun(*this, &Project::saveAsProject) );
-
-    m_refActionGroup->add( Gtk::Action::create("ProjectInfo", Gtk::Stock::PROPERTIES,
-                                               _("Project Info..."),
-                                               _("Edit global project data")),
-                           sigc::mem_fun(*this, &AudioCDProject::projectInfo) );
-
-    m_refActionGroup->add( Gtk::Action::create("CDTEXT", Gtk::Stock::PROPERTIES,
-                                               _("CD-TEXT..."),
-                                               _("Edit CD-TEXT data")),
-                           sigc::mem_fun(*this, &AudioCDProject::cdTextDialog) );
-
-    m_refActionGroup->add( Gtk::Action::create("Record",
-                                               _("_Record"),
-                                               _("Record")),
-                           sigc::mem_fun(*this, &AudioCDProject::recordToc2CD) );
-
-    m_refActionGroup->add( Gtk::Action::create("Play",
-                                               _("Play"),
-                                               _("Play")),
-                           sigc::mem_fun(*this, &AudioCDProject::on_play_clicked) );
-
-    m_refActionGroup->add( Gtk::Action::create("Stop",
-                                               _("Stop"),
-                                               _("Stop")),
-                           sigc::mem_fun(*this, &AudioCDProject::on_stop_clicked) );
-
-    m_refActionGroup->add( Gtk::Action::create("Pause",
-                                               _("Pause"),
-                                               _("Pause")),
-                           sigc::mem_fun(*this, &AudioCDProject::on_pause_clicked) );
-
-    //Add Toggle Actions:
-    Gtk::RadioAction::Group group_colors;
-    m_refActionGroup->add( Gtk::RadioAction::create(group_colors, "Select",
-                                                    Gtk::Stock::JUMP_TO,
-                                                    _("Select"),
-                                                    _("Select Mode")),
-                           sigc::mem_fun(*this, &AudioCDProject::on_select_clicked));
-    m_refActionGroup->add( Gtk::RadioAction::create(group_colors, "Zoom",
-                                                    Gtk::Stock::ZOOM_FIT,
-                                                    _("Zoom"),
-                                                    _("Zoom Mode")),
-                           sigc::mem_fun(*this, &AudioCDProject::on_zoom_clicked));
-
-    m_refActionGroup->add( Gtk::Action::create("ZoomIn", Gtk::Stock::ZOOM_IN,
-                                               _("Zoom In"),
-                                               _("Zoom In")),
-                           sigc::mem_fun(*this, &AudioCDProject::on_zoom_in_clicked) );
-
-    m_refActionGroup->add( Gtk::Action::create("ZoomOut", Gtk::Stock::ZOOM_OUT,
-                                               _("Zoom Out"),
-                                               _("Zoom Out")),
-                           sigc::mem_fun(*this, &AudioCDProject::on_zoom_out_clicked) );
-
-    m_refActionGroup->add( Gtk::Action::create("ZoomFit", Gtk::Stock::ZOOM_FIT,
-                                               _("Zoom Fit"),
-                                               _("Zoom Fit")),
-                           sigc::mem_fun(*this, &AudioCDProject::on_zoom_fit_clicked) );
-
-    // m_refUIManager->insert_action_group(m_refActionGroup);
-
-    // Merge menuitems
-    try
-    {
-        Glib::ustring ui_info =
-            "<ui>"
-            "  <menubar name='MenuBar'>"
-            "    <menu action='FileMenu'>"
-            "      <placeholder name='FileSaveHolder'>"
-            "      <menuitem action='Save'/>"
-            "      <menuitem action='SaveAs'/>"
-            "      </placeholder>"
-            "    </menu>"
-            "    <menu action='EditMenu'>"
-            "      <menuitem action='ProjectInfo'/>"
-            "      <menuitem action='CDTEXT'/>"
-            "    </menu>"
-            "    <menu action='ActionsMenu'>"
-            "      <placeholder name='ActionsRecordHolder'>"
-            "        <menuitem action='Record'/>"
-            "      </placeholder>"
-            "      <menuitem action='Play'/>"
-            "      <menuitem action='Stop'/>"
-            "      <menuitem action='Pause'/>"
-            "      <separator/>"
-            "      <menuitem action='Select'/>"
-            "      <menuitem action='Zoom'/>"
-            "      <separator/>"
-            "      <menuitem action='ZoomIn'/>"
-            "      <menuitem action='ZoomOut'/>"
-            "      <menuitem action='ZoomFit'/>"
-            "    </menu>"
-            "  </menubar>"
-            "  <toolbar name='ToolBar'>"
-            "    <toolitem action='Save'/>"
-            "    <toolitem action='Record'/>"
-            "    <separator/>"
-            "    <toolitem action='Play'/>"
-            "    <toolitem action='Stop'/>"
-            "    <toolitem action='Pause'/>"
-            "    <separator/>"
-            "    <toolitem action='Select'/>"
-            "    <toolitem action='Zoom'/>"
-            "    <separator/>"
-            "    <toolitem action='ZoomIn'/>"
-            "    <toolitem action='ZoomOut'/>"
-            "    <toolitem action='ZoomFit'/>"
-            "    <separator/>"
-            "  </toolbar>"
-            "</ui>";
-
-        //m_refUIManager->add_ui_from_string(ui_info);
-    }
-    catch(const Glib::Error& ex)
-    {
-        std::cerr << "merging menus failed: " <<  ex.what();
-    }
-
-    Glib::RefPtr<Gtk::Action> action;
-    action = m_refActionGroup->get_action ("Play");
-    action->set_sensitive(true);
-    action = m_refActionGroup->get_action ("Pause");
-    action->set_sensitive(false);
-    action = m_refActionGroup->get_action ("Stop");
-    action->set_sensitive(false);
-
-    // audioCDView_->add_menus (m_refUIManager);
-    audioCDView_->signal_tocModified.
-        connect(sigc::mem_fun(*this, &AudioCDProject::update));
+    gcdmaster->set_accel_for_action("box.zoom-in",  "<Primary>plus");
+    gcdmaster->set_accel_for_action("box.zoom-out", "<Primary>minus");
+    gcdmaster->set_accel_for_action("box.zoom-fit", "<Primary>1");
 }
+
+//     m_action_group->add( Gtk::Action::create("Save", Gtk::Stock::SAVE),
+//                            sigc::mem_fun(*this, &Project::saveProject) );
+
+//     m_action_group->add( Gtk::Action::create("SaveAs", Gtk::Stock::SAVE_AS),
+//                            sigc::mem_fun(*this, &Project::saveAsProject) );
+
+//     m_action_group->add( Gtk::Action::create("ProjectInfo", Gtk::Stock::PROPERTIES,
+//                                                _("Project Info..."),
+//                                                _("Edit global project data")),
+//                            sigc::mem_fun(*this, &AudioCDProject::projectInfo) );
+
+//     m_action_group->add( Gtk::Action::create("CDTEXT", Gtk::Stock::PROPERTIES,
+//                                                _("CD-TEXT..."),
+//                                                _("Edit CD-TEXT data")),
+//                            sigc::mem_fun(*this, &AudioCDProject::cdTextDialog) );
+
+//     m_action_group->add( Gtk::Action::create("Record",
+//                                                _("_Record"),
+//                                                _("Record")),
+//                            sigc::mem_fun(*this, &AudioCDProject::recordToc2CD) );
+
+//     m_action_group->add( Gtk::Action::create("Play",
+//                                                _("Play"),
+//                                                _("Play")),
+//                            sigc::mem_fun(*this, &AudioCDProject::on_play_clicked) );
+
+//     m_action_group->add( Gtk::Action::create("Stop",
+//                                                _("Stop"),
+//                                                _("Stop")),
+//                            sigc::mem_fun(*this, &AudioCDProject::on_stop_clicked) );
+
+//     m_action_group->add( Gtk::Action::create("Pause",
+//                                                _("Pause"),
+//                                                _("Pause")),
+//                            sigc::mem_fun(*this, &AudioCDProject::on_pause_clicked) );
+
+//     //Add Toggle Actions:
+//     Gtk::RadioAction::Group group_colors;
+//     m_action_group->add( Gtk::RadioAction::create(group_colors, "Select",
+//                                                     Gtk::Stock::JUMP_TO,
+//                                                     _("Select"),
+//                                                     _("Select Mode")),
+//                            sigc::mem_fun(*this, &AudioCDProject::on_select_clicked));
+//     m_action_group->add( Gtk::RadioAction::create(group_colors, "Zoom",
+//                                                     Gtk::Stock::ZOOM_FIT,
+//                                                     _("Zoom"),
+//                                                     _("Zoom Mode")),
+//                            sigc::mem_fun(*this, &AudioCDProject::on_zoom_clicked));
+
+//     m_action_group->add( Gtk::Action::create("ZoomIn", Gtk::Stock::ZOOM_IN,
+//                                                _("Zoom In"),
+//                                                _("Zoom In")),
+//                            sigc::mem_fun(*this, &AudioCDProject::on_zoom_in_clicked) );
+
+//     m_action_group->add( Gtk::Action::create("ZoomOut", Gtk::Stock::ZOOM_OUT,
+//                                                _("Zoom Out"),
+//                                                _("Zoom Out")),
+//                            sigc::mem_fun(*this, &AudioCDProject::on_zoom_out_clicked) );
+
+//     m_action_group->add( Gtk::Action::create("ZoomFit", Gtk::Stock::ZOOM_FIT,
+//                                                _("Zoom Fit"),
+//                                                _("Zoom Fit")),
+//                            sigc::mem_fun(*this, &AudioCDProject::on_zoom_fit_clicked) );
+
+//     // m_refUIManager->insert_action_group(m_action_group);
+
+//     // Merge menuitems
+//     try
+//     {
+//         Glib::ustring ui_info =
+//             "<ui>"
+//             "  <menubar name='MenuBar'>"
+//             "    <menu action='FileMenu'>"
+//             "      <placeholder name='FileSaveHolder'>"
+//             "      <menuitem action='Save'/>"
+//             "      <menuitem action='SaveAs'/>"
+//             "      </placeholder>"
+//             "    </menu>"
+//             "    <menu action='EditMenu'>"
+//             "      <menuitem action='ProjectInfo'/>"
+//             "      <menuitem action='CDTEXT'/>"
+//             "    </menu>"
+//             "    <menu action='ActionsMenu'>"
+//             "      <placeholder name='ActionsRecordHolder'>"
+//             "        <menuitem action='Record'/>"
+//             "      </placeholder>"
+//             "      <menuitem action='Play'/>"
+//             "      <menuitem action='Stop'/>"
+//             "      <menuitem action='Pause'/>"
+//             "      <separator/>"
+//             "      <menuitem action='Select'/>"
+//             "      <menuitem action='Zoom'/>"
+//             "      <separator/>"
+//             "      <menuitem action='ZoomIn'/>"
+//             "      <menuitem action='ZoomOut'/>"
+//             "      <menuitem action='ZoomFit'/>"
+//             "    </menu>"
+//             "  </menubar>"
+//             "  <toolbar name='ToolBar'>"
+//             "    <toolitem action='Save'/>"
+//             "    <toolitem action='Record'/>"
+//             "    <separator/>"
+//             "    <toolitem action='Play'/>"
+//             "    <toolitem action='Stop'/>"
+//             "    <toolitem action='Pause'/>"
+//             "    <separator/>"
+//             "    <toolitem action='Select'/>"
+//             "    <toolitem action='Zoom'/>"
+//             "    <separator/>"
+//             "    <toolitem action='ZoomIn'/>"
+//             "    <toolitem action='ZoomOut'/>"
+//             "    <toolitem action='ZoomFit'/>"
+//             "    <separator/>"
+//             "  </toolbar>"
+//             "</ui>";
+
+//         //m_refUIManager->add_ui_from_string(ui_info);
+//     }
+//     catch(const Glib::Error& ex)
+//     {
+//         std::cerr << "merging menus failed: " <<  ex.what();
+//     }
+
+//     Glib::RefPtr<Gtk::Action> action;
+//     action = m_action_group->get_action ("Play");
+//     action->set_sensitive(true);
+//     action = m_action_group->get_action ("Pause");
+//     action->set_sensitive(false);
+//     action = m_action_group->get_action ("Stop");
+//     action->set_sensitive(false);
+
+//     // audioCDView_->add_menus (m_refUIManager);
+//     audioCDView_->signal_tocModified.
+//         connect(sigc::mem_fun(*this, &AudioCDProject::update));
+// }
 
 // void AudioCDProject::configureAppBar(Gnome::UI::AppBar *s, Gtk::ProgressBar* p,
 //                                      Gtk::Button *b)
@@ -278,7 +306,7 @@ void AudioCDProject::status(const char* msg)
 
 void AudioCDProject::errorDialog(const char* msg)
 {
-    Gtk::MessageDialog md(*(getParentWindow()), msg, false, Gtk::MESSAGE_ERROR);
+    Gtk::MessageDialog md(*(get_parent_window()), msg, false, Gtk::MESSAGE_ERROR);
     md.run();
 }
 
@@ -310,13 +338,13 @@ bool AudioCDProject::closeProject()
 
         // Project window might be iconified and user might have forgotten
         // about it (Quit can be called on another project window).
-        getParentWindow()->present();
+        get_parent_window()->present();
 
         Glib::ustring message = "Project ";
         message += tocEdit_->filename();
         message += " not saved. Are you sure you want to close it ?";
 
-        Gtk::MessageDialog d(*getParentWindow(), message, false,
+        Gtk::MessageDialog d(*get_parent_window(), message, false,
                              Gtk::MESSAGE_QUESTION, Gtk::BUTTONS_OK_CANCEL, true);
 
         int ret = d.run();
@@ -398,20 +426,23 @@ void AudioCDProject::update(unsigned long level)
             { true, false, false } // Stopped
         };
 
-        Glib::RefPtr<Gtk::Action> action;
-        action = m_refActionGroup->get_action ("Play");
-        action->set_sensitive(sensitivity[playStatus_][0]);
-        action = m_refActionGroup->get_action ("Pause");
-        action->set_sensitive(sensitivity[playStatus_][1]);
-        action = m_refActionGroup->get_action ("Stop");
-        action->set_sensitive(sensitivity[playStatus_][2]);
+#define GET_THE_FUCKING_ACTION(s) \
+        Glib::RefPtr<Gio::SimpleAction>::cast_dynamic((m_action_group->lookup_action(s)))
+
+        Glib::RefPtr<Gio::SimpleAction> action;
+        action = GET_THE_FUCKING_ACTION("play");
+        action->set_enabled(sensitivity[playStatus_][0]);
+        action = GET_THE_FUCKING_ACTION("pause");
+        action->set_enabled(sensitivity[playStatus_][1]);
+        action = GET_THE_FUCKING_ACTION("stop");
+        action->set_enabled(sensitivity[playStatus_][2]);
     }
 
     if (level & UPD_EDITABLE_STATE) {
         bool editable = tocEdit_->editable();
-        Glib::RefPtr<Gtk::Action> action;
-        action = m_refActionGroup->get_action ("Play");
-        action->set_sensitive(editable);
+        Glib::RefPtr<Gio::SimpleAction> action;
+        action = GET_THE_FUCKING_ACTION("play");
+        action->set_enabled(editable);
     }
 }
 
@@ -598,18 +629,21 @@ void AudioCDProject::on_pause_clicked()
 
 void AudioCDProject::on_zoom_in_clicked()
 {
+    printf("zoom in\n");
     if (audioCDView_)
         audioCDView_->zoomx2();
 }
 
 void AudioCDProject::on_zoom_out_clicked()
 {
+    printf("zoom out\n");
     if (audioCDView_)
         audioCDView_->zoomOut();
 }
 
 void AudioCDProject::on_zoom_fit_clicked()
 {
+    printf("zoom fit\n");
     if (audioCDView_)
         audioCDView_->fullView();
 }

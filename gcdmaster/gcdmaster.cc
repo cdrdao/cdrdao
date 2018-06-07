@@ -48,23 +48,31 @@ GCDWindow* GCDWindow::create(Glib::RefPtr<Gtk::Builder> builder, GCDWindow::What
     switch (what) {
     case What::CHOOSER:
         project = ProjectChooser::create(builder, window);
+        project->show_all();
         window->gears_->hide();
         break;
     case What::DUPLICATE:
         project = DuplicateCDProject::create(builder, window);
+        project->show_all();
         window->gears_->hide();
         break;
     case What::DUMP:
         project = DumpCDProject::create(builder, window);
+        project->show_all();
         window->gears_->hide();
         break;
     case What::AUDIOCD:
         project = AudioCDProject::create(builder, 0, proj_name, toc, window);
+        project->show_all();
         break;
     default:
         throw std::runtime_error("create arg");
     }
 
+    Gtk::Label* stbar;
+    builder->get_widget("status-bar-label", stbar);
+    stbar->set_justify(Gtk::JUSTIFY_LEFT);
+    project->set_status_target(stbar);
     window->set_project(project);
 
     return window;
@@ -363,21 +371,14 @@ void GCDMaster::newAudioCDProject(const char* name, TocEdit* tocEdit)
                                     name, tocEdit);
     add_window(*window);
 
-    window->show_all_children();
     window->present();
 }
-
-// void GCDMaster::newAudioCDProject2()
-// {
-//   newAudioCDProject("", NULL);
-// }
 
 void GCDMaster::newDuplicateCDProject()
 {
     auto window = GCDWindow::create(builder_, GCDWindow::What::DUPLICATE);
     add_window(*window);
 
-    window->show_all_children();
     window->present();
 }
 void GCDMaster::newDumpCDProject()
@@ -385,7 +386,6 @@ void GCDMaster::newDumpCDProject()
     auto window = GCDWindow::create(builder_, GCDWindow::What::DUMP);
     add_window(*window);
 
-    window->show_all_children();
     window->present();
 }
 
