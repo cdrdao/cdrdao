@@ -21,7 +21,6 @@
 #define __AUDIO_CD_VIEW_H__
 
 #include <gtkmm.h>
-#include <glibmm/i18n.h>
 
 #include "AddFileDialog.h"
 #include <list>
@@ -35,89 +34,91 @@ class Track;
 class TocEditView;
 
 enum {
-  TARGET_URI_LIST,
+    TARGET_URI_LIST,
 };
 
 class AudioCDView : public Gtk::VBox
 {
 public:
-  AudioCDView(AudioCDProject *project);
-  ~AudioCDView();
-  void add_menus(Glib::RefPtr<Gtk::UIManager> m_refUIManager);
-  sigc::signal0<void> add_view;
+    AudioCDView(AudioCDProject *project,
+                Glib::RefPtr<Gio::SimpleActionGroup> ag);
+    ~AudioCDView();
+    sigc::signal0<void> add_view;
 
-  void update(unsigned long level = 0);
+    void update(unsigned long level = 0);
 
-  enum Mode { ZOOM, SELECT };
-  void setMode(Mode);
+    enum Mode { ZOOM, SELECT };
+    void setMode(Mode);
 
-  void zoomIn();
-  void zoomx2();
-  void zoomOut();
-  void fullView();
+    void zoomIn();
+    void zoomx2();
+    void zoomOut();
+    void fullView();
 
-  sigc::signal1<void, unsigned long> signal_tocModified;
+    sigc::signal1<void, unsigned long> signal_tocModified;
 
-  virtual TocEditView* tocEditView() const;
+    virtual TocEditView* tocEditView() const;
 
- protected:
-  static const char* sample2string(unsigned long sample);
-  static unsigned long string2sample(const char* s);
-  TocEditView* tocEditView_;
+protected:
+    static const char* sample2string(unsigned long sample);
+    static unsigned long string2sample(const char* s);
+    TocEditView* tocEditView_;
 
 private:
-  AudioCDProject *project_;
+    AudioCDProject *project_;
 
-  Glib::RefPtr<Gtk::ActionGroup> m_refActionGroup;
+    Glib::RefPtr<Gio::SimpleActionGroup> m_action_group;
 
-  TrackInfoDialog*  trackInfoDialog_;
-  AddFileDialog     addFileDialog_;
-  AddSilenceDialog* addSilenceDialog_;
+    TrackInfoDialog*  trackInfoDialog_;
+    AddFileDialog     addFileDialog_;
+    AddSilenceDialog* addSilenceDialog_;
 
-  Mode mode_;
-  SampleDisplay *sampleDisplay_;
+    Mode mode_;
+    SampleDisplay *sampleDisplay_;
 
-  Gtk::Entry*  markerPos_;
-  Gtk::Label*  cursorPos_;
-  Gtk::Entry*  selectionStartPos_;
-  Gtk::Entry*  selectionEndPos_;
+    Gtk::Entry*  markerPos_;
+    Gtk::Label*  cursorPos_;
+    Gtk::Entry*  selectionStartPos_;
+    Gtk::Entry*  selectionEndPos_;
+    Gtk::HScrollbar* scrollbar_;
 
-  void markerSetCallback(unsigned long);
-  void cursorMovedCallback(unsigned long);
-  void selectionSetCallback(unsigned long, unsigned long);
-  void selectAll();
-  void selectionClearedCallback();
-  void trackMarkSelectedCallback(const Track *, int trackNr, int indexNr);
-  void trackMarkMovedCallback(const Track *, int trackNr, int indexNr,
-			      unsigned long sample);
-  void viewModifiedCallback(unsigned long, unsigned long);
-  int  snapSampleToBlock(unsigned long sample, long *block);
+    void add_menus();
+    void markerSetCallback(unsigned long);
+    void cursorMovedCallback(unsigned long);
+    void selectionSetCallback(unsigned long, unsigned long);
+    void selectAll();
+    void selectionClearedCallback();
+    void trackMarkSelectedCallback(const Track *, int trackNr, int indexNr);
+    void trackMarkMovedCallback(const Track *, int trackNr, int indexNr,
+                                unsigned long sample);
+    void viewModifiedCallback(unsigned long, unsigned long);
+    int  snapSampleToBlock(unsigned long sample, long *block);
 
-  void trackInfo();
-  void cutTrackData();
-  void pasteTrackData();
+    void trackInfo();
+    void cutTrackData();
+    void pasteTrackData();
 
-  void addTrackMark();
-  void addIndexMark();
-  void addPregap();
-  void removeTrackMark();
+    void addTrackMark();
+    void addIndexMark();
+    void addPregap();
+    void removeTrackMark();
 
-  void appendSilence();
-  void insertSilence();
+    void appendSilence();
+    void insertSilence();
 
-  void appendTrack();
-  void appendFile();
-  void insertFile();
+    void appendTrack();
+    void appendFile();
+    void insertFile();
 
-  int  getMarker(unsigned long *sample);
-  void markerSet();
+    int  getMarker(unsigned long *sample);
+    void markerSet();
 
-  void selectionSet();
+    void selectionSet();
 
-  void drag_data_received_cb(const Glib::RefPtr<Gdk::DragContext>& context,
-			     int x, int y,
-			     const Gtk::SelectionData& selection_data,
-			     guint info, guint time);
+    void drag_data_received_cb(const Glib::RefPtr<Gdk::DragContext>& context,
+                               int x, int y,
+                               const Gtk::SelectionData& selection_data,
+                               guint info, guint time);
 };
 
 #endif

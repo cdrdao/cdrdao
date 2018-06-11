@@ -44,7 +44,7 @@ public:
 
   SampleManager *sampleManager();
 
-  unsigned long lengthSample() const;
+  unsigned long sample_length() const;
 
   void tocDirty(bool);
   bool tocDirty() const            { return tocDirty_; }

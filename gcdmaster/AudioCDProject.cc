@@ -39,7 +39,8 @@ AudioCDProject*
 AudioCDProject::create(Glib::RefPtr<Gtk::Builder>& builder, int number,
                        const char* name, TocEdit* tocEdit, GCDWindow* parent)
 {
-    AudioCDProject* project = new AudioCDProject(number, name, tocEdit, parent);
+    AudioCDProject* project = new AudioCDProject(builder,
+                                                 number, name, tocEdit, parent);
     return project;
 }
 
@@ -47,7 +48,8 @@ AudioCDProject::~AudioCDProject()
 {
 }
 
-AudioCDProject::AudioCDProject(int number, const char *name, TocEdit *tocEdit,
+AudioCDProject::AudioCDProject(Glib::RefPtr<Gtk::Builder>& builder,
+                               int number, const char *name, TocEdit *tocEdit,
                                GCDWindow *parent) : Project(parent)
 {
     tocInfoDialog_ = NULL;
@@ -59,7 +61,7 @@ AudioCDProject::AudioCDProject(int number, const char *name, TocEdit *tocEdit,
     audioCDView_ = NULL;
 
     parent_ = parent;
-    pack_start(hbox_);
+    pack_start(vbox_);
 
     projectNumber_ = number;
 
@@ -98,11 +100,28 @@ AudioCDProject::AudioCDProject(int number, const char *name, TocEdit *tocEdit,
         new_ = false; // The project file already exists
     }
 
-    audioCDView_ = new AudioCDView(this);
-    hbox_.pack_start(*audioCDView_, TRUE, TRUE);
-    audioCDView_->tocEditView()->sampleViewFull();
+    // Load toolbar.
+    builder->add_from_resource("/org/gnome/gcdmaster/audiocd.ui");
+    Gtk::Toolbar* tbar = NULL;
+    builder->get_widget("audio-toolbar", tbar);
+    vbox_.pack_start(*tbar, Gtk::PACK_SHRINK);
 
     add_actions();
+
+    // Load menu.
+    builder->add_from_resource("/org/gnome/gcdmaster/gears_audio_menu.ui");
+    auto object = builder->get_object("audiocd-menu");
+    auto menu = Glib::RefPtr<Gio::MenuModel>::cast_dynamic(object);
+    if (!menu)
+        throw std::runtime_error("Menu resource not found");
+
+    parent_->set_menu(menu);
+
+    // Create Viewer.
+    audioCDView_ = new AudioCDView(this, m_action_group);
+    vbox_.pack_start(*audioCDView_);
+    audioCDView_->tocEditView()->sampleViewFull();
+
     updateWindowTitle();
 
     guiUpdate(UPD_ALL);
@@ -134,6 +153,10 @@ void AudioCDProject::add_actions()
                                sigc::mem_fun(*this, &AudioCDProject::on_pause_clicked));
     m_action_group->add_action("zoom-fit",
                                sigc::mem_fun(*this, &AudioCDProject::on_zoom_fit_clicked));
+    m_action_group->add_action("zoom-mode",
+                               sigc::mem_fun(*this, &AudioCDProject::on_zoom_clicked));
+    m_action_group->add_action("select-mode",
+                               sigc::mem_fun(*this, &AudioCDProject::on_select_clicked));
 
     insert_action_group("box", m_action_group);
 
@@ -141,72 +164,6 @@ void AudioCDProject::add_actions()
     gcdmaster->set_accel_for_action("box.zoom-out", "<Primary>minus");
     gcdmaster->set_accel_for_action("box.zoom-fit", "<Primary>1");
 }
-
-//     m_action_group->add( Gtk::Action::create("Save", Gtk::Stock::SAVE),
-//                            sigc::mem_fun(*this, &Project::saveProject) );
-
-//     m_action_group->add( Gtk::Action::create("SaveAs", Gtk::Stock::SAVE_AS),
-//                            sigc::mem_fun(*this, &Project::saveAsProject) );
-
-//     m_action_group->add( Gtk::Action::create("ProjectInfo", Gtk::Stock::PROPERTIES,
-//                                                _("Project Info..."),
-//                                                _("Edit global project data")),
-//                            sigc::mem_fun(*this, &AudioCDProject::projectInfo) );
-
-//     m_action_group->add( Gtk::Action::create("CDTEXT", Gtk::Stock::PROPERTIES,
-//                                                _("CD-TEXT..."),
-//                                                _("Edit CD-TEXT data")),
-//                            sigc::mem_fun(*this, &AudioCDProject::cdTextDialog) );
-
-//     m_action_group->add( Gtk::Action::create("Record",
-//                                                _("_Record"),
-//                                                _("Record")),
-//                            sigc::mem_fun(*this, &AudioCDProject::recordToc2CD) );
-
-//     m_action_group->add( Gtk::Action::create("Play",
-//                                                _("Play"),
-//                                                _("Play")),
-//                            sigc::mem_fun(*this, &AudioCDProject::on_play_clicked) );
-
-//     m_action_group->add( Gtk::Action::create("Stop",
-//                                                _("Stop"),
-//                                                _("Stop")),
-//                            sigc::mem_fun(*this, &AudioCDProject::on_stop_clicked) );
-
-//     m_action_group->add( Gtk::Action::create("Pause",
-//                                                _("Pause"),
-//                                                _("Pause")),
-//                            sigc::mem_fun(*this, &AudioCDProject::on_pause_clicked) );
-
-//     //Add Toggle Actions:
-//     Gtk::RadioAction::Group group_colors;
-//     m_action_group->add( Gtk::RadioAction::create(group_colors, "Select",
-//                                                     Gtk::Stock::JUMP_TO,
-//                                                     _("Select"),
-//                                                     _("Select Mode")),
-//                            sigc::mem_fun(*this, &AudioCDProject::on_select_clicked));
-//     m_action_group->add( Gtk::RadioAction::create(group_colors, "Zoom",
-//                                                     Gtk::Stock::ZOOM_FIT,
-//                                                     _("Zoom"),
-//                                                     _("Zoom Mode")),
-//                            sigc::mem_fun(*this, &AudioCDProject::on_zoom_clicked));
-
-//     m_action_group->add( Gtk::Action::create("ZoomIn", Gtk::Stock::ZOOM_IN,
-//                                                _("Zoom In"),
-//                                                _("Zoom In")),
-//                            sigc::mem_fun(*this, &AudioCDProject::on_zoom_in_clicked) );
-
-//     m_action_group->add( Gtk::Action::create("ZoomOut", Gtk::Stock::ZOOM_OUT,
-//                                                _("Zoom Out"),
-//                                                _("Zoom Out")),
-//                            sigc::mem_fun(*this, &AudioCDProject::on_zoom_out_clicked) );
-
-//     m_action_group->add( Gtk::Action::create("ZoomFit", Gtk::Stock::ZOOM_FIT,
-//                                                _("Zoom Fit"),
-//                                                _("Zoom Fit")),
-//                            sigc::mem_fun(*this, &AudioCDProject::on_zoom_fit_clicked) );
-
-//     // m_refUIManager->insert_action_group(m_action_group);
 
 //     // Merge menuitems
 //     try
@@ -400,8 +357,7 @@ void AudioCDProject::cdTextDialog()
 
 void AudioCDProject::update(unsigned long level)
 {
-    // FIXME: Here we should update the menus and the icons this is,
-    // enabled/disabled.
+    Glib::RefPtr<Gio::SimpleAction> action;
 
     level |= tocEdit_->updateLevel();
 
@@ -427,9 +383,8 @@ void AudioCDProject::update(unsigned long level)
         };
 
 #define GET_THE_FUCKING_ACTION(s) \
-        Glib::RefPtr<Gio::SimpleAction>::cast_dynamic((m_action_group->lookup_action(s)))
+    Glib::RefPtr<Gio::SimpleAction>::cast_dynamic((m_action_group->lookup_action(s)))
 
-        Glib::RefPtr<Gio::SimpleAction> action;
         action = GET_THE_FUCKING_ACTION("play");
         action->set_enabled(sensitivity[playStatus_][0]);
         action = GET_THE_FUCKING_ACTION("pause");
@@ -440,7 +395,6 @@ void AudioCDProject::update(unsigned long level)
 
     if (level & UPD_EDITABLE_STATE) {
         bool editable = tocEdit_->editable();
-        Glib::RefPtr<Gio::SimpleAction> action;
         action = GET_THE_FUCKING_ACTION("play");
         action->set_enabled(editable);
     }
@@ -475,7 +429,7 @@ void AudioCDProject::playStart(unsigned long start, unsigned long end)
     if (playStatus_ == PLAYING)
         return;
 
-    if (tocEdit_->lengthSample() == 0) {
+    if (tocEdit_->sample_length() == 0) {
         guiUpdate(UPD_PLAY_STATUS);
         return;
     }

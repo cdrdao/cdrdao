@@ -130,7 +130,7 @@ SampleDisplay::SampleDisplay() :
     white_("white"),
     black_("black")
 {
-    adjustment_ = Gtk::Adjustment::create(0.0, 0.0, 1.0);
+    adjustment_ = Gtk::Adjustment::create(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
     adjustment_->signal_value_changed().connect(mem_fun(*this,
                                                         &SampleDisplay::scrollTo));
 
@@ -220,8 +220,6 @@ void SampleDisplay::updateToc(unsigned long smin, unsigned long smax)
 {
   if (tocEdit_ == NULL)
     return;
-
-  printf("UpdateToc %ld %ld\n", smin, smax);
 
   Toc *toc = tocEdit_->toc();
 

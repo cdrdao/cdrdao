@@ -156,7 +156,7 @@ unsigned long TocEdit::updateLevel()
   return level;
 }
 
-unsigned long TocEdit::lengthSample() const
+unsigned long TocEdit::sample_length() const
 {
   return toc_->length().samples();
 }

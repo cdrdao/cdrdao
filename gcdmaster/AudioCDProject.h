@@ -47,7 +47,8 @@ public:
     void update(unsigned long level);
 
 protected:
-    AudioCDProject(int number, const char* name, TocEdit *tocEdit, GCDWindow* parent);
+    AudioCDProject(Glib::RefPtr<Gtk::Builder>& builder,
+                   int number, const char* name, TocEdit *tocEdit, GCDWindow* parent);
 
 private:
     Gtk::Label label_;
@@ -103,7 +104,7 @@ private:
 
     bool playCallback();
 
-    Gtk::HBox      hbox_;
+    Gtk::VBox      vbox_;
     AudioCDView*   audioCDView_;
     TocInfoDialog* tocInfoDialog_;
     CdTextDialog*  cdTextDialog_;

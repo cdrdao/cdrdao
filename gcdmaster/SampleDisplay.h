@@ -44,7 +44,7 @@ public:
   void setRegion(unsigned long start, unsigned long end);
   int  getRegion(unsigned long *start, unsigned long *end);
   void clearRegion();
-  Glib::RefPtr<Gtk::Adjustment> getAdjustment() { return adjustment_; }
+  Glib::RefPtr<Gtk::Adjustment> get_adjustment() { return adjustment_; }
   void updateTrackMarks();
   void setCursor(int, unsigned long);
 

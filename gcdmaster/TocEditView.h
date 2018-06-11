@@ -24,49 +24,48 @@ class TocEdit;
 
 class TocEditView {
 public:
-  TocEditView(TocEdit *);
-  ~TocEditView();
+    TocEditView(TocEdit *);
+    ~TocEditView();
 
-  TocEdit *tocEdit() const;
+    TocEdit *tocEdit() const;
 
-  void sampleMarker(unsigned long);
-  bool sampleMarker(unsigned long *) const;
+    void sampleMarker(unsigned long);
+    bool sampleMarker(unsigned long *) const;
 
-  void sampleSelect(unsigned long, unsigned long);
-  void sampleSelectAll();
-  bool sampleSelection(unsigned long *, unsigned long *) const;
-  bool sampleSelectionClear();
+    void sampleSelect(unsigned long, unsigned long);
+    void sampleSelectAll();
+    bool sampleSelection(unsigned long *, unsigned long *) const;
+    bool sampleSelectionClear();
 
-  void sampleViewFull();
-  void sampleViewUpdate();
-  void sampleViewInclude(unsigned long, unsigned long);
-  void sampleView(unsigned long *, unsigned long *) const;
-  bool sampleView(unsigned long smin, unsigned long smax);
+    void sampleViewFull();
+    void sampleView(unsigned long *, unsigned long *) const;
+    bool sampleView(unsigned long smin, unsigned long smax);
+    bool is_sample_view_full();
 
-  void trackSelection(int);
-  int trackSelection(int *) const;
+    void trackSelection(int);
+    bool trackSelection(int *) const;
 
-  void indexSelection(int);
-  int indexSelection(int *) const;
+    void indexSelection(int);
+    bool indexSelection(int *) const;
   
 private:
-  TocEdit *tocEdit_;
+    TocEdit *tocEdit_;
 
-  bool sampleMarkerValid_;
-  unsigned long sampleMarker_;
+    bool sampleMarkerValid_;
+    unsigned long sampleMarker_;
 
-  bool sampleSelectionValid_;
-  unsigned long sampleSelectionMin_;
-  unsigned long sampleSelectionMax_;
+    bool sampleSelectionValid_;
+    unsigned long sampleSelectionMin_;
+    unsigned long sampleSelectionMax_;
 
-  unsigned long sampleViewMin_;
-  unsigned long sampleViewMax_;
+    unsigned long sampleViewMin_;
+    unsigned long sampleViewMax_;
   
-  int trackSelectionValid_;
-  int trackSelection_;
+    bool trackSelectionValid_;
+    int trackSelection_;
 
-  int indexSelectionValid_;
-  int indexSelection_;
+    bool indexSelectionValid_;
+    int indexSelection_;
 
 };
 

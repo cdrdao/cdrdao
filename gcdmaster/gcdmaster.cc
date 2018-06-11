@@ -92,20 +92,17 @@ GCDWindow::GCDWindow(BaseObjectType* cobject,
     notebook_->set_show_border(false);
     notebook_->set_show_tabs(false);
 
-    builder->add_from_resource("/org/gnome/gcdmaster/gears_menu.ui");
-    auto object = builder->get_object("gears-menu");
-    auto menu = Glib::RefPtr<Gio::MenuModel>::cast_dynamic(object);
-    if (!menu)
-        throw std::runtime_error("No \"gears_menu\" in gears_menu.ui");
-
-    gears_->set_menu_model(menu);
-
     auto gtk_settings = Gtk::Settings::get_default();
     if (gtk_settings)
         gtk_settings->property_gtk_shell_shows_app_menu() = false;
     set_show_menubar(true);
 
     set_icon(Gdk::Pixbuf::create_from_resource("/org/gnome/gcdmaster/gcdmaster.png"));
+}
+
+void GCDWindow::set_menu(Glib::RefPtr<Gio::MenuModel> model)
+{
+    gears_->set_menu_model(model);
 }
 
 void GCDWindow::set_project(Project* project)

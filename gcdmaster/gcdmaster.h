@@ -47,6 +47,7 @@ public:
     Project* project() { return project_; }
 
     void update(unsigned long level);
+    void set_menu(Glib::RefPtr<Gio::MenuModel> model);
 
 protected:
     void set_project(Project* project);
