@@ -428,7 +428,7 @@ static CDRVendorTable VENDOR_TABLE[] = {
   { 97,26,50,  97,48,60, "Lead Data Inc." },
   { 97,27,50,  97,48,50, "Mitsui Chemicals, Inc." },
   { 97,34,20,  97,50,20, "Mitsubishi Chemical Corporation" },
-  { 97,28,20,  97,46,20, "Multi Media Masters & Machinary SA" },
+  { 97,28,20,  97,46,20, "Multi Media Masters & Machinery SA" },
   { 97,21,40,  0,0,0,    "Optical Disc Manufacturing Equipment" },
   { 97,27,30,  97,48,30, "Pioneer Video Corporation" },
   { 97,27,10,  97,48,20, "Plasmon Data systems Ltd." },
@@ -2187,7 +2187,7 @@ Toc *CdrDriver::readDiskToc(int session, const char *dataFilename)
     if ((cdToc[i].adrCtl & 0x04) != 0) {
       if ((trackMode = getTrackMode(i + 1, cdToc[i].start)) ==
 	  TrackData::MODE0) {
-	log_message(-1, "Cannot determine mode of data track %d - asuming MODE1.",
+	log_message(-1, "Cannot determine mode of data track %d - assuming MODE1.",
 		i + 1);
 	trackMode = TrackData::MODE1;
       }
@@ -3253,7 +3253,7 @@ Toc *CdrDriver::readDisk(int session, const char *dataFilename)
     if ((cdToc[i].adrCtl & 0x04) != 0) {
       if ((trackMode = getTrackMode(i + 1, cdToc[i].start)) ==
 	  TrackData::MODE0) {
-	log_message(-1, "Cannot determine mode of data track %d - asuming MODE1.",
+	log_message(-1, "Cannot determine mode of data track %d - assuming MODE1.",
 		i + 1);
 	trackMode = TrackData::MODE1;
       }
