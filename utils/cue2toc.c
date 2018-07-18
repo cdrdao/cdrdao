@@ -644,7 +644,7 @@ determine_session_type(struct trackspec *list)
 		case MODE2: case MODE2_RAW:
 			mode2 = 1; break;
 		default:	/* should never get here */
-			err_fail2("Dont know how this could happen, but here "
+			err_fail2("Don't know how this could happen, but here "
 				 "is a track with an unknown mode :|");
 		}
 		track = track->next;
