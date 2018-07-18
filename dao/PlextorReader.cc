@@ -940,7 +940,7 @@ int PlextorReader::readAudioRangePlextor(ReadDiskInfo *rinfo, int fd,
           // write this block's audio data
           block=repairBlock;
 	  //fwrite(repairBlock,1,AUDIO_BLOCK_LEN,fd);
-          log_message(1,"block %6ld written with %4ld erronous bytes in it!", cab, repairErrors);
+          log_message(1,"block %6ld written with %4ld erroneous bytes in it!", cab, repairErrors);
         }
         else
         {
