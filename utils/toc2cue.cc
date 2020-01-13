@@ -78,6 +78,73 @@ void message(int level, const char *fmt, ...)
   va_end(args);
 }
 
+long sectorSize(TrackData::Mode m)
+{
+  long bsize = 0;
+
+#if 1
+  // force block size to 2352
+  bsize = AUDIO_BLOCK_LEN;
+#else
+  switch (m) {
+  case TrackData::AUDIO:
+      bsize = AUDIO_BLOCK_LEN;
+      break;
+  case TrackData::MODE1:
+  case TrackData::MODE1_RAW:
+      bsize = MODE1_BLOCK_LEN;
+      break;
+  case TrackData::MODE2:
+  case TrackData::MODE2_RAW:
+  case TrackData::MODE2_FORM1:
+  case TrackData::MODE2_FORM2:
+  case TrackData::MODE2_FORM_MIX:
+      bsize = MODE2_BLOCK_LEN;
+      break;
+  case TrackData::MODE0:
+      message(-3, "Illegal mode in 'CdrDriver::blockSize()'.");
+      break;
+  }
+#endif
+
+  return bsize;
+}
+
+int convertBin(Toc *toc, char *oldBin, char *newBin)
+{
+    Msf start, end;
+    const Track *trun;
+    int trackNr;
+    TrackIterator titr(toc);
+
+    FILE *in, *out;
+    in = fopen(oldBin, "r");
+    out = fopen(newBin, "w+");
+    
+    for (trun = titr.first(start, end), trackNr = 1;
+	 trun != NULL;
+	 trun = titr.next(start, end), trackNr++) 
+    {
+	int iblksize = sectorSize(trun->type()) + TrackData::subChannelSize(trun->subChannelType());
+	int oblksize = sectorSize(trun->type());
+
+	char buf[AUDIO_BLOCK_LEN + MAX_SUBCHANNEL_LEN];
+	int cnt;
+	for(cnt = 0; cnt < (end.lba() - start.lba()); cnt++)
+	{
+	    int num_read, num_written = 0;
+	    num_read = fread(buf, 1, iblksize, in);
+	    num_written = fwrite(buf, 1, oblksize, out);
+	}
+	printf("  wrote %d sectors\n", cnt);
+    }
+
+    fclose(in);
+    fclose(out);
+
+    return 0;
+}
+
 static void printVersion()
 {
   message(1, "toc2cue version %s - (C) Andreas Mueller <andreas@daneb.de>",
@@ -87,20 +154,27 @@ static void printVersion()
 
 static void printUsage()
 {
-  message(0, "\nUsage: %s [-v #] { -V | input-toc-file output-cue-file}", PRGNAME);
+  message(0, "Usage: %s [-v #] { -V | -h | input-toc-file output-cue-file}", PRGNAME);
+}
+
+static void printHelp()
+{
+  printUsage();
+  message(0, "Printing help");
 }
 
 static int parseCommandLine(int argc, char **argv, char **tocFile,
-			    char **cueFile)
+			    char **cueFile, char **convertedBinFile)
 {
   int c;
   int printVersion = 0;
+  int printHelpInfo = 0;
   extern char *optarg;
   extern int optind, opterr, optopt;
 
   opterr = 0;
 
-  while ((c = getopt(argc, argv, "Vv:")) != EOF) {
+  while ((c = getopt(argc, argv, "Vhv:C:")) != EOF) {
     switch (c) {
     case 'V':
       printVersion = 1;
@@ -109,24 +183,44 @@ static int parseCommandLine(int argc, char **argv, char **tocFile,
     case 'v':
       if (optarg != NULL) {
 	if ((VERBOSE = atoi(optarg)) < 0) {
-	  message(-2, "Invalid verbose level: %s", optarg);
+	  message(-2, "Invalid verbose level: %s\n", optarg);
 	  return 0;
 	}
       }
       else {
-	message(-2, "Missing verbose level after option '-v'.");
+	message(-2, "Missing verbose level after option '-v'.\n");
 	return 0;
       }
       break;
 
+    case 'h':
+      printHelpInfo = 1;
+      break;
+
+    case 'C':
+      *convertedBinFile = strdupCC(optarg);
+      message(1, "Converting bin file to '%s'", *convertedBinFile);
+      break;
+
     case '?':
-      message(-2, "Invalid option: %c", optopt);
+      message(-2, "Invalid option: %c\n", optopt);
+      return 0;
+      break;
+
+    case ':':
+      message(-2, "option %c missing argument\n", optopt);
       return 0;
       break;
     }
   }
 
   if (printVersion) {
+    printf("%s\n", VERSION);
+    return 1;
+  }
+
+  if (printHelpInfo) {
+    printHelp();
     return 1;
   }
 
@@ -135,7 +229,7 @@ static int parseCommandLine(int argc, char **argv, char **tocFile,
     optind++;
   }
   else {
-    message(-2, "Missing toc-file name.");
+    message(-2, "Missing toc-file name.\n");
     return 0;
   }
 
@@ -144,12 +238,12 @@ static int parseCommandLine(int argc, char **argv, char **tocFile,
     optind++;
   }
   else {
-    message(-2, "Missing cue file name.");
+    message(-2, "Missing cue file name.\n");
     return 0;
   }
 
   if (optind != argc) {
-    message(-2, "Expecting exactly two arguments.");
+    message(-2, "Expecting exactly two arguments.\n");
     return 0;
   }
 
@@ -158,19 +252,18 @@ static int parseCommandLine(int argc, char **argv, char **tocFile,
 
 int main(int argc, char **argv)
 {
-  char *tocFile, *cueFile;
+  char *tocFile, *cueFile, *convertedBinFile = NULL;
   Toc *toc;
 
   PRGNAME = *argv;
   
-  switch (parseCommandLine(argc, argv, &tocFile, &cueFile)) {
-  case 0:
+  switch (parseCommandLine(argc, argv, &tocFile, &cueFile, &convertedBinFile)) {
+  case 0: // error
     printUsage();
     return 1;
     break;
     
-  case 1:
-    printf("%s\n", VERSION);
+  case 1: // return early
     return 0;
     break;
   }
@@ -188,6 +281,7 @@ int main(int argc, char **argv)
   TrackIterator titr(toc);
   char *binFileName = NULL;
   int err = 0;
+  int subchan_data_found = 0;
 
   // first make some consistency checks, surely not complete to identify
   // toc-files that can be correctly converted to cue files
@@ -208,6 +302,12 @@ int main(int argc, char **argv)
       break;
     default:
       break;
+    }
+
+    // Check for the presence of subchannel data
+    TrackData::SubChannelMode subchan_mode = trun->subChannelType();
+    if(subchan_mode) {
+      subchan_data_found = 1;
     }
 
     for (strun = stitr.first(), stcount = 0;
@@ -286,7 +386,13 @@ int main(int argc, char **argv)
     return 1;
   }
 
-  out << "FILE \"" << binFileName << "\" BINARY" << "\n";
+  if(convertedBinFile) {
+    // cue file needs to reference the new bin file
+    out << "FILE \"" << convertedBinFile << "\" BINARY" << "\n";
+  }
+  else {
+    out << "FILE \"" << binFileName << "\" BINARY" << "\n";
+  }
 
   long offset = 0;
 
@@ -358,6 +464,26 @@ int main(int argc, char **argv)
   message(1, "Converted toc-file '%s' to cue file '%s'.",
 	  tocFile, cueFile);
   message(1, "");
+
+  if(convertedBinFile) {
+    if(convertBin(toc, binFileName, convertedBinFile)) {
+      message(1, "Error converting bin file '%s' to '%s'", binFileName, convertedBinFile);
+      message(1, "");
+    }
+    else {
+      message(1, "Converted bin file '%s' to '%s'", binFileName, convertedBinFile);
+      message(1, "");
+    }
+  }
+
+  if(subchan_data_found) {
+    message(1, "Subchannel data detected on one or more tracks. The cue/bin");
+    message(1, "pair may not be compatible with third-party software. You can");
+    message(1, "use the -C option to create a bin file with subchannel data");
+    message(1, "removed.");
+    message(1, "");
+  }
+
   message(1, "Please note that the resulting cue file is only valid if the");
   message(1, "toc-file was created with cdrdao using the commands 'read-toc'");
   message(1, "or 'read-cd'. For manually created or edited toc-files the");
