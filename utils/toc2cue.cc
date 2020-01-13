@@ -33,7 +33,7 @@
 #include "util.h"
 #include "Toc.h"
 
-static const char *PRGNAME = NULL;
+static const char *PRGNAME = "toc2cue";
 static int VERBOSE = 1;
 
 void message(int level, const char *fmt, ...)
@@ -154,13 +154,20 @@ static void printVersion()
 
 static void printUsage()
 {
-  message(0, "Usage: %s [-v #] { -V | -h | input-toc-file output-cue-file}", PRGNAME);
+  message(0, "Usage: %s [-v #] [-C output-bin-file] { -V | -h | input-toc-file output-cue-file}", PRGNAME);
 }
 
 static void printHelp()
 {
   printUsage();
-  message(0, "Printing help");
+  message(0, "Convert a toc file to a cue file for use with other programs.\n");
+  message(0, "Options:");
+  message(0, "  -v    set verbosity level");
+  message(0, "  -C    try to convert the bin file referenced by the toc to a format\n        compatible with cue files");
+  message(0, "\nMutually exclusive options:");
+  message(0, "  -h    print this help text");
+  message(0, "  -V    print the version number");
+  message(0, "  none  convert the provided toc file to a cue file");
 }
 
 static int parseCommandLine(int argc, char **argv, char **tocFile,
@@ -199,7 +206,6 @@ static int parseCommandLine(int argc, char **argv, char **tocFile,
 
     case 'C':
       *convertedBinFile = strdupCC(optarg);
-      message(1, "Converting bin file to '%s'", *convertedBinFile);
       break;
 
     case '?':
@@ -255,8 +261,6 @@ int main(int argc, char **argv)
   char *tocFile, *cueFile, *convertedBinFile = NULL;
   Toc *toc;
 
-  PRGNAME = *argv;
-  
   switch (parseCommandLine(argc, argv, &tocFile, &cueFile, &convertedBinFile)) {
   case 0: // error
     printUsage();
@@ -466,6 +470,7 @@ int main(int argc, char **argv)
   message(1, "");
 
   if(convertedBinFile) {
+    message(1, "Converting bin file...");  
     if(convertBin(toc, binFileName, convertedBinFile)) {
       message(1, "Error converting bin file '%s' to '%s'", binFileName, convertedBinFile);
       message(1, "");
@@ -476,7 +481,7 @@ int main(int argc, char **argv)
     }
   }
 
-  if(subchan_data_found) {
+  if(subchan_data_found && !convertedBinFile) {
     message(1, "Subchannel data detected on one or more tracks. The cue/bin");
     message(1, "pair may not be compatible with third-party software. You can");
     message(1, "use the -C option to create a bin file with subchannel data");
@@ -490,6 +495,7 @@ int main(int argc, char **argv)
   message(1, "cue file may not be correct. This program just checks for");
   message(1, "the most obvious toc-file features that cannot be converted to");
   message(1, "a cue file.");
+  message(1, "");
   message(1, "Furthermore, if the toc-file contains audio tracks the byte");
   message(1, "order of the image file will be wrong which results in static");
   message(1, "noise when the resulting cue file is used for recording");
