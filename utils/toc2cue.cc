@@ -110,23 +110,41 @@ long sectorSize(TrackData::Mode m)
   return bsize;
 }
 
-int convertBin(Toc *toc, char *oldBin, char *newBin)
+int convertBin(Toc *toc, char *oldBin, char *newBin, int byteSwap)
 {
     Msf start, end;
     const Track *trun;
     int trackNr;
     TrackIterator titr(toc);
-
     FILE *in, *out;
+
     in = fopen(oldBin, "r");
+    if(!in)
+    {
+	message(-2, "Failed to open input bin file %s", oldBin);
+	return 1;
+    }
+
     out = fopen(newBin, "w+");
-    
+    if(!out)
+    {
+	message(-2, "Failed to open output bin file %s", newBin);
+	fclose(in);
+	return 1;
+    }
+
     for (trun = titr.first(start, end), trackNr = 1;
 	 trun != NULL;
 	 trun = titr.next(start, end), trackNr++) 
     {
-	int iblksize = sectorSize(trun->type()) + TrackData::subChannelSize(trun->subChannelType());
-	int oblksize = sectorSize(trun->type());
+	TrackData::Mode mode = trun->type();
+	int iblksize = sectorSize(mode) + TrackData::subChannelSize(trun->subChannelType());
+	int oblksize = sectorSize(mode);
+
+	if(mode == TrackData::AUDIO && byteSwap)
+	{
+	    printf("  byte swapping audio samples in track %d\n", trackNr);
+	}
 
 	char buf[AUDIO_BLOCK_LEN + MAX_SUBCHANNEL_LEN];
 	int cnt;
@@ -134,8 +152,15 @@ int convertBin(Toc *toc, char *oldBin, char *newBin)
 	{
 	    int num_read, num_written = 0;
 	    num_read = fread(buf, 1, iblksize, in);
+
+	    if(mode == TrackData::AUDIO && byteSwap)
+	    {
+		swapSamples((Sample *)buf, SAMPLES_PER_BLOCK);
+	    }
+	    
 	    num_written = fwrite(buf, 1, oblksize, out);
 	}
+	
 	printf("  wrote %d sectors\n", cnt);
     }
 
@@ -154,7 +179,7 @@ static void printVersion()
 
 static void printUsage()
 {
-  message(0, "Usage: %s [-v #] [-C output-bin-file] { -V | -h | input-toc-file output-cue-file}", PRGNAME);
+  message(0, "Usage: %s [-v #] [-s] [-C output-bin-file] { -V | -h | input-toc-file output-cue-file}", PRGNAME);
 }
 
 static void printHelp()
@@ -164,6 +189,7 @@ static void printHelp()
   message(0, "Options:");
   message(0, "  -v    set verbosity level");
   message(0, "  -C    try to convert the bin file referenced by the toc to a format\n        compatible with cue files");
+  message(0, "  -s    when -C is specified, byte swap audio data when writing new bin file");
   message(0, "\nMutually exclusive options:");
   message(0, "  -h    print this help text");
   message(0, "  -V    print the version number");
@@ -171,7 +197,7 @@ static void printHelp()
 }
 
 static int parseCommandLine(int argc, char **argv, char **tocFile,
-			    char **cueFile, char **convertedBinFile)
+			    char **cueFile, char **convertedBinFile, int *byteSwap)
 {
   int c;
   int printVersion = 0;
@@ -181,7 +207,7 @@ static int parseCommandLine(int argc, char **argv, char **tocFile,
 
   opterr = 0;
 
-  while ((c = getopt(argc, argv, "Vhv:C:")) != EOF) {
+  while ((c = getopt(argc, argv, "Vhsv:C:")) != EOF) {
     switch (c) {
     case 'V':
       printVersion = 1;
@@ -202,6 +228,10 @@ static int parseCommandLine(int argc, char **argv, char **tocFile,
 
     case 'h':
       printHelpInfo = 1;
+      break;
+
+    case 's':
+      *byteSwap = 1;
       break;
 
     case 'C':
@@ -260,8 +290,9 @@ int main(int argc, char **argv)
 {
   char *tocFile, *cueFile, *convertedBinFile = NULL;
   Toc *toc;
+  int byteSwapBinAudio = 0;
 
-  switch (parseCommandLine(argc, argv, &tocFile, &cueFile, &convertedBinFile)) {
+  switch (parseCommandLine(argc, argv, &tocFile, &cueFile, &convertedBinFile, &byteSwapBinAudio)) {
   case 0: // error
     printUsage();
     return 1;
@@ -471,7 +502,7 @@ int main(int argc, char **argv)
 
   if(convertedBinFile) {
     message(1, "Converting bin file...");  
-    if(convertBin(toc, binFileName, convertedBinFile)) {
+    if(convertBin(toc, binFileName, convertedBinFile, byteSwapBinAudio)) {
       message(1, "Error converting bin file '%s' to '%s'", binFileName, convertedBinFile);
       message(1, "");
     }
@@ -499,7 +530,9 @@ int main(int argc, char **argv)
   message(1, "Furthermore, if the toc-file contains audio tracks the byte");
   message(1, "order of the image file will be wrong which results in static");
   message(1, "noise when the resulting cue file is used for recording");
-  message(1, "(even with cdrdao itself).");
+  message(1, "(even with cdrdao itself). This can be corrected by creating");
+  message(1, "a new image file with the -C option and specifying the -s flag");
+  message(1, "to byte swap the audio tracks.");
 
   return 0;
 }
