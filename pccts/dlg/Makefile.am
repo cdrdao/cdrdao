@@ -4,4 +4,4 @@ dlg_SOURCES = automata.c dlg_a.c dlg_p.c err.c main.c output.c relabel.c set.c s
 
 AM_CFLAGS = -DUSER_ZZSYN  -DZZLEXBUFSIZE=32000
 
-INCLUDES = -I../h
+AM_CPPFLAGS = -I../h
