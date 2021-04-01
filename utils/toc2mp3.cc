@@ -411,14 +411,12 @@ std::string &clean_string(std::string &s)
       s[i] = ' ';
       i++;
     }
-    else if (isalnum(c) || c == ' ' || c == '.' || c== '-' || c == '(' ||
-	     c == ')' || c == ')' || c == ',' || c == ':' || c == ';' ||
-	     c == '"' || c == '!' || c == '?' || c == '\'' || c == '$')  {
-      i++;
-    }
-    else {
+    else if (iscntrl(c) || c == '/') {
       s.erase(i, 1);
       len = s.length();
+    }
+    else {
+      i++;
     }
   }
 
