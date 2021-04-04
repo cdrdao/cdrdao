@@ -13,7 +13,7 @@ toc2mp3_SOURCES = toc2mp3.cc
 
 toc2cddb_LDADD = $(top_builddir)/trackdb/libtrackdb.a
 toc2cue_LDADD = $(top_builddir)/trackdb/libtrackdb.a
-toc2mp3_LDADD = $(top_builddir)/trackdb/libtrackdb.a @LAME_LIBS@
+toc2mp3_LDADD = $(top_builddir)/trackdb/libtrackdb.a @LAME_LIBS@ @LIBICONV@
 
 if COND_MP3
 toc2cddb_LDADD += @MAD_LIBS@
