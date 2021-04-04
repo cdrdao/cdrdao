@@ -32,6 +32,10 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#ifdef HAVE_ICONV
+#include <iconv.h>
+#include <langinfo.h>
+#endif
 
 #include <lame/lame.h>
 
@@ -282,6 +286,62 @@ lame_global_flags *init_encoder(int bitrate)
   return lf;
 }
 
+void set_id3v2tag(lame_global_flags* lf, int type, const std::string &str)
+{
+#ifdef HAVE_ICONV
+  unsigned short* dst;
+
+  if ((dst = (unsigned short*)calloc(str.length()+1, 4)) == NULL) {
+    fprintf(stderr, "Memory allocation error in set_id3v2tag()");
+    exit(EXIT_FAILURE);
+  }
+  else {
+    char* cur_code = nl_langinfo(CODESET);
+    iconv_t xiconv = iconv_open("UTF-16//TRANSLIT", cur_code);
+    if (xiconv != (iconv_t)-1) {
+      char* src = strdupCC(str.c_str());
+      char* i_ptr = src;
+      char* o_ptr = (char*)dst;
+      size_t srcln = str.length();
+      size_t avail = srcln * 4;
+      if (iconv(xiconv, &i_ptr, &srcln, (char**)&o_ptr, &avail) == (size_t)-1)
+        fputs(strerror(errno), stderr);
+      iconv_close(xiconv);
+      delete[] src;
+    }
+  }
+#endif
+
+  switch (type)
+  {
+#ifdef HAVE_ICONV
+    case 'a':
+      id3tag_set_textinfo_utf16(lf, "TPE1", dst);
+      break;
+    case 't':
+      id3tag_set_textinfo_utf16(lf, "TIT2", dst);
+      break;
+    case 'l':
+      id3tag_set_textinfo_utf16(lf, "TALB", dst);
+      break;
+#else
+    case 'a':
+      id3tag_set_artist(lf, str.c_str());
+      break;
+    case 't':
+      id3tag_set_title(lf, str.c_str());
+      break;
+    case 'l':
+      id3tag_set_album(lf, str.c_str());
+      break;
+#endif
+  }
+
+#ifdef HAVE_ICONV
+  free(dst);
+#endif
+}
+
 void set_id3_tags(lame_global_flags *lf, int tracknr, const std::string &title,
 		  const std::string &artist, const std::string &album)
 {
@@ -292,13 +352,13 @@ void set_id3_tags(lame_global_flags *lf, int tracknr, const std::string &title,
   id3tag_add_v2(lf);
 
   if (!title.empty())
-    id3tag_set_title(lf, title.c_str());
+    set_id3v2tag(lf, 't', title.c_str());
 
   if (!artist.empty())
-    id3tag_set_artist(lf, artist.c_str());
+    set_id3v2tag(lf, 'a', artist.c_str());
 
   if (!album.empty())
-    id3tag_set_album(lf, album.c_str());
+    set_id3v2tag(lf, 'l', album.c_str());
 
   if (tracknr > 0 && tracknr <= 255) {
     sprintf(buf, "%d", tracknr);
@@ -444,6 +504,10 @@ int main(int argc, char **argv)
   char *tocfileBaseName, *p;
   char sbuf[100];
   int err = 0;
+
+#ifdef HAVE_ICONV
+  setlocale(LC_CTYPE, "");
+#endif
 
   PRGNAME = *argv;
 
