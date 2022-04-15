@@ -21,12 +21,15 @@ format.
 Summary:        The Gnome2/GTK2 GUI front-end to cdrdao
 Group:          Applications/Multimedia
 Requires:       %{name} = %{epoch}:%{version}-%{release}
-BuildRequires:	gtkmm24-devel >= 0:2.4
-BuildRequires:	libgnomeuimm26-devel >= 0:2.6
+BuildRequires:	gtkmm30-devel
 BuildRequires:  libsigc++20-devel >= 0:1.2
 BuildRequires:  libvorbis-devel >= 0:1.0
 BuildRequires:  libao-devel >= 0:0.8
-# BuildRequires:  libmad-devel
+BuildRequires:  libmad-devel
+BuildRequires: GConf2
+Requires(pre): GConf2
+Requires(post): GConf2
+Requires(preun): GConf2
 
 %description -n gcdmaster
 Gcdmaster is a GNOME2 GUI front-end to cdrdao that makes it easy to
@@ -39,13 +42,14 @@ edition and silence insertion.
 
 
 %build
-%configure
+%configure --disable-schemas-compile
 make %{?_smp_mflags}
 
 
 %install
 rm -rf $RPM_BUILD_ROOT
-%makeinstall
+export GCONF_DISABLE_MAKEFILE_SCHEMA_INSTALL=1
+make install DESTDIR=$RPM_BUILD_ROOT
  
 find $RPM_BUILD_ROOT -type f -name "*.la" -exec rm -f {} ';'
 
@@ -53,9 +57,14 @@ find $RPM_BUILD_ROOT -type f -name "*.la" -exec rm -f {} ';'
 %clean
 rm -rf $RPM_BUILD_ROOT
 
+%pre
+%gconf_schema_prepare org.gnome.gcdmaster
 
 %post
+%gconf_schema_upgrade org.gnome.gcdmaster
 
+%preun
+%gconf_schema_remove org.gnome.gcdmaster
 
 %files
 %defattr(-, root, root, -)
@@ -75,10 +84,15 @@ rm -rf $RPM_BUILD_ROOT
 %{_datadir}/mime/packages/gcdmaster.xml
 %{_datadir}/applications/gcdmaster.desktop
 %{_datadir}/application-registry/gcdmaster.applications
+%{_datadir}/glib-2.0/schemas/org.gnome.gcdmaster.gschema.xml
 %{_datadir}/pixmaps/gcdmaster*
 %{_mandir}/man1/gcdmaster*
+%{_mandir}/man1/toc2*
 
 %changelog
+* Fri Apr 15 2022 Denis Leroy <denis@poolshark.org> - 0:1.2.5-1
+- gtk 3.0 port
+
 * Mon Jul 20 2004 Denis Leroy <denis@poolshark.org> - 0:1.1.9pre1-0.fdr.1
 - Added Ogg and libao dependencies
 - Switch to gtkmm 2.4 APIs
