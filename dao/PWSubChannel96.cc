@@ -111,11 +111,11 @@ void PWSubChannel96::setChannelByte(Channel chan, int byteNr,
 {
   assert(byteNr >= 0 && byteNr < 12);
 
-  register unsigned char setMask = 1 << chan;
-  register unsigned char clearMask = ~setMask;
+  unsigned char setMask = 1 << chan;
+  unsigned char clearMask = ~setMask;
 
-  register unsigned char *p = data_ + (byteNr * 8);
-  register int i;
+  unsigned char *p = data_ + (byteNr * 8);
+  int i;
 
   for (i = 0; i < 8; i++) {
     if (value & 0x80)
@@ -132,10 +132,10 @@ unsigned char PWSubChannel96::getChannelByte(Channel chan, int byteNr) const
 {
   assert(byteNr >= 0 && byteNr < 12);
 
-  register unsigned char testMask = 1 << chan;
-  register const unsigned char *p = data_ + (byteNr * 8);
-  register unsigned char val = 0;
-  register int i;
+  unsigned char testMask = 1 << chan;
+  const unsigned char *p = data_ + (byteNr * 8);
+  unsigned char val = 0;
+  int i;
   
   for (i = 0; i < 8; i++) {
     val <<= 1;
@@ -161,11 +161,11 @@ long PWSubChannel96::dataLength() const
 // calculate the crc over Q sub channel bytes 0-9 and stores it in byte 10,11
 void PWSubChannel96::calcCrc()
 {
-  register unsigned short crc = 0;
-  register int i;
+  unsigned short crc = 0;
+  int i;
 
   for (i = 0; i < 10; i++) {
-    register unsigned char data = getChannelByte(Q_CHAN, i);
+    unsigned char data = getChannelByte(Q_CHAN, i);
     crc = crctab[(crc >> 8) ^ data] ^ (crc << 8);
   }
 
@@ -177,15 +177,15 @@ void PWSubChannel96::calcCrc()
 
 int PWSubChannel96::checkCrc() const
 {
-  register unsigned short crc = 0;
-  register int i;
+  unsigned short crc = 0;
+  int i;
 
   if (!crcValid_) {
     return 1;
   }
 
   for (i = 0; i < 10; i++) {
-    register unsigned char data = getChannelByte(Q_CHAN, i);
+    unsigned char data = getChannelByte(Q_CHAN, i);
     crc = crctab[(crc >> 8) ^ data] ^ (crc << 8);
   }
 
@@ -202,7 +202,7 @@ int PWSubChannel96::checkCrc() const
 // sets P channel bit
 void PWSubChannel96::pChannel(int f)
 {
-  register int i;
+  int i;
 
   if (f != 0) {
     for (i = 0; i < 96; i++)
@@ -246,7 +246,7 @@ void PWSubChannel96::type(unsigned char type)
     break;
   }
 
-  register unsigned char val = getChannelByte(Q_CHAN, 0);
+  unsigned char val = getChannelByte(Q_CHAN, 0);
 
   val &= 0xf0;
   val |= type & 0x0f;
@@ -260,7 +260,7 @@ void PWSubChannel96::ctl(int c)
 {
   assert((c & 0x0f) == 0);
 
-  register unsigned char val = getChannelByte(Q_CHAN, 0);
+  unsigned char val = getChannelByte(Q_CHAN, 0);
 
   val &= 0x0f;
   val |= c & 0xf0;
@@ -270,7 +270,7 @@ void PWSubChannel96::ctl(int c)
 
 unsigned char PWSubChannel96::ctl() const
 {
-  register unsigned char val = getChannelByte(Q_CHAN, 0);
+  unsigned char val = getChannelByte(Q_CHAN, 0);
 
   return val >> 4;
 }

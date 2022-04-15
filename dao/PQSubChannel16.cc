@@ -118,8 +118,8 @@ long PQSubChannel16::dataLength() const
 // calculate the crc over Q sub channel bytes 0-9 and stores it in byte 10,11
 void PQSubChannel16::calcCrc()
 {
-  register unsigned short crc = 0;
-  register int i;
+  unsigned short crc = 0;
+  int i;
 
   for (i = 0; i < 10; i++) {
     crc = crctab[(crc >> 8) ^ data_[i]] ^ (crc << 8);
@@ -131,8 +131,8 @@ void PQSubChannel16::calcCrc()
 
 int PQSubChannel16::checkCrc() const
 {
-  register unsigned short crc = 0;
-  register int i;
+  unsigned short crc = 0;
+  int i;
 
   if (!crcValid_) {
     return 1;

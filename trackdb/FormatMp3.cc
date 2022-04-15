@@ -230,12 +230,12 @@ signed long FormatMp3::audio_linear_dither(unsigned int bits,
 FormatSupport::Status FormatMp3::madOutput()
 {
   struct mad_pcm* pcm = &synth_.pcm;
-  register int nsamples = pcm->length;
+  int nsamples = pcm->length;
   mad_fixed_t const *left_ch = pcm->samples[0], *right_ch = pcm->samples[1];
     
-  register char* ptr = buffer_;
-  register signed int sample;
-  register mad_fixed_t tempsample;
+  char* ptr = buffer_;
+  signed int sample;
+  mad_fixed_t tempsample;
 
   if (pcm->channels == 2) {
     while (nsamples--) {
