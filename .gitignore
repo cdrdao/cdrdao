@@ -10,3 +10,6 @@ scsilib
 stamp-h1
 autom4te.cache
 aclocal.m4
+*.Po
+gcdmaster/gcdmaster.schemas
+specs/cdrdao.fedora.spec

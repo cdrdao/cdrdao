@@ -396,9 +396,9 @@ void CdTextEncoder::buildSizeInfoPacks()
 void CdTextEncoder::calcCrcs()
 {
   CdTextPackEntry *prun;
-  register unsigned char data;
-  register unsigned short crc;
-  register int i;
+  unsigned char data;
+  unsigned short crc;
+  int i;
 
   for (prun = packs_; prun != NULL; prun = prun->next_) {
     crc = 0;

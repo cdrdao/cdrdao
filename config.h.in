@@ -54,16 +54,16 @@
 /* Define to 1 if you have the `pthread_sigmask' function. */
 #undef HAVE_PTHREAD_SIGMASK
 
-/* "" */
+/* Define to 1 if you have the `sched_getparam' function. */
 #undef HAVE_SCHED_GETPARAM
 
-/* "" */
+/* Define to 1 if you have the `sched_get_priority_max' function. */
 #undef HAVE_SCHED_GET_PRIORITY_MAX
 
 /* Define to 1 if you have the <sched.h> header file. */
 #undef HAVE_SCHED_H
 
-/* "" */
+/* Define to 1 if you have the `sched_setscheduler' function. */
 #undef HAVE_SCHED_SETSCHEDULER
 
 /* Define to 1 if you have the `setegid' function. */
