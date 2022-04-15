@@ -2,6 +2,7 @@ dnl Process this file with autoconf to produce a configure script.
 AC_REVISION($Revision: 1.26 $)dnl
 
 AC_INIT(cdrdao, 1.2.5)
+AC_CONFIG_MACRO_DIR([m4])
 
 AC_CONFIG_SRCDIR(dao/main.cc)
 AM_INIT_AUTOMAKE(subdir-objects)
@@ -32,7 +33,7 @@ AC_PROG_CXX
 AC_PROG_CPP
 AC_PROG_INSTALL
 AC_PROG_RANLIB
-AC_CHECK_PROG(AR,ar,ar)
+AM_PROG_AR
 AC_PROG_MAKE_SET
 AC_PATH_TOOL([PKG_CONFIG], [pkg-config])
 
@@ -108,7 +109,10 @@ if test "$use_pthreads" = default; then
 fi
 
 if test "$use_pthreads" = yes; then
-  AC_CHECK_FUNC(pthread_create,have_pthread_std=yes,have_pthread_std=no)
+  AX_PTHREAD([have_pthread_std=yes],[have_pthread_std=no])
+  LIBS="$PTHREAD_LIBS $PTHREAD_CFLAGS $LIBS"
+  CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
+  CXXFLAGS="$CXXFLAGS $PTHREAD_CFLAGS"
 
   if test "$have_pthread_std" = yes; then
     AC_DEFINE(USE_POSIX_THREADS,1,"")

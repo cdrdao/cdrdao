@@ -4,6 +4,8 @@
 
   o Removed scsilib snapshot from old cdrecord project
 
+  o Many warning fixes
+
 --------------------------------------------------------------------------
   cdrdao 1.2.4
 --------------------------------------------------------------------------
@@ -95,7 +97,7 @@ GCDMaster changes:
 
  o  pccts build is now better integrated with automake/autoconf.
 
- o  Added FreeBSD 7 support to configure.ac. Fixed libao dependency.	
+ o  Added FreeBSD 7 support to configure.ac. Fixed libao dependency.
 
 GCDMaster changes:
 
@@ -359,7 +361,7 @@ GCDMaster changes:
  o Fixed bug in generic-mmc-raw driver: the TOC type was not written correctly
    and some flags for data tracks were missing in the lead-in
 
- o Fixed handling of toc type for multi session CDs: the toc-type of 
+ o Fixed handling of toc type for multi session CDs: the toc-type of
    a session that just contains audio tracks is always CD_DA, even in multi
    session mode
 
@@ -387,7 +389,7 @@ GCDMaster changes:
    'mkisofs'
 
  o Overburning is now prevented by default and must be explicitly requested
-   with option '--overburn'. Fix for Debian bug #79585 
+   with option '--overburn'. Fix for Debian bug #79585
    (http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=79585&repeatmerged=yes).
 
  o Fixed error in cdrdao's manual page (Debian bug #82816,
@@ -471,10 +473,10 @@ GCDMaster changes:
 
 
 Xcdrdao changes:
- 
+
  o Xcdrdao is now a Gnome application and will be called "Gnome CD Master"
    (gcdmaster) in future.
-   
+
  o Added table wise entry of CD-TEXT title/performer data.
 
  o Added a dialog to extract a CD to the hard disk.
@@ -501,7 +503,7 @@ Xcdrdao changes:
 
  o 'read-cd' creates now a complete image of a session. All tracks are written
    to a single image file (comparable to a .bin file). Pre-gaps and index marks
-   of audio tracks are extracted while ripping the audio data so that a 
+   of audio tracks are extracted while ripping the audio data so that a
    'read-toc' step is obsolete now.
    It may choke on CDs written in TAO mode.
 
@@ -528,7 +530,7 @@ Xcdrdao changes:
 
  o ATAPI CD-ROM drives that were only working with the 'plextor' driver
    should now be supported by the 'generic-mmc' driver with driver option 0x20
-   (--driver generic-mmc:0x20). 
+   (--driver generic-mmc:0x20).
 
  o A CD-R medium is automatically ejected now before writing to reset the disk
    status after a simulation run which is necessary e.g. for the
@@ -557,11 +559,11 @@ Xcdrdao changes:
    toc-file is expected. The cue file must have exactly one FILE statement.
    The bin file name is constructed from the cue file name by replacing
    ".cue" with ".bin". Currently supported track modes: MODE1/2048, MODE1/2352,
-   MODE2/2336, MODE2/2352. The 'cdd2600' driver uses the L-EC data 
+   MODE2/2336, MODE2/2352. The 'cdd2600' driver uses the L-EC data
    contained in the MODEX/2352 track images when recording. All other drivers
    will ignore and regenerate the L-EC data.
 
- o The 'generic-mmc' driver has full multi session support now. The start 
+ o The 'generic-mmc' driver has full multi session support now. The start
    address of the last and current session which must be used for the mkisofs
    option '-C x,y' can be retrieved with 'disk-info'.
 
@@ -593,7 +595,7 @@ s o The 'sony-cdu948' driver is included in the source package.
  o Fixed failed assertion problems with 'read-toc' that occured when
    the raw P-W sub-channel data passed the CRC check but was actually
    not consistent (happened quiet often with Teac CD-ROM CD-532S drives).
-   
+
  o The SCSI interface can now use Joerg Schilling's SCSI library. Cdrdao is
    reported to work on Solaris 2.6 and FreeBSD using the SCSI library.
    Max Khon provided an independent SCSI interface implementation for FreeBSD

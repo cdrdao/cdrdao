@@ -263,7 +263,7 @@ unsigned b;
 	static set a;
 
 	if ( b == nil ) return( empty );
-	set_new(a, b);
+	set_new(a, (long unsigned int) b);
 	a.setword[DIVWORD(b)] = bitmask[MODWORD(b)];
 
 	return(a);
