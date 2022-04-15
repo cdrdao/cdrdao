@@ -55,7 +55,7 @@ typedef struct _set {
 /* make arg1 a set big enough to hold max elem # of arg2 */
 #define set_new(a,_max) \
 if (((a).setword=(unsigned *)calloc(NumWords(_max),BytesPerWord))==NULL) \
-        fprintf(stderr, "set_new: Cannot allocate set with max of %d\n", _max); \
+        fprintf(stderr, "set_new: Cannot allocate set with max of %lu\n", _max); \
         (a).n = NumWords(_max);
 
 #define set_free(a)									\
