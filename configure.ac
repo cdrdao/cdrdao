@@ -299,6 +299,10 @@ case "$host" in
      ;;
 esac
 
+dnl Check for libao
+PKG_CHECK_MODULES(AO, ao >= 0.8, [AC_DEFINE(HAVE_AO,1,"")],
+        [echo "gcdmaster, MP3 and Ogg support disabled"; en_gcdmaster=no; with_ogg_support=no; with_mp3_support=no])
+
 dnl Check for OGG support
 if test "$with_ogg_support" = yes; then
   PKG_CHECK_MODULES(VORBISFILE, vorbisfile >= 1.0, [],
