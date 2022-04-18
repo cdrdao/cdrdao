@@ -163,10 +163,10 @@ int ScsiIf::init()
 	}
 	if (!impl_->scsi_) log_message(-2, "init: no scsi");
 	if (impl_->scsi_) {
-		/* Obtain exclusive access to device */
-		err = (*impl_->scsi_)->ObtainExclusiveAccess(impl_->scsi_);
+                /* Obtain exclusive access to device */
+                err = (*impl_->scsi_)->ObtainExclusiveAccess(impl_->scsi_);
 		if (err != noErr)
-			log_message(-2, "init: ObtainExclusiveAccess failed: %d", err);
+                        log_message(-2, "Device already in use, please use diskutil to unmount the disc first");
 		if (err == noErr) {
 			impl_->exclusive_ = 1;
 			/* Send SCSI inquiry command */
@@ -481,9 +481,9 @@ ScsiIf::ScanData *ScsiIf::scan(int *len, char *dev)
 		}
 		err = (*scsi)->ObtainExclusiveAccess(scsi);
 		if (err != noErr) {
-			log_message(-2, "scan: ObtainExclusiveAccess failed: %d", err);
-			goto clean;
-		}
+                        log_message(-2, "Device already in use, please use diskutil to unmount the disc first");
+                        goto clean;
+                }
 		ret = inq(scsi, &response, &status, NULL,
 		          scanData[*len].vendor,
 		          scanData[*len].product,
