@@ -11,4 +11,7 @@ stamp-h1
 autom4te.cache
 aclocal.m4
 *.Po
+*.o
+*.a
+*~
 specs/cdrdao.fedora.spec
