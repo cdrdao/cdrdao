@@ -147,7 +147,7 @@ typedef struct {
     const char* tocFile;
     const char* driverId;
     const char* sourceDriverId;
-    const char* scsiDevice;
+    std::string scsiDevice;
     const char* sourceScsiDevice;
     const char* dataFilename;
     const char* cddbLocalDbDir;
@@ -590,7 +590,7 @@ static void importSettings(DaoCommandLine* opts, Settings* settings)
 	}
 
 	if ((sval = settings->getString(Settings::setWriteDevice)) != NULL) {
-	    opts->scsiDevice = strdupCC(sval);
+	    opts->scsiDevice = sval;
 	}
     
 	if ((ival = settings->getInteger(Settings::setWriteSpeed)) != NULL &&
@@ -618,7 +618,7 @@ static void importSettings(DaoCommandLine* opts, Settings* settings)
 	}
 
 	if ((sval = settings->getString(Settings::setReadDevice)) != NULL) {
-	    opts->scsiDevice = strdupCC(sval);
+	    opts->scsiDevice = sval;
 	}
 
 	if ((ival = settings->getInteger(Settings::setReadParanoiaMode)) != NULL &&
@@ -649,7 +649,7 @@ static void importSettings(DaoCommandLine* opts, Settings* settings)
 	}
 
 	if ((sval = settings->getString(Settings::setWriteDevice)) != NULL) {
-	    opts->scsiDevice = strdupCC(sval);
+	    opts->scsiDevice = sval;
 	}
     }
 
@@ -686,8 +686,8 @@ static void exportSettings(DaoCommandLine* opts, Settings* settings)
 	if (opts->driverId != NULL)
 	    settings->set(Settings::setWriteDriver, opts->driverId);
     
-	if (opts->scsiDevice != NULL)
-	    settings->set(Settings::setWriteDevice, opts->scsiDevice);
+	if (!opts->scsiDevice.empty())
+	    settings->set(Settings::setWriteDevice, opts->scsiDevice.c_str());
 
 	if (opts->writingSpeed >= 0) {
 	    settings->set(Settings::setWriteSpeed, opts->writingSpeed);
@@ -710,8 +710,8 @@ static void exportSettings(DaoCommandLine* opts, Settings* settings)
 	if (opts->driverId != NULL)
 	    settings->set(Settings::setReadDriver, opts->driverId);
 
-	if (opts->scsiDevice != NULL)
-	    settings->set(Settings::setReadDevice, opts->scsiDevice);
+	if (!opts->scsiDevice.empty())
+	    settings->set(Settings::setReadDevice, opts->scsiDevice.c_str());
 
 	settings->set(Settings::setReadParanoiaMode, opts->paranoiaMode);
     }
@@ -731,8 +731,8 @@ static void exportSettings(DaoCommandLine* opts, Settings* settings)
 	if (opts->driverId != NULL)
 	    settings->set(Settings::setWriteDriver, opts->driverId);
     
-	if (opts->scsiDevice != NULL)
-	    settings->set(Settings::setWriteDevice, opts->scsiDevice);
+	if (!opts->scsiDevice.empty())
+	    settings->set(Settings::setWriteDevice, opts->scsiDevice.c_str());
     }
 
     if (cmd == READ_CDDB ||
@@ -1239,10 +1239,10 @@ static CdrDriver *selectDriver(DaoCommand cmd, ScsiIf *scsiIf,
   return ret;
 }
 
-const char* getDefaultDevice(DaoDeviceType req)
+std::string getDefaultDevice(DaoDeviceType req)
 {
     int i, len;
-    static char buf[128];
+    std::string buf;
 
     // This function should not be called if the command issues
     // doesn't actually require a device.
@@ -1270,18 +1270,18 @@ const char* getDefaultDevice(DaoDeviceType req)
 	    if (req == NEED_CDRW_W && !rww)
 	      continue;
 
-	    strncpy(buf, sdata[i].dev.c_str(), 128);
+            buf = sdata[i].dev;
 	    delete[] sdata;
 	    return buf;
 	}
 	delete[] sdata;
     }
 
-    return NULL;
+    return std::string();
 }
 
 #define MAX_RETRY 10
-static CdrDriver *setupDevice(DaoCommand cmd, const char *scsiDevice,
+static CdrDriver *setupDevice(DaoCommand cmd, const std::string& scsiDevice,
 			      const char *driverId, int initDevice,
 			      int checkReady, int checkEmpty,
 			      int readingSpeed,
@@ -1295,7 +1295,7 @@ static CdrDriver *setupDevice(DaoCommand cmd, const char *scsiDevice,
   int initTries = 2;
   int ret = 0;
 
-  scsiIf = new ScsiIf(scsiDevice);
+  scsiIf = new ScsiIf(scsiDevice.c_str());
 
   switch (scsiIf->init()) {
   case 1:
@@ -1310,7 +1310,7 @@ static CdrDriver *setupDevice(DaoCommand cmd, const char *scsiDevice,
     break;
   }
   
-  log_message(2, "%s: %s %s\tRev: %s", scsiDevice, scsiIf->vendor(),
+  log_message(2, "%s: %s %s\tRev: %s", scsiDevice.c_str(), scsiIf->vendor(),
 	  scsiIf->product(), scsiIf->revision());
 
 
@@ -1485,7 +1485,7 @@ static CdrDriver *setupDevice(DaoCommand cmd, const char *scsiDevice,
 			else
 				log_message(2, "OS lock on device %s. Unit won't be accessible while burning.", devstr);
 		}	else	{
-			log_message(-2, "Unable to determine drive letter for device %s! No OS level locking.", scsiDevice);
+                    log_message(-2, "Unable to determine drive letter for device %s! No OS level locking.", scsiDevice.c_str());
 			if (fh) CloseHandle (fh);
 			fh = NULL;
 		}
@@ -2416,9 +2416,9 @@ int main(int argc, char **argv)
 
     if (cmdInfo[options.command].requiredDevice != NO_DEVICE) {
 
-	if (!options.scsiDevice)
+	if (options.scsiDevice.empty())
 	    options.scsiDevice =
-		getDefaultDevice(cmdInfo[options.command].requiredDevice);
+              getDefaultDevice(cmdInfo[options.command].requiredDevice);
 
 	cdr = setupDevice(options.command,
 			  options.scsiDevice,
@@ -2437,7 +2437,7 @@ int main(int argc, char **argv)
 			  options.reload);
 
 	if (cdr == NULL) {
-	    log_message(-2, "Cannot setup device %s.", options.scsiDevice);
+	    log_message(-2, "Cannot setup device %s.", options.scsiDevice.c_str());
 	    exitCode = 1; goto fail;
 	}
 
@@ -2478,7 +2478,7 @@ int main(int argc, char **argv)
   
     if (options.command == COPY_CD) {
 	if (options.sourceScsiDevice != NULL && 
-	    strcmp(options.scsiDevice, options.sourceScsiDevice) != 0) {
+	    options.scsiDevice != options.sourceScsiDevice) {
 	    delSrcDevice = 1;
 	    srcCdr = setupDevice(READ_CD, options.sourceScsiDevice,
 				 options.sourceDriverId,
