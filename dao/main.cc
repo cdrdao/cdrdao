@@ -37,7 +37,9 @@
 #include <ctype.h>
 #include <list>
 #include <string>
+#include <vector>
 #include <assert.h>
+#include <sstream>
 
 #include "log.h"
 #include "util.h"
@@ -60,6 +62,8 @@
 #define IOCTL_SCSI_PASS_THROUGH_DIRECT  CTL_CODE(IOCTL_SCSI_BASE, 0x0405, METHOD_BUFFERED, FILE_READ_ACCESS | FILE_WRITE_ACCESS)
 #define IOCTL_SCSI_GET_ADDRESS          CTL_CODE(IOCTL_SCSI_BASE, 0x0406, METHOD_BUFFERED, FILE_ANY_ACCESS)
 #endif
+
+using namespace std;
 
 #ifdef UNIXWARE
 extern "C" {
@@ -147,12 +151,12 @@ typedef struct {
     const char* tocFile;
     const char* driverId;
     const char* sourceDriverId;
-    std::string scsiDevice;
+    string scsiDevice;
     const char* sourceScsiDevice;
     const char* dataFilename;
     const char* cddbLocalDbDir;
-    const char* tmpFileDir;
-    const char* cddbServerList;
+    string tmpFileDir;
+    vector<string> cddbServerList;
 
     int  readingSpeed;
     int  writingSpeed;
@@ -210,15 +214,14 @@ static void printVersion()
   log_message(2, "Cdrdao version %s - (C) Andreas Mueller <andreas@daneb.de>",
 	  VERSION);
 
-  std::list<std::string> list;
-  int num = formatConverter.supportedExtensions(list);
+  list<string> elist;
+  int num = formatConverter.supportedExtensions(elist);
 
   if (num) {
-    std::string msg = "Format converter enabled for extensions:";
-    std::list<std::string>::iterator i = list.begin();
-    for (;i != list.end(); i++) {
-      msg += " ";
-      msg += (*i);
+    string msg = "Format converter enabled for extensions:";
+    for (const auto& i : elist) {
+        msg += " ";
+        msg += i;
     }
     log_message(3, msg.c_str());
   }
@@ -248,9 +251,10 @@ static void setOptionDefaults(DaoCommandLine* options)
 #else
     options->fifoBuffers = 32;
 #endif
-    options->cddbServerList = "freedb.freedb.org freedb.freedb.org"
-	":/~cddb/cddb.cgi uk.freedb.org uk.freedb.org:/~cddb/cddb.cgi"
-	"cz.freedb.org cz.freedb.org:/~cddb/cddb.cgi";
+    options->cddbServerList = {
+        "gnudb.gnudb.org",
+        "http://gnudb.gnudb.org:80/~cddb/cddb.cgi"
+    };
 
     options->blankingMode = CdrDriver::BLANK_MINIMAL;
     options->readSubchanMode = TrackData::SUBCHAN_NONE;
@@ -655,9 +659,8 @@ static void importSettings(DaoCommandLine* opts, Settings* settings)
 
     if (cmd == READ_CDDB || cmd == COPY_CD || cmd == READ_TOC ||
 	cmd == READ_CD || cmd == DISCID) {
-	if ((sval = settings->getString(Settings::setCddbServerList)) != NULL) {
-	    opts->cddbServerList = strdupCC(sval);
-	}
+        settings->getStrings(Settings::setCddbServerList,
+                             opts->cddbServerList);
 
 	if ((sval = settings->getString(Settings::setCddbDbDir)) != NULL) {
 	    opts->cddbLocalDbDir = strdupCC(sval);
@@ -668,7 +671,7 @@ static void importSettings(DaoCommandLine* opts, Settings* settings)
 	    opts->cddbTimeout = *ival;
 	}
 	if ((sval = settings->getString(Settings::setTmpFileDir)) != NULL) {
-	    opts->tmpFileDir = strdupCC(sval);
+	    opts->tmpFileDir = sval;
 	}
     }
 
@@ -738,7 +741,7 @@ static void exportSettings(DaoCommandLine* opts, Settings* settings)
     if (cmd == READ_CDDB ||
 	(opts->withCddb && (cmd == COPY_CD || cmd == READ_TOC ||
 			      cmd == READ_CD || cmd == DISCID))) {
-	if (opts->cddbServerList != NULL) {
+	if (opts->cddbServerList.size()) {
 	    settings->set(Settings::setCddbServerList, opts->cddbServerList);
 	}
 
@@ -757,7 +760,8 @@ static void exportSettings(DaoCommandLine* opts, Settings* settings)
 
     if (cmd == SHOW_TOC || cmd == SIMULATE || cmd == WRITE ||
 	cmd == TOC_INFO || cmd == TOC_SIZE) {
-	settings->set(Settings::setTmpFileDir, opts->tmpFileDir);
+        if (opts->tmpFileDir.size())
+            settings->set(Settings::setTmpFileDir, opts->tmpFileDir.c_str());
     }
 }
 
@@ -765,6 +769,7 @@ static int parseCmdline(int argc, char **argv, DaoCommandLine* opts,
 			Settings* settings)
 {
     int i;
+    bool clear_default_servers = true;
 
     if (argc < 1) {
 	return 1;
@@ -1033,7 +1038,16 @@ static int parseCmdline(int argc, char **argv, DaoCommandLine* opts,
 		    log_message(-2, "Missing argument after: %s", *argv);
 		    return 1;
 		} else {
-		    opts->cddbServerList = argv[1];
+                    if (clear_default_servers) {
+                        clear_default_servers = false;
+                        opts->cddbServerList.clear();
+                    }
+                    {
+                        string parsed;
+                        stringstream iss(argv[1]);
+                        while (getline(iss, parsed, ' '))
+                            opts->cddbServerList.push_back(parsed);
+                    }
 		    argc--, argv++;
 		}
 	    }
@@ -1158,8 +1172,8 @@ static int parseCmdline(int argc, char **argv, DaoCommandLine* opts,
 static void commitSettings(DaoCommandLine* opts, Settings* settings,
 			   const char* settingsPath)
 {
-    if (opts->tmpFileDir)
-	tempFileManager.setTempDirectory(opts->tmpFileDir);
+    if (opts->tmpFileDir.size())
+	tempFileManager.setTempDirectory(opts->tmpFileDir.c_str());
 
     tempFileManager.setKeepTemps(opts->keep);
 
@@ -1239,10 +1253,10 @@ static CdrDriver *selectDriver(DaoCommand cmd, ScsiIf *scsiIf,
   return ret;
 }
 
-std::string getDefaultDevice(DaoDeviceType req)
+string getDefaultDevice(DaoDeviceType req)
 {
     int i, len;
-    std::string buf;
+    string buf;
 
     // This function should not be called if the command issues
     // doesn't actually require a device.
@@ -1277,11 +1291,11 @@ std::string getDefaultDevice(DaoDeviceType req)
 	delete[] sdata;
     }
 
-    return std::string();
+    return string();
 }
 
 #define MAX_RETRY 10
-static CdrDriver *setupDevice(DaoCommand cmd, const std::string& scsiDevice,
+static CdrDriver *setupDevice(DaoCommand cmd, const string& scsiDevice,
 			      const char *driverId, int initDevice,
 			      int checkReady, int checkEmpty,
 			      int readingSpeed,
@@ -1779,7 +1793,6 @@ static void printCddbQuery(Toc *toc)
 static int readCddb(DaoCommandLine* opts, Toc *toc, bool showEntry = false)
 {
   int err = 0;
-  char *servers = strdupCC(opts->cddbServerList);
   char *p;
   const char *sep = " ,";
   char *user = NULL;
@@ -1796,11 +1809,8 @@ static int readCddb(DaoCommandLine* opts, Toc *toc, bool showEntry = false)
     cddb.localCddbDirectory(opts->cddbLocalDbDir);
 
 
-  for (p = strtok(servers, sep); p != NULL; p = strtok(NULL, sep))
-    cddb.appendServer(p);
-
-  delete[] servers;
-  servers = NULL;
+  for (const auto& p : opts->cddbServerList)
+    cddb.appendServer(p.c_str());
 
   if ((pwent = getpwuid(getuid())) != NULL &&
       pwent->pw_name != NULL) {
@@ -2012,7 +2022,7 @@ static int copyCd(DaoCommandLine* opts, CdrDriver *src, CdrDriver *dst)
 
     if (checkToc(toc, opts->force)) {
 	log_message(-3, "Toc created from source CD image is inconsistent.");
-	toc->print(std::cout);
+	toc->print(cout);
 	delete toc;
 	return 1;
     }
@@ -2157,7 +2167,7 @@ static int copyCdOnTheFly(DaoCommandLine* opts,CdrDriver *src, CdrDriver *dst)
     if (checkToc(toc, opts->force) != 0) {
 	log_message(-3, "Toc created from source CD image is inconsistent"
 		    "- please report.");
-	toc->print(std::cout);
+	toc->print(cout);
 	ret = 1;
 	goto fail;
     }
@@ -2667,7 +2677,7 @@ int main(int argc, char **argv)
 	    }
 
 	    {
-		std::ofstream out(options.tocFile);
+		ofstream out(options.tocFile);
 		if (!out) {
 		    log_message(-2, "Cannot open \"%s\" for writing: %s",
 				options.tocFile,
@@ -2723,7 +2733,7 @@ int main(int argc, char **argv)
 	}
 
 	{
-	    std::ofstream out(options.tocFile);
+	    ofstream out(options.tocFile);
 	    if (!out) {
 		log_message(-2, "Cannot open \"%s\" for writing: %s",
 			    options.tocFile, strerror(errno));

@@ -284,6 +284,7 @@ dnl -lc_r is automatically done by the linker
   *darwin*)
             AC_DEFINE(_P1003_1B_VISIBLE,1,"")
             LIBS="$LIBS -framework CoreServices -framework IOKit"
+            CXXFLAGS="$CXXFLAGS -std=c++11"
             ;;
 
 esac

@@ -25,11 +25,14 @@
 #include <string.h>
 #include <assert.h>
 
+#include <sstream>
+
 #include "Settings.h"
 
 #include "util.h"
 #include "log.h"
 
+using namespace std;
 
 #ifdef UNIXWARE
 extern "C" {
@@ -322,6 +325,19 @@ const char *Settings::getString(const char *name) const
     return NULL;
 }
 
+bool Settings::getStrings(const char* name, vector<string>& strings) const
+{
+  const char* entry = getString(name);
+  if (!entry)
+    return false;
+
+  string parsed;
+  stringstream iss(entry);
+  while (getline(iss, parsed, ';'))
+    strings.push_back(parsed);
+  return true;
+}
+
 void Settings::set(const char *name, int val)
 {
   impl_->set(name, val);
@@ -331,3 +347,14 @@ void Settings::set(const char *name, const char *val)
 {
   impl_->set(name, val);
 }  
+
+void Settings::set(const char* name, const vector<string>& strings)
+{
+  string accu;
+  for (const auto& s : strings) {
+    if (accu.size())
+      accu += ";";
+    accu += s;
+  }
+  set(name, accu.c_str());
+}
