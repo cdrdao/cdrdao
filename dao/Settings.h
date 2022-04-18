@@ -20,6 +20,9 @@
 #ifndef __SETTINGS_H__
 #define __SETTINGS_H__
 
+#include <string>
+#include <vector>
+
 class Settings {
 public:
   Settings();
@@ -30,9 +33,11 @@ public:
 
   const int *getInteger(const char *) const;
   const char *getString(const char *) const;
+  bool getStrings(const char *, std::vector<std::string>& strings) const;
 
   void set(const char *, int);
   void set(const char *, const char *);
+  void set(const char *, const std::vector<std::string>& strings);
 
   // Key name definitions
   static const char* setWriteSpeed;
