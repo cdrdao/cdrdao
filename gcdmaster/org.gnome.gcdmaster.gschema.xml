@@ -5,7 +5,7 @@
       <summary>Temporary files directory</summary>
       <description>Directory in which temporary decoded audio files are stored</description>
     </key>
-    <key name="manual-devices" type="as">
+    <key name="configured-devices" type="as">
       <default>[]</default>
       <summary>Manually configured devices</summary>
       <description>List of manually configured devices</description>

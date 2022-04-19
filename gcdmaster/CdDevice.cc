@@ -956,7 +956,7 @@ void CdDevice::importSettings()
 
     CdDevice::init();
 
-    Glib::StringArrayHandle sa = configManager->get_string_array("manual-devices");
+    Glib::StringArrayHandle sa = configManager->get_string_array("configured-devices");
 
     if (!sa.empty()) {
         for (auto s : sa) {
@@ -988,7 +988,7 @@ void CdDevice::exportSettings()
         }
     }
 
-    configManager->set("manual-devices", sa);
+    configManager->set("configured-devices", sa);
 }
 
 CdDevice *CdDevice::add(const char* dev, const char *vendor,
