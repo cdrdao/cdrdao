@@ -65,6 +65,8 @@
 
 using namespace std;
 
+namespace {
+
 #ifdef UNIXWARE
 extern "C" {
   extern int seteuid(uid_t);
@@ -107,7 +109,7 @@ typedef enum {
 // main commands, including some of the basic processing steps
 // required, almost as a simplified state machine.
 
-static struct {
+struct {
     // The command code, which is also the index into the array
     DaoCommand cmd;
     // The command-line string for this command
@@ -143,8 +145,8 @@ static struct {
     { SHOW_VERSION, "version",    NO_DEVICE,   0, 0, 0 },
 };
 
-typedef struct {
-
+struct DaoCommandLine
+{
     DaoCommand command;
 
     const char* progName;
@@ -194,22 +196,65 @@ typedef struct {
     CdrDriver::BlankingMode blankingMode;
     TrackData::SubChannelMode readSubchanMode;
 
-} DaoCommandLine;
+    DaoCommandLine();
 
-static bool isNT = false;
+    void printUsage();
+    void importSettings(Settings* settings);
+    void exportSettings(Settings* settings);
+    void commitSettings(Settings* settings, const char* settingsPath);
+    int parseCmdLine(int argc, char** argv, Settings* settings);
+};
+
+DaoCommandLine::DaoCommandLine() :
+    eject(false), swap(false), multiSession(false), fastToc(false), pause(false),
+    readRaw(false), mode2Mixed(false), remoteMode(false),
+    reload(false), force(false), onTheFly(false), writeSimulate(false), saveSettings(false),
+    fullBurn(false), withCddb(false), taoSource(false), keepImage(false), overburn(false),
+    writeSpeedControl(false), keep(false), printQuery(false)
+{
+    readingSpeed = -1;
+    writingSpeed = -1;
+    command = UNKNOWN;
+    verbose = 2;
+    session = 1;
+    pause = true;
+    mode2Mixed = true;
+    remoteFd = -1;
+    paranoiaMode = 3;
+    cddbTimeout = 60;
+    userCapacity = 0;
+    taoSourceAdjust = -1;
+    bufferUnderrunProtection = 1;
+    writeSpeedControl = true;
+    scsiDevice.clear();
+#if defined(__FreeBSD__)
+    fifoBuffers = 20;
+#else
+    fifoBuffers = 32;
+#endif
+    cddbServerList = {
+        "gnudb.gnudb.org",
+        "http://gnudb.gnudb.org:80/~cddb/cddb.cgi"
+    };
+
+    blankingMode = CdrDriver::BLANK_MINIMAL;
+    readSubchanMode = TrackData::SUBCHAN_NONE;
+}
+
+bool isNT = false;
 
 #ifdef __CYGWIN__
 /*! \brief OS handle to the device
 	As obtained from CreateFile, used to apply OS level locking.
 */
-static HANDLE fh = NULL;
+HANDLE fh = NULL;
 /*! \brief Device string
 	Like "\\\\.\\E:", used in CreateFile to obtain handle to device.
 */
-static char devstr[10];
+char devstr[10];
 #endif
 
-static void printVersion()
+void printVersion()
 {
   log_message(2, "Cdrdao version %s - (C) Andreas Mueller <andreas@daneb.de>",
 	  VERSION);
@@ -227,46 +272,13 @@ static void printVersion()
   }
 }
 
-static void setOptionDefaults(DaoCommandLine* options)
+void DaoCommandLine::printUsage()
 {
-    memset(options, 0, sizeof(DaoCommandLine));
-
-    options->readingSpeed = -1;
-    options->writingSpeed = -1;
-    options->command = UNKNOWN;
-    options->verbose = 2;
-    options->session = 1;
-    options->pause = true;
-    options->mode2Mixed = true;
-    options->remoteFd = -1;
-    options->paranoiaMode = 3;
-    options->cddbTimeout = 60;
-    options->taoSourceAdjust = -1;
-    options->bufferUnderrunProtection = 1;
-    options->writeSpeedControl = true;
-    options->keep = false;
-    options->printQuery = false;
-#if defined(__FreeBSD__)
-    options->fifoBuffers = 20;
-#else
-    options->fifoBuffers = 32;
-#endif
-    options->cddbServerList = {
-        "gnudb.gnudb.org",
-        "http://gnudb.gnudb.org:80/~cddb/cddb.cgi"
-    };
-
-    options->blankingMode = CdrDriver::BLANK_MINIMAL;
-    options->readSubchanMode = TrackData::SUBCHAN_NONE;
-}
-
-static void printUsage(DaoCommandLine* options)
-{
-    switch (options->command) {
+    switch (command) {
 
   case UNKNOWN:
     log_message(0, "\nUsage: %s <command> [options] [toc-file]",
-		options->progName);
+		progName);
     log_message(0,
 "command:\n"
 "  show-toc   - prints out toc and exits\n"
@@ -289,12 +301,12 @@ static void printUsage(DaoCommandLine* options)
 "  copy       - copies CD\n");
     
     log_message(0, "\n Try '%s <command> -h' to get a list of available "
-		"options\n", options->progName);
+		"options\n", progName);
     break;
     
   case SHOW_TOC:
     log_message(0, "\nUsage: %s show-toc [options] toc-file",
-		options->progName);
+		progName);
     log_message(0,
 "options:\n"
 "  --tmpdir <path>         - sets directory for temporary wav files\n"
@@ -304,17 +316,17 @@ static void printUsage(DaoCommandLine* options)
     
   case SHOW_DATA:
     log_message(0, "\nUsage: %s show-data [--swap] [-v #] toc-file\n",
-		options->progName);
+		progName);
     break;
     
   case READ_TEST:
     log_message(0, "\nUsage: %s read-test [-v #] toc-file\n",
-		options->progName);
+		progName);
     break;
   
   case SIMULATE:
     log_message(0, "\nUsage: %s simulate [options] toc-file",
-		options->progName);
+		progName);
     log_message(0,
 "options:\n"
 "  --device [proto:]{<x,y,z>|device} - sets SCSI device of CD-writer\n"
@@ -340,7 +352,7 @@ static void printUsage(DaoCommandLine* options)
     break;
     
   case WRITE:
-    log_message(0, "\nUsage: %s write [options] toc-file", options->progName);
+    log_message(0, "\nUsage: %s write [options] toc-file", progName);
     log_message(0,
 "options:\n"
 "  --device [proto:]{<x,y,z>|device} - sets SCSI device of CD-writer\n"
@@ -373,7 +385,7 @@ static void printUsage(DaoCommandLine* options)
     
   case READ_TOC:
     log_message(0, "\nUsage: %s read-toc [options] toc-file",
-		options->progName);
+		progName);
     log_message(0,
 "options:\n"
 "  --device [proto:]{<x,y,z>|device} - sets SCSI device of CD-ROM reader\n"
@@ -398,7 +410,7 @@ static void printUsage(DaoCommandLine* options)
     break;
     
   case DISK_INFO:
-    log_message(0, "\nUsage: %s disk-info [options]", options->progName);
+    log_message(0, "\nUsage: %s disk-info [options]", progName);
     log_message(0,
 "options:\n"
 "  --device [proto:]{<x,y,z>|device} - sets SCSI device of CD-writer\n"
@@ -407,7 +419,7 @@ static void printUsage(DaoCommandLine* options)
     break;
     
   case DISCID:
-    log_message(0, "\nUsage: %s discid [options]", options->progName);
+    log_message(0, "\nUsage: %s discid [options]", progName);
     log_message(0,
 "options:\n"
 "  --device [proto:]{<x,y,z>|device} - sets SCSI device of CD-writer\n"
@@ -422,7 +434,7 @@ static void printUsage(DaoCommandLine* options)
    
   case READ_CD:
     log_message(0, "\nUsage: %s read-cd [options] toc-file",
-		options->progName);
+		progName);
     log_message(0,
 "options:\n"
 "  --device [proto:]{<x,y,z>|device} - sets SCSI device of CD-ROM reader\n"
@@ -449,7 +461,7 @@ static void printUsage(DaoCommandLine* options)
     
   case TOC_INFO:
       log_message(0, "\nUsage: %s toc-info [options] toc-file",
-		  options->progName);
+		  progName);
     log_message(0,
 "options:\n"
 "  --tmpdir <path>         - sets directory for temporary wav files\n"
@@ -459,7 +471,7 @@ static void printUsage(DaoCommandLine* options)
     
   case TOC_SIZE:
     log_message(0, "\nUsage: %s toc-size [options] toc-file",
-		options->progName);
+		progName);
     log_message(0,
 "options:\n"
 "  --tmpdir <path>         - sets directory for temporary wav files\n"
@@ -468,7 +480,7 @@ static void printUsage(DaoCommandLine* options)
     break;
 
   case BLANK:
-    log_message(0, "\nUsage: %s blank [options]", options->progName);
+    log_message(0, "\nUsage: %s blank [options]", progName);
     log_message(0,
 "options:\n"
 "  --device [proto:]{<x,y,z>|device} - sets SCSI device of CD-writer\n"
@@ -480,11 +492,11 @@ static void printUsage(DaoCommandLine* options)
     break;
     
   case SCAN_BUS:
-    log_message(0, "\nUsage: %s scan-bus [-v #]\n", options->progName);
+    log_message(0, "\nUsage: %s scan-bus [-v #]\n", progName);
     break;
     
   case UNLOCK:
-    log_message(0, "\nUsage: %s unlock [options]", options->progName);
+    log_message(0, "\nUsage: %s unlock [options]", progName);
     log_message(0,
 "options:\n"
 "  --device [proto:]{<x,y,z>|device} - sets SCSI device of CD-writer\n"
@@ -495,7 +507,7 @@ static void printUsage(DaoCommandLine* options)
     break;
     
   case DRIVE_INFO:
-    log_message(0, "\nUsage: %s drive-info [options]", options->progName);
+    log_message(0, "\nUsage: %s drive-info [options]", progName);
     log_message(0,
 "options:\n"
 "  --device [proto:]{<x,y,z>|device} - sets SCSI device of CD-writer\n"
@@ -504,7 +516,7 @@ static void printUsage(DaoCommandLine* options)
     break;
     
   case COPY_CD:
-    log_message(0, "\nUsage: %s copy [options]", options->progName);
+    log_message(0, "\nUsage: %s copy [options]", progName);
     log_message(0,
 "options:\n"
 "  --device [proto:]{<x,y,z>|device} - sets SCSI device of CD-writer\n"
@@ -553,7 +565,7 @@ static void printUsage(DaoCommandLine* options)
   
   case READ_CDDB:
     log_message(0, "\nUsage: %s read-cddb [options] toc-file",
-		options->progName);
+		progName);
     log_message(0,
 "options:\n"
 "  --cddb-servers <list>   - sets space separated list of CDDB servers\n"
@@ -564,7 +576,7 @@ static void printUsage(DaoCommandLine* options)
     break;
     
   case MSINFO:
-    log_message(0, "\nUsage: %s msinfo [options]", options->progName);
+    log_message(0, "\nUsage: %s msinfo [options]", progName);
     log_message(0,
 "options:\n"
 "  --device [proto:]{<x,y,z>|device} - sets SCSI device of CD-writer\n"
@@ -575,198 +587,200 @@ static void printUsage(DaoCommandLine* options)
     
   default:
     log_message(0, "Sorry, no help available for command %d :-(\n",
-		options->command);
+		command);
     break;
   }
   
 }
 
-static void importSettings(DaoCommandLine* opts, Settings* settings)
+void DaoCommandLine::importSettings(Settings* settings)
 {
     const char *sval;
     const int *ival;
 
-    DaoCommand cmd = opts->command;
+    DaoCommand cmd = command;
 
     if (cmd == SIMULATE || cmd == WRITE || cmd == COPY_CD) {
 	if ((sval = settings->getString(Settings::setWriteDriver)) != NULL) {
-	    opts->driverId = strdupCC(sval);
+	    driverId = strdupCC(sval);
 	}
 
 	if ((sval = settings->getString(Settings::setWriteDevice)) != NULL) {
-	    opts->scsiDevice = sval;
+	    scsiDevice = sval;
 	}
     
 	if ((ival = settings->getInteger(Settings::setWriteSpeed)) != NULL &&
 	    *ival >= 0) {
-	    opts->writingSpeed = *ival;
+	    writingSpeed = *ival;
 	}
 
 	if ((ival = settings->getInteger(Settings::setWriteBuffers)) != NULL &&
 	    *ival >= 10) {
-	    opts->fifoBuffers = *ival;
+	    fifoBuffers = *ival;
 	}
 	if ((ival = settings->getInteger(Settings::setUserCapacity)) != NULL &&
 	    *ival >= 0) {
-	    opts->userCapacity = *ival;
+	    userCapacity = *ival;
 	}
 	if ((ival = settings->getInteger(Settings::setFullBurn)) != NULL &&
 	    *ival >= 0) {
-	    opts->fullBurn = *ival;
+	    fullBurn = *ival;
 	}
     }
 
     if (cmd == READ_CD || cmd == READ_TOC) {
 	if ((sval = settings->getString(Settings::setReadDriver)) != NULL) {
-	    opts->driverId = strdupCC(sval);
+	    driverId = strdupCC(sval);
 	}
 
 	if ((sval = settings->getString(Settings::setReadDevice)) != NULL) {
-	    opts->scsiDevice = sval;
+	    scsiDevice = sval;
 	}
 
 	if ((ival = settings->getInteger(Settings::setReadParanoiaMode)) != NULL &&
 	    *ival >= 0) {
-	    opts->paranoiaMode = *ival;
+	    paranoiaMode = *ival;
 	}
     }
 
     if (cmd == COPY_CD) {
 	if ((sval = settings->getString(Settings::setReadDriver)) != NULL) {
-	    opts->sourceDriverId = strdupCC(sval);
+	    sourceDriverId = strdupCC(sval);
 	}
 
 	if ((sval = settings->getString(Settings::setReadDevice)) != NULL) {
-	    opts->sourceScsiDevice = strdupCC(sval);
+	    sourceScsiDevice = strdupCC(sval);
 	}
     
 	if ((ival = settings->getInteger(Settings::setReadParanoiaMode)) != NULL &&
 	    *ival >= 0) {
-	    opts->paranoiaMode = *ival;
+	    paranoiaMode = *ival;
 	}
     }
 
     if (cmd == BLANK || cmd == DISK_INFO || cmd == MSINFO || cmd == UNLOCK ||
 	cmd == DISCID || cmd == DRIVE_INFO) {
 	if ((sval = settings->getString(Settings::setWriteDriver)) != NULL) {
-	    opts->driverId = strdupCC(sval);
+	    driverId = strdupCC(sval);
 	}
 
 	if ((sval = settings->getString(Settings::setWriteDevice)) != NULL) {
-	    opts->scsiDevice = sval;
+	    scsiDevice = sval;
 	}
     }
 
     if (cmd == READ_CDDB || cmd == COPY_CD || cmd == READ_TOC ||
 	cmd == READ_CD || cmd == DISCID) {
-        settings->getStrings(Settings::setCddbServerList,
-                             opts->cddbServerList);
+        vector<string> sl;
+        settings->getStrings(Settings::setCddbServerList, sl);
+        if (sl.size())
+            cddbServerList = sl;
 
 	if ((sval = settings->getString(Settings::setCddbDbDir)) != NULL) {
-	    opts->cddbLocalDbDir = strdupCC(sval);
+	    cddbLocalDbDir = strdupCC(sval);
 	}
 
 	if ((ival = settings->getInteger(Settings::setCddbTimeout)) != NULL &&
 	    *ival > 0) {
-	    opts->cddbTimeout = *ival;
+	    cddbTimeout = *ival;
 	}
 	if ((sval = settings->getString(Settings::setTmpFileDir)) != NULL) {
-	    opts->tmpFileDir = sval;
+	    tmpFileDir = sval;
 	}
     }
 
     if ((ival = settings->getInteger(Settings::setReadSpeed)) != NULL &&
 	*ival >= 0) {
-	opts->readingSpeed = *ival;
+	readingSpeed = *ival;
     }  
 }
 
-static void exportSettings(DaoCommandLine* opts, Settings* settings)
+void DaoCommandLine::exportSettings(Settings* settings)
 {
-    DaoCommand cmd = opts->command;
+    DaoCommand cmd = command;
 
     if (cmd == SIMULATE || cmd == WRITE || cmd == COPY_CD) {
-	if (opts->driverId != NULL)
-	    settings->set(Settings::setWriteDriver, opts->driverId);
+	if (driverId != NULL)
+	    settings->set(Settings::setWriteDriver, driverId);
     
-	if (!opts->scsiDevice.empty())
-	    settings->set(Settings::setWriteDevice, opts->scsiDevice.c_str());
+	if (!scsiDevice.empty())
+	    settings->set(Settings::setWriteDevice, scsiDevice.c_str());
 
-	if (opts->writingSpeed >= 0) {
-	    settings->set(Settings::setWriteSpeed, opts->writingSpeed);
+	if (writingSpeed >= 0) {
+	    settings->set(Settings::setWriteSpeed, writingSpeed);
     }
 
-	if (opts->fifoBuffers > 0) {
-	    settings->set(Settings::setWriteBuffers, opts->fifoBuffers);
+	if (fifoBuffers > 0) {
+	    settings->set(Settings::setWriteBuffers, fifoBuffers);
 	}
 
-	if (opts->fullBurn > 0) {
-	    settings->set(Settings::setFullBurn, opts->fullBurn);
+	if (fullBurn > 0) {
+	    settings->set(Settings::setFullBurn, fullBurn);
 	}
 
-	if (opts->userCapacity > 0) {
-	    settings->set(Settings::setUserCapacity, opts->userCapacity);
+	if (userCapacity > 0) {
+	    settings->set(Settings::setUserCapacity, userCapacity);
 	}
     }
 
     if (cmd == READ_CD) {
-	if (opts->driverId != NULL)
-	    settings->set(Settings::setReadDriver, opts->driverId);
+	if (driverId != NULL)
+	    settings->set(Settings::setReadDriver, driverId);
 
-	if (!opts->scsiDevice.empty())
-	    settings->set(Settings::setReadDevice, opts->scsiDevice.c_str());
+	if (!scsiDevice.empty())
+	    settings->set(Settings::setReadDevice, scsiDevice.c_str());
 
-	settings->set(Settings::setReadParanoiaMode, opts->paranoiaMode);
+	settings->set(Settings::setReadParanoiaMode, paranoiaMode);
     }
 
     if (cmd == COPY_CD) {
-	if (opts->sourceDriverId != NULL)
-	    settings->set(Settings::setReadDriver, opts->sourceDriverId);
+	if (sourceDriverId != NULL)
+	    settings->set(Settings::setReadDriver, sourceDriverId);
 
-	if (opts->sourceScsiDevice != NULL)
-	    settings->set(Settings::setReadDevice, opts->sourceScsiDevice);
+	if (sourceScsiDevice != NULL)
+	    settings->set(Settings::setReadDevice, sourceScsiDevice);
 
-	settings->set(Settings::setReadParanoiaMode, opts->paranoiaMode);
+	settings->set(Settings::setReadParanoiaMode, paranoiaMode);
     }
 
     if (cmd == BLANK || cmd == DISK_INFO || cmd == MSINFO || cmd == UNLOCK ||
 	cmd == DISCID || cmd == DRIVE_INFO) {
-	if (opts->driverId != NULL)
-	    settings->set(Settings::setWriteDriver, opts->driverId);
+	if (driverId != NULL)
+	    settings->set(Settings::setWriteDriver, driverId);
     
-	if (!opts->scsiDevice.empty())
-	    settings->set(Settings::setWriteDevice, opts->scsiDevice.c_str());
+	if (!scsiDevice.empty())
+	    settings->set(Settings::setWriteDevice, scsiDevice.c_str());
     }
 
     if (cmd == READ_CDDB ||
-	(opts->withCddb && (cmd == COPY_CD || cmd == READ_TOC ||
+	(withCddb && (cmd == COPY_CD || cmd == READ_TOC ||
 			      cmd == READ_CD || cmd == DISCID))) {
-	if (opts->cddbServerList.size()) {
-	    settings->set(Settings::setCddbServerList, opts->cddbServerList);
+	if (cddbServerList.size()) {
+	    settings->set(Settings::setCddbServerList, cddbServerList);
 	}
 
-	if (opts->cddbLocalDbDir != NULL) {
-	    settings->set(Settings::setCddbDbDir, opts->cddbLocalDbDir);
+	if (cddbLocalDbDir != NULL) {
+	    settings->set(Settings::setCddbDbDir, cddbLocalDbDir);
 	}
 
-	if (opts->cddbTimeout > 0) {
-	    settings->set(Settings::setCddbTimeout, opts->cddbTimeout);
+	if (cddbTimeout > 0) {
+	    settings->set(Settings::setCddbTimeout, cddbTimeout);
 	}
     }
 
-    if (opts->readingSpeed >= 0) {
-	settings->set(Settings::setReadSpeed, opts->readingSpeed);
+    if (readingSpeed >= 0) {
+	settings->set(Settings::setReadSpeed, readingSpeed);
     }
 
     if (cmd == SHOW_TOC || cmd == SIMULATE || cmd == WRITE ||
 	cmd == TOC_INFO || cmd == TOC_SIZE) {
-        if (opts->tmpFileDir.size())
-            settings->set(Settings::setTmpFileDir, opts->tmpFileDir.c_str());
+        if (tmpFileDir.size())
+            settings->set(Settings::setTmpFileDir, tmpFileDir.c_str());
     }
 }
 
-static int parseCmdline(int argc, char **argv, DaoCommandLine* opts,
-			Settings* settings)
+int DaoCommandLine::parseCmdLine(int argc, char **argv,
+                                 Settings* settings)
 {
     int i;
     bool clear_default_servers = true;
@@ -777,18 +791,18 @@ static int parseCmdline(int argc, char **argv, DaoCommandLine* opts,
 
     for (i = 0; i < LAST_CMD; i++) {
 	if (strcmp(*argv, cmdInfo[i].str) == 0) {
-	    opts->command = cmdInfo[i].cmd;
+	    command = cmdInfo[i].cmd;
 	    break;
 	}
     }
 
-    if (opts->command == UNKNOWN) {
+    if (command == UNKNOWN) {
 	log_message(-2, "Illegal command: %s", *argv);
 	return 1;
     }
 
     // retrieve settings from $HOME/.cdrdao for given command
-    importSettings(opts, settings);
+    importSettings(settings);
 
     argc--, argv++;
 
@@ -801,20 +815,20 @@ static int parseCmdline(int argc, char **argv, DaoCommandLine* opts,
 	
 	    case 'v':
 		if ((*argv)[2] != 0) {
-		    opts->verbose = atoi((*argv) + 2);
+		    verbose = atoi((*argv) + 2);
 		} else {
 		    if (argc < 2) {
 			log_message(-2, "Missing argument after: %s", *argv);
 			return 1;
 		    }  else {
-			opts->verbose = atoi(argv[1]);
+			verbose = atoi(argv[1]);
 			argc--, argv++;
 		    }
 		}
 		break;
 
 	    case 'n':
-		opts->pause = false;
+		pause = false;
 		break;
 
 	    default:
@@ -833,7 +847,7 @@ static int parseCmdline(int argc, char **argv, DaoCommandLine* opts,
 		    log_message(-2, "Missing argument after: %s", *argv);
 		    return 1;
 		} else {
-		    opts->scsiDevice = argv[1];
+		    scsiDevice = argv[1];
 		    argc--, argv++;
 		}
 	    } 
@@ -842,7 +856,7 @@ static int parseCmdline(int argc, char **argv, DaoCommandLine* opts,
 		    log_message(-2, "Missing argument after: %s", *argv);
 		    return 1;
 		} else {
-		    opts->sourceScsiDevice = argv[1];
+		    sourceScsiDevice = argv[1];
 		    argc--, argv++;
 		}
 	    }
@@ -851,8 +865,8 @@ static int parseCmdline(int argc, char **argv, DaoCommandLine* opts,
 		    log_message(-2, "Missing argument after: %s", *argv);
 		    return 1;
 		} else {
-		    opts->readingSpeed = atol(argv[1]);
-		    if (opts->readingSpeed < 0) {
+		    readingSpeed = atol(argv[1]);
+		    if (readingSpeed < 0) {
 			log_message(-2, "Illegal reading speed: %s", argv[1]);
 			return 1;
 		    }
@@ -864,8 +878,8 @@ static int parseCmdline(int argc, char **argv, DaoCommandLine* opts,
 		    log_message(-2, "Missing argument after: %s", *argv);
 		    return 1;
 		} else {
-		    opts->writingSpeed = atol(argv[1]);
-		    if (opts->writingSpeed < 0) {
+		    writingSpeed = atol(argv[1]);
+		    if (writingSpeed < 0) {
 			log_message(-2, "Illegal writing speed: %s", argv[1]);
 			return 1;
 		    }
@@ -877,8 +891,8 @@ static int parseCmdline(int argc, char **argv, DaoCommandLine* opts,
 		    log_message(-2, "Missing argument after: %s", *argv);
 		    return 1;
 		} else {
-		    opts->userCapacity = atol(argv[1]);
-		    if (opts->userCapacity < 0) {
+		    userCapacity = atol(argv[1]);
+		    if (userCapacity < 0) {
 			log_message(-2, "Illegal disk capacity: %s minutes",
 				    argv[1]);
 			return 1;
@@ -892,9 +906,9 @@ static int parseCmdline(int argc, char **argv, DaoCommandLine* opts,
 		    return 1;
 		} else {
 		    if (strcmp(argv[1], "full") == 0) {
-			opts->blankingMode = CdrDriver::BLANK_FULL;
+			blankingMode = CdrDriver::BLANK_FULL;
 		    } else if (strcmp(argv[1], "minimal") == 0) {
-			opts->blankingMode = CdrDriver::BLANK_MINIMAL;
+			blankingMode = CdrDriver::BLANK_MINIMAL;
 		    } else {
 			log_message(-2, "Illegal blank mode. Valid values: full minimal");
 			return 1;
@@ -907,8 +921,8 @@ static int parseCmdline(int argc, char **argv, DaoCommandLine* opts,
 		    log_message(-2, "Missing argument after: %s", *argv);
 		    return 1;
 		} else {
-		    opts->paranoiaMode= atol(argv[1]);
-		    if (opts->paranoiaMode < 0) {
+		    paranoiaMode= atol(argv[1]);
+		    if (paranoiaMode < 0) {
 			log_message(-2, "Illegal paranoia mode: %s", argv[1]);
 			return 1;
 		    }
@@ -920,75 +934,75 @@ static int parseCmdline(int argc, char **argv, DaoCommandLine* opts,
 		    log_message(-2, "Missing argument after: %s", *argv);
 		    return 1;
 		} else {
-		    opts->remoteFd = atol(argv[1]);
-		    if (opts->remoteFd < 0) {
+		    remoteFd = atol(argv[1]);
+		    if (remoteFd < 0) {
 			log_message(-2, "Invalid remote message file descriptor: %s", argv[1]);
 			return 1;
 		    }
-		    opts->remoteMode = true;
+		    remoteMode = true;
 		    argc--, argv++;
 		}
 	    }
 	    else if (strcmp((*argv) + 2, "eject") == 0) {
-		opts->eject = true;
+		eject = true;
 	    }
 	    else if (strcmp((*argv) + 2, "swap") == 0) {
-		opts->swap = true;
+		swap = true;
 	    }
 	    else if (strcmp((*argv) + 2, "query-string") == 0) {
-		opts->printQuery = true;
+		printQuery = true;
 	    }
 	    else if (strcmp((*argv) + 2, "multi") == 0) {
-		opts->multiSession = true;
+		multiSession = true;
 	    }
 	    else if (strcmp((*argv) + 2, "simulate") == 0) {
-		opts->writeSimulate = true;
+		writeSimulate = true;
 	    }
 	    else if (strcmp((*argv) + 2, "fast-toc") == 0) {
-		opts->fastToc = true;
+		fastToc = true;
 	    }
 	    else if (strcmp((*argv) + 2, "read-raw") == 0) {
-		opts->readRaw = true;
+		readRaw = true;
 	    }
 	    else if (strcmp((*argv) + 2, "no-mode2-mixed") == 0) {
-		opts->mode2Mixed = false;
+		mode2Mixed = false;
 	    }
 	    else if (strcmp((*argv) + 2, "reload") == 0) {
-		opts->reload = true;
+		reload = true;
 	    }
 	    else if (strcmp((*argv) + 2, "force") == 0) {
-		opts->force = true;
+		force = true;
 	    }
 	    else if (strcmp((*argv) + 2, "keep") == 0) {
-		opts->keep = true;
+		keep = true;
 	    }
 	    else if (strcmp((*argv) + 2, "on-the-fly") == 0) {
-		opts->onTheFly = true;
+		onTheFly = true;
 	    }
 	    else if (strcmp((*argv) + 2, "save") == 0) {
-		opts->saveSettings = true;
+		saveSettings = true;
 	    }
 	    else if (strcmp((*argv) + 2, "tao-source") == 0) {
-		opts->taoSource = true;
+		taoSource = true;
 	    }
 	    else if (strcmp((*argv) + 2, "keepimage") == 0) {
-		opts->keepImage = true;
+		keepImage = true;
 	    }
 	    else if (strcmp((*argv) + 2, "overburn") == 0) {
-		opts->overburn = true;
+		overburn = true;
 	    }
 	    else if (strcmp((*argv) + 2, "full-burn") == 0) {
-		opts->fullBurn = true;
+		fullBurn = true;
 	    }
 	    else if (strcmp((*argv) + 2, "with-cddb") == 0) {
-		opts->withCddb = true;
+		withCddb = true;
 	    }
 	    else if (strcmp((*argv) + 2, "driver") == 0) {
 		if (argc < 2) {
 		    log_message(-2, "Missing argument after: %s", *argv);
 		    return 1;
 		} else {
-		    opts->driverId = argv[1];
+		    driverId = argv[1];
 		    argc--, argv++;
 		}
 	    }
@@ -997,7 +1011,7 @@ static int parseCmdline(int argc, char **argv, DaoCommandLine* opts,
 		    log_message(-2, "Missing argument after: %s", *argv);
 		    return 1;
 		} else {
-		    opts->sourceDriverId = argv[1];
+		    sourceDriverId = argv[1];
 		    argc--, argv++;
 		}
 	    }
@@ -1006,7 +1020,7 @@ static int parseCmdline(int argc, char **argv, DaoCommandLine* opts,
 		    log_message(-2, "Missing argument after: %s", *argv);
 		    return 1;
 		} else {
-		    opts->dataFilename = argv[1];
+		    dataFilename = argv[1];
 		    argc--, argv++;
 		}
 	    }
@@ -1015,7 +1029,7 @@ static int parseCmdline(int argc, char **argv, DaoCommandLine* opts,
 		    log_message(-2, "Missing argument after: %s", *argv);
 		    return 1;
 		} else {
-		    opts->fifoBuffers = atoi(argv[1]);
+		    fifoBuffers = atoi(argv[1]);
 		    argc--, argv++;
 		}
 	    }
@@ -1024,11 +1038,11 @@ static int parseCmdline(int argc, char **argv, DaoCommandLine* opts,
 		    log_message(-2, "Missing argument after: %s", *argv);
 		    return 1;
 		} else {
-		    opts->session = atoi(argv[1]);
+		    session = atoi(argv[1]);
 		    argc--, argv++;
-		    if (opts->session < 1) {
+		    if (session < 1) {
 			log_message(-2, "Illegal session number: %d",
-				    opts->session);
+				    session);
 			return 1;
 		    }
 		}
@@ -1040,13 +1054,13 @@ static int parseCmdline(int argc, char **argv, DaoCommandLine* opts,
 		} else {
                     if (clear_default_servers) {
                         clear_default_servers = false;
-                        opts->cddbServerList.clear();
+                        cddbServerList.clear();
                     }
                     {
                         string parsed;
                         stringstream iss(argv[1]);
                         while (getline(iss, parsed, ' '))
-                            opts->cddbServerList.push_back(parsed);
+                            cddbServerList.push_back(parsed);
                     }
 		    argc--, argv++;
 		}
@@ -1056,7 +1070,7 @@ static int parseCmdline(int argc, char **argv, DaoCommandLine* opts,
 		    log_message(-2, "Missing argument after: %s", *argv);
 		    return 1;
 		} else {
-		    opts->cddbLocalDbDir = argv[1];
+		    cddbLocalDbDir = argv[1];
 		    argc--, argv++;
 		}
 	    }
@@ -1065,7 +1079,7 @@ static int parseCmdline(int argc, char **argv, DaoCommandLine* opts,
 		    log_message(-2, "Missing argument after: %s", *argv);
 		    return 1;
 		} else {
-		    opts->tmpFileDir = argv[1];
+		    tmpFileDir = argv[1];
 		    argc--, argv++;
 		}
 	    }
@@ -1074,11 +1088,11 @@ static int parseCmdline(int argc, char **argv, DaoCommandLine* opts,
 		    log_message(-2, "Missing argument after: %s", *argv);
 		    return 1;
 		} else {
-		    opts->cddbTimeout = atoi(argv[1]);
+		    cddbTimeout = atoi(argv[1]);
 		    argc--, argv++;
-		    if (opts->cddbTimeout < 1) {
+		    if (cddbTimeout < 1) {
 			log_message(-2, "Illegal CDDB timeout: %d",
-				    opts->cddbTimeout);
+				    cddbTimeout);
 			return 1;
 		    }
 		}
@@ -1088,12 +1102,12 @@ static int parseCmdline(int argc, char **argv, DaoCommandLine* opts,
 		    log_message(-2, "Missing argument after: %s", *argv);
 		    return 1;
 		} else {
-		    opts->taoSourceAdjust = atoi(argv[1]);
+		    taoSourceAdjust = atoi(argv[1]);
 		    argc--, argv++;
-		    if (opts->taoSourceAdjust < 0 ||
-			opts->taoSourceAdjust >= 100) {
+		    if (taoSourceAdjust < 0 ||
+			taoSourceAdjust >= 100) {
 			log_message(-2, "Illegal number of TAO link blocks: %d",
-				    opts->taoSourceAdjust);
+				    taoSourceAdjust);
 			return 1;
 		    }
 		}
@@ -1109,7 +1123,7 @@ static int parseCmdline(int argc, char **argv, DaoCommandLine* opts,
 			log_message(-2, "Illegal value for option --buffer-under-run-protection: %d", val);
 			return 1;
 		    }
-		    opts->bufferUnderrunProtection = val;
+		    bufferUnderrunProtection = val;
 		}
 	    }
 	    else if (strcmp((*argv) + 2, "write-speed-control") == 0) {
@@ -1123,7 +1137,7 @@ static int parseCmdline(int argc, char **argv, DaoCommandLine* opts,
 			log_message(-2, "Illegal value for option --write-speed-control: %d", val);
 			return 1;
 		    }
-		    opts->writeSpeedControl = val;
+		    writeSpeedControl = val;
 		}
 	    }
 	    else if (strcmp((*argv) + 2, "read-subchan") == 0) {
@@ -1132,9 +1146,9 @@ static int parseCmdline(int argc, char **argv, DaoCommandLine* opts,
 		    return 1;
 		} else {
 		    if (strcmp(argv[1], "rw") == 0) {
-			opts->readSubchanMode = TrackData::SUBCHAN_RW;
+			readSubchanMode = TrackData::SUBCHAN_RW;
 		    } else if (strcmp(argv[1], "rw_raw") == 0) {
-			opts->readSubchanMode = TrackData::SUBCHAN_RW_RAW;
+			readSubchanMode = TrackData::SUBCHAN_RW_RAW;
 		    } else {
 			log_message(-2, "Invalid argument after %s: %s",
 				    argv[0], argv[1]);
@@ -1153,7 +1167,7 @@ static int parseCmdline(int argc, char **argv, DaoCommandLine* opts,
 	argc--, argv++;
     }
 
-    if (cmdInfo[opts->command].needTocFile) {
+    if (cmdInfo[command].needTocFile) {
 	if (argc < 1) {
 	    log_message(-2, "Missing toc-file.");
 	    return 1;
@@ -1161,7 +1175,7 @@ static int parseCmdline(int argc, char **argv, DaoCommandLine* opts,
 	    log_message(-2, "Expecting only one toc-file.");
 	    return 1;
 	}
-	opts->tocFile = *argv;
+	tocFile = *argv;
     }
 
 
@@ -1169,20 +1183,19 @@ static int parseCmdline(int argc, char **argv, DaoCommandLine* opts,
 }
 
 // Commit settings to overall system. Export them.
-static void commitSettings(DaoCommandLine* opts, Settings* settings,
-			   const char* settingsPath)
+void DaoCommandLine::commitSettings(Settings* settings, const char* settingsPath)
 {
-    if (opts->tmpFileDir.size())
-	tempFileManager.setTempDirectory(opts->tmpFileDir.c_str());
+    if (tmpFileDir.size())
+	tempFileManager.setTempDirectory(tmpFileDir.c_str());
 
-    tempFileManager.setKeepTemps(opts->keep);
+    tempFileManager.setKeepTemps(keep);
 
-    if (opts->saveSettings && settingsPath != NULL) {
+    if (saveSettings && settingsPath != NULL) {
 	// If we're saving our settings, give up root privileges and
 	// exit. The --save option is only compiled in if setreuid() is
 	// available (because it could be used for a local root exploit).
 	if (giveUpRootPrivileges()) {
-	    exportSettings(opts, settings);
+	    exportSettings(settings);
 	    settings->write(settingsPath);
 	}
 	exit(0);
@@ -1190,8 +1203,8 @@ static void commitSettings(DaoCommandLine* opts, Settings* settings,
 }
 
 // Selects driver for device of 'scsiIf'.
-static CdrDriver *selectDriver(DaoCommand cmd, ScsiIf *scsiIf,
-			       const char *driverId)
+CdrDriver *selectDriver(DaoCommand cmd, ScsiIf *scsiIf,
+                        const char *driverId)
 {
   unsigned long options = 0;
   CdrDriver *ret = NULL;
@@ -1291,15 +1304,15 @@ string getDefaultDevice(DaoDeviceType req)
 	delete[] sdata;
     }
 
-    return string();
+    return buf;
 }
 
 #define MAX_RETRY 10
-static CdrDriver *setupDevice(DaoCommand cmd, const string& scsiDevice,
-			      const char *driverId, int initDevice,
-			      int checkReady, int checkEmpty,
-			      int readingSpeed,
-			      bool remote, bool reload)
+CdrDriver *setupDevice(DaoCommand cmd, const string& scsiDevice,
+                       const char *driverId, int initDevice,
+                       int checkReady, int checkEmpty,
+                       int readingSpeed,
+                       bool remote, bool reload)
 {
   ScsiIf *scsiIf = NULL;
   CdrDriver *cdr = NULL;
@@ -1518,7 +1531,7 @@ static CdrDriver *setupDevice(DaoCommand cmd, const string& scsiDevice,
   return cdr;
 }
 
-static void showDriveInfo(const DriveInfo *i)
+void showDriveInfo(const DriveInfo *i)
 {
   if (i == NULL) {
     log_message(0, "No drive information available.");
@@ -1534,7 +1547,7 @@ static void showDriveInfo(const DriveInfo *i)
   printf("JustSpeed supported: %s\n", i->ricohJustSpeed ? "yes" : "no");
 }
 
-static void showTocInfo(const Toc *toc, const char *tocFile)
+void showTocInfo(const Toc *toc, const char *tocFile)
 {
   long len = toc->length().lba() * AUDIO_BLOCK_LEN;
   len >>= 20;
@@ -1543,12 +1556,12 @@ static void showTocInfo(const Toc *toc, const char *tocFile)
 	 toc->nofTracks(), toc->length().str(), toc->length().lba(), len);
 }
 
-static void showTocSize(const Toc *toc, const char *tocFile)
+void showTocSize(const Toc *toc, const char *tocFile)
 {
   printf("%ld\n", toc->length().lba());
 }
 
-static void showToc(const Toc *toc)
+void showToc(const Toc *toc)
 {
   const Track *t;
   Msf start, end, index;
@@ -1761,7 +1774,7 @@ void showDiskInfo(DiskInfo *di)
  *         1: disk is not empty and not appendable
  *         2: could not determine the requested information
  */
-static int showMultiSessionInfo(DiskInfo *di)
+int showMultiSessionInfo(DiskInfo *di)
 {
   
   if (di->valid.empty) {
@@ -1783,14 +1796,14 @@ static int showMultiSessionInfo(DiskInfo *di)
   return 2;
 }
 
-static void printCddbQuery(Toc *toc)
+void printCddbQuery(Toc *toc)
 {
   Cddb cddb(toc);
 
   cddb.printDbQuery();
 }
 
-static int readCddb(DaoCommandLine* opts, Toc *toc, bool showEntry = false)
+int readCddb(const DaoCommandLine& opts, Toc *toc, bool showEntry = false)
 {
   int err = 0;
   char *p;
@@ -1803,13 +1816,13 @@ static int readCddb(DaoCommandLine* opts, Toc *toc, bool showEntry = false)
 
   Cddb cddb(toc);
 
-  cddb.timeout(opts->cddbTimeout);
+  cddb.timeout(opts.cddbTimeout);
 
-  if (opts->cddbLocalDbDir != NULL)
-    cddb.localCddbDirectory(opts->cddbLocalDbDir);
+  if (opts.cddbLocalDbDir != NULL)
+    cddb.localCddbDirectory(opts.cddbLocalDbDir);
 
 
-  for (const auto& p : opts->cddbServerList)
+  for (const auto& p : opts.cddbServerList)
     cddb.appendServer(p.c_str());
 
   if ((pwent = getpwuid(getuid())) != NULL &&
@@ -1924,7 +1937,7 @@ static int readCddb(DaoCommandLine* opts, Toc *toc, bool showEntry = false)
   return err;
 }
 
-static void scanBus()
+void scanBus()
 {
   int i, len;
   ScsiIf::ScanData *sdata = ScsiIf::scan(&len);
@@ -1958,7 +1971,7 @@ static void scanBus()
 #endif
 }
 
-static int checkToc(const Toc *toc, bool force)
+int checkToc(const Toc *toc, bool force)
 {
     int ret = toc->check();
 
@@ -1973,7 +1986,7 @@ static int checkToc(const Toc *toc, bool force)
     return ret;
 }
 
-static int copyCd(DaoCommandLine* opts, CdrDriver *src, CdrDriver *dst)
+int copyCd(DaoCommandLine& opts, CdrDriver *src, CdrDriver *dst)
 {
     char dataFilenameBuf[50];
     long pid = getpid();
@@ -1982,24 +1995,24 @@ static int copyCd(DaoCommandLine* opts, CdrDriver *src, CdrDriver *dst)
     DiskInfo *di = NULL;
     int isAppendable = 0;
 
-    if (opts->dataFilename == NULL) {
+    if (opts.dataFilename == NULL) {
 	// create a unique temporary data file name in current directory
 	sprintf(dataFilenameBuf, "cddata%ld.bin", pid);
-	opts->dataFilename = dataFilenameBuf;
+	opts.dataFilename = dataFilenameBuf;
     }
 
     src->rawDataReading(true);
-    src->taoSource(opts->taoSource);
-    if (opts->taoSourceAdjust >= 0)
-	src->taoSourceAdjust(opts->taoSourceAdjust);
+    src->taoSource(opts.taoSource);
+    if (opts.taoSourceAdjust >= 0)
+	src->taoSourceAdjust(opts.taoSourceAdjust);
 
-    if ((toc = src->readDisk(opts->session, opts->dataFilename)) == NULL) {
-	unlink(opts->dataFilename);
+    if ((toc = src->readDisk(opts.session, opts.dataFilename)) == NULL) {
+	unlink(opts.dataFilename);
 	log_message(-2, "Creation of source CD image failed.");
 	return 1;
     }
 
-    if (opts->withCddb) {
+    if (opts.withCddb) {
 	if (readCddb(opts, toc) == 0)
 	    log_message(2, "CD-TEXT data was added to toc-file.");
 	else
@@ -2007,20 +2020,20 @@ static int copyCd(DaoCommandLine* opts, CdrDriver *src, CdrDriver *dst)
 			"continuing without CD-TEXT data.");
     }
 
-    if (opts->keepImage) {
+    if (opts.keepImage) {
 	char tocFilename[50];
 
 	sprintf(tocFilename, "cd%ld.toc", pid);
     
 	log_message(2, "Keeping created image file \"%s\".",
-		    opts->dataFilename);
+		    opts.dataFilename);
 	log_message(2, "Corresponding toc-file is written to \"%s\".",
 		    tocFilename);
 
 	toc->write(tocFilename);
     }
 
-    if (checkToc(toc, opts->force)) {
+    if (checkToc(toc, opts.force)) {
 	log_message(-3, "Toc created from source CD image is inconsistent.");
 	toc->print(cout);
 	delete toc;
@@ -2031,7 +2044,7 @@ static int copyCd(DaoCommandLine* opts, CdrDriver *src, CdrDriver *dst)
     case 0: // OK
 	break;
     case 1: // warning
-	if (!opts->force) {
+	if (!opts.force) {
 	    log_message(-2, "The toc extracted from the source CD is not suitable for");
 	    log_message(-2, "the recorder device and may produce undefined results.");
 	    log_message(-2, "Use option --force to use it anyway.");
@@ -2076,10 +2089,10 @@ static int copyCd(DaoCommandLine* opts, CdrDriver *src, CdrDriver *dst)
 
 
     if (dst->preventMediumRemoval(1) != 0) {
-	if (!opts->keepImage) {
-	    if (unlink(opts->dataFilename) != 0)
+	if (!opts.keepImage) {
+	    if (unlink(opts.dataFilename) != 0)
 		log_message(-2, "Cannot remove CD image file \"%s\": %s",
-			    opts->dataFilename,
+			    opts.dataFilename,
 			    strerror(errno));
 	}
 
@@ -2087,7 +2100,7 @@ static int copyCd(DaoCommandLine* opts, CdrDriver *src, CdrDriver *dst)
 	return 1;
     }
     
-    if (writeDiskAtOnce(toc, dst, opts->fifoBuffers, opts->swap, 0, 0) != 0) {
+    if (writeDiskAtOnce(toc, dst, opts.fifoBuffers, opts.swap, 0, 0) != 0) {
 	if (dst->simulate())
 	    log_message(-2, "Simulation failed.");
 	else
@@ -2106,14 +2119,14 @@ static int copyCd(DaoCommandLine* opts, CdrDriver *src, CdrDriver *dst)
 
     dst->rezeroUnit(0);
 
-    if (ret == 0 && opts->eject) {
+    if (ret == 0 && opts.eject) {
 	dst->loadUnload(1);
     }
 
-    if (!opts->keepImage) {
-	if (unlink(opts->dataFilename) != 0)
+    if (!opts.keepImage) {
+	if (unlink(opts.dataFilename) != 0)
 	    log_message(-2, "Cannot remove CD image file \"%s\": %s",
-			opts->dataFilename,
+			opts.dataFilename,
 			strerror(errno));
     }
 
@@ -2122,7 +2135,7 @@ static int copyCd(DaoCommandLine* opts, CdrDriver *src, CdrDriver *dst)
     return ret;
 }
 
-static int copyCdOnTheFly(DaoCommandLine* opts,CdrDriver *src, CdrDriver *dst)
+int copyCdOnTheFly(DaoCommandLine& opts,CdrDriver *src, CdrDriver *dst)
 {
     Toc *toc = NULL;
     int pipeFds[2];
@@ -2139,9 +2152,9 @@ static int copyCdOnTheFly(DaoCommandLine* opts,CdrDriver *src, CdrDriver *dst)
     }
   
     src->rawDataReading(true);
-    src->taoSource(opts->taoSource);
-    if (opts->taoSourceAdjust >= 0)
-	src->taoSourceAdjust(opts->taoSourceAdjust);
+    src->taoSource(opts.taoSource);
+    if (opts.taoSourceAdjust >= 0)
+	src->taoSourceAdjust(opts.taoSourceAdjust);
 
     src->onTheFly(1);
     // the fd is not used by 'readDiskToc', just need to
@@ -2149,13 +2162,13 @@ static int copyCdOnTheFly(DaoCommandLine* opts,CdrDriver *src, CdrDriver *dst)
     // automatical selection if the first track's pre-gap
     // is padded with zeros in the created Toc.
 
-    if ((toc = src->readDiskToc(opts->session, "-")) == NULL) {
+    if ((toc = src->readDiskToc(opts.session, "-")) == NULL) {
 	log_message(-2, "Creation of source CD toc failed.");
 	ret = 1;
 	goto fail;
     }
 
-    if (opts->withCddb) {
+    if (opts.withCddb) {
 	if (readCddb(opts, toc) != 0) {
 	    ret = 1;
 	    goto fail;
@@ -2164,7 +2177,7 @@ static int copyCdOnTheFly(DaoCommandLine* opts,CdrDriver *src, CdrDriver *dst)
 	}
     }
   
-    if (checkToc(toc, opts->force) != 0) {
+    if (checkToc(toc, opts.force) != 0) {
 	log_message(-3, "Toc created from source CD image is inconsistent"
 		    "- please report.");
 	toc->print(cout);
@@ -2176,7 +2189,7 @@ static int copyCdOnTheFly(DaoCommandLine* opts,CdrDriver *src, CdrDriver *dst)
     case 0: // OK
 	break;
     case 1: // warning
-	if (!opts->force) {
+	if (!opts.force) {
 	    log_message(-2, "The toc extracted from the source CD is not suitable for");
 	    log_message(-2, "the recorder device and may produce undefined results.");
 	    log_message(-2, "Use option --force to use it anyway.");
@@ -2204,7 +2217,7 @@ static int copyCdOnTheFly(DaoCommandLine* opts,CdrDriver *src, CdrDriver *dst)
 
 	src->onTheFly(pipeFds[1]);
 
-	opts->verbose = 0;
+	opts.verbose = 0;
 
 #ifdef __CYGWIN__
 	/* Close the SCSI interface and open it again. This will re-init the
@@ -2213,7 +2226,7 @@ static int copyCdOnTheFly(DaoCommandLine* opts,CdrDriver *src, CdrDriver *dst)
 
 	delete src->scsiIf();
 
-	src->scsiIf(new ScsiIf(opts->sourceScsiDevice));
+	src->scsiIf(new ScsiIf(opts.sourceScsiDevice));
     
 	if (src->scsiIf()->init() != 0) {
 	    log_message(-2, "Re-init of SCSI interace failed.");
@@ -2226,7 +2239,7 @@ static int copyCdOnTheFly(DaoCommandLine* opts,CdrDriver *src, CdrDriver *dst)
 	}    
 #endif
 
-	if (src->readDisk(opts->session, "-") != NULL)
+	if (src->readDisk(opts.session, "-") != NULL)
 	    log_message(1, "CD image reading finished successfully.");
 	else
 	    log_message(-2, "CD image reading failed.");
@@ -2261,7 +2274,7 @@ static int copyCdOnTheFly(DaoCommandLine* opts,CdrDriver *src, CdrDriver *dst)
 	goto fail;
     }
 
-    if (writeDiskAtOnce(toc, dst, opts->fifoBuffers, opts->swap, 0, 0) != 0) {
+    if (writeDiskAtOnce(toc, dst, opts.fifoBuffers, opts.swap, 0, 0) != 0) {
 	if (dst->simulate())
 	    log_message(-2, "Simulation failed.");
 	else
@@ -2280,7 +2293,7 @@ static int copyCdOnTheFly(DaoCommandLine* opts,CdrDriver *src, CdrDriver *dst)
     if (dst->preventMediumRemoval(0) != 0)
 	ret = 1;
 
-    if (ret == 0 && opts->eject) {
+    if (ret == 0 && opts.eject) {
 	dst->loadUnload(1);
     }
 
@@ -2306,6 +2319,8 @@ fail:
 
     return ret;
 }
+
+} // End of anonymous namespace
 
 int main(int argc, char **argv)
 {
@@ -2335,7 +2350,6 @@ int main(int argc, char **argv)
 
     // Initialize command line options to default values
     DaoCommandLine options;
-    setOptionDefaults(&options);
     options.progName = argv[0];
 
     Settings* settings = new Settings;
@@ -2368,15 +2382,15 @@ int main(int argc, char **argv)
 #endif
 
     // Parse command line command and options.
-    if (parseCmdline(argc - 1, argv + 1, &options, settings) != 0) {
+    if (options.parseCmdLine(argc - 1, argv + 1, settings) != 0) {
 	log_set_verbose(2);
 	printVersion();
-	printUsage(&options);
+	options.printUsage();
 	exit(1);
     }
 
     log_set_verbose(options.verbose);
-    commitSettings(&options, settings, settingsPath);
+    options.commitSettings(settings, settingsPath);
 
     // Just show version ? We're done.
     if (options.command == SHOW_VERSION)
@@ -2426,9 +2440,14 @@ int main(int argc, char **argv)
 
     if (cmdInfo[options.command].requiredDevice != NO_DEVICE) {
 
-	if (options.scsiDevice.empty())
-	    options.scsiDevice =
-              getDefaultDevice(cmdInfo[options.command].requiredDevice);
+	if (options.scsiDevice.empty()) {
+            options.scsiDevice = getDefaultDevice(cmdInfo[options.command].requiredDevice);
+        }
+
+        if (options.scsiDevice.empty()) {
+            log_message(-2, "No device specified, no default device found.");
+            exitCode = 1; goto fail;
+        }
 
 	cdr = setupDevice(options.command,
 			  options.scsiDevice,
@@ -2522,7 +2541,7 @@ int main(int argc, char **argv)
 
     switch (options.command) {
     case READ_CDDB:
-	if ((exitCode = readCddb(&options, toc)) == 0) {
+	if ((exitCode = readCddb(options, toc)) == 0) {
 	    log_message(1, "Writing CD-TEXT populated toc-file \"%s\".",
 			options.tocFile);
 	    if (toc->write(options.tocFile) != 0)
@@ -2609,7 +2628,7 @@ int main(int argc, char **argv)
 	    if (options.printQuery)
 		printCddbQuery(toc);
 	    else
-		readCddb(&options, toc, true);
+		readCddb(options, toc, true);
 	}
 	break;
    
@@ -2671,7 +2690,7 @@ int main(int argc, char **argv)
 	    cdr->rezeroUnit(0);
 
 	    if (options.withCddb) {
-		if (readCddb(&options, toc) == 0) {
+		if (readCddb(options, toc) == 0) {
 		    log_message(2, "CD-TEXT data was added to toc-file.");
 		}
 	    }
@@ -2727,7 +2746,7 @@ int main(int argc, char **argv)
 	cdr->rezeroUnit(0);
 
 	if (options.withCddb) {
-	    if (readCddb(&options, toc) == 0) {
+	    if (readCddb(options, toc) == 0) {
 		log_message(2, "CD-TEXT data was added to toc-file.");
 	    }
 	}
@@ -2926,7 +2945,7 @@ int main(int argc, char **argv)
 		exitCode = 1; goto fail;
 	    }
 
-	    if (copyCdOnTheFly(&options, srcCdr, cdr) == 0) {
+	    if (copyCdOnTheFly(options, srcCdr, cdr) == 0) {
 		log_message(1, "On-the-fly CD copying finished successfully.");
 	    } else {
 		log_message(-2, "On-the-fly CD copying failed.");
@@ -2937,7 +2956,7 @@ int main(int argc, char **argv)
 	    if (srcCdr != cdr)
 		srcCdr->remote(options.remoteMode, options.remoteFd);
 
-	    if (copyCd(&options, srcCdr, cdr) == 0) {
+	    if (copyCd(options, srcCdr, cdr) == 0) {
 		log_message(1, "CD copying finished successfully.");
 	    } else {
 		log_message(-2, "CD copying failed.");
