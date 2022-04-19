@@ -119,7 +119,7 @@ int ScsiIf::init()
 		CFDictionarySetValue(sub, CFSTR(kIOPropertySCSITaskDeviceCategory),
 		                          CFSTR(kIOPropertySCSITaskAuthoringDevice));
 		CFDictionarySetValue(dict, CFSTR(kIOPropertyMatchKey), sub);
-		IOServiceGetMatchingServices(kIOMasterPortDefault, dict, &iterator);
+		IOServiceGetMatchingServices(kIOMainPortDefault, dict, &iterator);
 		if (!iterator) log_message(-2, "init: no iterator");
 		if (iterator) {
 			i = impl_->num_;
@@ -131,7 +131,7 @@ int ScsiIf::init()
 		}
 	} else if (impl_->path_) {
 		/* Native mode. Just use the IO Registry pathname */
-		impl_->object_ = IORegistryEntryFromPath(kIOMasterPortDefault, impl_->path_);
+		impl_->object_ = IORegistryEntryFromPath(kIOMainPortDefault, impl_->path_);
 	}
 	/* Strange if (!x) ... if (x) style so you can #ifdef out the !x part */
 	if (!impl_->object_) log_message(-2, "init: no object");
@@ -257,7 +257,7 @@ const unsigned char *ScsiIf::getSense(int &len) const
 
 void ScsiIf::printError()
 {
-	char *s;
+        const char *s;
 
 	if (impl_->error_)
 		/* Internal error in sendCmd(). We saved a message string. */
@@ -435,7 +435,7 @@ ScsiIf::ScanData *ScsiIf::scan(int *len, char *dev)
 	CFDictionarySetValue(sub, CFSTR(kIOPropertySCSITaskDeviceCategory),
 	                          CFSTR(kIOPropertySCSITaskAuthoringDevice));
 	CFDictionarySetValue(dict, CFSTR(kIOPropertyMatchKey), sub);
-	IOServiceGetMatchingServices(kIOMasterPortDefault, dict, &iterator);
+	IOServiceGetMatchingServices(kIOMainPortDefault, dict, &iterator);
 	if (!iterator) {
 		log_message(-2, "scan: no iterator");
 		*len = 0;

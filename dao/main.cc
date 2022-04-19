@@ -151,8 +151,8 @@ struct DaoCommandLine
 
     const char* progName;
     const char* tocFile;
-    const char* driverId;
-    const char* sourceDriverId;
+    string driverId;
+    string sourceDriverId;
     string scsiDevice;
     const char* sourceScsiDevice;
     const char* dataFilename;
@@ -602,7 +602,7 @@ void DaoCommandLine::importSettings(Settings* settings)
 
     if (cmd == SIMULATE || cmd == WRITE || cmd == COPY_CD) {
 	if ((sval = settings->getString(Settings::setWriteDriver)) != NULL) {
-	    driverId = strdupCC(sval);
+	    driverId = sval;
 	}
 
 	if ((sval = settings->getString(Settings::setWriteDevice)) != NULL) {
@@ -630,7 +630,7 @@ void DaoCommandLine::importSettings(Settings* settings)
 
     if (cmd == READ_CD || cmd == READ_TOC) {
 	if ((sval = settings->getString(Settings::setReadDriver)) != NULL) {
-	    driverId = strdupCC(sval);
+	    driverId = sval;
 	}
 
 	if ((sval = settings->getString(Settings::setReadDevice)) != NULL) {
@@ -645,7 +645,7 @@ void DaoCommandLine::importSettings(Settings* settings)
 
     if (cmd == COPY_CD) {
 	if ((sval = settings->getString(Settings::setReadDriver)) != NULL) {
-	    sourceDriverId = strdupCC(sval);
+	    sourceDriverId = sval;
 	}
 
 	if ((sval = settings->getString(Settings::setReadDevice)) != NULL) {
@@ -661,7 +661,7 @@ void DaoCommandLine::importSettings(Settings* settings)
     if (cmd == BLANK || cmd == DISK_INFO || cmd == MSINFO || cmd == UNLOCK ||
 	cmd == DISCID || cmd == DRIVE_INFO) {
 	if ((sval = settings->getString(Settings::setWriteDriver)) != NULL) {
-	    driverId = strdupCC(sval);
+	    driverId = sval;
 	}
 
 	if ((sval = settings->getString(Settings::setWriteDevice)) != NULL) {
@@ -700,8 +700,8 @@ void DaoCommandLine::exportSettings(Settings* settings)
     DaoCommand cmd = command;
 
     if (cmd == SIMULATE || cmd == WRITE || cmd == COPY_CD) {
-	if (driverId != NULL)
-	    settings->set(Settings::setWriteDriver, driverId);
+        if (!driverId.empty())
+            settings->set(Settings::setWriteDriver, driverId.c_str());
     
 	if (!scsiDevice.empty())
 	    settings->set(Settings::setWriteDevice, scsiDevice.c_str());
@@ -724,8 +724,8 @@ void DaoCommandLine::exportSettings(Settings* settings)
     }
 
     if (cmd == READ_CD) {
-	if (driverId != NULL)
-	    settings->set(Settings::setReadDriver, driverId);
+	if (!driverId.empty())
+	    settings->set(Settings::setReadDriver, driverId.c_str());
 
 	if (!scsiDevice.empty())
 	    settings->set(Settings::setReadDevice, scsiDevice.c_str());
@@ -734,8 +734,8 @@ void DaoCommandLine::exportSettings(Settings* settings)
     }
 
     if (cmd == COPY_CD) {
-	if (sourceDriverId != NULL)
-	    settings->set(Settings::setReadDriver, sourceDriverId);
+	if (!sourceDriverId.empty())
+	    settings->set(Settings::setReadDriver, sourceDriverId.c_str());
 
 	if (sourceScsiDevice != NULL)
 	    settings->set(Settings::setReadDevice, sourceScsiDevice);
@@ -745,8 +745,8 @@ void DaoCommandLine::exportSettings(Settings* settings)
 
     if (cmd == BLANK || cmd == DISK_INFO || cmd == MSINFO || cmd == UNLOCK ||
 	cmd == DISCID || cmd == DRIVE_INFO) {
-	if (driverId != NULL)
-	    settings->set(Settings::setWriteDriver, driverId);
+	if (!driverId.empty())
+	    settings->set(Settings::setWriteDriver, driverId.c_str());
     
 	if (!scsiDevice.empty())
 	    settings->set(Settings::setWriteDevice, scsiDevice.c_str());
@@ -1204,13 +1204,13 @@ void DaoCommandLine::commitSettings(Settings* settings, const char* settingsPath
 
 // Selects driver for device of 'scsiIf'.
 CdrDriver *selectDriver(DaoCommand cmd, ScsiIf *scsiIf,
-                        const char *driverId)
+                        const string& driverId)
 {
   unsigned long options = 0;
   CdrDriver *ret = NULL;
 
-  if (driverId != NULL) {
-    char *s = strdupCC(driverId);
+  if (!driverId.empty()) {
+    char *s = strdupCC(driverId.c_str());
     char *p = strchr(s, ':');
 
     if (p != NULL) {
@@ -1309,7 +1309,7 @@ string getDefaultDevice(DaoDeviceType req)
 
 #define MAX_RETRY 10
 CdrDriver *setupDevice(DaoCommand cmd, const string& scsiDevice,
-                       const char *driverId, int initDevice,
+                       const string& driverId, int initDevice,
                        int checkReady, int checkEmpty,
                        int readingSpeed,
                        bool remote, bool reload)
@@ -1341,7 +1341,7 @@ CdrDriver *setupDevice(DaoCommand cmd, const string& scsiDevice,
 	  scsiIf->product(), scsiIf->revision());
 
 
-  if (inquiryFailed && driverId == NULL) {
+  if (inquiryFailed && driverId.empty()) {
     log_message(-2, "Inquiry failed and no driver id is specified.");
     log_message(-2, "Please use option --driver to specify a driver id.");
     delete scsiIf;
@@ -2486,8 +2486,7 @@ int main(int argc, char **argv)
 	options.command == WRITE ||
 	options.command == COPY_CD) {
 	if (options.fullBurn) {
-	    if (options.driverId &&
-		strcmp(options.driverId, "generic-mmc-raw") != 0) {
+	    if (!options.driverId.empty() && options.driverId != "generic-mmc-raw") {
 		log_message(-2, "You must use the generic-mmc-raw driver to use the "
 			    "full-burn option.");
 		exitCode = 1; goto fail;
