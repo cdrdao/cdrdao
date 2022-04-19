@@ -29,9 +29,14 @@
 #include <getopt.h>
 #endif
 #include <string>
+#include <vector>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#ifdef HAVE_ICONV
+#include <iconv.h>
+#include <langinfo.h>
+#endif
 
 #include <lame/lame.h>
 
@@ -39,13 +44,16 @@
 #include "Toc.h"
 #include "CdTextItem.h"
 
+using namespace std;
+
 // set desired default bit rate for encoding here:
 #define DEFAULT_ENCODER_BITRATE 192
 
 static const char *PRGNAME = NULL;
 static int VERBOSE = 1;
 static int CREATE_ALBUM_DIRECTORY = 0;
-static std::string TARGET_DIRECTORY;
+static string TARGET_DIRECTORY;
+static string ENCODING;
 
 
 void message_args(int level, int addNewLine, const char *fmt, va_list args)
@@ -131,10 +139,12 @@ static void printUsage()
   message(0, "Options:");
   message(0, "  -h               Shows this help.");
   message(0, "  -v <n>           Sets verbose level to <n> (0..2).");
+  message(0, "  -V               Displays version and exit");
   message(0, "  -d <target-dir>  Specifies directory the mp3 files will be");
   message(0, "                   written to.");
   message(0, "  -c               Adds a sub-directory composed out of CD title");
   message(0, "                   and author to <target-dir> specified with -d.");
+  message(0, "  -J               Force text decoding to MS-JIS (instead of ISO-8859-1)");
   message(0, "  -b <bit rate>    Sets bit rate used for encoding (default %d kbit/s).",
 	  DEFAULT_ENCODER_BITRATE);
   message(0, "                   See below for supported bit rates.");
@@ -155,10 +165,11 @@ static int parseCommandLine(int argc, char **argv, char **tocFile, int *bitrate)
   int printVersion = 0;
   extern char *optarg;
   extern int optind, opterr, optopt;
+  ENCODING = "ISO-8859-1";
 
   opterr = 0;
 
-  while ((c = getopt(argc, argv, "Vhcv:d:b:")) != EOF) {
+  while ((c = getopt(argc, argv, "Vhcv:d:b:J")) != EOF) {
     switch (c) {
     case 'V':
       printVersion = 1;
@@ -193,6 +204,10 @@ static int parseCommandLine(int argc, char **argv, char **tocFile, int *bitrate)
 
     case 'h':
       return 0;
+      break;
+
+    case 'J':
+      ENCODING = "SJIS-WIN";
       break;
 
     case 'd':
@@ -282,8 +297,86 @@ lame_global_flags *init_encoder(int bitrate)
   return lf;
 }
 
-void set_id3_tags(lame_global_flags *lf, int tracknr, const std::string &title,
-		  const std::string &artist, const std::string &album)
+string to_utf8(const string& input)
+{
+#ifndef HAVE_ICONV
+  return input;
+#else
+  char* src = (char*)strdupa(input.c_str());
+  size_t srclen = strlen(src);
+  size_t dstlen = srclen * 4;
+  char* dst = (char*)alloca(dstlen);
+  char* orig_dst = dst;
+  auto icv = iconv_open("UTF-8", ENCODING.c_str());
+  if (!icv)
+    return input;
+  if (iconv(icv, &src, &srclen, &dst, &dstlen) == (size_t)-1) {
+    fputs(strerror(errno), stderr);
+    return input;
+  }
+  *dst = 0;
+  return string(orig_dst);
+#endif
+}
+
+#ifdef HAVE_ICONV
+vector<short unsigned int> to_utf16(const string& input)
+{
+  vector<short unsigned int> vec;
+
+  char* src = (char*)strdupa(input.c_str());
+  size_t srclen = strlen(src);
+  size_t dstlen = srclen * 4;
+  vec.resize(dstlen / 2);
+  char* dst = (char*)(&vec[0]);
+  char* orig_dst = dst;
+  auto icv = iconv_open("UTF-16//TRANSLIT", ENCODING.c_str());
+  if (!icv)
+    return vec;
+  if (iconv(icv, &src, &srclen, &dst, &dstlen) == (size_t)-1) {
+    fputs(strerror(errno), stderr);
+    return vec;
+  }
+  vec.resize((dst - orig_dst) / 2);
+  vec.push_back(0);
+  return vec;
+}
+#endif
+
+void set_id3v2tag(lame_global_flags* lf, int type, const string &str)
+{
+#ifdef HAVE_ICONV
+  auto dst = to_utf8(str);
+#endif
+
+  switch (type)
+  {
+#ifdef HAVE_ICONV
+    case 'a':
+      id3tag_set_textinfo_utf16(lf, "TPE1", (short unsigned int*)&dst[0]);
+      break;
+    case 't':
+      id3tag_set_textinfo_utf16(lf, "TIT2", (short unsigned int*)&dst[0]);
+      break;
+    case 'l':
+      id3tag_set_textinfo_utf16(lf, "TALB", (short unsigned int*)&dst[0]);
+      break;
+#else
+    case 'a':
+      id3tag_set_artist(lf, str.c_str());
+      break;
+    case 't':
+      id3tag_set_title(lf, str.c_str());
+      break;
+    case 'l':
+      id3tag_set_album(lf, str.c_str());
+      break;
+#endif
+  }
+}
+
+void set_id3_tags(lame_global_flags *lf, int tracknr, const string &title,
+		  const string &artist, const string &album)
 {
   char buf[100];
 
@@ -292,13 +385,13 @@ void set_id3_tags(lame_global_flags *lf, int tracknr, const std::string &title,
   id3tag_add_v2(lf);
 
   if (!title.empty())
-    id3tag_set_title(lf, title.c_str());
+    set_id3v2tag(lf, 't', title.c_str());
 
   if (!artist.empty())
-    id3tag_set_artist(lf, artist.c_str());
+    set_id3v2tag(lf, 'a', artist.c_str());
 
   if (!album.empty())
-    id3tag_set_album(lf, album.c_str());
+    set_id3v2tag(lf, 'l', album.c_str());
 
   if (tracknr > 0 && tracknr <= 255) {
     sprintf(buf, "%d", tracknr);
@@ -307,7 +400,7 @@ void set_id3_tags(lame_global_flags *lf, int tracknr, const std::string &title,
 }
 
 int encode_track(lame_global_flags *lf, const Toc *toc, 
-		 const std::string &fileName, long startLba,
+		 const string &fileName, long startLba,
 		 long len)
 {
   int fd;
@@ -400,7 +493,7 @@ int encode_track(lame_global_flags *lf, const Toc *toc,
   return ret;
 }
 
-std::string &clean_string(std::string &s)
+string &clean_string(string &s)
 {
   int i = 0;
   int len = s.length();
@@ -411,14 +504,12 @@ std::string &clean_string(std::string &s)
       s[i] = ' ';
       i++;
     }
-    else if (isalnum(c) || c == ' ' || c == '.' || c== '-' || c == '(' ||
-	     c == ')' || c == ')' || c == ',' || c == ':' || c == ';' ||
-	     c == '"' || c == '!' || c == '?' || c == '\'' || c == '$')  {
-      i++;
-    }
-    else {
+    else if (iscntrl(c) || c == '/') {
       s.erase(i, 1);
       len = s.length();
+    }
+    else {
+        i++;
     }
   }
 
@@ -440,12 +531,16 @@ int main(int argc, char **argv)
   int bitrate = DEFAULT_ENCODER_BITRATE;
   Toc *toc;
   lame_global_flags *lf;
-  std::string album, albumPerformer, title, performer;
+  string album, albumPerformer, title, performer;
   int cdTextLanguage = 0;
   const CdTextItem *cdTextItem;
   char *tocfileBaseName, *p;
   char sbuf[100];
   int err = 0;
+
+#ifdef HAVE_ICONV
+  setlocale(LC_CTYPE, "");
+#endif
 
   PRGNAME = *argv;
 
@@ -508,7 +603,7 @@ int main(int argc, char **argv)
   }
 
 
-  std::string mp3TargetDir;
+  string mp3TargetDir;
 
   if (!TARGET_DIRECTORY.empty()) {
     mp3TargetDir = TARGET_DIRECTORY;
@@ -570,22 +665,22 @@ int main(int argc, char **argv)
       }
       
       // build mp3 file name
-      std::string mp3FileName;
+      string mp3FileName;
       
       sprintf(sbuf, "%02d_", trackNr);
       
       mp3FileName += sbuf;
       
       if (!title.empty()) {
-	mp3FileName += title;
+	mp3FileName += to_utf8(title);
 	mp3FileName += "_";
       }
       
-      mp3FileName += album;
+      mp3FileName += to_utf8(album);
       
       if (!albumPerformer.empty()) {
 	mp3FileName += "_";
-	mp3FileName += albumPerformer;
+	mp3FileName += to_utf8(albumPerformer);
       }
       
       mp3FileName += ".mp3";
