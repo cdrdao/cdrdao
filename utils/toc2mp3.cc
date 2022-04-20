@@ -54,6 +54,8 @@ static int VERBOSE = 1;
 static int CREATE_ALBUM_DIRECTORY = 0;
 static string TARGET_DIRECTORY;
 static string ENCODING;
+static bool DRY_RUN = false;
+static string SEPARATOR = "_";
 
 
 void message_args(int level, int addNewLine, const char *fmt, va_list args)
@@ -144,7 +146,10 @@ static void printUsage()
   message(0, "                   written to.");
   message(0, "  -c               Adds a sub-directory composed out of CD title");
   message(0, "                   and author to <target-dir> specified with -d.");
-  message(0, "  -J               Force text decoding to MS-JIS (instead of ISO-8859-1)");
+  message(0, "  -J <encoding>    Force text decoding to given iconv-compatible encoding\n"
+          "                   (default ISO-8859-1)");
+  message(0, "  -s <separator>   Filename separator for title, artist (default \"_\")");
+  message(0, "  -n               Dry run, show created files but don't actually encode");
   message(0, "  -b <bit rate>    Sets bit rate used for encoding (default %d kbit/s).",
 	  DEFAULT_ENCODER_BITRATE);
   message(0, "                   See below for supported bit rates.");
@@ -169,7 +174,7 @@ static int parseCommandLine(int argc, char **argv, char **tocFile, int *bitrate)
 
   opterr = 0;
 
-  while ((c = getopt(argc, argv, "Vhcv:d:b:J")) != EOF) {
+  while ((c = getopt(argc, argv, "Vhcv:d:b:J:ns:")) != EOF) {
     switch (c) {
     case 'V':
       printVersion = 1;
@@ -198,6 +203,10 @@ static int parseCommandLine(int argc, char **argv, char **tocFile, int *bitrate)
       }
       break;
 
+    case 'n':
+      DRY_RUN = true;
+      break;
+
     case 'c':
       CREATE_ALBUM_DIRECTORY = 1;
       break;
@@ -207,7 +216,11 @@ static int parseCommandLine(int argc, char **argv, char **tocFile, int *bitrate)
       break;
 
     case 'J':
-      ENCODING = "SJIS-WIN";
+      ENCODING = optarg;
+      break;
+
+    case 's':
+      SEPARATOR = optarg;
       break;
 
     case 'd':
@@ -302,7 +315,10 @@ string to_utf8(const string& input)
 #ifndef HAVE_ICONV
   return input;
 #else
-  char* src = (char*)strdupa(input.c_str());
+  if (ENCODING == "UTF-8")
+    return input;
+  char* src = (char*)alloca(input.size() + 1);
+  strcpy(src, input.c_str());
   size_t srclen = strlen(src);
   size_t dstlen = srclen * 4;
   char* dst = (char*)alloca(dstlen);
@@ -324,7 +340,8 @@ vector<short unsigned int> to_utf16(const string& input)
 {
   vector<short unsigned int> vec;
 
-  char* src = (char*)strdupa(input.c_str());
+  char* src = (char*)alloca(input.size() + 1);
+  strcpy(src, input.c_str());
   size_t srclen = strlen(src);
   size_t dstlen = srclen * 4;
   vec.resize(dstlen / 2);
@@ -346,12 +363,9 @@ vector<short unsigned int> to_utf16(const string& input)
 void set_id3v2tag(lame_global_flags* lf, int type, const string &str)
 {
 #ifdef HAVE_ICONV
-  auto dst = to_utf8(str);
-#endif
-
-  switch (type)
-  {
-#ifdef HAVE_ICONV
+  if (ENCODING != "ISO-8859-1") {
+    auto dst = to_utf16(str);
+    switch (type) {
     case 'a':
       id3tag_set_textinfo_utf16(lf, "TPE1", (short unsigned int*)&dst[0]);
       break;
@@ -361,17 +375,22 @@ void set_id3v2tag(lame_global_flags* lf, int type, const string &str)
     case 'l':
       id3tag_set_textinfo_utf16(lf, "TALB", (short unsigned int*)&dst[0]);
       break;
-#else
-    case 'a':
-      id3tag_set_artist(lf, str.c_str());
-      break;
-    case 't':
-      id3tag_set_title(lf, str.c_str());
-      break;
-    case 'l':
-      id3tag_set_album(lf, str.c_str());
-      break;
+    }
+    return;
+  }
 #endif
+
+  switch (type)
+  {
+  case 'a':
+    id3tag_set_artist(lf, str.c_str());
+    break;
+  case 't':
+    id3tag_set_title(lf, str.c_str());
+    break;
+  case 'l':
+    id3tag_set_album(lf, str.c_str());
+    break;
   }
 }
 
@@ -614,7 +633,7 @@ int main(int argc, char **argv)
     if (CREATE_ALBUM_DIRECTORY) {
       if (!album.empty() && !albumPerformer.empty()) {
 	mp3TargetDir += albumPerformer;
-	mp3TargetDir += "_";
+	mp3TargetDir += SEPARATOR;
 	mp3TargetDir += album;
       }
       else {
@@ -667,19 +686,20 @@ int main(int argc, char **argv)
       // build mp3 file name
       string mp3FileName;
       
-      sprintf(sbuf, "%02d_", trackNr);
+      sprintf(sbuf, "%02d", trackNr);
       
       mp3FileName += sbuf;
+      mp3FileName += SEPARATOR;
       
       if (!title.empty()) {
 	mp3FileName += to_utf8(title);
-	mp3FileName += "_";
+	mp3FileName += SEPARATOR;
       }
       
       mp3FileName += to_utf8(album);
       
       if (!albumPerformer.empty()) {
-	mp3FileName += "_";
+	mp3FileName += SEPARATOR;
 	mp3FileName += to_utf8(albumPerformer);
       }
       
@@ -726,7 +746,8 @@ int main(int argc, char **argv)
 	message(1, "Encoding track %d to \"%s\"...", trackNr,
 		mp3FileName.c_str());
 
-	if (!encode_track(lf, toc, mp3TargetDir + mp3FileName, astart.lba(), len)) {
+	if (!DRY_RUN &&
+            !encode_track(lf, toc, mp3TargetDir + mp3FileName, astart.lba(), len)) {
 	  message(-2, "Encoding of track %d failed.", trackNr);
 	  err = 1;
 	  break;
