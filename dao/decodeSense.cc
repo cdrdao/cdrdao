@@ -35,7 +35,7 @@
 
 struct StringTable {
   int code;
-  char *message;
+  const char *message;
 };
 
 static StringTable SENSE_KEYS[] = {
