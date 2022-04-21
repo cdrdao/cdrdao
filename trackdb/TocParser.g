@@ -174,6 +174,7 @@ public:
 #token Reserved2        "RESERVED2"
 #token Reserved3        "RESERVED3"
 #token Reserved4        "RESERVED4"
+#token Closed           "CLOSED"
 #token UpcEan           "UPC_EAN"
 #token SizeInfo         "SIZE_INFO"
 #token LangEn           "EN"
@@ -704,7 +705,8 @@ packType > [ CdTextItem::PackType t, int lineNr ]
      | Reserved1  << $t = CdTextItem::CDTEXT_RES1; $lineNr = $1->getLine(); >>
      | Reserved2  << $t = CdTextItem::CDTEXT_RES2; $lineNr = $1->getLine(); >>
      | Reserved3  << $t = CdTextItem::CDTEXT_RES3; $lineNr = $1->getLine(); >>
-     | Reserved4  << $t = CdTextItem::CDTEXT_RES4; $lineNr = $1->getLine(); >>
+     | Reserved4  << $t = CdTextItem::CDTEXT_CLOSED; $lineNr = $1->getLine(); >>
+     | Closed     << $t = CdTextItem::CDTEXT_CLOSED; $lineNr = $1->getLine(); >>
      | UpcEan     << $t = CdTextItem::CDTEXT_UPCEAN_ISRC; $lineNr = $1->getLine(); >>
      | Isrc       << $t = CdTextItem::CDTEXT_UPCEAN_ISRC; $lineNr = $1->getLine(); >>
      | SizeInfo   << $t = CdTextItem::CDTEXT_SIZE_INFO; $lineNr = $1->getLine(); >>

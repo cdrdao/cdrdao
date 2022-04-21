@@ -51,6 +51,7 @@ Toc::Toc() : length_(0)
   tocType_ = CD_DA;
   nofTracks_ = 0; firstTrackNo_ = 0;
   tracks_ = lastTrack_ = NULL;
+  textEncoding_ = ENC_LATIN;
 
   catalogValid_ = 0;
 }

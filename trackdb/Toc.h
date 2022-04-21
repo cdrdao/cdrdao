@@ -36,6 +36,8 @@ public:
 
   enum TocType { CD_DA, CD_ROM, CD_I, CD_ROM_XA };
 
+  enum EncodingType { ENC_LATIN, ENC_ASCII, ENC_MSJIS };
+
   // sets/returns toc type
   void tocType(TocType);
   TocType tocType() const;
@@ -86,8 +88,12 @@ public:
   int existCdTextBlock(int blockNr) const;
   const CdTextItem *getCdTextItem(int trackNr, int blockNr,
 				  CdTextItem::PackType) const;
+  int nofCdTextItems() { return cdtext_.count(); }
   void cdTextLanguage(int blockNr, int lang);
   int cdTextLanguage(int blockNr) const;
+
+  void cdTextEncoding(EncodingType t) { textEncoding_ = t; }
+  EncodingType cdTextEncoding() const { return textEncoding_; }
 
   void trackSummary(int *nofAudioTracks, int *nofMode1Tracks,
 		    int *nofMode2Tracks) const;
@@ -155,6 +161,7 @@ private:
   int catalogValid_;
 
   CdTextContainer cdtext_;
+  EncodingType textEncoding_;
 };
 
 

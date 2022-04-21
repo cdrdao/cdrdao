@@ -40,6 +40,8 @@
 #include <vector>
 #include <assert.h>
 #include <sstream>
+#include <algorithm>
+#include <memory>
 
 #include "log.h"
 #include "util.h"
@@ -52,6 +54,9 @@
 #include "Cddb.h"
 #include "TempFileManager.h"
 #include "FormatConverter.h"
+#ifdef HAVE_ICONV
+#include <iconv.h>
+#endif
 
 #ifdef __CYGWIN__
 #define NOMINMAX
@@ -95,6 +100,7 @@ typedef enum {
     DRIVE_INFO,
     DISCID,
     SHOW_VERSION,
+    CDTEXT,
     LAST_CMD,
 } DaoCommand;
 
@@ -143,6 +149,7 @@ struct {
     { DRIVE_INFO,   "drive-info", NEED_CDR_R,  0, 0, 1 },
     { DISCID,       "discid",     NEED_CDR_R,  0, 0, 1 },
     { SHOW_VERSION, "version",    NO_DEVICE,   0, 0, 0 },
+    { CDTEXT,       "cdtext",     NEED_CDR_R,  0, 0, 0 },
 };
 
 struct DaoCommandLine
@@ -299,11 +306,11 @@ void DaoCommandLine::printUsage()
 "  simulate   - shortcut for 'write --simulate'\n"
 "  write      - writes CD\n"
 "  copy       - copies CD\n");
-    
+
     log_message(0, "\n Try '%s <command> -h' to get a list of available "
 		"options\n", progName);
     break;
-    
+
   case SHOW_TOC:
     log_message(0, "\nUsage: %s show-toc [options] toc-file",
 		progName);
@@ -313,17 +320,17 @@ void DaoCommandLine::printUsage()
 "  --keep                  - keep generated temp wav files after exit\n"
 "  -v #                    - sets verbose level\n");
     break;
-    
+
   case SHOW_DATA:
     log_message(0, "\nUsage: %s show-data [--swap] [-v #] toc-file\n",
 		progName);
     break;
-    
+
   case READ_TEST:
     log_message(0, "\nUsage: %s read-test [-v #] toc-file\n",
 		progName);
     break;
-  
+
   case SIMULATE:
     log_message(0, "\nUsage: %s simulate [options] toc-file",
 		progName);
@@ -350,7 +357,7 @@ void DaoCommandLine::printUsage()
 "  -v #                    - sets verbose level\n"
 "  -n                      - no pause before writing\n");
     break;
-    
+
   case WRITE:
     log_message(0, "\nUsage: %s write [options] toc-file", progName);
     log_message(0,
@@ -364,7 +371,7 @@ void DaoCommandLine::printUsage()
 "                          - 0: disable buffer under run protection\n"
 "                            1: enable buffer under run protection (default)\n"
 "  --write-speed-control # - 0: disable writing speed control by the drive\n"
-"                            1: enable writing speed control (default)\n" 
+"                            1: enable writing speed control (default)\n"
 "  --overburn              - allow one to overburn a medium\n"
 "  --full-burn             - force burning to the outer disk edge\n"
 "                            with '--driver generic-mmc-raw'\n"
@@ -382,7 +389,7 @@ void DaoCommandLine::printUsage()
 "  -v #                    - sets verbose level\n"
 "  -n                      - no pause before writing\n");
     break;
-    
+
   case READ_TOC:
     log_message(0, "\nUsage: %s read-toc [options] toc-file",
 		progName);
@@ -408,7 +415,7 @@ void DaoCommandLine::printUsage()
 "  --force                 - force execution of operation\n"
 "  -v #                    - sets verbose level\n");
     break;
-    
+
   case DISK_INFO:
     log_message(0, "\nUsage: %s disk-info [options]", progName);
     log_message(0,
@@ -417,7 +424,7 @@ void DaoCommandLine::printUsage()
 "  --driver <id>           - force usage of specified driver\n"
 "  -v #                    - sets verbose level\n");
     break;
-    
+
   case DISCID:
     log_message(0, "\nUsage: %s discid [options]", progName);
     log_message(0,
@@ -431,7 +438,7 @@ void DaoCommandLine::printUsage()
 "  --query-string          - prints out CDDB query only\n"
 "  -v #                    - sets verbose level\n");
     break;
-   
+
   case READ_CD:
     log_message(0, "\nUsage: %s read-cd [options] toc-file",
 		progName);
@@ -458,7 +465,7 @@ void DaoCommandLine::printUsage()
 "  --force                 - force execution of operation\n"
 "  -v #                    - sets verbose level\n");
     break;
-    
+
   case TOC_INFO:
       log_message(0, "\nUsage: %s toc-info [options] toc-file",
 		  progName);
@@ -468,7 +475,7 @@ void DaoCommandLine::printUsage()
 "  --keep                  - keep generated temp wav files after exit\n"
 "  -v #                    - sets verbose level\n");
     break;
-    
+
   case TOC_SIZE:
     log_message(0, "\nUsage: %s toc-size [options] toc-file",
 		progName);
@@ -490,11 +497,11 @@ void DaoCommandLine::printUsage()
 "  --eject                 - ejects cd after writing or simulation\n"
 "  -v #                    - sets verbose level\n");
     break;
-    
+
   case SCAN_BUS:
     log_message(0, "\nUsage: %s scan-bus [-v #]\n", progName);
     break;
-    
+
   case UNLOCK:
     log_message(0, "\nUsage: %s unlock [options]", progName);
     log_message(0,
@@ -505,7 +512,7 @@ void DaoCommandLine::printUsage()
 "  --eject                 - ejects cd after unlocking\n"
 "  -v #                    - sets verbose level\n");
     break;
-    
+
   case DRIVE_INFO:
     log_message(0, "\nUsage: %s drive-info [options]", progName);
     log_message(0,
@@ -514,7 +521,7 @@ void DaoCommandLine::printUsage()
 "  --driver <id>           - force usage of specified driver\n"
 "  -v #                    - sets verbose level\n");
     break;
-    
+
   case COPY_CD:
     log_message(0, "\nUsage: %s copy [options]", progName);
     log_message(0,
@@ -531,7 +538,7 @@ void DaoCommandLine::printUsage()
 "                          - 0: disable buffer under run protection\n"
 "                            1: enable buffer under run protection (default)\n"
 "  --write-speed-control # - 0: disable writing speed control by the drive\n"
-"                            1: enable writing speed control (default)\n" 
+"                            1: enable writing speed control (default)\n"
 "  --overburn              - allow one to overburn a medium\n"
 "  --full-burn             - force burning to the outer disk edge\n"
 "                            with '--driver generic-mmc-raw'\n"
@@ -562,7 +569,7 @@ void DaoCommandLine::printUsage()
 "  -v #                    - sets verbose level\n"
 "  -n                      - no pause before writing\n");
   break;
-  
+
   case READ_CDDB:
     log_message(0, "\nUsage: %s read-cddb [options] toc-file",
 		progName);
@@ -574,7 +581,7 @@ void DaoCommandLine::printUsage()
 "                            CDDB records will be stored\n"
 "  -v #                    - sets verbose level\n");
     break;
-    
+
   case MSINFO:
     log_message(0, "\nUsage: %s msinfo [options]", progName);
     log_message(0,
@@ -584,13 +591,13 @@ void DaoCommandLine::printUsage()
 "  --reload                - reload the disk if necessary for writing\n"
 "  -v #                    - sets verbose level\n");
     break;
-    
+
   default:
     log_message(0, "Sorry, no help available for command %d :-(\n",
 		command);
     break;
   }
-  
+
 }
 
 void DaoCommandLine::importSettings(Settings* settings)
@@ -608,7 +615,7 @@ void DaoCommandLine::importSettings(Settings* settings)
 	if ((sval = settings->getString(Settings::setWriteDevice)) != NULL) {
 	    scsiDevice = sval;
 	}
-    
+
 	if ((ival = settings->getInteger(Settings::setWriteSpeed)) != NULL &&
 	    *ival >= 0) {
 	    writingSpeed = *ival;
@@ -651,7 +658,7 @@ void DaoCommandLine::importSettings(Settings* settings)
 	if ((sval = settings->getString(Settings::setReadDevice)) != NULL) {
 	    sourceScsiDevice = strdupCC(sval);
 	}
-    
+
 	if ((ival = settings->getInteger(Settings::setReadParanoiaMode)) != NULL &&
 	    *ival >= 0) {
 	    paranoiaMode = *ival;
@@ -692,7 +699,7 @@ void DaoCommandLine::importSettings(Settings* settings)
     if ((ival = settings->getInteger(Settings::setReadSpeed)) != NULL &&
 	*ival >= 0) {
 	readingSpeed = *ival;
-    }  
+    }
 }
 
 void DaoCommandLine::exportSettings(Settings* settings)
@@ -702,7 +709,7 @@ void DaoCommandLine::exportSettings(Settings* settings)
     if (cmd == SIMULATE || cmd == WRITE || cmd == COPY_CD) {
         if (!driverId.empty())
             settings->set(Settings::setWriteDriver, driverId.c_str());
-    
+
 	if (!scsiDevice.empty())
 	    settings->set(Settings::setWriteDevice, scsiDevice.c_str());
 
@@ -747,7 +754,7 @@ void DaoCommandLine::exportSettings(Settings* settings)
 	cmd == DISCID || cmd == DRIVE_INFO) {
 	if (!driverId.empty())
 	    settings->set(Settings::setWriteDriver, driverId.c_str());
-    
+
 	if (!scsiDevice.empty())
 	    settings->set(Settings::setWriteDevice, scsiDevice.c_str());
     }
@@ -812,7 +819,7 @@ int DaoCommandLine::parseCmdLine(int argc, char **argv,
 	    switch ((*argv)[1]) {
 	    case 'h':
 		return 1;
-	
+
 	    case 'v':
 		if ((*argv)[2] != 0) {
 		    verbose = atoi((*argv) + 2);
@@ -836,7 +843,7 @@ int DaoCommandLine::parseCmdLine(int argc, char **argv,
 		return 1;
 		break;
 	    }
-	} 
+	}
 	else {
 
 	    if (strcmp((*argv) + 2, "help") == 0) {
@@ -850,7 +857,7 @@ int DaoCommandLine::parseCmdLine(int argc, char **argv,
 		    scsiDevice = argv[1];
 		    argc--, argv++;
 		}
-	    } 
+	    }
 	    else if (strcmp((*argv) + 2, "source-device") == 0) {
 		if (argc < 2) {
 		    log_message(-2, "Missing argument after: %s", *argv);
@@ -1229,7 +1236,7 @@ CdrDriver *selectDriver(DaoCommand cmd, ScsiIf *scsiIf,
   }
   else {
     const char *id = NULL;
-    
+
     // for reading commands try to select a special read driver first:
     if (cmd == READ_TOC || cmd == READ_CD)
       id = CdrDriver::selectDriver(0, scsiIf->vendor(), scsiIf->product(),
@@ -1247,7 +1254,7 @@ CdrDriver *selectDriver(DaoCommand cmd, ScsiIf *scsiIf,
     // Still no driver, try to autodetect one
     if (id == NULL)
       id = CdrDriver::detectDriver(scsiIf, &options);
-      
+
     if (id != NULL) {
       ret = CdrDriver::createDriver(id, options, scsiIf);
     }
@@ -1336,7 +1343,7 @@ CdrDriver *setupDevice(DaoCommand cmd, const string& scsiDevice,
     inquiryFailed = 1;
     break;
   }
-  
+
   log_message(2, "%s: %s %s\tRev: %s", scsiDevice.c_str(), scsiIf->vendor(),
 	  scsiIf->product(), scsiIf->revision());
 
@@ -1358,7 +1365,7 @@ CdrDriver *setupDevice(DaoCommand cmd, const string& scsiDevice,
 
   if (!initDevice)
     return cdr;
-      
+
   while (initTries > 0) {
     // clear unit attention
     cdr->rezeroUnit(0);
@@ -1392,12 +1399,12 @@ CdrDriver *setupDevice(DaoCommand cmd, const string& scsiDevice,
 	delete scsiIf;
 	return NULL;
       }
-	
+
       cdr->rezeroUnit(0);
 
       if (readingSpeed >= 0) {
         log_message(0, "Setting reading speed %d.",
-                readingSpeed); 
+                readingSpeed);
         if (!cdr->rspeed(readingSpeed)) {
           log_message(-2, "Reading speed %d is not supported by device.",
                   readingSpeed);
@@ -1413,7 +1420,7 @@ CdrDriver *setupDevice(DaoCommand cmd, const string& scsiDevice,
       }
 
       if (checkEmpty && initTries == 2 &&
-	  di->valid.empty && !di->empty && 
+	  di->valid.empty && !di->empty &&
 	  (!di->valid.append || !di->append) &&
 	  (!remote || reload)) {
 	if (!reload) {
@@ -1573,7 +1580,7 @@ void showToc(const Toc *toc)
   printf("TOC TYPE: %s\n", Toc::tocType2String(toc->tocType()));
 
   if (toc->catalogValid()) {
-    for (i = 0; i < 13; i++) 
+    for (i = 0; i < 13; i++)
       buf[i] = toc->catalog(i) + '0';
     buf[13] = 0;
 
@@ -1616,7 +1623,7 @@ void showToc(const Toc *toc)
     }
 
     if (t->start().lba() != 0) {
-      printf("          PREGAP %s(%6ld)\n", 
+      printf("          PREGAP %s(%6ld)\n",
 	      t->start().str(), t->start().lba());
     }
     printf("          START  %s(%6ld)\n",
@@ -1633,7 +1640,7 @@ void showToc(const Toc *toc)
 
     tcount++;
   }
-} 
+}
 
 void showData(const Toc *toc, bool swap)
 {
@@ -1669,6 +1676,107 @@ void showData(const Toc *toc, bool swap)
   }
 }
 
+#ifdef HAVE_ICONV
+string to_utf8(const char* input, Toc::EncodingType enc)
+{
+    const char* from_encoding = "ISO-8859-1";
+    if (enc == Toc::ENC_MSJIS)
+        from_encoding = "CP932"; // Code Page 932, aka MS-JIS
+
+    char* src = (char*)alloca(strlen(input) + 1);
+    strcpy(src, input);
+    size_t srclen = strlen(src);
+    size_t dstlen = srclen * 4;
+    char* dst = (char*)alloca(dstlen);
+    char* orig_dst = dst;
+    auto icv = iconv_open("UTF-8", from_encoding);
+    if (!icv)
+        return input;
+    if (iconv(icv, &src, &srclen, &dst, &dstlen) == (size_t)-1) {
+        log_message(-1, strerror(errno));
+        return input;
+    }
+    *dst = 0;
+    return string(orig_dst);
+}
+#else
+string to_utf8(const char* input, Toc::EncodingType enc)
+{
+    return string(input);
+}
+#endif
+
+void showCDText(CdrDriver* cdr)
+{
+    auto items = cdr->generateCdTextItems();
+    const unsigned char* languages = NULL;
+    Toc::EncodingType encoding = Toc::ENC_LATIN;
+
+    CdTextItem* sizeinfo = NULL;
+
+    if (items.size() == 0) {
+        cout << "No CD-TEXT data.\n";
+        return;
+    }
+
+    log_message(3, "Found %ld CD-TEXT packs.", items.size());
+
+    // Locate the SizeInfo item;
+    for (const auto i : items) {
+        if (i->packType() == CdTextItem::CDTEXT_SIZE_INFO) {
+            sizeinfo = i;
+            break;
+        }
+    }
+    if (sizeinfo) {
+        auto d = sizeinfo->data();
+        if (sizeinfo->dataLen() > 0 && d[0] == 0x80)
+            encoding = Toc::ENC_MSJIS;
+        if (sizeinfo->dataLen() >= 36)
+            languages = &d[28];
+    }
+
+    sort(items.begin(), items.end(),
+         [](const CdTextItem* a, const CdTextItem* b) {
+             if (a->blockNr() != b->blockNr())
+                 return (int)(a->blockNr() < b->blockNr());
+             if (a->trackNr() != b->trackNr())
+                 return (int)(a->trackNr() < b->trackNr());
+             if (a->packType() != b->packType())
+                 return (int)(a->packType() < b->packType());
+             return 0;
+         });
+
+    int n_block = -1;
+    int n_track = -1;
+    for (const auto i : items) {
+        if (i->packType() == CdTextItem::CDTEXT_SIZE_INFO)
+            continue;
+        if (i->blockNr() != n_block) {
+            n_block = i->blockNr();
+            if (n_block > 0) cout << "\n";
+            cout << "Block " << n_block << ":\n";
+            if (languages && n_block < 8 && languages[n_block] != 0) {
+                cout << "    LANGUAGE \""
+                     << CdTextContainer::languageName(languages[n_block])
+                     << "\"\n";
+            }
+        }
+        if (i->trackNr() >= 1 && i->trackNr() != n_track) {
+            n_track = i->trackNr();
+            cout << "  Track " << n_track << ":\n";
+        }
+        cout << "    ";
+        if (i->dataType() == CdTextItem::SBCC) {
+            cout << CdTextItem::packType2String(i->trackNr() > 0, i->packType())
+                 << " \"" << to_utf8((const char*)i->data(), encoding) << "\"";
+        } else {
+            cout << *i;
+        }
+        cout << "\n";
+    }
+}
+
 void showDiskInfo(DiskInfo *di)
 {
   const char *s1, *s2;
@@ -1680,7 +1788,7 @@ void showDiskInfo(DiskInfo *di)
   printf("CD-RW                : ");
   if (di->valid.cdrw)
     printf(di->cdrw ? "yes" : "no");
-  else 
+  else
     printf("n/a");
 
   printf("\n");
@@ -1721,7 +1829,7 @@ void showDiskInfo(DiskInfo *di)
   printf("CD-R empty           : ");
   if (di->valid.empty)
     printf(di->empty ? "yes" : "no");
-  else 
+  else
     printf("n/a");
 
   printf("\n");
@@ -1776,7 +1884,7 @@ void showDiskInfo(DiskInfo *di)
  */
 int showMultiSessionInfo(DiskInfo *di)
 {
-  
+
   if (di->valid.empty) {
     if (di->empty) {
       // print nothing  to indicate empty disk
@@ -1842,19 +1950,19 @@ int readCddb(const DaoCommandLine& opts, Toc *toc, bool showEntry = false)
       host = strdupCC("unknown");
     }
   }
-  
+
 
   if (cddb.connectDb(user, host, "cdrdao", VERSION) != 0) {
     log_message(-2, "Cannot connect to any CDDB server.");
     err = 2; goto fail;
   }
 
-	
+
   if (cddb.queryDb(&qres) != 0) {
     log_message(-2, "Querying of CDDB server failed.");
     err = 2; goto fail;
   }
-  
+
   if (qres == NULL) {
     log_message(1, "No CDDB record found for this toc-file.");
     err = 1; goto fail;
@@ -1867,9 +1975,9 @@ int readCddb(const DaoCommandLine& opts, Toc *toc, bool showEntry = false)
       log_message(0, "Found following inexact match:");
     else
       log_message(0, "Found following inexact matches:");
-    
+
     log_message(0, "\n    DISKID   CATEGORY     TITLE\n");
-    
+
     for (qrun = qres, qcount = 0; qrun != NULL; qrun = qrun->next, qcount++) {
       log_message(0, "%2d. %-8s %-12s %s", qcount + 1, qrun->diskId,
 	      qrun->category,  qrun->title);
@@ -2024,7 +2132,7 @@ int copyCd(DaoCommandLine& opts, CdrDriver *src, CdrDriver *dst)
 	char tocFilename[50];
 
 	sprintf(tocFilename, "cd%ld.toc", pid);
-    
+
 	log_message(2, "Keeping created image file \"%s\".",
 		    opts.dataFilename);
 	log_message(2, "Corresponding toc-file is written to \"%s\".",
@@ -2099,7 +2207,7 @@ int copyCd(DaoCommandLine& opts, CdrDriver *src, CdrDriver *dst)
 	delete toc;
 	return 1;
     }
-    
+
     if (writeDiskAtOnce(toc, dst, opts.fifoBuffers, opts.swap, 0, 0) != 0) {
 	if (dst->simulate())
 	    log_message(-2, "Simulation failed.");
@@ -2150,7 +2258,7 @@ int copyCdOnTheFly(DaoCommandLine& opts,CdrDriver *src, CdrDriver *dst)
 	log_message(-2, "Cannot create pipe: %s", strerror(errno));
 	return 1;
     }
-  
+
     src->rawDataReading(true);
     src->taoSource(opts.taoSource);
     if (opts.taoSourceAdjust >= 0)
@@ -2176,7 +2284,7 @@ int copyCdOnTheFly(DaoCommandLine& opts,CdrDriver *src, CdrDriver *dst)
 	    log_message(2, "CD-TEXT data was added to toc.");
 	}
     }
-  
+
     if (checkToc(toc, opts.force) != 0) {
 	log_message(-3, "Toc created from source CD image is inconsistent"
 		    "- please report.");
@@ -2227,7 +2335,7 @@ int copyCdOnTheFly(DaoCommandLine& opts,CdrDriver *src, CdrDriver *dst)
 	delete src->scsiIf();
 
 	src->scsiIf(new ScsiIf(opts.sourceScsiDevice));
-    
+
 	if (src->scsiIf()->init() != 0) {
 	    log_message(-2, "Re-init of SCSI interace failed.");
 
@@ -2236,7 +2344,7 @@ int copyCdOnTheFly(DaoCommandLine& opts,CdrDriver *src, CdrDriver *dst)
 
 	    while (1)
 		sleep(10);
-	}    
+	}
 #endif
 
 	if (src->readDisk(opts.session, "-") != NULL)
@@ -2451,7 +2559,7 @@ int main(int argc, char **argv)
 
 	cdr = setupDevice(options.command,
 			  options.scsiDevice,
-			  options.driverId, 
+			  options.driverId,
 			  /* init device? */
 			  (options.command == UNLOCK) ? 0 : 1,
 			  /* check for ready status? */
@@ -2481,7 +2589,7 @@ int main(int argc, char **argv)
     // ---------------------------------------------------------------------
     //   Process fullburn option for writing commands.
     // ---------------------------------------------------------------------
-  
+
     if (options.command == SIMULATE ||
 	options.command == WRITE ||
 	options.command == COPY_CD) {
@@ -2503,9 +2611,9 @@ int main(int argc, char **argv)
     // ---------------------------------------------------------------------
     //   Setup secondary device for copy command.
     // ---------------------------------------------------------------------
-  
+
     if (options.command == COPY_CD) {
-	if (options.sourceScsiDevice != NULL && 
+	if (options.sourceScsiDevice != NULL &&
 	    options.scsiDevice != options.sourceScsiDevice) {
 	    delSrcDevice = 1;
 	    srcCdr = setupDevice(READ_CD, options.sourceScsiDevice,
@@ -2600,6 +2708,10 @@ int main(int argc, char **argv)
 	showDiskInfo(di);
 	break;
 
+    case CDTEXT:
+        showCDText(cdr);
+        break;
+
     case DISCID:
 	if (di->valid.empty && di->empty) {
 	    log_message(-2, "Inserted disk is empty.");
@@ -2630,19 +2742,19 @@ int main(int argc, char **argv)
 		readCddb(options, toc, true);
 	}
 	break;
-   
+
     case MSINFO:
 	switch (showMultiSessionInfo(di)) {
 	case 0:
 	    log_message(2, "msinfo: Session is appendable");
 	    exitCode = 0;
 	    break;
-      
+
 	case 1: // CD-R is not empty and not appendable
 	    log_message(2, "msinfo: CD-R is not empty and not appendable");
 	    exitCode = 2;
 	    break;
-      
+
 	case 2: // cannot determine state
 	    log_message(2, "msinfo: cannot determine state");
 	    exitCode = 3;
@@ -2708,7 +2820,7 @@ int main(int argc, char **argv)
 	    log_message(1, "Reading of toc data finished successfully.");
 	}
 	break;
-    
+
     case READ_CD:
 	if (di->valid.empty && di->empty) {
 	    log_message(-2, "Inserted disk is empty.");
@@ -2737,7 +2849,7 @@ int main(int argc, char **argv)
 	toc = cdr->readDisk(options.session,
 			    (options.dataFilename == NULL) ? "data.bin" :
 			    options.dataFilename);
-      
+
 	if (toc == NULL) {
 	    cdr->rezeroUnit(0);
 	    exitCode = 1; goto fail;
@@ -2767,9 +2879,9 @@ int main(int argc, char **argv)
 	if (!options.writeSimulate)
 	    cdr->simulate(false);
 	// fall through
-    
+
     case SIMULATE:
-	if (di->valid.empty && !di->empty && 
+	if (di->valid.empty && !di->empty &&
 	    (!di->valid.append || !di->append)) {
 	    log_message(-2, "Inserted disk is not empty and not appendable.");
 	    exitCode = 1; goto fail;
@@ -2883,7 +2995,7 @@ int main(int argc, char **argv)
 
     case COPY_CD:
 	if (cdr != srcCdr) {
-	    if (di->valid.empty && !di->empty && 
+	    if (di->valid.empty && !di->empty &&
 		(!di->valid.append || !di->append)) {
 		log_message(-2, "Medium in recorder device is not empty"
 			    "and not appendable.");
@@ -2895,14 +3007,14 @@ int main(int argc, char **argv)
 	    log_message(-2, "Medium in source device is empty.");
 	    exitCode = 1; goto fail;
 	}
-    
+
 	cdr->simulate(options.writeSimulate);
 	cdr->force(options.force);
 	cdr->remote(options.remoteMode, options.remoteFd);
 
 	cdr->bufferUnderRunProtection(options.bufferUnderrunProtection);
 	cdr->writeSpeedControl(options.writeSpeedControl);
-    
+
 	if (options.multiSession) {
 	    if (cdr->multiSession(1) != 0) {
 		log_message(-2, "This driver does not support multi"
@@ -2923,7 +3035,7 @@ int main(int argc, char **argv)
 	srcCdr->subChanReadMode(options.readSubchanMode);
 	srcCdr->fastTocReading(options.fastToc);
 	srcCdr->force(options.force);
-    
+
 	if (options.onTheFly)
 	    log_message(1, "Starting on-the-fly CD copy ");
 	else
