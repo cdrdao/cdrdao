@@ -148,9 +148,7 @@ void CdTextContainer::print(int isTrack, std::ostream &out) const
 	actBlockNr = run->blockNr();
 	out << "  }\n  LANGUAGE " << actBlockNr << " {\n";
       }
-      out << "    ";
-      run->print(isTrack, out);
-      out << "\n";
+      out << "    " << *run << "\n";
     }
 
     out << "  }\n}\n";

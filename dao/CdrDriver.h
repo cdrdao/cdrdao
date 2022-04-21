@@ -20,6 +20,7 @@
 #ifndef __CDRDRIVER_H__
 #define __CDRDRIVER_H__
 
+#include <vector>
 #include "ScsiIf.h"
 #include "Msf.h"
 #include "TrackData.h"
@@ -28,6 +29,7 @@
 
 class Toc;
 class Track;
+class CdTextItem;
 
 #define OPT_DRV_GET_TOC_GENERIC   0x00010000
 #define OPT_DRV_SWAP_READ_SAMPLES 0x00020000
@@ -100,6 +102,8 @@ struct CdTextPack {
   unsigned char crc0;
   unsigned char crc1;
 };
+
+std::ostream& operator<<(std::ostream& os, const CdTextPack& pack);
 
 struct CdToc {
   int track;            // number
@@ -342,8 +346,9 @@ public:
   // returns information about inserted medium
   virtual DiskInfo *diskInfo() { return 0; }
 
-
-
+  // returns CDTEXT information
+  std::vector<CdTextItem*> generateCdTextItems();
+  
   // Returns block size depending on given sector mode and 'encodingMode_'
   // that must be used to send data to the recorder.
   virtual long blockSize(TrackData::Mode, TrackData::SubChannelMode) const;
@@ -492,13 +497,6 @@ protected:
   // 'getToc()' and must be implemented by the actual driver.
   virtual CdRawToc *getRawToc(int sessionNr, int *len) = 0;
 
-  // Reads CD-TEXT packs from the lead-in of a CD. The base implementation
-  // uses the SCSI-3/mmc commands.
-  virtual CdTextPack *readCdTextPacks(long *);
-
-  // reads CD-TEXT data and adds it to given 'Toc' object
-  int readCdTextData(Toc *);
-
   // Tries to determine the data mode of specified track.
   virtual TrackData::Mode getTrackMode(int trackNr, long trackStartLba);
 
@@ -620,6 +618,13 @@ protected:
 
   // checks if drive capabilities support requested sub-channel reading mode
   int checkSubChanReadCaps(TrackData::Mode, unsigned long caps);
+ 
+  // Reads CD-TEXT packs from the lead-in of a CD. The base implementation
+  // uses the SCSI-3/mmc commands.
+  virtual CdTextPack *readCdTextPacks(int *);
+ 
+  // reads CD-TEXT data and adds it to given 'Toc' object
+  int readCdTextData(Toc *);
 
   void printCdToc(CdToc *toc, int tocLen);
 

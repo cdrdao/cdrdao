@@ -29,6 +29,9 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <ctype.h>
+#include <ostream>
+#include <vector>
+#include <string>
 
 #include "CdrDriver.h"
 #include "PWSubChannel96.h"
@@ -57,6 +60,7 @@
 #include "cdda_interface.h"
 #include "../paranoia/cdda_paranoia.h"
 
+using namespace std;
 
 typedef CdrDriver *(*CdrDriverConstructor)(ScsiIf *, unsigned long);
 
@@ -454,7 +458,7 @@ static CDRVendorTable VENDOR_TABLE[] = {
   { 97,23,60,  0,0,0,    "Customer Pressing Oosterhout" },
   { 97,28,50,  0,0,0,    "DELPHI TECHNOLOGY INC." },
   { 97,27,00,  97,48,40, "DIGITAL STORAGE TECHNOLOGY CO.,LTD" },
-  { 97,22,30,  0,0,0,    "EXIMPO" }, 
+  { 97,22,30,  0,0,0,    "EXIMPO" },
   { 97,28,60,  0,0,0,    "Friendly CD-Tek Co." },
   { 97,31,30,  97,51,10, "Grand Advance Technology Ltd." },
   { 97,29,50,  0,0,0,    "General Magnetics Ld" },
@@ -479,10 +483,10 @@ static CDRVendorTable VENDOR_TABLE[] = {
   { 97,29,00,  0,0,0,    "Taeil Media Co.,Ltd." },
   { 97,18,60,  0,0,0,    "TAROKO INTERNATIONAL CO.,LTD." },
   { 97,15,00,  0,0,0,    "TDK Corporation." },
-  { 97,29,20,  0,0,0,    "UNIDISC TECHNOLOGY CO.,LTD" }, 
+  { 97,29,20,  0,0,0,    "UNIDISC TECHNOLOGY CO.,LTD" },
   { 97,24,30,  97,45,10, "UNITECH JAPAN INC." },
   { 97,29,10,  97,50,10, "Vanguard Disc Inc." },
-  { 97,49,40,  97,23,40, "VICTOR COMPANY OF JAPAN, LIMITED" }, 
+  { 97,49,40,  97,23,40, "VICTOR COMPANY OF JAPAN, LIMITED" },
   { 97,29,40,  0,0,0,    "VIVA MAGNETICS LIMITED" },
   { 97,25,40,  0,0,0,    "VIVASTAR AG" },
   { 97,18,10,  0,0,0,    "WEALTH FAIR INVESTMENT LIMITED" },
@@ -498,7 +502,7 @@ unsigned char CdrDriver::syncPattern[12] = {
 unsigned char CdrDriver::REMOTE_MSG_SYNC_[4] = { 0xff, 0x00, 0xff, 0x00 };
 
 
-/* Maps a string to the corresponding driver option value 
+/* Maps a string to the corresponding driver option value
  * Return: 0: string is not a valid driver option sting
  *         else: option value for string
  */
@@ -637,10 +641,10 @@ static int readDriverTable(const char *filename)
       if (rw > 0) {
 	if ((p = strtok(NULL, sep)) != NULL) {
 	  vendor = strdupCC(p);
-	  
+
 	  if ((p = strtok(NULL, sep)) != NULL) {
 	    model = strdupCC(p);
-	    
+
 	    if ((p = strtok(NULL, sep)) != NULL) {
 	      driver = strdupCC(p);
 
@@ -668,7 +672,7 @@ static int readDriverTable(const char *filename)
 
 	      if (!err) {
 		ent = new DriverSelectTable;
-	      
+
 		ent->vendor = vendor;
 		vendor = NULL;
 		ent->model = model;
@@ -676,7 +680,7 @@ static int readDriverTable(const char *filename)
 		ent->driverId = driver;
 		driver = NULL;
 		ent->options = options;
-		
+
 		if (rw == 1) {
 		  ent->next = READ_DRIVER_TABLE;
 		  READ_DRIVER_TABLE = ent;
@@ -685,7 +689,7 @@ static int readDriverTable(const char *filename)
 		  ent->next = WRITE_DRIVER_TABLE;
 		  WRITE_DRIVER_TABLE = ent;
 		}
-		
+
 		count++;
 	      }
 	    }
@@ -761,7 +765,7 @@ static void initDriverTable()
   const char *home;
   char *path;
 
-  if (initialized) 
+  if (initialized)
     return;
 
   if (readDriverTable(DRIVER_TABLE_FILE) != 0) {
@@ -792,7 +796,7 @@ const char *CdrDriver::selectDriver(int readWrite, const char *vendor,
   run = (readWrite == 0) ? READ_DRIVER_TABLE : WRITE_DRIVER_TABLE;
 
   while (run != NULL) {
-    if (strcmp(run->vendor, vendor) == 0 && 
+    if (strcmp(run->vendor, vendor) == 0 &&
 	strstr(model, run->model) != NULL) {
       if (match == NULL || (len = strlen(run->model)) > matchLen) {
 	matchLen = (match == NULL) ? strlen(run->model) : len;
@@ -818,7 +822,7 @@ CdrDriver *CdrDriver::createDriver(const char *driverId, unsigned long options,
   DriverTable *run = DRIVERS;
 
   while (run->driverId != NULL) {
-    if (strcmp(run->driverId, driverId) == 0) 
+    if (strcmp(run->driverId, driverId) == 0)
       return run->constructor(scsiIf, options);
 
     run++;
@@ -847,7 +851,7 @@ void CdrDriver::printDriverIds()
   }
 }
 
-CdrDriver::CdrDriver(ScsiIf *scsiIf, unsigned long options) 
+CdrDriver::CdrDriver(ScsiIf *scsiIf, unsigned long options)
 {
   size16 byteOrderTest = 1;
   char *byteOrderTestP = (char*)&byteOrderTest;
@@ -888,7 +892,7 @@ CdrDriver::CdrDriver(ScsiIf *scsiIf, unsigned long options)
   blockLength_ = 0;
   blocksPerWrite_ = 0;
   zeroBuffer_ = NULL;
-  
+
   userCapacity_ = 0;
   fullBurn_ = false;
 
@@ -934,7 +938,7 @@ void CdrDriver::taoSourceAdjust(int val)
   if (val >= 0 && val < 100) {
     taoSourceAdjust_ = val;
   }
-} 
+}
 
 
 void CdrDriver::onTheFly(int fd)
@@ -992,7 +996,7 @@ int CdrDriver::subChannelEncodingMode(TrackData::SubChannelMode sm) const
 }
 
 
-int CdrDriver::cdrVendor(Msf &code, const char **vendorId, 
+int CdrDriver::cdrVendor(Msf &code, const char **vendorId,
 			 const char **mediumType)
 {
   CDRVendorTable *run = VENDOR_TABLE;
@@ -1061,7 +1065,7 @@ int CdrDriver::testUnitReady(int ignoreUnitAttention) const
 
   case 2:
     sense = scsiIf_->getSense(senseLen);
-    
+
     int code = sense[2] & 0x0f;
 
     if (code == 0x02) {
@@ -1106,7 +1110,7 @@ int CdrDriver::startStopUnit(int startStop) const
   memset(cmd, 0, 6);
 
   cmd[0] = 0x1b;
-  
+
   if (startStop != 0) {
     cmd[4] |= 0x01;
   }
@@ -1131,7 +1135,7 @@ int CdrDriver::preventMediumRemoval(int block) const
   memset(cmd, 0, 6);
 
   cmd[0] = 0x1e;
-  
+
   if (block != 0) {
     cmd[4] |= 0x01;
   }
@@ -1155,7 +1159,7 @@ int CdrDriver::rezeroUnit(int showMessage) const
   memset(cmd, 0, 6);
 
   cmd[0] = 0x01;
-  
+
   if (sendCmd(cmd, 6, NULL, 0, NULL, 0, showMessage) != 0) {
     if (showMessage)
       log_message(-2, "Cannot rezero unit.");
@@ -1176,7 +1180,7 @@ int CdrDriver::flushCache() const
   memset(cmd, 0, 10);
 
   cmd[0] = 0x35; // FLUSH CACHE
-  
+
   // Print no message if the flush cache command fails because some drives
   // report errors even if all went OK.
   sendCmd(cmd, 10, NULL, 0, NULL, 0, 0);
@@ -1203,7 +1207,7 @@ int CdrDriver::readCapacity(long *length, int showMessage)
       log_message(-2, "Cannot read capacity.");
     return 1;
   }
-  
+
   *length = (data[0] << 24) | (data[1] << 16) | (data[2] << 8) | data[3];
   // *length += 1;
 
@@ -1229,7 +1233,7 @@ int CdrDriver::writeData(TrackData::Mode mode, TrackData::SubChannelMode sm,
   int writeLen = 0;
   unsigned char cmd[10];
   long blockLength = blockSize(mode, sm);
-  
+
 #if 0
   long sum, i;
 
@@ -1246,7 +1250,7 @@ int CdrDriver::writeData(TrackData::Mode mode, TrackData::SubChannelMode sm,
 
   memset(cmd, 0, 10);
   cmd[0] = 0x2a; // WRITE1
-  
+
   while (len > 0) {
     writeLen = (len > blocksPerWrite_ ? blocksPerWrite_ : len);
 
@@ -1269,7 +1273,7 @@ int CdrDriver::writeData(TrackData::Mode mode, TrackData::SubChannelMode sm,
     lba += writeLen;
     len -= writeLen;
   }
-      
+
   return 0;
 }
 
@@ -1329,7 +1333,7 @@ int CdrDriver::writeZeros(TrackData::Mode m, TrackData::SubChannelMode sm,
 		  zeroBuffer_, n) != 0) {
       return 1;
     }
-    
+
     cnt += n * blockLen;
 
     cntMb = cnt >> 20;
@@ -1362,7 +1366,7 @@ int CdrDriver::getModePage(int pageCode, unsigned char *buf, long bufLen,
 			   int showErrorMsg)
 {
   unsigned char cmd[10];
-  long dataLen = bufLen + 8/*mode parameter header*/ + 
+  long dataLen = bufLen + 8/*mode parameter header*/ +
                           100/*spare for block descriptors*/;
   unsigned char *data = new unsigned char[dataLen];
 
@@ -1389,7 +1393,7 @@ int CdrDriver::getModePage(int pageCode, unsigned char *buf, long bufLen,
   if (blockDesc != NULL) {
     if (blockDescLen >= 8)
       memcpy(blockDesc, data + 8, 8);
-    else 
+    else
       memset(blockDesc, 0, 8);
   }
 
@@ -1485,7 +1489,7 @@ int CdrDriver::getModePage6(int pageCode, unsigned char *buf, long bufLen,
 			    int showErrorMsg)
 {
   unsigned char cmd[6];
-  long dataLen = bufLen + 4/*mode parameter header*/ + 
+  long dataLen = bufLen + 4/*mode parameter header*/ +
                           100/*spare for block descriptors*/;
   unsigned char *data = new unsigned char[dataLen];
 
@@ -1511,7 +1515,7 @@ int CdrDriver::getModePage6(int pageCode, unsigned char *buf, long bufLen,
   if (blockDesc != NULL) {
     if (blockDescLen >= 8)
       memcpy(blockDesc, data + 4, 8);
-    else 
+    else
       memset(blockDesc, 0, 8);
   }
 
@@ -1532,7 +1536,7 @@ int CdrDriver::getModePage6(int pageCode, unsigned char *buf, long bufLen,
     return 1;
   }
 }
- 
+
 // Sets mode page in device specified in buffer 'modePage'
 // modePageHeader: if != NULL used as mode page header (4 bytes)
 // blockDesc     : if != NULL used as block descriptor (8 bytes),
@@ -1591,7 +1595,7 @@ int CdrDriver::setModePage6(const unsigned char *modePage,
 // first session depending on the drive. 'cdTocLen' is filled with number
 // of entries including the lead-out track.
 // Return: 'NULL' on error, else array of 'CdToc' structures with '*cdTocLen'
-// entries 
+// entries
 CdToc *CdrDriver::getTocGeneric(int *cdTocLen)
 {
   unsigned char cmd[10];
@@ -1608,7 +1612,7 @@ CdToc *CdrDriver::getTocGeneric(int *cdTocLen)
   cmd[0] = 0x43; // READ TOC
   cmd[6] = 0; // return info for all tracks
   cmd[8] = 4;
-  
+
   if (sendCmd(cmd, 10, NULL, 0, reqData, 4) != 0) {
     log_message(-2, "Cannot read disk toc.");
     return NULL;
@@ -1629,7 +1633,7 @@ CdToc *CdrDriver::getTocGeneric(int *cdTocLen)
   // read disk toc
   cmd[7] = dataLen >> 8;
   cmd[8] = dataLen;
-  
+
   if (sendCmd(cmd, 10, NULL, 0, data, dataLen) != 0) {
     log_message(-2, "Cannot read disk toc.");
     delete[] data;
@@ -1644,7 +1648,7 @@ CdToc *CdrDriver::getTocGeneric(int *cdTocLen)
   }
 
   toc = new CdToc[nTracks + 1];
-  
+
   for (i = 0, p = data + 4; i <= nTracks; i++, p += 8) {
     toc[i].track = p[2];
     toc[i].adrCtl = p[1];
@@ -1664,7 +1668,7 @@ CdToc *CdrDriver::getTocGeneric(int *cdTocLen)
 // last track.
 // 'cdTocLen' is filled with number of entries including the lead-out track.
 // Return: 'NULL' on error, else array of 'CdToc' structures with '*cdTocLen'
-// entries 
+// entries
 
 #define IS_BCD(v) (((v) & 0xf0) <= 0x90 && ((v) & 0x0f) <= 0x09)
 CdToc *CdrDriver::getToc(int sessionNr, int *cdTocLen)
@@ -1720,7 +1724,7 @@ CdToc *CdrDriver::getToc(int sessionNr, int *cdTocLen)
       log_message(-2, "contains BCD values but a non BCD value was found.");
       log_message(-2, "Please adjust the driver options.");
       log_message(-1, "Using TOC data retrieved with generic method (no multi session support).");
-	
+
       delete[] rawToc;
       *cdTocLen = completeTocLen;
       return completeToc;
@@ -1739,7 +1743,7 @@ CdToc *CdrDriver::getToc(int sessionNr, int *cdTocLen)
       isBcd = 1;
       for (i = 0; i < rawTocLen && isBcd == 1; i++) {
 	if ((rawToc[i].adrCtl & 0xf0) == 0x10 && // only process QMODE1 entries
-	    rawToc[i].point < 0xa0) { 
+	    rawToc[i].point < 0xa0) {
 	  trackNr = SubChannel::bcd2int(rawToc[i].point);
 
 	  for (j = 0; j < completeTocLen; j++) {
@@ -1781,31 +1785,31 @@ CdToc *CdrDriver::getToc(int sessionNr, int *cdTocLen)
 	    min = SubChannel::bcd2int(rawToc[i].pmin);
 	    sec = SubChannel::bcd2int(rawToc[i].psec);
 	    frame = SubChannel::bcd2int(rawToc[i].pframe);
-	    
+
 	    if (min <= 99 && sec < 60 && frame < 75)
 	      trackStart = Msf(min, sec, frame).lba() - 150;
 	    break;
 	  }
 	}
-	
+
 	if (i < 0) {
 	  log_message(-1, "Found bogus toc data (no lead-out entry in raw data).");
 	  log_message(-1, "Your drive probably does not support raw toc reading.");
 	  log_message(-1, "Using TOC data retrieved with generic method (no multi session support).");
 	  log_message(-1, "Use driver option 0x%lx to suppress this message.",
 		  OPT_DRV_GET_TOC_GENERIC);
-	
+
 	  delete[] rawToc;
 	  *cdTocLen = completeTocLen;
 	  return completeToc;
 	}
-	
+
 	for (j = 0; j < completeTocLen; j++) {
 	  if (completeToc[j].track == 0xaa) {
 	    break;
 	  }
 	}
-	
+
 	if (j < completeTocLen) {
 	  if (trackStart != completeToc[j].start) {
 	    // lead-out start does not match -> values are not BCD
@@ -1814,13 +1818,13 @@ CdToc *CdrDriver::getToc(int sessionNr, int *cdTocLen)
 	}
 	else {
 	  log_message(-2, "Found bogus toc data (no lead-out entry).");
-	  
+
 	  delete[] completeToc;
 	  delete[] rawToc;
 	  return NULL;
 	}
       }
-      
+
     }
 
     if (isBcd == 0) {
@@ -1828,9 +1832,9 @@ CdToc *CdrDriver::getToc(int sessionNr, int *cdTocLen)
       for (i = 0; i < rawTocLen && isBcd == 0; i++) {
 	if ((rawToc[i].adrCtl & 0xf0) == 0x10 && // only process QMODE1 entries
 	    rawToc[i].point < 0xa0) {
-	  
+
 	  trackNr = rawToc[i].point;
-	
+
 	  for (j = 0; j < completeTocLen; j++) {
 	    if (completeToc[j].track == trackNr) {
 	      break;
@@ -1841,7 +1845,7 @@ CdToc *CdrDriver::getToc(int sessionNr, int *cdTocLen)
 	    min = rawToc[i].pmin;
 	    sec = rawToc[i].psec;
 	    frame = rawToc[i].pframe;
-	    
+
 	    if (min <= 99 && sec < 60 && frame < 75) {
 	      trackStart = Msf(min, sec, frame).lba() - 150;
 	      if (completeToc[j].start != trackStart) {
@@ -1869,7 +1873,7 @@ CdToc *CdrDriver::getToc(int sessionNr, int *cdTocLen)
 	  min = rawToc[i].pmin;
 	  sec = rawToc[i].psec;
 	  frame = rawToc[i].pframe;
-	  
+
 	  if (min <= 99 && sec < 60 && frame < 75)
 	    trackStart = Msf(min, sec, frame).lba() - 150;
 	  break;
@@ -1882,18 +1886,18 @@ CdToc *CdrDriver::getToc(int sessionNr, int *cdTocLen)
 	log_message(-1, "Using TOC data retrieved with generic method (no multi session support).");
 	log_message(-1, "Use driver option 0x%lx to suppress this message.",
 		OPT_DRV_GET_TOC_GENERIC);
-	
+
 	delete[] rawToc;
 	*cdTocLen = completeTocLen;
 	return completeToc;
       }
-      
+
       for (j = 0; j < completeTocLen; j++) {
 	if (completeToc[j].track == 0xaa) {
 	  break;
 	}
       }
-      
+
       if (j < completeTocLen) {
 	if (trackStart != completeToc[j].start) {
 	  // lead-out start does not match -> values are not BCD
@@ -1902,20 +1906,20 @@ CdToc *CdrDriver::getToc(int sessionNr, int *cdTocLen)
       }
       else {
 	log_message(-1, "Found bogus toc data (no lead-out entry).");
-	
+
 	delete[] rawToc;
 	delete[] completeToc;
 	return NULL;
       }
     }
-    
+
     if (isBcd == -1) {
       log_message(-1, "Could not determine if raw toc data is BCD or HEX. Please report!");
       log_message(-1, "Using TOC data retrieved with generic method (no multi session support).");
       log_message(-1,
 	      "Use driver option 0x%lx or 0x%lx to assume BCD or HEX data.",
 	      OPT_DRV_RAW_TOC_BCD, OPT_DRV_RAW_TOC_HEX);
-      
+
       delete[] rawToc;
       *cdTocLen = completeTocLen;
       return completeToc;
@@ -1938,7 +1942,7 @@ CdToc *CdrDriver::getToc(int sessionNr, int *cdTocLen)
     log_message(-1, "Using TOC data retrieved with generic method (no multi session support).");
     log_message(-1, "Use driver option 0x%lx to suppress this message.",
 	    OPT_DRV_GET_TOC_GENERIC);
-	
+
     delete[] rawToc;
     *cdTocLen = completeTocLen;
     return completeToc;
@@ -1971,7 +1975,7 @@ CdToc *CdrDriver::getToc(int sessionNr, int *cdTocLen)
 	log_message(-1, "Using TOC data retrieved with generic method (no multi session support).");
 	log_message(-1, "Use driver option 0x%lx to suppress this message.",
 		OPT_DRV_GET_TOC_GENERIC);
-	
+
 	delete[] cdToc;
 	delete[] rawToc;
 	*cdTocLen = completeTocLen;
@@ -2002,7 +2006,7 @@ CdToc *CdrDriver::getToc(int sessionNr, int *cdTocLen)
 	trackStart =
 	  Msf(rawToc[i].pmin, rawToc[i].psec, rawToc[i].pframe).lba();
       }
-      
+
       cdToc[tocEnt].adrCtl = rawToc[i].adrCtl;
       cdToc[tocEnt].track = 0xaa;
       cdToc[tocEnt].start = trackStart - 150;
@@ -2011,20 +2015,20 @@ CdToc *CdrDriver::getToc(int sessionNr, int *cdTocLen)
       break;
     }
   }
-  
+
   if (tocEnt != nTracks + 1) {
     log_message(-1, "Found bogus toc data (no lead-out pointer for session). Please report!");
     log_message(-1, "Your drive probably does not support raw toc reading.");
     log_message(-1, "Using TOC data retrieved with generic method (no multi session support).");
     log_message(-1, "Use driver option 0x%lx to suppress this message.",
 	    OPT_DRV_GET_TOC_GENERIC);
-	
+
     delete[] cdToc;
     delete[] rawToc;
     *cdTocLen = completeTocLen;
     return completeToc;
   }
-  
+
 
   delete[] rawToc;
   delete[] completeToc;
@@ -2033,7 +2037,7 @@ CdToc *CdrDriver::getToc(int sessionNr, int *cdTocLen)
   return cdToc;
 }
 
-static char *buildDataFileName(int trackNr, CdToc *toc, int nofTracks, 
+static char *buildDataFileName(int trackNr, CdToc *toc, int nofTracks,
 			       const char *basename, const char *extension)
 {
   char buf[30];
@@ -2130,7 +2134,7 @@ int CdrDriver::checkSubChanReadCaps(TrackData::Mode mode, unsigned long caps)
     }
     break;
   }
-   
+
   return ret;
 }
 
@@ -2171,7 +2175,7 @@ Toc *CdrDriver::readDiskToc(int session, const char *dataFilename)
   nofTracks -= 1; // do not count lead-out
 
   readCapabilities_ = getReadCapabilities(cdToc, nofTracks);
-  
+
   fname = strdupCC(dataFilename);
   if ((p = strrchr(fname, '.')) != NULL) {
     extension = strdupCC(p);
@@ -2252,7 +2256,7 @@ Toc *CdrDriver::readDiskToc(int session, const char *dataFilename)
   trackInfos[nofTracks].isrcCode[0] = 0;
   trackInfos[nofTracks].filename = NULL;
   trackInfos[nofTracks].bytesWritten = 0;
-  
+
   long pregap = 0;
   long defaultPregap;
   long slba, elba;
@@ -2286,7 +2290,7 @@ Toc *CdrDriver::readDiskToc(int session, const char *dataFilename)
     }
 
     elba -= defaultPregap;
-    
+
 
     Msf trackLength(elba - slba);
 
@@ -2308,7 +2312,7 @@ Toc *CdrDriver::readDiskToc(int session, const char *dataFilename)
       // Find index increments and pre-gap of next track
       if (trackInfos[i].mode == TrackData::AUDIO) {
 	analyzeTrack(TrackData::AUDIO, i + 1, slba, elba,
-		     indexIncrements, &indexIncrementCnt, 
+		     indexIncrements, &indexIncrementCnt,
 		     i < nofTracks - 1 ? &pregap : 0, isrcCode, &trackCtl);
 	if (defaultPregap != 0)
 	  pregap = defaultPregap;
@@ -2333,9 +2337,9 @@ Toc *CdrDriver::readDiskToc(int session, const char *dataFilename)
 
     for (j = 0; j < indexIncrementCnt; j++)
       trackInfos[i].index[j] = indexIncrements[j].lba();
-    
+
     trackInfos[i].indexCnt = indexIncrementCnt;
-    
+
     if ((trackCtl & 0x80) != 0) {
       // Check track against TOC control nibbles
       ctlCheckOk = 1;
@@ -2370,7 +2374,7 @@ Toc *CdrDriver::readDiskToc(int session, const char *dataFilename)
   Toc *toc = buildToc(trackInfos, nofTracks + 1, padFirstPregap);
 
   if (toc != NULL) {
-    if ((options_ & OPT_DRV_NO_CDTEXT_READ) == 0) 
+    if ((options_ & OPT_DRV_NO_CDTEXT_READ) == 0)
       readCdTextData(toc);
 
     if (readCatalog(toc, trackInfos[0].start, trackInfos[nofTracks].start))
@@ -2428,7 +2432,7 @@ int CdrDriver::analyzeTrackSearch(TrackData::Mode, int trackNr, long startLba,
   } while (indexLba > 0 && indexLba < endLba);
 
 
-  // Retrieve control nibbles of track, add 75 to track start so we 
+  // Retrieve control nibbles of track, add 75 to track start so we
   // surely get a block of current track.
   int dummy, track;
   if (getTrackIndex(startLba + 75, &track, &dummy, ctl) == 0 &&
@@ -2439,7 +2443,7 @@ int CdrDriver::analyzeTrackSearch(TrackData::Mode, int trackNr, long startLba,
   return 0;
 }
 
-int CdrDriver::getTrackIndex(long lba, int *trackNr, int *indexNr, 
+int CdrDriver::getTrackIndex(long lba, int *trackNr, int *indexNr,
 			     unsigned char *ctl)
 {
   return 1;
@@ -2461,7 +2465,7 @@ long CdrDriver::findIndex(int track, int index, long trackStart,
 
   while (start < end) {
     mid = start + ((end - start) / 2);
-    
+
     //log_message(0, "Checking block %ld...", mid);
     if (getTrackIndex(mid, &actTrack, &actIndex, NULL) != 0) {
       return 0;
@@ -2480,7 +2484,7 @@ long CdrDriver::findIndex(int track, int index, long trackStart,
       else {
 	start = mid + 1;
       }
-      
+
     }
     else {
       end = mid;
@@ -2570,7 +2574,7 @@ int CdrDriver::analyzeTrackScan(TrackData::Mode, int trackNr, long startLba,
 	      if (crcErrCnt != 0)
 		log_message(2, "Found %ld Q sub-channels with CRC errors.",
 			crcErrCnt);
-	    
+
 	      return 0;
 	    }
 	  }
@@ -2734,7 +2738,7 @@ TrackData::Mode CdrDriver::getTrackMode(int, long trackStartLba)
     setBlockSize(MODE1_BLOCK_LEN);
     return TrackData::MODE0;
   }
-  
+
   setBlockSize(MODE1_BLOCK_LEN);
 
   mode = determineSectorMode(data);
@@ -2828,7 +2832,7 @@ int CdrDriver::setBlockSize(long blocksize, unsigned char density)
 }
 
 
-// Returns control flags for given track.		  
+// Returns control flags for given track.
 unsigned char CdrDriver::trackCtl(const Track *track)
 {
   unsigned char ctl = 0;
@@ -2850,7 +2854,7 @@ unsigned char CdrDriver::trackCtl(const Track *track)
     // data track
     ctl |= 0x40;
   }
-  
+
   return ctl;
 }
 
@@ -2860,7 +2864,7 @@ unsigned char CdrDriver::sessionFormat()
   unsigned char ret = 0;
   int nofMode1Tracks;
   int nofMode2Tracks;
-  
+
   switch (toc_->tocType()) {
   case Toc::CD_DA:
   case Toc::CD_ROM:
@@ -2892,11 +2896,13 @@ unsigned char CdrDriver::sessionFormat()
 // Generic method to read CD-TEXT packs according to the MMC-2 specification.
 // nofPacks: filled with number of found CD-TEXT packs
 // return: array of CD-TEXT packs or 'NULL' if no packs where retrieved
-CdTextPack *CdrDriver::readCdTextPacks(long *nofPacks)
+CdTextPack *CdrDriver::readCdTextPacks(int *nofPacks)
 {
   unsigned char cmd[12];
   unsigned char *data;
   unsigned char reqData[4];
+
+  *nofPacks = 0;
 
 #if 0
   memset(cmd, 0, 12);
@@ -2909,7 +2915,7 @@ CdTextPack *CdrDriver::readCdTextPacks(long *nofPacks)
   cmd[8] = 15;
   cmd[9] = 0x0;
   cmd[10] = 0x1;
-  
+
   long len1 = 15 * (AUDIO_BLOCK_LEN + 96);
   data = new unsigned char [len1];
 
@@ -2929,17 +2935,17 @@ CdTextPack *CdrDriver::readCdTextPacks(long *nofPacks)
     chan.getRawRWdata(packs);
 
     for (j = 0; j < 4; j++) {
-      log_message(0, "%02x %02x %02x %02x: %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x  CRC: %02x %02x", 
-	      packs[j*18+0], packs[j*18+1], packs[j*18+2], packs[j*18+3], 
-	      packs[j*18+4], packs[j*18+5], packs[j*18+6], packs[j*18+7], 
-	      packs[j*18+8], packs[j*18+9], packs[j*18+10], packs[j*18+11], 
-	      packs[j*18+12], packs[j*18+13], packs[j*18+14], packs[j*18+15], 
+      log_message(0, "%02x %02x %02x %02x: %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x  CRC: %02x %02x",
+	      packs[j*18+0], packs[j*18+1], packs[j*18+2], packs[j*18+3],
+	      packs[j*18+4], packs[j*18+5], packs[j*18+6], packs[j*18+7],
+	      packs[j*18+8], packs[j*18+9], packs[j*18+10], packs[j*18+11],
+	      packs[j*18+12], packs[j*18+13], packs[j*18+14], packs[j*18+15],
 	      packs[j*18+16], packs[j*18+17]);
     }
 
     p += AUDIO_BLOCK_LEN + 96;
   }
-      
+
   delete[] data;
 
 
@@ -2979,7 +2985,7 @@ CdTextPack *CdrDriver::readCdTextPacks(long *nofPacks)
     delete[] data;
     return NULL;
   }
-  
+
   *nofPacks = (len - 4) / sizeof(CdTextPack);
 
   CdTextPack *packs = new CdTextPack[*nofPacks];
@@ -2991,170 +2997,190 @@ CdTextPack *CdrDriver::readCdTextPacks(long *nofPacks)
   return packs;
 }
 
-// Analyzes CD-TEXT packs and stores read data in given 'Toc' object.
-// Return: 0: OK
-//         1: error occured
-int CdrDriver::readCdTextData(Toc *toc)
+vector<CdTextItem*> processPacks(CdTextPack* packs, int nofPacks)
 {
-  long i, j;
-  long nofPacks;
-  CdTextPack *packs = readCdTextPacks(&nofPacks);
-  unsigned char buf[256 * 12];
+  int pos = 0;
   unsigned char lastType;
   int lastBlockNumber;
-  int blockNumber;
-  int pos;
-  int actTrack;
-  CdTextItem::PackType packType;
-  CdTextItem *sizeInfoItem = NULL;
-  CdTextItem *item;
+  int lastTrackNumber;
+  int actTrack = 0;
+  unsigned char buf[256 * 12];
 
-  if (packs == NULL)
-    return 1;
+  vector<CdTextItem*> items;
 
-  log_message(1, "Found CD-TEXT data.");
+  if (nofPacks == 0)
+      return items;
 
-  pos = 0;
   lastType = packs[0].packType;
   lastBlockNumber = (packs[0].blockCharacter >> 4) & 0x07;
-  actTrack = 0;
+  lastTrackNumber = packs[0].trackNumber;
 
-  for (i = 0; i < nofPacks; i++) {
-    CdTextPack &p = packs[i];
+  while (nofPacks--) {
+    CdTextPack& p = *packs++;
 
-#if 1
-    log_message(4, "%02x %02x %02x %02x: %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x  CRC: %02x %02x", p.packType, p.trackNumber,
-	    p.sequenceNumber, p.blockCharacter, p.data[0], p.data[1], 
-	    p.data[2], p.data[3], p.data[4], p.data[5], p.data[6], p.data[7], 
-	    p.data[8], p.data[9], p.data[10], p.data[11],
-	    p.crc0, p.crc1);
-#endif
+    log_message(4, "%02x %02x %02x %02x: %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x  CRC: %02x %02x",
+                p.packType, p.trackNumber,
+                p.sequenceNumber, p.blockCharacter, p.data[0], p.data[1],
+                p.data[2], p.data[3], p.data[4], p.data[5], p.data[6], p.data[7],
+                p.data[8], p.data[9], p.data[10], p.data[11],
+                p.crc0, p.crc1);
 
-    blockNumber = (p.blockCharacter >> 4) & 0x07;
+    int blockNumber = (p.blockCharacter >> 4) & 0x07;
+    int trackNumber = p.trackNumber;
 
     if (lastType != p.packType || lastBlockNumber != blockNumber) {
+      // Starting a new type section.
       if (lastType >= 0x80 && lastType <= 0x8f) {
-	packType = CdTextItem::int2PackType(lastType);
+        auto packType = CdTextItem::int2PackType(lastType);
 
-	if (CdTextItem::isBinaryPack(packType)) {
-	  // finish binary data
+        if (CdTextItem::isBinaryPack(packType)) {
+          // finish binary data
 
-	  if (packType == CdTextItem::CDTEXT_GENRE) {
-	    // The two genre codes may be followed by a string. Adjust 'pos'
-	    // so that all extra 0 bytes at the end of the data are stripped
-	    // off.
-	    for (j = 2; j < pos && buf[j] != 0; j++) ;
-	    if (j < pos)
-	      pos = j + 1;
-	  }
+          if (packType == CdTextItem::CDTEXT_GENRE) {
+            // The two genre codes may be followed by a string. Adjust
+	    // 'pos' so that all extra 0 bytes at the end of the data
+	    // are stripped off.
+            int i;
+            for (i = 2; i < pos && buf[i] != 0; i++);
+            if (i < pos)
+              pos = i+1;
+          }
 
-	  item = new CdTextItem(packType, lastBlockNumber, buf, pos);
-
-	  if (packType == CdTextItem::CDTEXT_SIZE_INFO)
-	    sizeInfoItem = item;
-
-	  toc->addCdTextItem(0, item);
-	}
-      }
-      else {
-	log_message(-2, "CD-TEXT: Found invalid pack type: %02x", lastType);
-	delete[] packs;
-	return 1;
+          items.push_back(new CdTextItem(packType, lastBlockNumber, buf, pos));
+          if (packType != CdTextItem::CDTEXT_SIZE_INFO)
+            items.back()->trackNr(lastTrackNumber);
+        }
+      } else {
+        log_message(-2, "CD-TEXT: Found invalid pack type: %02x", lastType);
+        return items;
       }
 
       lastType = p.packType;
       lastBlockNumber = blockNumber;
+      lastTrackNumber = trackNumber;
       pos = 0;
       actTrack = 0;
     }
 
     if (p.packType >= 0x80 && p.packType <= 0x8f) {
-      packType = CdTextItem::int2PackType(p.packType);
+      auto packType = CdTextItem::int2PackType(p.packType);
 
       if (CdTextItem::isBinaryPack(packType)) {
-	memcpy(buf + pos, p.data, 12);
-	pos += 12;
-      }
-      else {
-	// pack contains text -> read all string from it
-	j = 0;
+        memcpy(buf + pos, p.data, 12);
+        pos += 12;
+      } else {
+        // pack contains text -> read all string from it
+        int i = 0;
 
-	while (j < 12 && actTrack <= toc->nofTracks()) {
-	  for (; j < 12 && p.data[j] != 0; j++)
-	    buf[pos++] = p.data[j];
+        while (i < 12) {
+          for (; i < 12 && p.data[i] != 0; i++)
+            buf[pos++] = p.data[i];
 
-	  if (j < 12) {
-	    // string is finished
-	    buf[pos] = 0;
+          if (i < 12) {
+            // string is finished
+            buf[pos] = 0;
 
-#if 0	
-	    log_message(0, "%02x %02x: %s", p.packType, p.trackNumber, buf);
-#endif
+            items.push_back(new CdTextItem(packType, blockNumber, (char*)buf));
+            items.back()->trackNr(trackNumber);
+            pos = 0;
+            trackNumber++;
 
-	    toc->addCdTextItem(actTrack,
-			       new CdTextItem(packType, blockNumber,
-					      (char*)buf));
-	    actTrack++;
-	    pos = 0;
-
-	    if (CdTextItem::isTrackPack(packType)) {
-	      j++; // skip zero
-	    }
-	    else {
-	      j = 12; // don't use remaining zeros to build track packs
-	    }
-	  }
-	}
+            if (!CdTextItem::isBinaryPack(packType)) {
+              // Skip zeroes
+              while (i < 12 && p.data[i] == 0)
+                i++;
+            } else {
+              i = 12;
+            }
+          }
+        }
       }
     }
     else {
       log_message(-2, "CD-TEXT: Found invalid pack type: %02x", p.packType);
-      delete[] packs;
-      return 1;
+      return items;
     }
   }
 
-  if (pos != 0 && lastType >= 0x80 && lastType <= 0x8f) {
-    packType = CdTextItem::int2PackType(lastType);
+  // Done processing the packs, process any leftover in the buffer.
+
+  if (pos > 0 && lastType >= 0x80 && lastType <= 0x8f) {
+    auto packType = CdTextItem::int2PackType(lastType);
 
     if (CdTextItem::isBinaryPack(packType)) {
       // finish binary data
 
       if (packType == CdTextItem::CDTEXT_GENRE) {
-	// The two genre codes may be followed by a string. Adjust 'pos'
-	// so that all extra 0 bytes at the end of the data are stripped
-	// off.
-	for (j = 2; j < pos && buf[j] != 0; j++) ;
-	if (j < pos)
-	  pos = j + 1;
+        // The two genre codes may be followed by a string. Adjust
+	// 'pos' so that all extra 0 bytes at the end of the data are
+	// stripped off.
+        int i;
+        for (i = 2; i < pos && buf[i] != 0; i++);
+        if (i < pos)
+          pos = i + 1;
       }
 
-      item = new CdTextItem(packType, lastBlockNumber, buf, pos);
-      toc->addCdTextItem(0, item);
-
-      if (packType == CdTextItem::CDTEXT_SIZE_INFO)
-	sizeInfoItem = item;
+      items.push_back(new CdTextItem(packType, lastBlockNumber, buf, pos));
+      if (packType != CdTextItem::CDTEXT_SIZE_INFO)
+        items.back()->trackNr(lastTrackNumber);
     }
   }
 
-  delete[] packs;
+  return items;
+}
+
+vector<CdTextItem*> CdrDriver::generateCdTextItems()
+{
+  int nofPacks = 0;
+  CdTextPack* packs = readCdTextPacks(&nofPacks);
+
+  return processPacks(packs, nofPacks);
+}
+
+// Analyzes CD-TEXT packs and stores read data in given 'Toc' object.
+// Return: 0: OK
+//         1: error occured
+int CdrDriver::readCdTextData(Toc *toc)
+{
+    CdTextItem* sizeInfoItem = NULL;
+
+    auto items = generateCdTextItems();
+
+    if (items.size() == 0)
+        return 1;
+
+    log_message(1, "Found CD-TEXT data.");
+
+    for (auto& item : items) {
+        toc->addCdTextItem(item->trackNr(), item);
+
+        if (item->packType() == CdTextItem::CDTEXT_SIZE_INFO)
+            sizeInfoItem = item;
+    }
 
   // update language mapping from SIZE INFO pack data
-  if (sizeInfoItem != NULL && sizeInfoItem->dataLen() >= 36) {
-    const unsigned char *data = sizeInfoItem->data();
-    for (i = 0; i < 8; i++) {
-      if (data[28 + i] > 0)
-	toc->cdTextLanguage(i, data[28 + i]);
-      else
-	toc->cdTextLanguage(i, -1);
+    if (sizeInfoItem && sizeInfoItem->dataLen() >= 36) {
+        const unsigned char *data = sizeInfoItem->data();
+        for (int i = 0; i < 8; i++) {
+            if (data[28 + i] > 0)
+                toc->cdTextLanguage(i, data[28 + i]);
+            else
+                toc->cdTextLanguage(i, -1);
+        }
     }
-  }
-  else {
-    log_message(-1, "Cannot determine language mapping from CD-TEXT data.");
-    log_message(-1, "Using default mapping.");
-  }
+    else {
+        log_message(-1, "Cannot determine language mapping from CD-TEXT data.");
+        log_message(-1, "Using default mapping.");
+    }
+    if (sizeInfoItem && sizeInfoItem->dataLen() >= 1) {
+        const unsigned char *data = sizeInfoItem->data();
+        if (data[0] == 0x01)
+            toc->cdTextEncoding(Toc::ENC_ASCII);
+        else if (data[0] == 0x80)
+            toc->cdTextEncoding(Toc::ENC_MSJIS);
+    }
 
-  return 0;
+    return 0;
 }
 
 int CdrDriver::analyzeDataTrack(TrackData::Mode mode, int trackNr,
@@ -3248,7 +3274,7 @@ Toc *CdrDriver::readDisk(int session, const char *dataFilename)
   readCapabilities_ = getReadCapabilities(cdToc, nofTracks);
 
   trackInfos = new TrackInfo[nofTracks + 1];
-  
+
   for (i = 0; i < nofTracks; i++) {
     if ((cdToc[i].adrCtl & 0x04) != 0) {
       if ((trackMode = getTrackMode(i + 1, cdToc[i].start)) ==
@@ -3369,12 +3395,12 @@ Toc *CdrDriver::readDisk(int session, const char *dataFilename)
       }
 
 
-      log_message(1, "Copying data track %d (%s): start %s, ", trs + 1, 
+      log_message(1, "Copying data track %d (%s): start %s, ", trs + 1,
 	      TrackData::mode2String(trackInfos[trs].mode),
 	      Msf(cdToc[trs].start).str());
       log_message(1, "length %s to \"%s\"...", Msf(elba - slba).str(),
 	      trackInfos[trs].filename);
-      
+
       if (readDataTrack(&info, fp, slba, elba, &trackInfos[trs]) != 0)
 	goto fail;
 
@@ -3413,7 +3439,7 @@ Toc *CdrDriver::readDisk(int session, const char *dataFilename)
       }
 
       // Assume that the pre-gap length conforms to the standard if the track
-      // mode changes. 
+      // mode changes.
       if (taoSource()) {
 	if (tre < nofTracks)
 	  elba -= 150 + taoSourceAdjust_;
@@ -3437,7 +3463,7 @@ Toc *CdrDriver::readDisk(int session, const char *dataFilename)
   }
 
   // if the drive allows to read audio data from the first track's
-  // pre-gap the data will be written to the output file and 
+  // pre-gap the data will be written to the output file and
   // 'buildToc()' must not create zero data for the pre-gap
   padFirstPregap = 1;
 
@@ -3535,7 +3561,7 @@ Toc *CdrDriver::buildToc(TrackInfo *trackInfos, long nofTrackInfos,
 	modeStartLba = ati.start;
       lastMode = trackMode;
     }
-    
+
     Track t(trackMode, trackSubChanMode);
 
     t.preEmphasis(ati.ctl & 0x01);
@@ -3562,14 +3588,14 @@ Toc *CdrDriver::buildToc(TrackInfo *trackInfos, long nofTrackInfos,
 	  t.append(SubTrack(SubTrack::DATA,
 			    TrackData(ati.filename, byteOffset,
 				      Msf(ati.start - modeStartLba
-					  - ati.pregap).samples(), 
+					  - ati.pregap).samples(),
 				      trackLength.samples())));
 	}
       }
       else {
 	if (newMode && (i > 0 || padFirstPregap)) {
 	  long trackLength = nti.start - ati.start - nti.pregap;
-	  
+
 	  if (ati.pregap > 0) {
 	    dataLen = ati.pregap * TrackData::dataBlockSize(trackMode,
 							    trackSubChanMode);
@@ -3590,7 +3616,7 @@ Toc *CdrDriver::buildToc(TrackInfo *trackInfos, long nofTrackInfos,
 	  long offset =
 	    (ati.start - modeStartLba - ati.pregap) *
 	    TrackData::dataBlockSize(trackMode, trackSubChanMode);
-	    
+
 
 	  t.append(SubTrack(SubTrack::DATA,
 			    TrackData(trackMode, trackSubChanMode,
@@ -3611,7 +3637,7 @@ Toc *CdrDriver::buildToc(TrackInfo *trackInfos, long nofTrackInfos,
 	t.append(SubTrack(SubTrack::DATA,
 			  TrackData(trackMode, trackSubChanMode, dataLen)));
       }
-      
+
       dataLen = trackLength * TrackData::dataBlockSize(trackMode,
 						       trackSubChanMode);
       t.append(SubTrack(SubTrack::DATA,
@@ -3782,7 +3808,7 @@ int CdrDriver::readDataTrack(ReadDiskInfo *info, int fd, long start, long end,
 	  log_message(-2, "Writing of data failed: %s", strerror(errno));
 	else
 	  log_message(-2, "Writing of data failed: Disk full");
-	  
+
 	delete[] buf;
 	return 1;
       }
@@ -3801,7 +3827,7 @@ int CdrDriver::readDataTrack(ReadDiskInfo *info, int fd, long start, long end,
 	    log_message(-2, "Writing of data failed: %s", strerror(errno));
 	  else
 	    log_message(-2, "Writing of data failed: Disk full");
-	  
+
 	  delete[] buf;
 	  return 1;
 	}
@@ -3831,7 +3857,7 @@ int CdrDriver::readDataTrack(ReadDiskInfo *info, int fd, long start, long end,
 	    totalProgress = 0;
 	  }
 
-	  sendReadCdProgressMsg(RCD_EXTRACTING, info->tracks, 
+	  sendReadCdProgressMsg(RCD_EXTRACTING, info->tracks,
 				trackInfo->trackNr, progress, totalProgress);
 	}
       }
@@ -3862,7 +3888,7 @@ int CdrDriver::readDataTrack(ReadDiskInfo *info, int fd, long start, long end,
     else {
       memset(buf, 0, blockLen);
     }
-    
+
     while (len > 0) {
       if (mode == TrackData::MODE1_RAW || mode == TrackData::MODE2_RAW) {
 	Msf m(lba + 150);
@@ -3877,20 +3903,20 @@ int CdrDriver::readDataTrack(ReadDiskInfo *info, int fd, long start, long end,
 	  log_message(-2, "Writing of data failed: %s", strerror(errno));
 	else
 	  log_message(-2, "Writing of data failed: Disk full");
-	  
+
 	delete[] buf;
 	return 1;
       }
 
       trackInfo->bytesWritten += blockLen;
-      
+
       len--;
       lba++;
     }
   }
 
   delete[] buf;
-  
+
   return 0;
 }
 
@@ -3907,7 +3933,7 @@ static int cmpMcn(const void *p1, const void *p2)
 {
   const char *s1 = (const char *)p1;
   const char *s2 = (const char *)p2;
-  
+
   return strcmp(s1, s2);
 }
 
@@ -3992,7 +4018,7 @@ void CdrDriver::sendReadCdProgressMsg(ReadCdProgressType type, int totalTracks,
 }
 
 // Sends a write cd progress message without blocking the actual process.
-int CdrDriver::sendWriteCdProgressMsg(WriteCdProgressType type, 
+int CdrDriver::sendWriteCdProgressMsg(WriteCdProgressType type,
 				      int totalTracks, int track,
 				      int trackProgress, int totalProgress,
 				      int bufferFillRate, int writeFill)
@@ -4065,7 +4091,7 @@ long CdrDriver::audioRead(TrackData::SubChannelMode sm, int byteOrder,
 
   if (swap) {
     unsigned char *b = (unsigned char*)buffer;
-    
+
     for (i = 0; i < len; i++) {
       swapSamples((Sample *)b, SAMPLES_PER_BLOCK);
       b += blockLen;
@@ -4117,15 +4143,15 @@ long CdrDriver::audioRead(TrackData::SubChannelMode sm, int byteOrder,
       Msf m(audioReadProgress_);
       log_message(1, "%02d:%02d:00\r", m.min(), m.sec());
     }
-    
-    return len;      
+
+    return len;
   }
 
   // analyze sub-channels to find pre-gaps, index marks and ISRC codes
   for (i = 0; i < len; i++) {
     SubChannel *chan = chans[i];
     //chan->print();
-    
+
     if (chan->checkCrc() && chan->checkConsistency()) {
       if (chan->type() == SubChannel::QMODE1DATA) {
 	int t = chan->trackNr() - 1;
@@ -4134,7 +4160,7 @@ long CdrDriver::audioRead(TrackData::SubChannelMode sm, int byteOrder,
 	//log_message(0, "LastLba: %ld, ActLba: %ld", audioReadActLba_, atime.lba());
 
 	if (t >= audioReadStartTrack_ && t <= audioReadEndTrack_ &&
-	    atime.lba() > audioReadActLba_ && 
+	    atime.lba() > audioReadActLba_ &&
 	    atime.lba() - 150 < audioReadTrackInfo_[t + 1].start) {
 	  Msf time(chan->min(), chan->sec(), chan->frame()); // track rel time
 
@@ -4148,11 +4174,11 @@ long CdrDriver::audioRead(TrackData::SubChannelMode sm, int byteOrder,
 
 	  if (t == audioReadActTrack_ &&
 	      chan->indexNr() == audioReadActIndex_ + 1) {
-	  
+
 	    if (chan->indexNr() > 1) {
 	      log_message(2, "Found index %d at: %s", chan->indexNr(),
 		      time.str());
-	  
+
 	      if (audioReadTrackInfo_[t].indexCnt < 98) {
 		audioReadTrackInfo_[t].index[audioReadTrackInfo_[t].indexCnt] = time.lba();
 		audioReadTrackInfo_[t].indexCnt += 1;
@@ -4197,7 +4223,7 @@ long CdrDriver::audioRead(TrackData::SubChannelMode sm, int byteOrder,
 }
 
 int CdrDriver::readAudioRangeStream(ReadDiskInfo *info, int fd, long start,
-				    long end, int startTrack, int endTrack, 
+				    long end, int startTrack, int endTrack,
 				    TrackInfo *trackInfo)
 {
   long startLba = start;
@@ -4210,7 +4236,7 @@ int CdrDriver::readAudioRangeStream(ReadDiskInfo *info, int fd, long start,
   blockLen = AUDIO_BLOCK_LEN + TrackData::subChannelSize(subChanReadMode_);
   blocking = scsiMaxDataLen_ / blockLen;
   assert(blocking > 0);
-  
+
   buf = new unsigned char[blocking * blockLen];
 
   audioReadInfo_ = info;
@@ -4287,7 +4313,7 @@ void CdrDriver::paranoiaMode(int mode)
 
 
 int CdrDriver::readAudioRangeParanoia(ReadDiskInfo *info, int fd, long start,
-				      long end, int startTrack, int endTrack, 
+				      long end, int startTrack, int endTrack,
 				      TrackInfo *trackInfo)
 {
   long startLba = start;
@@ -4296,7 +4322,7 @@ int CdrDriver::readAudioRangeParanoia(ReadDiskInfo *info, int fd, long start,
   size16 *buf;
 
   if (paranoia_ == NULL) {
-    // first time -> allocate paranoia structure 
+    // first time -> allocate paranoia structure
     paranoiaDrive_ = new cdrom_drive;
     paranoiaDrive_->cdr = this;
     paranoiaDrive_->nsectors = maxScannedSubChannels_;
@@ -4364,4 +4390,17 @@ long cdda_read(cdrom_drive *d, void *buffer, long beginsector, long sectors)
 
 void CdrDriver::paranoiaCallback(long, int)
 {
+}
+
+std::ostream& operator<<(std::ostream& os, const CdTextPack& pack)
+{
+  static char line[80];
+  snprintf(line, sizeof(line), "type %02x track %2d seq %3d bc %02x : ",
+           pack.packType, pack.trackNumber, pack.sequenceNumber, pack.blockCharacter);
+  os << line;
+  for (int i = 0; i < 12; i++) {
+    snprintf(line, sizeof(line), "%02x ", pack.data[i]);
+    os << line;
+  }
+  return os;
 }

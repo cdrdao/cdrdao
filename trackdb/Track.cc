@@ -1413,7 +1413,7 @@ void Track::encodeZeroData(int encMode, TrackData::Mode mode,
 
 void Track::addCdTextItem(CdTextItem *item)
 {
-  assert(CdTextItem::isTrackPack(item->packType()));
+  assert(item->isTrackPack());
 
   cdtext_.add(item);
 }

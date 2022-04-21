@@ -234,7 +234,7 @@ void CdTextEncoder::buildPacks(int blockNr, CdTextItem::PackType type)
     encodeCdTextItem(0, blockNr, globalItem);
   }
 
-  if (CdTextItem::isTrackPack(type)) {
+  if (type != CdTextItem::CDTEXT_SIZE_INFO) {
     // count tracks that have the current pack type defined
     tracks = 0;
 

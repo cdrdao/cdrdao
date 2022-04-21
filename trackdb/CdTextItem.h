@@ -39,7 +39,7 @@ public:
 		  CDTEXT_RES1 = 0x8a,
 		  CDTEXT_RES2 = 0x8b,
 		  CDTEXT_RES3 = 0x8c,
-		  CDTEXT_RES4 = 0x8d,
+		  CDTEXT_CLOSED = 0x8d,
 		  CDTEXT_UPCEAN_ISRC = 0x8e,
 		  CDTEXT_SIZE_INFO = 0x8f };
 
@@ -47,34 +47,36 @@ public:
 
   CdTextItem(PackType packType, int blockNr,
 	     const unsigned char *data, long len);
-
   CdTextItem(int blockNr, unsigned char genreCode1, unsigned char genreCode2,
-	     const char *description);
+             const char *description);
 
   CdTextItem(const CdTextItem &);
 
   ~CdTextItem();
 
   DataType dataType() const { return dataType_; }
-  
+
   PackType packType() const { return packType_; }
 
   int blockNr() const { return blockNr_; }
+
+  bool isTrackPack() const { return trackNr_ > 0; }
+  void trackNr(int t) { trackNr_ = t; }
+  int trackNr() const { return trackNr_; }
 
   const unsigned char *data() const { return data_; }
 
   long dataLen() const { return dataLen_; }
 
-  void print(int isTrack, std::ostream &) const;
+  void print(std::ostream &) const;
 
   int operator==(const CdTextItem &);
   int operator!=(const CdTextItem &);
-  
+
   static const char *packType2String(int isTrack, int packType);
-  
+
   static PackType int2PackType(int);
   static int isBinaryPack(PackType);
-  static int isTrackPack(PackType);
 
 private:
   friend class CdTextContainer;
@@ -86,7 +88,12 @@ private:
   unsigned char *data_;
   long dataLen_;
 
+  // Info fields only, ignored during burn
+  int trackNr_;
+
   CdTextItem *next_;
 };
+
+std::ostream& operator<<(std::ostream& oss, const CdTextItem& item);
 
 #endif

@@ -120,7 +120,7 @@ int ScsiIf::init()
 		                          CFSTR(kIOPropertySCSITaskAuthoringDevice));
 		CFDictionarySetValue(dict, CFSTR(kIOPropertyMatchKey), sub);
 		IOServiceGetMatchingServices(kIOMainPortDefault, dict, &iterator);
-		if (!iterator) log_message(-2, "init: no iterator");
+		if (!iterator) log_message(3, "init: no iterator");
 		if (iterator) {
 			i = impl_->num_;
 			do {
@@ -437,7 +437,7 @@ ScsiIf::ScanData *ScsiIf::scan(int *len, char *dev)
 	CFDictionarySetValue(dict, CFSTR(kIOPropertyMatchKey), sub);
 	IOServiceGetMatchingServices(kIOMainPortDefault, dict, &iterator);
 	if (!iterator) {
-		log_message(-2, "scan: no iterator");
+		log_message(3, "scan: no iterator");
 		*len = 0;
 		return NULL;
 	}

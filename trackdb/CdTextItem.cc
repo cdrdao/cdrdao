@@ -33,6 +33,7 @@ CdTextItem::CdTextItem(PackType packType, int blockNr, const char *data)
   dataType_ = SBCC;
   packType_ = packType;
   blockNr_ = blockNr;
+  trackNr_ = 0;
 
   dataLen_ = strlen(data) + 1;
 
@@ -52,6 +53,7 @@ CdTextItem::CdTextItem(PackType packType, int blockNr,
   dataType_ = BINARY;
   packType_ = packType;
   blockNr_ = blockNr;
+  trackNr_ = 0;
 
   dataLen_ = len;
 
@@ -65,7 +67,7 @@ CdTextItem::CdTextItem(PackType packType, int blockNr,
 }
 
 CdTextItem::CdTextItem(int blockNr, unsigned char genreCode1,
-		       unsigned char genreCode2, const char *description)
+                       unsigned char genreCode2, const char *description)
 {
   assert(blockNr >= 0 && blockNr <= 7);
 
@@ -74,6 +76,7 @@ CdTextItem::CdTextItem(int blockNr, unsigned char genreCode1,
   dataType_ = BINARY;
   packType_ = CDTEXT_GENRE;
   blockNr_ = blockNr;
+  trackNr_ = 0;
 
   dataLen_ = 2;
 
@@ -95,6 +98,7 @@ CdTextItem::CdTextItem(const CdTextItem &obj)
   dataType_ = obj.dataType_;
   packType_ = obj.packType_;
   blockNr_ = obj.blockNr_;
+  trackNr_ = obj.trackNr_;
 
   dataLen_ = obj.dataLen_;
 
@@ -104,7 +108,7 @@ CdTextItem::CdTextItem(const CdTextItem &obj)
   }
   else {
     data_ = NULL;
-  } 
+  }
 }
 
 CdTextItem::~CdTextItem()
@@ -115,11 +119,11 @@ CdTextItem::~CdTextItem()
   next_ = NULL;
 }
 
-void CdTextItem::print(int isTrack, std::ostream &out) const
+void CdTextItem::print(std::ostream &out) const
 {
   int i;
   char buf[20];
-  out << packType2String(isTrack, packType_);
+  out << packType2String(isTrackPack(), packType_);
 
   if (dataType() == SBCC) {
     out << " \"";
@@ -148,7 +152,7 @@ void CdTextItem::print(int isTrack, std::ostream &out) const
 	out << buf;
       }
       else {
-	if (i % 12 == 0) 
+	if (i % 12 == 0)
 	  out << ",\n               ";
 	else
 	  out << ", ";
@@ -220,8 +224,8 @@ const char *CdTextItem::packType2String(int isTrack, int packType)
   case CDTEXT_RES3:
     ret = "RESERVED3";
     break;
-  case CDTEXT_RES4:
-    ret = "RESERVED4";
+  case CDTEXT_CLOSED:
+    ret = "CLOSED";
     break;
   case CDTEXT_UPCEAN_ISRC:
     if (isTrack)
@@ -233,7 +237,7 @@ const char *CdTextItem::packType2String(int isTrack, int packType)
     ret = "SIZE_INFO";
     break;
   }
-  
+
   return ret;
 }
 
@@ -282,7 +286,7 @@ CdTextItem::PackType CdTextItem::int2PackType(int i)
     t = CDTEXT_RES3;
     break;
   case 0x8d:
-    t = CDTEXT_RES4;
+    t = CDTEXT_CLOSED;
     break;
   case 0x8e:
     t = CDTEXT_UPCEAN_ISRC;
@@ -315,34 +319,9 @@ int CdTextItem::isBinaryPack(PackType type)
   return ret;
 }
 
-int CdTextItem::isTrackPack(PackType type)
+std::ostream& operator<<(std::ostream& oss, const CdTextItem& item)
 {
-  int ret;
-  
-  switch (type) {
-  case CDTEXT_DISK_ID:
-  case CDTEXT_GENRE:
-  case CDTEXT_TOC_INFO1:
-  case CDTEXT_TOC_INFO2:
-  case CDTEXT_RES1:
-  case CDTEXT_RES2:
-  case CDTEXT_RES3:
-  case CDTEXT_RES4:
-  case CDTEXT_SIZE_INFO:
-  case CDTEXT_TITLE:
-  case CDTEXT_PERFORMER:
-  case CDTEXT_SONGWRITER:
-  case CDTEXT_COMPOSER:
-  case CDTEXT_ARRANGER:
-  case CDTEXT_MESSAGE:
-  case CDTEXT_UPCEAN_ISRC:
-    ret = 1;
-    break;
-
-  default:
-    ret = 0;
-    break;
-  }
-
-  return ret;
+  item.print(oss);
+  return oss;
 }
+
