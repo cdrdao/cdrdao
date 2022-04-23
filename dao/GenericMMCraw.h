@@ -27,49 +27,49 @@
 class GenericMMCraw : public GenericMMC, private PQChannelEncoder {
 public:
 
-  GenericMMCraw(ScsiIf *scsiIf, unsigned long options);
-  ~GenericMMCraw();
+    GenericMMCraw(ScsiIf *scsiIf, unsigned long options);
+    ~GenericMMCraw();
 
-  static CdrDriver *instance(ScsiIf *scsiIf, unsigned long options);
+    static CdrDriver *instance(ScsiIf *scsiIf, unsigned long options);
 
-  int multiSession(bool);
+    int multiSession(bool);
 
-  int subChannelEncodingMode(TrackData::SubChannelMode) const;
+    int subChannelEncodingMode(TrackData::SubChannelMode) const;
 
-  int initDao(const Toc *);
-  int startDao();
-  int finishDao();
+    int initDao(const Toc *);
+    int startDao();
+    int finishDao();
 
-  int writeData(TrackData::Mode, TrackData::SubChannelMode, long &lba,
-		const char *buf, long len);
+    int writeData(TrackData::Mode, TrackData::SubChannelMode, long &lba,
+                  const char *buf, long len);
 
 protected:
   
-  int setWriteParameters(int);
+    int setWriteParameters(int);
 
 private:  
-  unsigned char *encodeBuffer_; // buffer for encoding sub-channels
-  unsigned char *encSubChannel_; // holds encoded sub-channels
+    u8 *encodeBuffer_; // buffer for encoding sub-channels
+    u8 *encSubChannel_; // holds encoded sub-channels
 
-  SubChannel *subChannel_; // sub channel template
+    SubChannel *subChannel_; // sub channel template
 
-  int subChannelMode_; /* selected sub-channel writing mode:
-			  0: undefined
-			  1: 16 byte PQ
-			  2: 96 byte PW packed
-			  3: 96 byte PW raw
-		       */
+    int subChannelMode_; /* selected sub-channel writing mode:
+                            0: undefined
+                            1: 16 byte PQ
+                            2: 96 byte PW packed
+                            3: 96 byte PW raw
+                         */
   
-  long cdTextStartLba_;
-  long cdTextEndLba_;
-  const PWSubChannel96 **cdTextSubChannels_;
-  long cdTextSubChannelCount_;
-  long cdTextSubChannelAct_;
+    long cdTextStartLba_;
+    long cdTextEndLba_;
+    const PWSubChannel96 **cdTextSubChannels_;
+    long cdTextSubChannelCount_;
+    long cdTextSubChannelAct_;
 
-  long nextWritableAddress();
-  int getMultiSessionInfo(int sessionNr, int multi, SessionInfo *info);
-  int getSubChannelModeFromToc();
-  int setSubChannelMode();
+    long nextWritableAddress();
+    int getMultiSessionInfo(int sessionNr, int multi, SessionInfo *info);
+    int getSubChannelModeFromToc();
+    int setSubChannelMode();
 };
 
 #endif

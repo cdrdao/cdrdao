@@ -28,11 +28,18 @@
 
 class ScsiIfImpl;
 
+typedef unsigned char  u8;
+typedef signed char    s8;
+typedef unsigned short u16;
+typedef signed short   s16;
+typedef unsigned int   u32;
+typedef signed int     s32;
+
 //! \brief Base class to communicate with SCSI device
 
 class ScsiIf
 {
- public:
+public:
    
     //! \brief Constructor. Does not do SCSI initialization.
     //
@@ -88,9 +95,9 @@ class ScsiIf
     //   - 0 OK
     //   - 1 scsi command failed (os level, no sense data available)
     //   - 2 scsi command failed (sense data available)
-    int sendCmd(const unsigned char *cmd, int cmdLen,
-		const unsigned char *dataOut, int dataOutLen,
-		unsigned char *dataIn, int dataInLen, int showMessage = 1);
+    int sendCmd(const u8 *cmd, int cmdLen,
+		const u8 *dataOut, int dataOutLen,
+		u8 *dataIn, int dataInLen, int showMessage = 1);
 
     //! \brief Return the actual sense buffer in scglib
     // \param len will be overwritten and contain
@@ -99,7 +106,7 @@ class ScsiIf
     //	\return ScsiIf::impl->scgp_->scmd->u_sense.cmd_sense. This
     //	      buffer contains last sense data available to scglib. The
     //	      buffer is owned by scglib and must not be freed.
-    const unsigned char *getSense(int &len) const;
+    const u8 *getSense(int &len) const;
   
     //! \brief Prints extended status information of the last SCSI command.
     // Prints the following SCSI codes:
@@ -145,7 +152,7 @@ class ScsiIf
     // 'ScanData' array.
     static ScanData *scan(int *len, char* scsi_dev_path = NULL);
 
- private:
+private:
     char vendor_[9];
     char product_[17];
     char revision_[5];
