@@ -79,6 +79,8 @@ GenericMMC::GenericMMC(ScsiIf *scsiIf, unsigned long options)
       scannedSubChannels_[i] = new PWSubChannel96;
   }
 
+  cdtextEnabled_ = (options_ & OPT_MMC_CD_TEXT);
+
   // MMC drives usually return little endian samples
   audioDataByteOrder_ = 0;
 }
@@ -111,7 +113,7 @@ int GenericMMC::checkToc(const Toc *toc)
   int err = CdrDriver::checkToc(toc);
   int e;
 
-  if (options_ & OPT_MMC_CD_TEXT) {
+  if (cdtextEnabled_) {
     if ((e = toc->checkCdTextData()) > err)
       err = e;
   }
@@ -208,7 +210,7 @@ int GenericMMC::rspeed()
 //         1: scsi command failed
 int GenericMMC::loadUnload(int unload) const
 {
-  unsigned char cmd[6];
+  u8 cmd[6];
 
   // First send an ALLOW MEDIUM REMOVAL command
   // sg_utils equivalent:
@@ -264,7 +266,7 @@ int GenericMMC::checkDriveReady() const
     ret = sendCmd(cmd, 10, NULL, 0, data, 4, 0);
     
     if (ret == 2) {
-      const unsigned char *sense;
+      const u8 *sense;
       int senseLen;
       
       ret = 0; // indicates ready status
@@ -288,7 +290,7 @@ int GenericMMC::checkDriveReady() const
 //         1: scsi command failed
 int GenericMMC::blankDisk(BlankingMode mode)
 {
-  unsigned char cmd[12];
+  u8 cmd[12];
   int ret, progress;
   time_t startTime, endTime;
 
@@ -352,7 +354,7 @@ int GenericMMC::blankDisk(BlankingMode mode)
 //         1: scsi command failed
 int GenericMMC::selectSpeed()
 {
-  unsigned char cmd[12];
+  u8 cmd[12];
   int spd;
 
   memset(cmd, 0, 12);
@@ -398,9 +400,9 @@ int GenericMMC::selectSpeed()
 //         1: SCSI command failed
 int GenericMMC::getSessionInfo()
 {
-  unsigned char cmd[10];
+  u8 cmd[10];
   unsigned long dataLen = 34;
-  unsigned char data[34];
+  u8 data[34];
 
   memset(cmd, 0, 10);
   memset(data, 0, dataLen);
@@ -443,8 +445,8 @@ int GenericMMC::getSessionInfo()
 
 bool GenericMMC::readBufferCapacity(long *capacity, long *available)
 {
-  unsigned char cmd[10];
-  unsigned char data[12];
+  u8 cmd[10];
+  u8 data[12];
   long bufsize;
 
   memset(cmd, 0, 10);
@@ -466,7 +468,7 @@ bool GenericMMC::readBufferCapacity(long *capacity, long *available)
 
 int GenericMMC::performPowerCalibration()
 {
-  unsigned char cmd[10];
+  u8 cmd[10];
   int ret;
   long old_timeout;
 
@@ -486,7 +488,7 @@ int GenericMMC::performPowerCalibration()
     return 0;
   }
   if (ret == 2) {
-    const unsigned char *sense;
+    const u8 *sense;
     int senseLen;
 
     sense = scsiIf_->getSense(senseLen);
@@ -506,9 +508,9 @@ int GenericMMC::performPowerCalibration()
 //         1: scsi command failed
 int GenericMMC::setWriteParameters(unsigned long variant)
 {
-  unsigned char mp[0x38];
-  unsigned char mpHeader[8];
-  unsigned char blockDesc[8];
+  u8 mp[0x38];
+  u8 mpHeader[8];
+  u8 blockDesc[8];
 
   if (getModePage(5/*write parameters mode page*/, mp, 0x38,
 		  mpHeader, blockDesc, 1) != 0) {
@@ -593,8 +595,8 @@ int GenericMMC::setWriteParameters(unsigned long variant)
 //         1: scsi command failed
 int GenericMMC::setSimulationMode(int showMessage)
 {
-  unsigned char mp[0x38];
-  unsigned char mpHeader[8];
+  u8 mp[0x38];
+  u8 mpHeader[8];
 
   if (getModePage(5/*write parameters mode page*/, mp, 0x38,
 		  mpHeader, NULL, showMessage) != 0) {
@@ -621,9 +623,9 @@ int GenericMMC::setSimulationMode(int showMessage)
 
 int GenericMMC::getNWA(long *nwa)
 {
-  unsigned char cmd[10];
+  u8 cmd[10];
   int infoblocklen = 16;
-  unsigned char info[16];
+  u8 info[16];
   long lba = 0;
 
   cmd[0] = 0x52; // READ TRACK INFORMATION
@@ -670,8 +672,8 @@ int GenericMMC::getNWA(long *nwa)
 //         1: error occured
 int GenericMMC::getStartOfSession(long *lba)
 {
-  unsigned char mp[0x38];
-  unsigned char mpHeader[8];
+  u8 mp[0x38];
+  u8 mpHeader[8];
 
   // first set the writing mode because it influences which address is
   // returned with 'READ TRACK INFORMATION'
@@ -694,9 +696,9 @@ int GenericMMC::getStartOfSession(long *lba)
   return getNWA(lba);
 }
 
-static unsigned char leadInOutDataMode(TrackData::Mode mode)
+static u8 leadInOutDataMode(TrackData::Mode mode)
 {
-  unsigned char ret = 0;
+  u8 ret = 0;
 
   switch (mode) {
   case TrackData::AUDIO:
@@ -725,10 +727,10 @@ static unsigned char leadInOutDataMode(TrackData::Mode mode)
 }
 
 
-unsigned char GenericMMC::subChannelDataForm(TrackData::SubChannelMode sm,
+u8 GenericMMC::subChannelDataForm(TrackData::SubChannelMode sm,
 					     int encodingMode)
 {
-  unsigned char ret = 0;
+  u8 ret = 0;
 
   switch (sm) {
   case TrackData::SUBCHAN_NONE:
@@ -750,18 +752,18 @@ unsigned char GenericMMC::subChannelDataForm(TrackData::SubChannelMode sm,
 // Creates cue sheet for current toc.
 // cueSheetLen: filled with length of cue sheet in bytes
 // return: newly allocated cue sheet buffer or 'NULL' on error
-unsigned char *GenericMMC::createCueSheet(unsigned long variant,
+u8 *GenericMMC::createCueSheet(unsigned long variant,
 					  long *cueSheetLen)
 {
   const Track *t;
   int trackNr;
   Msf start, end, index;
-  unsigned char *cueSheet;
+  u8 *cueSheet;
   long len = 3; // entries for lead-in, gap, lead-out
   long n; // index into cue sheet
-  unsigned char ctl; // control nibbles of cue sheet entry CTL/ADR
+  u8 ctl; // control nibbles of cue sheet entry CTL/ADR
   long i;
-  unsigned char dataMode;
+  u8 dataMode;
   int trackOffset;
   long lbaOffset;
 
@@ -807,7 +809,7 @@ unsigned char *GenericMMC::createCueSheet(unsigned long variant,
     len += t->nofIndices(); // entry for each index increment
   }
 
-  cueSheet = new unsigned char[len * 8];
+  cueSheet = new u8[len * 8];
   n = 0;
 
   if (toc_->leadInMode() == TrackData::AUDIO) {
@@ -1037,10 +1039,10 @@ unsigned char *GenericMMC::createCueSheet(unsigned long variant,
 
 int GenericMMC::sendCueSheet()
 {
-  unsigned char cmd[10];
+  u8 cmd[10];
   long cueSheetLen;
   unsigned long variant;
-  unsigned char *cueSheet;
+  u8 *cueSheet;
   int cueSheetSent = 0;
 
   for (variant = 0; variant <= CUE_VAR_MAX; variant++) {
@@ -1094,7 +1096,7 @@ int GenericMMC::initDao(const Toc *toc)
 
   toc_ = toc;
 
-  if (options_ & OPT_MMC_CD_TEXT) {
+  if (cdtextEnabled_) {
     delete cdTextEncoder_;
     cdTextEncoder_ = new CdTextEncoder(toc_);
     if (cdTextEncoder_->encode() != 0) {
@@ -1267,7 +1269,7 @@ int GenericMMC::writeData(TrackData::Mode mode, TrackData::SubChannelMode sm,
 {
   assert(blocksPerWrite_ > 0);
   int writeLen = 0;
-  unsigned char cmd[10];
+  u8 cmd[10];
   long blockLength = blockSize(mode, sm);
   int retry;
   int ret;
@@ -1334,11 +1336,11 @@ int GenericMMC::writeData(TrackData::Mode mode, TrackData::SubChannelMode sm,
     do {
       retry = 0;
 
-      ret = sendCmd(cmd, 10, (unsigned char *)buf, writeLen * blockLength,
+      ret = sendCmd(cmd, 10, (u8 *)buf, writeLen * blockLength,
 		    NULL, 0, 0);
 
       if(ret == 2) {
-        const unsigned char *sense;
+        const u8 *sense;
         int senseLen;
 
         sense = scsiIf_->getSense(senseLen);
@@ -1373,7 +1375,7 @@ int GenericMMC::writeData(TrackData::Mode mode, TrackData::SubChannelMode sm,
 
 int GenericMMC::writeCdTextLeadIn()
 {
-  unsigned char cmd[10];
+  u8 cmd[10];
   const PWSubChannel96 **cdTextSubChannels;
   long cdTextSubChannelCount;
   long channelsPerCmd;
@@ -1384,7 +1386,7 @@ int GenericMMC::writeCdTextLeadIn()
   long i;
   int retry;
   int ret;
-  unsigned char *p;
+  u8 *p;
 
   if (cdTextEncoder_ == NULL)
     return 0;
@@ -1434,7 +1436,7 @@ int GenericMMC::writeCdTextLeadIn()
       ret = sendCmd(cmd, 10, transferBuffer_, n * 96, NULL, 0, 0);
 
       if(ret == 2) {
-        const unsigned char *sense;
+        const u8 *sense;
         int senseLen;
 	
         sense = scsiIf_->getSense(senseLen);
@@ -1468,9 +1470,9 @@ int GenericMMC::writeCdTextLeadIn()
 
 DiskInfo *GenericMMC::diskInfo()
 {
-  unsigned char cmd[10];
+  u8 cmd[10];
   unsigned long dataLen = 34;
-  unsigned char data[34];
+  u8 data[34];
   char spd;
 
   memset(&diskInfo_, 0, sizeof(DiskInfo));
@@ -1610,8 +1612,8 @@ DiskInfo *GenericMMC::diskInfo()
 // return: 1 if valid catalog number was found, else 0
 int GenericMMC::readCatalog(Toc *toc, long startLba, long endLba)
 {
-  unsigned char cmd[10];
-  unsigned char data[24];
+  u8 cmd[10];
+  u8 data[24];
   char catalog[14];
   int i;
 
@@ -1656,8 +1658,8 @@ int GenericMMC::readCatalog(Toc *toc, long startLba, long endLba)
 
 int GenericMMC::readIsrc(int trackNr, char *buf)
 {
-  unsigned char cmd[10];
-  unsigned char data[24];
+  u8 cmd[10];
+  u8 data[24];
   int i;
 
   buf[0] = 0;
@@ -1689,7 +1691,7 @@ int GenericMMC::readIsrc(int trackNr, char *buf)
 int GenericMMC::analyzeTrack(TrackData::Mode mode, int trackNr, long startLba,
 			     long endLba, Msf *indexIncrements,
 			     int *indexIncrementCnt, long *pregap,
-			     char *isrcCode, unsigned char *ctl)
+			     char *isrcCode, u8 *ctl)
 {
   int ret;
   int noScan = 0;
@@ -1726,7 +1728,7 @@ int GenericMMC::readSubChannels(TrackData::SubChannelMode sm,
 				Sample *audioData)
 {
   int retries = 5;
-  unsigned char cmd[12];
+  u8 cmd[12];
   int i;
   long blockLen = 0;
   unsigned long subChanMode = 0;
@@ -1809,7 +1811,7 @@ int GenericMMC::readSubChannels(TrackData::SubChannelMode sm,
 #endif
 
   if (subChanMode != 0) {
-    unsigned char *buf = transferBuffer_ + AUDIO_BLOCK_LEN;
+    u8 *buf = transferBuffer_ + AUDIO_BLOCK_LEN;
 
     for (i = 0; i < len; i++) {
       switch (subChanMode) {
@@ -1850,7 +1852,7 @@ int GenericMMC::readSubChannels(TrackData::SubChannelMode sm,
 	log_message(0, "");
 	for (j = 0; j < 4; j++) {
 	  for (k = 0; k < 24; k++) {
-	    unsigned char data = buf[j * 24 + k];
+	    u8 data = buf[j * 24 + k];
 	    log_message(0, "%02x ", data&0x3f);
 	  }
 	  log_message(0, "");
@@ -1863,7 +1865,7 @@ int GenericMMC::readSubChannels(TrackData::SubChannelMode sm,
   }
   
   if (audioData != NULL) {
-    unsigned char *p = transferBuffer_;
+    u8 *p = transferBuffer_;
 
     for (i = 0; i < len; i++) {
       memcpy(audioData, p, AUDIO_BLOCK_LEN);
@@ -1899,12 +1901,12 @@ int GenericMMC::readSubChannels(TrackData::SubChannelMode sm,
 // Return: 0: OK
 //         1: feature not available
 //         2: SCSI error
-int GenericMMC::getFeature(unsigned int feature, unsigned char *buf,
+int GenericMMC::getFeature(unsigned int feature, u8 *buf,
 			   unsigned long bufLen, int showMsg)
 {
-  unsigned char header[8];
-  unsigned char *data;
-  unsigned char cmd[10];
+  u8 header[8];
+  u8 *data;
+  u8 cmd[10];
   unsigned long len;
 
   memset(cmd, 0, 10);
@@ -1937,7 +1939,7 @@ int GenericMMC::getFeature(unsigned int feature, unsigned char *buf,
   if (len > bufLen)
     len = bufLen;
 
-  data = new unsigned char[len + 8];
+  data = new u8[len + 8];
 
   cmd[7] = (len + 8) >> 8;
   cmd[8] = (len + 8);
@@ -1973,7 +1975,7 @@ int GenericMMC::getFeature(unsigned int feature, unsigned char *buf,
 
 const DriveInfo *GenericMMC::driveInfo(bool showErrorMsg)
 {
-  unsigned char mp[32];
+  u8 mp[32];
 
   if (driveInfo_ != NULL)
     return driveInfo_;
@@ -1998,16 +2000,14 @@ const DriveInfo *GenericMMC::driveInfo(bool showErrorMsg)
   driveInfo_->maxWriteSpeed = (mp[18] << 8) | mp[19];
   driveInfo_->currentWriteSpeed = (mp[20] << 8) | mp[21];
 
-#if 0
-  unsigned char cdMasteringFeature[8];
+  // Check if drive supports R-W subchannels-TEXT writing (i.e. CD-TEXT)
+  u8 cdMasteringFeature[8];
   if (getFeature(0x2e, cdMasteringFeature, 8, 1) == 0) {
-    log_message(0, "Feature: %x %x %x %x %x %x %x %x", cdMasteringFeature[0],
-	    cdMasteringFeature[1], cdMasteringFeature[2],
-	    cdMasteringFeature[3], cdMasteringFeature[4],
-	    cdMasteringFeature[5], cdMasteringFeature[6],
-	    cdMasteringFeature[7]);
+      if (cdMasteringFeature[4] & 0x01) {
+          log_message(3, "CD-TEXT writing is supported.");
+          cdtextEnabled_ = true;
+      }
   }
-#endif
 
   RicohGetWriteOptions();
 
@@ -2016,8 +2016,8 @@ const DriveInfo *GenericMMC::driveInfo(bool showErrorMsg)
 
 TrackData::Mode GenericMMC::getTrackMode(int, long trackStartLba)
 {
-  unsigned char cmd[12];
-  unsigned char data[AUDIO_BLOCK_LEN];
+  u8 cmd[12];
+  u8 data[AUDIO_BLOCK_LEN];
 
   memset(cmd, 0, 12);
   cmd[0] = 0xbe;  // READ CD
@@ -2053,11 +2053,11 @@ TrackData::Mode GenericMMC::getTrackMode(int, long trackStartLba)
 
 CdRawToc *GenericMMC::getRawToc(int sessionNr, int *len)
 {
-  unsigned char cmd[10];
-  unsigned short dataLen;
-  unsigned char *data = NULL;;
-  unsigned char reqData[4]; // buffer for requestion the actual length
-  unsigned char *p;
+  u8 cmd[10];
+  u16 dataLen;
+  u8 *data = NULL;;
+  u8 reqData[4]; // buffer for requestion the actual length
+  u8 *p;
   int i, entries;
   CdRawToc *rawToc;
 
@@ -2079,7 +2079,7 @@ CdRawToc *GenericMMC::getRawToc(int sessionNr, int *len)
   
   log_message(4, "Raw toc data len: %d", dataLen);
 
-  data = new unsigned char[dataLen];
+  data = new u8[dataLen];
   
   // read disk toc
   cmd[7] = dataLen >> 8;
@@ -2117,12 +2117,12 @@ CdRawToc *GenericMMC::getRawToc(int sessionNr, int *len)
 
 long GenericMMC::readTrackData(TrackData::Mode mode,
 			       TrackData::SubChannelMode sm,
-			       long lba, long len, unsigned char *buf)
+			       long lba, long len, u8 *buf)
 {
   long i;
   long inBlockLen = AUDIO_BLOCK_LEN;
-  unsigned char cmd[12];
-  const unsigned char *sense;
+  u8 cmd[12];
+  const u8 *sense;
   int senseLen;
 
   memset(cmd, 0, 12);
@@ -2215,7 +2215,7 @@ long GenericMMC::readTrackData(TrackData::Mode mode,
     break;
   }
 
-  unsigned char *sector = transferBuffer_;
+  u8 *sector = transferBuffer_;
   for (i = 0; i < len; i++) {
     if (buf != NULL) {
       switch (mode) {
@@ -2271,7 +2271,7 @@ long GenericMMC::readTrackData(TrackData::Mode mode,
     log_message(0, "");
     for (j = 0; j < 4; j++) {
       for (k = 0; k < 24; k++) {
-	unsigned char data = sector[AUDIO_BLOCK_LEN + j * 24 + k];
+	u8 data = sector[AUDIO_BLOCK_LEN + j * 24 + k];
 	log_message(0, "%02x ", data&0x3f);
       }
       log_message(0, "");
@@ -2319,7 +2319,7 @@ int GenericMMC::readAudioRange(ReadDiskInfo *rinfo, int fd, long start,
 	    long slba, elba;
 	    int i, indexCnt;
 	    Msf index[98];
-	    unsigned char ctl;
+	    u8 ctl;
 
 	    if (pregap > 0)
 	      log_message(2, "Found pre-gap: %s", Msf(pregap).str());
@@ -2377,11 +2377,11 @@ int GenericMMC::readAudioRange(ReadDiskInfo *rinfo, int fd, long start,
 }
 
 int GenericMMC::getTrackIndex(long lba, int *trackNr, int *indexNr,
-			      unsigned char *ctl)
+			      u8 *ctl)
 {
-  unsigned char cmd[12];
-  unsigned short dataLen = 0x30;
-  unsigned char data[0x30];
+  u8 cmd[12];
+  u16 dataLen = 0x30;
+  u8 data[0x30];
   int waitLoops = 10;
   int waitFailed = 0;
 
@@ -2468,7 +2468,7 @@ int GenericMMC::getTrackIndex(long lba, int *trackNr, int *indexNr,
 
 int GenericMMC::readCdTest(long lba, long len, int subChanMode) const
 {
-  unsigned char cmd[12];
+  u8 cmd[12];
   long blockLen;
   int ret;
   int successRead = 0;
@@ -2476,8 +2476,6 @@ int GenericMMC::readCdTest(long lba, long len, int subChanMode) const
   int pqSubChanHexOk = 0;
 
   memset(cmd, 0, sizeof(cmd));
-
-  //log_message(0, "readCdTest: %ld %ld %d", lba, len, subChanMode);
 
   if (len <= 0)
     return 0;
@@ -2523,7 +2521,7 @@ int GenericMMC::readCdTest(long lba, long len, int subChanMode) const
       successRead++;
 
       if (subChanMode == 1) {
-	unsigned char *buf = transferBuffer_ + AUDIO_BLOCK_LEN;
+	u8 *buf = transferBuffer_ + AUDIO_BLOCK_LEN;
 
 #if 0
 	{
@@ -2570,7 +2568,6 @@ int GenericMMC::readCdTest(long lba, long len, int subChanMode) const
 	if (buf[7] < 100 && buf[8] < 60 && buf[9] < 75) {
 	  long pqlba = Msf(buf[7], buf[8], buf[9]).lba() - 150;
 
-	  //log_message(0, "readCdTest: pqlba: %ld", pqlba);
 	  long diff = pqlba - lba;
 	  if (diff < 0)
 	    diff = -diff;
@@ -2762,7 +2759,7 @@ unsigned long GenericMMC::getReadCapabilities(const CdToc *toc,
 
 int GenericMMC::RicohGetWriteOptions()
 {
-  unsigned char mp[14];
+  u8 mp[14];
 
   driveInfo_->ricohJustLink = 0;
   driveInfo_->ricohJustSpeed = 0;
@@ -2785,7 +2782,7 @@ int GenericMMC::RicohGetWriteOptions()
 
 int GenericMMC::RicohSetWriteOptions(const DriveInfo *di)
 {
-  unsigned char mp[14];
+  u8 mp[14];
 
   if (di->ricohJustLink == 0 && di->ricohJustSpeed == 0)
     return 0;

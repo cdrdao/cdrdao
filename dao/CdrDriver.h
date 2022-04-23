@@ -283,6 +283,8 @@ public:
 
   virtual int readCapacity(long *length, int showMessage = 1);
 
+  virtual int getPerformance();
+
   virtual bool readBufferCapacity(long* total, long* available) {
     return false;
   }

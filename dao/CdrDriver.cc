@@ -1214,6 +1214,27 @@ int CdrDriver::readCapacity(long *length, int showMessage)
   return 0;
 }
 
+int CdrDriver::getPerformance()
+{
+    u8 cmd[12];
+    u8 data[512];
+    int ret;
+    long length;
+    memset(cmd, 0, sizeof(cmd));
+    cmd[0] = 0xac; // GET PERFORMANCE
+
+    cmd[9] = 10;
+    cmd[1] = 4;
+    cmd[10] = 0;
+
+    if ((ret = sendCmd(cmd, 12, NULL, 0, data, sizeof(data)))) {
+        log_message(-2, "Cannot get performance (%d)", ret);
+        return 1;
+    }
+    length = (data[0] << 24) | (data[1] << 16) | (data[2] << 8) | data[3];
+    return 0;
+}
+
 int CdrDriver::blankDisk(BlankingMode)
 {
   log_message(-2, "Blanking is not supported by this driver.");
