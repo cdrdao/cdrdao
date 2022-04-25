@@ -206,14 +206,14 @@ int CDD2600Base::writeSession(const Toc *toc, int multiSession, long lbaOffset)
 
 
   switch (toc->tocType()) {
-  case Toc::CD_DA:
-  case Toc::CD_ROM:
+  case Toc::Type::CD_DA:
+  case Toc::Type::CD_ROM:
     cmd[6] = 0;
     break;
-  case Toc::CD_ROM_XA:
+  case Toc::Type::CD_ROM_XA:
     cmd[6] = 3;
     break;
-  case Toc::CD_I:
+  case Toc::Type::CD_I:
     cmd[6] = 4;
     break;
   }

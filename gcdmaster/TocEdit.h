@@ -100,7 +100,7 @@ public:
   void setCdTextLanguage(int blockNr, int langCode);
 
   void setCatalogNumber(const char *);
-  void setTocType(Toc::TocType);
+  void setTocType(Toc::Type);
 
   // Signals
   sigc::signal0<void> signalProgressPulse;

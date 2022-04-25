@@ -64,7 +64,7 @@ private:
   };
 
   Gtk::ComboBoxText tocType_;
-  Toc::TocType selectedTocType_;
+  Toc::Type selectedTocType_;
 
   struct BlockValue {
     int block;

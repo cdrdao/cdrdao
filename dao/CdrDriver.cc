@@ -2643,7 +2643,7 @@ int CdrDriver::checkToc(const Toc *toc)
 {
   int ret = 0;
 
-  if (multiSession_ && toc->tocType() != Toc::CD_ROM_XA) {
+  if (multiSession_ && toc->tocType() != Toc::Type::CD_ROM_XA) {
     log_message(-1, "The toc type should be set to CD_ROM_XA if a multi session");
     log_message(-1, "CD is recorded.");
     ret = 1;
@@ -2887,16 +2887,16 @@ unsigned char CdrDriver::sessionFormat()
   int nofMode2Tracks;
 
   switch (toc_->tocType()) {
-  case Toc::CD_DA:
-  case Toc::CD_ROM:
+  case Toc::Type::CD_DA:
+  case Toc::Type::CD_ROM:
     ret = 0x00;
     break;
 
-  case Toc::CD_I:
+  case Toc::Type::CD_I:
     ret = 0x10;
     break;
 
-  case Toc::CD_ROM_XA:
+  case Toc::Type::CD_ROM_XA:
     /* The toc type can only be set to CD_ROM_XA if the session contains
        at least one data track. Otherwise the toc type must be CD_DA even
        in multi session mode.
@@ -3163,7 +3163,7 @@ vector<CdTextItem*> CdrDriver::generateCdTextItems()
 //         1: error occured
 int CdrDriver::readCdTextData(Toc *toc)
 {
-    CdTextItem* sizeInfoItem = NULL;
+    bool languagesSet = false;
 
     auto items = generateCdTextItems();
 
@@ -3175,30 +3175,33 @@ int CdrDriver::readCdTextData(Toc *toc)
     for (auto& item : items) {
         toc->addCdTextItem(item->trackNr(), item);
 
-        if (item->packType() == CdTextItem::CDTEXT_SIZE_INFO)
-            sizeInfoItem = item;
-    }
+        if (item->packType() == CdTextItem::CDTEXT_SIZE_INFO) {
 
-  // update language mapping from SIZE INFO pack data
-    if (sizeInfoItem && sizeInfoItem->dataLen() >= 36) {
-        const unsigned char *data = sizeInfoItem->data();
-        for (int i = 0; i < 8; i++) {
-            if (data[28 + i] > 0)
-                toc->cdTextLanguage(i, data[28 + i]);
-            else
-                toc->cdTextLanguage(i, -1);
+            // update language mapping from SIZE INFO pack data
+            if (!languagesSet && item->dataLen() >= 36) {
+                const unsigned char *data = item->data();
+                for (int i = 0; i < 8; i++) {
+                    if (data[28 + i] > 0)
+                        toc->cdTextLanguage(i, data[28 + i]);
+                    else
+                        toc->cdTextLanguage(i, -1);
+                }
+                languagesSet = true;
+            }
+        }
+
+        if (item->dataLen() >= 1) {
+            const unsigned char *data = item->data();
+            if (data[0] == 0x01)
+                toc->cdTextEncoding(item->blockNr(), CdTextContainer::EncodingType::ASCII);
+            else if (data[0] == 0x80)
+                toc->cdTextEncoding(item->blockNr(), CdTextContainer::EncodingType::MSJIS);
         }
     }
-    else {
+
+    if (!languagesSet) {
         log_message(-1, "Cannot determine language mapping from CD-TEXT data.");
         log_message(-1, "Using default mapping.");
-    }
-    if (sizeInfoItem && sizeInfoItem->dataLen() >= 1) {
-        const unsigned char *data = sizeInfoItem->data();
-        if (data[0] == 0x01)
-            toc->cdTextEncoding(Toc::ENC_ASCII);
-        else if (data[0] == 0x80)
-            toc->cdTextEncoding(Toc::ENC_MSJIS);
     }
 
     return 0;
@@ -3684,11 +3687,11 @@ Toc *CdrDriver::buildToc(TrackInfo *trackInfos, long nofTrackInfos,
   }
 
   if (foundXATrack)
-    toc->tocType(Toc::CD_ROM_XA);
+    toc->tocType(Toc::Type::CD_ROM_XA);
   else if (foundDataTrack)
-    toc->tocType(Toc::CD_ROM);
+    toc->tocType(Toc::Type::CD_ROM);
   else
-    toc->tocType(Toc::CD_DA);
+    toc->tocType(Toc::Type::CD_DA);
 
   return toc;
 }
