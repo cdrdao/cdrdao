@@ -27,38 +27,45 @@
 
 class CdTextContainer {
 public:
-  CdTextContainer();
-  CdTextContainer(const CdTextContainer &);
+    CdTextContainer();
+    CdTextContainer(const CdTextContainer &);
 
-  ~CdTextContainer();
+    ~CdTextContainer();
 
-  long count() const { return count_; }
+    enum class EncodingType { LATIN, ASCII, MSJIS, KOREAN, MANDARIN };
 
-  void add(CdTextItem *);
+    long count() const { return count_; }
 
-  void remove(CdTextItem::PackType, int blockNr);
+    void add(CdTextItem *);
 
-  void print(int isTrack, std::ostream &) const;
+    void remove(CdTextItem::PackType, int blockNr);
 
-  // checks if a pack exists for given 'blockNr' (language)
-  int existBlock(int blockNr) const;
+    void print(int isTrack, std::ostream &) const;
 
-  // return pack for given 'blockNr' and pack type
-  const CdTextItem *getPack(int blockNr, CdTextItem::PackType) const;
+    // checks if a pack exists for given 'blockNr' (language)
+    int existBlock(int blockNr) const;
 
-  // sets/returns language code for block nr
-  void language(int blockNr, int lang);
-  int language(int blockNr) const;
+    // return pack for given 'blockNr' and pack type
+    const CdTextItem *getPack(int blockNr, CdTextItem::PackType) const;
 
-  static const char *languageName(int lang);
+    // sets/returns language code for block nr
+    void language(int blockNr, int lang);
+    int language(int blockNr) const;
+
+    // sets/returns character encoding for block nr
+    void encoding(int blockNr, EncodingType enc);
+    EncodingType encoding(int blockNr) const;
+
+    static const char *languageName(int lang);
 
 private:
-  long count_;
-  CdTextItem *items_;
+    long count_;
+    CdTextItem *items_;
 
-  int language_[8]; // mapping from block nr to language code
+    int language_[8]; // mapping from block nr to language code
+    EncodingType encoding_[8]; // mapping from block_nr to encoding
 
-  void setDefaultLanguageMapping();
+    void setDefaultLanguageMapping();
 
 };
 

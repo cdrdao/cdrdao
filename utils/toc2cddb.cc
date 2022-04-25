@@ -93,7 +93,7 @@ int main (int argc, char *argv[])	{
 	if ((toc = Toc::read(tocFile)) == NULL)
 		message(-10, "Failed to read toc-file '%s'.", tocFile);
 	
-	if (toc->tocType () != Toc::CD_DA)
+	if (toc->tocType () != Toc::Type::CD_DA)
 		message (-10, "Toc does not refer to a CDDA");
 
 	int ntracks = toc->nofTracks ();

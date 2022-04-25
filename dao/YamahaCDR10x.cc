@@ -240,7 +240,7 @@ void YamahaCDR10x::cueSheetDataType(TrackData::Mode mode,
   case TrackData::MODE2_FORM1:
   case TrackData::MODE2_FORM2:
   case TrackData::MODE2_FORM_MIX:
-    if (toc_->tocType() == Toc::CD_I)
+    if (toc_->tocType() == Toc::Type::CD_I)
       *dataType = 4;
     else
       *dataType = 5;

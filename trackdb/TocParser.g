@@ -60,17 +60,17 @@ private:
   ANTLRChar *text_;
 
 public:
-  ANTLRToken(ANTLRTokenType t, ANTLRChar *s) 
+  ANTLRToken(ANTLRTokenType t, ANTLRChar *s)
     : ANTLRRefCountToken(t, s)
-  { 
-    setType(t); 
-    line_ = 0; 
-    setText(s); 
+  {
+    setType(t);
+    line_ = 0;
+    setText(s);
   }
   ANTLRToken()
-  { 
-    setType((ANTLRTokenType)0); 
-    line_ = 0; 
+  {
+    setType((ANTLRTokenType)0);
+    line_ = 0;
     setText("");
   }
   virtual ~ANTLRToken() { delete[] text_; }
@@ -111,7 +111,7 @@ public:
 
   virtual ANTLRTokenType erraction();
 
-  TocParserGram *parser_;   
+  TocParserGram *parser_;
 };
 >>
 
@@ -178,6 +178,11 @@ public:
 #token UpcEan           "UPC_EAN"
 #token SizeInfo         "SIZE_INFO"
 #token LangEn           "EN"
+#token EncodingLatin    "ENCODING_ISO_8859_1"
+#token EncodingAscii    "ENCODING_ASCII"
+#token EncodingJis      "ENCODING_MS_JIS"
+#token EncodingKorean   "ENCODING_KOREAN"
+#token EncodingMandarin "ENCODING_MANDARIN"
 
 #lexclass STRING
 #token EndString        "\""         << mode(START); >>
@@ -201,11 +206,11 @@ void syn(_ANTLRTokenPtr tok, ANTLRChar *egroup, SetWordType *eset,
 >>
 
 toc > [ Toc *t ]
-  : << $t = new Toc; 
+  : << $t = new Toc;
        Track *tr = NULL;
        int lineNr = 0;
        char *catalog = NULL;
-       Toc::TocType toctype;
+       Toc::Type toctype;
        int firsttrack, firstLine;
     >>
   (  Catalog string > [ catalog ]
@@ -217,10 +222,10 @@ toc > [ Toc *t ]
           }
          delete[] catalog;
 	 catalog = NULL;
-       } 
-     >> 
+       }
+     >>
    | tocType > [ toctype ]
-     << $t->tocType(toctype); >> 
+     << $t->tocType(toctype); >>
   )*
 
   { FirstTrackNo integer > [ firsttrack, firstLine ]
@@ -291,7 +296,7 @@ track > [ Track *tr, int lineNr ]
        << $tr->copyPermitted(flag); flag = 1; >>
      | { No << flag = 0; >> } PreEmphasis
        << $tr->preEmphasis(flag); flag = 1; >>
-     | TwoChannel 
+     | TwoChannel
        << $tr->audioType(0); >>
      | FourChannel
        << $tr->audioType(1); >>
@@ -299,7 +304,7 @@ track > [ Track *tr, int lineNr ]
 
     { cdTextTrack [ $tr->cdtext_ ] }
 
-    { Pregap msf > [ length ] 
+    { Pregap msf > [ length ]
       << if (length.lba() == 0) {
 	   log_message(-2, "%s:%d: Length of pregap is zero.\n",
 	               filename_, $1->getLine());
@@ -307,7 +312,7 @@ track > [ Track *tr, int lineNr ]
 	 }
          else {
            if (trackType == TrackData::AUDIO) {
-             $tr->append(SubTrack(SubTrack::DATA, 
+             $tr->append(SubTrack(SubTrack::DATA,
                                   TrackData(length.samples())));
            }
 	   else {
@@ -321,8 +326,8 @@ track > [ Track *tr, int lineNr ]
       >>
     }
 
-    (  subTrack [ trackType, subChanType ] > [ st, lineNr ] 
-       << 
+    (  subTrack [ trackType, subChanType ] > [ st, lineNr ]
+       <<
           if (st != NULL && $tr->append(*st) == 2) {
 	    log_message(-2,
 		    "%s:%d: Mixing of FILE/AUDIOFILE/SILENCE and DATAFILE/ZERO statements not allowed.", filename_, lineNr);
@@ -441,7 +446,7 @@ subTrack < [ TrackData::Mode trackType, TrackData::SubChannelMode subChanType ] 
        TrackData::Mode dMode;
        int swapSamples = 0;
     >>
-    (  AudioFile string > [ filename ] 
+    (  AudioFile string > [ filename ]
        { Swap << swapSamples = 1; >> }
        { "#" sLong > [ offset ] }
        samples > [start] { samples > [len] }
@@ -467,11 +472,11 @@ subTrack < [ TrackData::Mode trackType, TrackData::SubChannelMode subChanType ] 
        { "#" sLong > [ offset ] }
        { dataLength [ dMode, $subChanType ] > [ len ] }
        << $st = new SubTrack(SubTrack::DATA, TrackData(dMode, $subChanType,
-                                                       filename, 
+                                                       filename,
                                                        offset, len));
           $lineNr = $1->getLine();
        >>
-     | Fifo string > [ filename ] 
+     | Fifo string > [ filename ]
             dataLength [$trackType, $subChanType ] > [ len ]
        << $st = new SubTrack(SubTrack::DATA, TrackData($trackType,
                                                        $subChanType,
@@ -496,7 +501,7 @@ subTrack < [ TrackData::Mode trackType, TrackData::SubChannelMode subChanType ] 
 	    error_ = 1;
           }
        >>
-     | Zero 
+     | Zero
        << dMode = $trackType; >>
        { dataMode > [ dMode ] }
        { subChannelMode > [ $subChanType ] }
@@ -512,14 +517,14 @@ subTrack < [ TrackData::Mode trackType, TrackData::SubChannelMode subChanType ] 
        >>
     )
     << if ($st != NULL && $st->length() == 0) {
-         // try to determine length 
+         // try to determine length
          if ($st->determineLength() != 0) {
 	         log_message(-2, "%s:%d: Cannot determine length of track data specification.",
 		                 filename_, $lineNr);
 	         error_ = 1;
       	 }
        }
-    >> 
+    >>
     ;
     // fail action
     << delete $st, $st = NULL;
@@ -534,7 +539,7 @@ string > [ char *ret ]
 
     << buf[1] = 0; >>
 
-    BeginString 
+    BeginString
     ( (  String      << s = strdup3CC($ret, $1->getText(), NULL); >>
        | StringQuote << s = strdup3CC($ret, "\"", NULL); >>
        | StringOctal << buf[0] = strtol($1->getText() + 1, NULL, 8);
@@ -545,7 +550,7 @@ string > [ char *ret ]
          $ret = s;
       >>
     )+
- 
+
     EndString
     ;
 
@@ -557,7 +562,7 @@ stringEmpty > [ char *ret ]
 
     << buf[1] = 0; >>
 
-    BeginString 
+    BeginString
     ( (  String      << s = strdup3CC($ret, $1->getText(), NULL); >>
        | StringQuote << s = strdup3CC($ret, "\"", NULL); >>
        | StringOctal << buf[0] = strtol($1->getText() + 1, NULL, 8);
@@ -568,7 +573,7 @@ stringEmpty > [ char *ret ]
          $ret = s;
       >>
     )*
- 
+
     EndString
     ;
 
@@ -588,7 +593,7 @@ integer > [ int i, int lineNr ]
   : << $i = 0; >>
     Integer << $i = atol($1->getText()); $lineNr = $1->getLine(); >>
     ;
-    
+
 msf > [ Msf m ]
   : << int min = 0;
        int sec = 0;
@@ -598,7 +603,7 @@ msf > [ Msf m ]
        int secLine;
        int fracLine;
     >>
-    integer > [min, minLine] ":" integer > [sec, secLine] 
+    integer > [min, minLine] ":" integer > [sec, secLine]
     ":" integer > [frac, fracLine]
     << if (min < 0) {
          log_message(-2, "%s:%d: Illegal minute field: %d\n", filename_,
@@ -615,7 +620,7 @@ msf > [ Msf m ]
 		 fracLine, frac);
 	 err = error_ = 1;
        }
-	  
+
        if (err != 0) {
 	 $m = Msf(0);
        }
@@ -683,11 +688,11 @@ subChannelMode > [ TrackData::SubChannelMode m ]
     )
     ;
 
-tocType > [ Toc::TocType t ]
-  : (  TocTypeCdda << $t = Toc::CD_DA; >>
-     | TocTypeCdrom << $t = Toc::CD_ROM; >>
-     | TocTypeCdromXa << $t = Toc::CD_ROM_XA; >>
-     | TocTypeCdi << $t = Toc::CD_I; >>
+tocType > [ Toc::Type t ]
+  : (  TocTypeCdda << $t = Toc::Type::CD_DA; >>
+     | TocTypeCdrom << $t = Toc::Type::CD_ROM; >>
+     | TocTypeCdromXa << $t = Toc::Type::CD_ROM_XA; >>
+     | TocTypeCdi << $t = Toc::Type::CD_I; >>
     )
     ;
 
@@ -755,7 +760,7 @@ binaryData > [ const unsigned char *data, long len ]
     ;
     // fail action
     << $len = 0; >>
-         
+
 cdTextItem [ int blockNr ] > [ CdTextItem *item, int lineNr ]
   : << $item = NULL;
        CdTextItem::PackType type;
@@ -765,7 +770,7 @@ cdTextItem [ int blockNr ] > [ CdTextItem *item, int lineNr ]
     >>
 
     packType > [ type, $lineNr ]
-    (  stringEmpty > [ s ] 
+    (  stringEmpty > [ s ]
        << if (s != NULL) {
             $item = new CdTextItem(type, blockNr, s);
             delete[] s;
@@ -779,7 +784,7 @@ cdTextItem [ int blockNr ] > [ CdTextItem *item, int lineNr ]
     << delete $item;
        $item = NULL;
     >>
- 
+
 cdTextBlock [ CdTextContainer &container, int isTrack ]
   : << CdTextItem *item = NULL;
        int blockNr;
@@ -795,7 +800,17 @@ cdTextBlock [ CdTextContainer &container, int isTrack ]
          blockNr = 0;
        }
     >>
-    ( cdTextItem [ blockNr ] > [ item, lineNr ]
+    { EncodingLatin
+    << container.encoding(blockNr, CdTextContainer::EncodingType::LATIN); >>
+    | EncodingAscii
+    << container.encoding(blockNr, CdTextContainer::EncodingType::ASCII); >>
+    | EncodingJis
+    << container.encoding(blockNr, CdTextContainer::EncodingType::MSJIS); >>
+    | EncodingKorean
+    << container.encoding(blockNr, CdTextContainer::EncodingType::KOREAN); >>
+    | EncodingMandarin
+    << container.encoding(blockNr, CdTextContainer::EncodingType::MANDARIN); >> }
+    | ( cdTextItem [ blockNr ] > [ item, lineNr ]
       << if (item != NULL) {
            int type = item->packType();
 
@@ -827,7 +842,7 @@ cdTextLanguageMap [ CdTextContainer &container ]
     >>
 
     LanguageMap "\{"
-    ( integer > [ blockNr, blockNrLine] ":" 
+    ( integer > [ blockNr, blockNrLine] ":"
       (  integer > [ lang, langLine ]
        | LangEn << lang = 9; >>
       )
@@ -908,7 +923,7 @@ void TocParserGram::syn(_ANTLRTokenPtr tok, ANTLRChar *egroup,
 
   if ( strlen(egroup) > 0 )
     log_message(0, "in %s ", egroup);
-	
+
   log_message(0, "");
 }
 

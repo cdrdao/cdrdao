@@ -924,7 +924,7 @@ void TocEdit::setCatalogNumber(const char *s)
 
 }
 
-void TocEdit::setTocType(Toc::TocType type)
+void TocEdit::setTocType(Toc::Type type)
 {
   if (!editable())
     return;

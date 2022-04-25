@@ -32,55 +32,58 @@
 
 #include "CdrDriver.h"
 #include "CdTextItem.h"
+#include "CdTextContainer.h"
 
 class CdTextItem;
 class PWSubChannel96;
 
 class CdTextEncoder {
 public:
-  CdTextEncoder(const Toc *);
-  ~CdTextEncoder();
+    CdTextEncoder(const Toc *);
+    ~CdTextEncoder();
 
-  int encode();
+    int encode();
 
-  const PWSubChannel96 **getSubChannels(long *subChannelCount);
+    const PWSubChannel96 **getSubChannels(long *subChannelCount);
+
+    static u8 characterCode(CdTextContainer::EncodingType);
 
 private:
-  struct CdTextSizeInfo {
-    unsigned char characterCode;
-    unsigned char firstTrack;
-    unsigned char lastTrack;
-    unsigned char copyright;
-    unsigned char packTypeCount[16];
-    unsigned char lastSequenceNumber[8];
-    unsigned char languageCode[8];
-  };
+    struct CdTextSizeInfo {
+        unsigned char characterCode;
+        unsigned char firstTrack;
+        unsigned char lastTrack;
+        unsigned char copyright;
+        unsigned char packTypeCount[16];
+        unsigned char lastSequenceNumber[8];
+        unsigned char languageCode[8];
+    };
 
-  const Toc *toc_;
+    const Toc *toc_;
   
-  CdTextSizeInfo sizeInfo_[8];
+    CdTextSizeInfo sizeInfo_[8];
 
-  long packCount_;
-  class CdTextPackEntry *packs_;
-  class CdTextPackEntry *lastPack_;
-  int lastPackPos_; // number of characters written to last pack
+    long packCount_;
+    class CdTextPackEntry *packs_;
+    class CdTextPackEntry *lastPack_;
+    int lastPackPos_; // number of characters written to last pack
 
-  long packId_;
+    long packId_;
 
-  PWSubChannel96 **subChannels_;
-  long subChannelCount_;
+    PWSubChannel96 **subChannels_;
+    long subChannelCount_;
 
-  static unsigned short CRCTAB_[256];
+    static unsigned short CRCTAB_[256];
 
-  void appendPack(CdTextPackEntry *);
+    void appendPack(CdTextPackEntry *);
 
-  void buildPacks();
-  void buildPacks(int blockNr, CdTextItem::PackType type);
-  void buildSizeInfoPacks();
-  void calcCrcs();
-  void buildSubChannels();
+    void buildPacks();
+    void buildPacks(int blockNr, CdTextItem::PackType type);
+    void buildSizeInfoPacks();
+    void calcCrcs();
+    void buildSubChannels();
 
-  void encodeCdTextItem(int, int, const CdTextItem *);
+    void encodeCdTextItem(int, int, const CdTextItem *);
 
 };
 

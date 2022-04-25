@@ -1677,10 +1677,10 @@ void showData(const Toc *toc, bool swap)
 }
 
 #ifdef HAVE_ICONV
-string to_utf8(const char* input, Toc::EncodingType enc)
+string to_utf8(const char* input, CdTextContainer::EncodingType enc)
 {
     const char* from_encoding = "ISO-8859-1";
-    if (enc == Toc::ENC_MSJIS)
+    if (enc == CdTextContainer::EncodingType::MSJIS)
         from_encoding = "CP932"; // Code Page 932, aka MS-JIS
 
     char* src = (char*)alloca(strlen(input) + 1);
@@ -1700,7 +1700,7 @@ string to_utf8(const char* input, Toc::EncodingType enc)
     return string(orig_dst);
 }
 #else
-string to_utf8(const char* input, Toc::EncodingType enc)
+string to_utf8(const char* input, CdTextContainer::EncodingType enc)
 {
     return string(input);
 }
@@ -1710,7 +1710,7 @@ void showCDText(CdrDriver* cdr)
 {
     auto items = cdr->generateCdTextItems();
     const unsigned char* languages = NULL;
-    Toc::EncodingType encoding = Toc::ENC_LATIN;
+    auto encoding = CdTextContainer::EncodingType::LATIN;
 
     CdTextItem* sizeinfo = NULL;
 
@@ -1731,7 +1731,7 @@ void showCDText(CdrDriver* cdr)
     if (sizeinfo) {
         auto d = sizeinfo->data();
         if (sizeinfo->dataLen() > 0 && d[0] == 0x80)
-            encoding = Toc::ENC_MSJIS;
+            encoding = CdTextContainer::EncodingType::MSJIS;
         if (sizeinfo->dataLen() >= 36)
             languages = &d[28];
     }

@@ -90,7 +90,7 @@ TocInfoDialog::TocInfoDialog(Gtk::Window* parent)
 
   tocEdit_ = NULL;
   active_ = false;
-  selectedTocType_ = Toc::CD_DA;
+  selectedTocType_ = Toc::Type::CD_DA;
 
   nofTracks_ = manage(new Gtk::Label("99"));
   nofTracks_->set_alignment(Gtk::ALIGN_START);
@@ -203,13 +203,13 @@ void TocInfoDialog::stop()
 void TocInfoDialog::setSelectedTocType()
 {
   if (tocType_.get_active_text() == TOC_TYPE_CD_DA) {
-    selectedTocType_ = Toc::CD_DA;
+    selectedTocType_ = Toc::Type::CD_DA;
   } else if (tocType_.get_active_text() == TOC_TYPE_CD_ROM) {
-    selectedTocType_ = Toc::CD_ROM;
+    selectedTocType_ = Toc::Type::CD_ROM;
   } else if (tocType_.get_active_text() == TOC_TYPE_CD_ROM_XA) {
-    selectedTocType_ = Toc::CD_ROM_XA;
+    selectedTocType_ = Toc::Type::CD_ROM_XA;
   } else if (tocType_.get_active_text() == TOC_TYPE_CD_I) {
-    selectedTocType_ = Toc::CD_I;
+    selectedTocType_ = Toc::Type::CD_I;
   }
 }
 
@@ -453,7 +453,7 @@ void TocInfoDialog::clear()
   tocLength_->set_text("");
 
   tocType_.set_active(0);
-  selectedTocType_ = Toc::CD_DA;
+  selectedTocType_ = Toc::Type::CD_DA;
 
   catalog_->set_text("");
   catalog_->set_editable(false);
@@ -717,16 +717,16 @@ void TocInfoDialog::importData(const Toc *toc)
   catalog_->set_editable(true);
 
   switch (toc->tocType()) {
-  case Toc::CD_DA:
+  case Toc::Type::CD_DA:
     tocType_.set_active(0);
     break;
-  case Toc::CD_ROM:
+  case Toc::Type::CD_ROM:
     tocType_.set_active(1);
     break;
-  case Toc::CD_ROM_XA:
+  case Toc::Type::CD_ROM_XA:
     tocType_.set_active(2);
     break;
-  case Toc::CD_I:
+  case Toc::Type::CD_I:
     tocType_.set_active(3);
     break;
   }
