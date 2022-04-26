@@ -21,79 +21,79 @@
 #define __CDTEXTITEM_H__
 
 #include <iostream>
+#include "util.h"
 
 class CdTextItem {
 public:
-  enum DataType { SBCC, DBCC, BINARY };
+    enum class DataType { SBCC, DBCC, BINARY };
 
-  enum PackType { CDTEXT_TITLE = 0x80,
-		  CDTEXT_PERFORMER = 0x81,
-		  CDTEXT_SONGWRITER = 0x82,
-		  CDTEXT_COMPOSER = 0x83,
-		  CDTEXT_ARRANGER = 0x84,
-		  CDTEXT_MESSAGE = 0x85,
-		  CDTEXT_DISK_ID = 0x86,
-		  CDTEXT_GENRE = 0x87,
-		  CDTEXT_TOC_INFO1 = 0x88,
-		  CDTEXT_TOC_INFO2 = 0x89,
-		  CDTEXT_RES1 = 0x8a,
-		  CDTEXT_RES2 = 0x8b,
-		  CDTEXT_RES3 = 0x8c,
-		  CDTEXT_CLOSED = 0x8d,
-		  CDTEXT_UPCEAN_ISRC = 0x8e,
-		  CDTEXT_SIZE_INFO = 0x8f };
+    enum class PackType {
+        TITLE = 0x80,
+        PERFORMER = 0x81,
+        SONGWRITER = 0x82,
+        COMPOSER = 0x83,
+        ARRANGER = 0x84,
+        MESSAGE = 0x85,
+        DISK_ID = 0x86,
+        GENRE = 0x87,
+        TOC_INFO1 = 0x88,
+        TOC_INFO2 = 0x89,
+        RES1 = 0x8a,
+        RES2 = 0x8b,
+        RES3 = 0x8c,
+        CLOSED = 0x8d,
+        UPCEAN_ISRC = 0x8e,
+        SIZE_INFO = 0x8f };
 
-  CdTextItem(PackType packType, int blockNr, const char *data);
+    CdTextItem(PackType packType, int blockNr, const char *data);
 
-  CdTextItem(PackType packType, int blockNr,
-	     const unsigned char *data, long len);
-  CdTextItem(int blockNr, unsigned char genreCode1, unsigned char genreCode2,
-             const char *description);
+    CdTextItem(PackType packType, int blockNr,
+               const unsigned char *data, long len);
+    CdTextItem(int blockNr, unsigned char genreCode1, unsigned char genreCode2,
+               const char *description);
 
-  CdTextItem(const CdTextItem &);
+    CdTextItem(const CdTextItem &);
 
-  ~CdTextItem();
+    ~CdTextItem();
 
-  DataType dataType() const { return dataType_; }
+    DataType dataType() const { return dataType_; }
 
-  PackType packType() const { return packType_; }
+    PackType packType() const { return packType_; }
 
-  int blockNr() const { return blockNr_; }
+    int blockNr() const { return blockNr_; }
 
-  bool isTrackPack() const { return trackNr_ > 0; }
-  void trackNr(int t) { trackNr_ = t; }
-  int trackNr() const { return trackNr_; }
+    bool isTrackPack() const { return trackNr_ > 0; }
+    void trackNr(int t) { trackNr_ = t; }
+    int trackNr() const { return trackNr_; }
 
-  const unsigned char *data() const { return data_; }
+    const unsigned char *data() const { return data_; }
 
-  long dataLen() const { return dataLen_; }
+    long dataLen() const { return dataLen_; }
 
-  void print(std::ostream &) const;
+    void print(std::ostream &, PrintParams& params) const;
 
-  int operator==(const CdTextItem &);
-  int operator!=(const CdTextItem &);
+    int operator==(const CdTextItem &);
+    int operator!=(const CdTextItem &);
 
-  static const char *packType2String(int isTrack, int packType);
+    static const char *packType2String(int isTrack, PackType packType);
 
-  static PackType int2PackType(int);
-  static int isBinaryPack(PackType);
+    static PackType int2PackType(int);
+    static int isBinaryPack(PackType);
 
 private:
-  friend class CdTextContainer;
+    friend class CdTextContainer;
 
-  DataType dataType_;
-  PackType packType_;
-  int blockNr_; // 0 ... 7
+    DataType dataType_;
+    PackType packType_;
+    int blockNr_; // 0 ... 7
 
-  unsigned char *data_;
-  long dataLen_;
+    unsigned char *data_;
+    long dataLen_;
 
-  // Info fields only, ignored during burn
-  int trackNr_;
+    // Info fields only, ignored during burn
+    int trackNr_;
 
-  CdTextItem *next_;
+    CdTextItem *next_;
 };
-
-std::ostream& operator<<(std::ostream& oss, const CdTextItem& item);
 
 #endif

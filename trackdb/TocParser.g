@@ -697,24 +697,24 @@ tocType > [ Toc::Type t ]
     ;
 
 packType > [ CdTextItem::PackType t, int lineNr ]
-  : (  Title      << $t = CdTextItem::CDTEXT_TITLE; $lineNr = $1->getLine(); >>
-     | Performer  << $t = CdTextItem::CDTEXT_PERFORMER; $lineNr = $1->getLine(); >>
-     | Songwriter << $t = CdTextItem::CDTEXT_SONGWRITER; $lineNr = $1->getLine(); >>
-     | Composer   << $t = CdTextItem::CDTEXT_COMPOSER; $lineNr = $1->getLine(); >>
-     | Arranger   << $t = CdTextItem::CDTEXT_ARRANGER; $lineNr = $1->getLine(); >>
-     | Message    << $t = CdTextItem::CDTEXT_MESSAGE; $lineNr = $1->getLine(); >>
-     | DiscId     << $t = CdTextItem::CDTEXT_DISK_ID; $lineNr = $1->getLine(); >>
-     | Genre      << $t = CdTextItem::CDTEXT_GENRE; $lineNr = $1->getLine(); >>
-     | TocInfo1   << $t = CdTextItem::CDTEXT_TOC_INFO1; $lineNr = $1->getLine(); >>
-     | TocInfo2   << $t = CdTextItem::CDTEXT_TOC_INFO2; $lineNr = $1->getLine(); >>
-     | Reserved1  << $t = CdTextItem::CDTEXT_RES1; $lineNr = $1->getLine(); >>
-     | Reserved2  << $t = CdTextItem::CDTEXT_RES2; $lineNr = $1->getLine(); >>
-     | Reserved3  << $t = CdTextItem::CDTEXT_RES3; $lineNr = $1->getLine(); >>
-     | Reserved4  << $t = CdTextItem::CDTEXT_CLOSED; $lineNr = $1->getLine(); >>
-     | Closed     << $t = CdTextItem::CDTEXT_CLOSED; $lineNr = $1->getLine(); >>
-     | UpcEan     << $t = CdTextItem::CDTEXT_UPCEAN_ISRC; $lineNr = $1->getLine(); >>
-     | Isrc       << $t = CdTextItem::CDTEXT_UPCEAN_ISRC; $lineNr = $1->getLine(); >>
-     | SizeInfo   << $t = CdTextItem::CDTEXT_SIZE_INFO; $lineNr = $1->getLine(); >>
+  : (  Title      << $t = CdTextItem::PackType::TITLE; $lineNr = $1->getLine(); >>
+     | Performer  << $t = CdTextItem::PackType::PERFORMER; $lineNr = $1->getLine(); >>
+     | Songwriter << $t = CdTextItem::PackType::SONGWRITER; $lineNr = $1->getLine(); >>
+     | Composer   << $t = CdTextItem::PackType::COMPOSER; $lineNr = $1->getLine(); >>
+     | Arranger   << $t = CdTextItem::PackType::ARRANGER; $lineNr = $1->getLine(); >>
+     | Message    << $t = CdTextItem::PackType::MESSAGE; $lineNr = $1->getLine(); >>
+     | DiscId     << $t = CdTextItem::PackType::DISK_ID; $lineNr = $1->getLine(); >>
+     | Genre      << $t = CdTextItem::PackType::GENRE; $lineNr = $1->getLine(); >>
+     | TocInfo1   << $t = CdTextItem::PackType::TOC_INFO1; $lineNr = $1->getLine(); >>
+     | TocInfo2   << $t = CdTextItem::PackType::TOC_INFO2; $lineNr = $1->getLine(); >>
+     | Reserved1  << $t = CdTextItem::PackType::RES1; $lineNr = $1->getLine(); >>
+     | Reserved2  << $t = CdTextItem::PackType::RES2; $lineNr = $1->getLine(); >>
+     | Reserved3  << $t = CdTextItem::PackType::RES3; $lineNr = $1->getLine(); >>
+     | Reserved4  << $t = CdTextItem::PackType::CLOSED; $lineNr = $1->getLine(); >>
+     | Closed     << $t = CdTextItem::PackType::CLOSED; $lineNr = $1->getLine(); >>
+     | UpcEan     << $t = CdTextItem::PackType::UPCEAN_ISRC; $lineNr = $1->getLine(); >>
+     | Isrc       << $t = CdTextItem::PackType::UPCEAN_ISRC; $lineNr = $1->getLine(); >>
+     | SizeInfo   << $t = CdTextItem::PackType::SIZE_INFO; $lineNr = $1->getLine(); >>
     )
     ;
 
@@ -801,18 +801,18 @@ cdTextBlock [ CdTextContainer &container, int isTrack ]
        }
     >>
     { EncodingLatin
-    << container.encoding(blockNr, CdTextContainer::EncodingType::LATIN); >>
+    << container.encoding(blockNr, Util::Encoding::LATIN); >>
     | EncodingAscii
-    << container.encoding(blockNr, CdTextContainer::EncodingType::ASCII); >>
+    << container.encoding(blockNr, Util::Encoding::ASCII); >>
     | EncodingJis
-    << container.encoding(blockNr, CdTextContainer::EncodingType::MSJIS); >>
+    << container.encoding(blockNr, Util::Encoding::MSJIS); >>
     | EncodingKorean
-    << container.encoding(blockNr, CdTextContainer::EncodingType::KOREAN); >>
+    << container.encoding(blockNr, Util::Encoding::KOREAN); >>
     | EncodingMandarin
-    << container.encoding(blockNr, CdTextContainer::EncodingType::MANDARIN); >> }
+    << container.encoding(blockNr, Util::Encoding::MANDARIN); >> }
     | ( cdTextItem [ blockNr ] > [ item, lineNr ]
       << if (item != NULL) {
-           int type = item->packType();
+           int type = (int)item->packType();
 
            if (isTrack && ((type > 0x86 && type <= 0x89) || type == 0x8f)) {
              log_message(-2, "%s:%d: Invalid CD-TEXT item for a track.",

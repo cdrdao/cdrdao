@@ -885,7 +885,7 @@ void TocEdit::setCdTextGenreItem(int blockNr, int code1, int code2,
     return;
 
   if (code1 < 0 || code2 < 0) {
-    toc_->removeCdTextItem(0, CdTextItem::CDTEXT_GENRE, blockNr);
+    toc_->removeCdTextItem(0, CdTextItem::PackType::GENRE, blockNr);
   }
   else {
     CdTextItem *item = new CdTextItem(blockNr, (unsigned char)code1,

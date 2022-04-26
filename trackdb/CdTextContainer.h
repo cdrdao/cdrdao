@@ -22,6 +22,7 @@
 
 #include <iostream>
 
+#include "util.h"
 #include "CdTextItem.h"
 
 
@@ -32,15 +33,13 @@ public:
 
     ~CdTextContainer();
 
-    enum class EncodingType { LATIN, ASCII, MSJIS, KOREAN, MANDARIN };
-
     long count() const { return count_; }
 
     void add(CdTextItem *);
 
     void remove(CdTextItem::PackType, int blockNr);
 
-    void print(int isTrack, std::ostream &) const;
+    void print(int isTrack, std::ostream &, PrintParams&) const;
 
     // checks if a pack exists for given 'blockNr' (language)
     int existBlock(int blockNr) const;
@@ -53,8 +52,8 @@ public:
     int language(int blockNr) const;
 
     // sets/returns character encoding for block nr
-    void encoding(int blockNr, EncodingType enc);
-    EncodingType encoding(int blockNr) const;
+    void encoding(int blockNr, Util::Encoding enc);
+    Util::Encoding encoding(int blockNr) const;
 
     static const char *languageName(int lang);
 
@@ -63,7 +62,7 @@ private:
     CdTextItem *items_;
 
     int language_[8]; // mapping from block nr to language code
-    EncodingType encoding_[8]; // mapping from block_nr to encoding
+    Util::Encoding encoding_[8]; // mapping from block_nr to encoding
 
     void setDefaultLanguageMapping();
 

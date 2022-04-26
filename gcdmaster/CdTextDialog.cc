@@ -297,25 +297,25 @@ void CdTextDialog::importData()
   adjustTableEntries(n);
 
   for (l = 0; l < 8; l++) {
-    if ((item = toc->getCdTextItem(0, l, CdTextItem::CDTEXT_TITLE)) != NULL)
+    if ((item = toc->getCdTextItem(0, l, CdTextItem::PackType::TITLE)) != NULL)
       page_[l].title->set_text((const char*)item->data());
     else
       page_[l].title->set_text("");
 
-    if ((item = toc->getCdTextItem(0, l, CdTextItem::CDTEXT_PERFORMER))
+    if ((item = toc->getCdTextItem(0, l, CdTextItem::PackType::PERFORMER))
 	!= NULL)
       page_[l].performer->set_text((const char*)item->data());
     else
       page_[l].performer->set_text("");
 
     for (i = 0; i < n; i++) {
-      if ((item = toc->getCdTextItem(i + 1, l, CdTextItem::CDTEXT_TITLE))
+      if ((item = toc->getCdTextItem(i + 1, l, CdTextItem::PackType::TITLE))
 	  != NULL)
 	page_[l].tracks[i].title->set_text((const char*)item->data());
       else
 	page_[l].tracks[i].title->set_text("");
 
-      if ((item = toc->getCdTextItem(i + 1, l, CdTextItem::CDTEXT_PERFORMER))
+      if ((item = toc->getCdTextItem(i + 1, l, CdTextItem::PackType::PERFORMER))
 	  != NULL)
 	page_[l].tracks[i].performer->set_text((const char*)item->data());
       else
@@ -329,15 +329,15 @@ void CdTextDialog::exportData()
   int i, l;
 
   for (l = 0; l < 8; l++) {
-    setCdTextItem(CdTextItem::CDTEXT_TITLE, 0, l,
+    setCdTextItem(CdTextItem::PackType::TITLE, 0, l,
 		  checkString(page_[l].title->get_text()));
-    setCdTextItem(CdTextItem::CDTEXT_PERFORMER, 0, l,
+    setCdTextItem(CdTextItem::PackType::PERFORMER, 0, l,
 		  checkString(page_[l].performer->get_text()));
 
     for (i = 0; i < trackEntries_; i++) {
-      setCdTextItem(CdTextItem::CDTEXT_TITLE, i + 1, l,
+      setCdTextItem(CdTextItem::PackType::TITLE, i + 1, l,
 		    checkString(page_[l].tracks[i].title->get_text()));
-      setCdTextItem(CdTextItem::CDTEXT_PERFORMER, i + 1, l,
+      setCdTextItem(CdTextItem::PackType::PERFORMER, i + 1, l,
 		    checkString(page_[l].tracks[i].performer->get_text()));
     }
   }

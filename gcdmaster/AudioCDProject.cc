@@ -624,11 +624,11 @@ void AudioCDProject::on_cancel_clicked()
 
 bool AudioCDProject::appendTrack(const char* file)
 {
-  FileExtension type = fileExtension(file);
+  auto type = Util::fileExtension(file);
 
   switch (type) {
 
-  case FE_M3U: {
+  case Util::FileExtension::M3U: {
     std::list<std::string> list;
     if (parseM3u(file, list)) {
       std::list<std::string>::iterator i = list.begin();

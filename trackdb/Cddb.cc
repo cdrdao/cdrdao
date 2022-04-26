@@ -904,21 +904,21 @@ int Cddb::addAsCdText(Toc *toc)
   toc->cdTextLanguage(0, 9);
 
   if (haveTitle) {
-    item = new CdTextItem(CdTextItem::CDTEXT_TITLE, 0,
+    item = new CdTextItem(CdTextItem::PackType::TITLE, 0,
       (cddbEntry_->diskTitle != NULL) ? cdTextFilter(cddbEntry_->diskTitle) : ""); 
 
     toc->addCdTextItem(0, item);
   }
 
   if (havePerformer) {
-    item = new CdTextItem(CdTextItem::CDTEXT_PERFORMER, 0,
+    item = new CdTextItem(CdTextItem::PackType::PERFORMER, 0,
       (cddbEntry_->diskArtist != NULL) ? cdTextFilter(cddbEntry_->diskArtist) : "");
 
     toc->addCdTextItem(0, item);
   }
 
   if (haveMessage) {
-    item = new CdTextItem(CdTextItem::CDTEXT_MESSAGE, 0,
+    item = new CdTextItem(CdTextItem::PackType::MESSAGE, 0,
       (cddbEntry_->diskExt != NULL) ? cdTextFilter(cddbEntry_->diskExt) : "");
 
     toc->addCdTextItem(0, item);
@@ -927,21 +927,21 @@ int Cddb::addAsCdText(Toc *toc)
   for (trun = 0; trun < toc->nofTracks(); trun++) {
     if (haveTitle) {
       
-      item = new CdTextItem(CdTextItem::CDTEXT_TITLE, 0,
+      item = new CdTextItem(CdTextItem::PackType::TITLE, 0,
         (trun < cddbEntry_->ntracks && cddbEntry_->trackTitles[trun] != NULL) ? cdTextFilter(cddbEntry_->trackTitles[trun]) : ""); 
 
       toc->addCdTextItem(trun + 1, item);
     }
 
     if (havePerformer) {
-      item = new CdTextItem(CdTextItem::CDTEXT_PERFORMER, 0,
+      item = new CdTextItem(CdTextItem::PackType::PERFORMER, 0,
         (cddbEntry_->diskArtist != NULL) ? cdTextFilter(cddbEntry_->diskArtist) : "");
 
       toc->addCdTextItem(trun + 1, item);
     }
 
     if (haveMessage) {
-      item = new CdTextItem(CdTextItem::CDTEXT_MESSAGE, 0,
+      item = new CdTextItem(CdTextItem::PackType::MESSAGE, 0,
         (trun < cddbEntry_->ntracks && cddbEntry_->trackExt[trun] != NULL) ? cdTextFilter(cddbEntry_->trackExt[trun]) : "");
 
       toc->addCdTextItem(trun + 1, item);

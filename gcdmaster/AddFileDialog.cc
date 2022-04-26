@@ -147,7 +147,7 @@ bool AddFileDialog::applyAction()
 
     if (s && *s != 0 && s[strlen(s) - 1] != '/') {
 
-      if (fileExtension(s) == FE_M3U)
+      if (Util::fileExtension(s) == Util::FileExtension::M3U)
         parseM3u(s, files);
       else
         files.push_back(s);

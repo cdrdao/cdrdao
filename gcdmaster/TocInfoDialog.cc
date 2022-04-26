@@ -608,56 +608,56 @@ void TocInfoDialog::importCdText(const Toc *toc)
   const CdTextItem *item;
 
   for (l = 0; l < 8; l++) {
-    if ((item = toc->getCdTextItem(0, l, CdTextItem::CDTEXT_TITLE)) != NULL)
+    if ((item = toc->getCdTextItem(0, l, CdTextItem::PackType::TITLE)) != NULL)
       cdTextPages_[l].title->set_text((const char*) (item->data()));
     else
       cdTextPages_[l].title->set_text("");
     cdTextPages_[l].title->set_editable(true);
 
-    if ((item = toc->getCdTextItem(0, l, CdTextItem::CDTEXT_PERFORMER)) != NULL)
+    if ((item = toc->getCdTextItem(0, l, CdTextItem::PackType::PERFORMER)) != NULL)
       cdTextPages_[l].performer->set_text((const char*) (item->data()));
     else
       cdTextPages_[l].performer->set_text("");
     cdTextPages_[l].performer->set_editable(true);
 
-    if ((item = toc->getCdTextItem(0, l, CdTextItem::CDTEXT_SONGWRITER)) != NULL)
+    if ((item = toc->getCdTextItem(0, l, CdTextItem::PackType::SONGWRITER)) != NULL)
       cdTextPages_[l].songwriter->set_text((const char*) (item->data()));
     else
       cdTextPages_[l].songwriter->set_text("");
     cdTextPages_[l].songwriter->set_editable(true);
 
-    if ((item = toc->getCdTextItem(0, l, CdTextItem::CDTEXT_COMPOSER)) != NULL)
+    if ((item = toc->getCdTextItem(0, l, CdTextItem::PackType::COMPOSER)) != NULL)
       cdTextPages_[l].composer->set_text((const char*) (item->data()));
     else
       cdTextPages_[l].composer->set_text("");
     cdTextPages_[l].composer->set_editable(true);
 
-    if ((item = toc->getCdTextItem(0, l, CdTextItem::CDTEXT_ARRANGER)) != NULL)
+    if ((item = toc->getCdTextItem(0, l, CdTextItem::PackType::ARRANGER)) != NULL)
       cdTextPages_[l].arranger->set_text((const char*) (item->data()));
     else
       cdTextPages_[l].arranger->set_text("");
     cdTextPages_[l].arranger->set_editable(true);
 
-    if ((item = toc->getCdTextItem(0, l, CdTextItem::CDTEXT_MESSAGE)) != NULL)
+    if ((item = toc->getCdTextItem(0, l, CdTextItem::PackType::MESSAGE)) != NULL)
       cdTextPages_[l].message->set_text((const char*) (item->data()));
     else
       cdTextPages_[l].message->set_text("");
     cdTextPages_[l].message->set_editable(true);
 
-    if ((item = toc->getCdTextItem(0, l, CdTextItem::CDTEXT_DISK_ID)) != NULL)
+    if ((item = toc->getCdTextItem(0, l, CdTextItem::PackType::DISK_ID)) != NULL)
       cdTextPages_[l].catalog->set_text((const char*) (item->data()));
     else
       cdTextPages_[l].catalog->set_text("");
     cdTextPages_[l].catalog->set_editable(true);
 
-    if ((item = toc->getCdTextItem(0, l, CdTextItem::CDTEXT_UPCEAN_ISRC))
+    if ((item = toc->getCdTextItem(0, l, CdTextItem::PackType::UPCEAN_ISRC))
         != NULL)
       cdTextPages_[l].upcEan->set_text((const char*) (item->data()));
     else
       cdTextPages_[l].upcEan->set_text("");
     cdTextPages_[l].upcEan->set_editable(true);
 
-    if ((item = toc->getCdTextItem(0, l, CdTextItem::CDTEXT_GENRE)) != NULL) {
+    if ((item = toc->getCdTextItem(0, l, CdTextItem::PackType::GENRE)) != NULL) {
       if (item->dataLen() >= 2) {
         cdTextPages_[l].selectedGenre = getCdTextGenreIndex(item->data()[0],
             item->data()[1]);
@@ -769,137 +769,137 @@ void TocInfoDialog::exportCdText(TocEdit *tocEdit)
   for (l = 0; l < 8; l++) {
     // Title
     if ((s = checkString(cdTextPages_[l].title->get_text())) != NULL)
-      newItem = new CdTextItem(CdTextItem::CDTEXT_TITLE, l, s);
+      newItem = new CdTextItem(CdTextItem::PackType::TITLE, l, s);
     else
       newItem = NULL;
 
-    if ((item = toc->getCdTextItem(0, l, CdTextItem::CDTEXT_TITLE)) != NULL) {
+    if ((item = toc->getCdTextItem(0, l, CdTextItem::PackType::TITLE)) != NULL) {
       if (newItem == NULL)
-        tocEdit->setCdTextItem(0, CdTextItem::CDTEXT_TITLE, l, NULL);
+        tocEdit->setCdTextItem(0, CdTextItem::PackType::TITLE, l, NULL);
       else if (*newItem != *item)
-        tocEdit->setCdTextItem(0, CdTextItem::CDTEXT_TITLE, l, s);
+        tocEdit->setCdTextItem(0, CdTextItem::PackType::TITLE, l, s);
     } else if (newItem != NULL) {
-      tocEdit->setCdTextItem(0, CdTextItem::CDTEXT_TITLE, l, s);
+      tocEdit->setCdTextItem(0, CdTextItem::PackType::TITLE, l, s);
     }
 
     delete newItem;
 
     // Performer
     if ((s = checkString(cdTextPages_[l].performer->get_text())) != NULL)
-      newItem = new CdTextItem(CdTextItem::CDTEXT_PERFORMER, l, s);
+      newItem = new CdTextItem(CdTextItem::PackType::PERFORMER, l, s);
     else
       newItem = NULL;
 
-    if ((item = toc->getCdTextItem(0, l, CdTextItem::CDTEXT_PERFORMER)) != NULL) {
+    if ((item = toc->getCdTextItem(0, l, CdTextItem::PackType::PERFORMER)) != NULL) {
       if (newItem == NULL)
-        tocEdit->setCdTextItem(0, CdTextItem::CDTEXT_PERFORMER, l, NULL);
+        tocEdit->setCdTextItem(0, CdTextItem::PackType::PERFORMER, l, NULL);
       else if (*newItem != *item)
-        tocEdit->setCdTextItem(0, CdTextItem::CDTEXT_PERFORMER, l, s);
+        tocEdit->setCdTextItem(0, CdTextItem::PackType::PERFORMER, l, s);
     } else if (newItem != NULL) {
-      tocEdit->setCdTextItem(0, CdTextItem::CDTEXT_PERFORMER, l, s);
+      tocEdit->setCdTextItem(0, CdTextItem::PackType::PERFORMER, l, s);
     }
 
     delete newItem;
 
     // Songwriter
     if ((s = checkString(cdTextPages_[l].songwriter->get_text())) != NULL)
-      newItem = new CdTextItem(CdTextItem::CDTEXT_SONGWRITER, l, s);
+      newItem = new CdTextItem(CdTextItem::PackType::SONGWRITER, l, s);
     else
       newItem = NULL;
 
-    if ((item = toc->getCdTextItem(0, l, CdTextItem::CDTEXT_SONGWRITER)) != NULL) {
+    if ((item = toc->getCdTextItem(0, l, CdTextItem::PackType::SONGWRITER)) != NULL) {
       if (newItem == NULL)
-        tocEdit->setCdTextItem(0, CdTextItem::CDTEXT_SONGWRITER, l, NULL);
+        tocEdit->setCdTextItem(0, CdTextItem::PackType::SONGWRITER, l, NULL);
       else if (*newItem != *item)
-        tocEdit->setCdTextItem(0, CdTextItem::CDTEXT_SONGWRITER, l, s);
+        tocEdit->setCdTextItem(0, CdTextItem::PackType::SONGWRITER, l, s);
     } else if (newItem != NULL) {
-      tocEdit->setCdTextItem(0, CdTextItem::CDTEXT_SONGWRITER, l, s);
+      tocEdit->setCdTextItem(0, CdTextItem::PackType::SONGWRITER, l, s);
     }
 
     delete newItem;
 
     // Composer
     if ((s = checkString(cdTextPages_[l].composer->get_text())) != NULL)
-      newItem = new CdTextItem(CdTextItem::CDTEXT_COMPOSER, l, s);
+      newItem = new CdTextItem(CdTextItem::PackType::COMPOSER, l, s);
     else
       newItem = NULL;
 
-    if ((item = toc->getCdTextItem(0, l, CdTextItem::CDTEXT_COMPOSER)) != NULL) {
+    if ((item = toc->getCdTextItem(0, l, CdTextItem::PackType::COMPOSER)) != NULL) {
       if (newItem == NULL)
-        tocEdit->setCdTextItem(0, CdTextItem::CDTEXT_COMPOSER, l, NULL);
+        tocEdit->setCdTextItem(0, CdTextItem::PackType::COMPOSER, l, NULL);
       else if (*newItem != *item)
-        tocEdit->setCdTextItem(0, CdTextItem::CDTEXT_COMPOSER, l, s);
+        tocEdit->setCdTextItem(0, CdTextItem::PackType::COMPOSER, l, s);
     } else if (newItem != NULL) {
-      tocEdit->setCdTextItem(0, CdTextItem::CDTEXT_COMPOSER, l, s);
+      tocEdit->setCdTextItem(0, CdTextItem::PackType::COMPOSER, l, s);
     }
 
     delete newItem;
 
     // Arranger
     if ((s = checkString(cdTextPages_[l].arranger->get_text())) != NULL)
-      newItem = new CdTextItem(CdTextItem::CDTEXT_ARRANGER, l, s);
+      newItem = new CdTextItem(CdTextItem::PackType::ARRANGER, l, s);
     else
       newItem = NULL;
 
-    if ((item = toc->getCdTextItem(0, l, CdTextItem::CDTEXT_ARRANGER)) != NULL) {
+    if ((item = toc->getCdTextItem(0, l, CdTextItem::PackType::ARRANGER)) != NULL) {
       if (newItem == NULL)
-        tocEdit->setCdTextItem(0, CdTextItem::CDTEXT_ARRANGER, l, NULL);
+        tocEdit->setCdTextItem(0, CdTextItem::PackType::ARRANGER, l, NULL);
       else if (*newItem != *item)
-        tocEdit->setCdTextItem(0, CdTextItem::CDTEXT_ARRANGER, l, s);
+        tocEdit->setCdTextItem(0, CdTextItem::PackType::ARRANGER, l, s);
     } else if (newItem != NULL) {
-      tocEdit->setCdTextItem(0, CdTextItem::CDTEXT_ARRANGER, l, s);
+      tocEdit->setCdTextItem(0, CdTextItem::PackType::ARRANGER, l, s);
     }
 
     delete newItem;
 
     // Message
     if ((s = checkString(cdTextPages_[l].message->get_text())) != NULL)
-      newItem = new CdTextItem(CdTextItem::CDTEXT_MESSAGE, l, s);
+      newItem = new CdTextItem(CdTextItem::PackType::MESSAGE, l, s);
     else
       newItem = NULL;
 
-    if ((item = toc->getCdTextItem(0, l, CdTextItem::CDTEXT_MESSAGE)) != NULL) {
+    if ((item = toc->getCdTextItem(0, l, CdTextItem::PackType::MESSAGE)) != NULL) {
       if (newItem == NULL)
-        tocEdit->setCdTextItem(0, CdTextItem::CDTEXT_MESSAGE, l, NULL);
+        tocEdit->setCdTextItem(0, CdTextItem::PackType::MESSAGE, l, NULL);
       else if (*newItem != *item)
-        tocEdit->setCdTextItem(0, CdTextItem::CDTEXT_MESSAGE, l, s);
+        tocEdit->setCdTextItem(0, CdTextItem::PackType::MESSAGE, l, s);
     } else if (newItem != NULL) {
-      tocEdit->setCdTextItem(0, CdTextItem::CDTEXT_MESSAGE, l, s);
+      tocEdit->setCdTextItem(0, CdTextItem::PackType::MESSAGE, l, s);
     }
 
     delete newItem;
 
     // Catalog
     if ((s = checkString(cdTextPages_[l].catalog->get_text())) != NULL)
-      newItem = new CdTextItem(CdTextItem::CDTEXT_DISK_ID, l, s);
+      newItem = new CdTextItem(CdTextItem::PackType::DISK_ID, l, s);
     else
       newItem = NULL;
 
-    if ((item = toc->getCdTextItem(0, l, CdTextItem::CDTEXT_DISK_ID)) != NULL) {
+    if ((item = toc->getCdTextItem(0, l, CdTextItem::PackType::DISK_ID)) != NULL) {
       if (newItem == NULL)
-        tocEdit->setCdTextItem(0, CdTextItem::CDTEXT_DISK_ID, l, NULL);
+        tocEdit->setCdTextItem(0, CdTextItem::PackType::DISK_ID, l, NULL);
       else if (*newItem != *item)
-        tocEdit->setCdTextItem(0, CdTextItem::CDTEXT_DISK_ID, l, s);
+        tocEdit->setCdTextItem(0, CdTextItem::PackType::DISK_ID, l, s);
     } else if (newItem != NULL) {
-      tocEdit->setCdTextItem(0, CdTextItem::CDTEXT_DISK_ID, l, s);
+      tocEdit->setCdTextItem(0, CdTextItem::PackType::DISK_ID, l, s);
     }
 
     delete newItem;
 
     // Upc/Ean
     if ((s = checkString(cdTextPages_[l].upcEan->get_text())) != NULL)
-      newItem = new CdTextItem(CdTextItem::CDTEXT_UPCEAN_ISRC, l, s);
+      newItem = new CdTextItem(CdTextItem::PackType::UPCEAN_ISRC, l, s);
     else
       newItem = NULL;
 
-    if ((item = toc->getCdTextItem(0, l, CdTextItem::CDTEXT_UPCEAN_ISRC))
+    if ((item = toc->getCdTextItem(0, l, CdTextItem::PackType::UPCEAN_ISRC))
         != NULL) {
       if (newItem == NULL)
-        tocEdit->setCdTextItem(0, CdTextItem::CDTEXT_UPCEAN_ISRC, l, NULL);
+        tocEdit->setCdTextItem(0, CdTextItem::PackType::UPCEAN_ISRC, l, NULL);
       else if (*newItem != *item)
-        tocEdit->setCdTextItem(0, CdTextItem::CDTEXT_UPCEAN_ISRC, l, s);
+        tocEdit->setCdTextItem(0, CdTextItem::PackType::UPCEAN_ISRC, l, s);
     } else if (newItem != NULL) {
-      tocEdit->setCdTextItem(0, CdTextItem::CDTEXT_UPCEAN_ISRC, l, s);
+      tocEdit->setCdTextItem(0, CdTextItem::PackType::UPCEAN_ISRC, l, s);
     }
 
     delete newItem;
@@ -915,7 +915,7 @@ void TocInfoDialog::exportCdText(TocEdit *tocEdit)
       else
         newItem = NULL;
 
-      if ((item = toc->getCdTextItem(0, l, CdTextItem::CDTEXT_GENRE)) != NULL) {
+      if ((item = toc->getCdTextItem(0, l, CdTextItem::PackType::GENRE)) != NULL) {
         if (newItem == NULL)
           tocEdit->setCdTextGenreItem(l, -1, -1, NULL);
         else if (*newItem != *item)
