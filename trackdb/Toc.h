@@ -24,6 +24,7 @@
 #include <list>
 #include <string>
 
+#include "util.h"
 #include "Track.h"
 #include "CdTextContainer.h"
 #include "CdTextItem.h"
@@ -90,8 +91,8 @@ public:
     void cdTextLanguage(int blockNr, int lang);
     int cdTextLanguage(int blockNr) const;
 
-    void cdTextEncoding(int blockNr, CdTextContainer::EncodingType t);
-    CdTextContainer::EncodingType cdTextEncoding(int blockNr) const;
+    void cdTextEncoding(int blockNr, Util::Encoding t);
+    Util::Encoding cdTextEncoding(int blockNr) const;
 
     void trackSummary(int *nofAudioTracks, int *nofMode1Tracks,
                       int *nofMode2Tracks) const;
@@ -106,7 +107,8 @@ public:
 
     // if conversions is true, the TOc is printed with the converted WAV
     // or RAW filenames instead of the original ones.
-    void print(std::ostream &, bool conversions = false) const;
+
+    void print(std::ostream &, PrintParams& params) const;
 
     void collectFiles(std::set<std::string>& list);
     void markFileConversion(const char* src, const char* dst);

@@ -108,7 +108,7 @@ void CdTextContainer::setDefaultLanguageMapping()
         language_[i] = -1;
 }
 
-void CdTextContainer::print(int isTrack, std::ostream &out) const
+void CdTextContainer::print(int isTrack, std::ostream &out, PrintParams& params) const
 {
     CdTextItem *run;
     int i;
@@ -148,7 +148,9 @@ void CdTextContainer::print(int isTrack, std::ostream &out) const
                 actBlockNr = run->blockNr();
                 out << "  }\n  LANGUAGE " << actBlockNr << " {\n";
             }
-            out << "    " << *run << "\n";
+            out << "    ";
+            run->print(out, params);
+            out << "\n";
         }
 
         out << "  }\n}\n";
@@ -245,14 +247,14 @@ int CdTextContainer::language(int blockNr) const
     return language_[blockNr];
 }
 
-void CdTextContainer::encoding(int blockNr, EncodingType enc)
+void CdTextContainer::encoding(int blockNr, Util::Encoding enc)
 {
     assert(blockNr >= 0 && blockNr <= 7);
 
     encoding_[blockNr] = enc;
 }
 
-CdTextContainer::EncodingType CdTextContainer::encoding(int blockNr) const
+Util::Encoding CdTextContainer::encoding(int blockNr) const
 {
     assert(blockNr >= 0 && blockNr <= 7);
     return encoding_[blockNr];

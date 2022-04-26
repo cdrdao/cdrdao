@@ -26,6 +26,7 @@
 #include <set>
 
 #include "Sample.h"
+#include "util.h"
 
 #define AUDIO_BLOCK_LEN 2352
 #define MODE0_BLOCK_LEN 2336
@@ -96,7 +97,7 @@ public:
   void split(unsigned long, TrackData **part1, TrackData **part2);
   TrackData *merge(const TrackData *) const;
 
-  void print(std::ostream &, bool conversions = false) const;
+  void print(std::ostream &, PrintParams&) const;
 
   static int checkAudioFile(const char *fn, unsigned long *length);
   static int waveLength(const char *filename, long offset, long *hdrlen,

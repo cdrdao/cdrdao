@@ -221,14 +221,14 @@ bool GCDMaster::openNewProject(const char* s)
   if (s == NULL || *s == 0 || s[strlen(s) - 1] == '/')
     return false;
 
-  FileExtension type = fileExtension(s);
+  auto type = Util::fileExtension(s);
   switch (type) {
 
-  case FE_M3U:
+  case Util::FileExtension::M3U:
     newAudioCDProject("", NULL, s);
     break;
 
-  case FE_TOC:
+  case Util::FileExtension::TOC:
     tocEdit = new TocEdit(NULL, NULL);
     if (tocEdit->readToc(stripCwd(s)) == 0)
       newAudioCDProject(stripCwd(s), tocEdit);
@@ -236,7 +236,7 @@ bool GCDMaster::openNewProject(const char* s)
       return false;
     break;
 
-  case FE_CUE:
+  case Util::FileExtension::CUE:
     tocEdit = new TocEdit(NULL, NULL);
     if (tocEdit->readToc(stripCwd(s)) == 0)
       newAudioCDProject("", tocEdit);

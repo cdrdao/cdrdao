@@ -46,7 +46,7 @@ public:
 
     const PWSubChannel96 **getSubChannels(long *subChannelCount);
 
-    static u8 characterCode(CdTextContainer::EncodingType);
+    static u8 characterCode(Util::Encoding);
 
 private:
     struct CdTextSizeInfo {

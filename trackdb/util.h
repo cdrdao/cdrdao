@@ -1,6 +1,7 @@
 /*  cdrdao - write audio CD-Rs in disc-at-once mode
  *
- *  Copyright (C) 1998-2001  Andreas Mueller <andreas@daneb.de>
+ *  Copyright (C) 1998-2022  Andreas Mueller <andreas@daneb.de>,
+ *                           Denis Leroy <denis@poolshark.org>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -24,6 +25,16 @@
 #include <stdlib.h>
 
 #include <string>
+#ifdef HAVE_ICONV
+#include <iconv.h>
+#endif
+
+typedef unsigned char  u8;
+typedef signed char    s8;
+typedef unsigned short u16;
+typedef signed short   s16;
+typedef unsigned int   u32;
+typedef signed int     s32;
 
 class Sample;
 
@@ -43,19 +54,34 @@ int bcd2int(unsigned char);
 
 const char *stripCwd(const char *fname);
 
-typedef enum {
-  FE_UNKNOWN = 0,
-  FE_TOC,
-  FE_CUE,
-  FE_WAV,
-  FE_MP3,
-  FE_OGG,
-  FE_M3U,
-} FileExtension;
+bool resolveFilename(std::string& dest, const char* file, const char* path);
+
+namespace Util
+{
+
+enum class FileExtension {
+  UNKNOWN = 0,
+  TOC,
+  CUE,
+  WAV,
+  MP3,
+  OGG,
+  M3U,
+};
 
 FileExtension fileExtension(const char* fname);
 
-bool resolveFilename(std::string& dest, const char* file, const char* path);
+enum class Encoding { LATIN, ASCII, MSJIS, KOREAN, MANDARIN };
+
+std::string to_utf8(u8* input, size_t input_size, Encoding enc);
+
+}
+
+struct PrintParams
+{
+    PrintParams() : conversions(false), to_utf8(false) {}
+    bool conversions;
+    bool to_utf8;
+};
 
 #endif
-

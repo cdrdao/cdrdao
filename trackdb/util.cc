@@ -30,7 +30,10 @@
 #include <stdarg.h>
 
 #include "util.h"
+#include "log.h"
 #include "Sample.h"
+
+using namespace std;
 
 char *strdupCC(const char *s)
 {
@@ -260,6 +263,9 @@ const char *stripCwd(const char *fname)
   return buf;
 }
 
+namespace Util
+{
+
 FileExtension fileExtension(const char* fname)
 {
   const char* e;
@@ -268,22 +274,51 @@ FileExtension fileExtension(const char* fname)
     e++;
 
     if (strcasecmp(e, "toc") == 0)
-      return FE_TOC;
+      return FileExtension::TOC;
     if (strcasecmp(e, "cue") == 0)
-      return FE_CUE;
+      return FileExtension::CUE;
     if (strcasecmp(e, "wav") == 0)
-      return FE_WAV;
+      return FileExtension::WAV;
     if (strcasecmp(e, "mp3") == 0)
-      return FE_MP3;
+      return FileExtension::MP3;
     if (strcasecmp(e, "ogg") == 0)
-      return FE_OGG;
+      return FileExtension::OGG;
     if (strcasecmp(e, "m3u") == 0)
-      return FE_M3U;
+      return FileExtension::M3U;
   }
 
-  return FE_UNKNOWN;
+  return FileExtension::UNKNOWN;
 }
-                                           
+
+string to_utf8(u8* input, size_t input_size, Util::Encoding enc)
+{
+#ifdef HAVE_ICONV
+    const char* from_encoding = "ISO-8859-1";
+    if (enc == Util::Encoding::MSJIS)
+        from_encoding = "CP932"; // Code Page 932, aka MS-JIS
+
+    char* src = (char*)alloca(input_size + 1);
+    memcpy(src, input, input_size);
+    size_t srclen = input_size;
+    size_t dstlen = input_size * 4;
+    char* dst = (char*)alloca(dstlen);
+    char* orig_dst = dst;
+    auto icv = iconv_open("UTF-8", from_encoding);
+    if (!icv)
+        return string((char*)input);
+    if (iconv(icv, &src, &srclen, &dst, &dstlen) == (size_t)-1) {
+        log_message(-1, strerror(errno));
+        return string((char*)input);
+    }
+    *dst = 0;
+    return string(orig_dst);
+#else
+    return string((char*)input);
+#endif
+}
+
+}
+
 bool resolveFilename(std::string& abs, const char* file, const char* path)
 {
   struct stat st;

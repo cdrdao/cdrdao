@@ -3057,7 +3057,7 @@ vector<CdTextItem*> processPacks(CdTextPack* packs, int nofPacks)
         if (CdTextItem::isBinaryPack(packType)) {
           // finish binary data
 
-          if (packType == CdTextItem::CDTEXT_GENRE) {
+          if (packType == CdTextItem::PackType::GENRE) {
             // The two genre codes may be followed by a string. Adjust
 	    // 'pos' so that all extra 0 bytes at the end of the data
 	    // are stripped off.
@@ -3068,7 +3068,7 @@ vector<CdTextItem*> processPacks(CdTextPack* packs, int nofPacks)
           }
 
           items.push_back(new CdTextItem(packType, lastBlockNumber, buf, pos));
-          if (packType != CdTextItem::CDTEXT_SIZE_INFO)
+          if (packType != CdTextItem::PackType::SIZE_INFO)
             items.back()->trackNr(lastTrackNumber);
         }
       } else {
@@ -3131,7 +3131,7 @@ vector<CdTextItem*> processPacks(CdTextPack* packs, int nofPacks)
     if (CdTextItem::isBinaryPack(packType)) {
       // finish binary data
 
-      if (packType == CdTextItem::CDTEXT_GENRE) {
+      if (packType == CdTextItem::PackType::GENRE) {
         // The two genre codes may be followed by a string. Adjust
 	// 'pos' so that all extra 0 bytes at the end of the data are
 	// stripped off.
@@ -3142,7 +3142,7 @@ vector<CdTextItem*> processPacks(CdTextPack* packs, int nofPacks)
       }
 
       items.push_back(new CdTextItem(packType, lastBlockNumber, buf, pos));
-      if (packType != CdTextItem::CDTEXT_SIZE_INFO)
+      if (packType != CdTextItem::PackType::SIZE_INFO)
         items.back()->trackNr(lastTrackNumber);
     }
   }
@@ -3175,7 +3175,7 @@ int CdrDriver::readCdTextData(Toc *toc)
     for (auto& item : items) {
         toc->addCdTextItem(item->trackNr(), item);
 
-        if (item->packType() == CdTextItem::CDTEXT_SIZE_INFO) {
+        if (item->packType() == CdTextItem::PackType::SIZE_INFO) {
 
             // update language mapping from SIZE INFO pack data
             if (!languagesSet && item->dataLen() >= 36) {
@@ -3193,9 +3193,9 @@ int CdrDriver::readCdTextData(Toc *toc)
         if (item->dataLen() >= 1) {
             const unsigned char *data = item->data();
             if (data[0] == 0x01)
-                toc->cdTextEncoding(item->blockNr(), CdTextContainer::EncodingType::ASCII);
+                toc->cdTextEncoding(item->blockNr(), Util::Encoding::ASCII);
             else if (data[0] == 0x80)
-                toc->cdTextEncoding(item->blockNr(), CdTextContainer::EncodingType::MSJIS);
+                toc->cdTextEncoding(item->blockNr(), Util::Encoding::MSJIS);
         }
     }
 

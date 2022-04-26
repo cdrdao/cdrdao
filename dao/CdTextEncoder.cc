@@ -65,14 +65,14 @@ unsigned short CdTextEncoder::CRCTAB_[256] = {
 
 class CdTextPackEntry {
 public:
-    CdTextPackEntry(unsigned char packType, unsigned char trackNr, 
+    CdTextPackEntry(CdTextItem::PackType, unsigned char trackNr,
                     unsigned char packId);
 
     int blockNr();
     void blockNr(int);
 
     void characterPos(int);
-  
+
     union {
         CdTextPack pack;
         unsigned char packData[18];
@@ -81,13 +81,13 @@ public:
     CdTextPackEntry *next_;
 };
 
-CdTextPackEntry::CdTextPackEntry(unsigned char packType, unsigned char trackNr,
+CdTextPackEntry::CdTextPackEntry(CdTextItem::PackType packType, unsigned char trackNr,
 				 unsigned char packId)
 {
     memset(&pack, 0, sizeof(pack));
     next_ = NULL;
 
-    pack.packType = packType;
+    pack.packType = (u8)packType;
     pack.trackNumber = trackNr;
     pack.sequenceNumber = packId;
 }
@@ -154,7 +154,7 @@ CdTextEncoder::~CdTextEncoder()
             delete subChannels_[i];
             subChannels_[i] = NULL;
         }
-    
+
         delete[] subChannels_;
         subChannels_ = NULL;
     }
@@ -180,7 +180,7 @@ int CdTextEncoder::encode()
                         prun->pack.crc0, prun->pack.crc1);
         }
     }
-  
+
     buildSubChannels();
 
     return 0;
@@ -201,18 +201,18 @@ void CdTextEncoder::buildPacks()
         if (toc_->cdTextLanguage(blockNr) >= 0) {
             // only build the packs if the language code is defined
             packId_ = 0;
-    
-            buildPacks(blockNr, CdTextItem::CDTEXT_TITLE);
-            buildPacks(blockNr, CdTextItem::CDTEXT_PERFORMER);
-            buildPacks(blockNr, CdTextItem::CDTEXT_SONGWRITER);
-            buildPacks(blockNr, CdTextItem::CDTEXT_COMPOSER);
-            buildPacks(blockNr, CdTextItem::CDTEXT_ARRANGER);
-            buildPacks(blockNr, CdTextItem::CDTEXT_MESSAGE);
-            buildPacks(blockNr, CdTextItem::CDTEXT_DISK_ID);
-            buildPacks(blockNr, CdTextItem::CDTEXT_GENRE);
-            buildPacks(blockNr, CdTextItem::CDTEXT_TOC_INFO1);
-            buildPacks(blockNr, CdTextItem::CDTEXT_TOC_INFO2);
-            buildPacks(blockNr, CdTextItem::CDTEXT_UPCEAN_ISRC);
+
+            buildPacks(blockNr, CdTextItem::PackType::TITLE);
+            buildPacks(blockNr, CdTextItem::PackType::PERFORMER);
+            buildPacks(blockNr, CdTextItem::PackType::SONGWRITER);
+            buildPacks(blockNr, CdTextItem::PackType::COMPOSER);
+            buildPacks(blockNr, CdTextItem::PackType::ARRANGER);
+            buildPacks(blockNr, CdTextItem::PackType::MESSAGE);
+            buildPacks(blockNr, CdTextItem::PackType::DISK_ID);
+            buildPacks(blockNr, CdTextItem::PackType::GENRE);
+            buildPacks(blockNr, CdTextItem::PackType::TOC_INFO1);
+            buildPacks(blockNr, CdTextItem::PackType::TOC_INFO2);
+            buildPacks(blockNr, CdTextItem::PackType::UPCEAN_ISRC);
         }
     }
 
@@ -234,7 +234,7 @@ void CdTextEncoder::buildPacks(int blockNr, CdTextItem::PackType type)
         encodeCdTextItem(0, blockNr, globalItem);
     }
 
-    if (type != CdTextItem::CDTEXT_SIZE_INFO) {
+    if (type != CdTextItem::PackType::SIZE_INFO) {
         // count tracks that have the current pack type defined
         tracks = 0;
 
@@ -244,11 +244,11 @@ void CdTextEncoder::buildPacks(int blockNr, CdTextItem::PackType type)
         }
 
         if (tracks > 0) {
-            if (globalItem == NULL && type == CdTextItem::CDTEXT_UPCEAN_ISRC) {
+            if (globalItem == NULL && type == CdTextItem::PackType::UPCEAN_ISRC) {
                 // Special handling for UPC/EAN field. If this field is not defined
                 // but ISRC codes are defined for the tracks an pack with an empty
                 // string is created.
-                CdTextItem upcEan(CdTextItem::CDTEXT_UPCEAN_ISRC, blockNr, "");
+                CdTextItem upcEan(CdTextItem::PackType::UPCEAN_ISRC, blockNr, "");
                 encodeCdTextItem(0, blockNr, &upcEan);
             }
 
@@ -273,18 +273,18 @@ void CdTextEncoder::encodeCdTextItem(int trackNr, int blockNr,
     long pos, n;
     CdTextPackEntry *pack = NULL;
     int first = 1;
-  
+
     if (CdTextItem::isBinaryPack(item->packType())) {
         pos = 0;
 
         while (dataLen > 0) {
             switch (item->packType()) {
-            case CdTextItem::CDTEXT_GENRE:
+            case CdTextItem::PackType::GENRE:
                 pack = new CdTextPackEntry(item->packType(), 0, packId_++);
                 if (pos > 0)
                     pack->characterPos((pos * 12) - 2);
                 break;
-            case CdTextItem::CDTEXT_TOC_INFO1:
+            case CdTextItem::PackType::TOC_INFO1:
                 if (pos == 0)
                     pack = new CdTextPackEntry(item->packType(), 0, packId_++);
                 else
@@ -303,7 +303,7 @@ void CdTextEncoder::encodeCdTextItem(int trackNr, int blockNr,
 
             appendPack(pack);
             lastPackPos_ = 12;
-      
+
             data += n;
             dataLen -= n;
             pos++;
@@ -314,7 +314,7 @@ void CdTextEncoder::encodeCdTextItem(int trackNr, int blockNr,
 
         while (dataLen > 0) {
             if (first && lastPack_ != NULL &&
-                lastPack_->pack.packType == item->packType() &&
+                lastPack_->pack.packType == (u8)item->packType() &&
                 lastPack_->blockNr() == blockNr &&
                 lastPackPos_ < 12) {
                 // we can use space from previous block
@@ -373,7 +373,7 @@ void CdTextEncoder::buildSizeInfoPacks()
         }
 
         // adjust the counter for the packs we're currently creating
-        sizeInfo_[b].packTypeCount[15] += 3; // we create 3 packs 
+        sizeInfo_[b].packTypeCount[15] += 3; // we create 3 packs
     }
 
     for (b = 0; b < 8; b++) {
@@ -381,7 +381,7 @@ void CdTextEncoder::buildSizeInfoPacks()
             // ' - 3' because we've already adjusted the pack count
             packId_ = sizeInfo_[b].lastSequenceNumber[b] - 3 + 1;
 
-            sizeInfoItem = new CdTextItem(CdTextItem::CDTEXT_SIZE_INFO, b, 
+            sizeInfoItem = new CdTextItem(CdTextItem::PackType::SIZE_INFO, b,
                                           (unsigned char*)&(sizeInfo_[b]),
                                           sizeof(CdTextSizeInfo));
 
@@ -409,7 +409,7 @@ void CdTextEncoder::calcCrcs()
         }
 
         crc = ~crc;
-    
+
         prun->pack.crc0 = crc >> 8;
         prun->pack.crc1 = crc;
     }
@@ -441,7 +441,7 @@ void CdTextEncoder::buildSubChannels()
     }
 
     subChannels_ = new PWSubChannel96*[subChannelCount_];
-  
+
     prun = packs_;
 
     for (i = 0; i < subChannelCount_; i++) {
@@ -504,7 +504,7 @@ void CdTextEncoder::appendPack(CdTextPackEntry *pack)
                 if (pack->blockNr() < prun->blockNr())
                     break;
             }
-      
+
             if (prun == NULL) {
                 // this case should have been handled above
                 lastPack_->next_ = pack;
@@ -522,7 +522,7 @@ void CdTextEncoder::appendPack(CdTextPackEntry *pack)
             }
         }
     }
-  
+
     packCount_++;
 
     // update summary data used for creating the SIZE_INFO pack
@@ -538,16 +538,16 @@ void CdTextEncoder::appendPack(CdTextPackEntry *pack)
 }
 
 // Values coming from Sony patent.
-u8 CdTextEncoder::characterCode(CdTextContainer::EncodingType enctype)
+u8 CdTextEncoder::characterCode(Util::Encoding enctype)
 {
     switch (enctype) {
-    case CdTextContainer::EncodingType::ASCII:
+    case Util::Encoding::ASCII:
         return 0x01;
-    case CdTextContainer::EncodingType::MSJIS:
+    case Util::Encoding::MSJIS:
         return 0x80;
-    case CdTextContainer::EncodingType::KOREAN:
+    case Util::Encoding::KOREAN:
         return 0x82;
-    case CdTextContainer::EncodingType::MANDARIN:
+    case Util::Encoding::MANDARIN:
         return 0x83;
     default:
         return 0; // Always default to ISO-8859-1

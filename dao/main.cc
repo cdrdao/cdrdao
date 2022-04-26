@@ -54,9 +54,6 @@
 #include "Cddb.h"
 #include "TempFileManager.h"
 #include "FormatConverter.h"
-#ifdef HAVE_ICONV
-#include <iconv.h>
-#endif
 
 #ifdef __CYGWIN__
 #define NOMINMAX
@@ -78,6 +75,8 @@ extern "C" {
   extern int setegid(uid_t);
 };
 #endif
+
+PrintParams errPrintParams;
 
 typedef enum {
     UNKNOWN = -1,
@@ -1676,41 +1675,11 @@ void showData(const Toc *toc, bool swap)
   }
 }
 
-#ifdef HAVE_ICONV
-string to_utf8(const char* input, CdTextContainer::EncodingType enc)
-{
-    const char* from_encoding = "ISO-8859-1";
-    if (enc == CdTextContainer::EncodingType::MSJIS)
-        from_encoding = "CP932"; // Code Page 932, aka MS-JIS
-
-    char* src = (char*)alloca(strlen(input) + 1);
-    strcpy(src, input);
-    size_t srclen = strlen(src);
-    size_t dstlen = srclen * 4;
-    char* dst = (char*)alloca(dstlen);
-    char* orig_dst = dst;
-    auto icv = iconv_open("UTF-8", from_encoding);
-    if (!icv)
-        return input;
-    if (iconv(icv, &src, &srclen, &dst, &dstlen) == (size_t)-1) {
-        log_message(-1, strerror(errno));
-        return input;
-    }
-    *dst = 0;
-    return string(orig_dst);
-}
-#else
-string to_utf8(const char* input, CdTextContainer::EncodingType enc)
-{
-    return string(input);
-}
-#endif
-
 void showCDText(CdrDriver* cdr)
 {
     auto items = cdr->generateCdTextItems();
     const unsigned char* languages = NULL;
-    auto encoding = CdTextContainer::EncodingType::LATIN;
+    auto encoding = Util::Encoding::LATIN;
 
     CdTextItem* sizeinfo = NULL;
 
@@ -1723,7 +1692,7 @@ void showCDText(CdrDriver* cdr)
 
     // Locate the SizeInfo item;
     for (const auto i : items) {
-        if (i->packType() == CdTextItem::CDTEXT_SIZE_INFO) {
+        if (i->packType() == CdTextItem::PackType::SIZE_INFO) {
             sizeinfo = i;
             break;
         }
@@ -1731,7 +1700,7 @@ void showCDText(CdrDriver* cdr)
     if (sizeinfo) {
         auto d = sizeinfo->data();
         if (sizeinfo->dataLen() > 0 && d[0] == 0x80)
-            encoding = CdTextContainer::EncodingType::MSJIS;
+            encoding = Util::Encoding::MSJIS;
         if (sizeinfo->dataLen() >= 36)
             languages = &d[28];
     }
@@ -1750,7 +1719,7 @@ void showCDText(CdrDriver* cdr)
     int n_block = -1;
     int n_track = -1;
     for (const auto i : items) {
-        if (i->packType() == CdTextItem::CDTEXT_SIZE_INFO)
+        if (i->packType() == CdTextItem::PackType::SIZE_INFO)
             continue;
         if (i->blockNr() != n_block) {
             n_block = i->blockNr();
@@ -1767,11 +1736,12 @@ void showCDText(CdrDriver* cdr)
             cout << "  Track " << n_track << ":\n";
         }
         cout << "    ";
-        if (i->dataType() == CdTextItem::SBCC) {
+        if (i->dataType() == CdTextItem::DataType::SBCC) {
             cout << CdTextItem::packType2String(i->trackNr() > 0, i->packType())
-                 << " \"" << to_utf8((const char*)i->data(), encoding) << "\"";
+                 << " \"" << Util::to_utf8((u8*)i->data(), (size_t)i->dataLen(), encoding) << "\"";
         } else {
-            cout << *i;
+            PrintParams p;
+            i->print(cout, p);
         }
         cout << "\n";
     }
@@ -2143,7 +2113,7 @@ int copyCd(DaoCommandLine& opts, CdrDriver *src, CdrDriver *dst)
 
     if (checkToc(toc, opts.force)) {
 	log_message(-3, "Toc created from source CD image is inconsistent.");
-	toc->print(cout);
+	toc->print(cout, errPrintParams);
 	delete toc;
 	return 1;
     }
@@ -2288,7 +2258,7 @@ int copyCdOnTheFly(DaoCommandLine& opts,CdrDriver *src, CdrDriver *dst)
     if (checkToc(toc, opts.force) != 0) {
 	log_message(-3, "Toc created from source CD image is inconsistent"
 		    "- please report.");
-	toc->print(cout);
+	toc->print(cout, errPrintParams);
 	ret = 1;
 	goto fail;
     }
@@ -2814,7 +2784,7 @@ int main(int argc, char **argv)
 				strerror(errno));
 		    exitCode = 1; goto fail;
 		}
-		toc->print(out);
+		toc->print(out, errPrintParams);
 	    }
 
 	    log_message(1, "Reading of toc data finished successfully.");
@@ -2869,7 +2839,7 @@ int main(int argc, char **argv)
 			    options.tocFile, strerror(errno));
 		exitCode = 1; goto fail;
 	    }
-	    toc->print(out);
+	    toc->print(out, errPrintParams);
 	}
 
 	log_message(1, "Reading of toc and track data finished successfully.");

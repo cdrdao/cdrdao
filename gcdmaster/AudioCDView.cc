@@ -544,14 +544,14 @@ AudioCDView::drag_data_received_cb(const Glib::RefPtr<Gdk::DragContext>&
         continue;
 
       // Process m3u file.
-      FileExtension type = fileExtension(fn.c_str());
+      auto type = Util::fileExtension(fn.c_str());
 
-      if (type == FE_WAV || type == FE_M3U
+      if (type == Util::FileExtension::WAV || type == Util::FileExtension::M3U
 #ifdef HAVE_MP3_SUPPORT
-          || type == FE_MP3
+          || type == Util::FileExtension::MP3
 #endif
 #ifdef HAVE_OGG_SUPPORT
-          || type == FE_OGG
+          || type == Util::FileExtension::OGG
 #endif
           ) {
         project_->appendTrack(fn.c_str());

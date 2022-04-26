@@ -507,7 +507,7 @@ int Track::isPadded() const
 }
 
 // writes out track data in TOC file syntax
-void Track::print(std::ostream &out, bool conversions) const
+void Track::print(std::ostream &out, PrintParams& params) const
 {
   SubTrack *st;
   const char *s;
@@ -545,12 +545,12 @@ void Track::print(std::ostream &out, bool conversions) const
 	  << (char)(isrcSerial(4) + '0') << "\"" << std::endl;
     }
 
-    cdtext_.print(1, out);
+    cdtext_.print(1, out, params);
   }
 
 
   for (st = subTracks_; st != NULL; st = st->next_) {
-    st->print(out, conversions);
+    st->print(out, params);
   }
 
   if (start_.lba() != 0) {

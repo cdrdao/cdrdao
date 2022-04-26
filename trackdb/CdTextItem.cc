@@ -23,6 +23,8 @@
 #include <stdio.h>
 
 #include "CdTextItem.h"
+#include "CdTextContainer.h"
+#include "util.h"
 
 CdTextItem::CdTextItem(PackType packType, int blockNr, const char *data)
 {
@@ -30,7 +32,7 @@ CdTextItem::CdTextItem(PackType packType, int blockNr, const char *data)
 
   next_ = NULL;
 
-  dataType_ = SBCC;
+  dataType_ = DataType::SBCC;
   packType_ = packType;
   blockNr_ = blockNr;
   trackNr_ = 0;
@@ -50,7 +52,7 @@ CdTextItem::CdTextItem(PackType packType, int blockNr,
 
   next_ = NULL;
 
-  dataType_ = BINARY;
+  dataType_ = DataType::BINARY;
   packType_ = packType;
   blockNr_ = blockNr;
   trackNr_ = 0;
@@ -73,8 +75,8 @@ CdTextItem::CdTextItem(int blockNr, unsigned char genreCode1,
 
   next_ = NULL;
 
-  dataType_ = BINARY;
-  packType_ = CDTEXT_GENRE;
+  dataType_ = DataType::BINARY;
+  packType_ = PackType::GENRE;
   blockNr_ = blockNr;
   trackNr_ = 0;
 
@@ -119,13 +121,13 @@ CdTextItem::~CdTextItem()
   next_ = NULL;
 }
 
-void CdTextItem::print(std::ostream &out) const
+void CdTextItem::print(std::ostream &out, PrintParams& params) const
 {
   int i;
   char buf[20];
   out << packType2String(isTrackPack(), packType_);
 
-  if (dataType() == SBCC) {
+  if (dataType() == DataType::SBCC) {
     out << " \"";
     for (i = 0; i < dataLen_ - 1; i++) {
       if (data_[i] == '"') {
@@ -180,60 +182,60 @@ int CdTextItem::operator!=(const CdTextItem &obj)
   return (*this == obj) ? 0 : 1;
 }
 
-const char *CdTextItem::packType2String(int isTrack, int packType)
+const char *CdTextItem::packType2String(int isTrack, PackType packType)
 {
   const char *ret = "UNKNOWN";
 
   switch (packType) {
-  case CDTEXT_TITLE:
+  case PackType::TITLE:
     ret = "TITLE";
     break;
-  case CDTEXT_PERFORMER:
+  case PackType::PERFORMER:
     ret = "PERFORMER";
     break;
-  case CDTEXT_SONGWRITER:
+  case PackType::SONGWRITER:
     ret = "SONGWRITER";
     break;
-  case CDTEXT_COMPOSER:
+  case PackType::COMPOSER:
     ret = "COMPOSER";
     break;
-  case CDTEXT_ARRANGER:
+  case PackType::ARRANGER:
     ret = "ARRANGER";
     break;
-  case CDTEXT_MESSAGE:
+  case PackType::MESSAGE:
     ret = "MESSAGE";
     break;
-  case CDTEXT_DISK_ID:
+  case PackType::DISK_ID:
     ret = "DISC_ID";
     break;
-  case CDTEXT_GENRE:
+  case PackType::GENRE:
     ret = "GENRE";
     break;
-  case CDTEXT_TOC_INFO1:
+  case PackType::TOC_INFO1:
     ret = "TOC_INFO1";
     break;
-  case CDTEXT_TOC_INFO2:
+  case PackType::TOC_INFO2:
     ret = "TOC_INFO2";
     break;
-  case CDTEXT_RES1:
+  case PackType::RES1:
     ret = "RESERVED1";
     break;
-  case CDTEXT_RES2:
+  case PackType::RES2:
     ret = "RESERVED2";
     break;
-  case CDTEXT_RES3:
+  case PackType::RES3:
     ret = "RESERVED3";
     break;
-  case CDTEXT_CLOSED:
+  case PackType::CLOSED:
     ret = "CLOSED";
     break;
-  case CDTEXT_UPCEAN_ISRC:
+  case PackType::UPCEAN_ISRC:
     if (isTrack)
       ret = "ISRC";
     else
       ret = "UPC_EAN";
     break;
-  case CDTEXT_SIZE_INFO:
+  case PackType::SIZE_INFO:
     ret = "SIZE_INFO";
     break;
   }
@@ -243,56 +245,56 @@ const char *CdTextItem::packType2String(int isTrack, int packType)
 
 CdTextItem::PackType CdTextItem::int2PackType(int i)
 {
-  PackType t = CDTEXT_TITLE;
+  PackType t = PackType::TITLE;
 
   switch (i) {
   case 0x80:
-    t = CDTEXT_TITLE;
+    t = PackType::TITLE;
     break;
   case 0x81:
-    t = CDTEXT_PERFORMER;
+    t = PackType::PERFORMER;
     break;
   case 0x82:
-    t = CDTEXT_SONGWRITER;
+    t = PackType::SONGWRITER;
     break;
   case 0x83:
-    t = CDTEXT_COMPOSER;
+    t = PackType::COMPOSER;
     break;
   case 0x84:
-    t = CDTEXT_ARRANGER;
+    t = PackType::ARRANGER;
     break;
   case 0x85:
-    t = CDTEXT_MESSAGE;
+    t = PackType::MESSAGE;
     break;
   case 0x86:
-    t = CDTEXT_DISK_ID;
+    t = PackType::DISK_ID;
     break;
   case 0x87:
-    t = CDTEXT_GENRE;
+    t = PackType::GENRE;
     break;
   case 0x88:
-    t = CDTEXT_TOC_INFO1;
+    t = PackType::TOC_INFO1;
     break;
   case 0x89:
-    t = CDTEXT_TOC_INFO2;
+    t = PackType::TOC_INFO2;
     break;
   case 0x8a:
-    t = CDTEXT_RES1;
+    t = PackType::RES1;
     break;
   case 0x8b:
-    t = CDTEXT_RES2;
+    t = PackType::RES2;
     break;
   case 0x8c:
-    t = CDTEXT_RES3;
+    t = PackType::RES3;
     break;
   case 0x8d:
-    t = CDTEXT_CLOSED;
+    t = PackType::CLOSED;
     break;
   case 0x8e:
-    t = CDTEXT_UPCEAN_ISRC;
+    t = PackType::UPCEAN_ISRC;
     break;
   case 0x8f:
-    t = CDTEXT_SIZE_INFO;
+    t = PackType::SIZE_INFO;
     break;
   }
 
@@ -304,10 +306,10 @@ int CdTextItem::isBinaryPack(PackType type)
   int ret;
 
   switch (type) {
-  case CDTEXT_TOC_INFO1:
-  case CDTEXT_TOC_INFO2:
-  case CDTEXT_SIZE_INFO:
-  case CDTEXT_GENRE:
+  case PackType::TOC_INFO1:
+  case PackType::TOC_INFO2:
+  case PackType::SIZE_INFO:
+  case PackType::GENRE:
     ret = 1;
     break;
 
@@ -318,10 +320,3 @@ int CdTextItem::isBinaryPack(PackType type)
 
   return ret;
 }
-
-std::ostream& operator<<(std::ostream& oss, const CdTextItem& item)
-{
-  item.print(oss);
-  return oss;
-}
-

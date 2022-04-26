@@ -119,23 +119,23 @@ int main (int argc, char *argv[])	{
 		const CdTextItem *cdTextItem = NULL;
 		string album(""), albumPerformer(""), genre("");
 
-		if ((cdTextItem = toc->getCdTextItem(0, cdTextLanguage, CdTextItem::CDTEXT_TITLE)) != NULL)
+		if ((cdTextItem = toc->getCdTextItem(0, cdTextLanguage, CdTextItem::PackType::TITLE)) != NULL)
 			album = (const char*)cdTextItem->data();
 	
-		if ((cdTextItem = toc->getCdTextItem(0, cdTextLanguage, CdTextItem::CDTEXT_PERFORMER)) != NULL)
+		if ((cdTextItem = toc->getCdTextItem(0, cdTextLanguage, CdTextItem::PackType::PERFORMER)) != NULL)
 			albumPerformer = (const char*)cdTextItem->data();
 
 		cout << "DTITLE=" << albumPerformer << " / " << album << endl;
 		cout << "DYEAR=" << endl;
 	
-		if ((cdTextItem = toc->getCdTextItem(0, cdTextLanguage, CdTextItem::CDTEXT_GENRE)) != NULL)
+		if ((cdTextItem = toc->getCdTextItem(0, cdTextLanguage, CdTextItem::PackType::GENRE)) != NULL)
 			genre = (const char*)cdTextItem->data();
 
 		cout << "DGENRE=" << genre << endl;
 		
 		string title("");
 		for (int i = 1; i <= ntracks; i++)	{
-			if ((cdTextItem = toc->getCdTextItem(i, cdTextLanguage, CdTextItem::CDTEXT_TITLE)) != NULL)
+			if ((cdTextItem = toc->getCdTextItem(i, cdTextLanguage, CdTextItem::PackType::TITLE)) != NULL)
 				title = (const char*)cdTextItem->data();
 			cout << "TTITLE" << i-1 << "=" << title << endl;
 		}

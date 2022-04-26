@@ -435,7 +435,7 @@ void TrackData::effectiveFilename(const char* name)
 }
 
 // writes out contents of object in TOC file syntax
-void TrackData::print(std::ostream &out, bool conversions) const
+void TrackData::print(std::ostream &out, PrintParams& params) const
 {
   unsigned long blen;
   const char *s;
@@ -454,7 +454,7 @@ void TrackData::print(std::ostream &out, bool conversions) const
     if (audioCutMode()) {
       if (type() == STDIN)
 	out << "FILE \"-\" ";
-      else if (effFilename_ && !conversions)
+      else if (effFilename_ && !params.conversions)
 	out << "FILE \"" << effFilename_ << "\" ";
       else
 	out << "FILE \"" << filename_ << "\" ";
@@ -476,7 +476,7 @@ void TrackData::print(std::ostream &out, bool conversions) const
       // data mode
       if (type() == STDIN)
 	out << "DATAFILE \"-\" ";
-      else if (effFilename_ && !conversions)
+      else if (effFilename_ && !params.conversions)
 	out << "DATAFILE \"" << effFilename_ << "\" ";
       else
 	out << "DATAFILE \"" << filename_ << "\" ";
@@ -904,13 +904,13 @@ int TrackData::dataFileLength(const char *fname, long offset,
 //         WAVE: wave file
 TrackData::FileType TrackData::audioFileType(const char *filename)
 {
-  FileExtension p = fileExtension(filename);
+  Util::FileExtension p = Util::fileExtension(filename);
 
-  if (p == FE_WAV)
+  if (p == Util::FileExtension::WAV)
     return WAVE;
-  if (p == FE_MP3)
+  if (p == Util::FileExtension::MP3)
     return MP3;
-  if (p == FE_OGG)
+  if (p == Util::FileExtension::OGG)
     return OGG;
 
   return RAW;
