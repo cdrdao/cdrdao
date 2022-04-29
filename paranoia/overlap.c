@@ -95,7 +95,7 @@ void offset_adjust_settings(cdrom_paranoia *p, void(*callback)(long,int)){
        sector, frob it.  We just want a little hysteresis [sp?]*/
     long av=(p->stage2.offpoints?p->stage2.offaccum/p->stage2.offpoints:0);
     
-    if(abs(av)>p->dynoverlap/4){
+    if(labs(av)>p->dynoverlap/4){
       av=(av/MIN_SECTOR_EPSILON)*MIN_SECTOR_EPSILON;
       
       if(callback)(*callback)(ce(p->root.vector),PARANOIA_CB_DRIFT);
@@ -168,7 +168,7 @@ void offset_add_value(cdrom_paranoia *p,offsets *o,long value,
 			     void(*callback)(long,int)){
   if(o->offpoints!=-1){
 
-    o->offdiff+=abs(value);
+    o->offdiff+=labs(value);
     o->offpoints++;
     o->newpoints++;
     o->offaccum+=value;
