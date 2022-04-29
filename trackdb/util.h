@@ -25,9 +25,6 @@
 #include <stdlib.h>
 
 #include <string>
-#ifdef HAVE_ICONV
-#include <iconv.h>
-#endif
 
 typedef unsigned char  u8;
 typedef signed char    s8;

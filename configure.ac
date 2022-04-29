@@ -251,7 +251,7 @@ case "$host" in
       ;;
 
   *-darwin*)
-      scsilib_libs="-framework IOKit -framework CoreFoundation"
+      scsilib_libs="-framework IOKit -framework CoreFoundation -liconv"
       scsilib_objs="ScsiIf-osx.o"
       ;;
 
@@ -284,7 +284,7 @@ dnl -lc_r is automatically done by the linker
 	      ;;
   *darwin*)
             AC_DEFINE(_P1003_1B_VISIBLE,1,"")
-            LIBS="$LIBS -framework CoreServices -framework IOKit"
+            LIBS="$LIBS -framework CoreServices -framework IOKit -liconv"
             CXXFLAGS="$CXXFLAGS -std=c++11"
             ;;
 
