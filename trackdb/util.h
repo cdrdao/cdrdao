@@ -78,9 +78,13 @@ Encoding characterCodeToEncoding(u8);
 
 struct PrintParams
 {
-    PrintParams() : conversions(false), to_utf8(false) {}
+    PrintParams() : conversions(false),
+                    to_utf8(false),
+                    to_file(false),
+                    encoding(Util::Encoding::LATIN) {}
     bool conversions;
     bool to_utf8;
+    bool to_file;
     Util::Encoding encoding;
 };
 

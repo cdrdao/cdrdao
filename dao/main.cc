@@ -156,7 +156,7 @@ struct DaoCommandLine
     DaoCommand command;
 
     const char* progName;
-    const char* tocFile;
+    string tocFile;
     string driverId;
     string sourceDriverId;
     string scsiDevice;
@@ -1553,16 +1553,16 @@ void showDriveInfo(const DriveInfo *i)
   printf("JustSpeed supported: %s\n", i->ricohJustSpeed ? "yes" : "no");
 }
 
-void showTocInfo(const Toc *toc, const char *tocFile)
+void showTocInfo(const Toc *toc, const string& tocFile)
 {
   long len = toc->length().lba() * AUDIO_BLOCK_LEN;
   len >>= 20;
 
-  printf("%s: %d tracks, length %s, %ld blocks, %ld MB\n", tocFile,
+  printf("%s: %d tracks, length %s, %ld blocks, %ld MB\n", tocFile.c_str(),
 	 toc->nofTracks(), toc->length().str(), toc->length().lba(), len);
 }
 
-void showTocSize(const Toc *toc, const char *tocFile)
+void showTocSize(const Toc *toc, const string& tocFile)
 {
   printf("%ld\n", toc->length().lba());
 }
@@ -2100,14 +2100,16 @@ int copyCd(DaoCommandLine& opts, CdrDriver *src, CdrDriver *dst)
     }
 
     if (opts.keepImage) {
-	char tocFilename[50];
+	string tocFilename;
 
-	sprintf(tocFilename, "cd%ld.toc", pid);
+        tocFilename = "cd";
+        tocFilename += to_string(pid);
+        tocFilename += ".toc";
 
 	log_message(2, "Keeping created image file \"%s\".",
 		    opts.dataFilename);
 	log_message(2, "Corresponding toc-file is written to \"%s\".",
-		    tocFilename);
+		    tocFilename.c_str());
 
 	toc->write(tocFilename);
     }
@@ -2484,11 +2486,11 @@ int main(int argc, char **argv)
 	toc = Toc::read(options.tocFile);
 
 	if (options.remoteMode) {
-	    unlink(options.tocFile);
+	    unlink(options.tocFile.c_str());
 	}
 
 	// Check and resolve input files paths
-	if (!toc || !toc->resolveFilenames(options.tocFile)) {
+	if (!toc || !toc->resolveFilenames(options.tocFile.c_str())) {
 	    exitCode = 1;
 	    goto fail;
 	}
@@ -2621,7 +2623,7 @@ int main(int argc, char **argv)
     case READ_CDDB:
 	if ((exitCode = readCddb(options, toc)) == 0) {
 	    log_message(1, "Writing CD-TEXT populated toc-file \"%s\".",
-			options.tocFile);
+			options.tocFile.c_str());
 	    if (toc->write(options.tocFile) != 0)
 		exitCode = 2;
 	}
@@ -2746,7 +2748,7 @@ int main(int argc, char **argv)
 	}
 	log_message(1, "Reading toc data...");
 
-	if (access(options.tocFile, R_OK) == 0) {
+	if (access(options.tocFile.c_str(), R_OK) == 0) {
 	    log_message(-2, "File \"%s\" exists, will not overwrite.",
 			options.tocFile);
 	    exitCode = 1; goto fail;
@@ -2799,7 +2801,7 @@ int main(int argc, char **argv)
 	}
 	log_message(1, "Reading toc and track data...");
 
-	if (access(options.tocFile, R_OK) == 0) {
+	if (access(options.tocFile.c_str(), R_OK) == 0) {
 	    log_message(-2, "File \"%s\" exists, will not overwrite.",
 			options.tocFile);
 	    exitCode = 1; goto fail;

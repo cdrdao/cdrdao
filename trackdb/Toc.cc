@@ -38,6 +38,8 @@
 #include "CueParser.h"
 #include "FormatConverter.h"
 
+using std::string;
+
 #ifdef UNIXWARE
 extern "C" {
     extern int      strcasecmp(const char *, const char *);
@@ -134,22 +136,22 @@ void Toc::update()
 
 
 
-Toc *Toc::read(const char *filename)
+Toc *Toc::read(const string& filename)
 {
     FILE *fp;
     Toc *ret;
     const char *p;
 
-    if ((fp = fopen(filename, "r")) == NULL) {
+    if ((fp = fopen(filename.c_str(), "r")) == NULL) {
         log_message(-2, "Cannot open toc file '%s' for reading: %s",
-                    filename, strerror(errno));
+                    filename.c_str(), strerror(errno));
         return NULL;
     }
 
-    if ((p = strrchr(filename, '.')) != NULL && strcasecmp(p, ".cue") == 0)
-        ret = parseCue(fp, filename);
+    if (filename.substr(filename.size() -4, 4) == ".cue")
+        ret = parseCue(fp, filename.c_str());
     else
-        ret = parseToc(fp, filename);
+        ret = parseToc(fp, filename.c_str());
 
     fclose(fp);
 
@@ -175,39 +177,25 @@ bool Toc::resolveFilenames(const char* filename)
 // Return: 0: OK
 //         1: error occured
 
-int Toc::write(const char *filename) const
+int Toc::write(const string& filename, bool conversions) const
 {
-    assert(filename != NULL);
-    assert(*filename != 0);
+    assert(!filename.empty());
 
     std::ofstream out(filename);
 
     if (!out) {
-        log_message(-2, "Cannot open file \"%s\" for writing: %s", filename,
+        log_message(-2, "Cannot open file \"%s\" for writing: %s",
+                    filename.c_str(),
                     strerror(errno));
         return 1;
     }
 
     PrintParams p;
+    p.to_file = true;
+    p.conversions = conversions;
     print(out, p);
 
     return 0;
-}
-
-bool Toc::write(int fd, bool conversions) const
-{
-    assert(fd);
-
-    std::ostringstream oss(std::ostringstream::out);
-    PrintParams p;
-    p.conversions = true;
-    print(oss, p);
-
-    std::string ossstr = oss.str();
-    const char* content = ossstr.c_str();
-    int written = ::write(fd, content, strlen(content));
-
-    return (written >= 0);
 }
 
 int Toc::check() const

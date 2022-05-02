@@ -373,7 +373,7 @@ bool CdDevice::recordDao(Gtk::Window& parent, TocEdit *tocEdit, int simulate,
                         int multiSession, int speed, int eject, int reload,
                         int buffer, int overburn)
 {
-  char* tocFileName;
+  std::string tocFileName;
   const char *args[30];
   int n = 0;
   char devname[30];
@@ -387,31 +387,16 @@ bool CdDevice::recordDao(Gtk::Window& parent, TocEdit *tocEdit, int simulate,
       || process_ != NULL)
     return false;
 
-  // Create temporary toc file. Get temporary directory from
-  // ConfigManager, then append mkstemp template.
-  Glib::ustring tempdir = configManager->getTempDir();
-  int length = tempdir.length();
-  tocFileName = (char*)alloca(length + 24);
-
-  strcpy(tocFileName, tempdir.c_str());
-  strcat(tocFileName, "/gcdm.toc.XXXXXX");
-
-  int fd = mkstemp(tocFileName);
-  if (!fd) {
-    log_message(-2, _("Cannot create temporary toc-file: %s"), strerror(errno));
-    return false;
-  }
+  tocFileName = std::tmpnam(nullptr);
+  tocFileName += ".gcdm.toc";
 
   // Write out temporary toc file containing all the converted wav
   // files (don't want to rely on cdrdao doing the mp3->wav
   // translation, besides it's already been done).
-  if (!tocEdit->toc()->write(fd, true)) {
-    close(fd);
+  if (!tocEdit->toc()->write(tocFileName, true)) {
     log_message(-2, _("Cannot write temporary toc-file."));
     return false;
   }
-
-  close(fd);
 
   Glib::ustring execName = configManager->getCdrdaoPath();
 
@@ -462,7 +447,7 @@ bool CdDevice::recordDao(Gtk::Window& parent, TocEdit *tocEdit, int simulate,
     args[n++] = bufferbuf;
   }
 
-  args[n++] = tocFileName;
+  args[n++] = tocFileName.c_str();
 
   args[n++] = NULL;
   
@@ -491,7 +476,7 @@ bool CdDevice::recordDao(Gtk::Window& parent, TocEdit *tocEdit, int simulate,
     return true;
   }
   else {
-    unlink(tocFileName);
+    unlink(tocFileName.c_str());
     return false;
   }
 }
