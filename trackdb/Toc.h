@@ -72,9 +72,8 @@ public:
                         TrackDataList **);
     int insertTrackData(unsigned long pos, const TrackDataList *list);
 
-    static Toc *read(const char *);
-    int write(const char *) const;
-    bool write(int fd, bool conversions = false) const;
+    static Toc *read(const std::string&);
+    int write(const std::string&, bool conversions = false) const;
 
     int catalogValid() const { return catalogValid_; }
 
