@@ -299,6 +299,7 @@ void DaoCommandLine::printUsage()
 "  discid     - prints out CDDB information\n"
 "  msinfo     - shows multi session info, output is suited for scripts\n"
 "  drive-info - shows drive information\n"
+"  cdtext     - shows CD CD-TEXT content\n"
 "  unlock     - unlock drive after failed writing\n"
 "  blank      - blank a CD-RW\n"
 "  scanbus    - scan for devices\n"
@@ -1677,75 +1678,60 @@ void showData(const Toc *toc, bool swap)
 
 void showCDText(CdrDriver* cdr)
 {
-    auto items = cdr->generateCdTextItems();
-    const unsigned char* languages = NULL;
-    Util::Encoding encodings[8];
+    int nofTracks = 0;
+    auto cdt = cdr->getTocGeneric(&nofTracks);
 
-    if (items.size() == 0) {
-        cout << "No CD-TEXT data.\n";
+    if (!cdt || nofTracks <= 1)
+        return;
+    nofTracks--; // remove leadout
+
+    // Create a fake Toc placeholder.
+    auto toc = new Toc();
+    for (int i = 0; i < nofTracks; i++)
+        toc->append(new Track(TrackData::AUDIO, TrackData::SUBCHAN_RW));
+
+    if (cdr->readCdTextData(toc) != 0) {
+        log_message(-2, "Cannot read CD-TEXT data.");
         return;
     }
 
-    log_message(3, "Found %ld CD-TEXT packs.", items.size());
-
-    // Locate the SizeInfo item;
-    for (const auto it : items) {
-        if (it->packType() == CdTextItem::PackType::SIZE_INFO) {
-            auto d = it->data();
-            if (it->dataLen() > 0) {
-                if (it->blockNr() >= 0 && it->blockNr() <= 7)
-                    encodings[it->blockNr()] =
-                        Util::characterCodeToEncoding(d[0]);
-                printf("Block %d has encoding %d\n", it->blockNr(),
-                       (int)encodings[it->blockNr()]);
-            }
-            if (it->dataLen() >= 36)
-                languages = &d[28];
-        }
-    }
-
-    sort(items.begin(), items.end(),
-         [](const CdTextItem* a, const CdTextItem* b) {
-             if (a->blockNr() != b->blockNr())
-                 return (int)(a->blockNr() < b->blockNr());
-             if (a->trackNr() != b->trackNr())
-                 return (int)(a->trackNr() < b->trackNr());
-             if (a->packType() != b->packType())
-                 return (int)(a->packType() < b->packType());
-             return 0;
-         });
-
-    int n_block = -1;
-    int n_track = -1;
-    for (const auto i : items) {
-        if (i->packType() == CdTextItem::PackType::SIZE_INFO)
-            continue;
-        if (i->blockNr() != n_block) {
-            n_block = i->blockNr();
-            if (n_block > 0) cout << "\n";
-            cout << "Block " << n_block << ":\n";
-            if (languages && n_block < 8 && languages[n_block] != 0) {
-                cout << "    LANGUAGE \""
-                     << CdTextContainer::languageName(languages[n_block])
-                     << "\"\n";
-            }
-        }
-        if (i->trackNr() >= 1 && i->trackNr() != n_track) {
-            n_track = i->trackNr();
-            cout << "  Track " << n_track << ":\n";
-        }
-        cout << "    ";
-        if (i->dataType() == CdTextItem::DataType::SBCC) {
-            cout << CdTextItem::packType2String(i->trackNr() > 0, i->packType())
-                 << " \"" << Util::to_utf8((u8*)i->data(), (size_t)i->dataLen(),
-                                           encodings[i->blockNr()]) << "\"";
-        } else {
-            PrintParams p;
-            p.to_utf8 = true;
-            i->print(cout, p);
-        }
+    for (const auto& item : toc->globalCdTextItems()) {
+        PrintParams params;
+        params.pretty = true;
+        params.to_utf8 = true;
+        item.print(cout, params);
         cout << "\n";
     }
+
+    // for (const auto i : items) {
+    //     if (i->packType() == CdTextItem::PackType::SIZE_INFO)
+    //         continue;
+    //     if (i->blockNr() != n_block) {
+    //         n_block = i->blockNr();
+    //         if (n_block > 0) cout << "\n";
+    //         cout << "Block " << n_block << ":\n";
+    //         if (languages && n_block < 8 && languages[n_block] != 0) {
+    //             cout << "    LANGUAGE \""
+    //                  << CdTextContainer::languageName(languages[n_block])
+    //                  << "\"\n";
+    //         }
+    //     }
+    //     if (i->trackNr() >= 1 && i->trackNr() != n_track) {
+    //         n_track = i->trackNr();
+    //         cout << "  Track " << n_track << ":\n";
+    //     }
+    //     cout << "    ";
+    //     if (i->dataType() == CdTextItem::DataType::SBCC) {
+    //         cout << CdTextItem::packType2String(i->trackNr() > 0, i->packType())
+    //              << " \"" << Util::to_utf8((u8*)i->data(), (size_t)i->dataLen(),
+    //                                        encodings[i->blockNr()]) << "\"";
+    //     } else {
+    //         PrintParams p;
+    //         p.to_utf8 = true;
+    //         i->print(cout, p);
+    //     }
+    //     cout << "\n";
+    // }
 }
 
 void showDiskInfo(DiskInfo *di)

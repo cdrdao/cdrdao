@@ -978,7 +978,6 @@ int Toc::cdTextLanguage(int blockNr) const
 
 void Toc::cdTextEncoding(int blockNr, Util::Encoding t)
 {
-    std::cerr << "ENCODING SET TO" << (int)t << "\n";
     cdtext_.encoding(blockNr, t);
 }
 Util::Encoding Toc::cdTextEncoding(int blockNr) const

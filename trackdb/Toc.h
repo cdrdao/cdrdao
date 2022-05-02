@@ -87,6 +87,7 @@ public:
     const CdTextItem *getCdTextItem(int trackNr, int blockNr,
                                     CdTextItem::PackType) const;
     int nofCdTextItems() { return cdtext_.count(); }
+    CdTextContainer& globalCdTextItems() { return cdtext_; }
     void cdTextLanguage(int blockNr, int lang);
     int cdTextLanguage(int blockNr) const;
 
