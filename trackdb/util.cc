@@ -321,6 +321,22 @@ string to_utf8(u8* input, size_t input_size, Util::Encoding enc)
 #endif
 }
 
+Encoding characterCodeToEncoding(u8 code)
+{
+    switch (code) {
+    case 0x01:
+        return Encoding::ASCII;
+    case 0x80:
+        return Encoding::MSJIS;
+    case 0x81:
+        return Encoding::KOREAN;
+    case 0x82:
+        return Encoding::MANDARIN;
+    default:
+        return Encoding::LATIN;
+    }
+}
+
 }
 
 bool resolveFilename(std::string& abs, const char* file, const char* path)

@@ -72,6 +72,8 @@ enum class Encoding { LATIN, ASCII, MSJIS, KOREAN, MANDARIN };
 
 std::string to_utf8(u8* input, size_t input_size, Encoding enc);
 
+Encoding characterCodeToEncoding(u8);
+
 }
 
 struct PrintParams
@@ -79,6 +81,7 @@ struct PrintParams
     PrintParams() : conversions(false), to_utf8(false) {}
     bool conversions;
     bool to_utf8;
+    Util::Encoding encoding;
 };
 
 #endif

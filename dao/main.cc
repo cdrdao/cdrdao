@@ -1679,9 +1679,7 @@ void showCDText(CdrDriver* cdr)
 {
     auto items = cdr->generateCdTextItems();
     const unsigned char* languages = NULL;
-    auto encoding = Util::Encoding::LATIN;
-
-    CdTextItem* sizeinfo = NULL;
+    Util::Encoding encodings[8];
 
     if (items.size() == 0) {
         cout << "No CD-TEXT data.\n";
@@ -1691,18 +1689,19 @@ void showCDText(CdrDriver* cdr)
     log_message(3, "Found %ld CD-TEXT packs.", items.size());
 
     // Locate the SizeInfo item;
-    for (const auto i : items) {
-        if (i->packType() == CdTextItem::PackType::SIZE_INFO) {
-            sizeinfo = i;
-            break;
+    for (const auto it : items) {
+        if (it->packType() == CdTextItem::PackType::SIZE_INFO) {
+            auto d = it->data();
+            if (it->dataLen() > 0) {
+                if (it->blockNr() >= 0 && it->blockNr() <= 7)
+                    encodings[it->blockNr()] =
+                        Util::characterCodeToEncoding(d[0]);
+                printf("Block %d has encoding %d\n", it->blockNr(),
+                       (int)encodings[it->blockNr()]);
+            }
+            if (it->dataLen() >= 36)
+                languages = &d[28];
         }
-    }
-    if (sizeinfo) {
-        auto d = sizeinfo->data();
-        if (sizeinfo->dataLen() > 0 && d[0] == 0x80)
-            encoding = Util::Encoding::MSJIS;
-        if (sizeinfo->dataLen() >= 36)
-            languages = &d[28];
     }
 
     sort(items.begin(), items.end(),
@@ -1738,9 +1737,11 @@ void showCDText(CdrDriver* cdr)
         cout << "    ";
         if (i->dataType() == CdTextItem::DataType::SBCC) {
             cout << CdTextItem::packType2String(i->trackNr() > 0, i->packType())
-                 << " \"" << Util::to_utf8((u8*)i->data(), (size_t)i->dataLen(), encoding) << "\"";
+                 << " \"" << Util::to_utf8((u8*)i->data(), (size_t)i->dataLen(),
+                                           encodings[i->blockNr()]) << "\"";
         } else {
             PrintParams p;
+            p.to_utf8 = true;
             i->print(cout, p);
         }
         cout << "\n";
