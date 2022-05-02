@@ -81,10 +81,12 @@ struct PrintParams
     PrintParams() : conversions(false),
                     to_utf8(false),
                     to_file(false),
+                    pretty(false),
                     encoding(Util::Encoding::LATIN) {}
     bool conversions;
     bool to_utf8;
     bool to_file;
+    bool pretty;
     Util::Encoding encoding;
 };
 

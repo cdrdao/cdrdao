@@ -389,6 +389,13 @@ public:
   // returns vendor/type of CD-R medium
   static int cdrVendor(Msf &, const char **vendor, const char** mediumType);
 
+  // Generic function to retrieve basic TOC data. Cannot distinguish
+  // between different sessions.
+  CdToc *getTocGeneric(int *nofTracks);
+
+  // reads CD-TEXT data and adds it to given 'Toc' object
+  int readCdTextData(Toc *);
+
 protected:
   struct ReadDiskInfo {
     int tracks;    // total number of tracks
@@ -490,10 +497,6 @@ protected:
   // the tracks of all session or of the first session depending on the
   // drive
   virtual CdToc *getToc(int sessionNr, int *nofTracks);
-
-  // Generic function to retrieve basic TOC data. Cannot distinguish
-  // between different sessions.
-  CdToc *getTocGeneric(int *nofTracks);
 
   // Reads raw toc data of inserted CD. Used by base implementation of
   // 'getToc()' and must be implemented by the actual driver.
@@ -625,9 +628,6 @@ protected:
   // uses the SCSI-3/mmc commands.
   virtual CdTextPack *readCdTextPacks(int *);
  
-  // reads CD-TEXT data and adds it to given 'Toc' object
-  int readCdTextData(Toc *);
-
   void printCdToc(CdToc *toc, int tocLen);
 
   enum ReadCdProgressType { RCD_ANALYZING = PGSMSG_RCD_ANALYZING,
