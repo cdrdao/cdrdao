@@ -148,6 +148,7 @@ void CdTextContainer::print(int isTrack, std::ostream &out, PrintParams& params)
                 actBlockNr = run->blockNr();
                 out << "  }\n  LANGUAGE " << actBlockNr << " {\n";
             }
+            params.encoding = encoding_[actBlockNr];
             out << "    ";
             run->print(out, params);
             out << "\n";
