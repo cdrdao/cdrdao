@@ -337,6 +337,22 @@ Encoding characterCodeToEncoding(u8 code)
     }
 }
 
+const char* encodingToString(Encoding e)
+{
+    switch (e) {
+    case Encoding::ASCII:
+        return "ENCODING_ASCII";
+    case Encoding::MSJIS:
+        return "ENCODING_MS_JIS";
+    case Encoding::KOREAN:
+        return "ENCODING_KOREAN";
+    case Encoding::MANDARIN:
+        return "ENCODING_MANDARIN";
+    default:
+        return "ENCODING_ISO_8859_1";
+    }
+}
+
 }
 
 bool resolveFilename(std::string& abs, const char* file, const char* path)
