@@ -131,7 +131,7 @@ void CdTextItem::print(std::ostream &out, PrintParams& params) const
     if (params.to_utf8) out << " (u8)";
     out << " \"";
     if (params.to_utf8) {
-      out << to_utf8(data_, dataLen_, params.encoding);
+      out << to_utf8(data_, dataLen_, encoding_);
     } else {
       for (i = 0; i < dataLen_ - 1; i++) {
         if (data_[i] == '"') {

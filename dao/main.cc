@@ -2484,7 +2484,7 @@ int main(int argc, char **argv)
 	if (!toc->convertFilesToWav()) {
 	    log_message(-2,
 			"Could not decode audio files from toc file \"%s\".",
-			options.tocFile);
+			options.tocFile.c_str());
 	    exitCode = 1;
 	    goto fail;
 	}
@@ -2494,7 +2494,7 @@ int main(int argc, char **argv)
 	if (cmdInfo[options.command].tocCheck) {
 	    if (checkToc(toc, options.force) != 0) {
 		log_message(-2, "Toc file \"%s\" is inconsistent.",
-			    options.tocFile);
+			    options.tocFile.c_str());
 		exitCode = 1;
 		goto fail;
 	    }
@@ -2627,7 +2627,7 @@ int main(int argc, char **argv)
 	showToc(toc);
 	if (toc->check() > 1) {
 	    log_message(-2, "Toc file \"%s\" is inconsistent.",
-			options.tocFile);
+			options.tocFile.c_str());
 	}
 	break;
 
@@ -2635,7 +2635,7 @@ int main(int argc, char **argv)
 	showTocInfo(toc, options.tocFile);
 	if (toc->check() > 1) {
 	    log_message(-2, "Toc file \"%s\" is inconsistent.",
-			options.tocFile);
+			options.tocFile.c_str());
 	}
 	break;
 
@@ -2643,7 +2643,7 @@ int main(int argc, char **argv)
 	showTocSize(toc, options.tocFile);
 	if (toc->check() > 1) {
 	    log_message(-2, "Toc file \"%s\" is inconsistent.",
-			options.tocFile);
+			options.tocFile.c_str());
 	}
 	break;
 
@@ -2736,7 +2736,7 @@ int main(int argc, char **argv)
 
 	if (access(options.tocFile.c_str(), R_OK) == 0) {
 	    log_message(-2, "File \"%s\" exists, will not overwrite.",
-			options.tocFile);
+			options.tocFile.c_str());
 	    exitCode = 1; goto fail;
 	}
 
@@ -2769,7 +2769,7 @@ int main(int argc, char **argv)
 		ofstream out(options.tocFile);
 		if (!out) {
 		    log_message(-2, "Cannot open \"%s\" for writing: %s",
-				options.tocFile,
+				options.tocFile.c_str(),
 				strerror(errno));
 		    exitCode = 1; goto fail;
 		}
@@ -2789,7 +2789,7 @@ int main(int argc, char **argv)
 
 	if (access(options.tocFile.c_str(), R_OK) == 0) {
 	    log_message(-2, "File \"%s\" exists, will not overwrite.",
-			options.tocFile);
+			options.tocFile.c_str());
 	    exitCode = 1; goto fail;
 	}
 
@@ -2825,7 +2825,7 @@ int main(int argc, char **argv)
 	    ofstream out(options.tocFile);
 	    if (!out) {
 		log_message(-2, "Cannot open \"%s\" for writing: %s",
-			    options.tocFile, strerror(errno));
+			    options.tocFile.c_str(), strerror(errno));
 		exitCode = 1; goto fail;
 	    }
 	    toc->print(out, errPrintParams);
@@ -2892,14 +2892,14 @@ int main(int argc, char **argv)
 	case 1: // warning
 	    if (!options.force && !options.remoteMode) {
 		log_message(-2, "Toc-file \"%s\" may create undefined "
-			    "results.", options.tocFile);
+			    "results.", options.tocFile.c_str());
 		log_message(-2, "Use option --force to use it anyway.");
 		exitCode = 1; goto fail;
 	    }
 	    break;
 	default: // error
 	    log_message(-2, "Toc-file \"%s\" is not suitable for this drive.",
-			options.tocFile);
+			options.tocFile.c_str());
 	    exitCode = 1; goto fail;
 	    break;
 	}
