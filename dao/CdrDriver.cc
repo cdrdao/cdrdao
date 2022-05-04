@@ -3164,6 +3164,7 @@ vector<CdTextItem*> CdrDriver::generateCdTextItems()
 int CdrDriver::readCdTextData(Toc *toc)
 {
     bool languagesSet = false;
+    vector<Util::Encoding> encodings(8, Util::Encoding::LATIN);
 
     auto items = generateCdTextItems();
 
@@ -3172,14 +3173,13 @@ int CdrDriver::readCdTextData(Toc *toc)
 
     log_message(1, "Found CD-TEXT data.");
 
+    // First pass, collect SIZE_INFO information
     for (auto& item : items) {
-        toc->addCdTextItem(item->trackNr(), item);
-
         if (item->packType() == CdTextItem::PackType::SIZE_INFO) {
+            const unsigned char *data = item->data();
 
-            // update language mapping from SIZE INFO pack data
+            // Update language mapping
             if (!languagesSet && item->dataLen() >= 36) {
-                const unsigned char *data = item->data();
                 for (int i = 0; i < 8; i++) {
                     if (data[28 + i] > 0)
                         toc->cdTextLanguage(i, data[28 + i]);
@@ -3188,15 +3188,19 @@ int CdrDriver::readCdTextData(Toc *toc)
                 }
                 languagesSet = true;
             }
+            // Collect encodings
+            if (item->dataLen() >= 1) {
+                if (item->blockNr() >= 0 && item->blockNr() <= 8)
+                    encodings[item->blockNr()] ==
+                        Util::characterCodeToEncoding(data[0]);
+            }
         }
+    }
 
-        if (item->dataLen() >= 1) {
-            const unsigned char *data = item->data();
-            if (data[0] == 0x01)
-                toc->cdTextEncoding(item->blockNr(), Util::Encoding::ASCII);
-            else if (data[0] == 0x80)
-                toc->cdTextEncoding(item->blockNr(), Util::Encoding::MSJIS);
-        }
+    for (auto& item : items) {
+        if (item->dataType() == CdTextItem::DataType::SBCC)
+            item->encoding(encodings[item->blockNr()]);
+        toc->addCdTextItem(item->trackNr(), item);
     }
 
     if (!languagesSet) {

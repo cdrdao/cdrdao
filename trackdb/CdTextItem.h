@@ -66,6 +66,9 @@ public:
     void trackNr(int t) { trackNr_ = t; }
     int trackNr() const { return trackNr_; }
 
+    void encoding(Util::Encoding e) { encoding_ = e; }
+    Util::Encoding encoding() const { return encoding_; }
+
     const unsigned char *data() const { return data_; }
 
     long dataLen() const { return dataLen_; }
@@ -86,6 +89,7 @@ private:
     DataType dataType_;
     PackType packType_;
     int blockNr_; // 0 ... 7
+    Util::Encoding encoding_;
 
     unsigned char *data_;
     long dataLen_;
