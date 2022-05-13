@@ -351,9 +351,10 @@ void CdTextDialog::setCdTextItem(CdTextItem::PackType type, int trackNr,
   const Toc *toc = tocEdit->toc();
   CdTextItem *newItem;
   
-  if (s != NULL)
-    newItem = new CdTextItem(type, l, s);
-  else
+  if (s != NULL) {
+    newItem = new CdTextItem(type, l);
+    newItem->setText(s);
+  }  else
     newItem = NULL;
 
   if ((item = toc->getCdTextItem(trackNr, l, type)) != NULL) {

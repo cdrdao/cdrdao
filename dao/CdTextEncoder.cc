@@ -248,7 +248,7 @@ void CdTextEncoder::buildPacks(int blockNr, CdTextItem::PackType type)
                 // Special handling for UPC/EAN field. If this field is not defined
                 // but ISRC codes are defined for the tracks an pack with an empty
                 // string is created.
-                CdTextItem upcEan(CdTextItem::PackType::UPCEAN_ISRC, blockNr, "");
+                CdTextItem upcEan(CdTextItem::PackType::UPCEAN_ISRC, blockNr);
                 encodeCdTextItem(0, blockNr, &upcEan);
             }
 
@@ -381,9 +381,8 @@ void CdTextEncoder::buildSizeInfoPacks()
             // ' - 3' because we've already adjusted the pack count
             packId_ = sizeInfo_[b].lastSequenceNumber[b] - 3 + 1;
 
-            sizeInfoItem = new CdTextItem(CdTextItem::PackType::SIZE_INFO, b,
-                                          (unsigned char*)&(sizeInfo_[b]),
-                                          sizeof(CdTextSizeInfo));
+            sizeInfoItem = new CdTextItem(CdTextItem::PackType::SIZE_INFO, b);
+            sizeInfoItem->setData((u8*)&(sizeInfo_[b]), sizeof(CdTextSizeInfo));
 
             encodeCdTextItem(0, b, sizeInfoItem);
 

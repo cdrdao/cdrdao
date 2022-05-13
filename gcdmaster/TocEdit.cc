@@ -861,7 +861,8 @@ void TocEdit::setCdTextItem(int trackNr, CdTextItem::PackType type,
     return;
 
   if (s != NULL) {
-    CdTextItem *item = new CdTextItem(type, blockNr, s);
+    CdTextItem *item = new CdTextItem(type, blockNr);
+    item->setText(s);
 
     toc_->addCdTextItem(trackNr, item);
   }
@@ -888,8 +889,8 @@ void TocEdit::setCdTextGenreItem(int blockNr, int code1, int code2,
     toc_->removeCdTextItem(0, CdTextItem::PackType::GENRE, blockNr);
   }
   else {
-    CdTextItem *item = new CdTextItem(blockNr, (unsigned char)code1,
-				      (unsigned char)code2, description);
+    CdTextItem *item = new CdTextItem(CdTextItem::PackType::GENRE, blockNr);
+    item->setGenre((u8)code1, (u8)code2, description);
 
     toc_->addCdTextItem(0, item);
   }

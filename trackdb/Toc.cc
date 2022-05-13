@@ -902,9 +902,11 @@ void Toc::addCdTextItem(int trackNr, CdTextItem *item)
     assert(trackNr >= 0 && trackNr <= 99);
 
     if (trackNr == 0) {
-        cdtext_.add(item);
+        cditems_.emplace_back(item);
+        cdtext_.add(cditems_.back());
     }
     else {
+        item->trackNr(trackNr);
         TrackEntry *track = findTrackByNumber(trackNr);
 
         if (track == NULL) {
@@ -912,7 +914,8 @@ void Toc::addCdTextItem(int trackNr, CdTextItem *item)
             return;
         }
 
-        track->track->addCdTextItem(item);
+        cditems_.emplace_back(item);
+        track->track->addCdTextItem(cditems_.back());
     }
 }
 

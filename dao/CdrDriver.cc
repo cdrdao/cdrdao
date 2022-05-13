@@ -3066,10 +3066,13 @@ vector<CdTextItem*> processPacks(CdTextPack* packs, int nofPacks)
             if (i < pos)
               pos = i+1;
           }
-
-          items.push_back(new CdTextItem(packType, lastBlockNumber, buf, pos));
-          if (packType != CdTextItem::PackType::SIZE_INFO)
-            items.back()->trackNr(lastTrackNumber);
+          {
+              auto item = new CdTextItem(packType, lastBlockNumber);
+              item->setData(buf, pos);
+              if (packType != CdTextItem::PackType::SIZE_INFO)
+                  item->trackNr(lastTrackNumber);
+              items.push_back(item);
+          }
         }
       } else {
         log_message(-2, "CD-TEXT: Found invalid pack type: %02x", lastType);
@@ -3100,9 +3103,12 @@ vector<CdTextItem*> processPacks(CdTextPack* packs, int nofPacks)
           if (i < 12) {
             // string is finished
             buf[pos] = 0;
-
-            items.push_back(new CdTextItem(packType, blockNumber, (u8*)buf, strlen(buf)));
-            items.back()->trackNr(trackNumber);
+            {
+                auto item = new CdTextItem(packType, blockNumber);
+                item->setRawText((u8*)buf, pos);
+                item->trackNr(trackNumber);
+                items.push_back(item);
+            }
             pos = 0;
             trackNumber++;
 
@@ -3141,9 +3147,13 @@ vector<CdTextItem*> processPacks(CdTextPack* packs, int nofPacks)
           pos = i + 1;
       }
 
-      items.push_back(new CdTextItem(packType, lastBlockNumber, buf, pos));
-      if (packType != CdTextItem::PackType::SIZE_INFO)
-        items.back()->trackNr(lastTrackNumber);
+      {
+          auto item = new CdTextItem(packType, lastBlockNumber);
+          item->setData(buf, pos);
+          if (packType != CdTextItem::PackType::SIZE_INFO)
+              item->trackNr(lastTrackNumber);
+          items.push_back(item);
+      }
     }
   }
 

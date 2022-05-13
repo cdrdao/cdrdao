@@ -294,7 +294,7 @@ FileExtension fileExtension(const char* fname)
   return FileExtension::UNKNOWN;
 }
 
-string to_utf8(u8* input, size_t input_size, Util::Encoding enc)
+string to_utf8(const u8* input, size_t input_size, Util::Encoding enc)
 {
 #ifdef HAVE_ICONV
     const char* from_encoding = "ISO-8859-1";
@@ -319,6 +319,41 @@ string to_utf8(u8* input, size_t input_size, Util::Encoding enc)
 #else
     return string((char*)input);
 #endif
+}
+
+bool from_utf8(const string& input, std::vector<u8>& output, Encoding enc)
+{
+#ifdef HAVE_ICONV
+    const char* to_encoding;
+    switch (enc) {
+    case Encoding::ASCII:
+        to_encoding = "ASCII";
+        break;
+    case Encoding::MSJIS:
+        to_encoding = "CP932";
+        break;
+    default:
+        to_encoding = "ISO-8859-1";
+    }
+    char* src = (char*)alloca(input.size() + 1);
+    strcpy(src, input.c_str());
+    size_t srclen = input.size();
+    size_t dstlen = srclen * 4;
+    char* dst = (char*)alloca(dstlen);
+    char* origdst = dst;
+    auto icv = iconv_open(to_encoding, "UTF-8");
+    if (!icv)
+        return false;
+    if (iconv(icv, &src, &srclen, &dst, &dstlen) == (size_t)-1)
+        return false;
+
+    while (origdst < dst)
+        output.push_back(*dst++);
+#else
+    output.resize(input.size());
+    std::copy(input.begin(), input.end(), output.begin());
+#endif
+    return true;
 }
 
 Encoding characterCodeToEncoding(u8 code)

@@ -18,6 +18,7 @@
  */
 
 #include <assert.h>
+#include <algorithm>
 
 #include "CdTextContainer.h"
 #include "CdTextItem.h"
@@ -53,59 +54,8 @@ static LanguageCode LANGUAGE_CODES[] = {
 static int NOF_LANGUAGE_CODES = sizeof(LANGUAGE_CODES) / sizeof(LanguageCode);
 
 CdTextContainer::CdTextContainer()
+    : languages(8, -1), encodings(8, Util::Encoding::LATIN)
 {
-    count_ = 0;
-    items_ = 0;
-
-    setDefaultLanguageMapping();
-}
-
-CdTextContainer::CdTextContainer(const CdTextContainer &obj)
-{
-    CdTextItem *run;
-    CdTextItem *last = NULL;
-    int i;
-
-    items_ = NULL;
-    count_ = 0;
-
-    for (run = obj.items_; run != NULL; run = run->next_) {
-        if (last == NULL) {
-            items_ = new CdTextItem(*run);
-            last = items_;
-        }
-        else {
-            last->next_ = new CdTextItem(*run);;
-            last = last->next_;
-        }
-        count_++;
-    }
-
-    // copy language map
-    for (i = 0; i < 8; i++)
-        language_[i] = obj.language_[i];
-}
-
-CdTextContainer::~CdTextContainer()
-{
-    CdTextItem *next;
-
-    while (items_ != NULL) {
-        next = items_->next_;
-        delete items_;
-        items_ = next;
-    }
-
-    count_ = 0;
-}
-
-void CdTextContainer::setDefaultLanguageMapping()
-{
-    int i;
-
-    // set all to undefined
-    for (i = 0; i < 8; i++)
-        language_[i] = -1;
 }
 
 void CdTextContainer::print(int isTrack, std::ostream &out, PrintParams& params) const
@@ -114,15 +64,15 @@ void CdTextContainer::print(int isTrack, std::ostream &out, PrintParams& params)
     int i;
     int foundLanguageMapping;
 
-    if (count_ > 0) {
-        int actBlockNr = items_->blockNr();
+    if (!items_.empty()) {
+        int actBlockNr = (*items_.begin())->blockNr();
 
         out << "CD_TEXT {\n";
 
         if (!isTrack) {
             foundLanguageMapping = 0;
             for (i = 0; i < 8; i++) {
-                if (language_[i] >= 0) {
+                if (languages[i] >= 0) {
                     foundLanguageMapping = 1;
                     break;
                 }
@@ -132,8 +82,8 @@ void CdTextContainer::print(int isTrack, std::ostream &out, PrintParams& params)
                 out << "  LANGUAGE_MAP {\n";
 
                 for (i = 0; i < 8; i++) {
-                    if (language_[i] >= 0)
-                        out << "    " << i << ": " << language_[i] << "\n";
+                    if (languages[i] >= 0)
+                        out << "    " << i << ": " << languages[i] << "\n";
                 }
 
                 out << "  }\n";
@@ -142,14 +92,13 @@ void CdTextContainer::print(int isTrack, std::ostream &out, PrintParams& params)
 
         out << "  LANGUAGE " << actBlockNr << " {\n";
 
-
-        for (run = items_; run != NULL; run = run->next_) {
-            if (run->blockNr() != actBlockNr) {
+        for (const auto& item : items_) {
+            if (item->blockNr() != actBlockNr) {
                 actBlockNr = run->blockNr();
                 out << "  }\n  LANGUAGE " << actBlockNr << " {\n";
             }
             out << "    ";
-            run->print(out, params);
+            item->print(out, params);
             out << "\n";
         }
 
@@ -157,78 +106,46 @@ void CdTextContainer::print(int isTrack, std::ostream &out, PrintParams& params)
     }
 }
 
-void CdTextContainer::add(CdTextItem *item)
+void CdTextContainer::add(std::shared_ptr<CdTextItem> item)
 {
-    CdTextItem *pred;
-    CdTextItem *run;
-
-    assert(item->next_ == NULL);
-
     remove(item->packType(), item->blockNr());
 
-    for (pred = NULL, run = items_; run != NULL; pred = run, run = run->next_) {
-        if (item->blockNr() < run->blockNr() ||
-            (item->blockNr() == run->blockNr() &&
-             item->packType() < run->packType()))
-            break;
-    }
+    items_.emplace_back(item);
 
-    if (pred == NULL) {
-        item->next_ = items_;
-        items_ = item;
-    }
-    else {
-        item->next_ = pred->next_;
-        pred->next_ = item;
-    }
-
-    count_++;
+    std::sort(items_.begin(), items_.end(),
+              [](std::shared_ptr<CdTextItem>& a,
+                 std::shared_ptr<CdTextItem>& b) {
+                  if (a->blockNr() != b->blockNr())
+                      return a->blockNr() < b->blockNr();
+                  else
+                      return a->packType() < b->packType(); });
 }
 
 void CdTextContainer::remove(CdTextItem::PackType type, int blockNr)
 {
-    CdTextItem *run, *pred;
-
-    for (pred = NULL, run = items_; run != NULL; pred = run, run = run->next_) {
-        if (run->packType() == type && run->blockNr() == blockNr) {
-            if (pred == NULL)
-                items_ = run->next_;
-            else
-                pred->next_ = run->next_;
-
-            count_--;
-
-            delete run;
-            return;
-        }
+    for (auto it = items_.begin(); it != items_.end(); it++) {
+        if ((*it)->packType() == type && (*it)->blockNr() == blockNr)
+            items_.erase(it);
     }
 }
 
-int CdTextContainer::existBlock(int blockNr) const
+bool CdTextContainer::existBlock(int blockNr) const
 {
-    CdTextItem *run;
+    for (const auto& item : items_)
+        if (item->blockNr() == blockNr)
+            return true;
 
-    for (run = items_; run != NULL; run = run->next_) {
-        if (run->blockNr() == blockNr) {
-            return 1;
-        }
-    }
-
-    return 0;
+    return false;
 }
 
 const CdTextItem *CdTextContainer::getPack(int blockNr,
 					   CdTextItem::PackType type) const
 {
-    CdTextItem *run;
+    for (const auto& item : items_)
+        if (item->blockNr() == blockNr && item->packType() == type)
+            return item.get();
 
-    for (run = items_; run != NULL; run = run->next_) {
-        if (run->blockNr() == blockNr && run->packType() == type) {
-            return run;
-        }
-    }
-
-    return NULL;
+    return nullptr;
 }
 
 void CdTextContainer::language(int blockNr, int lang)
@@ -236,7 +153,7 @@ void CdTextContainer::language(int blockNr, int lang)
     assert(blockNr >= 0 && blockNr <= 7);
     assert(lang >= -1 && lang <= 255);
 
-    language_[blockNr] = lang;
+    languages[blockNr] = lang;
 }
 
 
@@ -244,20 +161,20 @@ int CdTextContainer::language(int blockNr) const
 {
     assert(blockNr >= 0 && blockNr <= 7);
 
-    return language_[blockNr];
+    return languages[blockNr];
 }
 
 void CdTextContainer::encoding(int blockNr, Util::Encoding enc)
 {
     assert(blockNr >= 0 && blockNr <= 7);
 
-    encoding_[blockNr] = enc;
+    encodings[blockNr] = enc;
 }
 
 Util::Encoding CdTextContainer::encoding(int blockNr) const
 {
     assert(blockNr >= 0 && blockNr <= 7);
-    return encoding_[blockNr];
+    return encodings[blockNr];
 }
 
 const char *CdTextContainer::languageName(int lang)

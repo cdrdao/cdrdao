@@ -21,6 +21,7 @@
 #define __TRACK_H__
 
 #include <iostream>
+#include <memory>
 
 #include "SubTrack.h"
 #include "Msf.h"
@@ -109,7 +110,7 @@ public:
   int  audioType() const { return flags_.audioType; }
   void audioType(int t) { flags_.audioType = t != 0 ? 1 : 0; }
 
-  void addCdTextItem(CdTextItem *);
+    void addCdTextItem(std::shared_ptr<CdTextItem>&);
   void removeCdTextItem(CdTextItem::PackType, int blockNr);
   int  existCdTextBlock(int n) const { return cdtext_.existBlock(n); }
   const CdTextItem *getCdTextItem(int blockNr, CdTextItem::PackType t) const {
