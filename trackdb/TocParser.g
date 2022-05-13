@@ -21,6 +21,7 @@
 #header <<
 #include <config.h>
 #include <stdlib.h>
+#include <memory>
 #include "Toc.h"
 #include "util.h"
 #include "log.h"
@@ -761,7 +762,7 @@ binaryData > [ const unsigned char *data, long len ]
     // fail action
     << $len = 0; >>
 
-cdTextItem [ int blockNr ] > [ CdTextItem *item, int lineNr ]
+cdTextItem [ int blockNr ] > [ std::shared_ptr<CdTextItem> item, int lineNr ]
   : << $item = NULL;
        CdTextItem::PackType type;
        const char *s;
@@ -772,21 +773,22 @@ cdTextItem [ int blockNr ] > [ CdTextItem *item, int lineNr ]
     packType > [ type, $lineNr ]
     (  stringEmpty > [ s ]
        << if (s != NULL) {
-            $item = new CdTextItem(type, blockNr, s);
+            $item.reset(new CdTextItem(type, blockNr));
+            $item->setText(s);
             delete[] s;
           }
        >>
      | binaryData > [ data, len ]
-       << $item = new CdTextItem(type, blockNr, data, len); >>
+       << $item.reset(new CdTextItem(type, blockNr));
+          $item->setData(data, len);
+       >>
     )
     ;
     // fail action
-    << delete $item;
-       $item = NULL;
-    >>
+    <<  >>
 
 cdTextBlock [ CdTextContainer &container, int isTrack ]
-  : << CdTextItem *item = NULL;
+  : << std::shared_ptr<CdTextItem> item;
        int blockNr;
        int lineNr;
     >>
@@ -811,19 +813,16 @@ cdTextBlock [ CdTextContainer &container, int isTrack ]
     | EncodingMandarin
     << container.encoding(blockNr, Util::Encoding::MANDARIN); >> }
     | ( cdTextItem [ blockNr ] > [ item, lineNr ]
-      << if (item != NULL) {
+      << if (item) {
            int type = (int)item->packType();
 
            if (isTrack && ((type > 0x86 && type <= 0x89) || type == 0x8f)) {
              log_message(-2, "%s:%d: Invalid CD-TEXT item for a track.",
                      filename_, lineNr);
              error_ = 1;
-             delete item;
-             item = NULL;
            }
            else {
              container.add(item);
-             item = NULL;
            }
          }
       >>
@@ -831,7 +830,7 @@ cdTextBlock [ CdTextContainer &container, int isTrack ]
     "\}"
     ;
     // fail action
-    << delete item; >>
+    <<  >>
 
 
 cdTextLanguageMap [ CdTextContainer &container ]

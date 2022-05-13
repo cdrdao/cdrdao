@@ -22,6 +22,8 @@
 
 #include <iterator>
 #include <iostream>
+#include <vector>
+#include <memory>
 
 #include "util.h"
 #include "CdTextItem.h"
@@ -30,20 +32,18 @@
 class CdTextContainer {
 public:
     CdTextContainer();
-    CdTextContainer(const CdTextContainer &);
+    CdTextContainer(const CdTextContainer &) = default;
 
-    ~CdTextContainer();
+    long count() const { return items_.size(); }
 
-    long count() const { return count_; }
-
-    void add(CdTextItem *);
+    void add(std::shared_ptr<CdTextItem>);
 
     void remove(CdTextItem::PackType, int blockNr);
 
     void print(int isTrack, std::ostream &, PrintParams&) const;
 
     // checks if a pack exists for given 'blockNr' (language)
-    int existBlock(int blockNr) const;
+    bool existBlock(int blockNr) const;
 
     // return pack for given 'blockNr' and pack type
     const CdTextItem *getPack(int blockNr, CdTextItem::PackType) const;
@@ -60,30 +60,29 @@ public:
 
     // Allow iteration over CD-TEXT items
     struct Iterator {
-        using iterator_category = std::input_iterator_tag;
+        using iterator_category = std::forward_iterator_tag;
         using difference_type   = std::ptrdiff_t;
         using value_type = CdTextItem;
-        using pointer = CdTextItem*;
+        using pointer = std::vector<std::shared_ptr<CdTextItem>>::iterator;
         using reference = CdTextItem&;
 
-        Iterator(CdTextItem* item) : m_ptr(item) {}
+        Iterator(pointer item) : m_ptr(item) {}
         friend bool operator==(const Iterator& a, const Iterator& b) { return a.m_ptr == b.m_ptr; }
         friend bool operator!=(const Iterator& a, const Iterator& b) { return a.m_ptr != b.m_ptr; }
-        Iterator& operator++() { m_ptr = m_ptr->next_; return *this; }
-        reference operator*() const { return *m_ptr; }
+        Iterator& operator++() { m_ptr++; return *this; }
+        reference operator*() const { return *(*m_ptr); }
 
         pointer m_ptr;
     };
 
-    Iterator begin() { return Iterator(items_); }
-    Iterator end() { return Iterator(nullptr); }
+    Iterator begin() { return Iterator(items_.begin()); }
+    Iterator end() { return Iterator(items_.end()); }
 
 private:
-    long count_;
-    CdTextItem *items_;
+    std::vector<std::shared_ptr<CdTextItem>> items_;
 
-    int language_[8]; // mapping from block nr to language code
-    Util::Encoding encoding_[8]; // mapping from block_nr to encoding
+    std::vector<int> languages; // mapping from block nr to language code
+    std::vector<Util::Encoding> encodings; // mapping from block_nr to encoding
 
     void setDefaultLanguageMapping();
 

@@ -162,7 +162,7 @@ struct DaoCommandLine
     string scsiDevice;
     const char* sourceScsiDevice;
     const char* dataFilename;
-    const char* cddbLocalDbDir;
+    string cddbLocalDbDir;
     string tmpFileDir;
     vector<string> cddbServerList;
 
@@ -316,8 +316,6 @@ void DaoCommandLine::printUsage()
 		progName);
     log_message(0,
 "options:\n"
-"  --tmpdir <path>         - sets directory for temporary wav files\n"
-"  --keep                  - keep generated temp wav files after exit\n"
 "  -v #                    - sets verbose level\n");
     break;
 
@@ -329,6 +327,16 @@ void DaoCommandLine::printUsage()
   case READ_TEST:
     log_message(0, "\nUsage: %s read-test [-v #] toc-file\n",
 		progName);
+    break;
+
+  case CDTEXT:
+    log_message(0, "\nUsage: %s cdtext [options]\n",
+		progName);
+    log_message(0,
+"options:\n"
+"  -v #                    - sets verbose level\n"
+"  --device [proto:]{<x,y,z>|device} - sets SCSI device of CD-ROM reader\n"
+"  --driver <id>           - force usage of specified driver for source device\n");
     break;
 
   case SIMULATE:
@@ -444,8 +452,6 @@ void DaoCommandLine::printUsage()
 		progName);
     log_message(0,
 "options:\n"
-"  --device [proto:]{<x,y,z>|device} - sets SCSI device of CD-ROM reader\n"
-"  --driver <id>    - force usage of specified driver for source device\n"
 "  --datafile <filename>   - name of data file placed in toc-file\n"
 "  --session #             - select session\n"
 "  --fast-toc              - do not extract pre-gaps and index marks\n"
@@ -471,8 +477,6 @@ void DaoCommandLine::printUsage()
 		  progName);
     log_message(0,
 "options:\n"
-"  --tmpdir <path>         - sets directory for temporary wav files\n"
-"  --keep                  - keep generated temp wav files after exit\n"
 "  -v #                    - sets verbose level\n");
     break;
 
@@ -481,8 +485,6 @@ void DaoCommandLine::printUsage()
 		progName);
     log_message(0,
 "options:\n"
-"  --tmpdir <path>         - sets directory for temporary wav files\n"
-"  --keep                  - keep generated temp wav files after exit\n"
 "  -v #                    - sets verbose level\n");
     break;
 
@@ -684,7 +686,7 @@ void DaoCommandLine::importSettings(Settings* settings)
             cddbServerList = sl;
 
 	if ((sval = settings->getString(Settings::setCddbDbDir)) != NULL) {
-	    cddbLocalDbDir = strdupCC(sval);
+	    cddbLocalDbDir = sval;
 	}
 
 	if ((ival = settings->getInteger(Settings::setCddbTimeout)) != NULL &&
@@ -766,8 +768,8 @@ void DaoCommandLine::exportSettings(Settings* settings)
 	    settings->set(Settings::setCddbServerList, cddbServerList);
 	}
 
-	if (cddbLocalDbDir != NULL) {
-	    settings->set(Settings::setCddbDbDir, cddbLocalDbDir);
+	if (!cddbLocalDbDir.empty()) {
+	    settings->set(Settings::setCddbDbDir, cddbLocalDbDir.c_str());
 	}
 
 	if (cddbTimeout > 0) {
@@ -1883,7 +1885,7 @@ int readCddb(const DaoCommandLine& opts, Toc *toc, bool showEntry = false)
 
   cddb.timeout(opts.cddbTimeout);
 
-  if (opts.cddbLocalDbDir != NULL)
+  if (!opts.cddbLocalDbDir.empty())
     cddb.localCddbDirectory(opts.cddbLocalDbDir);
 
 

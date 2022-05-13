@@ -21,6 +21,7 @@
 #define __CDTEXTITEM_H__
 
 #include <iostream>
+#include <vector>
 #include "util.h"
 
 class CdTextItem {
@@ -45,21 +46,16 @@ public:
         UPCEAN_ISRC = 0x8e,
         SIZE_INFO = 0x8f };
 
-    CdTextItem(PackType packType, int blockNr,
-               const u8 *data, size_t len,
-               Util::Encoding enc = Util::Encoding::RAW);
+    CdTextItem(PackType packType, int blockNr);
+    CdTextItem(const CdTextItem &) = default;
 
-    CdTextItem(PackType packType, int blockNr,
-               const unsigned char *data, long len);
-    CdTextItem(int blockNr, unsigned char genreCode1, unsigned char genreCode2,
-               const char *description);
-
-    CdTextItem(const CdTextItem &);
-
-    ~CdTextItem();
+    void setData(const u8* buffer, size_t buffer_len);
+    void setRawText(const u8* buffer, size_t buffer_len);
+    void setText(const char* utf8_text);
+    void setTextFromToc(const char* text);
+    void setGenre(u8 genreCode1, u8 genreCode2, const char *description);
 
     DataType dataType() const { return dataType_; }
-
     PackType packType() const { return packType_; }
 
     int blockNr() const { return blockNr_; }
@@ -68,12 +64,11 @@ public:
     void trackNr(int t) { trackNr_ = t; }
     int trackNr() const { return trackNr_; }
 
-    void encoding(Util::Encoding e) { encoding_ = e; }
+    void encoding(Util::Encoding e);
     Util::Encoding encoding() const { return encoding_; }
 
-    const unsigned char *data() const { return data_; }
-
-    long dataLen() const { return dataLen_; }
+    const u8* data() const { return data_.data(); }
+    size_t dataLen() const { return data_.size(); }
 
     void print(std::ostream &, PrintParams& params) const;
 
@@ -86,20 +81,21 @@ public:
     static int isBinaryPack(PackType);
 
 private:
-    friend class CdTextContainer;
-
     DataType dataType_;
     PackType packType_;
     int blockNr_; // 0 ... 7
     Util::Encoding encoding_;
 
-    unsigned char *data_;
-    long dataLen_;
+    // Raw binary content, or pre-encoded text content
+    std::vector<u8> data_;
+
+    // UTF-8 text content.
+    std::string u8text;
 
     // Info fields only, ignored during burn
     int trackNr_;
 
-    CdTextItem *next_;
+    void updateEncoding();
 };
 
 #endif

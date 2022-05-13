@@ -23,6 +23,8 @@
 #include <iostream>
 #include <list>
 #include <string>
+#include <vector>
+#include <memory>
 
 #include "util.h"
 #include "Track.h"
@@ -160,6 +162,7 @@ private:
     int catalogValid_;
 
     CdTextContainer cdtext_;
+    std::vector<std::shared_ptr<CdTextItem>> cditems_;
 };
 
 

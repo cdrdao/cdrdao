@@ -25,6 +25,7 @@
 #include <stdlib.h>
 
 #include <string>
+#include <vector>
 
 typedef unsigned char  u8;
 typedef signed char    s8;
@@ -68,9 +69,10 @@ enum class FileExtension {
 
 FileExtension fileExtension(const char* fname);
 
-enum class Encoding { LATIN, ASCII, MSJIS, KOREAN, MANDARIN, UTF8, AUTO, RAW };
+enum class Encoding { UNSET,LATIN, ASCII, MSJIS, KOREAN, MANDARIN, UTF8 };
 
-std::string to_utf8(u8* input, size_t input_size, Encoding enc);
+bool from_utf8(const std::string& input, std::vector<u8>& output, Encoding enc);
+std::string to_utf8(const u8* input, size_t input_size, Encoding enc);
 
 Encoding characterCodeToEncoding(u8);
 const char* encodingToString(Encoding);

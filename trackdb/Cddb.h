@@ -51,7 +51,7 @@ public:
   Cddb(const Toc *);
   ~Cddb();
 
-  void localCddbDirectory(const char *);
+  void localCddbDirectory(const std::string&);
   void appendServer(const char *s);
 
   void timeout(int);
@@ -86,7 +86,7 @@ private:
   ServerList *serverList_; // list of CDDB servers
   ServerList *selectedServer_;
 
-  char *localCddbDirectory_;
+  std::string localCddbDirectory_;
 
   int fd_; // file descriptor for connection to CDDB server
   int connected_; // 1 if connection to CDDB server was established, else 0

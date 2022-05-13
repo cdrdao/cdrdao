@@ -73,7 +73,6 @@ Cddb::Cddb(const Toc *t)
 
   serverList_ = NULL;
   selectedServer_ = NULL;
-  localCddbDirectory_ = NULL;
 
   fd_ = -1;
   connected_ = 0;
@@ -94,9 +93,6 @@ Cddb::~Cddb()
 
   clearQueryResults();
   clearCddbEntry();
-
-  delete[] localCddbDirectory_;
-  localCddbDirectory_ = NULL;
 
   delete[] httpCmd_;
   httpCmd_ = NULL;
@@ -128,18 +124,17 @@ void Cddb::timeout(int t)
     timeout_ = t;
 }
 
-void Cddb::localCddbDirectory(const char *dir)
+void Cddb::localCddbDirectory(const std::string& dir)
 {
   const char *homeDir;
 
-  delete[] localCddbDirectory_;
-
   // replace ~/ by the path to the home directory as indicated by $HOME
   if (dir[0] == '~' && dir[1] == '/' && (homeDir = getenv("HOME")) != NULL) {
-    localCddbDirectory_ = strdupvCC(homeDir, dir + 1, NULL);
+    localCddbDirectory_ = homeDir;
+    localCddbDirectory_ += dir.substr(1);
   }
   else {
-    localCddbDirectory_ = strdupCC(dir);
+    localCddbDirectory_ = dir;
   }
 }
 
@@ -903,20 +898,19 @@ int Cddb::addAsCdText(Toc *toc)
   }
     
   for (trun = 0; trun < toc->nofTracks(); trun++) {
+
+    item = nullptr;
     if (haveTitle) {
-      
       item = createItem(CdTextItem::PackType::TITLE,
                         (trun < cddbEntry_->ntracks && cddbEntry_->trackTitles[trun] != NULL) ?
-                        cdTextFilter(cddbEntry_->trackTitles[trun]) : ""); 
+                        cdTextFilter(cddbEntry_->trackTitles[trun]) : "");
       toc->addCdTextItem(trun + 1, item);
     }
-
     if (havePerformer) {
       item = createItem(CdTextItem::PackType::PERFORMER,
                         (cddbEntry_->diskArtist != NULL) ? cdTextFilter(cddbEntry_->diskArtist) : "");
       toc->addCdTextItem(trun + 1, item);
     }
-
     if (haveMessage) {
       item = createItem(CdTextItem::PackType::MESSAGE,
                         (trun < cddbEntry_->ntracks && cddbEntry_->trackExt[trun] != NULL) ?
@@ -1347,64 +1341,64 @@ int Cddb::readDbEntry(int localRecordFd)
 
 int Cddb::createLocalCddbFile(const char *category, const char *diskId)
 {
-  char *categoryDir = NULL;
-  char *recordFile = NULL;
+  std::string categoryDir;
+  std::string recordFile;
   struct stat sbuf;
   int ret;
   int fd = -1;
 
-  if (localCddbDirectory_ == NULL)
+  if (localCddbDirectory_.empty())
     return -1;
 
-  ret = stat(localCddbDirectory_, &sbuf);
+  ret = stat(localCddbDirectory_.c_str(), &sbuf);
 
   if (ret != 0 && errno == ENOENT) {
     log_message(-1, "CDDB: Local CDDB directory \"%s\" does not exist.",
-	    localCddbDirectory_);
+                localCddbDirectory_.c_str());
     return -1;
   }
   else if (ret == 0) {
     if (!S_ISDIR(sbuf.st_mode)) {
-      log_message(-2, "CDDB: \"%s\" is not a directory.", localCddbDirectory_);
+      log_message(-2, "CDDB: \"%s\" is not a directory.", localCddbDirectory_.c_str());
       return -1;
     }
   }
   else {
-    log_message(-2, "CDDB: stat of \"%s\" failed: %s", localCddbDirectory_,
+    log_message(-2, "CDDB: stat of \"%s\" failed: %s", localCddbDirectory_.c_str(),
 	    strerror(errno));
     return -1;
   }
 
-  categoryDir = strdup3CC(localCddbDirectory_, "/", category);
+  categoryDir = localCddbDirectory_ + "/" + category;
 
-  ret = stat(categoryDir, &sbuf);
+  ret = stat(categoryDir.c_str(), &sbuf);
 
   if (ret != 0 && errno == ENOENT) {
-    if (mkdir(categoryDir, 0777) != 0) {
-      log_message(-2, "CDDB: Cannot create directory \"%s\": %s", categoryDir,
+    if (mkdir(categoryDir.c_str(), 0777) != 0) {
+      log_message(-2, "CDDB: Cannot create directory \"%s\": %s", categoryDir.c_str(),
 	      strerror(errno));
       goto fail;
     }
   }
   else if (ret == 0) {
     if (!S_ISDIR(sbuf.st_mode)) {
-      log_message(-2, "CDDB: \"%s\" is not a directory.", categoryDir);
+      log_message(-2, "CDDB: \"%s\" is not a directory.", categoryDir.c_str());
     }
   }
   else {
-    log_message(-2, "CDDB: stat of \"%s\" failed: %s", categoryDir,
+    log_message(-2, "CDDB: stat of \"%s\" failed: %s", categoryDir.c_str(),
 	    strerror(errno));
     goto fail;
   }
 
-  recordFile = strdup3CC(categoryDir, "/", diskId);
+  recordFile = categoryDir + "/" + diskId;
   
-  ret = stat(recordFile, &sbuf);
+  ret = stat(recordFile.c_str(), &sbuf);
 
   if (ret != 0 && errno == ENOENT) {
-    if ((fd = open(recordFile, O_WRONLY|O_CREAT, 0666)) < 0) {
+    if ((fd = open(recordFile.c_str(), O_WRONLY|O_CREAT, 0666)) < 0) {
       log_message(-2, "CDDB: Cannot create CDDB record file \"%s\": %s",
-	      recordFile, strerror(errno));
+                  recordFile.c_str(), strerror(errno));
       fd = -1;
       goto fail;
     }
@@ -1414,20 +1408,19 @@ int Cddb::createLocalCddbFile(const char *category, const char *diskId)
     goto fail;
   }
   else {
-    log_message(-2, "CDDB: stat of \"%s\" failed: %s", categoryDir,
+    log_message(-2, "CDDB: stat of \"%s\" failed: %s", categoryDir.c_str(),
 	    strerror(errno));
     goto fail;
   }
   
  fail:
 
-  delete[] categoryDir;
-  delete[] recordFile;
-
   return fd;
 }
 
 CdTextItem* Cddb::createItem(CdTextItem::PackType ptype, const char* text)
 {
-  return new CdTextItem(ptype, 0, (const u8*)text, strlen(text), Util::Encoding::UTF8);
+    auto item = new CdTextItem(ptype, 0);
+    item->setText(text);
+    return item;
 }
