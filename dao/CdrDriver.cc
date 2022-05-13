@@ -3101,7 +3101,7 @@ vector<CdTextItem*> processPacks(CdTextPack* packs, int nofPacks)
             // string is finished
             buf[pos] = 0;
 
-            items.push_back(new CdTextItem(packType, blockNumber, (char*)buf));
+            items.push_back(new CdTextItem(packType, blockNumber, (u8*)buf, strlen(buf)));
             items.back()->trackNr(trackNumber);
             pos = 0;
             trackNumber++;
@@ -3191,7 +3191,7 @@ int CdrDriver::readCdTextData(Toc *toc)
             // Collect encodings
             if (item->dataLen() >= 1) {
                 if (item->blockNr() >= 0 && item->blockNr() <= 8)
-                    encodings[item->blockNr()] ==
+                    encodings[item->blockNr()] =
                         Util::characterCodeToEncoding(data[0]);
             }
         }

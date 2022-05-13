@@ -68,12 +68,15 @@ enum class FileExtension {
 
 FileExtension fileExtension(const char* fname);
 
-enum class Encoding { LATIN, ASCII, MSJIS, KOREAN, MANDARIN };
+enum class Encoding { LATIN, ASCII, MSJIS, KOREAN, MANDARIN, UTF8, AUTO, RAW };
 
 std::string to_utf8(u8* input, size_t input_size, Encoding enc);
 
 Encoding characterCodeToEncoding(u8);
 const char* encodingToString(Encoding);
+
+bool isStrictAscii(const char* ptr);
+bool isValidUTF8(const char* ptr);
 
 }
 

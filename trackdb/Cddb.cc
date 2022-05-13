@@ -35,6 +35,7 @@
 #include <sys/stat.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <sstream>
 
 #include "Toc.h"
 #include "CdTextItem.h"
@@ -43,6 +44,8 @@
 
 #include "Cddb.h"
 
+using std::string;
+using std::vector;
 
 #define CDDB_MAX_LINE_LEN 1024
 #define CDDB_DEFAULT_PORT_CDDBP 8880
@@ -473,7 +476,7 @@ void Cddb::setupHttpData(const char *userName, const char *hostName,
 
   httpCmd_ = strdupvCC("&hello=", userName, "+",  hostName, "+",
 		       clientName, "+", version, 
-		       "&proto=1", NULL);
+		       "&proto=6", NULL);
 
   delete[] httpData_;
 
@@ -532,7 +535,7 @@ int Cddb::connectDb(const char *userName, const char *hostName,
   cmdArgs[4] = clientName;
   cmdArgs[5] = version;
 
-  if (sendCommand(6, cmdArgs) != 0) {
+  if (sendCommand({"cddb", "hello", userName, hostName, clientName, version}) != 0) {
     log_message(-2, "CDDB: Failed to send handshake command.");
     return 2;
   }
@@ -548,6 +551,14 @@ int Cddb::connectDb(const char *userName, const char *hostName,
     log_message(-2, "CDDB: Server handshake failed: %s", response);
     return 2;
   }
+
+  log_message(4, "CDDB: Handshake response: %s", response);
+
+  if (sendCommand({"proto", "6"}) != 0) {
+    log_message(-2, "CDDB: Failed to send proto command.");
+    return 2;
+  }
+  response = getServerResponse(code);
 
   log_message(4, "CDDB: Handshake response: %s", response);
 
@@ -615,7 +626,7 @@ bool Cddb::printDbEntry()
 int Cddb::queryDb(QueryResults **results)
 {
   const char *cddbId;
-  const char **args;
+  vector<string> args;
   const char *resp;
   char qtitle[CDDB_MAX_LINE_LEN];
   char qcategory[CDDB_MAX_LINE_LEN];
@@ -624,12 +635,10 @@ int Cddb::queryDb(QueryResults **results)
   char *buf;
   int code[3];
   int err = 0;
-  int nargs;
-  int arg, i;
+  int i;
   int ntracks;
   const Track *t;
   Msf start, end;
-  long diskLength;
 
   // clear previous results
   clearQueryResults();
@@ -641,38 +650,24 @@ int Cddb::queryDb(QueryResults **results)
 
   ntracks = toc_->nofTracks();
 
-  nargs = ntracks + 5;
-
-  args = new const char*[nargs];
-  arg = 0;
-
-  args[arg++] = "cddb";
-  args[arg++] = "query";
+  args = { "cddb", "query" };
 
   cddbId = calcCddbId();
 
-  args[arg++] = cddbId;
-
-  buf = new char[20];
-  sprintf(buf, "%d", ntracks);
-  args[arg++] = buf;
+  args.push_back(cddbId);
+  args.push_back(std::to_string(ntracks));
 
   TrackIterator itr(toc_);
 
-  for (t = itr.first(start, end); t != NULL; t = itr.next(start, end)) {
-    long trackStart = start.lba() + 150;
-    buf = new char[20];
+  for (t = itr.first(start, end); t != NULL; t = itr.next(start, end))
+    args.push_back(std::to_string(start.lba() + 150));
 
-    sprintf(buf, "%ld", trackStart);
-    args[arg++] = buf;
+  {
+    long diskLength = toc_->length().min() * 60 + toc_->length().sec() + 2;
+    args.push_back(std::to_string(diskLength));
   }
-
-  buf = new char[20];
-  diskLength = toc_->length().min() * 60 + toc_->length().sec() + 2;
-  sprintf(buf, "%ld", diskLength);
-  args[arg++] = buf;
-  
-  if (sendCommand(nargs, args) != 0) {
+                   
+  if (sendCommand(args) != 0) {
     log_message(-2, "CDDB: Failed to send QUERY command.");
     err = 1; goto fail;
   }
@@ -733,11 +728,6 @@ int Cddb::queryDb(QueryResults **results)
   if (httpMode_)
     closeConnection();
 
-  for (i = 3; i < arg; i++)
-    delete[] args[i];
-
-  delete[] args;
-  
   *results = queryResults_;
   return err;
   
@@ -751,7 +741,6 @@ int Cddb::queryDb(QueryResults **results)
 int Cddb::readDb(const char *category, const char *diskId, CddbEntry **entry)
 {
   int code[3];
-  const char *args[4];
   const char *resp;
   int localRecordFd = -1;
 
@@ -762,12 +751,7 @@ int Cddb::readDb(const char *category, const char *diskId, CddbEntry **entry)
       return 1;
   }
 
-  args[0] = "cddb";
-  args[1] = "read";
-  args[2] = category;
-  args[3] = diskId;
-
-  if (sendCommand(4, args) != 0) {
+  if (sendCommand({"cddb", "read", category, diskId}) != 0) {
     log_message(-2, "CDDB: Failed to send READ command.");
     goto fail;
   }
@@ -820,7 +804,6 @@ int Cddb::readDb(const char *category, const char *diskId, CddbEntry **entry)
 void Cddb::shutdown()
 {
   const char *resp;
-  const char *args[1];
   int code[3];
 
   if (fd_ < 0) 
@@ -831,9 +814,7 @@ void Cddb::shutdown()
     return;
   }
 
-  args[0] = "quit";
-
-  if (sendCommand(1, args) == 0) {
+  if (sendCommand({"quit"}) == 0) {
     if ((resp = getServerResponse(code)) == NULL) {
       log_message(-1, "CDDB: EOF while waiting for QUIT response.");
     }
@@ -904,46 +885,42 @@ int Cddb::addAsCdText(Toc *toc)
   toc->cdTextLanguage(0, 9);
 
   if (haveTitle) {
-    item = new CdTextItem(CdTextItem::PackType::TITLE, 0,
-      (cddbEntry_->diskTitle != NULL) ? cdTextFilter(cddbEntry_->diskTitle) : ""); 
-
+    item = createItem(CdTextItem::PackType::TITLE,
+                      (cddbEntry_->diskTitle != NULL) ? cdTextFilter(cddbEntry_->diskTitle) : ""); 
     toc->addCdTextItem(0, item);
   }
 
   if (havePerformer) {
-    item = new CdTextItem(CdTextItem::PackType::PERFORMER, 0,
-      (cddbEntry_->diskArtist != NULL) ? cdTextFilter(cddbEntry_->diskArtist) : "");
-
+    item = createItem(CdTextItem::PackType::PERFORMER,
+                      (cddbEntry_->diskArtist != NULL) ? cdTextFilter(cddbEntry_->diskArtist) : "");
     toc->addCdTextItem(0, item);
   }
 
   if (haveMessage) {
-    item = new CdTextItem(CdTextItem::PackType::MESSAGE, 0,
-      (cddbEntry_->diskExt != NULL) ? cdTextFilter(cddbEntry_->diskExt) : "");
-
+    item = createItem(CdTextItem::PackType::MESSAGE,
+                      (cddbEntry_->diskExt != NULL) ? cdTextFilter(cddbEntry_->diskExt) : "");
     toc->addCdTextItem(0, item);
   }
     
   for (trun = 0; trun < toc->nofTracks(); trun++) {
     if (haveTitle) {
       
-      item = new CdTextItem(CdTextItem::PackType::TITLE, 0,
-        (trun < cddbEntry_->ntracks && cddbEntry_->trackTitles[trun] != NULL) ? cdTextFilter(cddbEntry_->trackTitles[trun]) : ""); 
-
+      item = createItem(CdTextItem::PackType::TITLE,
+                        (trun < cddbEntry_->ntracks && cddbEntry_->trackTitles[trun] != NULL) ?
+                        cdTextFilter(cddbEntry_->trackTitles[trun]) : ""); 
       toc->addCdTextItem(trun + 1, item);
     }
 
     if (havePerformer) {
-      item = new CdTextItem(CdTextItem::PackType::PERFORMER, 0,
-        (cddbEntry_->diskArtist != NULL) ? cdTextFilter(cddbEntry_->diskArtist) : "");
-
+      item = createItem(CdTextItem::PackType::PERFORMER,
+                        (cddbEntry_->diskArtist != NULL) ? cdTextFilter(cddbEntry_->diskArtist) : "");
       toc->addCdTextItem(trun + 1, item);
     }
 
     if (haveMessage) {
-      item = new CdTextItem(CdTextItem::PackType::MESSAGE, 0,
-        (trun < cddbEntry_->ntracks && cddbEntry_->trackExt[trun] != NULL) ? cdTextFilter(cddbEntry_->trackExt[trun]) : "");
-
+      item = createItem(CdTextItem::PackType::MESSAGE,
+                        (trun < cddbEntry_->ntracks && cddbEntry_->trackExt[trun] != NULL) ?
+                        cdTextFilter(cddbEntry_->trackExt[trun]) : "");
       toc->addCdTextItem(trun + 1, item);
     }
   }
@@ -1063,106 +1040,53 @@ const char *Cddb::getServerResponse(int code[3])
  * Return: 0: OK
  *         1: communication error occured.
  */
-int Cddb::sendCommand(int nargs, const char *args[])
+int Cddb::sendCommand(const vector<string>& args)
 {
-  char portBuf[20];
-  int len = 0;
   int err = 0;
-  char *cmd, *p;
-  char *httpCmd = NULL;
-  int run, ret;
-  struct timeval tv;
-  fd_set writeFds;
+  string cmd;
 
-  // build command line
-  for (run = 0; run < nargs; run++)
-    len += strlen(args[run]) + 1;
-
-  cmd = new char[len + 1];
-  *cmd = 0;
-
-  for (run = 0; run < nargs; run++) {
-    strcat(cmd, args[run]);
-    if (run != nargs - 1) {
-      if (httpMode_)
-	strcat(cmd, "+");
-      else
-	strcat(cmd, " ");
-    }
+  for (const auto& s : args) {
+    if (!cmd.empty())
+      cmd += (httpMode_ ? "+" : " ");
+    cmd += s;
   }
 
   if (httpMode_) {
+
+    std::ostringstream ss;
     if (selectedServer_->httpProxyServer != NULL) {
-      sprintf(portBuf, ":%u", selectedServer_->port);
-      httpCmd = strdupvCC("GET http://", selectedServer_->server,
-			portBuf, selectedServer_->httpCgiBin, 
-			"?cmd=", cmd, httpCmd_, " HTTP/1.0\r\n", 
-			"Host: ", selectedServer_->server, "\r\n",
-			httpData_, "\r\n", NULL);
+      ss <<  "GET http://" << selectedServer_->server;
+      ss <<  selectedServer_->port << selectedServer_->httpCgiBin;
+      ss << "?cmd=" <<  cmd << " HTTP/1.0\r\n";
+      ss << "Host: " << selectedServer_->server << "\r\n";
+      ss << httpData_ << "\r\n";
     }
     else {
-      httpCmd = strdupvCC("GET ", selectedServer_->httpCgiBin, 
-			  "?cmd=", cmd, httpCmd_, " HTTP/1.0\r\n", 
-			  "Host: ", selectedServer_->server, "\r\n",
-			  httpData_, "\r\n", NULL);
+      ss << "GET " << selectedServer_->httpCgiBin
+         << "?cmd=" << cmd << " HTTP/1.0\r\n"
+         << "Host: " << selectedServer_->server << "\r\n"
+         << httpData_ << "\r\n";
     }
 
-    delete[] cmd;
-    cmd = httpCmd;
-    httpCmd = NULL;
-
-    log_message(4, "CDDB: Sending command '%s'...", cmd);
+    cmd = ss.str();
+    log_message(4, "CDDB: Sending command '%s'...", cmd.c_str());
   }
   else {
-    log_message(4, "CDDB: Sending command '%s'...", cmd);
-    
-    strcat(cmd, "\n");
+    log_message(4, "CDDB: Sending command '%s'...", cmd.c_str());
+    cmd += "\n";
   }
 
-  len = strlen(cmd);
-  p = cmd;
+  auto ret = ::write(fd_, cmd.c_str(), cmd.size());
 
-  while (len > 0) {
-    FD_ZERO(&writeFds);
-    FD_SET(fd_, &writeFds);
-
-    tv.tv_sec = timeout_;
-    tv.tv_usec = 0;
-
-    ret = select(fd_ + 1, NULL, &writeFds, NULL, &tv);
-
-    if (ret == 0) {
-      log_message(-2, "CDDB: Timeout while sending data.");
-      err = 1; goto fail;
-    }
-    
-    if (ret < 0) {
-      log_message(-2, "CDDB: Error while waiting for send: %s", strerror(errno));
-      err = 1; goto fail;
-    }
- 
-    ret = write(fd_, p, 1);
-
-    if (ret < 0) {
-      log_message(-2, "CDDB: Failed to send command '%s': %s", cmd,
-	      strerror(errno));
-      err = 1; goto fail;
-    }
-
-    if (ret != 1) {
-      log_message(-2, "CDDB: Failed to send command '%s'.", cmd);
-      err = 1; goto fail;
-    }
-
-    len--;
-    p++;
+  if (ret != cmd.size()) {
+    log_message(-2, "CDDB: Failed to send command '%s': %s", cmd.c_str(),
+                strerror(errno));
+    err = 1; goto fail;
   }
 
   log_message(4, "CDDB: Ok.");
 
   fail:
-  delete[] cmd;
-
   return err;
 }
 
@@ -1501,4 +1425,9 @@ int Cddb::createLocalCddbFile(const char *category, const char *diskId)
   delete[] recordFile;
 
   return fd;
+}
+
+CdTextItem* Cddb::createItem(CdTextItem::PackType ptype, const char* text)
+{
+  return new CdTextItem(ptype, 0, (const u8*)text, strlen(text), Util::Encoding::UTF8);
 }

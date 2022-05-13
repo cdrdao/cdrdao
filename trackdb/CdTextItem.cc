@@ -26,7 +26,8 @@
 #include "CdTextContainer.h"
 #include "util.h"
 
-CdTextItem::CdTextItem(PackType packType, int blockNr, const char *data)
+CdTextItem::CdTextItem(PackType packType, int blockNr,
+                       const u8* data, size_t len, Util::Encoding enc)
 {
   assert(blockNr >= 0 && blockNr <= 7);
 
@@ -36,12 +37,14 @@ CdTextItem::CdTextItem(PackType packType, int blockNr, const char *data)
   packType_ = packType;
   blockNr_ = blockNr;
   trackNr_ = 0;
+  encoding_ = enc;
 
-  dataLen_ = strlen(data) + 1;
+  dataLen_ = len + 1;
 
   data_ = new unsigned char[dataLen_];
 
-  strcpy((char *)data_, data);
+  memcpy(data_, data, len);
+  data_[len] = 0;
 }
 
 
