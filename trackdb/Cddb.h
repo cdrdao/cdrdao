@@ -24,6 +24,9 @@
 #ifndef __CDDB_H__
 #define __CDDB_H__
 
+#include <string>
+#include <vector>
+
 class Toc;
 
 class Cddb {
@@ -96,6 +99,8 @@ private:
   QueryResults *queryResults_;
   CddbEntry *cddbEntry_;
 
+  static CdTextItem* createItem(CdTextItem::PackType, const char*);
+
   int openConnection();
   void closeConnection();
   void setupHttpData(const char *userName, const char *hostName,
@@ -108,7 +113,7 @@ private:
 
   const char *readLine();
   const char *getServerResponse(int code[3]);
-  int sendCommand(int nargs, const char *args[]);
+  int sendCommand(const std::vector<std::string>& cmds);
   const char *calcCddbId();
   int readDbEntry(int);
   void shutdown();

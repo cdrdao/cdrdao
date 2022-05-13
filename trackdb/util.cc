@@ -353,6 +353,36 @@ const char* encodingToString(Encoding e)
     }
 }
 
+bool isStrictAscii(const char* ptr)
+{
+  while (*ptr) {
+    if (((unsigned char)(*ptr++)) > 127)
+      return false;
+  }
+  return true;
+}
+
+bool isValidUTF8(const char* str)
+{
+#ifndef HAVE_ICONV
+  return true;
+#else
+  const char* encoding = "UTF-8";
+  char* src = (char*)alloca(strlen(str) + 1);
+  strcpy(src, str);
+  size_t srclen = strlen(src);
+  size_t dstlen = srclen * 2;
+  char* dst = (char*)alloca(dstlen);
+  auto icv = iconv_open(encoding, encoding);
+  if (!icv)
+    return true;
+  if (iconv(icv, &src, &srclen, &dst, &dstlen) == (size_t)-1)
+    return false;
+  else
+    return true;
+#endif
+}
+
 }
 
 bool resolveFilename(std::string& abs, const char* file, const char* path)

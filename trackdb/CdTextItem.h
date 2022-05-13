@@ -45,7 +45,9 @@ public:
         UPCEAN_ISRC = 0x8e,
         SIZE_INFO = 0x8f };
 
-    CdTextItem(PackType packType, int blockNr, const char *data);
+    CdTextItem(PackType packType, int blockNr,
+               const u8 *data, size_t len,
+               Util::Encoding enc = Util::Encoding::RAW);
 
     CdTextItem(PackType packType, int blockNr,
                const unsigned char *data, long len);
