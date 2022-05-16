@@ -54,7 +54,7 @@ ANTLR = @antlr_path@
 DLG = @dlg_path@
 
 TocParser.cpp: $(srcdir)/TocParser.g
-	$(ANTLR) -k 3 -CC  -w2 -fl TocLexer.dlg -ft TocParserTokens.h $(srcdir)/TocParser.g
+	$(ANTLR) -nopurify -k 3 -CC  -w2 -fl TocLexer.dlg -ft TocParserTokens.h $(srcdir)/TocParser.g
 	$(DLG) -C2 -CC -cl TocLexerBase TocLexer.dlg 
 
 TocParserGram.cpp TocLexerBase.cpp: TocParser.cpp
