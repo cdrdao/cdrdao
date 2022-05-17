@@ -210,19 +210,17 @@ toc > [ Toc *t ]
   : << $t = new Toc;
        Track *tr = NULL;
        int lineNr = 0;
-       char *catalog = NULL;
+       std::string catalog;
        Toc::Type toctype;
        int firsttrack, firstLine;
     >>
   (  Catalog string > [ catalog ]
-     << if (catalog != NULL) {
-          if ($t->catalog(catalog) != 0) {
+     << if (!catalog.empty()) {
+          if ($t->catalog(catalog.c_str()) != 0) {
             log_message(-2, "%s:%d: Illegal catalog number: %s.\n",
-                	filename_, $1->getLine(), catalog);
+                        filename_, $1->getLine(), catalog.c_str());
             error_ = 1;
           }
-         delete[] catalog;
-	 catalog = NULL;
        }
      >>
    | tocType > [ toctype ]
@@ -256,15 +254,13 @@ toc > [ Toc *t ]
   Eof
   ;
   // fail action
-  << delete $t, $t = NULL;
-     delete[] catalog;
-  >>
+  << delete $t, $t = NULL; >>
 
 track > [ Track *tr, int lineNr ]
   : << $tr = NULL;
        $lineNr = 0;
        SubTrack *st = NULL;
-       char *isrcCode = NULL;
+       std::string isrcCode;
        TrackData::Mode trackType;
        TrackData::SubChannelMode subChanType = TrackData::SUBCHAN_NONE;
        Msf length;
@@ -284,13 +280,12 @@ track > [ Track *tr, int lineNr ]
     << $tr = new Track(trackType, subChanType); >>
 
     (  Isrc string > [ isrcCode ]
-       << if (isrcCode != NULL) {
-            if ($tr->isrc(isrcCode) != 0) {
+       << if (!isrcCode.empty()) {
+            if ($tr->isrc(isrcCode.c_str()) != 0) {
               log_message(-2, "%s:%d: Illegal ISRC code: %s.\n",
-                          filename_, $1->getLine(), isrcCode);
+                          filename_, $1->getLine(), isrcCode.c_str());
               error_ = 1;
             }
-            delete[] isrcCode;
           }
        >>
      | { No << flag = 0; >> } Copy
@@ -433,14 +428,13 @@ track > [ Track *tr, int lineNr ]
     ;
     // fail action
     << delete $tr, $tr = NULL;
-       delete[] isrcCode;
     >>
 
 
 subTrack < [ TrackData::Mode trackType, TrackData::SubChannelMode subChanType ] > [ SubTrack *st, int lineNr ]
   : << $st = NULL;
        $lineNr = 0;
-       char *filename = NULL;
+       std::string filename;
        unsigned long start = 0;
        unsigned long len = 0;
        long offset = 0;
@@ -452,7 +446,7 @@ subTrack < [ TrackData::Mode trackType, TrackData::SubChannelMode subChanType ] 
        { "#" sLong > [ offset ] }
        samples > [start] { samples > [len] }
        << $st = new SubTrack(SubTrack::DATA,
-	                     TrackData(filename, offset, start, len));
+	                     TrackData(filename.c_str(), offset, start, len));
 	  $st->swapSamples(swapSamples);
 
           $lineNr = $1->getLine();
@@ -473,7 +467,7 @@ subTrack < [ TrackData::Mode trackType, TrackData::SubChannelMode subChanType ] 
        { "#" sLong > [ offset ] }
        { dataLength [ dMode, $subChanType ] > [ len ] }
        << $st = new SubTrack(SubTrack::DATA, TrackData(dMode, $subChanType,
-                                                       filename,
+                                                       filename.c_str(),
                                                        offset, len));
           $lineNr = $1->getLine();
        >>
@@ -481,7 +475,7 @@ subTrack < [ TrackData::Mode trackType, TrackData::SubChannelMode subChanType ] 
             dataLength [$trackType, $subChanType ] > [ len ]
        << $st = new SubTrack(SubTrack::DATA, TrackData($trackType,
                                                        $subChanType,
-                                                       filename, len));
+                                                       filename.c_str(), len));
        >>
      | Silence samples > [len]
        << $st = new SubTrack(SubTrack::DATA, TrackData(len));
@@ -529,50 +523,25 @@ subTrack < [ TrackData::Mode trackType, TrackData::SubChannelMode subChanType ] 
     ;
     // fail action
     << delete $st, $st = NULL;
-       delete[] filename;
     >>
 
-string > [ char *ret ]
- :  << $ret = strdupCC("");
-       char *s;
-       char buf[2];
-    >>
-
-    << buf[1] = 0; >>
-
-    BeginString
-    ( (  String      << s = strdup3CC($ret, $1->getText(), NULL); >>
-       | StringQuote << s = strdup3CC($ret, "\"", NULL); >>
-       | StringOctal << buf[0] = strtol($1->getText() + 1, NULL, 8);
-                        s = strdup3CC($ret, buf, NULL);
-                     >>
+string > [ std::string ret ]
+ :  BeginString
+    ( (  String      << $ret += $1->getText(); >>
+       | StringQuote << $ret += "\""; >>
+       | StringOctal << $ret += (char)strtol($1->getText() + 1, NULL, 8); >>
       )
-      << delete[] $ret;
-         $ret = s;
-      >>
     )+
 
     EndString
     ;
 
-stringEmpty > [ char *ret ]
- :  << $ret = strdupCC("");
-       char *s;
-       char buf[2];
-    >>
-
-    << buf[1] = 0; >>
-
-    BeginString
-    ( (  String      << s = strdup3CC($ret, $1->getText(), NULL); >>
-       | StringQuote << s = strdup3CC($ret, "\"", NULL); >>
-       | StringOctal << buf[0] = strtol($1->getText() + 1, NULL, 8);
-                        s = strdup3CC($ret, buf, NULL);
-                     >>
+stringEmpty > [ std::string ret ]
+ :  BeginString
+    ( (  String      << $ret += $1->getText(); >>
+       | StringQuote << $ret += "\""; >>
+       | StringOctal << $ret += (char)strtol($1->getText() + 1, NULL, 8); >>
       )
-      << delete[] $ret;
-         $ret = s;
-      >>
     )*
 
     EndString
@@ -765,17 +734,16 @@ binaryData > [ const unsigned char *data, long len ]
 cdTextItem [ int blockNr ] > [ std::shared_ptr<CdTextItem> item, int lineNr ]
   : << $item = NULL;
        CdTextItem::PackType type;
-       const char *s;
+       std::string s;
        const unsigned char *data;
        long len;
     >>
 
     packType > [ type, $lineNr ]
     (  stringEmpty > [ s ]
-       << if (s != NULL) {
+       << if (!s.empty()) {
             $item.reset(new CdTextItem(type, blockNr));
-            $item->setText(s);
-            delete[] s;
+            $item->setText(s.c_str());
           }
        >>
      | binaryData > [ data, len ]
