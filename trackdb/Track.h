@@ -110,12 +110,13 @@ public:
   int  audioType() const { return flags_.audioType; }
   void audioType(int t) { flags_.audioType = t != 0 ? 1 : 0; }
 
-    void addCdTextItem(std::shared_ptr<CdTextItem>&);
+  void addCdTextItem(CdTextItem*);
   void removeCdTextItem(CdTextItem::PackType, int blockNr);
   int  existCdTextBlock(int n) const { return cdtext_.existBlock(n); }
   const CdTextItem *getCdTextItem(int blockNr, CdTextItem::PackType t) const {
     return cdtext_.getPack(blockNr, t);
   }
+  const CdTextContainer& getCdTextItems() const { return cdtext_; }
 
   void print(std::ostream &, PrintParams&) const;
 

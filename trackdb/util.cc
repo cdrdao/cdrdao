@@ -32,6 +32,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <stdarg.h>
+#include <iostream>
 
 #include "util.h"
 #include "log.h"
@@ -388,13 +389,13 @@ const char* encodingToString(Encoding e)
     }
 }
 
-bool isStrictAscii(const char* ptr)
+bool isStrictAscii(const std::string& str)
 {
-  while (*ptr) {
-    if (((unsigned char)(*ptr++)) > 127)
-      return false;
-  }
-  return true;
+    for (const auto c: str) {
+        if (((u8)(c)) > 127)
+            return false;
+    }
+    return true;
 }
 
 bool isValidUTF8(const char* str)
@@ -416,6 +417,24 @@ bool isValidUTF8(const char* str)
   else
     return true;
 #endif
+}
+
+bool processMixedString(std::string& str, bool& is_utf8)
+{
+    is_utf8 = !isStrictAscii(str);
+    for (size_t i = 0; str.size() >= 4 && i < str.size() - 3; i++) {
+        if (str[i] == '\\' && isdigit(str[i+1]) &&
+            isdigit(str[i+2]) && isdigit(str[i+3])) {
+
+            if (is_utf8)
+                return false;
+
+            std::string singlechar(1, 0);
+            singlechar[0] = strtol(str.substr(i+1, 3).c_str(), NULL, 8);
+            str = str.replace(i, 4, singlechar);
+        }
+    }
+    return true;
 }
 
 }

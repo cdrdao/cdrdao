@@ -95,6 +95,7 @@ public:
 
     void cdTextEncoding(int blockNr, Util::Encoding t);
     Util::Encoding cdTextEncoding(int blockNr) const;
+    void enforceTextEncoding();
 
     void trackSummary(int *nofAudioTracks, int *nofMode1Tracks,
                       int *nofMode2Tracks) const;
@@ -118,11 +119,6 @@ public:
     static const char *tocType2String(Type);
 
 private:
-    friend class TocImpl;
-    friend class TocParserGram;
-    friend class TocReader;
-    friend class TrackIterator;
-
     struct TrackEntry {
         TrackEntry() : absStart(0), start(0), end(0) {
             trackNr = 0; track = 0; next = 0; pred = 0;
@@ -137,6 +133,34 @@ private:
         struct TrackEntry *next;
         struct TrackEntry *pred;
     };
+
+public:
+    // Allow iterations over tracks
+    struct Iterator {
+        using iterator_category = std::bidirectional_iterator_tag;
+        using difference_type = std::ptrdiff_t;
+        using value_type = Track;
+        using pointer = TrackEntry*;
+        using reference= Track&;
+
+        Iterator(pointer item) : m_ptr(item) {}
+        friend bool operator==(const Iterator& a, const Iterator& b) { return a.m_ptr == b.m_ptr; }
+        friend bool operator!=(const Iterator& a, const Iterator& b) { return a.m_ptr != b.m_ptr; }
+        Iterator& operator++() { m_ptr = m_ptr->next; return *this; }
+        Iterator& operator--() { m_ptr = m_ptr->pred; return *this; }
+        reference operator*() const { return *(m_ptr->track); }
+
+        pointer m_ptr;
+    };
+
+    Iterator begin() { return Iterator(tracks_); }
+    Iterator end() { return Iterator(lastTrack_); }
+
+private:
+    friend class TocImpl;
+    friend class TocParserGram;
+    friend class TocReader;
+    friend class TrackIterator;
 
     void update();
 
@@ -162,7 +186,6 @@ private:
     int catalogValid_;
 
     CdTextContainer cdtext_;
-    std::vector<std::shared_ptr<CdTextItem>> cditems_;
 };
 
 

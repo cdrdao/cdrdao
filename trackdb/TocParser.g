@@ -251,6 +251,7 @@ toc > [ Toc *t ]
        }
     >>
   )+
+  << $t->enforceTextEncoding(); >>
   Eof
   ;
   // fail action
@@ -526,24 +527,32 @@ subTrack < [ TrackData::Mode trackType, TrackData::SubChannelMode subChanType ] 
     >>
 
 string > [ std::string ret ]
- :  BeginString
+ :  << int linenr = 0; bool is_utf8; >>
+    BeginString << linenr = $1->getLine(); >>
     ( (  String      << $ret += $1->getText(); >>
        | StringQuote << $ret += "\""; >>
-       | StringOctal << $ret += (char)strtol($1->getText() + 1, NULL, 8); >>
+       | StringOctal << $ret += $1->getText(); >>
       )
     )+
-
+    << if (!Util::processMixedString($ret, is_utf8)) {
+      log_message(-2, "%s:%d: Illegal mixed UTF-8 and binary.", filename_, linenr);
+      error_ = 1;
+    } >>
     EndString
     ;
 
-stringEmpty > [ std::string ret ]
- :  BeginString
+stringEmpty > [ std::string ret, bool is_utf8 ]
+ :  << int linenr = 0; >>
+    BeginString << linenr = $1->getLine(); >>
     ( (  String      << $ret += $1->getText(); >>
        | StringQuote << $ret += "\""; >>
-       | StringOctal << $ret += (char)strtol($1->getText() + 1, NULL, 8); >>
+       | StringOctal << $ret += $1->getText(); >>
       )
     )*
-
+    << if (!Util::processMixedString($ret, $is_utf8)) {
+      log_message(-2, "%s:%d: Illegal mixed UTF-8 and binary.", filename_, linenr);
+      error_ = 1;
+    } >>
     EndString
     ;
 
@@ -731,23 +740,27 @@ binaryData > [ const unsigned char *data, long len ]
     // fail action
     << $len = 0; >>
 
-cdTextItem [ int blockNr ] > [ std::shared_ptr<CdTextItem> item, int lineNr ]
+cdTextItem [ int blockNr ] > [ CdTextItem* item, int lineNr ]
   : << $item = NULL;
        CdTextItem::PackType type;
        std::string s;
+       bool is_utf8 = false;
        const unsigned char *data;
        long len;
     >>
 
     packType > [ type, $lineNr ]
-    (  stringEmpty > [ s ]
+    (  stringEmpty > [ s, is_utf8 ]
        << if (!s.empty()) {
-            $item.reset(new CdTextItem(type, blockNr));
-            $item->setText(s.c_str());
+            $item = new CdTextItem(type, blockNr);
+            if (is_utf8)
+                $item->setText(s.c_str());
+            else
+                $item->setRawText(s);
           }
        >>
      | binaryData > [ data, len ]
-       << $item.reset(new CdTextItem(type, blockNr));
+       << $item = new CdTextItem(type, blockNr);
           $item->setData(data, len);
        >>
     )
@@ -756,9 +769,9 @@ cdTextItem [ int blockNr ] > [ std::shared_ptr<CdTextItem> item, int lineNr ]
     <<  >>
 
 cdTextBlock [ CdTextContainer &container, int isTrack ]
-  : << std::shared_ptr<CdTextItem> item;
-       int blockNr;
-       int lineNr;
+  : << CdTextItem* item = nullptr;
+       int blockNr = 0;
+       int lineNr = 0;
     >>
 
     Language integer > [ blockNr, lineNr ]

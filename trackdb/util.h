@@ -79,6 +79,7 @@ const char* encodingToString(Encoding);
 
 bool isStrictAscii(const char* ptr);
 bool isValidUTF8(const char* ptr);
+bool processMixedString(std::string& str, bool& is_utf8);
 
 }
 

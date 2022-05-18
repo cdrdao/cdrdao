@@ -48,7 +48,7 @@ public:
     char **trackExt;
   };
 
-  Cddb(const Toc *);
+  Cddb(Toc *);
   ~Cddb();
 
   void localCddbDirectory(const std::string&);
@@ -82,7 +82,7 @@ private:
   };
 
   
-  const Toc *toc_;
+  Toc *toc_;
   ServerList *serverList_; // list of CDDB servers
   ServerList *selectedServer_;
 

@@ -70,11 +70,8 @@ Toc::Toc(const Toc &obj) : length_(0), cdtext_(obj.cdtext_)
     tracks_ = lastTrack_ = NULL;
 
     // copy all tracks
-    TrackIterator itr(&obj);
-    const Track *trun;
-
-    for (trun = itr.first(); trun != NULL; trun = itr.next())
-        append(trun);
+    for (auto trun = obj.tracks_; trun; trun = trun->next)
+        append(trun->track);
 }
 
 
@@ -901,9 +898,11 @@ void Toc::addCdTextItem(int trackNr, CdTextItem *item)
 {
     assert(trackNr >= 0 && trackNr <= 99);
 
+    if (cdtext_.encoding(item->blockNr()) != Util::Encoding::UNSET)
+        item->encoding(cdtext_.encoding(item->blockNr()));
+
     if (trackNr == 0) {
-        cditems_.emplace_back(item);
-        cdtext_.add(cditems_.back());
+        cdtext_.add(item);
     }
     else {
         item->trackNr(trackNr);
@@ -914,8 +913,7 @@ void Toc::addCdTextItem(int trackNr, CdTextItem *item)
             return;
         }
 
-        cditems_.emplace_back(item);
-        track->track->addCdTextItem(cditems_.back());
+        track->track->addCdTextItem(item);
     }
 }
 
@@ -943,9 +941,7 @@ int Toc::existCdTextBlock(int blockNr) const
     if (cdtext_.existBlock(blockNr))
         return 1;
 
-    TrackEntry *run;
-
-    for (run = tracks_; run != NULL; run = run->next) {
+    for (auto run = tracks_; run != NULL; run = run->next) {
         if (run->track->existCdTextBlock(blockNr))
             return 1;
     }
@@ -986,6 +982,15 @@ void Toc::cdTextEncoding(int blockNr, Util::Encoding t)
 Util::Encoding Toc::cdTextEncoding(int blockNr) const
 {
     return cdtext_.encoding(blockNr);
+}
+
+void Toc::enforceTextEncoding()
+{
+    cdtext_.enforceEncoding(&cdtext_);
+
+    for (auto run = tracks_; run; run = run ->next) {
+        run->track->cdtext_.enforceEncoding(&cdtext_);
+    }
 }
 
 
@@ -1211,7 +1216,7 @@ const Track *TrackIterator::find(int trackNr, Msf &start, Msf &end)
 }
 
 const Track *TrackIterator::find(unsigned long sample, Msf &start, Msf &end,
-				 int *trackNr)
+                                 int *trackNr)
 {
     Track *t;
 
