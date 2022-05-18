@@ -67,7 +67,7 @@ static RETSIGTYPE alarmHandler(int sig)
 #endif
 }
 
-Cddb::Cddb(const Toc *t)
+Cddb::Cddb(Toc *t)
 {
   toc_ = t;
 

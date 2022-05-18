@@ -1570,7 +1570,7 @@ void showTocSize(const Toc *toc, const string& tocFile)
   printf("%ld\n", toc->length().lba());
 }
 
-void showToc(const Toc *toc)
+void showToc(Toc *toc, int verbose)
 {
   const Track *t;
   Msf start, end, index;
@@ -1587,6 +1587,17 @@ void showToc(const Toc *toc)
     buf[13] = 0;
 
     printf("CATALOG NUMBER: %s\n", buf);
+  }
+
+
+  if (verbose > 2) {
+      for (const auto& item : toc->globalCdTextItems()) {
+          PrintParams params;
+          params.pretty = true;
+          params.to_utf8 = true;
+          cout << "          "; item.print(cout, params);
+          cout << "\n";
+      }
   }
 
   TrackIterator itr(toc);
@@ -1639,6 +1650,14 @@ void showToc(const Toc *toc)
 
     printf("          END%c   %s(%6ld)\n",
 	    t->isPadded() ? '*' : ' ', end.str(), end.lba());
+
+    if (verbose > 2) {
+        for (const auto& item : t->getCdTextItems()) {
+            PrintParams params;
+          cout << "          "; item.print(cout, params);
+          cout << "\n";
+        }
+    }
 
     tcount++;
   }
@@ -2626,7 +2645,7 @@ int main(int argc, char **argv)
 	break;
 
     case SHOW_TOC:
-	showToc(toc);
+	showToc(toc, options.verbose);
 	if (toc->check() > 1) {
 	    log_message(-2, "Toc file \"%s\" is inconsistent.",
 			options.tocFile.c_str());

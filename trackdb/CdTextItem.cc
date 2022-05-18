@@ -50,6 +50,16 @@ void CdTextItem::setRawText(const u8* buffer, size_t buffer_len)
     updateEncoding();
 }
 
+void CdTextItem::setRawText(const std::string& str)
+{
+    data_.resize(str.size());
+    auto writer = data_.begin();
+    for (const auto c : str)
+        *writer++ = c;
+    dataType_ = DataType::SBCC;
+    updateEncoding();
+}
+
 void CdTextItem::setText(const char* utf8_text)
 {
     u8text = utf8_text;

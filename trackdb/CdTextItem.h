@@ -51,6 +51,7 @@ public:
 
     void setData(const u8* buffer, size_t buffer_len);
     void setRawText(const u8* buffer, size_t buffer_len);
+    void setRawText(const std::string &buffer);
     void setText(const char* utf8_text);
     void setTextFromToc(const char* text);
     void setGenre(u8 genreCode1, u8 genreCode2, const char *description);

@@ -1411,7 +1411,7 @@ void Track::encodeZeroData(int encMode, TrackData::Mode mode,
   }
 }
 
-void Track::addCdTextItem(std::shared_ptr<CdTextItem>& item)
+void Track::addCdTextItem(CdTextItem* item)
 {
   assert(item->isTrackPack());
 

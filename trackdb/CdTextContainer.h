@@ -36,7 +36,7 @@ public:
 
     long count() const { return items_.size(); }
 
-    void add(std::shared_ptr<CdTextItem>);
+    void add(CdTextItem*);
 
     void remove(CdTextItem::PackType, int blockNr);
 
@@ -55,6 +55,7 @@ public:
     // sets/returns character encoding for block nr
     void encoding(int blockNr, Util::Encoding enc);
     Util::Encoding encoding(int blockNr) const;
+    void enforceEncoding(CdTextContainer* global);
 
     static const char *languageName(int lang);
 
@@ -63,7 +64,7 @@ public:
         using iterator_category = std::forward_iterator_tag;
         using difference_type   = std::ptrdiff_t;
         using value_type = CdTextItem;
-        using pointer = std::vector<std::shared_ptr<CdTextItem>>::iterator;
+        using pointer = std::vector<std::shared_ptr<CdTextItem>>::const_iterator;
         using reference = CdTextItem&;
 
         Iterator(pointer item) : m_ptr(item) {}
@@ -75,8 +76,8 @@ public:
         pointer m_ptr;
     };
 
-    Iterator begin() { return Iterator(items_.begin()); }
-    Iterator end() { return Iterator(items_.end()); }
+    Iterator begin() const { return Iterator(items_.begin()); }
+    Iterator end() const { return Iterator(items_.end()); }
 
 private:
     std::vector<std::shared_ptr<CdTextItem>> items_;

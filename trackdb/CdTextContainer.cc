@@ -54,7 +54,7 @@ static LanguageCode LANGUAGE_CODES[] = {
 static int NOF_LANGUAGE_CODES = sizeof(LANGUAGE_CODES) / sizeof(LanguageCode);
 
 CdTextContainer::CdTextContainer()
-    : languages(8, -1), encodings(8, Util::Encoding::LATIN)
+    : languages(8, -1), encodings(8, Util::Encoding::UNSET)
 {
 }
 
@@ -106,7 +106,7 @@ void CdTextContainer::print(int isTrack, std::ostream &out, PrintParams& params)
     }
 }
 
-void CdTextContainer::add(std::shared_ptr<CdTextItem> item)
+void CdTextContainer::add(CdTextItem* item)
 {
     remove(item->packType(), item->blockNr());
 
@@ -169,6 +169,20 @@ void CdTextContainer::encoding(int blockNr, Util::Encoding enc)
     assert(blockNr >= 0 && blockNr <= 7);
 
     encodings[blockNr] = enc;
+}
+
+void CdTextContainer::enforceEncoding(CdTextContainer* global)
+{
+    if (global == this) {
+        for (auto& e : encodings)
+            if (e == Util::Encoding::UNSET)
+                e = Util::Encoding::LATIN;
+    } else {
+        encodings = global->encodings;
+    }
+
+    for (auto i : items_)
+        i->encoding(encodings[i->blockNr()]);
 }
 
 Util::Encoding CdTextContainer::encoding(int blockNr) const
