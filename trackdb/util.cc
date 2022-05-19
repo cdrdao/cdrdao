@@ -349,7 +349,7 @@ bool from_utf8(const string& input, std::vector<u8>& output, Encoding enc)
         return false;
 
     while (origdst < dst)
-        output.push_back(*dst++);
+        output.push_back(*origdst++);
 #else
     output.resize(input.size());
     std::copy(input.begin(), input.end(), output.begin());
