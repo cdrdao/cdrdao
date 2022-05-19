@@ -3218,6 +3218,8 @@ int CdrDriver::readCdTextData(Toc *toc)
         log_message(-1, "Using default mapping.");
     }
 
+    toc->enforceTextEncoding();
+
     return 0;
 }
 

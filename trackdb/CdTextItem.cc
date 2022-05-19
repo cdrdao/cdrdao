@@ -90,13 +90,24 @@ void CdTextItem::setGenre(u8 genreCode1, u8 genreCode2, const char *description)
     }
 }
 
-void CdTextItem::print(std::ostream &out, PrintParams&) const
+void CdTextItem::print(std::ostream &out, PrintParams& params) const
 {
     char buf[20];
     out << packType2String(isTrackPack(), packType_);
 
     if (dataType() == DataType::SBCC) {
-        out << " \"" << u8text << "\"";
+        if (params.no_utf8) {
+            out << " \"";
+            for (auto c : data_) {
+                if (c >= 128)
+                    out << "\\" << std::oct << (unsigned int)c;
+                else
+                    out << c;
+            }
+            out << "\"";
+        } else {
+            out << " \"" << u8text << "\"";
+        }
     }
     else {
         long i = 0;

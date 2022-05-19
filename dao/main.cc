@@ -76,7 +76,7 @@ extern "C" {
 };
 #endif
 
-PrintParams errPrintParams;
+PrintParams errPrintParams, filePrintParams;
 
 typedef enum {
     UNKNOWN = -1,
@@ -198,6 +198,7 @@ struct DaoCommandLine
     bool writeSpeedControl;
     bool keep;
     bool printQuery;
+    bool no_utf8;
 
     CdrDriver::BlankingMode blankingMode;
     TrackData::SubChannelMode readSubchanMode;
@@ -216,7 +217,7 @@ DaoCommandLine::DaoCommandLine() :
     readRaw(false), mode2Mixed(false), remoteMode(false),
     reload(false), force(false), onTheFly(false), writeSimulate(false), saveSettings(false),
     fullBurn(false), withCddb(false), taoSource(false), keepImage(false), overburn(false),
-    writeSpeedControl(false), keep(false), printQuery(false)
+    writeSpeedControl(false), keep(false), printQuery(false), no_utf8(false)
 {
     readingSpeed = -1;
     writingSpeed = -1;
@@ -316,7 +317,8 @@ void DaoCommandLine::printUsage()
 		progName);
     log_message(0,
 "options:\n"
-"  -v #                    - sets verbose level\n");
+"  -v #                    - sets verbose level\n"
+"  --no-utf8               - don't show CD-TEXT as UTF-8\n");
     break;
 
   case SHOW_DATA:
@@ -335,6 +337,7 @@ void DaoCommandLine::printUsage()
     log_message(0,
 "options:\n"
 "  -v #                    - sets verbose level\n"
+"  --no-utf8               - don't show CD-TEXT as UTF-8\n"
 "  --device [proto:]{<x,y,z>|device} - sets SCSI device of CD-ROM reader\n"
 "  --driver <id>           - force usage of specified driver for source device\n");
     break;
@@ -421,6 +424,7 @@ void DaoCommandLine::printUsage()
 "  --cddb-directory <path> - path to local CDDB directory where fetched\n"
 "                            CDDB records will be stored\n"
 "  --force                 - force execution of operation\n"
+"  --no-utf8               - don't show CD-TEXT as UTF-8\n"
 "  -v #                    - sets verbose level\n");
     break;
 
@@ -468,6 +472,7 @@ void DaoCommandLine::printUsage()
 "  --cddb-timeout #        - timeout in seconds for CDDB server communication\n"
 "  --cddb-directory <path> - path to local CDDB directory where fetched\n"
 "                            CDDB records will be stored\n"
+"  --no-utf8               - don't show CD-TEXT as UTF-8\n"
 "  --force                 - force execution of operation\n"
 "  -v #                    - sets verbose level\n");
     break;
@@ -591,6 +596,7 @@ void DaoCommandLine::printUsage()
 "  --device [proto:]{<x,y,z>|device} - sets SCSI device of CD-writer\n"
 "  --driver <id>           - force usage of specified driver\n"
 "  --reload                - reload the disk if necessary for writing\n"
+"  --no-utf8               - don't show CD-TEXT as UTF-8\n"
 "  -v #                    - sets verbose level\n");
     break;
 
@@ -978,6 +984,9 @@ int DaoCommandLine::parseCmdLine(int argc, char **argv,
 	    }
 	    else if (strcmp((*argv) + 2, "reload") == 0) {
 		reload = true;
+	    }
+	    else if (strcmp((*argv) + 2, "no-utf8") == 0) {
+		no_utf8 = true;
 	    }
 	    else if (strcmp((*argv) + 2, "force") == 0) {
 		force = true;
@@ -1570,7 +1579,7 @@ void showTocSize(const Toc *toc, const string& tocFile)
   printf("%ld\n", toc->length().lba());
 }
 
-void showToc(Toc *toc, int verbose)
+void showToc(Toc *toc, DaoCommandLine& options)
 {
   const Track *t;
   Msf start, end, index;
@@ -1590,11 +1599,10 @@ void showToc(Toc *toc, int verbose)
   }
 
 
-  if (verbose > 2) {
+  if (options.verbose > 2) {
       for (const auto& item : toc->globalCdTextItems()) {
           PrintParams params;
-          params.pretty = true;
-          params.to_utf8 = true;
+          params.no_utf8 = options.no_utf8;
           cout << "          "; item.print(cout, params);
           cout << "\n";
       }
@@ -1651,11 +1659,12 @@ void showToc(Toc *toc, int verbose)
     printf("          END%c   %s(%6ld)\n",
 	    t->isPadded() ? '*' : ' ', end.str(), end.lba());
 
-    if (verbose > 2) {
+    if (options.verbose > 2) {
         for (const auto& item : t->getCdTextItems()) {
             PrintParams params;
-          cout << "          "; item.print(cout, params);
-          cout << "\n";
+            params.no_utf8 = options.no_utf8;
+            cout << "          "; item.print(cout, params);
+            cout << "\n";
         }
     }
 
@@ -1697,7 +1706,7 @@ void showData(const Toc *toc, bool swap)
   }
 }
 
-void showCDText(CdrDriver* cdr)
+void showCDText(CdrDriver* cdr, DaoCommandLine& options)
 {
     int nofTracks = 0;
     auto cdt = cdr->getTocGeneric(&nofTracks);
@@ -1718,8 +1727,7 @@ void showCDText(CdrDriver* cdr)
 
     for (const auto& item : toc->globalCdTextItems()) {
         PrintParams params;
-        params.pretty = true;
-        params.to_utf8 = true;
+        params.no_utf8 = options.no_utf8;
         item.print(cout, params);
         cout << "\n";
     }
@@ -2484,6 +2492,9 @@ int main(int argc, char **argv)
     if (options.command == SHOW_VERSION)
 	goto fail;
 
+    errPrintParams.no_utf8 = options.no_utf8;
+    filePrintParams.no_utf8 = options.no_utf8;
+
     // ---------------------------------------------------------------------
     //   Parse and check the toc file
     // ---------------------------------------------------------------------
@@ -2645,7 +2656,7 @@ int main(int argc, char **argv)
 	break;
 
     case SHOW_TOC:
-	showToc(toc, options.verbose);
+	showToc(toc, options);
 	if (toc->check() > 1) {
 	    log_message(-2, "Toc file \"%s\" is inconsistent.",
 			options.tocFile.c_str());
@@ -2689,7 +2700,7 @@ int main(int argc, char **argv)
 	break;
 
     case CDTEXT:
-        showCDText(cdr);
+        showCDText(cdr, options);
         break;
 
     case DISCID:
@@ -2794,7 +2805,7 @@ int main(int argc, char **argv)
 				strerror(errno));
 		    exitCode = 1; goto fail;
 		}
-		toc->print(out, errPrintParams);
+		toc->print(out, filePrintParams);
 	    }
 
 	    log_message(1, "Reading of toc data finished successfully.");
@@ -2849,7 +2860,7 @@ int main(int argc, char **argv)
 			    options.tocFile.c_str(), strerror(errno));
 		exitCode = 1; goto fail;
 	    }
-	    toc->print(out, errPrintParams);
+	    toc->print(out, filePrintParams);
 	}
 
 	log_message(1, "Reading of toc and track data finished successfully.");
