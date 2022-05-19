@@ -85,14 +85,10 @@ bool processMixedString(std::string& str, bool& is_utf8);
 
 struct PrintParams
 {
-    PrintParams() : conversions(false),
-                    to_utf8(false),
-                    to_file(false),
-                    pretty(false) {}
+    PrintParams() : conversions(false), to_file(false), no_utf8(false) {}
     bool conversions;
-    bool to_utf8;
     bool to_file;
-    bool pretty;
+    bool no_utf8;
 };
 
 #endif

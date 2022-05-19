@@ -188,7 +188,6 @@ int Toc::write(const string& filename, bool conversions) const
     }
 
     PrintParams p;
-    p.to_file = true;
     p.conversions = conversions;
     print(out, p);
 
