@@ -125,7 +125,7 @@ void CdTextContainer::remove(CdTextItem::PackType type, int blockNr)
 {
     for (auto it = items_.begin(); it != items_.end(); it++) {
         if ((*it)->packType() == type && (*it)->blockNr() == blockNr)
-            items_.erase(it);
+            items_.erase(it--);
     }
 }
 

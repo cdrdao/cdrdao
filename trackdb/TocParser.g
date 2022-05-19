@@ -793,7 +793,7 @@ cdTextBlock [ CdTextContainer &container, int isTrack ]
     << container.encoding(blockNr, Util::Encoding::KOREAN); >>
     | EncodingMandarin
     << container.encoding(blockNr, Util::Encoding::MANDARIN); >> }
-    | ( cdTextItem [ blockNr ] > [ item, lineNr ]
+    ( cdTextItem [ blockNr ] > [ item, lineNr ]
       << if (item) {
            int type = (int)item->packType();
 
