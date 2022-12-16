@@ -1,0 +1,8 @@
+#!/bin/bash
+
+cd "$(dirname "$0")"
+# Really 'make clean'
+./clean.sh
+./autogen.sh
+./configure 
+make
