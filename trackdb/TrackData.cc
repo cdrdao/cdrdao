@@ -1251,8 +1251,7 @@ long TrackDataReader::readData(Sample *buffer, long len)
   }
 
   if (readLen > 0) {
-    if (trackData_->mode_ == TrackData::AUDIO &&
-	trackData_->subChannelMode_ == TrackData::SUBCHAN_NONE) {
+    if (trackData_->mode_ == TrackData::AUDIO || trackData_->subChannelMode_ == TrackData::SUBCHAN_NONE) {
       int swap = 0;
 
       if (trackData_->fileType_ == TrackData::WAVE) {
