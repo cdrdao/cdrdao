@@ -532,7 +532,7 @@ static void *reader(void *args)
 
     if (cdr != NULL &&
 	((track->type() == TrackData::AUDIO && swap) ||
-	 (encodingMode == 0 && cdr->bigEndianSamples() == 0))) {
+	 (encodingMode == 0 && cdr->bigEndianSamples() == 0 && (track->type() != TrackData::AUDIO)))) {
       // swap audio data 
       long blockLen = cdr->blockSize(dataMode, subChanMode);
       char *brun = buf.buffer;
