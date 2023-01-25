@@ -1,0 +1,69 @@
+CD_DA
+
+CD_TEXT {
+  LANGUAGE_MAP {
+    0: 9
+    1: 15
+    2: 105
+  }
+  LANGUAGE 0 {
+    ENCODING_ISO_8859_1
+    TITLE "The Water"
+    PERFORMER "Jeanne Cherhal"
+  }
+  LANGUAGE 1 {
+    TITLE "L'humidité de l'eau"
+    PERFORMER "Jeannine Française"
+  }
+  LANGUAGE 2 {
+    ENCODING_MS_JIS
+    TITLE "湿った水"
+    PERFORMER "白人のフランス人女性"
+  }
+}
+
+// Track 1
+TRACK AUDIO
+NO COPY
+NO PRE_EMPHASIS
+TWO_CHANNEL_AUDIO
+ISRC "FR79W0600410"
+CD_TEXT {
+  LANGUAGE 0 {
+    TITLE "Heat Wave"
+    PERFORMER "Jeanne Cherhal"
+  }
+  LANGUAGE 1 {
+    TITLE "Canicule"
+    PERFORMER "Jeannine Française"
+  }
+  LANGUAGE 2 {
+    TITLE "熱波"
+    PERFORMER "白人のフランス人女性"
+  }
+}
+
+SILENCE 1:0:0
+
+// Track 2
+TRACK AUDIO
+NO COPY
+NO PRE_EMPHASIS
+TWO_CHANNEL_AUDIO
+ISRC "FR79W0600420"
+CD_TEXT {
+  LANGUAGE 0 {
+    TITLE "I am liquid"
+    PERFORMER "Jeanne Cherhal"
+  }
+  LANGUAGE 1 {
+    TITLE "Je suis liquidée"
+    PERFORMER "Jeannine Française"
+  }
+  LANGUAGE 2 {
+    TITLE "私は液体です"
+    PERFORMER "白人のフランス人女性"
+  }
+}
+
+SILENCE 1:0:0
