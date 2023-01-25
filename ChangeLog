@@ -2,51 +2,69 @@
   cdrdao 1.2.5
 --------------------------------------------------------------------------
 
-  o gcdmaster port to GTK 3 (Stefan Roellin)
+ o  gcdmaster port to GTK 3 (Stefan Roellin)
 
-  o Support to specify encoding in TOC (Denis Leroy):
+ o  Support to specify encoding in TOC (Denis Leroy):
     - one of ENCODING_ISO_8859_1, ENCODING_ASCII, ENCODING_MS_JIS,
       ENCODING_KOREAN, ENCODING_MANDARIN may be specified on LANGUAGE
       section.
     - TOC always dumped in UTF-8, unless --no-utf8 is specified
 
-  o Fix --swap argument with generic-mmc-raw driver (Alex Free)
+ o  Fix --swap argument with generic-mmc-raw driver (Alex Free)
 
-  o MacOS fixes (DL)
+ o  MacOS fixes (DL)
 
-  o cdrdao:
+ o  cdrdao:
     - new cdtext command to dump CD-TEXT disc content
     - deprecate 0x10 driver option by checking device configuration
 
-  o toc2cue: (Jonathan Simpson)
+ o  toc2cue: (Jonathan Simpson)
     - add option to convert bin file, removing subchannel data that
       isn't supported by cue/bin files
     - add option to swap byte order when creating new bin file
 
-  o toc2mp3: (DL)
+ o  toc2mp3: (DL)
     - -J option to force specific text decoding
     - support for character encoding in filenames and id3v2 tags
 
-  o Fix eject by first issuing PREVENT ALLOW MEDIUM REMOVAL (DL)
+ o  Fix eject by first issuing PREVENT ALLOW MEDIUM REMOVAL (DL)
 
-  o Removed scsilib snapshot from old cdrecord project, only use
+ o  Removed scsilib snapshot from old cdrecord project, only use
     native interface. RIP Jörg Schilling.
 
-  o Misc patches from Fedora:
-    - compile and warning fixes for newer C++ compilers
-    - lame 3.100 support
-    - pccts format security patch
-    - man page fix
+ o  Misc compile and warning fixes for newer C++ compilers (Fedora)
 
-  o Many C++ compiler fixes (Nick Bailey)
+ o  MacOS compile fixes, upstreamed from brew
 
-  o MacOS compile fixes, upstreamed from brew
-
-  o Cddb server updates.
+ o  Cddb server updates.
 
 --------------------------------------------------------------------------
-  cdrdao 1.2.4
+  cdrdao 1.2.4 (2016-05-16)
 --------------------------------------------------------------------------
+
+ o  Ported to lame 3.100 (from Fedora)
+
+ o  G++ compile fixes (Nick Bailey)
+
+ o  Renamed xdao folder to gcdmaster (Denis Leroy)
+
+ o  pccts format security patch (from Fedora)
+
+ o  Gcdmaster segfault fix (Adrian Knoth)
+
+ o  Prevent a FTBFS on kfreebsd (Christoph Egger)
+
+ o  Also look in /etc/default/cdrdao config (Andrew Suffield)
+
+ o  Fix printf format security issues (Frantisek Kluknavsky Fedora)
+
+ o  Add missing options to man page (Honza Horák)
+
+ o  CD_TEXT fix for HL-DT-ST (Kees Cook)
+
+ o  Man page hyphen fixes (Markus Koschany)
+
+ o  Some updates to the old scsilib smake files (Ubuntu patches)
 
  o  Fixed compile issues with glibc >= 2.12
 
