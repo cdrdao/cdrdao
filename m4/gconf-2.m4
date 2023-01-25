@@ -14,8 +14,7 @@ AC_DEFUN([AM_GCONF_SOURCE_2],
   fi
 
   AC_ARG_WITH([gconf-source],
-	      AC_HELP_STRING([--with-gconf-source=sourceaddress],
-			     [Config database for installing schema files.]),
+	      AS_HELP_STRING([--with-gconf-source=sourceaddress],[Config database for installing schema files.]),
 	      [GCONF_SCHEMA_CONFIG_SOURCE="$withval"],)
 
   AC_SUBST(GCONF_SCHEMA_CONFIG_SOURCE)
@@ -26,16 +25,14 @@ AC_DEFUN([AM_GCONF_SOURCE_2],
   fi
 
   AC_ARG_WITH([gconf-schema-file-dir],
-	      AC_HELP_STRING([--with-gconf-schema-file-dir=dir],
-			     [Directory for installing schema files.]),
+	      AS_HELP_STRING([--with-gconf-schema-file-dir=dir],[Directory for installing schema files.]),
 	      [GCONF_SCHEMA_FILE_DIR="$withval"],)
 
   AC_SUBST(GCONF_SCHEMA_FILE_DIR)
   AC_MSG_RESULT([Using $GCONF_SCHEMA_FILE_DIR as install directory for schema files])
 
   AC_ARG_ENABLE(schemas-install,
-  	AC_HELP_STRING([--disable-schemas-install],
-		       [Disable the schemas installation]),
+  	AS_HELP_STRING([--disable-schemas-install],[Disable the schemas installation]),
      [case ${enableval} in
        yes|no) ;;
        *) AC_MSG_ERROR([bad value ${enableval} for --enable-schemas-install]) ;;

@@ -22,7 +22,7 @@ AC_DEFUN([AC_PATH_LAME],
 
   if test x$lame_test = xyes ; then
     AC_LANG_SAVE
-    AC_LANG_CPLUSPLUS
+    AC_LANG([C++])
 
     ac_save_CXXFLAGS="$CXXFLAGS"
     ac_save_LIBS="$LIBS"
@@ -37,7 +37,7 @@ AC_DEFUN([AC_PATH_LAME],
 
     LIBS="$LIBS -lmp3lame"
 
-    AC_TRY_RUN([
+    AC_RUN_IFELSE([AC_LANG_SOURCE([[
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -76,7 +76,7 @@ main ()
 
   return 1;
 }
-],,lame_ok=no,[echo $ac_n "cross compiling; assumed OK... $ac_c"])
+]])],[],[lame_ok=no],[echo $ac_n "cross compiling; assumed OK... $ac_c"])
 
     CXXFLAGS="$ac_save_CXXFLAGS"
     LIBS="$ac_save_LIBS"
@@ -122,7 +122,7 @@ dnl
 dnl  AC_MSG_CHECKING(for scg/schily library >= $1)
 
   AC_LANG_SAVE
-  AC_LANG_C
+  AC_LANG([C])
   ac_save_CFLAGS="$CFLAGS"
   ac_save_LIBS="$LIBS"
 
