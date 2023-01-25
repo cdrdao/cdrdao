@@ -31,6 +31,7 @@ AC_ARG_WITH(mp3-support,[  --with-mp3-support      enable MP3 format support (de
 dnl Checks for programs.
 AC_PROG_CC
 AC_PROG_CXX
+AX_CXX_COMPILE_STDCXX_11
 AC_PROG_CPP
 AC_PROG_INSTALL
 AC_PROG_RANLIB

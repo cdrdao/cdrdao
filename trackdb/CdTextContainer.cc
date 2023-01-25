@@ -113,8 +113,8 @@ void CdTextContainer::add(CdTextItem* item)
     items_.emplace_back(item);
 
     std::sort(items_.begin(), items_.end(),
-              [](std::shared_ptr<CdTextItem>& a,
-                 std::shared_ptr<CdTextItem>& b) {
+              [](std::shared_ptr<CdTextItem> a,
+                 std::shared_ptr<CdTextItem> b) {
                   if (a->blockNr() != b->blockNr())
                       return a->blockNr() < b->blockNr();
                   else
