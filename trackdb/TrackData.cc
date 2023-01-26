@@ -715,7 +715,7 @@ int TrackData::waveLength(const char *filename, long offset,
 
   waveFormat = readShort(fp);
 
-  if (waveFormat != 1) {
+  if (waveFormat != 1 && waveFormat != -2) {
     // not PCM format
     log_message(-2, "%s: not in PCM format.", filename);
     fclose(fp);
