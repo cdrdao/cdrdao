@@ -427,7 +427,7 @@ int TrackData::check(int trackNr) const
 void TrackData::effectiveFilename(const char* name)
 {
   if (effFilename_)
-    delete effFilename_;
+    delete[] effFilename_;
 
   effFilename_ = filename_;
   filename_ = strdupCC(name);

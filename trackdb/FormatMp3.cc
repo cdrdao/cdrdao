@@ -111,6 +111,7 @@ FormatSupport::Status FormatMp3::madInit()
 
   // Initialize libao for WAV output;
   ao_sample_format out_format;
+  bzero(&out_format, sizeof(out_format));
   out_format.bits = 16;
   out_format.rate = 44100;
   out_format.channels = 2;
