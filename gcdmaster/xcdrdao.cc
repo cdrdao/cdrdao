@@ -49,7 +49,8 @@ ProcessMonitor*     PROCESS_MONITOR = NULL;
 ProgressDialogPool* PROGRESS_POOL = NULL;
 PreferencesDialog*  preferencesDialog = NULL;
 ConfigManager*      configManager = NULL;
-Glib::RefPtr<Gtk::Application> app;
+
+Glib::RefPtr<GCDMasterApplication> app;
 
 static int PROCESS_MONITOR_SIGNAL_BLOCKED = 0;
 
@@ -77,9 +78,30 @@ static RETSIGTYPE signalHandler(int sig)
     PROCESS_MONITOR->handleSigChld();
 }
 
+void GCDMasterApplication::on_activate()
+{
+    auto appwindow = new GCDMaster();
+    appwindow->newChooserWindow();
+    add_window(*appwindow);
+    appwindow->present();
+}
+
+void GCDMasterApplication::on_open(const Gio::Application::type_vec_files& files,
+                                   const Glib::ustring&)
+{
+    for (const auto& file: files) {
+        if (file->is_native()) {
+            auto window = new GCDMaster();
+            window->openNewProject(file->get_path());
+            add_window(*window);
+            window->present();
+        }
+    }
+}
+
 int main(int argc, char* argv[])
 {
-  app = Gtk::Application::create(argc, argv, "Gnome.CDMaster");
+    app = Glib::RefPtr<GCDMasterApplication>(new GCDMasterApplication());
 
   // create GConf configuration manager
   configManager = new ConfigManager();
@@ -122,23 +144,8 @@ int main(int argc, char* argv[])
       exit(1);
   }
 
-  GCDMaster* gcdmaster = new GCDMaster();
-
-  bool openChooser = true;
-
-  while (argc > 1) {
-    if (gcdmaster->openNewProject(argv[1]))
-      openChooser = false; 
-
-    argv++;
-    argc--;
-  }
-
-  if (openChooser)
-    gcdmaster->newChooserWindow();
-
   //Shows the window and returns when it is closed.
-  int retval = app->run(*gcdmaster);
+  int retval = app->run(argc, argv);
 
   // save settings
   CdDevice::exportSettings();

@@ -214,9 +214,10 @@ void GCDMaster::createMenus()
   box_.add(*pToolbar);
 }
 
-bool GCDMaster::openNewProject(const char* s)
+bool GCDMaster::openNewProject(const std::string& str)
 {
   TocEdit* tocEdit;
+  const char* s = str.c_str();
 
   if (s == NULL || *s == 0 || s[strlen(s) - 1] == '/')
     return false;

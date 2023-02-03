@@ -71,6 +71,8 @@ public:
     const u8* data() const { return data_.data(); }
     size_t dataLen() const { return data_.size(); }
 
+    const std::string& getText() const { return u8text; }
+
     void print(std::ostream &, PrintParams& params) const;
 
     int operator==(const CdTextItem &);
