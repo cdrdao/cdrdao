@@ -33,10 +33,25 @@ extern class ProcessMonitor*     PROCESS_MONITOR;
 extern class ProgressDialogPool* PROGRESS_POOL;
 extern class PreferencesDialog*  preferencesDialog;
 extern class ConfigManager*      configManager;
-extern Glib::RefPtr<Gtk::Application> app;
 
 void blockProcessMonitorSignals();
 void unblockProcessMonitorSignals();
 
-#endif
+class GCDMasterApplication: public Gtk::Application
+{
+public:
+GCDMasterApplication() :
+    Gtk::Application("Gonme.CDMaster", Gio::APPLICATION_HANDLES_OPEN) {}
 
+protected:
+    void on_activate() override;
+    void on_open(const Gio::Application::type_vec_files& files,
+                 const Glib::ustring& hint) override;
+
+private:
+    void on_hide_window(Gtk::Window* window);
+};
+
+extern Glib::RefPtr<GCDMasterApplication> app;
+
+#endif

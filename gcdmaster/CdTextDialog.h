@@ -58,7 +58,7 @@ private:
   };
 
   struct Language {
-    Gtk::Table *table;
+    Gtk::Grid *table;
     Gtk::Entry *performer;
     Gtk::Entry *title;
     Gtk::Label *tabLabel;

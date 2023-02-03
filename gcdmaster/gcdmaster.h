@@ -38,7 +38,7 @@ public:
   bool closeProject();
   void closeChooser();
   bool on_delete_event(GdkEventAny* e);
-  bool openNewProject(const char*);
+  bool openNewProject(const std::string&);
   void openProject();
   void newChooserWindow();
   void newAudioCDProject2();
