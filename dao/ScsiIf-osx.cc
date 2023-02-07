@@ -1,6 +1,6 @@
 /*
  * Native implementation of cdrdao's SCSI interface for Mac OS X.
- * Copyright (C) by Edgar Fuß, Bonn, July 2007.
+ * Copyright (C) by Edgar FuÃŸ, Bonn, July 2007.
  * Do with this whatever you like, as long as you are either me or you keep
  * this message intact and both
  * - acknowledge that I wrote it for cdrdao in the first place, and
@@ -119,7 +119,7 @@ int ScsiIf::init()
 		CFDictionarySetValue(sub, CFSTR(kIOPropertySCSITaskDeviceCategory),
 		                          CFSTR(kIOPropertySCSITaskAuthoringDevice));
 		CFDictionarySetValue(dict, CFSTR(kIOPropertyMatchKey), sub);
-		IOServiceGetMatchingServices(kIOMainPortDefault, dict, &iterator);
+		IOServiceGetMatchingServices(NULL, dict, &iterator);
 		if (!iterator) log_message(3, "init: no iterator");
 		if (iterator) {
 			i = impl_->num_;
@@ -131,7 +131,7 @@ int ScsiIf::init()
 		}
 	} else if (impl_->path_) {
 		/* Native mode. Just use the IO Registry pathname */
-		impl_->object_ = IORegistryEntryFromPath(kIOMainPortDefault, impl_->path_);
+		impl_->object_ = IORegistryEntryFromPath(NULL, impl_->path_);
 	}
 	/* Strange if (!x) ... if (x) style so you can #ifdef out the !x part */
 	if (!impl_->object_) log_message(-2, "init: no object");
@@ -435,7 +435,7 @@ ScsiIf::ScanData *ScsiIf::scan(int *len, char *dev)
 	CFDictionarySetValue(sub, CFSTR(kIOPropertySCSITaskDeviceCategory),
 	                          CFSTR(kIOPropertySCSITaskAuthoringDevice));
 	CFDictionarySetValue(dict, CFSTR(kIOPropertyMatchKey), sub);
-	IOServiceGetMatchingServices(kIOMainPortDefault, dict, &iterator);
+	IOServiceGetMatchingServices(NULL, dict, &iterator);
 	if (!iterator) {
 		log_message(3, "scan: no iterator");
 		*len = 0;
