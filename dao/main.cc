@@ -219,6 +219,7 @@ DaoCommandLine::DaoCommandLine() :
     fullBurn(false), withCddb(false), taoSource(false), keepImage(false), overburn(false),
     writeSpeedControl(false), keep(false), printQuery(false), no_utf8(false)
 {
+    dataFilename = NULL;
     readingSpeed = -1;
     writingSpeed = -1;
     command = UNKNOWN;
