@@ -145,7 +145,7 @@ Toc *Toc::read(const string& filename)
         return NULL;
     }
 
-    if (filename.substr(filename.size() -4, 4) == ".cue")
+    if (filename.size() >= 4 && filename.substr(filename.size() - 4, 4) == ".cue")
         ret = parseCue(fp, filename.c_str());
     else
         ret = parseToc(fp, filename.c_str());
