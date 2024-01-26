@@ -2158,7 +2158,8 @@ int copyCd(DaoCommandLine& opts, CdrDriver *src, CdrDriver *dst)
     if (src == dst) {
 	// Unlock src to make swaping possible
 	src->preventMediumRemoval(0);
-	log_message(0, "Please insert a recordable medium and hit enter.");
+	    src->loadUnload(1);
+	    log_message(0, "Please insert a recordable medium and hit enter.");
 	getc(stdin);
     }
 
