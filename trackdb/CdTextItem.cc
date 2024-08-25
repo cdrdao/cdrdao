@@ -96,18 +96,35 @@ void CdTextItem::print(std::ostream &out, PrintParams& params) const
     out << packType2String(isTrackPack(), packType_);
 
     if (dataType() == DataType::SBCC) {
+        out << " \"";
         if (params.no_utf8) {
-            out << " \"";
+            // no-utf8 mode: print raw bytes, using the ascii representation
+            // where available and printable.
             for (auto c : data_) {
-                if (c >= 128)
-                    out << "\\" << std::oct << (unsigned int)c;
+                if (c == '\\')
+                    out << "\\\\";
+                else if (c == '"')
+                    out << "\\\"";
+                else if (c < 32 || c >= 127) // non-printable ASCII or out of ASCII
+                    out << "\\" << std::oct << static_cast<unsigned int>(c);
                 else
                     out << c;
             }
-            out << "\"";
         } else {
-            out << " \"" << u8text << "\"";
+            // UTF-8 mode: print the decoded characters as UTF-8, but still
+            // escape enough to reconstruct strings and to avoid control characters.
+            for (auto c : u8text) {
+                if (c == '\\')
+                    out << "\\\\";
+                else if (c == '"')
+                    out << "\\\"";
+                else if (static_cast<unsigned>(c) < 32 || c == 127)  // non-printable ASCII
+                    out << "\\" << std::oct << static_cast<unsigned int>(c);
+                else
+                    out << c;
+            }
         }
+        out << "\"";
     }
     else {
         long i = 0;
