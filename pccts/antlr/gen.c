@@ -47,7 +47,7 @@ static set tokensRefdInBlock;
 					/* T r a n s l a t i o n  T a b l e s */
 
 /* C_Trans[node type] == pointer to function that knows how to translate that node. */
-#ifdef __cplusplus
+#ifdef __USE_PROTOS
 void (*C_Trans[NumNodeTypes+1])(...) = {
 	NULL,
 	NULL,					/* See next table.
@@ -70,7 +70,7 @@ Junctions have many types */
 /* C_JTrans[Junction type] == pointer to function that knows how to translate that
  * kind of junction node.
  */
-#ifdef __cplusplus
+#ifdef __USE_PROTOS
 void (*C_JTrans[NumJuncTypes+1])(...) = {
 	NULL,
 	(void (*)(...)) genSubBlk,

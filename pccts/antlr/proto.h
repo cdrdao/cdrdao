@@ -34,37 +34,37 @@ extern int tp;
 extern Junction *SynDiag;
 extern char Version[];
 extern char VersionDef[];
-#ifdef __cplusplus
+#ifdef __USE_PROTOS
 extern void (*fpPrint[])(...);
 #else
 extern void (*fpPrint[])();
 #endif
-#ifdef __cplusplus
+#ifdef __USE_PROTOS
 extern struct _set (*fpReach[])(...);
 #else
 extern struct _set (*fpReach[])();
 #endif
-#ifdef __cplusplus
+#ifdef __USE_PROTOS
 extern struct _tree *(*fpTraverse[])(...);
 #else
 extern struct _tree *(*fpTraverse[])();
 #endif
-#ifdef __cplusplus
+#ifdef __USE_PROTOS
 extern void (**fpTrans)(...);
 #else
 extern void (**fpTrans)();
 #endif
-#ifdef __cplusplus
+#ifdef __USE_PROTOS
 extern void (**fpJTrans)(...);
 #else
 extern void (**fpJTrans)();
 #endif
-#ifdef __cplusplus
+#ifdef __USE_PROTOS
 extern void (*C_Trans[NumNodeTypes+1])(...);
 #else
 extern void (*C_Trans[])();
 #endif
-#ifdef __cplusplus
+#ifdef __USE_PROTOS
 extern void (*C_JTrans[NumJuncTypes+1])(...);
 #else
 extern void (*C_JTrans[])();

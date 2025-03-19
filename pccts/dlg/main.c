@@ -108,7 +108,7 @@ void p_warn_ambig()	{ warn_ambig = TRUE; }
 void p_cpp()		{ gen_cpp = TRUE; }
 #endif
 
-#ifdef __cplusplus
+#ifdef __USE_PROTOS
 typedef void (*WildFunc)(...);
 #else
 typedef void (*WildFunc)();

@@ -49,7 +49,7 @@ static int tnodes_used_in_guard_predicates_etc;     /* MR10 */
 typedef struct _Opt {
 			char *option;
 			int  arg;
-#ifdef __cplusplus
+#ifdef __USE_PROTOS
 			void (*process)(...);
 #else
 			void (*process)();
@@ -492,7 +492,7 @@ char *t;
 }
 
 Opt options[] = {
-#ifdef __cplusplus
+#ifdef __USE_PROTOS
     { "-CC", 0, (void (*)(...)) pCC,	"Generate C++ output (default=FALSE)"},
     { "-ck", 1, (void (*)(...)) pCk,	"Set compressed lookahead depth; fast approximate lookahead"},
     { "-cr", 0, (void (*)(...)) pCr,	"Generate cross reference (default=FALSE)"},

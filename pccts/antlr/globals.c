@@ -190,7 +190,7 @@ char *CurAmbigbtype;
  * representing the FIRST sets for that node (maintains spatial info).
  * We use 'struct _tree' not 'tree' due to a g++ 2.4.3 bug.
  */
-#ifdef __cplusplus
+#ifdef __USE_PROTOS
 struct _tree *(*fpTraverse[NumNodeTypes+1])(... /* Node *, int, set * */) = {
 	NULL,
 	(struct _tree *(*)(...)) tJunc,
@@ -212,7 +212,7 @@ Tree *(*fpTraverse[NumNodeTypes+1])() = {
  * that node. (r stands for reach).  We use 'struct _set' not 'set'
  * due to a g++ 2.4.3 bug.
  */
-#ifdef __cplusplus
+#ifdef __USE_PROTOS
 struct _set (*fpReach[NumNodeTypes+1])(... /* Node *, int, set * */) = {
 	NULL,
 	(struct _set (*)(...)) rJunc,
@@ -231,7 +231,7 @@ set (*fpReach[NumNodeTypes+1])() = {
 #endif
 
 /* fpPrint[node type] == pointer to function that knows how to print that node. */
-#ifdef __cplusplus
+#ifdef __USE_PROTOS
 void (*fpPrint[NumNodeTypes+1])(... /* Node * */) = {
 	NULL,
 	(void (*)(...)) pJunc,
@@ -312,7 +312,7 @@ FILE	*output=NULL;		/* current parser output file */
 FILE	*input=NULL;		/* current grammar input file */
 char	*FileStr[MaxNumFiles];/* Ptr to array of file names on command-line */
 int		NumFiles=0;			/* current grammar file number */
-#ifdef __cplusplus
+#ifdef __USE_PROTOS
 void	(**fpTrans)(...),	/* array of ptrs to funcs that translate nodes */
 	 	(**fpJTrans)(...);	/*  ... that translate junctions */
 #else
