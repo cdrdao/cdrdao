@@ -340,7 +340,8 @@ disks, e.g. to create a CD-EXTRA.
 .TP
 .BI \--overburn
 By default cdrdao will not allow one to write more data on a medium than
-specified by the current medium. This option allows to ignore this condition.
+specified by the current medium. This option allows one to ignore this
+condition.
 .TP
 .BI \--eject
 Eject the CD-R after writing or write simulation.
@@ -439,7 +440,7 @@ Upon exit from cdrdao, do not delete temporary WAV files created from MP3 and Og
 .TP
 .BI \--save
 Saves some of the current options to the settings file
-"$HOME/.cdrdao" and exit. See section \'SETTINGS\' for more details.
+"$HOME/.cdrdao" and exits. See section \'SETTINGS\' for more details.
 .TP
 .BI \-n
 Suppresses the 10 second pause before writing or simulating.
