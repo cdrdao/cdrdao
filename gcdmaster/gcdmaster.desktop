@@ -1,10 +1,10 @@
 [Desktop Entry]
-Encoding=UTF-8
 Name=Gnome CD Master
 Comment=Gnome Audio CD editor and burner
 Exec=gcdmaster %F
-Icon=gcdmaster.png
+Icon=gcdmaster
 Terminal=false
 Type=Application
 StartupNotify=true
-Categories=GNOME;AudioVideo;Application;X-Fedora;
+Categories=GTK;GNOME;Audio;AudioVideo;DiscBurning;
+Keywords=cdrom;cd;dvd;disc;burn;audio;
