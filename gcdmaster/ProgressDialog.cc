@@ -496,7 +496,7 @@ void ProgressDialog::update(unsigned long level)
     break;
 
   default:
-    statusMsg_->set_text(_("Unknow device action!"));
+    statusMsg_->set_text(_("Unknown device action!"));
     break;
   }
 }

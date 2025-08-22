@@ -56,7 +56,7 @@ CdTextDialog::CdTextDialog()
     page_[i].title = manage(new Gtk::Entry);
     page_[i].tabLabel = new Gtk::Label("");
     page_[i].performerButton =
-      new Gtk::CheckButton(_("Enable Perfomer Entries"));
+      new Gtk::CheckButton(_("Enable Performer Entries"));
     page_[i].performerButton->set_active(false);
     page_[i].performerButton->signal_toggled().
       connect(bind(mem_fun(*this, &CdTextDialog::activatePerformerAction), i));

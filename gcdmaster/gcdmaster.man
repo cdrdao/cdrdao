@@ -393,7 +393,7 @@ CD-R/CD-RW in any case.
 
 .TP
 ISRC:
-Allows to edit the ISRC code of the track. The first fields
+Allows one to edit the ISRC code of the track. The first fields
 holds the country code; it will only accept capital letters. The
 second field holds the owner code, capital letters and digits are
 allowed. The remaining fields holds the year and a serial number and
@@ -401,7 +401,7 @@ will only accept digits. All fields must be filled to set the ISRC
 code and all fields must be cleared to remove it.
 
 .SS CD-TEXT Frame
-Allows to enter and edit the CD-TEXT data of each language number for
+Allows one to enter and edit the CD-TEXT data of each language number for
 this track. All fields are optional but at least "Title" and
 "Performer" should be filled.
 
@@ -451,7 +451,7 @@ The "Delete" button removes the selected device. The change takes
 immediate effect and all other changes will be lost.
 
 .SS Device Settings Frame
-This frame allows to edit the settings of the currently selected
+This frame allows one to edit the settings of the currently selected
 device.
 
 .TP
