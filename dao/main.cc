@@ -2460,6 +2460,10 @@ int main(int argc, char **argv)
     if (settings->read(settingsPath) == 0)
 	log_message(3, "Read settings from \"%s\".", settingsPath);
 
+    settingsPath = "/etc/default/cdrdao";
+    if (settings->read(settingsPath) == 0)
+	log_message(3, "Read settings from \"%s\".", settingsPath);
+
     settingsPath = NULL;
 
     if ((homeDir = getenv("HOME")) != NULL) {
