@@ -700,7 +700,7 @@ bool TocEdit::queueThread()
     if (result != 0) {
 
       if (result < 0)
-        signalError(_("An error occured while reading audio data"));
+        signalError(_("An error occurred while reading audio data"));
 
       else {
         // Post operating code here.
