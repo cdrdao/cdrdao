@@ -52,10 +52,11 @@ void CdTextItem::setRawText(const u8* buffer, size_t buffer_len)
 
 void CdTextItem::setRawText(const std::string& str)
 {
-    data_.resize(str.size());
+    data_.resize(str.size() + 1);
     auto writer = data_.begin();
     for (const auto c : str)
         *writer++ = c;
+    *writer++ = '\0';
     dataType_ = DataType::SBCC;
     updateEncoding();
 }
