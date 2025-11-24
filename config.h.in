@@ -12,13 +12,13 @@
 /* Define to 1 if you have the <getopt.h> header file. */
 #undef HAVE_GETOPT_H
 
-/* Define to 1 if you have the `getpagesize' function. */
+/* Define to 1 if you have the 'getpagesize' function. */
 #undef HAVE_GETPAGESIZE
 
 /* Define if you have the iconv() function and it works. */
 #undef HAVE_ICONV
 
-/* Define to 1 if you have the `inet_aton' function. */
+/* Define to 1 if you have the 'inet_aton' function. */
 #undef HAVE_INET_ATON
 
 /* Define to 1 if you have the <inttypes.h> header file. */
@@ -27,64 +27,64 @@
 /* Define to 1 if you have the <malloc.h> header file. */
 #undef HAVE_MALLOC_H
 
-/* Define to 1 if you have the `mlockall' function. */
+/* Define to 1 if you have the 'mlockall' function. */
 #undef HAVE_MLOCKALL
 
 /* "" */
 #undef HAVE_MP3_SUPPORT
 
-/* Define to 1 if you have the `munlockall' function. */
+/* Define to 1 if you have the 'munlockall' function. */
 #undef HAVE_MUNLOCKALL
 
 /* "" */
 #undef HAVE_OGG_SUPPORT
 
-/* Define to 1 if you have the `pthread_attr_setschedparam' function. */
+/* Define to 1 if you have the 'pthread_attr_setschedparam' function. */
 #undef HAVE_PTHREAD_ATTR_SETSCHEDPARAM
 
-/* Define to 1 if you have the `pthread_attr_setschedpolicy' function. */
+/* Define to 1 if you have the 'pthread_attr_setschedpolicy' function. */
 #undef HAVE_PTHREAD_ATTR_SETSCHEDPOLICY
 
-/* Define to 1 if you have the `pthread_getschedparam' function. */
+/* Define to 1 if you have the 'pthread_getschedparam' function. */
 #undef HAVE_PTHREAD_GETSCHEDPARAM
 
 /* Have PTHREAD_PRIO_INHERIT. */
 #undef HAVE_PTHREAD_PRIO_INHERIT
 
-/* Define to 1 if you have the `pthread_setschedparam' function. */
+/* Define to 1 if you have the 'pthread_setschedparam' function. */
 #undef HAVE_PTHREAD_SETSCHEDPARAM
 
-/* Define to 1 if you have the `pthread_sigmask' function. */
+/* Define to 1 if you have the 'pthread_sigmask' function. */
 #undef HAVE_PTHREAD_SIGMASK
 
-/* Define to 1 if you have the `sched_getparam' function. */
+/* Define to 1 if you have the 'sched_getparam' function. */
 #undef HAVE_SCHED_GETPARAM
 
-/* Define to 1 if you have the `sched_get_priority_max' function. */
+/* Define to 1 if you have the 'sched_get_priority_max' function. */
 #undef HAVE_SCHED_GET_PRIORITY_MAX
 
 /* Define to 1 if you have the <sched.h> header file. */
 #undef HAVE_SCHED_H
 
-/* Define to 1 if you have the `sched_setscheduler' function. */
+/* Define to 1 if you have the 'sched_setscheduler' function. */
 #undef HAVE_SCHED_SETSCHEDULER
 
-/* Define to 1 if you have the `setegid' function. */
+/* Define to 1 if you have the 'setegid' function. */
 #undef HAVE_SETEGID
 
-/* Define to 1 if you have the `seteuid' function. */
+/* Define to 1 if you have the 'seteuid' function. */
 #undef HAVE_SETEUID
 
-/* Define to 1 if you have the `setgid' function. */
+/* Define to 1 if you have the 'setgid' function. */
 #undef HAVE_SETGID
 
-/* Define to 1 if you have the `setregid' function. */
+/* Define to 1 if you have the 'setregid' function. */
 #undef HAVE_SETREGID
 
-/* Define to 1 if you have the `setreuid' function. */
+/* Define to 1 if you have the 'setreuid' function. */
 #undef HAVE_SETREUID
 
-/* Define to 1 if you have the `setuid' function. */
+/* Define to 1 if you have the 'setuid' function. */
 #undef HAVE_SETUID
 
 /* Define to 1 if you have the <stdint.h> header file. */
@@ -96,7 +96,7 @@
 /* Define to 1 if you have the <stdlib.h> header file. */
 #undef HAVE_STDLIB_H
 
-/* Define to 1 if you have the `strerror' function. */
+/* Define to 1 if you have the 'strerror' function. */
 #undef HAVE_STRERROR
 
 /* Define to 1 if you have the <strings.h> header file. */
@@ -120,7 +120,7 @@
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
 
-/* Define to 1 if you have the `usleep' function. */
+/* Define to 1 if you have the 'usleep' function. */
 #undef HAVE_USLEEP
 
 /* Define as const if the declaration of iconv() needs const. */
@@ -157,19 +157,19 @@
 /* Define as the return type of signal handlers (`int' or `void'). */
 #undef RETSIGTYPE
 
-/* The size of `int', as computed by sizeof. */
+/* The size of 'int', as computed by sizeof. */
 #undef SIZEOF_INT
 
-/* The size of `long', as computed by sizeof. */
+/* The size of 'long', as computed by sizeof. */
 #undef SIZEOF_LONG
 
-/* The size of `long long', as computed by sizeof. */
+/* The size of 'long long', as computed by sizeof. */
 #undef SIZEOF_LONG_LONG
 
-/* The size of `short', as computed by sizeof. */
+/* The size of 'short', as computed by sizeof. */
 #undef SIZEOF_SHORT
 
-/* Define to 1 if all of the C90 standard headers exist (not just the ones
+/* Define to 1 if all of the C89 standard headers exist (not just the ones
    required in a freestanding environment). This macro is provided for
    backward compatibility; new code need not use it. */
 #undef STDC_HEADERS
@@ -210,5 +210,5 @@
 /* "" */
 #undef u_int32_t
 
-/* Define to `unsigned char' if <sys/types.h> does not define. */
+/* Define to 'unsigned char' if <sys/types.h> does not define. */
 #undef u_int8_t

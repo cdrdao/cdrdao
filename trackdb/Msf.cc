@@ -69,7 +69,7 @@ const char *Msf::str() const
 {
   static char buf[20];
 
-  sprintf(buf, "%02d:%02d:%02d", min_, sec_, frac_);
+  snprintf(buf, sizeof(buf), "%02d:%02d:%02d", min_, sec_, frac_);
 
   return buf;
 }

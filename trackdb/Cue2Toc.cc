@@ -683,7 +683,7 @@ static int ifprintf(std::ostream& o, int indent, int level,
         o << ' ';
 
     va_start(ap, format);
-    fprintf_return = vsprintf(twolines, format, ap);
+    fprintf_return = vsnprintf(twolines, sizeof(twolines), format, ap);
     va_end(ap);
     o << twolines;
 
@@ -981,6 +981,6 @@ fr2tc(char *tc, long fr)
 	fr -= s * 75;
 	m = fr / 75 / 60;
 
-	sprintf(tc, "%02d:%02d:%02d", m, s, f);
+	snprintf(tc, TCBUFLEN, "%02d:%02d:%02d", m, s, f);
 	return 0;
 }

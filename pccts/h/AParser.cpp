@@ -67,7 +67,8 @@ SetWordType ANTLRParser::bitmask[sizeof(SetWordType)*8] = {
 	0x00000010, 0x00000020, 0x00000040, 0x00000080
 };
 
-char ANTLRParser::eMsgBuffer[500] = "";
+#define EMSGBUFFER_SIZE 500
+char ANTLRParser::eMsgBuffer[EMSGBUFFER_SIZE] = "";
 
 ANTLRParser::
 ~ANTLRParser()
@@ -251,7 +252,7 @@ LT(int i)
 	if ( i >= inputTokens->bufferSize() || inputTokens->minTokens() < LLk )     /* MR20 Was "<=" */
 	{
 		char buf[2000];                 /* MR20 Was "static" */
-        sprintf(buf, "The minimum number of tokens you requested that the\nANTLRTokenBuffer buffer is not enough to satisfy your\nLT(%d) request; increase 'k' argument to constructor for ANTLRTokenBuffer\n", i);
+		sprintf(buf, sizeof(buf), "The minimum number of tokens you requested that the\nANTLRTokenBuffer buffer is not enough to satisfy your\nLT(%d) request; increase 'k' argument to constructor for ANTLRTokenBuffer\n", i);
 		panic(buf);
 	}
 #endif
@@ -650,21 +651,21 @@ _setmatch_wdfltsig(SetWordType *tokensWanted,
 char *ANTLRParser::
 eMsgd(char *err,int d)
 {
-	sprintf(eMsgBuffer, err, d);	// dangerous, but I don't care
+	snprintf(eMsgBuffer, EMSGBUFFER_SIZE, err, d);	// dangerous, but I don't care
 	return eMsgBuffer;
 }
 
 char *ANTLRParser::
 eMsg(char *err, char *s)
 {
-	sprintf(eMsgBuffer, err, s);
+	snprintf(eMsgBuffer, EMSGBUFFER_SIZE, err, s);
 	return eMsgBuffer;
 }
 
 char *ANTLRParser::
 eMsg2(char *err,char *s, char *t)
 {
-	sprintf(eMsgBuffer, err, s, t);
+	snprintf(eMsgBuffer, EMSGBUFFER_SIZE, err, s, t);
 	return eMsgBuffer;
 }
 
