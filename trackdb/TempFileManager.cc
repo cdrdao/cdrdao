@@ -98,7 +98,7 @@ bool TempFileManager::getTempFile(std::string& tempname, const char* key,
   do {
     char tmpbuf[12];
     std::string uniqnm = fname;
-    sprintf(tmpbuf, ".%d", id);
+    snprintf(tmpbuf, sizeof(tmpbuf), ".%d", id);
     uniqnm += tmpbuf;
     if (extension) {
       uniqnm += ".";

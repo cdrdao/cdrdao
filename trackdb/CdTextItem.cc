@@ -115,7 +115,7 @@ void CdTextItem::print(std::ostream &out, PrintParams& params) const
         out << " {";
         for (auto c : data_) {
             if (i == 0) {
-                sprintf(buf, "%2d", c);
+                snprintf(buf, sizeof(buf), "%2d", c);
                 out << buf;
             }
             else {
@@ -124,7 +124,7 @@ void CdTextItem::print(std::ostream &out, PrintParams& params) const
                 else
                     out << ", ";
 
-                sprintf(buf, "%2d", c);
+                snprintf(buf, sizeof(buf), "%2d", c);
                 out << buf;
             }
             i++;

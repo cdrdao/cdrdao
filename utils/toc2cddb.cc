@@ -186,7 +186,7 @@ const char *calcCddbId(const Toc *toc)
   }
 
   id = (n % 0xff) << 24 | o << 8 | tcount;
-  sprintf(buf, "%08lx", id);
+  snprintf(buf, sizeof(buf), "%08lx", id);
 
   return buf;
 }

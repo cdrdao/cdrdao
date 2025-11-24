@@ -2091,7 +2091,7 @@ int copyCd(DaoCommandLine& opts, CdrDriver *src, CdrDriver *dst)
 
     if (opts.dataFilename == NULL) {
 	// create a unique temporary data file name in current directory
-	sprintf(dataFilenameBuf, "cddata%ld.bin", pid);
+	snprintf(dataFilenameBuf, sizeof(dataFilenameBuf), "cddata%ld.bin", pid);
 	opts.dataFilename = dataFilenameBuf;
     }
 

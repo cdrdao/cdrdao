@@ -434,9 +434,9 @@ int main(int argc, char **argv)
   for (trun = titr.first(start, end), trackNr = 1;
        trun != NULL;
        trun = titr.next(start, end), trackNr++) {
-    char buf[20];
 
-    sprintf(buf, "%02d ", trackNr);
+    char buf[20];
+    snprintf(buf, sizeof(buf), "%02d ", trackNr);
     out << "  TRACK " << buf;
 
     switch (trun->type()) {
