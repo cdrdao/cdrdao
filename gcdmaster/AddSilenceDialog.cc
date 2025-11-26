@@ -190,7 +190,7 @@ void AddSilenceDialog::applyAction()
   if (s != NULL && *s != 0) {
     val = atol(s);
     length += val * 60 * 75 * SAMPLES_PER_BLOCK;
-    sprintf(buf, "%ld", val);
+    snprintf(buf, sizeof(buf),"%ld", val);
     minutes_.set_text(buf);
   }
 
@@ -198,7 +198,7 @@ void AddSilenceDialog::applyAction()
   if (s != NULL && *s != 0) {
     val = atol(s);
     length += val * 75 * SAMPLES_PER_BLOCK;
-    sprintf(buf, "%ld", val);
+    snprintf(buf, sizeof(buf),"%ld", val);
     seconds_.set_text(buf);
   }
 
@@ -206,7 +206,7 @@ void AddSilenceDialog::applyAction()
   if (s != NULL && *s != 0) {
     val = atol(s);
     length += val * SAMPLES_PER_BLOCK;
-    sprintf(buf, "%ld", val);
+    snprintf(buf, sizeof(buf),"%ld", val);
     frames_.set_text(buf);
   }
   
@@ -214,7 +214,7 @@ void AddSilenceDialog::applyAction()
   if (s != NULL && *s != 0) {
     val = atol(s);
     length += val;
-    sprintf(buf, "%ld", val);
+    snprintf(buf, sizeof(buf),"%ld", val);
     samples_.set_text(buf);
   }
   

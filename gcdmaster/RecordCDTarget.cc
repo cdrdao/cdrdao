@@ -337,7 +337,7 @@ void RecordCDTarget::updateBufferRAMLabel()
 {
   char label[20];
   
-  sprintf(label, "= %0.2f Mb buffer.", bufferSpinButton_->get_value() * 0.171875);
+  snprintf(label, sizeof(label), "= %0.2f Mb buffer.", bufferSpinButton_->get_value() * 0.171875);
   bufferRAMLabel_->set_text(label);
 }
 

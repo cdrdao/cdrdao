@@ -121,7 +121,7 @@ Process *ProcessMonitor::start(const char *prg, const char **args,
   }
   
   if (pipeFdArgNum > 0) {
-    sprintf(buf, "%d", pipeFds[1]);
+    snprintf(buf, sizeof(buf),"%d", pipeFds[1]);
     args[pipeFdArgNum] = buf;
   }
 

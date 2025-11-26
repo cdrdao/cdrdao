@@ -326,7 +326,7 @@ void ProgressDialog::update(unsigned long level)
       	actTrack_ = track;
 
       	s = _("Analyzing track ");
-      	sprintf(buf, "%d of %d", track, totalTracks);
+	snprintf(buf, sizeof(buf),"%d of %d", track, totalTracks);
       	s += buf;
 
       	statusMsg_->set_text(s);
@@ -336,7 +336,7 @@ void ProgressDialog::update(unsigned long level)
       	actTrack_ = track;
 
       	s = _("Extracting ");
-	sprintf(buf, "%d", totalTracks);
+	snprintf(buf, sizeof(buf),"%d", totalTracks);
 	s += buf;
         s += _(" tracks...");
 
@@ -351,7 +351,7 @@ void ProgressDialog::update(unsigned long level)
 	actTrack_ = track;
 
 	s = _("Writing track ");
-	sprintf(buf, "%d of %d", track, totalTracks);
+	snprintf(buf, sizeof(buf),"%d of %d", track, totalTracks);
 	s += buf;
 
 	statusMsg_->set_text(s);
@@ -537,7 +537,7 @@ bool ProgressDialog::time()
   mins = (time - (hours * 3600)) / 60;
   secs = time - ((hours * 3600) + (mins * 60));
 
-  sprintf(buf, "%ld:%02ld:%02ld", hours, mins, secs);
+  snprintf(buf, sizeof(buf),"%ld:%02ld:%02ld", hours, mins, secs);
   currentTime_->set_text(buf);
 
   if (actTotalProgress_ > 10)
@@ -561,7 +561,7 @@ bool ProgressDialog::time()
     mins = (time_remain - (hours * 3600)) / 60;
     secs = time_remain - ((hours * 3600) + (mins * 60));
 
-    sprintf(buf, "%ld:%02ld:%02ld", hours, mins, secs);
+    snprintf(buf, sizeof(buf),"%ld:%02ld:%02ld", hours, mins, secs);
     remainingTime_->set_text(buf);
   }
 

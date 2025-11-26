@@ -267,7 +267,7 @@ Gtk::VBox *TrackInfoDialog::createCdTextPage(int n)
   Gtk::HBox *hbox;
   Gtk::Label *label;
 
-  sprintf(buf, " %d ", n);
+  snprintf(buf, sizeof(buf), " %d ", n);
   cdTextPages_[n].label = new Gtk::Label(buf);
 
   cdTextPages_[n].title = manage(new Gtk::Entry);
@@ -546,24 +546,24 @@ void TrackInfoDialog::importData(const Toc *toc, int trackNr)
     return;
   }
 
-  sprintf(buf, "%d", trackNr);
+  snprintf(buf, sizeof(buf),"%d", trackNr);
   trackNr_->set_text(buf);
 
-  sprintf(buf, "%3d:%02d:%02d", track->start().min(), track->start().sec(),
+  snprintf(buf, sizeof(buf),"%3d:%02d:%02d", track->start().min(), track->start().sec(),
 	  track->start().frac());
   pregapLen_->set_text(buf);
 
-  sprintf(buf, "%3d:%02d:%02d", start.min(), start.sec(), start.frac());
+  snprintf(buf, sizeof(buf),"%3d:%02d:%02d", start.min(), start.sec(), start.frac());
   trackStart_->set_text(buf);
 
-  sprintf(buf, "%3d:%02d:%02d", end.min(), end.sec(), end.frac());
+  snprintf(buf, sizeof(buf),"%3d:%02d:%02d", end.min(), end.sec(), end.frac());
   trackEnd_->set_text(buf);
 
   Msf len(track->length() - track->start());
-  sprintf(buf, "%3d:%02d:%02d", len.min(), len.sec(), len.frac());
+  snprintf(buf, sizeof(buf),"%3d:%02d:%02d", len.min(), len.sec(), len.frac());
   trackLen_->set_text(buf);
 
-  sprintf(buf, "%3d", track->nofIndices());
+  snprintf(buf, sizeof(buf),"%3d", track->nofIndices());
   indexMarks_->set_text(buf);
 
   copyFlag_->set_sensitive(true);
@@ -580,17 +580,17 @@ void TrackInfoDialog::importData(const Toc *toc, int trackNr)
     fourChannelAudio_->set_active(true);
     
   if (track->isrcValid()) {
-    sprintf(buf, "%c%c", track->isrcCountry(0), track->isrcCountry(1));
+    snprintf(buf, sizeof(buf),"%c%c", track->isrcCountry(0), track->isrcCountry(1));
     isrcCodeCountry_->set_text(buf);
     
-    sprintf(buf, "%c%c%c", track->isrcOwner(0), track->isrcOwner(1),
+    snprintf(buf, sizeof(buf),"%c%c%c", track->isrcOwner(0), track->isrcOwner(1),
 	    track->isrcOwner(2));
     isrcCodeOwner_->set_text(buf);
 
-    sprintf(buf, "%c%c", '0' + track->isrcYear(0), '0' + track->isrcYear(1));
+    snprintf(buf, sizeof(buf),"%c%c", '0' + track->isrcYear(0), '0' + track->isrcYear(1));
     isrcCodeYear_->set_text(buf);
     
-    sprintf(buf, "%c%c%c%c%c", '0' + track->isrcSerial(0),
+    snprintf(buf, sizeof(buf),"%c%c%c%c%c", '0' + track->isrcSerial(0),
 	    '0' + track->isrcSerial(1), '0' + track->isrcSerial(2),
 	    '0' + track->isrcSerial(3), '0' + track->isrcSerial(4));
     isrcCodeSerial_->set_text(buf);
