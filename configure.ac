@@ -1,7 +1,7 @@
 dnl Process this file with autoconf to produce a configure script.
 AC_REVISION($Revision: 1.26 $)dnl
 
-AC_INIT([cdrdao],[1.2.5])
+AC_INIT([cdrdao],[1.2.6a])
 AC_CONFIG_MACRO_DIR([m4])
 
 AC_CONFIG_SRCDIR(dao/main.cc)
@@ -31,7 +31,7 @@ AC_ARG_WITH(mp3-support,[  --with-mp3-support      enable MP3 format support (de
 dnl Checks for programs.
 AC_PROG_CC
 AC_PROG_CXX
-AX_CXX_COMPILE_STDCXX_11
+AX_CXX_COMPILE_STDCXX_14
 AC_PROG_CPP
 AC_PROG_INSTALL
 AC_PROG_RANLIB
