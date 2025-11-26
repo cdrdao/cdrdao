@@ -303,7 +303,7 @@ Gtk::VBox *TocInfoDialog::createCdTextPage(int n)
   Gtk::HBox *hbox;
   Gtk::Label *label;
 
-  sprintf(buf, " %d ", n);
+  snprintf(buf, sizeof(buf)," %d ", n);
   cdTextPages_[n].label = manage(new Gtk::Label(buf));
   cdTextPages_[n].label->show();
 
@@ -696,11 +696,11 @@ void TocInfoDialog::importData(const Toc *toc)
   char buf[50];
   int i;
 
-  sprintf(buf, "%3d:%02d:%02d", toc->length().min(), toc->length().sec(),
+  snprintf(buf, sizeof(buf),"%3d:%02d:%02d", toc->length().min(), toc->length().sec(),
       toc->length().frac());
   tocLength_->set_text(buf);
 
-  sprintf(buf, "%3d", toc->nofTracks());
+  snprintf(buf, sizeof(buf),"%3d", toc->nofTracks());
   nofTracks_->set_text(buf);
 
   if (toc->catalogValid()) {

@@ -905,9 +905,6 @@ void SampleDisplay::updateSamples()
                 rcenter_ - pos1);
         }
 
-        if (&pixmap_ == 0)
-          std::cout << "null !!" << std::endl;
-
         if (0 && (gint) di < sampleEndX_) {
           pos = sampleBuf[len - 1].left() * halfHeight;
           pos /= SHRT_MAX;
@@ -1004,7 +1001,7 @@ void SampleDisplay::drawTimeTick(const Cairo::RefPtr<Cairo::Context>& cr,
   unsigned long frame = sample / 588;
   sample %= 588;
 
-  sprintf(buf, "%lu:%02lu:%02lu.%03lu", min, sec, frame, sample);
+  snprintf(buf, sizeof(buf),"%lu:%02lu:%02lu.%03lu", min, sec, frame, sample);
 
   cr->set_source_rgb(0.0, 0.0, 0.0);
   draw_line(cr, x, y - timeLineHeight_, x, y);
@@ -1081,7 +1078,7 @@ void SampleDisplay::drawTrackMarker(const Cairo::RefPtr<Cairo::Context>& cr,
 {
   char buf[20];
 
-  sprintf(buf, "%d.%d", trackNr, indexNr);
+  snprintf(buf, sizeof(buf),"%d.%d", trackNr, indexNr);
 
   Glib::RefPtr<Gdk::Pixbuf> marker;
 

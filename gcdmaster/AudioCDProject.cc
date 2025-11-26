@@ -84,7 +84,7 @@ AudioCDProject::AudioCDProject(int number, const char *name, TocEdit *tocEdit,
                                                      
   if (!name || strlen(name) == 0) {
     char buf[20];
-    sprintf(buf, "unnamed-%i.toc", projectNumber_);
+    snprintf(buf, sizeof(buf),"unnamed-%i.toc", projectNumber_);
     tocEdit_->filename(buf);
     new_ = true;
   } else {

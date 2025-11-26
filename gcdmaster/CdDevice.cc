@@ -140,7 +140,7 @@ Glib::ustring CdDevice::settingString() const
 
   s += ",";
 
-  sprintf(buf, "0x%lx", driverOptions_);
+  snprintf(buf, sizeof(buf),"0x%lx", driverOptions_);
   s += buf;
 
   return s;
@@ -387,6 +387,7 @@ bool CdDevice::recordDao(Gtk::Window& parent, TocEdit *tocEdit, int simulate,
       || process_ != NULL)
     return false;
 
+  // Not ideal, but NO alternatives with C++14.
   tocFileName = std::tmpnam(nullptr);
   tocFileName += ".gcdm.toc";
 
@@ -418,7 +419,7 @@ bool CdDevice::recordDao(Gtk::Window& parent, TocEdit *tocEdit, int simulate,
     args[n++] = "--multi";
 
   if (speed > 0) {
-    sprintf(speedbuf, "%d", speed);
+    snprintf(speedbuf, sizeof(speedbuf), "%d", speed);
     args[n++] = "--speed";
     args[n++] = speedbuf;
   }
@@ -436,13 +437,13 @@ bool CdDevice::recordDao(Gtk::Window& parent, TocEdit *tocEdit, int simulate,
   args[n++] = (char*)dev_.c_str();
 
   if (driverId_ > 0) {
-    sprintf(drivername, "%s:0x%lx", driverName(driverId_), driverOptions_);
+    snprintf(drivername, sizeof(drivername), "%s:0x%lx", driverName(driverId_), driverOptions_);
     args[n++] = "--driver";
     args[n++] = drivername;
   }
 
   if (buffer >= 10) {
-    sprintf(bufferbuf, "%i", buffer);
+    snprintf(bufferbuf, sizeof(bufferbuf), "%i", buffer);
     args[n++] = "--buffers";
     args[n++] = bufferbuf;
   }
@@ -561,12 +562,12 @@ int CdDevice::extractDao(Gtk::Window& parent, const char *tocFileName,
   args[n++] = (char*)dev_.c_str();
 
   if (driverId_ > 0) {
-    sprintf(drivername, "%s:0x%lx", driverName(driverId_), driverOptions_);
+    snprintf(drivername, sizeof(drivername), "%s:0x%lx", driverName(driverId_), driverOptions_);
     args[n++] = "--driver";
     args[n++] = drivername;
   }
 
-  sprintf(correctionbuf, "%d", correction);
+  snprintf(correctionbuf, sizeof(correctionbuf), "%d", correction);
   args[n++] = "--paranoia-mode";
   args[n++] = correctionbuf;
 
@@ -662,12 +663,12 @@ int CdDevice::duplicateDao(Gtk::Window& parent, int simulate, int multiSession,
   if (multiSession)
     args[n++] = "--multi";
 
-  sprintf(correctionbuf, "%d", correction);
+  snprintf(correctionbuf, sizeof(correctionbuf), "%d", correction);
   args[n++] = "--paranoia-mode";
   args[n++] = correctionbuf;
 
   if (speed > 0) {
-    sprintf(speedbuf, "%d", speed);
+      snprintf(speedbuf, sizeof(speedbuf), "%d", speed);
     args[n++] = "--speed";
     args[n++] = speedbuf;
   }
@@ -697,7 +698,7 @@ int CdDevice::duplicateDao(Gtk::Window& parent, int simulate, int multiSession,
   args[n++] = (char*)dev_.c_str();
 
   if (driverId_ > 0) {
-    sprintf(drivername, "%s:0x%lx", driverName(driverId_), driverOptions_);
+    snprintf(drivername, sizeof(drivername), "%s:0x%lx", driverName(driverId_), driverOptions_);
     args[n++] = "--driver";
     args[n++] = drivername;
   }
@@ -709,14 +710,14 @@ int CdDevice::duplicateDao(Gtk::Window& parent, int simulate, int multiSession,
     args[n++] = (char*)readdev->dev();
 
     if (readdev->driverId() > 0) {
-      sprintf(r_drivername, "%s:0x%lx", driverName(readdev->driverId()),
+	snprintf(r_drivername, sizeof(r_drivername), "%s:0x%lx", driverName(readdev->driverId()),
       			 readdev->driverOptions());
       args[n++] = "--source-driver";
       args[n++] = r_drivername;
     }
   }
   if (buffer >= 10) {
-    sprintf(bufferbuf, "%i", buffer);
+    snprintf(bufferbuf, sizeof(bufferbuf), "%i", buffer);
     args[n++] = "--buffers";
     args[n++] = bufferbuf;
   }
@@ -802,7 +803,7 @@ int CdDevice::blank(Gtk::Window* parent, int fast, int speed, int eject,
     args[n++] = "full";
 
   if (speed > 0) {
-    sprintf(speedbuf, "%d", speed);
+    snprintf(speedbuf, sizeof(speedbuf), "%d", speed);
     args[n++] = "--speed";
     args[n++] = speedbuf;
   }
@@ -817,7 +818,7 @@ int CdDevice::blank(Gtk::Window* parent, int fast, int speed, int eject,
   args[n++] = (char*)dev_.c_str();
 
   if (driverId_ > 0) {
-    sprintf(drivername, "%s:0x%lx", driverName(driverId_), driverOptions_);
+    snprintf(drivername, sizeof(drivername), "%s:0x%lx", driverName(driverId_), driverOptions_);
     args[n++] = "--driver";
     args[n++] = drivername;
   }

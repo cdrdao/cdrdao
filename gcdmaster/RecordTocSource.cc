@@ -120,10 +120,10 @@ void RecordTocSource::update(unsigned long level, TocEdit *tedit)
 
       tocTypeLabel_.set_text(toc->tocType2String(toc->tocType()));
 
-      sprintf(label, "%d", toc->nofTracks());
+      snprintf(label, sizeof(label), "%d", toc->nofTracks());
       nofTracksLabel_.set_text(label);
       
-      sprintf(buf, "%d:%02d:%02d", toc->length().min(),
+      snprintf(buf, sizeof(buf),"%d:%02d:%02d", toc->length().min(),
 	      toc->length().sec(), toc->length().frac());
       tocLengthLabel_.set_text(buf);
     }

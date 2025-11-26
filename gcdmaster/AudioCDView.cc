@@ -872,7 +872,7 @@ const char *AudioCDView::sample2string(unsigned long sample)
   unsigned long frame = sample / 588;
   sample %= 588;
 
-  sprintf(buf, "%2lu:%02lu:%02lu.%03lu", min, sec, frame, sample);
+  snprintf(buf, sizeof(buf),"%2lu:%02lu:%02lu.%03lu", min, sec, frame, sample);
   
   return buf;
 }

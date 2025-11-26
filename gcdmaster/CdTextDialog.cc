@@ -94,7 +94,7 @@ CdTextDialog::CdTextDialog()
       swin->show_all();
       swin->add(*vbox1);
 
-      sprintf(buf, " %d ", i);
+      snprintf(buf, sizeof(buf)," %d ", i);
       languages_->append_page(*swin, *(page_[i].tabLabel));
     }
   }
@@ -181,7 +181,7 @@ void CdTextDialog::adjustTableEntries(int n)
       page_[l].tracks = newTracks;
 
       for (i = trackEntries_; i < n; i++) {
-	sprintf(buf, _("Track %02d"), i + 1);
+	snprintf(buf, sizeof(buf),_("Track %02d"), i + 1);
 	
 	page_[l].tracks[i].performer = manage(new Gtk::Entry);
 	page_[l].tracks[i].performer->set_sensitive(performerActive);

@@ -397,7 +397,7 @@ void DeviceConfDialog::importConfiguration(Gtk::TreeIter row)
     devtypeMenu_.set_sensitive(true);
     devtypeMenu_.set_active(data->deviceType);
     driverOptionsEntry_.set_sensitive(true);
-    sprintf(buf, "0x%lx", data->options);
+    snprintf(buf, sizeof(buf),"0x%lx", data->options);
     driverOptionsEntry_.set_text(buf);
 
   } else {
