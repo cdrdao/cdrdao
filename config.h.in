@@ -6,6 +6,9 @@
 /* "" */
 #undef HAVE_AO
 
+/* define if the compiler supports basic C++14 syntax */
+#undef HAVE_CXX14
+
 /* Define to 1 if you have the <fcntl.h> header file. */
 #undef HAVE_FCNTL_H
 
