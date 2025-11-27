@@ -15,7 +15,7 @@ CD_TEXT {
   LANGUAGE 0 {
     // Required fields - at least all CD-TEXT CDs I've seen so far have them.
     TITLE "CD Title"
-    PERFORMER "Performer"
+    PERFORMER "Perf\\ormer"
     DISC_ID "XY12345"
     UPC_EAN "" // usually empty
 
@@ -33,7 +33,7 @@ TRACK AUDIO
 CD_TEXT {
   LANGUAGE 0 {
     // if an item is defined for one track it should be defined for all tracks
-    TITLE "Track Title"
+    TITLE "Track \"Title\""
 
     PERFORMER "Performer"
     ISRC "US-XX1-98-01234"

@@ -89,6 +89,15 @@ private:
     int blockNr_; // 0 ... 7
     Util::Encoding encoding_;
 
+    // We potentially keep two copies of the CD-TEXT: the data_ vector
+    // represents what will actulally be burned onto the CD, and can
+    // be either binary data or text data, encoded using one of the
+    // officially supported CD encodings (i.e. not UTF-8). The u8text
+    // string, is set, represents the desired textual encoding and
+    // comes from either the TOC file or from the gcdmaster dialog
+    // boxes. That UTF-8 string will get translated into ASCII or
+    // ISO-8859-1 as best as possible.
+
     // Raw binary content, or pre-encoded text content
     std::vector<u8> data_;
 
