@@ -285,7 +285,7 @@ also supports all ATAPI CD-ROM, CD-R and CD-RW drives. Either the
 recorder supports DAO writing at all.
 
 Cdrdao access ATAPI devices through the same interface as used for
-SCSI devices. Therefor the operating system must emulate the ATAPI
+SCSI devices. Therefore the operating system must emulate the ATAPI
 devices as SCSI devices. Some operating systems do this by default
 (e.g. Win32), other operating system must be told to do that
 (e.g. Linux, enable the IDE host adapter emulation) and some operating
@@ -297,7 +297,7 @@ them but the operating system must present them as SCSI devices.
 It is also possible to access ATAPI devices directly by using the
 syntax '--device ATAPI:0,0,0' or '--device ATA:0,0,0' based in your
 operating system. This is the same syntax used by cdrecord. It is
-indeed the recommended way for recent Linux systems wich no longer
+indeed the recommended way for recent Linux systems which no longer
 relies on the ide-scsi emulation layer. Linux kernel 2.4 users should
 use the '--device ATAPI:0,0,0' syntax, while kernels above 2.6 can use
 the more recent ATA interface ('--device ATA:0,0,0').

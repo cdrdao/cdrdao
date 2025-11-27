@@ -899,7 +899,7 @@ static int getSharedMemory(long nofBuffers,
   maxSegmentSize = 1 * 1024 * 1024; // 1 MB
 #endif
 
-  log_message(4, "Shm max segement size: %ld (%ld MB)", maxSegmentSize,
+  log_message(4, "Shm max segment size: %ld (%ld MB)", maxSegmentSize,
 	  maxSegmentSize >> 20);
 
   if (maxSegmentSize < sizeof(BufferHeader) + nofBuffers * sizeof(Buffer)) {

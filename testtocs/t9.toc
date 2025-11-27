@@ -1,5 +1,5 @@
 CD_DA
-// check mulitple tracks
+// check multiple tracks
 CATALOG "0724385356926"
 
 TRACK AUDIO

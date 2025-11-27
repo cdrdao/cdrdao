@@ -218,7 +218,7 @@ void ScsiIf::printError()
 			case DSRT_LONG:    message(-2,"overrun"); break;
 			case DSRT_PROTO:   message(-2,"protocol failure"); break;
 			case DSRT_EBSY:    message(-2,"busy lost"); break;
-			case DSRT_REJECT:  message(-2,"mesage reject"); break;
+			case DSRT_REJECT:  message(-2,"message reject"); break;
 			case DSRT_PARITY:  message(-2,"parity error"); break;
 			case DSRT_MEMORY:  message(-2,"memory error"); break;
 			case DSRT_CMDO:    message(-2,"command error"); break;
