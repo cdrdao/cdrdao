@@ -98,29 +98,29 @@ void CdTextItem::print(std::ostream &out, PrintParams& params) const
     out << packType2String(isTrackPack(), packType_);
 
     auto printchar = [&](unsigned char c) {
-	if (c == '"')
-	    out << "\\\"";
-	else if (c == '\\')
-	    out << "\\\\";
-	else if (params.no_utf8 && !isprint(c))
-	    out << "\\" << std::oct << std::setfill('0') << std::setw(3) << (unsigned int)c;
-	else
-	    out << c;
+        if (c == '"')
+            out << "\\\"";
+        else if (c == '\\')
+            out << "\\\\";
+        else if (params.no_utf8 && !isprint(c))
+            out << "\\" << std::oct << std::setfill('0') << std::setw(3) << (unsigned int)c;
+        else
+            out << c;
     };
 
     if (dataType() == DataType::SBCC) {
-	out << " \"";
-	if (params.no_utf8 || u8text.empty()) {
-	    for (auto c : data_) {
-		if (c == '\0')
-		    break;
-		printchar(c);
-	    }
-	} else {
-	    for (auto c : u8text)
-		printchar(c);
-	}
-	out << "\"";
+        out << " \"";
+        if (params.no_utf8 || u8text.empty()) {
+            for (auto c : data_) {
+                if (c == '\0')
+                    break;
+                printchar(c);
+            }
+        } else {
+            for (auto c : u8text)
+                printchar(c);
+        }
+        out << "\"";
     }
     else {
         long i = 0;
