@@ -97,12 +97,12 @@ void CdTextItem::print(std::ostream &out, PrintParams& params) const
     char buf[20];
     out << packType2String(isTrackPack(), packType_);
 
-    auto printchar = [&](unsigned char c) {
+    auto printchar = [&](unsigned char c, bool ascii_only) {
         if (c == '"')
             out << "\\\"";
         else if (c == '\\')
             out << "\\\\";
-        else if (params.no_utf8 && !isprint(c))
+        else if (ascii_only && (c < 32 || c >= 127))
             out << "\\" << std::oct << std::setfill('0') << std::setw(3) << (unsigned int)c;
         else
             out << c;
@@ -114,11 +114,11 @@ void CdTextItem::print(std::ostream &out, PrintParams& params) const
             for (auto c : data_) {
                 if (c == '\0')
                     break;
-                printchar(c);
+                printchar(c, true);
             }
         } else {
             for (auto c : u8text)
-                printchar(c);
+                printchar(c, false);
         }
         out << "\"";
     }
