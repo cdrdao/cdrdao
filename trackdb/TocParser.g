@@ -188,8 +188,8 @@ public:
 #lexclass STRING
 #token EndString        "\""         << mode(START); >>
 #token StringQuote      "\\\""
+#token StringBackslash  "\\\\"
 #token StringOctal      "\\[0-9][0-9][0-9]"
-#token String           "\\"
 #token String           "[ ]+"
 #token String           "~[\\\n\"\t ]*"
 
@@ -530,6 +530,7 @@ string > [ std::string ret ]
  :  << int linenr = 0; bool is_utf8; >>
     BeginString << linenr = $1->getLine(); >>
     ( (  String      << $ret += $1->getText(); >>
+       | StringBackslash << $ret += "\\"; >>
        | StringQuote << $ret += "\""; >>
        | StringOctal << $ret += $1->getText(); >>
       )
@@ -545,6 +546,7 @@ stringEmpty > [ std::string ret, bool is_utf8 ]
  :  << int linenr = 0; >>
     BeginString << linenr = $1->getLine(); >>
     ( (  String      << $ret += $1->getText(); >>
+       | StringBackslash << $ret += "\\"; >>
        | StringQuote << $ret += "\""; >>
        | StringOctal << $ret += $1->getText(); >>
       )
