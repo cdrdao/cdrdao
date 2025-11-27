@@ -2489,8 +2489,10 @@ int main(int argc, char **argv)
     options.commitSettings(settings, settingsPath);
 
     // Just show version ? We're done.
-    if (options.command == SHOW_VERSION)
+    if (options.command == SHOW_VERSION) {
+	printVersion();
 	goto fail;
+    }
 
     errPrintParams.no_utf8 = options.no_utf8;
     filePrintParams.no_utf8 = options.no_utf8;
