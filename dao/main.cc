@@ -220,6 +220,7 @@ DaoCommandLine::DaoCommandLine() :
     writeSpeedControl(false), keep(false), printQuery(false), no_utf8(false)
 {
     dataFilename = NULL;
+    sourceScsiDevice = NULL;
     readingSpeed = -1;
     writingSpeed = -1;
     command = UNKNOWN;
