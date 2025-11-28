@@ -2,14 +2,12 @@ dnl Process this file with autoconf to produce a configure script.
 AC_REVISION($Revision: 1.26 $)dnl
 
 AC_INIT([cdrdao],[1.2.6a])
-AC_CONFIG_MACRO_DIR([m4])
-
+AC_CONFIG_MACRO_DIRS([m4])
 AC_CONFIG_SRCDIR(dao/main.cc)
 AM_INIT_AUTOMAKE(subdir-objects)
 AC_CONFIG_HEADERS(config.h)
 AM_MAINTAINER_MODE
 AC_CANONICAL_HOST
-#AM_GCONF_SOURCE_2
 AM_ICONV
 
 AC_ARG_WITH(pcctsbin,[  --with-pcctsbin=dir     set directory of PCCTS parser generator executables],[pcctsbin=$withval],[pcctsbin=default])
