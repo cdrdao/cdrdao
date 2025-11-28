@@ -27,6 +27,24 @@
 #include <string>
 #include "util.h"
 
+typedef struct {
+    unsigned char p_len;
+    unsigned cd_r_read : 1;
+    unsigned cd_rw_read : 1;
+    unsigned method2  : 1;
+    unsigned dvd_rom_read : 1;
+    unsigned dvd_r_read : 1;
+    unsigned dvd_ram_read : 1;
+    unsigned res_2_67 : 2;
+    unsigned cd_r_write : 1;
+    unsigned cd_rw_write : 1;
+    unsigned test_write : 1;
+    unsigned res_3_3  : 1;
+    unsigned dvd_r_write : 1;
+    unsigned dvd_ram_write : 1;
+    unsigned res_3_67 : 2;
+} cd_page_2a;
+
 class ScsiIfImpl;
 
 //! \brief Base class to communicate with SCSI device
@@ -130,8 +148,7 @@ public:
 
     //! \brief Check for mmc capability. Return whether the
     //driver/drive can read and write CD-R and CD-RW disks.
-    bool checkMmc(bool *cd_r_read,  bool *cd_r_write,
-		  bool *cd_rw_read, bool *cd_rw_write);
+    cd_page_2a* checkMmc();
 
     struct ScanData {
 	std::string dev;
