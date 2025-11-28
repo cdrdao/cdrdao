@@ -33,10 +33,8 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#ifdef HAVE_ICONV
 #include <iconv.h>
 #include <langinfo.h>
-#endif
 
 #include <lame/lame.h>
 
@@ -312,9 +310,6 @@ lame_global_flags *init_encoder(int bitrate)
 
 string to_utf8(const string& input)
 {
-#ifndef HAVE_ICONV
-  return input;
-#else
   if (ENCODING == "UTF-8")
     return input;
   char* src = (char*)alloca(input.size() + 1);
@@ -332,10 +327,8 @@ string to_utf8(const string& input)
   }
   *dst = 0;
   return string(orig_dst);
-#endif
 }
 
-#ifdef HAVE_ICONV
 vector<short unsigned int> to_utf16(const string& input)
 {
   vector<short unsigned int> vec;
@@ -358,11 +351,9 @@ vector<short unsigned int> to_utf16(const string& input)
   vec.push_back(0);
   return vec;
 }
-#endif
 
 void set_id3v2tag(lame_global_flags* lf, int type, const string &str)
 {
-#ifdef HAVE_ICONV
   if (ENCODING != "ISO-8859-1") {
     auto dst = to_utf16(str);
     switch (type) {
@@ -378,7 +369,6 @@ void set_id3v2tag(lame_global_flags* lf, int type, const string &str)
     }
     return;
   }
-#endif
 
   switch (type)
   {
@@ -557,9 +547,7 @@ int main(int argc, char **argv)
   char sbuf[100];
   int err = 0;
 
-#ifdef HAVE_ICONV
   setlocale(LC_CTYPE, "");
-#endif
 
   PRGNAME = *argv;
 
