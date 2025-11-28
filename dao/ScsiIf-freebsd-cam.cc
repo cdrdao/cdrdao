@@ -112,8 +112,8 @@ int ScsiIf::sendCmd(const unsigned char *cmd, int cmdLen,
 {
 	int		retval;
 	int		flags = CAM_DIR_NONE;
-	u_int8_t *	data_ptr;
-	size_t		data_len;
+	u_int8_t *	data_ptr = NULL;
+	size_t		data_len = 0;
 
 	bzero(impl_->ccb, sizeof(union ccb));
 	bcopy(cmd, &impl_->ccb->csio.cdb_io.cdb_bytes, cmdLen);
