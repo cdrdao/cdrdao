@@ -37,4 +37,4 @@ fi
 # Calls aclocal, automake, autoconf and al. for you
 echo "Running autoreconf"
 rm -fr autom4te.cache
-autoreconf -I m4
+autoreconf

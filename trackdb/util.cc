@@ -19,9 +19,7 @@
 
 #include <config.h>
 
-#ifdef HAVE_ICONV
 #include <iconv.h>
-#endif
 
 #include <stdio.h>
 #include <unistd.h>
@@ -297,7 +295,6 @@ FileExtension fileExtension(const char* fname)
 
 string to_utf8(const u8* input, size_t input_size, Util::Encoding enc)
 {
-#ifdef HAVE_ICONV
     const char* from_encoding = "ISO-8859-1";
     if (enc == Util::Encoding::MSJIS)
         from_encoding = "CP932"; // Code Page 932, aka MS-JIS
@@ -317,14 +314,10 @@ string to_utf8(const u8* input, size_t input_size, Util::Encoding enc)
     }
     *dst = 0;
     return string(orig_dst);
-#else
-    return string((char*)input);
-#endif
 }
 
 bool from_utf8(const string& input, std::vector<u8>& output, Encoding enc)
 {
-#ifdef HAVE_ICONV
     const char* to_encoding;
     switch (enc) {
     case Encoding::ASCII:
@@ -350,10 +343,6 @@ bool from_utf8(const string& input, std::vector<u8>& output, Encoding enc)
 
     while (origdst < dst)
         output.push_back(*origdst++);
-#else
-    output.resize(input.size());
-    std::copy(input.begin(), input.end(), output.begin());
-#endif
     return true;
 }
 
@@ -400,9 +389,6 @@ bool isStrictAscii(const std::string& str)
 
 bool isValidUTF8(const char* str)
 {
-#ifndef HAVE_ICONV
-  return true;
-#else
   const char* encoding = "UTF-8";
   char* src = (char*)alloca(strlen(str) + 1);
   strcpy(src, str);
@@ -416,7 +402,6 @@ bool isValidUTF8(const char* str)
     return false;
   else
     return true;
-#endif
 }
 
 bool processMixedString(std::string& str, bool& is_utf8)

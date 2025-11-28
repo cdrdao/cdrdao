@@ -8,7 +8,6 @@ AM_INIT_AUTOMAKE(subdir-objects)
 AC_CONFIG_HEADERS(config.h)
 AM_MAINTAINER_MODE
 AC_CANONICAL_HOST
-AM_ICONV
 
 AC_ARG_WITH(pcctsbin,[  --with-pcctsbin=dir     set directory of PCCTS parser generator executables],[pcctsbin=$withval],[pcctsbin=default])
 
@@ -261,7 +260,7 @@ case "$host" in
       ;;
 
   *-darwin*)
-      scsilib_libs="-framework IOKit -framework CoreFoundation -liconv"
+      scsilib_libs="-framework IOKit -framework CoreFoundation"
       scsilib_objs="ScsiIf-osx.o"
       ;;
 
