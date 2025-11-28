@@ -83,26 +83,7 @@ int ScsiIf::testUnitReady()
   return ret;
 }
 
-typedef struct {
-    unsigned char p_len;
-    unsigned cd_r_read : 1;
-    unsigned cd_rw_read : 1;
-    unsigned method2  : 1;
-    unsigned dvd_rom_read : 1;
-    unsigned dvd_r_read : 1;
-    unsigned dvd_ram_read : 1;
-    unsigned res_2_67 : 2;
-    unsigned cd_r_write : 1;
-    unsigned cd_rw_write : 1;
-    unsigned test_write : 1;
-    unsigned res_3_3  : 1;
-    unsigned dvd_r_write : 1;
-    unsigned dvd_ram_write : 1;
-    unsigned res_3_67 : 2;
-} cd_page_2a;
-
-bool ScsiIf::checkMmc(bool *cd_r_read,  bool *cd_r_write,
-                      bool *cd_rw_read, bool *cd_rw_write)
+cd_page_2a* ScsiIf::checkMmc()
 {
     static const int MODE_SENSE_G1_CMD = 0x5a;
     static const int MODE_MAX_SIZE = 256;
@@ -122,7 +103,7 @@ bool ScsiIf::checkMmc(bool *cd_r_read,  bool *cd_r_write,
     cmd[8] = MODE_PAGE_HEADER_SIZE;
     if (sendCmd((unsigned char*)&cmd, 10, NULL, 0, mode,
 		MODE_PAGE_HEADER_SIZE) != 0) {
-	return false;
+	return NULL;
     }
 
     int len = ((mode[0] << 8) + mode[1]) + 2; // +2 is for address field
@@ -135,14 +116,8 @@ bool ScsiIf::checkMmc(bool *cd_r_read,  bool *cd_r_write,
     cmd[2] = MODE_CD_CAP_PAGE;
     cmd[8] = len;
     if (sendCmd((unsigned char*)&cmd, 10, NULL, 0, mode, len) != 0) {
-	return false;
+	return NULL;
     }
 
-  cd_page_2a *p2a = (cd_page_2a*)(mode + 9);
-
-  *cd_r_read   = p2a->cd_r_read;
-  *cd_r_write  = p2a->cd_r_write;
-  *cd_rw_read  = p2a->cd_rw_read;
-  *cd_rw_write = p2a->cd_rw_write;
-  return true;
+  return (cd_page_2a*)(mode + 9);
 }

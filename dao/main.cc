@@ -1304,16 +1304,16 @@ string getDefaultDevice(DaoDeviceType req)
 	    if (testif.init() != 0) {
 		continue;
 	    }
-	    bool rr, rw, rwr, rww;
+	    cd_page_2a* p2a;
 
-	    if (!testif.checkMmc(&rr, &rw, &rwr, &rww))
+	    if (!(p2a = testif.checkMmc()))
 		continue;
 
-	    if (req == NEED_CDR_R && !rr)
+	    if (req == NEED_CDR_R && !p2a->cd_r_read)
 	      continue;
-	    if (req == NEED_CDR_W && !rw)
+	    if (req == NEED_CDR_W && !p2a->cd_r_write)
 	      continue;
-	    if (req == NEED_CDRW_W && !rww)
+	    if (req == NEED_CDRW_W && !p2a->cd_rw_write)
 	      continue;
 
             buf = sdata[i].dev;
