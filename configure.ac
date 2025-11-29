@@ -249,7 +249,7 @@ case "$host" in
       scsilib_objs="ScsiIf-freebsd-cam.o"
       ;;
 
-  *-netbsd*)
+  *-netbsd* | *-openbsd*)
       scsilib_libs="-lutil"
       scsilib_objs="ScsiIf-netbsd.o"
       ;;
@@ -296,7 +296,11 @@ dnl -lc_r is automatically done by the linker
             LIBS="$LIBS -framework CoreServices -framework IOKit -liconv"
             CXXFLAGS="$CXXFLAGS -std=c++11"
             ;;
-
+  *-openbsd*)
+            CPPFLAGS="$CPPFLAGS -I/usr/local/include"
+            LDFLAGS="$LDFLAGS -L/usr/local/lib"
+            LIBS="$LIBS -liconv"
+            ;;
 esac
 
 dnl Sound device selection for xcdrdao
