@@ -1345,9 +1345,8 @@ CdrDriver *setupDevice(DaoCommand cmd, const string& scsiDevice,
 
   switch (scsiIf->init()) {
   case 1:
-    log_message(-2, "Please use option '--device {[proto:]bus,id,lun}|device'"
-	    ", e.g. "
-            "--device 0,6,0, --device ATA:0,0,0 or --device /dev/cdrom");
+    log_message(-2, "Please use option '--device device'"
+	    ", e.g. --device /dev/cdrom");
     delete scsiIf;
     return NULL;
     break;
@@ -2562,9 +2561,7 @@ int main(int argc, char **argv)
 			  /* init device? */
 			  (options.command == UNLOCK) ? 0 : 1,
 			  /* check for ready status? */
-			  (options.command == BLANK ||
-			   options.command == DRIVE_INFO ||
-			   options.command == DISCID) ? 0 : 1,
+			  (options.command == DRIVE_INFO) ? 0 : 1,
 			  /* reset status of medium if not empty? */
 			  (options.command == SIMULATE ||
 			   options.command == WRITE) ? 1 : 0,
