@@ -3104,7 +3104,7 @@ vector<CdTextItem*> processPacks(CdTextPack* packs, int nofPacks)
             buf[pos] = 0;
             {
                 auto item = new CdTextItem(packType, blockNumber);
-                item->setRawText((u8*)buf, pos);
+                item->setRawText((u8*)buf, pos+1);
                 item->trackNr(trackNumber);
                 items.push_back(item);
             }
