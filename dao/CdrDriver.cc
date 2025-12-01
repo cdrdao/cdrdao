@@ -834,6 +834,7 @@ CdrDriver *CdrDriver::createDriver(const char *driverId, unsigned long options,
 const char *CdrDriver::detectDriver(ScsiIf *scsiIf, unsigned long *options)
 {
   if (scsiIf->checkMmc()) {
+    *options |= OPT_MMC_CD_TEXT;
     return "generic-mmc";
   }
 
