@@ -52,6 +52,8 @@ public:
     void language(int blockNr, int lang);
     int language(int blockNr) const;
 
+    int check() const;
+
     // sets/returns character encoding for block nr
     void encoding(int blockNr, Util::Encoding enc);
     Util::Encoding encoding(int blockNr) const;

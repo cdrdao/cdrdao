@@ -74,6 +74,7 @@ public:
     const std::string& getText() const { return u8text; }
 
     void print(std::ostream &, PrintParams& params) const;
+    int check() const;
 
     int operator==(const CdTextItem &);
     int operator!=(const CdTextItem &);

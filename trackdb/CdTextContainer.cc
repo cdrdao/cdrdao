@@ -58,6 +58,15 @@ CdTextContainer::CdTextContainer()
 {
 }
 
+int CdTextContainer::check() const
+{
+    for (const auto& item : items_) {
+	item->check();
+    }
+    return 0;
+}
+
+
 void CdTextContainer::print(int isTrack, std::ostream &out, PrintParams& params) const
 {
     CdTextItem *run;

@@ -39,6 +39,7 @@ CdTextItem::CdTextItem(PackType packType, int blockNr)
 
 void CdTextItem::setData(const u8* buffer, size_t buffer_len)
 {
+    u8text.clear();
     data_.resize(buffer_len);
     memcpy(data_.data(), buffer, buffer_len);
     dataType_ = DataType::BINARY;
@@ -46,6 +47,7 @@ void CdTextItem::setData(const u8* buffer, size_t buffer_len)
 
 void CdTextItem::setRawText(const u8* buffer, size_t buffer_len)
 {
+    u8text.clear();
     setData(buffer, buffer_len);
     dataType_ = DataType::SBCC;
     updateEncoding();
@@ -53,6 +55,8 @@ void CdTextItem::setRawText(const u8* buffer, size_t buffer_len)
 
 void CdTextItem::setRawText(const std::string& str)
 {
+    data_.clear();
+    u8text.clear();
     data_.resize(str.size() + 1);
     auto writer = data_.begin();
     for (const auto c : str)
@@ -64,6 +68,7 @@ void CdTextItem::setRawText(const std::string& str)
 
 void CdTextItem::setText(const char* utf8_text)
 {
+    data_.clear();
     u8text = utf8_text;
     dataType_ = DataType::SBCC;
     updateEncoding();
@@ -71,6 +76,8 @@ void CdTextItem::setText(const char* utf8_text)
 
 void CdTextItem::setTextFromToc(const char* text)
 {
+    data_.clear();
+    u8text.clear();
     if (Util::isValidUTF8(text))
         setText(text);
     else
@@ -90,6 +97,22 @@ void CdTextItem::setGenre(u8 genreCode1, u8 genreCode2, const char *description)
             data_.push_back(*ptr++);
         data_.push_back(0);
     }
+}
+
+int CdTextItem::check() const
+{
+    printf("dt%d ", dataType_);
+    printf("pt%02x ", packType_);
+    printf("bl%d ", blockNr_);
+    printf("enc%d ", encoding_);
+    printf("tr%d ", trackNr_);
+    
+    printf("(%2d)", (int)dataLen());
+    for (auto b : data_)
+	printf(" %c", b ? b : '~');
+    printf("\n");
+
+    return (data_.back() != 0);
 }
 
 void CdTextItem::print(std::ostream &out, PrintParams& params) const

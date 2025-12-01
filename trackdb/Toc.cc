@@ -204,6 +204,8 @@ int Toc::check() const
         ret |= t->track->check(trackNr);
     }
 
+    ret |= cdtext_.check();
+
     return ret;
 }
 

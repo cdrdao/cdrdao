@@ -400,6 +400,8 @@ int Track::check(int trackNr) const
     ret |= st->check(trackNr);
   }
 
+  ret |= cdtext_.check();
+
   return ret;
 }
 
