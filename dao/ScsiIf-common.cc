@@ -121,3 +121,79 @@ cd_page_2a* ScsiIf::checkMmc()
 
   return (cd_page_2a*)(mode + 9);
 }
+
+void ScsiIf::traceScsiRequest(const u8 *cmd, int cmdLen, const u8 *dataOut,
+			      int dataOutLen, u8 *dataIn, int dataInLen)
+{
+    switch (cmd[0]) {
+    case 0x12:
+	if (cmd[1] & 0x01)
+	    printf("INQUIRY (p%d)", cmd[2]);
+	else
+	    printf("INQUIRY");
+	break;
+    case 0x5a:
+	printf("MODE SENSE page %d", cmd[2] & 0x3f);
+	break;
+    case 0x01:
+	printf("REWIND");
+	break;
+    case 0x51:
+	printf("READ DISC INFO");
+	break;
+    case 0x43:
+	printf("READ TOC");
+	{
+	    std::string format_str[] = {
+		"TOC", "Multi-Session", "Raw TOC", "PMA", "ATIP", "CD-TEXT", "?" };
+	    int ff = cmd[2] & 0x0f;
+	    if (ff > 5)
+		ff = 6;
+	    printf(" %s", format_str[ff].c_str());
+	}
+	break;
+    case 0x46:
+	printf("GET CONFIGURATION feature 0x%x", cmd[3] + (((int)cmd[2]) << 8));
+	break;
+    default:
+	printf("%02x(%d)", cmd[0], cmdLen);
+    }
+    fflush(stdout);
+}
+
+void ScsiIf::traceScsiResponse(const u8 *cmd, int cmdLen, const u8 *dataOut,
+			       int dataOutLen, u8 *dataIn, int dataInLen,
+			       int ioctl_status, int scsi_status)
+{
+    printf("\033[40G");
+    if (ioctl_status != 0) {
+	printf("failed\n");
+	return;
+    }
+
+    printf("%d (%d bytes)\t", scsi_status, dataInLen);
+
+    switch (cmd[0]) {
+    case 0x12: // INQUIRY
+	printf(" %02x", dataIn[0]);
+	if (dataIn[1] & 0x80)
+	    printf(" REMOVABLE");
+	printf(" SPC-%d", dataIn[2]);
+	break;
+    case 0x51: // READ DISC INFORMATION
+	if ((dataIn[2] & 0x03) == 0)
+	    printf("EMPTY");
+	else if ((dataIn[2] & 0x03) == 1)
+	    printf("INCOMPLETE");
+	else if ((dataIn[2] & 0x03) == 2)
+	    printf("FINALIZED");
+	printf(", first track %d", dataIn[3]);
+	printf(", %d session(s)", dataIn[4]);
+	printf(", tracks %d->%d", dataIn[5], dataIn[6]);
+	printf(", type %d", dataIn[8]);
+	break;
+    default:
+	break;
+    }
+    printf("\n");
+}

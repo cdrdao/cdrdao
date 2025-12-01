@@ -159,6 +159,12 @@ public:
 	char revision[5];
     };
 
+    void traceScsiRequest(const u8 *cmd, int cmdLen, const u8 *dataOut,
+			  int dataOutLen, u8 *dataIn, int dataInLen);
+    void traceScsiResponse(const u8 *cmd, int cmdLen, const u8 *dataOut,
+			   int dataOutLen, u8 *dataIn, int dataInLen,
+			   int, int);
+
     //! Scans for all SCSI devices and returns a newly allocated
     // 'ScanData' array.
     static ScanData *scan(int *len, char* scsi_dev_path = NULL);

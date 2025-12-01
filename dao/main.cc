@@ -2814,6 +2814,7 @@ int main(int argc, char **argv)
 	    }
 
 	    log_message(1, "Reading of toc data finished successfully.");
+	    toc->check();
 	}
 	break;
 

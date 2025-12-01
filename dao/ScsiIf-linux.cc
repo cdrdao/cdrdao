@@ -71,6 +71,7 @@ public:
     char* filename_; // user provided device name
     int   fd_;
     bool  readOnlyMode;
+    bool  trace;
 
     int openScsiDevAsSg(const char* devname);
     int adjustReservedBuffer(int requestedSize);
@@ -94,6 +95,9 @@ ScsiIf::ScsiIf(const char *dev)
     impl_->fd_ = -1;
     impl_->sense_buffer_length = SG_MAX_SENSE;
     impl_->timeout_ms = CDRDAO_DEFAULT_TIMEOUT;
+
+    if (getenv("SCSI_TRACE"))
+	impl_->trace = true;
 }
 
 ScsiIf::~ScsiIf()
@@ -187,6 +191,9 @@ int ScsiIf::sendCmd(const uchar *cmd, int cmdLen, const uchar *dataOut,
     io_hdr.sbp = impl_->sense_buffer;
     io_hdr.mx_sb_len = impl_->sense_buffer_length;
     io_hdr.flags = 1;
+
+    if (impl_->trace)
+	traceScsiRequest(cmd, cmdLen, dataOut, dataOutLen, dataIn, dataInLen);
     
     if (dataOut) {
 	io_hdr.dxferp = (void*)dataOut;
@@ -202,7 +209,13 @@ int ScsiIf::sendCmd(const uchar *cmd, int cmdLen, const uchar *dataOut,
 		impl_->filename_, sg_strcommand(cmd[0]),
 		sg_strcmdopts(cmd));
 
-    if (ioctl(impl_->fd_, SG_IO, &io_hdr) < 0) {
+    status = ioctl(impl_->fd_, SG_IO, &io_hdr);
+
+    if (impl_->trace)
+	traceScsiResponse(cmd, cmdLen, dataOut, dataOutLen, dataIn, dataInLen,
+			  status, io_hdr.status);
+
+    if (status < 0) {
 	int errnosave = errno;
 	log_message((showMsg ? -2 : 3), "[SCSI] %s (0x%02x) "
 		    "failed: %s.",
