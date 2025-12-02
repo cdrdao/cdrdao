@@ -296,8 +296,7 @@ ScsiIf::ScanData *ScsiIf::scan(int *len, char* scsi_dev_path)
     path = (char*)alloca(strlen(SYSFS_SCSI_DEVICES) + 64);
     sprintf(path, "%s/*", SYSFS_SCSI_DEVICES);
     if (glob(path, 0, NULL, &pglob) != 0) {
-	log_message(-2, "Unable to glob through sysfs filesystem (%d).",
-		    errno);
+	log_message(-2, "No devices found");
 	goto fail;
     }
 
