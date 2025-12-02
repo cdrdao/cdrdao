@@ -264,13 +264,13 @@ case "$host" in
       scsilib_objs="ScsiIf-osx.o"
       ;;
 
-  *-pc-cygwin*)
+  *-pc-cygwin* | *mingw*)
       scsilib_libs=""
-      scsilib_objs="ScsiIf-win.o"
+      scsilib_objs="ScsiIf-nt.o"
       ;;
 
   *)
-      AC_MSG_ERROR([No native interface for operating system $host_os, use --with-libscg])
+      AC_MSG_ERROR([No native SCSI interface for operating system $host_os])
       ;;
 esac
 
@@ -296,7 +296,9 @@ dnl -lc_r is automatically done by the linker
             LIBS="$LIBS -framework CoreServices -framework IOKit -liconv"
             CXXFLAGS="$CXXFLAGS -std=c++11"
             ;;
-
+  *-pc-cygwin* | *mingw*)
+            LIBS="$LIBS -liconv"
+	    ;;
 esac
 
 dnl Sound device selection for xcdrdao
