@@ -56,22 +56,19 @@ libdao_a_SOURCES = \
 	TaiyoYuden.h		\
 	TeacCdr55.h		\
 	ToshibaReader.h		\
-	winaspi.h		\
 	YamahaCDR10x.h
 
 EXTRA_libdao_a_SOURCES = 	\
 	dao-win32.cc		\
 	decodeSense.cc		\
 	sg_err.cc		\
-	ScsiIf-lib.cc		\
 	ScsiIf-common.cc	\
 	ScsiIf-linux.cc		\
 	ScsiIf-freebsd-cam.cc	\
 	ScsiIf-netbsd.cc	\
 	ScsiIf-irix.cc		\
 	ScsiIf-osx.cc		\
-	ScsiIf-nt.cc		\
-	ScsiIf-win.cc
+	ScsiIf-nt.cc
 
 libdao_a_LIBADD =		\
 	@scsilib_objs@
