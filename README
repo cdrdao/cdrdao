@@ -337,14 +337,14 @@ CD-TEXT Writing
 
 CD-TEXT data is read with 'read-toc' or 'read-cd' if your drive
 supports it (e.g. Teac CD-532e, HP CD-Writer+ 8100) and will be stored
-in the toc-file.  It is also possible to create the CD-TEXT data
-manually by editing the toc-file or by using the xcdrdao GUI.  If you
+in the toc-file. It is also possible to create the CD-TEXT data
+manually by editing the toc-file or by using the gcdmaster GUI. If you
 want to create your own CD-TEXT data be sure to add the fields 'TITLE'
 and 'PERFORMER' to all tracks.
 
 IMPORTANT: The CD-TEXT writing feature must be explicitly enabled with
 the driver option 0x10 for the 'generic-mmc' driver (see section
-Drivers).  If the driver is automatically selected for your recorder
+Drivers). If the driver is automatically selected for your recorder
 model the driver options should be already set if your recorder is
 known to write CD-TEXT data. Please report if the driver database is
 not up to date or contains incorrect data.
