@@ -42,7 +42,7 @@
 // do not set start of lead-in time in lead-in cue sheet entry
 #define CUE_VAR_CDTEXT_NO_TIME 0x2
 
-#define CUE_VAR_MAX 0x3 
+#define CUE_VAR_MAX 0x3
 
 
 // Variants for write parameters mode page
@@ -58,14 +58,14 @@ GenericMMC::GenericMMC(ScsiIf *scsiIf, unsigned long options)
 {
   int i;
   driverName_ = "Generic SCSI-3/MMC - Version 2.0";
-  
+
   speed_ = 0;
   rspeed_ = 0;
   simulate_ = true;
   encodingMode_ = 1;
 
   scsiTimeout_ = 0;
-  
+
   cdTextEncoder_ = NULL;
 
   driveInfo_ = NULL;
@@ -73,7 +73,7 @@ GenericMMC::GenericMMC(ScsiIf *scsiIf, unsigned long options)
   memset(&diskInfo_, 0, sizeof(DiskInfo));
 
   for (i = 0; i < maxScannedSubChannels_; i++) {
-    if (options_ & OPT_MMC_USE_PQ) 
+    if (options_ & OPT_MMC_USE_PQ)
       scannedSubChannels_[i] = new PQSubChannel16;
     else
       scannedSubChannels_[i] = new PWSubChannel96;
@@ -83,6 +83,15 @@ GenericMMC::GenericMMC(ScsiIf *scsiIf, unsigned long options)
 
   // MMC drives usually return little endian samples
   audioDataByteOrder_ = 0;
+
+  // Check if drive supports R-W subchannels-TEXT writing (i.e. CD-TEXT)
+  u8 cdMasteringFeature[8];
+  if (getFeature(0x2e, cdMasteringFeature, 8, 1) == 0) {
+      if (cdMasteringFeature[4] & 0x01) {
+          log_message(2, "CD-TEXT writing is supported.");
+          cdtextEnabled_ = true;
+      }
+  }
 }
 
 GenericMMC::~GenericMMC()
@@ -132,9 +141,9 @@ int GenericMMC::subChannelEncodingMode(TrackData::SubChannelMode sm) const
 
   case TrackData::SUBCHAN_RW:
 #if 0
-    if (options_ & OPT_MMC_NO_RW_PACKED) 
+    if (options_ & OPT_MMC_NO_RW_PACKED)
       ret = 1; // have to encode the R-W sub-channel data
-    else 
+    else
       ret = 0;
 #endif
     ret = 0;
@@ -158,7 +167,7 @@ int GenericMMC::speed(int s)
 
   if (selectSpeed() != 0)
     return 1;
-  
+
   return 0;
 }
 
@@ -186,7 +195,7 @@ bool GenericMMC::rspeed(int s)
 
   if (selectSpeed() != 0)
     return false;
-  
+
   return true;
 }
 
@@ -232,7 +241,7 @@ int GenericMMC::loadUnload(int unload) const
   else {
     cmd[4] = 0x03; // LoUnlo=1, Start=1
   }
-  
+
   if (sendCmd(cmd, 6, NULL, 0, NULL, 0) != 0) {
     log_message(-2, "Cannot load/unload medium.");
     return 1;
@@ -256,25 +265,25 @@ int GenericMMC::checkDriveReady() const
 
   if (ret == 0) {
     // testUnitReady reports ready status but this might actually not
-    // be the truth -> additionally check the READ DISK INFO command 
-    
+    // be the truth -> additionally check the READ DISK INFO command
+
     memset(cmd, 0, 10);
 
     cmd[0] = 0x51; // READ DISK INFORMATION
     cmd[8] = 4;
-    
+
     ret = sendCmd(cmd, 10, NULL, 0, data, 4, 0);
-    
+
     if (ret == 2) {
       const u8 *sense;
       int senseLen;
-      
+
       ret = 0; // indicates ready status
 
       sense = scsiIf_->getSense(senseLen);
-      
+
       if (senseLen >= 14 && (sense[2] & 0x0f) == 0x2 && sense[7] >= 6 &&
-          sense[12] == 0x4 && 
+          sense[12] == 0x4 &&
           (sense[13] == 0x8 || sense[13] == 0x7)) {
         // Not Ready, long write in progress
         ret = 2; // indicates not ready status
@@ -660,13 +669,13 @@ int GenericMMC::getNWA(long *nwa)
 
   log_message(4, "NWA: %ld", lba);
 
-  if (nwa != NULL) 
+  if (nwa != NULL)
     *nwa = lba;
 
   return 0;
 }
 
-// Determines first writable address of data area of current empty session. 
+// Determines first writable address of data area of current empty session.
 // lba: set to start of data area
 // return: 0: OK
 //         1: error occured
@@ -747,7 +756,6 @@ u8 GenericMMC::subChannelDataForm(TrackData::SubChannelMode sm,
 
   return ret;
 }
-		  
 
 // Creates cue sheet for current toc.
 // cueSheetLen: filled with length of cue sheet in bytes
@@ -924,9 +932,9 @@ u8 *GenericMMC::createCueSheet(unsigned long variant,
 	cueSheet[n*8+1] = trackNr;
 	cueSheet[n*8+2] = t->isrcCountry(0);
 	cueSheet[n*8+3] = t->isrcCountry(1);
-	cueSheet[n*8+4] = t->isrcOwner(0);  
-	cueSheet[n*8+5] = t->isrcOwner(1);   
-	cueSheet[n*8+6] = t->isrcOwner(2);  
+	cueSheet[n*8+4] = t->isrcOwner(0);
+	cueSheet[n*8+5] = t->isrcOwner(1);
+	cueSheet[n*8+6] = t->isrcOwner(2);
 	cueSheet[n*8+7] = t->isrcYear(0) + '0';
 	n++;
 
@@ -949,7 +957,6 @@ u8 *GenericMMC::createCueSheet(unsigned long variant,
       // data track
       ctl |= 0x40;
     }
-	 
 
     if (firstTrack) {
       Msf sessionStart(lbaOffset);
@@ -981,7 +988,7 @@ u8 *GenericMMC::createCueSheet(unsigned long variant,
     }
 
     Msf tstart(lbaOffset + start.lba() + 150);
-    
+
     cueSheet[n*8]   = ctl | 0x01;
     cueSheet[n*8+1] = trackNr;
     cueSheet[n*8+2] = 1; // Index 1
@@ -1013,7 +1020,7 @@ u8 *GenericMMC::createCueSheet(unsigned long variant,
   // entry for lead out
   Msf lostart(lbaOffset + toc_->length().lba() + 150);
   ctl = toc_->leadOutMode() == TrackData::AUDIO ? 0 : 0x40;
-    
+
   cueSheet[n*8]   = ctl | 0x01;
   cueSheet[n*8+1] = 0xaa;
   cueSheet[n*8+2] = 1; // Index 1
@@ -1096,6 +1103,8 @@ int GenericMMC::initDao(const Toc *toc)
 
   toc_ = toc;
 
+
+
   if (cdtextEnabled_) {
     delete cdTextEncoder_;
     cdTextEncoder_ = new CdTextEncoder(toc_);
@@ -1108,7 +1117,7 @@ int GenericMMC::initDao(const Toc *toc)
       delete cdTextEncoder_;
       cdTextEncoder_ = NULL;
     }
-    
+
     //return 1;
   }
 
@@ -1211,11 +1220,11 @@ int GenericMMC::startDao()
     mode = tr->type();
     subChanMode = tr->subChannelType();
   }
-  
+
   if (writeZeros(mode, subChanMode, lba, lba + 150, 150) != 0) {
     return 1;
   }
-  
+
   return 0;
 }
 
@@ -1233,9 +1242,9 @@ int GenericMMC::finishDao()
 
   if (ret != 0)
     log_message(-1, "TEST UNIT READY failed after recording.");
-  
+
   log_message(2, "Flushing cache...");
-  
+
   if (flushCache() != 0) {
     return 1;
   }
@@ -1299,7 +1308,7 @@ int GenericMMC::writeData(TrackData::Mode mode, TrackData::SubChannelMode sm,
 
   memset(cmd, 0, 10);
   cmd[0] = 0x2a; // WRITE1
-  
+
   while (len > 0) {
     writeLen = (len > blocksPerWrite_ ? blocksPerWrite_ : len);
 
@@ -1369,7 +1378,7 @@ int GenericMMC::writeData(TrackData::Mode mode, TrackData::SubChannelMode sm,
     lba += writeLen;
     len -= writeLen;
   }
-      
+
   return 0;
 }
 
@@ -1418,7 +1427,7 @@ int GenericMMC::writeCdTextLeadIn()
     cmd[8] = n;
 
     p = transferBuffer_;
-    
+
     for (i = 0; i < n; i++) {
       memcpy(p, cdTextSubChannels[scp]->data(), 96);
       p += 96;
@@ -1438,7 +1447,7 @@ int GenericMMC::writeCdTextLeadIn()
       if(ret == 2) {
         const u8 *sense;
         int senseLen;
-	
+
         sense = scsiIf_->getSense(senseLen);
 
 	// check if drive rejected the command because the internal buffer
@@ -1459,7 +1468,7 @@ int GenericMMC::writeCdTextLeadIn()
       log_message(-2, "Writing of CD-TEXT data failed.");
       return 1;
     }
-      
+
 
     len -= n;
     lba += n;
@@ -1999,15 +2008,6 @@ const DriveInfo *GenericMMC::driveInfo(bool showErrorMsg)
 
   driveInfo_->maxWriteSpeed = (mp[18] << 8) | mp[19];
   driveInfo_->currentWriteSpeed = (mp[20] << 8) | mp[21];
-
-  // Check if drive supports R-W subchannels-TEXT writing (i.e. CD-TEXT)
-  u8 cdMasteringFeature[8];
-  if (getFeature(0x2e, cdMasteringFeature, 8, 1) == 0) {
-      if (cdMasteringFeature[4] & 0x01) {
-          log_message(3, "CD-TEXT writing is supported.");
-          cdtextEnabled_ = true;
-      }
-  }
 
   RicohGetWriteOptions();
 
