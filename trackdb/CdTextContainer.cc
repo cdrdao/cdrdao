@@ -60,7 +60,6 @@ CdTextContainer::CdTextContainer()
 
 void CdTextContainer::print(int isTrack, std::ostream &out, PrintParams& params) const
 {
-    CdTextItem *run;
     int i;
     int foundLanguageMapping;
 
@@ -94,7 +93,7 @@ void CdTextContainer::print(int isTrack, std::ostream &out, PrintParams& params)
 
         for (const auto& item : items_) {
             if (item->blockNr() != actBlockNr) {
-                actBlockNr = run->blockNr();
+                actBlockNr = item->blockNr();
                 out << "  }\n  LANGUAGE " << actBlockNr << " {\n";
             }
             out << "    ";
