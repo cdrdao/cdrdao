@@ -1,13 +1,14 @@
 dnl Process this file with autoconf to produce a configure script.
 AC_REVISION($Revision: 1.26 $)dnl
 
-AC_INIT([cdrdao],[1.2.6rc1])
+AC_INIT([cdrdao],[1.2.6rc2])
 AC_CONFIG_MACRO_DIRS([m4])
 AC_CONFIG_SRCDIR(dao/main.cc)
 AM_INIT_AUTOMAKE(subdir-objects)
 AC_CONFIG_HEADERS(config.h)
 AM_MAINTAINER_MODE
 AC_CANONICAL_HOST
+AM_ICONV
 
 AC_ARG_WITH(pcctsbin,[  --with-pcctsbin=dir     set directory of PCCTS parser generator executables],[pcctsbin=$withval],[pcctsbin=default])
 
@@ -39,6 +40,7 @@ AC_PATH_TOOL([PKG_CONFIG], [pkg-config])
 dnl Checks for header files.
 AC_CHECK_INCLUDES_DEFAULT
 AC_PROG_EGREP
+AC_FUNC_ALLOCA
 
 AC_HEADER_SYS_WAIT
 AC_CHECK_HEADERS(fcntl.h getopt.h malloc.h unistd.h sys/mman.h sched.h)
@@ -249,7 +251,7 @@ case "$host" in
       scsilib_objs="ScsiIf-freebsd-cam.o"
       ;;
 
-  *-netbsd*)
+  *-netbsd* | *-openbsd*)
       scsilib_libs="-lutil"
       scsilib_objs="ScsiIf-netbsd.o"
       ;;
@@ -293,12 +295,13 @@ dnl -lc_r is automatically done by the linker
 	      ;;
   *darwin*)
             AC_DEFINE(_P1003_1B_VISIBLE,1,"")
-            LIBS="$LIBS -framework CoreServices -framework IOKit -liconv"
+            LIBS="$LIBS -framework CoreServices -framework IOKit"
             CXXFLAGS="$CXXFLAGS -std=c++11"
             ;;
-  *-pc-cygwin* | *mingw*)
-            LIBS="$LIBS -liconv"
-	    ;;
+  *-openbsd*)
+            CPPFLAGS="$CPPFLAGS -I/usr/local/include"
+            LDFLAGS="$LDFLAGS -L/usr/local/lib"
+            ;;
 esac
 
 dnl Sound device selection for xcdrdao

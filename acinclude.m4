@@ -29,6 +29,7 @@ AC_DEFUN([AC_PATH_LAME],
 
     if test "x$lameinc" != x ; then
       CXXFLAGS="$CXXFLAGS -I$lameinc"
+      CFLAGS="$CFLAGS -I$lameinc"
     fi
 
     if test "x$lamelib" != x ; then

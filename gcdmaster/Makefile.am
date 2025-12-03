@@ -98,7 +98,8 @@ gcdmaster_LDADD =					\
 	$(top_builddir)/paranoia/libcdda_paranoia.a	\
 	$(top_builddir)/trackdb/libtrackdb.a		\
 	@scsilib_libs@					\
-	@GTKMM_LIBS@
+	@GTKMM_LIBS@					\
+	@LIBICONV@
 
 AM_CXXFLAGS = @GTKMM_CFLAGS@ @AO_CFLAGS@
 

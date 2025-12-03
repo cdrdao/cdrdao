@@ -1,3 +1,5 @@
+ACLOCAL_AMFLAGS = -I m4
+
 if COND_GCDMASTER
 MAYBE_GCDMASTER = gcdmaster
 else

@@ -312,7 +312,7 @@ string to_utf8(const string& input)
 {
   if (ENCODING == "UTF-8")
     return input;
-  char* src = (char*)alloca(input.size() + 1);
+  ICONV_CONST char* src = (ICONV_CONST char*)alloca(input.size() + 1);
   strcpy(src, input.c_str());
   size_t srclen = strlen(src);
   size_t dstlen = srclen * 4;
@@ -333,7 +333,7 @@ vector<short unsigned int> to_utf16(const string& input)
 {
   vector<short unsigned int> vec;
 
-  char* src = (char*)alloca(input.size() + 1);
+  ICONV_CONST char* src = (ICONV_CONST char*)alloca(input.size() + 1);
   strcpy(src, input.c_str());
   size_t srclen = strlen(src);
   size_t dstlen = srclen * 4;

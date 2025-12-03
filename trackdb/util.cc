@@ -299,7 +299,7 @@ string to_utf8(const u8* input, size_t input_size, Util::Encoding enc)
     if (enc == Util::Encoding::MSJIS)
         from_encoding = "CP932"; // Code Page 932, aka MS-JIS
 
-    char* src = (char*)alloca(input_size + 1);
+    ICONV_CONST char* src = (ICONV_CONST char*)alloca(input_size + 1);
     memcpy(src, input, input_size);
     size_t srclen = input_size;
     size_t dstlen = input_size * 4;
@@ -329,7 +329,7 @@ bool from_utf8(const string& input, std::vector<u8>& output, Encoding enc)
     default:
         to_encoding = "ISO-8859-1";
     }
-    char* src = (char*)alloca(input.size() + 1);
+    ICONV_CONST char* src = (ICONV_CONST char*)alloca(input.size() + 1);
     strcpy(src, input.c_str());
     size_t srclen = input.size();
     size_t dstlen = srclen * 4;
@@ -391,7 +391,7 @@ bool isStrictAscii(const std::string& str)
 bool isValidUTF8(const char* str)
 {
   const char* encoding = "UTF-8";
-  char* src = (char*)alloca(strlen(str) + 1);
+  ICONV_CONST char* src = (ICONV_CONST char*)alloca(strlen(str) + 1);
   strcpy(src, str);
   size_t srclen = strlen(src);
   size_t dstlen = srclen * 2;
