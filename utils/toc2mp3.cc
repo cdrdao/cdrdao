@@ -403,7 +403,7 @@ void set_id3_tags(lame_global_flags *lf, int tracknr, const string &title,
     set_id3v2tag(lf, 'l', album.c_str());
 
   if (tracknr > 0 && tracknr <= 255) {
-    sprintf(buf, "%d", tracknr);
+    snprintf(buf, sizeof(buf), "%d", tracknr);
     id3tag_set_track(lf, buf);
   }
 }
@@ -674,7 +674,7 @@ int main(int argc, char **argv)
       // build mp3 file name
       string mp3FileName;
       
-      sprintf(sbuf, "%02d", trackNr);
+      snprintf(sbuf, sizeof(sbuf), "%02d", trackNr);
       
       mp3FileName += sbuf;
       mp3FileName += SEPARATOR;
