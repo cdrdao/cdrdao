@@ -343,6 +343,7 @@ bool from_utf8(const string& input, std::vector<u8>& output, Encoding enc)
 
     while (origdst < dst)
         output.push_back(*origdst++);
+    output.push_back(0);
     return true;
 }
 

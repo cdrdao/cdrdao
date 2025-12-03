@@ -834,6 +834,7 @@ CdrDriver *CdrDriver::createDriver(const char *driverId, unsigned long options,
 const char *CdrDriver::detectDriver(ScsiIf *scsiIf, unsigned long *options)
 {
   if (scsiIf->checkMmc()) {
+    *options |= OPT_MMC_CD_TEXT;
     return "generic-mmc";
   }
 
@@ -3104,7 +3105,7 @@ vector<CdTextItem*> processPacks(CdTextPack* packs, int nofPacks)
             buf[pos] = 0;
             {
                 auto item = new CdTextItem(packType, blockNumber);
-                item->setRawText((u8*)buf, pos);
+                item->setRawText((u8*)buf, pos+1);
                 item->trackNr(trackNumber);
                 items.push_back(item);
             }

@@ -1,7 +1,7 @@
 dnl Process this file with autoconf to produce a configure script.
 AC_REVISION($Revision: 1.26 $)dnl
 
-AC_INIT([cdrdao],[1.2.6a])
+AC_INIT([cdrdao],[1.2.6rc1])
 AC_CONFIG_MACRO_DIRS([m4])
 AC_CONFIG_SRCDIR(dao/main.cc)
 AM_INIT_AUTOMAKE(subdir-objects)
@@ -264,13 +264,13 @@ case "$host" in
       scsilib_objs="ScsiIf-osx.o"
       ;;
 
-  *-pc-cygwin*)
+  *-pc-cygwin* | *mingw*)
       scsilib_libs=""
-      scsilib_objs="ScsiIf-win.o"
+      scsilib_objs="ScsiIf-nt.o"
       ;;
 
   *)
-      AC_MSG_ERROR([No native interface for operating system $host_os, use --with-libscg])
+      AC_MSG_ERROR([No native SCSI interface for operating system $host_os])
       ;;
 esac
 
@@ -301,6 +301,9 @@ dnl -lc_r is automatically done by the linker
             LDFLAGS="$LDFLAGS -L/usr/local/lib"
             LIBS="$LIBS -liconv"
             ;;
+  *-pc-cygwin* | *mingw*)
+            LIBS="$LIBS -liconv"
+	    ;;
 esac
 
 dnl Sound device selection for xcdrdao

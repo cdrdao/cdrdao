@@ -1345,9 +1345,8 @@ CdrDriver *setupDevice(DaoCommand cmd, const string& scsiDevice,
 
   switch (scsiIf->init()) {
   case 1:
-    log_message(-2, "Please use option '--device {[proto:]bus,id,lun}|device'"
-	    ", e.g. "
-            "--device 0,6,0, --device ATA:0,0,0 or --device /dev/cdrom");
+    log_message(-2, "Please use option '--device device'"
+	    ", e.g. --device /dev/cdrom");
     delete scsiIf;
     return NULL;
     break;
@@ -1468,76 +1467,6 @@ CdrDriver *setupDevice(DaoCommand cmd, const string& scsiDevice,
       initTries = 0;
     }
   }
-
-#ifdef __CYGWIN__
-/* 	Experimental device locking code. Should work on Win2k/NT only.  */
-	typedef struct _SCSI_ADDRESS {
-		ULONG Length;
-		UCHAR PortNumber;
-		UCHAR PathId;
-		UCHAR TargetId;
-		UCHAR Lun;
-	}SCSI_ADDRESS, *PSCSI_ADDRESS;
-
-	OSVERSIONINFO osinfo;
-	osinfo.dwOSVersionInfoSize = sizeof (OSVERSIONINFO);
-	if ((GetVersionEx (&osinfo)) && (osinfo.dwPlatformId == VER_PLATFORM_WIN32_NT))
-		isNT = true;
-	if (isNT)	{
-		char devletter;
-		SCSI_ADDRESS sa;
-		DWORD bytes;
-		bool gotit = false;
-		int ha,id,lun;
-
-		ha = scsiIf->bus ();
-		id = scsiIf->id ();
-		lun = scsiIf->lun ();
-
-		for (devletter = 'A'; devletter <= 'Z'; devletter++)	{
-			sprintf (devstr, "%c:\\\0", devletter);
-			if (GetDriveType (devstr) != DRIVE_CDROM)
-				continue;
-			sprintf (devstr, "\\\\.\\%c:", devletter);
-			fh = CreateFile (devstr,
-				GENERIC_READ,
-				0,
-				NULL,
-				OPEN_EXISTING,
-				FILE_FLAG_WRITE_THROUGH|FILE_FLAG_NO_BUFFERING,
-				NULL);
-			if (fh == INVALID_HANDLE_VALUE)	{
-				//~ printf ("Error opening device %s: %d\n", devstr, GetLastError());
-				fh = NULL;
-				continue;
-			}
-			if (DeviceIoControl (fh, IOCTL_SCSI_GET_ADDRESS, NULL, 0, &sa, sizeof(SCSI_ADDRESS), &bytes, NULL))	{
-				if ( (ha == sa.PortNumber) && (lun == sa.Lun) && (id == sa.TargetId) )	{
-					gotit = true;
-					break;
-				}	else	{
-					CloseHandle (fh);
-					fh = NULL;
-					continue;
-				}
-			}
-		}
-		if (gotit)	{
-			if (!DeviceIoControl (fh, FSCTL_LOCK_VOLUME, NULL, 0, NULL, 0, &bytes, NULL))	{
-				log_message(-2, "Couldn't lock device %s!", devstr);
-				CloseHandle (fh);
-				fh = NULL;
-			}
-			else
-				log_message(2, "OS lock on device %s. Unit won't be accessible while burning.", devstr);
-		}	else	{
-                    log_message(-2, "Unable to determine drive letter for device %s! No OS level locking.", scsiDevice.c_str());
-			if (fh) CloseHandle (fh);
-			fh = NULL;
-		}
-	}	else
-		log_message(2,"You are running Windows 9x. No OS level locking available.");
-#endif
 
   if (readingSpeed >= 0) {
     if (!cdr->rspeed(readingSpeed)) {
@@ -2562,9 +2491,7 @@ int main(int argc, char **argv)
 			  /* init device? */
 			  (options.command == UNLOCK) ? 0 : 1,
 			  /* check for ready status? */
-			  (options.command == BLANK ||
-			   options.command == DRIVE_INFO ||
-			   options.command == DISCID) ? 0 : 1,
+			  (options.command == DRIVE_INFO) ? 0 : 1,
 			  /* reset status of medium if not empty? */
 			  (options.command == SIMULATE ||
 			   options.command == WRITE) ? 1 : 0,
