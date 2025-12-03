@@ -18,8 +18,6 @@ AC_ARG_WITH(linux-qnx-sched,[  --with-linux-qnx-sched  enable QNX real time sche
 
 AC_ARG_WITH(posix-threads,[  --with-posix-threads    use Posix threads for ring buffer (default is YES)],[use_pthreads=$withval],[use_pthreads=default])
 
-AC_ARG_WITH(scglib,[  --with-scglib           use bundled libscg SCSI library (see INSTALL) (default is NO)],[scglib=$withval],[scglib=default])
-
 AC_ARG_WITH(gcdmaster,[  --with-gcdmaster             enable build of gcdmaster Gnome GUI front-end (default is YES)],[gcdmaster=$withval],[gcdmaster=default])
 
 AC_ARG_WITH(ogg-support,[  --with-ogg-support      enable OGG format support (default is YES)],[],[with_ogg_support=yes])

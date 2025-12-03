@@ -17,9 +17,6 @@ To:  Piergiorgio Sartor <sartor@sony.de>
 For: SCSI manual for the Sony CDU948 recorder.
      Implementation of sub-channel scanning for catalog number.
 
-To:  Joerg Schilling <schilling@fokus.gmd.de>
-For: Portable SCSI interface library 'libscg'.
-
 To:  Henk-Jan Slotboom
 For: Implementation of the taiyo-yuden driver.
 
