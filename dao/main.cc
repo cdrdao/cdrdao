@@ -265,7 +265,8 @@ char devstr[10];
 
 void printVersion()
 {
-  log_message(2, "Cdrdao version %s", VERSION);
+  log_message(2, "Cdrdao version %s - (C) Andreas Mueller <andreas@daneb.de>",
+	  VERSION);
 
   list<string> elist;
   int num = formatConverter.supportedExtensions(elist);
