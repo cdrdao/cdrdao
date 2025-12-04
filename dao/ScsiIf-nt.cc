@@ -41,7 +41,7 @@ typedef struct
   UCHAR ucSenseBuf[32];
 } SCSI_PASS_THROUGH_DIRECT_WITH_BUFFER;
 
-typedef struct _SCSI_INQUIRY_DEVICE 
+typedef struct _SCSI_INQUIRY_DEVICE
 {
   UCHAR Type;
   UCHAR TypeModifier;
@@ -64,21 +64,17 @@ typedef struct _SCSI_INQUIRY_DEVICE
 #define SCSIOP_MODE_SELECT         0x15
 #define SCSIOP_MODE_SENSE          0x1A
 
-class ScsiIfImpl 
+class ScsiIfImpl
 {
 public:
   std::string dev_;
 
   HANDLE hCD;
   SCSI_PASS_THROUGH_DIRECT_WITH_BUFFER sb;
-  
+
   unsigned char senseBuffer_[32];
 
   int timeout_;
-
-  char haid_;
-  char lun_;
-  char scsi_id_;
 };
 
 ScsiIf::ScsiIf(const char *dev)
@@ -129,31 +125,18 @@ int ScsiIf::init()
     return 1;
   }
 
-  if (DeviceIoControl (impl_->hCD, IOCTL_SCSI_GET_ADDRESS, NULL, 0, &sa, sizeof(SCSI_ADDRESS), &ol, NULL)) 
-  { 
-    impl_->haid_    = sa.PortNumber;
-    impl_->lun_     = sa.Lun;
-    impl_->scsi_id_ = sa.TargetId;
-  }
-  else
-  {
-    CloseHandle (impl_->hCD);
-    impl_->hCD = INVALID_HANDLE_VALUE;
-    return 1;
-  }
-
-  if (DeviceIoControl (impl_->hCD, IOCTL_SCSI_GET_CAPABILITIES, NULL, 0, &ca, sizeof(IO_SCSI_CAPABILITIES), &ol, NULL)) 
+  if (DeviceIoControl (impl_->hCD, IOCTL_SCSI_GET_CAPABILITIES,
+		       NULL, 0, &ca, sizeof(IO_SCSI_CAPABILITIES), &ol, NULL))
   {
     maxDataLen_ = ca.MaximumTransferLength;
   }
   else
   {
-    CloseHandle (impl_->hCD);
-    impl_->hCD = INVALID_HANDLE_VALUE;
-    return 1;
+    // Pick sensible default, most drives won't honor the GET_CAP
+    maxDataLen_ = 64 * 1024;
   }
 
-  if (inquiry() != 0) 
+  if (inquiry() != 0)
     return 2;
 
   return 0;
@@ -174,7 +157,7 @@ int ScsiIf::timeout (int t)
 //        1: scsi command failed (os level, no sense data available)
 //        2: scsi command failed (sense data available)
 
-int ScsiIf::sendCmd (const u8* cmd,     int cmdLen, 
+int ScsiIf::sendCmd (const u8* cmd,     int cmdLen,
 		     const u8 *dataOut, int dataOutLen,
 		     u8 *dataIn,  int dataInLen,
 		     int showMessage)
@@ -221,7 +204,7 @@ int ScsiIf::sendCmd (const u8* cmd,     int cmdLen,
 
   if (impl_->sb.sptd.ScsiStatus != 0)
     return 2;
-  
+
   return 0;
 }
 
@@ -265,17 +248,17 @@ int ScsiIf::inquiry()
   strncpy(revision_, (char *)(NTinqbuf.ProductRevLevel), 4);
   revision_[4] = 0;
 
-  for (i = 7; i >= 0 && vendor_[i] == ' '; i--) 
+  for (i = 7; i >= 0 && vendor_[i] == ' '; i--)
   {
      vendor_[i] = 0;
   }
 
-  for (i = 15; i >= 0 && product_[i] == ' '; i--) 
+  for (i = 15; i >= 0 && product_[i] == ' '; i--)
   {
      product_[i] = 0;
   }
 
-  for (i = 3; i >= 0 && revision_[i] == ' '; i--) 
+  for (i = 3; i >= 0 && revision_[i] == ' '; i--)
   {
      revision_[i] = 0;
   }
