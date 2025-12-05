@@ -55,7 +55,6 @@ static string ENCODING;
 static bool DRY_RUN = false;
 static string SEPARATOR = "_";
 
-
 void message_args(int level, int addNewLine, const char *fmt, va_list args)
 {
   long len = strlen(fmt);
@@ -150,6 +149,7 @@ static void printUsage()
   message(0, "  -n               Dry run, show created files but don't actually encode");
   message(0, "  -b <bit rate>    Sets bit rate used for encoding (default %d kbit/s).",
 	  DEFAULT_ENCODER_BITRATE);
+  message(0, "  -r <quality>     Use VBR (variable bit rate) encoding (0->9, 0 being highest quality).");
   message(0, "                   See below for supported bit rates.");
 
   message(0, "");
@@ -162,7 +162,8 @@ static void printUsage()
   message(0, "");
 }
 
-static int parseCommandLine(int argc, char **argv, char **tocFile, int *bitrate)
+static int parseCommandLine(int argc, char **argv, char **tocFile,
+			    int *bitrate, int* vbr)
 {
   int c;
   int printVersion = 0;
@@ -172,7 +173,7 @@ static int parseCommandLine(int argc, char **argv, char **tocFile, int *bitrate)
 
   opterr = 0;
 
-  while ((c = getopt(argc, argv, "Vhcv:d:b:J:ns:")) != EOF) {
+  while ((c = getopt(argc, argv, "Vhcv:d:b:J:ns:r:")) != EOF) {
     switch (c) {
     case 'V':
       printVersion = 1;
@@ -201,6 +202,18 @@ static int parseCommandLine(int argc, char **argv, char **tocFile, int *bitrate)
       }
       break;
 
+    case 'r':
+	if (optarg != NULL) {
+	    *vbr = atoi(optarg);
+	    if (*vbr < 0 || *vbr > 9) {
+		message(-2, "VBR quality must be between 0 and 9.");
+		return 0;
+	    }
+	} else {
+	    message(-2, "Missing VBR quality value");
+	    return 0;
+	}
+	break;
     case 'n':
       DRY_RUN = true;
       break;
@@ -259,7 +272,7 @@ static int parseCommandLine(int argc, char **argv, char **tocFile, int *bitrate)
   return 2;
 }
 
-lame_global_flags *init_encoder(int bitrate)
+lame_global_flags *init_encoder(int bitrate, int vbr)
 {
   lame_global_flags *lf;
   int bitrateOk = 0;
@@ -283,27 +296,17 @@ lame_global_flags *init_encoder(int bitrate)
   lame_set_errorf(lf, lame_error_message);
 
   lame_set_in_samplerate(lf, 44100);
-
   lame_set_num_channels(lf, 2);
 
-  lame_set_quality(lf, 2);
-
-  lame_set_mode(lf, STEREO);
-
-  lame_set_brate(lf, bitrate);
+  if (vbr >= 0) {
+      lame_set_VBR(lf, vbr_default);
+      lame_set_VBR_quality(lf, vbr);
+      lame_set_VBR_mean_bitrate_kbps(lf, bitrate);
+  } else {
+      lame_set_brate(lf, bitrate);
+  }
   
-  //lame_set_VBR(lf, vbr_abr);
-
-  //lame_set_VBR(lf, vbr_mtrh);
-  //lame_set_VBR_q(lf, 2);
-
-  //lame_set_VBR_mean_bitrate_kbps(lf, bitrate);
-  //lame_set_VBR_min_bitrate_kbps(lf, 112);
-  //lame_set_VBR_hard_min(lf, 1);
-
-  //lame_set_bWriteVbrTag(lf, 1);
-
-  //lame_set_asm_optimizations(lf, AMD_3DNOW, 1);
+  lame_set_quality(lf, 2);
 
   return lf;
 }
@@ -538,6 +541,7 @@ int main(int argc, char **argv)
 {
   char *tocFile;
   int bitrate = DEFAULT_ENCODER_BITRATE;
+  int vbr = -1;
   Toc *toc;
   lame_global_flags *lf;
   string album, albumPerformer, title, performer;
@@ -551,7 +555,7 @@ int main(int argc, char **argv)
 
   PRGNAME = *argv;
 
-  switch (parseCommandLine(argc, argv, &tocFile, &bitrate)) {
+  switch (parseCommandLine(argc, argv, &tocFile, &bitrate, &vbr)) {
   case 0:
     printUsage();
     exit(1);
@@ -569,7 +573,7 @@ int main(int argc, char **argv)
     message(-10, "Failed to read toc-file '%s'.", tocFile);
   }
 
-  if ((lf = init_encoder(bitrate)) == NULL) {
+  if ((lf = init_encoder(bitrate, vbr)) == NULL) {
     message(-10, "Cannot initialize lame encoder");
   }
 
@@ -710,7 +714,10 @@ int main(int argc, char **argv)
 	  }
 	  message(1, "Lame encoder settings:");
 	  lame_print_config(lf);
-	  message(1, "Selected bit rate: %d kbit/s", bitrate);
+	  if (vbr >= 0)
+	      message(1, "VBR encoding set at quality %d", vbr);
+	  else
+	      message(1, "Selected bit rate: %d kbit/s", bitrate);
 
 	  if (VERBOSE >= 2)
 	    lame_print_internals(lf);
