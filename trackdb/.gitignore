@@ -1,10 +1,1 @@
-AParser.cpp
-ATokenBuffer.cpp
-DLexerBase.cpp
 TocLexer.dlg
-TocLexerBase.cpp
-TocLexerBase.h
-TocParser.cpp
-TocParserGram.cpp
-TocParserGram.h
-TocParserTokens.h

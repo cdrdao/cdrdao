@@ -6,17 +6,12 @@ else
 MAYBE_GCDMASTER =
 endif
 
-if COND_PCCTS
-MAYBE_PCCTS = pccts
-else
-MAYBE_PCCTS =
-endif
+SUBDIRS = trackdb utils paranoia dao $(MAYBE_GCDMASTER)
 
-SUBDIRS = $(MAYBE_PCCTS) trackdb utils paranoia dao $(MAYBE_GCDMASTER)
-
-DIST_SUBDIRS = trackdb utils paranoia dao gcdmaster pccts
+DIST_SUBDIRS = trackdb utils paranoia dao gcdmaster
 
 EXTRA_DIST =		\
+	pccts/h/*.h	\
 	AUTHORS		\
 	ChangeLog	\
 	COPYING		\

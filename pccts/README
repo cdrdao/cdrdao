@@ -1,0 +1,16 @@
+We keep a copy of old ANTLR 1.33 source code here, in case we need to
+modify the TOC file format and regenerate the TOC parser. The
+generated parser code is cross-OS and stable and is therefore kept in
+the git repository, rather than being regenerated everytime cdrdao is
+built from a tarball.
+
+We provide a simple custom Makefile to build antlr from source and
+generate the toc parser.
+
+To build antlr 1.33:
+
+> make
+
+To regenerate the TOC parser:
+
+> make regen
