@@ -9,10 +9,6 @@ AC_CONFIG_HEADERS(config.h)
 AM_MAINTAINER_MODE
 AC_CANONICAL_HOST
 
-AC_ARG_WITH(pcctsbin,[  --with-pcctsbin=dir     set directory of PCCTS parser generator executables],[pcctsbin=$withval],[pcctsbin=default])
-
-AC_ARG_WITH(pcctsinc,[  --with-pcctsinc=dir     set directory of PCCTS parser generator includes],[pcctsinc=$withval],[pcctsinc=default])
-
 AC_ARG_WITH(linux-qnx-sched,[  --with-linux-qnx-sched  enable QNX real time scheduling for Linux],[AC_DEFINE(LINUX_QNX_SCHEDULING,1,"Use real time scheduling for Linux")])
 
 AC_ARG_WITH(posix-threads,[  --with-posix-threads    use Posix threads for ring buffer (default is YES)],[use_pthreads=$withval],[use_pthreads=default])
@@ -35,7 +31,6 @@ AC_PROG_MAKE_SET
 AC_PATH_TOOL([PKG_CONFIG], [pkg-config])
 
 dnl Checks for header files.
-AC_CHECK_INCLUDES_DEFAULT
 AC_PROG_EGREP
 AC_FUNC_ALLOCA
 
@@ -173,43 +168,6 @@ if test "$use_pthreads" = yes; then
   mydefs="-D_THREAD_SAFE -D_REENTRANT $mydefs"
 fi
 
-
-dnl Checks for pccts parser generator
-en_pccts="no"
-if test "$pcctsbin" = default; then
-  antlr_path='$(srcdir)/../pccts/antlr/antlr'
-  dlg_path='$(srcdir)/../pccts/dlg/dlg'
-
-
-  en_pccts="yes"
-else
-  AC_PATH_PROG(antlr_path,antlr,no,$pcctsbin)
-  AC_PATH_PROG(dlg_path,dlg,no,$pcctsbin)
-
-  if test $antlr_path = "no" || test $dlg_path = "no"; then
-    AC_MSG_WARN([PCCTS: antlr or dlg not found in path, using own.])
-    antlr_path='$(srcdir)/../pccts/antlr/antlr'
-    dlg_path='$(srcdir)/../pccts/dlg/dlg'
-    en_pccts="yes"
-  fi
-fi
-
-
-if test "$pcctsinc" = default; then
-  pcctsinc='$(srcdir)/../pccts/h'
-  antlr_path='$(srcdir)/../pccts/antlr/antlr'
-  dlg_path='$(srcdir)/../pccts/dlg/dlg'
-  en_pccts="yes"
-else
-  ac_save_CPPFLAGS="$CPPFLAGS"
-  CPPFLAGS="$CPPFLAGS -I$pcctsinc"
-  AC_CHECK_HEADER(pcctscfg.h,,[
-    AC_MSG_WARN([PCCTS: headers not found in path, using own.])
-    pcctsinc='$(srcdir)/../pccts/h'
-    antlr_path='$(srcdir)/../pccts/antlr/antlr'
-    en_pccts="yes"])
-  CPPFLAGS="$ac_save_CPPFLAGS"
-fi
 
 utiltools="toc2cue cue2toc"
 en_cdrdao=yes
@@ -376,17 +334,13 @@ AC_SUBST(en_cue2toc)
 AC_SUBST(en_cdrdao)
 AC_SUBST(scsilib_libs)
 AC_SUBST(scsilib_objs)
-AC_SUBST(pcctsinc)
 AC_SUBST(dao_src)
 AC_SUBST(sound_if_obj)
 AC_SUBST(thread_libs)
 AC_SUBST(mydefs)
-AC_SUBST(antlr_path)
-AC_SUBST(dlg_path)
 
 AM_CONDITIONAL([COND_GCDMASTER], [test "$en_gcdmaster" = yes])
 AM_CONDITIONAL([COND_TOC2MP3], [test "$en_toc2mp3" = yes])
-AM_CONDITIONAL([COND_PCCTS], [test "$en_pccts" = yes])
 AM_CONDITIONAL([COND_MP3], [test "$with_mp3_support" = yes])
 AM_CONDITIONAL([COND_OGG], [test "$with_ogg_support" = yes])
 
@@ -401,9 +355,6 @@ AC_CONFIG_FILES([
         gcdmaster/Makefile
         gcdmaster/stock/Makefile
         paranoia/Makefile
-        pccts/Makefile
-        pccts/antlr/Makefile
-        pccts/dlg/Makefile
         Makefile
         specs/cdrdao.fedora.spec
         ])
@@ -412,7 +363,6 @@ AC_OUTPUT
 
 echo
 echo "------------------------------------------------------"
-echo "  Building pccts     : $en_pccts"
 echo "  Building cdrdao    : $en_cdrdao"
 echo "     OGG support     : $with_ogg_support"
 echo "     MP3 support     : $with_mp3_support"
