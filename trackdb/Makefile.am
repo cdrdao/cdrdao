@@ -34,9 +34,7 @@ libtrackdb_a_SOURCES = \
 	CueParser.h		\
 	CueParser.cc		\
 	log.h			\
-	log.cc
-
-PCCTS_GEN_FILES = \
+	log.cc			\
 	TocParser.cpp		\
 	TocParserGram.cpp	\
 	TocLexerBase.cpp	\
@@ -47,28 +45,9 @@ PCCTS_GEN_FILES = \
 	DLexerBase.cpp		\
 	ATokenBuffer.cpp
 
-nodist_libtrackdb_a_SOURCES = ${PCCTS_GEN_FILES}
-
-AM_CPPFLAGS = -I@pcctsinc@
-ANTLR = @antlr_path@
-DLG = @dlg_path@
-
-TocParser.cpp: $(srcdir)/TocParser.g
-	$(ANTLR) -nopurify -k 3 -CC  -w2 -fl TocLexer.dlg -ft TocParserTokens.h $(srcdir)/TocParser.g
-	$(DLG) -C2 -CC -cl TocLexerBase TocLexer.dlg 
-
-TocParserGram.cpp TocLexerBase.cpp: TocParser.cpp
-
-AParser.cpp: @pcctsinc@/$@
-	cp @pcctsinc@/$@ .
-
-DLexerBase.cpp: @pcctsinc@/$@
-	cp @pcctsinc@/$@ .
-
-ATokenBuffer.cpp: @pcctsinc@/$@
-	cp @pcctsinc@/$@ .
 
 AM_CXXFLAGS = @AO_CFLAGS@
+AM_CPPFLAGS = -I$(top_builddir)/pccts/h
 
 if COND_MP3
 AM_CXXFLAGS += @MAD_CFLAGS@
@@ -79,5 +58,3 @@ if COND_OGG
 AM_CXXFLAGS += @VORBISFILE_CFLAGS@
 libtrackdb_a_SOURCES += FormatOgg.cc FormatOgg.h
 endif
-
-CLEANFILES = ${PCCTS_GEN_FILES} CueLexer.dlg TocLexer.dlg

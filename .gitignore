@@ -6,8 +6,6 @@ config.h.in
 config.log
 config.status
 configure
-pccts
-scsilib
 stamp-h1
 autom4te.cache
 aclocal.m4
