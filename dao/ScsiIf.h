@@ -74,12 +74,8 @@ public:
     /*! \brief Accessor method: SCSI LUN of the device. */
     const int lun ();
 
-    //! \brief Opens the scsi device. Most of the code originates
-    // from cdrecord's initialization function.
-    // Tries to build a scglib SCSI* object using device specified in
-    // ScsiIf::ScsiIf and issues an inquiry to test the
-    // communication. Gets max DMA transfer length using scg_bufsize,
-    // upto MAX_DATALEN_LIMIT, and builds a buffer of this size.
+    //! \brief Opens the scsi device. Issues an inquiry to test the
+    // communication. Gets max DMA transfer length.
     //
     // \return int
     //   - 0 OK
@@ -101,7 +97,7 @@ public:
     //        parameters to the command
     // \param dataInLen Length of input buffer. dataOutLen or
     //        dataInLen must be 0.
-    // \param showMessage If 0 makes scglib silent. If 1 verbose
+    // \param showMessage If 0 makes it silent. If 1 verbose
     //        command execution.
     // \return int
     //   - 0 OK
@@ -111,13 +107,11 @@ public:
 		const u8 *dataOut, int dataOutLen,
 		u8 *dataIn, int dataInLen, int showMessage = 1);
 
-    //! \brief Return the actual sense buffer in scglib
+    //! \brief Return the actual sense buffer
     // \param len will be overwritten and contain
-    //        ScsiIf::impl->scgp_->scmd->sense_count (length of returned
-    //        buffer).
-    //	\return ScsiIf::impl->scgp_->scmd->u_sense.cmd_sense. This
-    //	      buffer contains last sense data available to scglib. The
-    //	      buffer is owned by scglib and must not be freed.
+    //        the length of returned buffer.
+    //	\return buffer contains last sense data available. The
+    //	      buffer is owned and must not be freed.
     const u8 *getSense(int &len) const;
   
     //! \brief Prints extended status information of the last SCSI command.
@@ -130,8 +124,6 @@ public:
     //  - DMA status
     //  - SCSI timing
     //
-    // to file specified in ScsiIf::impl_->scgp_->errfile (defaults to
-    // stderr)
     void printError();
 
     //! \brief Sets new timeout (seconds) and returns old timeout.

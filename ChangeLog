@@ -1,4 +1,28 @@
 --------------------------------------------------------------------------
+  cdrdao 1.2.6 (2025-12-05)
+--------------------------------------------------------------------------
+
+ o  Many bugfixes related to CD-TEXT processing (Rasheeq Azad, Denis Leroy)
+
+ o  Windows native interface support (Denis Leroy)
+
+ o  Several crash fixes (Ole Bertram, Denis Leroy, Jan Solanti)
+
+ o  Fixed version command (Daniel Foster)
+
+ o  iconv detection improvement and cross-OS support (DL)
+
+ o  Ejects CD to allow source medium insertion with copy command (dhucul)
+
+ o  Fix burning issue with gcdmaster (Sven Geuer)
+
+ o  Many typos fixes (Sven Geuer, Michael Ortmann)
+
+ o  *BSDs support fixes (Michael Ortmann, Benjamin Jacobs, DL)
+
+ o  Do retries for blank and discid commands (DL)
+
+--------------------------------------------------------------------------
   cdrdao 1.2.5 (2023-02-03)
 --------------------------------------------------------------------------
 

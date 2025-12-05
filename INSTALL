@@ -1,12 +1,33 @@
 Installation Instructions
 *************************
 
+Build Dependencies
+==================
+
+Mandatory:
+ - a C++14 compiler
+ - iconv (for UTF-8 conversion)
+
+Optional:
+ - gtkmm3       (for gcdmaster)
+ - libao        (for gcdmaster)
+ - libvorbis    (for ogg/vorbis decoding support)
+ - libmad       (for MP3 decoding support)
+ - lame library (for toc2mp3)
+
+Supported OSes
+==============
+ - Most Linux distributions
+ - MacOS
+ - Windows 10 and 11 using Cygwin or MSYS2
+ - *BSDs (but not heavily tested)
+
 Basic Installation
 ==================
 
    The following shell commands:
 
-     test -f configure || ./bootstrap
+     test -f configure || ./autogen.sh
      ./configure
      make
      make install

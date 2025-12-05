@@ -16,21 +16,6 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
-/*
- * $Log: ScsiIf-common.cc,v $
- * Revision 1.4  2007/12/29 12:26:33  poolshark
- * Complete rewrite of native Linux SG driver for SG 3.0 using SG_IO ioctl. Code cleanup
- *
- * Revision 1.3  2004/04/13 01:23:44  poolshark
- * Cleanup of scglib selection. Fixed without-scglib option. Default build of scsilib was problematic on older systems
- *
- * Revision 1.2  2004/03/23 18:46:07  poolshark
- * MMC autodetect mode
- *
- * Revision 1.1.1.1  2000/02/05 01:36:55  llanero
- * Uploaded cdrdao 1.1.3 with pre10 patch applied.
- *
- */
 
 // checks if unit is ready
 // return: 0: OK, ready
