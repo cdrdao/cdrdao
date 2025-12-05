@@ -2782,7 +2782,9 @@ int GenericMMC::RicohGetWriteOptions()
 
 int GenericMMC::RicohSetWriteOptions(const DriveInfo *di)
 {
-  u8 mp[14];
+  unsigned char mp[16];
+
+  memset(mp, 0, sizeof mp);
 
   if (di->ricohJustLink == 0 && di->ricohJustSpeed == 0)
     return 0;
