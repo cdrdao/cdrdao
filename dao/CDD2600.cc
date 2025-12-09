@@ -121,7 +121,7 @@ int CDD2600::modeSelectPlay(int immediate, int sotc, unsigned char volume)
   mp[10] = 2;
   mp[11] = volume;
 
-  if (setModePage(mp, NULL, NULL, 1) != 0) {
+  if (setModePage(mp, sizeof(mp), NULL, NULL, 1) != 0) {
     log_message(-2, "Cannot set play parameters.");
     return 1;
   }

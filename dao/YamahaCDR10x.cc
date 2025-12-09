@@ -166,7 +166,7 @@ int YamahaCDR10x::selectSpeed()
 	return 1;
   }
 
-  if (setModePage6(mp, NULL, NULL, 1) != 0) {
+  if (setModePage6(mp, sizeof(mp), NULL, NULL, 1) != 0) {
     log_message(-2, "Cannot set drive configuration mode page for cd speed.");
     return 1;
   }
@@ -190,7 +190,7 @@ int YamahaCDR10x::setWriteParameters()
   mp[3] &= 0xf0;	// save speed settings in high nibble
   mp[3] |= (simulate_ ? 1 : 0);
 
-  if (setModePage6(mp, NULL, NULL, 1) != 0) {
+  if (setModePage6(mp, sizeof(mp), NULL, NULL, 1) != 0) {
     log_message(-2, "Cannot set drive configuration mode page (0x31).");
     return 1;
   }
@@ -207,7 +207,7 @@ int YamahaCDR10x::setWriteParameters()
   mp[3] &= 0xf0;
   mp[3] |= 0x04;	// disc at once (single session)
 
-  if (setModePage6(mp, NULL, NULL, 1) != 0) {
+  if (setModePage6(mp, sizeof(mp), NULL, NULL, 1) != 0) {
     log_message(-2, "Cannot set write format mode page (0x32).");
     return 1;
   }

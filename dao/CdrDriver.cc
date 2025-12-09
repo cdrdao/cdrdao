@@ -1442,11 +1442,13 @@ int CdrDriver::getModePage(int pageCode, unsigned char *buf, long bufLen,
 // Return: 0: OK
 //         1: SCSI command failed
 int CdrDriver::setModePage(const unsigned char *modePage,
+			   size_t modePage_size,
 			   const unsigned char *modePageHeader,
 			   const unsigned char *blockDesc,
 			   int showErrorMsg)
 {
   long pageLen = modePage[1] + 2;
+  assert(modePage_size >= pageLen);
   unsigned char cmd[10];
   long dataLen = pageLen + 8/*mode parameter header*/;
 
@@ -1563,12 +1565,13 @@ int CdrDriver::getModePage6(int pageCode, unsigned char *buf, long bufLen,
 // blockDesc     : if != NULL used as block descriptor (8 bytes),
 // Return: 0: OK
 //         1: SCSI command failed
-int CdrDriver::setModePage6(const unsigned char *modePage,
+int CdrDriver::setModePage6(const unsigned char *modePage, size_t modePageSz,
 			    const unsigned char *modePageHeader,
 			    const unsigned char *blockDesc,
 			    int showErrorMsg)
 {
   long pageLen = modePage[1] + 2;
+  assert(modePageSz >= pageLen);
   unsigned char cmd[6];
   long dataLen = pageLen + 4/*mode parameter header*/;
 

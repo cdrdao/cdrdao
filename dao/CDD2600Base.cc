@@ -86,7 +86,7 @@ int CDD2600Base::modeSelectSpeed(int readSpeed, int writeSpeed, int simulate,
     mp[4] = readSpeed;
   }
 
-  if (driver_->setModePage(mp, NULL, NULL, showMessage) != 0) {
+  if (driver_->setModePage(mp, sizeof(mp), NULL, NULL, showMessage) != 0) {
     if (showMessage) {
       log_message(-2, "Cannot set speed/simulation mode.");
     }
@@ -119,7 +119,7 @@ int CDD2600Base::modeSelectCatalog(const Toc *toc)
     mp[9] = (toc->catalog(12) << 4);
   }
 
-  if (driver_->setModePage(mp, NULL, NULL, 1) != 0) {
+  if (driver_->setModePage(mp, sizeof(mp), NULL, NULL, 1) != 0) {
     log_message(-2, "Cannot set catalog number.");
     return 1;
   }
