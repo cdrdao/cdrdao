@@ -178,7 +178,7 @@ int GenericMMCraw::setWriteParameters(int dataBlockType)
 
     mp[8] = 0; // session format: CD-DA or CD-ROM
 
-    if (setModePage(mp, NULL, NULL, 0) != 0) {
+    if (setModePage(mp, sizeof(mp), NULL, NULL, 0) != 0) {
         //log_message(-2, "Cannot set write parameters mode page.");
         return 1;
     }

@@ -144,7 +144,7 @@ PlextorReader::~PlextorReader ()        {
     	if (getModePage6 (0x31, buf, 32, header, blockdesc, 1) != 0) 
         	return;
     	buf[3] = orig_byte3;
-    	setModePage6 (buf, header, blockdesc, 1);
+    	setModePage6 (buf, sizeof(buf), header, blockdesc, 1);
 	}
 }
 
@@ -160,7 +160,7 @@ int PlextorReader::ReadErrorsSlowDown (int slowdown)    {
         return -1;
     if (slowdown) 
         buf[3] |= 0x01;
-    if (setModePage6 (buf, header, blockdesc, 1) != 0) 
+    if (setModePage6 (buf, sizeof(buf), header, blockdesc, 1) != 0) 
         return -1;
     slow_down_on_read_errors = slowdown;
     return 1;
@@ -177,7 +177,7 @@ int PlextorReader::VibrationsSlowDown (int slowdown)    {
         return -1;
     if (slowdown) 
         buf[3] |= 0x04;
-    if (setModePage6 (buf, header, blockdesc, 1) != 0) 
+    if (setModePage6 (buf, sizeof(buf), header, blockdesc, 1) != 0) 
         return -1;
     slow_down_on_vibrations = slowdown;
     return 1;
@@ -194,7 +194,7 @@ int PlextorReader::WaitMaxSpeed (int wait)      {
         return -1;
     if (wait) 
         buf[3] |= 0x02;
-    if (setModePage6 (buf, header, blockdesc, 1) != 0) 
+    if (setModePage6 (buf, sizeof(buf), header, blockdesc, 1) != 0) 
         return -1;
     transfer_data_before_max_speed = wait;
     return 1;
@@ -232,7 +232,7 @@ int PlextorReader::speed(int speed)
   //log_message(0,"speed value was %d\n",data[2]);
   data[2]=speedvalue;
   //log_message(0,"new speedvalue %d\n",speedvalue);    
-  setModePage6(data,NULL,NULL,1);
+  setModePage6(data, sizeof(data),NULL,NULL,1);
 
   return 0;  
 }

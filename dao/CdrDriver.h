@@ -467,7 +467,7 @@ protected:
   virtual int getModePage(int pageCode, unsigned char *buf, long bufLen,
 			  unsigned char *modePageHeader,
 			  unsigned char *blockDesc, int showErrorMsg);
-  virtual int setModePage(const unsigned char *buf,
+  virtual int setModePage(const unsigned char *buf, size_t bufSz,
 			  const unsigned char *modePageHeader,
 			  const unsigned char *blockDesc, int showErrorMsg);
 
@@ -475,7 +475,7 @@ protected:
   virtual int getModePage6(int pageCode, unsigned char *buf, long bufLen,
 			   unsigned char *modePageHeader,
 			   unsigned char *blockDesc, int showErrorMsg);
-  virtual int setModePage6(const unsigned char *buf,
+  virtual int setModePage6(const unsigned char *buf, size_t bufSz,
 			   const unsigned char *modePageHeader,
 			   const unsigned char *blockDesc, int showErrorMsg);
 

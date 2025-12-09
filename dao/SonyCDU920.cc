@@ -142,7 +142,7 @@ int SonyCDU920::selectSpeed()
     break;
   }
 
-  if (setModePage6(mp, NULL, NULL, 1) != 0) {
+  if (setModePage6(mp, sizeof(mp), NULL, NULL, 1) != 0) {
     log_message(-2, "Cannot set speed mode page.");
     return 1;
   }
@@ -188,7 +188,7 @@ int SonyCDU920::setWriteParameters()
   mp[1] = 6;
   mp[3] = (simulate_ != 0) ? 2 : 0;
   
-  if (setModePage6(mp, NULL, NULL, 1) != 0) {
+  if (setModePage6(mp, sizeof(mp), NULL, NULL, 1) != 0) {
     log_message(-2, "Cannot set CD-R mastering information page.");
     return 1;
   }
@@ -205,7 +205,7 @@ int SonyCDU920::setWriteParameters()
   mp[3] = sessionFormat(); // Disc Type: from 'toc_' object
   mp[19] = 0; // no automatic post-gap; required?
   
-  if (setModePage6(mp, NULL, NULL, 1) != 0) {
+  if (setModePage6(mp, sizeof(mp), NULL, NULL, 1) != 0) {
     log_message(-2, "Cannot set CD-R disc information page.");
     return 1;
   }

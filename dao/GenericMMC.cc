@@ -591,7 +591,7 @@ int GenericMMC::setWriteParameters(unsigned long variant)
 
   log_message(4, "Toc type: 0x%x", mp[8]);
 
-  if (setModePage(mp, mpHeader, NULL, 0) != 0) {
+  if (setModePage(mp, sizeof(mp), mpHeader, NULL, 0) != 0) {
     log_message(-2, "Cannot set write parameters mode page.");
     return 1;
   }
@@ -621,7 +621,7 @@ int GenericMMC::setSimulationMode(int showMessage)
   else
     mp[2] &= ~(1 << 4);
 
-  if (setModePage(mp, mpHeader, NULL, showMessage) != 0) {
+  if (setModePage(mp, sizeof(mp), mpHeader, NULL, showMessage) != 0) {
     if (showMessage)
       log_message(-2, "Cannot set write parameters mode page.");
     return 1;
@@ -697,7 +697,7 @@ int GenericMMC::getStartOfSession(long *lba)
   mp[2] &= 0xe0;
   mp[2] |= 0x02; // write type: Session-at-once
 
-  if (setModePage(mp, mpHeader, NULL, 1) != 0) {
+  if (setModePage(mp, sizeof(mp), mpHeader, NULL, 1) != 0) {
     log_message(-2, "Cannot set write parameters mode page.");
     return 1;
   }
@@ -2789,7 +2789,7 @@ int GenericMMC::RicohSetWriteOptions(const DriveInfo *di)
   if (di->ricohJustLink == 0 && di->ricohJustSpeed == 0)
     return 0;
 
-  if (getModePage(0x30, mp, 14, NULL, NULL, 1) != 0) {
+  if (getModePage(0x30, mp, sizeof(mp), NULL, NULL, 1) != 0) {
     log_message(-2, "Cannot retrieve Ricoh mode page 30.");
     return 1;
   }
@@ -2816,7 +2816,7 @@ int GenericMMC::RicohSetWriteOptions(const DriveInfo *di)
     }
   }
 
-  if (setModePage(mp, NULL, NULL, 1) != 0) {
+  if (setModePage(mp, sizeof(mp), NULL, NULL, 1) != 0) {
     log_message(-2, "Cannot set Ricoh mode page 30.");
     return 1;
   }
