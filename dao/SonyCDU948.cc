@@ -113,7 +113,7 @@ int SonyCDU948::selectSpeed()
     break;
   }
 
-  if (setModePage6(mp, NULL, NULL, 1) != 0) {
+  if (setModePage6(mp, sizeof(mp), NULL, NULL, 1) != 0) {
     log_message(-2, "Cannot set speed mode page.");
     return 1;
   }

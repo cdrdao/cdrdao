@@ -90,7 +90,7 @@ int RicohMP6200::setWriteParameters()
     mp[16] = 0;
   }
   
-  if (setModePage(mp, NULL, NULL, 1) != 0) {
+  if (setModePage(mp, sizeof(mp), NULL, NULL, 1) != 0) {
     log_message(-2, "Cannot set write parameters mode page.");
     return 1;
   }

@@ -158,7 +158,7 @@ int TeacCdr55::setWriteSpeed()
     break;
   }
 
-  if (setModePage6(mp, modeSelectData_, NULL, 1) != 0) {
+  if (setModePage6(mp, sizeof(mp), modeSelectData_, NULL, 1) != 0) {
     log_message(-2, "Cannot set speed mode page.");
     return 1;
   }
@@ -188,7 +188,7 @@ int TeacCdr55::setWriteParameters()
       mp[4] = 2; // disk at once
   }
 
-  if (setModePage6(mp, modeSelectData_, NULL, 1) != 0) {
+  if (setModePage6(mp, sizeof(mp), modeSelectData_, NULL, 1) != 0) {
     log_message(-2, "Cannot set write method mode page.");
     return 1;
   }
@@ -208,7 +208,7 @@ int TeacCdr55::setSimulationMode()
   else
     mp[2] = 0; 
 
-  if (setModePage6(mp, modeSelectData_, NULL, 1) != 0) {
+  if (setModePage6(mp, sizeof(mp), modeSelectData_, NULL, 1) != 0) {
     log_message(-2, "Cannot set preview write mode page.");
     return 1;
   }
