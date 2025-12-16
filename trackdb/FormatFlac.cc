@@ -48,19 +48,6 @@ FormatFlac::~FormatFlac()
 {
 }
 
-FormatSupport::Status FormatFlac::convert(std::string from, std::string to)
-{
-    Status err;
-    
-    err = convertStart(from, to);
-    if (err != FS_SUCCESS)
-        return err;
-
-    while ((err = convertContinue()) == FS_IN_PROGRESS);
-
-    return err;
-}
-
 FormatSupport::Status FormatFlac::convertStart(std::string from, std::string to)
 {
     source_file = from;

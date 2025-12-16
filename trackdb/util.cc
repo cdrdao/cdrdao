@@ -288,6 +288,8 @@ FileExtension fileExtension(const char* fname)
       return FileExtension::OGG;
     if (strcasecmp(e, "m3u") == 0)
       return FileExtension::M3U;
+    if (strcasecmp(e, "flac") == 0)
+      return FileExtension::FLAC;
   }
 
   return FileExtension::UNKNOWN;

@@ -51,7 +51,7 @@ public:
 
   enum Type { DATAFILE, ZERODATA, STDIN, FIFO };
   
-  enum FileType { RAW, WAVE, MP3, OGG };
+  enum FileType { RAW, WAVE, MP3, OGG, FLAC };
 
   // creates an audio mode file entry
   TrackData(const char *filename, long offset, unsigned long start,

@@ -32,7 +32,6 @@ class FormatMp3 : public FormatSupport
 public:
     FormatMp3();
 
-    Status convert(std::string from, std::string to);
     Status convertStart(std::string from, std::string to);
     Status convertContinue();
     void   convertAbort();

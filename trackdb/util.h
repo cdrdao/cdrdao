@@ -65,6 +65,7 @@ enum class FileExtension {
   MP3,
   OGG,
   M3U,
+  FLAC
 };
 
 FileExtension fileExtension(const char* fname);
