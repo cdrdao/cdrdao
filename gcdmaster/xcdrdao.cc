@@ -130,7 +130,12 @@ int main(int argc, char* argv[])
 
   Glib::RefPtr<Gtk::Builder> builder;
   try {
-    builder = Gtk::Builder::create_from_file(CDRDAO_GLADEDIR "/Preferences.glade");
+      std::string gladedir = CDRDAO_GLADEDIR;
+      auto override = getenv("CDRDAO_GLADEDIR");
+      if (override)
+	  gladedir = override;
+      gladedir += "/Preferences.glade";
+      builder = Gtk::Builder::create_from_file(gladedir.c_str());
   } catch(std::exception& ex) {
     std::cerr << ex.what() << std::endl;
     exit(1);

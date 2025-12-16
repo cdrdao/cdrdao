@@ -119,7 +119,7 @@ AM_CPPFLAGS =						\
 	-I$(srcdir)/../trackdb				\
 	-I$(srcdir)/../paranoia
 
-AM_CXXFLAGS = -DDRIVER_TABLE_FILE=\"$(DRIVER_TABLE_FILE)\"
+AM_CXXFLAGS = @AO_CFLAGS@ -DDRIVER_TABLE_FILE=\"$(DRIVER_TABLE_FILE)\"
 
 man1_MANS = cdrdao.man
 EXTRA_DIST = $(man1_MANS) cdrdao.drivers
