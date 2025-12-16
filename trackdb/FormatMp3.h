@@ -20,8 +20,8 @@
 #ifndef __FORMATMP3_H__
 #define __FORMATMP3_H__
 
+#include <string>
 #include <stdlib.h>
-#include <ao/ao.h>
 #include <mad.h>
 
 #include "FormatConverter.h"
@@ -29,55 +29,54 @@
 
 class FormatMp3 : public FormatSupport
 {
- public:
-  FormatMp3();
+public:
+    FormatMp3();
 
-  Status convert(const char* from, const char* to);
-  Status convertStart(const char* from, const char* to);
-  Status convertContinue();
-  void   convertAbort();
+    Status convert(std::string from, std::string to);
+    Status convertStart(std::string from, std::string to);
+    Status convertContinue();
+    void   convertAbort();
 
-  TrackData::FileType format() { return TrackData::WAVE; }
+    TrackData::FileType format() { return TrackData::WAVE; }
 
 protected:
-  struct audio_dither {
-    mad_fixed_t error[3];
-    mad_fixed_t random;
-  };
+    struct audio_dither {
+        mad_fixed_t error[3];
+        mad_fixed_t random;
+    };
 
-  static inline unsigned long prng(unsigned long state);
-  static inline signed long audio_linear_dither(unsigned int bits,
-                                                mad_fixed_t sample,
-                                                struct audio_dither* dither);
+    static inline unsigned long prng(unsigned long state);
+    static inline signed long audio_linear_dither(unsigned int bits,
+                                                  mad_fixed_t sample,
+                                                  struct audio_dither* dither);
 
-  Status madInit();
-  Status madDecodeFrame();
-  void   madExit();
+    Status madInit();
+    Status madDecodeFrame();
+    void   madExit();
   
-  Status madOutput();
+    Status madOutput();
 
- private:
-  const char* src_file_;
-  const char* dst_file_;
-  // 1152 because that's what mad has as a max; *4 because there are 4
-  // distinct bytes per sample (in 2 channel case).
-  char        buffer_[1152*4];
-  ao_device*  out_;
-  int         mapped_fd_;
-  void*       start_;
-  unsigned    length_;
+private:
+    std::string src_file_;
+    std::string dst_file_;
+    // 1152 because that's what mad has as a max; *4 because there are 4
+    // distinct bytes per sample (in 2 channel case).
+    char        buffer_[1152*4];
+    int         mapped_fd_;
+    void*       start_;
+    unsigned    length_;
 
-  struct audio_dither dither_;
-  struct mad_stream   stream_;
-  struct mad_frame    frame_;
-  struct mad_synth    synth_;
+    struct audio_dither dither_;
+    struct mad_stream   stream_;
+    struct mad_frame    frame_;
+    struct mad_synth    synth_;
 };
 
 class FormatMp3Manager : public FormatSupportManager
 {
- public:
-  FormatSupport* newConverter(const char* extension);
-  int supportedExtensions(std::list<std::string>&);
+public:
+    FormatSupport* newConverter(const char* extension);
+    int supportedExtensions(std::list<std::string>&);
 };
 
 #endif

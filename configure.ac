@@ -280,7 +280,7 @@ esac
 
 dnl Check for libao
 PKG_CHECK_MODULES(AO, ao >= 0.8, [AC_DEFINE(HAVE_AO,1,"")],
-        [echo "gcdmaster, MP3 and Ogg support disabled"; en_gcdmaster=no; with_ogg_support=no; with_mp3_support=no])
+        [echo "gcdmaster, MP3 and Ogg support disabled"; en_gcdmaster=no; with_ogg_support=no; with_mp3_support=no; with_flac_support=no])
 
 dnl Check for OGG support
 if test "$with_ogg_support" = yes; then
@@ -290,7 +290,7 @@ fi
 
 dnl Check for FLAC support
 if test "$with_flac_support" = yes; then
-  PKG_CHECK_MODULES(FLAC, FLAC++ >= 1.0, [],
+  PKG_CHECK_MODULES(FLAC, flac++ >= 1.0, [],
         [echo "FLAC support disabled"; with_flac_support=no])
   PKG_CHECK_MODULES(SAMPLERATE, samplerate >= 0.2, [],
         [echo "FLAC support disabled"; with_flac_support=no])
@@ -316,8 +316,8 @@ fi
 
 dnl Check for libao support
 if test "$with_mp3_support" = yes || test "$with_ogg_support" = yes || test "$en_gcdmaster" = yes; then
-PKG_CHECK_MODULES(AO, ao >= 0.8, [AC_DEFINE(HAVE_AO,1,"")],
-        [echo "Building of gcdmaster disabled"; en_gcdmaster=no])
+PKG_CHECK_MODULES(AO, ao >= 0.8, [have_ao=yes; AC_DEFINE(HAVE_AO,1,"")],
+        [echo "Building of gcdmaster disabled"; en_gcdmaster=no; have_ao=no])
 fi
 
 if test "$with_ogg_support" = yes; then
@@ -357,6 +357,7 @@ AM_CONDITIONAL([COND_TOC2MP3], [test "$en_toc2mp3" = yes])
 AM_CONDITIONAL([COND_MP3], [test "$with_mp3_support" = yes])
 AM_CONDITIONAL([COND_OGG], [test "$with_ogg_support" = yes])
 AM_CONDITIONAL([COND_FLAC], [test "$with_flac_support" = yes])
+AM_CONDITIONAL([COND_AO], [test "$have_ao" = yes])
 
 if test "$en_gcdmaster" = yes; then
 GLIB_GSETTINGS
