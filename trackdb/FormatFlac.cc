@@ -19,92 +19,140 @@
 
 #include <string.h>
 
+#include <samplerate.h>
+
 #include "log.h"
 #include "FormatFlac.h"
+#include "util.h"
 
+
+//
+// FLAC support
+//
+// Two code paths:
+//
+// - if the FLAC is sampled at 44.1khz, we do need to resample and we
+//   generate the output on the fly.
+//
+// - if we need to resample, we first load al lthe samples in memory
+//   and resample in one block (or there would be data loss at the
+//   frame boundaries).
+//
 
 FormatFlac::FormatFlac()
 {
-    src_state = NULL;
+    started = false;
 }
 
 FormatFlac::~FormatFlac()
 {
-    if (out_)
-	ao_close(out_);
 }
 
-FormatSupport::Status FormatFlac::convert(const char* from, const char* to)
+FormatSupport::Status FormatFlac::convert(std::string from, std::string to)
 {
     Status err;
     
-    convertStart(from, to);
+    err = convertStart(from, to);
+    if (err != FS_SUCCESS)
+        return err;
 
-    while (convertContinue() == FS_IN_PROGRESS);
+    while ((err = convertContinue()) == FS_IN_PROGRESS);
 
-    return FS_SUCCESS;
+    return err;
 }
 
-FormatSupport::Status FormatFlac::convertStart(const char* from, const char* to)
+FormatSupport::Status FormatFlac::convertStart(std::string from, std::string to)
 {
     source_file = from;
     dest_file = to;
-    out_ = NULL;
+    started = false;
+    channels = 0;
+    need_resampling = false;
+    src_samples.clear();
 
     auto init_st = init(source_file);
 
     if (init_st != FLAC__STREAM_DECODER_INIT_STATUS_OK)
-	return FS_INPUT_PROBLEM;
+        return FS_INPUT_PROBLEM;
 
-    if (process_until_end_of_stream())
-	return FS_SUCCESS;
-    else
-	return FS_INPUT_PROBLEM;
+    if (!process_until_end_of_metadata())
+        return FS_INPUT_PROBLEM;
+    return FS_SUCCESS;
 }
 
 FormatSupport::Status FormatFlac::convertContinue()
 {
-  return FS_SUCCESS;
+    if (!process_single()) {
+        finalize();
+        return FS_OUTPUT_PROBLEM;
+    }
+
+    if (get_state() == FLAC__STREAM_DECODER_END_OF_STREAM) {
+        if (need_resampling) {
+            auto rstatus = resample();
+            if (rstatus != FS_SUCCESS)
+                return rstatus;
+        }
+        finalize();
+        return FS_SUCCESS;
+    }
+
+    return FS_IN_PROGRESS;
 }
 
 void FormatFlac::convertAbort()
 {
+    finalize();
 }
 
-TrackData::FileType FormatFlac::format()
+bool FormatFlac::setup_output()
 {
-    return TrackData::WAVE;
-}
-
-bool FormatFlac::setupOutput()
-{
-    // Setup libao for WAV output
-    ao_sample_format out_format;
-    memset(&out_format, 0, sizeof(out_format));
-    out_format.bits = 16;
-    out_format.rate = 44100;
-    out_format.channels = 2;
-    out_format.byte_format = AO_FMT_NATIVE;
-
-    out_ = ao_open_file(ao_driver_id("wav"), dest_file.c_str(), 1,
-			&out_format, NULL);
-    if (!out_)
-	return false;
-
-    // Setup resampling
-    int error;
-    src_state = src_new(SRC_SINC_MEDIUM_QUALITY, channels, &error);
-    if (!src_state)
-	return false;
-
-    src_ratio = 44100.0 / (double)sample_rate;
-
-    log_message(1, "Input: %u Hz, %u-bit, target 44100Hz, 16-bit",
-		sample_rate, bits_per_sample);
-
+    src_samples.clear();
+    auto ostatus = setup_wav_output(dest_file);
+    if (ostatus != FS_SUCCESS)
+        return false;
+    
     return true;
 }
 
+FormatSupport::Status FormatFlac::resample()
+{
+    if (need_resampling && src_samples.size() > 0) {
+        double ratio = (double)TARGET_SAMPLE_RATE / sample_rate;
+        size_t input_frames = src_samples.size() / channels;
+        size_t output_frames = static_cast<size_t>(input_frames * ratio) + 10;
+        std::vector<float> sroutput(channels * output_frames);
+
+        SRC_DATA src_data;
+        src_data.data_in = src_samples.data();
+        src_data.data_out = sroutput.data();
+        src_data.input_frames = input_frames;
+        src_data.output_frames = output_frames;
+        src_data.src_ratio = ratio;
+
+        log_message(1, "  resampling...");
+        int rs_error = src_simple(&src_data, SRC_SINC_BEST_QUALITY, channels);
+        if (rs_error) {
+            log_message(-2, "Resampling error: %s", src_strerror(rs_error));
+            return FS_OUTPUT_PROBLEM;
+        }
+        log_message(1, "  %llu 16-bit samples", src_data.output_frames_gen);
+        // Convert back to s16
+        src_samples.clear();
+        size_t num_samples = channels * src_data.output_frames_gen;
+        std::vector<s16> pcm_data;
+        pcm_data.resize(num_samples);
+        src_float_to_short_array(sroutput.data(), pcm_data.data(), num_samples);
+        auto wstatus = write_wav_output((char*)pcm_data.data(), pcm_data.size() * 2);
+        return wstatus;
+    }
+    return FS_SUCCESS;
+}
+
+void FormatFlac::finalize()
+{
+    close_wav_output();
+}
 
 // ----------------------------------------------------------------
 //
@@ -114,44 +162,50 @@ bool FormatFlac::setupOutput()
 
 FLAC__StreamDecoderWriteStatus
 FormatFlac::write_callback(const ::FLAC__Frame *frame,
-			   const FLAC__int32 * const buffer[])
+                           const FLAC__int32 * const buffer[])
 {
-    channels = frame->header.channels;
-    blocksize = frame->header.blocksize;
+    if (!channels)
+        channels = frame->header.channels;
 
-    if (!out_) {
-	if (!setupOutput())
-	    return FLAC__STREAM_DECODER_WRITE_STATUS_ABORT;
+    if (!started) {
+        if (channels < 1 || !setup_output())
+            return FLAC__STREAM_DECODER_WRITE_STATUS_ABORT;
+        started = true;
     }
 
-    std::vector<float> inputBuffer(blocksize * channels);
-    double scale = (frame->header.bits_per_sample == 24 ? 8388608.0 : 32768.0);
-    for (unsigned i = 0; i < blocksize; i++) {
-	for (unsigned c = 0; c < channels; c++) {
-	    inputBuffer[i * channels + c] = (float)(buffer[c][i] / scale);
-	}
-    }
+    auto samples = frame->header.blocksize;
+    std::vector<s16> pcm_data;
 
-    std::vector<float> outputBuffer((size_t)(blocksize * src_ratio + 10)
-				    * channels);
-    SRC_DATA srcData;
-    srcData.data_in = inputBuffer.data();
-    srcData.input_frames = blocksize;
-    srcData.data_out = outputBuffer.data();
-    srcData.output_frames = outputBuffer.size() / channels;
-    srcData.src_ratio = src_ratio;
-    srcData.end_of_input = 0; // standard processing
+    if (need_resampling) {
+        // Convert to float for libsamplerate
+        for (size_t i = 0; i < samples; i++) {
+            for (u32 ch = 0; ch < channels; ch++) {
+                s32 sample = buffer[ch][i];
+                src_samples.push_back((float)sample / (float)(1 << (bits_per_sample - 1)));
+            }
+        }
+        return FLAC__STREAM_DECODER_WRITE_STATUS_CONTINUE;
+    } else {
+        pcm_data.reserve(channels * samples);
+        // Convert to interleaved signed 16-bit format.
+        for (size_t i = 0; i < samples; i++) {
+            for (u32 ch = 0; ch < channels; ch++) {
+                s32 sample = buffer[ch][i];
+                // Scale to 16-bit range if needed
+                if (bits_per_sample < 16) {
+                    sample <<= (16 - bits_per_sample);
+                } else if (bits_per_sample > 16) {
+                    sample >>= (bits_per_sample - 16);
+                }
+                // Clamp to int16_t range
+                if (sample > 32767) sample = 32767;
+                if (sample < -32768) sample = -32768;
 
-    int error = src_process(src_state, &srcData);
-    if (error) {
-	log_message(-2, "Resampler Error: %s", src_strerror(error));
-	return FLAC__STREAM_DECODER_WRITE_STATUS_ABORT;
+                pcm_data.push_back(static_cast<s16>(sample));
+            }
+        }
     }
-
-    for (auto f : outputBuffer) {
-	int16_t sample = (int16_t)(f * 32767.0f);
-	ao_play(out_, (char*)&sample, 2);
-    }
+    write_wav_output((char*)pcm_data.data(), pcm_data.size() * 2);
 
     return FLAC__STREAM_DECODER_WRITE_STATUS_CONTINUE;
 }
@@ -159,12 +213,14 @@ FormatFlac::write_callback(const ::FLAC__Frame *frame,
 void FormatFlac::metadata_callback(const ::FLAC__StreamMetadata *metadata)
 {
     if (metadata->type == FLAC__METADATA_TYPE_STREAMINFO) {
-	sample_rate = metadata->data.stream_info.sample_rate;
-	bits_per_sample = metadata->data.stream_info.bits_per_sample;
-	channels = metadata->data.stream_info.channels;
-	samples.resize(metadata->data.stream_info.total_samples);
-	log_message(1, "Reading FLAC file %s, sample reate %lu",
-		    source_file.c_str(), sample_rate);
+        sample_rate = metadata->data.stream_info.sample_rate;
+        bits_per_sample = metadata->data.stream_info.bits_per_sample;
+        channels = metadata->data.stream_info.channels;
+        src_samples.reserve(metadata->data.stream_info.total_samples);
+        need_resampling = (sample_rate != TARGET_SAMPLE_RATE);
+        log_message(1, "Reading FLAC file %s, %lu Hz, %u bps",
+                    source_file.c_str(), sample_rate, bits_per_sample);
+        log_message(1, "  %llu total samples", metadata->data.stream_info.total_samples);
     }
     
 }
@@ -174,7 +230,6 @@ void FormatFlac::error_callback(FLAC__StreamDecoderErrorStatus status)
     log_message(-2, "FLAC error callback %d", status);
 }
 
-
 // ----------------------------------------------------------------
 //
 // Manager class
@@ -183,16 +238,16 @@ void FormatFlac::error_callback(FLAC__StreamDecoderErrorStatus status)
 
 FormatSupport* FormatFlacManager::newConverter(const char* extension)
 {
-  if (strcasecmp(extension, "flac") == 0)
-    return new FormatFlac;
+    if (strcasecmp(extension, "flac") == 0)
+        return new FormatFlac;
 
-  return NULL;
+    return NULL;
 }
 
 int FormatFlacManager::supportedExtensions(std::list<std::string>& list)
 {
-  list.push_front("flac");
-  list.push_front("FLAC");
-  return 1;
+    list.push_front("flac");
+    list.push_front("FLAC");
+    return 1;
 }
 

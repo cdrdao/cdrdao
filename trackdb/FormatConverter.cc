@@ -41,7 +41,7 @@
 
 FormatConverter::FormatConverter()
 {
-#if defined(HAVE_MP3_SUPPORT) || defined(HAVE_OGG_SUPPORT)
+#if defined(HAVE_MP3_SUPPORT) | defined(HAVE_OGG_SUPPORT) || defined(HAVE_FLAC_SUPPORT)
   ao_initialize();
 #endif
 #ifdef HAVE_MP3_SUPPORT

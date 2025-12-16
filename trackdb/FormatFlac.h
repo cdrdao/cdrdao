@@ -23,9 +23,7 @@
 #include <stdlib.h>
 #include <vector>
 
-#include <ao/ao.h>
 #include <FLAC++/decoder.h>
-#include <samplerate.h>
 
 #include "FormatConverter.h"
 
@@ -35,39 +33,40 @@ public:
     FormatFlac();
     virtual ~FormatFlac();
 
-    Status convert(const char* from, const char* to);
-    Status convertStart(const char* from, const char* to);
+    Status convert(std::string from, std::string to);
+    Status convertStart(std::string from, std::string to);
     Status convertContinue();
     void   convertAbort();
 
-    TrackData::FileType format();
+    TrackData::FileType format() { return TrackData::WAVE; }
 
     FLAC__StreamDecoderWriteStatus write_callback(const ::FLAC__Frame *frame,
-						  const FLAC__int32 * const buffer[]);
+                                                  const FLAC__int32 * const buffer[]);
     void metadata_callback(const ::FLAC__StreamMetadata *metadata);
     void error_callback(FLAC__StreamDecoderErrorStatus status);
 
 private:
     std::string source_file, dest_file;
+    bool started;
 
-    std::vector<float> samples;
     unsigned sample_rate;
     unsigned channels;
     unsigned bits_per_sample;
-    u32 blocksize;
-    std::string src_file, dst_file;
-    ao_device* out_;
-    SRC_STATE* src_state;
+
+    bool need_resampling;
+    std::vector<float> src_samples;
     double src_ratio;
 
-    bool setupOutput();
+    Status resample();
+    bool setup_output();
+    void finalize();
 };
 
 class FormatFlacManager : public FormatSupportManager
 {
- public:
-  FormatSupport* newConverter(const char* extension);
-  int supportedExtensions(std::list<std::string>&);
+public:
+    FormatSupport* newConverter(const char* extension);
+    int supportedExtensions(std::list<std::string>&);
 };
 
 #endif
