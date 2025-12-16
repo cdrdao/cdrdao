@@ -58,3 +58,8 @@ if COND_OGG
 AM_CXXFLAGS += @VORBISFILE_CFLAGS@
 libtrackdb_a_SOURCES += FormatOgg.cc FormatOgg.h
 endif
+
+if COND_FLAC
+AM_CXXFLAGS += @FLAC_CFLAGS@ @SAMPLERATE_CFLAGS@
+libtrackdb_a_SOURCES += FormatFlac.cc FormatFlac.h
+endif

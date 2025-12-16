@@ -19,6 +19,8 @@ AC_ARG_WITH(ogg-support,[  --with-ogg-support      enable OGG format support (de
 
 AC_ARG_WITH(mp3-support,[  --with-mp3-support      enable MP3 format support (default is YES)],[],[with_mp3_support=yes])
 
+AC_ARG_WITH(flac-support,[  --with-flac-support    enable FLAC format support (default is YES)],[],[with_flac_support=yes])
+
 dnl Checks for programs.
 AC_PROG_CC
 AC_PROG_CXX
@@ -286,6 +288,14 @@ if test "$with_ogg_support" = yes; then
         [echo "OGG support disabled"; with_ogg_support=no])
 fi
 
+dnl Check for FLAC support
+if test "$with_flac_support" = yes; then
+  PKG_CHECK_MODULES(FLAC, FLAC++ >= 1.0, [],
+        [echo "FLAC support disabled"; with_flac_support=no])
+  PKG_CHECK_MODULES(SAMPLERATE, samplerate >= 0.2, [],
+        [echo "FLAC support disabled"; with_flac_support=no])
+fi
+
 dnl Check for MP3 support
 if test "$with_mp3_support" = yes; then
         PKG_CHECK_MODULES(MAD, mad >= 0.10, [],
@@ -316,6 +326,9 @@ fi
 if test "$with_mp3_support" = yes; then
   AC_DEFINE(HAVE_MP3_SUPPORT,1,"")
 fi
+if test "$with_flac_support" = yes; then
+  AC_DEFINE(HAVE_FLAC_SUPPORT,1,"")
+fi
 
 dnl General platform specific setup
 
@@ -343,6 +356,7 @@ AM_CONDITIONAL([COND_GCDMASTER], [test "$en_gcdmaster" = yes])
 AM_CONDITIONAL([COND_TOC2MP3], [test "$en_toc2mp3" = yes])
 AM_CONDITIONAL([COND_MP3], [test "$with_mp3_support" = yes])
 AM_CONDITIONAL([COND_OGG], [test "$with_ogg_support" = yes])
+AM_CONDITIONAL([COND_FLAC], [test "$with_flac_support" = yes])
 
 if test "$en_gcdmaster" = yes; then
 GLIB_GSETTINGS
@@ -366,6 +380,7 @@ echo "------------------------------------------------------"
 echo "  Building cdrdao    : $en_cdrdao"
 echo "     OGG support     : $with_ogg_support"
 echo "     MP3 support     : $with_mp3_support"
+echo "     FLAC support    : $with_flac_support"
 echo "  Building toc2cue   : $en_toc2cue"
 echo "  Building cue2toc   : $en_cue2toc"
 echo "  Building toc2mp3   : $en_toc2mp3"
