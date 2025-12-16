@@ -20,8 +20,8 @@
 #ifndef __FORMATOGG_H__
 #define __FORMATOGG_H__
 
+#include <string>
 #include <stdlib.h>
-#include <ao/ao.h>
 #include <vorbis/vorbisfile.h>
 
 #include "FormatConverter.h"
@@ -29,36 +29,34 @@
 
 class FormatOgg : public FormatSupport
 {
- public:
-  FormatOgg() {};
+public:
+    FormatOgg() {};
 
-  Status convert(const char* from, const char* to);
-  Status convertStart(const char* from, const char* to);
-  Status convertContinue();
-  void   convertAbort();
+    Status convert(std::string from, std::string to);
+    Status convertStart(std::string from, std::string to);
+    Status convertContinue();
+    void   convertAbort();
 
-  TrackData::FileType format() { return TrackData::WAVE; }
+    TrackData::FileType format() { return TrackData::WAVE; }
 
- protected:
-  virtual Status oggInit();
-  virtual Status oggDecodeFrame();
-  virtual Status oggExit();
+protected:
+    virtual Status oggInit();
+    virtual Status oggDecodeFrame();
+    virtual Status oggExit();
 
- private:
-  const char*      src_file_;
-  const char*      dst_file_;
-  char             buffer_[4096];
-  FILE*            fin_;
-  ao_device*       aoDev_;
-  ao_sample_format outFormat_;
-  OggVorbis_File   vorbisFile_;
+private:
+    std::string    src_file_;
+    std::string    dst_file_;
+    char           buffer_[4096];
+    FILE*          fin_;
+    OggVorbis_File vorbisFile_;
 };
 
 class FormatOggManager : public FormatSupportManager
 {
- public:
-  FormatSupport* newConverter(const char* extension);
-  int supportedExtensions(std::list<std::string>&);
+public:
+    FormatSupport* newConverter(const char* extension);
+    int supportedExtensions(std::list<std::string>&);
 };
 
 #endif

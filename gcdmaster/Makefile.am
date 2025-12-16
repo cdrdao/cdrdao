@@ -113,6 +113,10 @@ gcdmaster_LDADD += @VORBISFILE_LIBS@
 AM_CXXFLAGS += @VORBISFILE_CFLAGS@
 endif
 
+if COND_FLAC
+gcdmaster_LDADD += @FLAC_LIBS@ @SAMPLERATE_LIBS@
+endif
+
 gcdmaster_LDADD += @AO_LIBS@
 
 gcdmaster_DEPENDENCIES = \

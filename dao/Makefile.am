@@ -93,6 +93,10 @@ if COND_OGG
 cdrdao_LDADD += @VORBISFILE_LIBS@
 endif
 
+if COND_FLAC
+cdrdao_LDADD += @FLAC_LIBS@ @SAMPLERATE_LIBS@
+endif
+
 cdrdao_LDADD += @AO_LIBS@
 
 cdrdao_DEPENDENCIES = \

@@ -49,6 +49,10 @@ libtrackdb_a_SOURCES = \
 AM_CXXFLAGS = @AO_CFLAGS@
 AM_CPPFLAGS = -I$(top_builddir)/pccts/h
 
+if COND_AO
+libtrackdb_a_SOURCES += FormatSupport.cc FormatSupport.h
+endif
+
 if COND_MP3
 AM_CXXFLAGS += @MAD_CFLAGS@
 libtrackdb_a_SOURCES += FormatMp3.cc FormatMp3.h
