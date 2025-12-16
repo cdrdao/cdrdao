@@ -39,22 +39,6 @@ FormatMp3::FormatMp3()
     memset(&dither_, 0, sizeof(dither_));
 }
 
-FormatSupport::Status FormatMp3::convert(std::string from, std::string to)
-{
-    src_file_ = from;
-    dst_file_ = to;
-
-    Status err = madInit();
-    if (err != FS_SUCCESS)
-        return err;
-
-    while ((err = madDecodeFrame()) == FS_IN_PROGRESS);
-
-    madExit();
-
-    return err;
-}
-
 FormatSupport::Status FormatMp3::convertStart(std::string from, std::string to)
 {
     src_file_ = from;

@@ -64,6 +64,9 @@ AddFileDialog::AddFileDialog(AudioCDProject *project)
   filter_tocs->add_pattern("*.mp3");
   filter_tocs->add_pattern("*.m3u");
 #endif
+#ifdef HAVE_FLAC_SUPPORT
+  filter_tocs->add_pattern("*.flac");
+#endif
   add_filter(filter_tocs);
 
   Glib::RefPtr<Gtk::FileFilter> filter_all = Gtk::FileFilter::create();

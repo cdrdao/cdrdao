@@ -53,12 +53,7 @@ public:
 
     // Convert source file to destination WAV or RAW. This is a blocking
     // call until conversion is finished.
-    // Return values:
-    //   0: success
-    //   1: problem with input file
-    //   2: problem with output file
-    //   3: problem with conversion
-    virtual Status convert(const std::string from, const std::string to) = 0;
+    virtual Status convert(const std::string from, const std::string to);
 
     // Same as above, but asynchronous interface. Call start, then call
     // continue in a busy loop until it no longer returns

@@ -32,7 +32,6 @@ class FormatOgg : public FormatSupport
 public:
     FormatOgg() {};
 
-    Status convert(std::string from, std::string to);
     Status convertStart(std::string from, std::string to);
     Status convertContinue();
     void   convertAbort();
