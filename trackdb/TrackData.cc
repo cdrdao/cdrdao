@@ -272,6 +272,13 @@ int TrackData::determineLength()
               return 4;
           }
 #endif
+#ifndef HAVE_FLAC_SUPPORT
+          if (audioFileType(filename_) == FLAC) {
+              log_message (-2, "Can't read file \"%s\": cdrdao was compiled "
+			   "without FLAC support.", filename_);
+              return 4;
+          }
+#endif
           return 3;
       }
 
@@ -854,7 +861,7 @@ int TrackData::audioDataLength(const char *fname, long offset,
   if (ftype == WAVE) {
     if (waveLength(fname, offset, &headerLength, length) != 0)
       return 3;
-  } else if (ftype == MP3 || ftype == OGG) {
+  } else if (ftype == MP3 || ftype == OGG || ftype == FLAC) {
     return 5;
   } else {
     if (((buf.st_size - offset) % sizeof(Sample)) != 0) {
@@ -912,6 +919,8 @@ TrackData::FileType TrackData::audioFileType(const char *filename)
     return MP3;
   if (p == Util::FileExtension::OGG)
     return OGG;
+  if (p == Util::FileExtension::FLAC)
+    return FLAC;
 
   return RAW;
 }

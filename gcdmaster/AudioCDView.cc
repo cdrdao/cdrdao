@@ -550,6 +550,9 @@ AudioCDView::drag_data_received_cb(const Glib::RefPtr<Gdk::DragContext>&
 #ifdef HAVE_MP3_SUPPORT
           || type == Util::FileExtension::MP3
 #endif
+#ifdef HAVE_FLAC_SUPPORT
+          || type == Util::FileExtension::FLAC
+#endif
 #ifdef HAVE_OGG_SUPPORT
           || type == Util::FileExtension::OGG
 #endif

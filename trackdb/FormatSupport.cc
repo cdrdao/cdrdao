@@ -24,6 +24,18 @@
 #include "FormatSupport.h"
 
 FormatSupport::Status
+FormatSupport::convert(const std::string from, const std::string to)
+{
+    auto status = convertStart(from, to);
+    if (status != FS_SUCCESS)
+	return status;
+
+    while ((status = convertContinue()) == FS_IN_PROGRESS);
+
+    return status;
+}
+
+FormatSupport::Status
 FormatSupport::setup_wav_output(const std::string& wav_file)
 {
     memset(&ao_format_, 0, sizeof(ao_format_));

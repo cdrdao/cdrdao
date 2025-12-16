@@ -24,22 +24,6 @@
 #include "FormatOgg.h"
 
 
-FormatSupport::Status FormatOgg::convert(std::string from, std::string to)
-{
-    src_file_ = from;
-    dst_file_ = to;
-
-    Status err = oggInit();
-    if (err != FS_SUCCESS)
-        return err;
-
-    while ((err = oggDecodeFrame()) == FS_IN_PROGRESS);
-
-    oggExit();
-
-    return err;
-}
-
 FormatSupport::Status FormatOgg::convertStart(std::string from, std::string to)
 {
     src_file_ = from;
