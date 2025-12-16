@@ -35,6 +35,9 @@
 #ifdef HAVE_OGG_SUPPORT
 #include "FormatOgg.h"
 #endif
+#ifdef HAVE_FLAC_SUPPORT
+#include "FormatFlac.h"
+#endif
 
 FormatConverter::FormatConverter()
 {
@@ -46,6 +49,9 @@ FormatConverter::FormatConverter()
 #endif
 #ifdef HAVE_OGG_SUPPORT
   managers_.push_front(new FormatOggManager);
+#endif
+#ifdef HAVE_FLAC_SUPPORT
+  managers_.push_front(new FormatFlacManager);
 #endif
 }
 
