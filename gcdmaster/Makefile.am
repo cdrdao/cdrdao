@@ -33,6 +33,7 @@ gcdmaster_SOURCES = \
 	SampleDisplay.cc 	\
 	SampleManager.cc 	\
 	Settings.cc 		\
+	TaskManager.cc		\
 	TextEdit.cc 		\
 	TocEdit.cc 		\
 	TocEditView.cc 		\
@@ -71,6 +72,7 @@ gcdmaster_SOURCES = \
 	MessageBox.h		\
 	SampleDisplay.h		\
 	TrackManager.h		\
+	TaskManager.h		\
 	DeviceConfDialog.h	\
 	ProcessMonitor.h	\
 	SampleManager.h		\
