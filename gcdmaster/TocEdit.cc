@@ -20,11 +20,13 @@
 #include "config.h"
 #include "TocEdit.h"
 
+#include <cassert>
 #include <glibmm/i18n.h>
 #include <stddef.h>
 #include <iostream>
 #include <sstream>
 #include <set>
+#include <memory.h>
 
 #include "util.h"
 #include "Toc.h"
@@ -38,370 +40,374 @@
 
 TocEdit::TocEdit(Toc *t, const char *filename)
 {
-  toc_ = NULL;
-  sampleManager_ = NULL;
-  filename_ = NULL;
-  trackDataScrap_ = NULL;
-  threadActive_ = false;
-  curState_ = TE_IDLE;
-  curConv_ = NULL;
-  cur_ = NULL;
+    toc_ = NULL;
+    sampleManager_ = NULL;
+    filename_ = NULL;
+    trackDataScrap_ = NULL;
+    threadActive_ = false;
 
-  updateLevel_ = 0;
-  editBlocked_ = false;
+    updateLevel_ = 0;
+    editBlocked_ = false;
 
-  if (filename == NULL)
-    toc(t, "unnamed.toc");
-  else
-    toc(t, filename);
+    if (filename == NULL)
+        toc(t, "unnamed.toc");
+    else
+        toc(t, filename);
+
+    tm_.signalQueueStarted.connect(
+        sigc::mem_fun(*this, &TocEdit::taskQueueActive));
+    tm_.signalQueueEmptied.connect(
+        sigc::mem_fun(*this, &TocEdit::taskQueueIdle));
+    tm_.signalJobUpdate.connect(
+        sigc::mem_fun(*this, &TocEdit::taskQueueStatus));
 }
 
 TocEdit::~TocEdit()
 {
-  if (toc_)
-    delete toc_;
+    if (toc_)
+        delete toc_;
 
-  if (sampleManager_)
-    delete sampleManager_;
+    if (sampleManager_)
+        delete sampleManager_;
 
-  if (filename_)
-    delete[] filename_;
+    if (filename_)
+        delete[] filename_;
 
-  if (trackDataScrap_)
-    delete trackDataScrap_;
+    if (trackDataScrap_)
+        delete trackDataScrap_;
 }
 
 void TocEdit::toc(Toc *t, const char *filename)
 {
-  if (toc_)
-    delete toc_;
+    if (toc_)
+        delete toc_;
 
-  if (t == NULL)
-    toc_ = new Toc;
-  else
-    toc_ = t;
+    if (t == NULL)
+        toc_ = new Toc;
+    else
+        toc_ = t;
 
-  if (filename != NULL) {
-    delete[] filename_;
-    filename_ = strdupCC(filename);
-  }
+    if (filename != NULL) {
+        delete[] filename_;
+        filename_ = strdupCC(filename);
+    }
 
-  tocDirty_ = false;
-  editBlocked_ = false;
+    tocDirty_ = false;
+    editBlocked_ = false;
 
-  if (sampleManager_)
-    delete sampleManager_;
-  sampleManager_ = new SampleManager(588);
+    if (sampleManager_)
+        delete sampleManager_;
+    sampleManager_ = new SampleManager(588);
 
-  sampleManager_->setTocEdit(this);
+    sampleManager_->setTocEdit(this);
 
-  if (toc_->length().samples() > 0) {
+    if (toc_->length().samples() > 0) {
 
-    // First collect all filenames and queue their conversions to WAV
-    std::set<std::string> set;
-    toc_->collectFiles(set);
-    std::set<std::string>::iterator i = set.begin();
-    for (; i != set.end(); i++)
-      queueConversion((*i).c_str());
+        // First collect all filenames and queue their conversions to WAV
+        std::set<std::string> set;
+        toc_->collectFiles(set);
+        std::set<std::string>::iterator i = set.begin();
+        for (; i != set.end(); i++)
+            queueConversion((*i).c_str());
 
-    // Second, queue for toc scan.
-    unsigned long maxSample = toc_->length().samples() - 1;
-    queueScan(0, -1);
-  }
+        // Second, queue for toc scan.
+        unsigned long maxSample = toc_->length().samples() - 1;
+        queueScan(0, -1);
+    }
 
-  updateLevel_ = UPD_ALL;
+    updateLevel_ = UPD_ALL;
 }
 
 Toc *TocEdit::toc() const
 {
-  return toc_;
+    return toc_;
 }
 
 SampleManager *TocEdit::sampleManager()
 {
-  return sampleManager_;
+    return sampleManager_;
 }
 
 void TocEdit::tocDirty(bool f)
 {
-  bool old = tocDirty_;
+    bool old = tocDirty_;
 
-  tocDirty_ = f;
+    tocDirty_ = f;
 
-  if (old != tocDirty_)
-    updateLevel_ |= UPD_TOC_DIRTY;
+    if (old != tocDirty_)
+        updateLevel_ |= UPD_TOC_DIRTY;
 }
 
 void TocEdit::blockEdit()
 {
-  if (editBlocked_ == 0)
-    updateLevel_ |= UPD_EDITABLE_STATE;
+    if (editBlocked_ == 0)
+        updateLevel_ |= UPD_EDITABLE_STATE;
 
-  editBlocked_ += 1;
+    editBlocked_ += 1;
 }
 
 void TocEdit::unblockEdit()
 {
-  if (editBlocked_ > 0) {
-    editBlocked_ -= 1;
+    if (editBlocked_ > 0) {
+        editBlocked_ -= 1;
 
-    if (editBlocked_ == 0)
-      updateLevel_ |= UPD_EDITABLE_STATE;
-  }
+        if (editBlocked_ == 0)
+            updateLevel_ |= UPD_EDITABLE_STATE;
+    }
 }
 
 unsigned long TocEdit::updateLevel()
 {
-  unsigned long level = updateLevel_;
+    unsigned long level = updateLevel_;
 
-  updateLevel_ = 0;
-  return level;
+    updateLevel_ = 0;
+    return level;
 }
 
 unsigned long TocEdit::lengthSample() const
 {
-  return toc_->length().samples();
+    return toc_->length().samples();
 }
 
 void TocEdit::filename(const char *fname)
 {
-  if (fname != NULL && *fname != 0) {
-    char *s = strdupCC(fname);
-    delete[] filename_;
-    filename_ = s;
+    if (fname != NULL && *fname != 0) {
+        char *s = strdupCC(fname);
+        delete[] filename_;
+        filename_ = s;
 
-    updateLevel_ |= UPD_TOC_DATA;
-  }
+        updateLevel_ |= UPD_TOC_DATA;
+    }
 }
 
 const char *TocEdit::filename() const
 {
-  return filename_;
+    return filename_;
 }
 
 
 int TocEdit::readToc(const char *fname)
 {
-  if (!editable())
-    return 0;
+    if (!editable())
+        return 0;
 
-  if (fname == NULL || *fname == 0)
+    if (fname == NULL || *fname == 0)
+        return 1;
+
+    Toc *t = Toc::read(fname);
+
+    if (t != NULL) {
+
+        // Check and resolve input files paths
+        t->resolveFilenames(fname);
+
+        // Sometimes length fields are ommited. Make sure we got everything.
+        t->recomputeLength();
+
+        toc(t, fname);
+        return 0;
+    }
+
     return 1;
-
-  Toc *t = Toc::read(fname);
-
-  if (t != NULL) {
-
-    // Check and resolve input files paths
-    t->resolveFilenames(fname);
-
-    // Sometimes length fields are ommited. Make sure we got everything.
-    t->recomputeLength();
-
-    toc(t, fname);
-    return 0;
-  }
-
-  return 1;
 }
 
 int TocEdit::saveToc()
 {
-  int ret = toc_->write(filename_);
+    int ret = toc_->write(filename_);
 
-  if (ret == 0)
-    tocDirty(0);
+    if (ret == 0)
+        tocDirty(0);
 
-  return ret;
+    return ret;
 }
 
 int TocEdit::saveAsToc(const char *fname)
 {
-  int ret;
+    int ret;
 
-  if (fname != NULL && *fname != 0) {
-    ret = toc_->write(fname);
+    if (fname != NULL && *fname != 0) {
+        ret = toc_->write(fname);
 
-    if (ret == 0) {
-      filename(fname);
-      tocDirty(0);
-      updateLevel_ |= UPD_TOC_DATA;
+        if (ret == 0) {
+            filename(fname);
+            tocDirty(0);
+            updateLevel_ |= UPD_TOC_DATA;
+        }
+
+        return ret;
     }
 
-    return ret;
-  }
-
-  return 1;
+    return 1;
 }
 
 
 int TocEdit::moveTrackMarker(int trackNr, int indexNr, long lba)
 {
-  if (!editable())
-    return 0;
+    if (!editable())
+        return 0;
 
-  int ret = toc_->moveTrackMarker(trackNr, indexNr, lba);
+    int ret = toc_->moveTrackMarker(trackNr, indexNr, lba);
 
-  if (ret == 0) {
-    tocDirty(1);
-    updateLevel_ |= UPD_TRACK_DATA;
-  }
+    if (ret == 0) {
+        tocDirty(1);
+        updateLevel_ |= UPD_TRACK_DATA;
+    }
 
-  return ret;
+    return ret;
 }
 
 int TocEdit::addTrackMarker(long lba)
 {
-  if (!editable())
-    return 0;
+    if (!editable())
+        return 0;
 
-  int ret = toc_->addTrackMarker(lba);
+    int ret = toc_->addTrackMarker(lba);
 
-  if (ret == 0) {
-    tocDirty(1);
+    if (ret == 0) {
+        tocDirty(1);
 //llanero: different views
 //    updateLevel_ |= UPD_TOC_DATA | UPD_TRACK_DATA;
-  }
+    }
 
-  return ret;
+    return ret;
 }
 
 int TocEdit::addIndexMarker(long lba)
 {
-  if (!editable())
-    return 0;
+    if (!editable())
+        return 0;
 
-  int ret = toc_->addIndexMarker(lba);
+    int ret = toc_->addIndexMarker(lba);
 
-  if (ret == 0) {
-    tocDirty(1);
+    if (ret == 0) {
+        tocDirty(1);
 //llanero: different views
 //    updateLevel_ |= UPD_TRACK_DATA;
-  }
+    }
 
-  return ret;
+    return ret;
 }
 
 int TocEdit::addPregap(long lba)
 {
-  if (!editable())
-    return 0;
+    if (!editable())
+        return 0;
 
-  int ret = toc_->addPregap(lba);
+    int ret = toc_->addPregap(lba);
 
-  if (ret == 0) {
-    tocDirty(1);
+    if (ret == 0) {
+        tocDirty(1);
 //llanero: different views
 //    updateLevel_ |= UPD_TRACK_DATA;
-  }
+    }
 
-  return ret;
+    return ret;
 }
 
 int TocEdit::removeTrackMarker(int trackNr, int indexNr)
 {
-  if (!editable())
-    return 0;
+    if (!editable())
+        return 0;
 
-  int ret = toc_->removeTrackMarker(trackNr, indexNr);
+    int ret = toc_->removeTrackMarker(trackNr, indexNr);
 
-  if (ret == 0) {
-    tocDirty(1);
+    if (ret == 0) {
+        tocDirty(1);
 //llanero: different views
 //    updateLevel_ |= UPD_TOC_DATA | UPD_TRACK_DATA;
-  }
+    }
 
-  return ret;
+    return ret;
 }
 
-bool TocEdit::curScan()
+bool TocEdit::curScan(QueueJob* job)
 {
-  // An end position of -1 means recompute the toc length and scan to
-  // the last sample position.
+    // An end position of -1 means recompute the toc length and scan to
+    // the last sample position.
 
-  if (cur_->end == -1) {
-    // (Denis Leroy) The reason for this code is somewhat
-    // complex. When importing a CUE file with MP3s, the length of the
-    // last track is not known until the MP3 is actually converted to
-    // a WAV (because, unlike TOC files, CUE files don't specify
-    // explicitely the length of each track). Unlike WAV, you can't
-    // guess the length of the track based on the mp3 file size
-    // without scanning the whole thing, which we don't want to do
-    // twice obviously. So the semantic of the "scan" job is changed
-    // to integrate a length recalculation when the end is not
-    // specified. It would be cleaner to create a specific job task to
-    // do this.
-    toc_->recomputeLength();
-    cur_->end = toc_->length().samples() - 1;
-    updateLevel_ |= UPD_SAMPLES;
-  }
-  int ret = sampleManager_->scanToc(cur_->pos, cur_->end);
+    if (job->end == -1) {
+        // (Denis Leroy) The reason for this code is somewhat
+        // complex. When importing a CUE file with MP3s, the length of the
+        // last track is not known until the MP3 is actually converted to
+        // a WAV (because, unlike TOC files, CUE files don't specify
+        // explicitely the length of each track). Unlike WAV, you can't
+        // guess the length of the track based on the mp3 file size
+        // without scanning the whole thing, which we don't want to do
+        // twice obviously. So the semantic of the "scan" job is changed
+        // to integrate a length recalculation when the end is not
+        // specified. It would be cleaner to create a specific job task to
+        // do this.
+        toc_->recomputeLength();
+        job->end = toc_->length().samples() - 1;
+        updateLevel_ |= UPD_SAMPLES;
+    }
+    int ret = sampleManager_->scanToc(job->pos, job->end);
 
-  if (ret == 0)
+    if (ret == 0)
+        return true;
+
+    if (ret == 2) {
+        signalError("Unable to open or read from input audio files");
+        return false;
+    }
+
+    return false;
+}
+
+bool TocEdit::curAppendTrack(QueueJob* job)
+{
+    TrackData* data;
+    int ret = curCreateAudioData(job, &data);
+    if (ret != 0)
+        return false;
+
+    TrackDataList list;
+    long start, end;
+    list.append(data);
+    toc_->appendTrack(&list, &start, &end);
+    tocDirty(1);
+    sampleManager_->scanToc(Msf(start).samples(), Msf(end).samples() - 1);
     return true;
-
-  if (ret == 2) {
-    signalError("Unable to open or read from input audio files");
-    return false;
-  }
-
-  return false;
 }
 
-bool TocEdit::curAppendTrack()
+bool TocEdit::curAppendFile(QueueJob* job)
 {
-  TrackData* data;
-  int ret = curCreateAudioData(&data);
-  if (ret != 0)
-    return false;
+    TrackData* data;
+    int ret = curCreateAudioData(job, &data);
+    if (ret != 0)
+        return false;
 
-  TrackDataList list;
-  long start, end;
-  list.append(data);
-  toc_->appendTrack(&list, &start, &end);
-  tocDirty(1);
-  sampleManager_->scanToc(Msf(start).samples(), Msf(end).samples() - 1);
-  return true;
+    TrackDataList list;
+    long start, end;
+    list.append(data);
+    if (toc_->appendTrackData(&list, &start, &end) != 0) {
+        delete data;
+        return false;
+    }
+    tocDirty(1);
+    sampleManager_->scanToc(Msf(start).samples(), Msf(end).samples() - 1);
+    return true;
 }
 
-bool TocEdit::curAppendFile()
+bool TocEdit::curInsertFile(QueueJob* job)
 {
-  TrackData* data;
-  int ret = curCreateAudioData(&data);
-  if (ret != 0)
-    return false;
+    TrackData* data;
+    int ret = curCreateAudioData(job, &data);
+    if (ret != 0)
+        return false;
 
-  TrackDataList list;
-  long start, end;
-  list.append(data);
-  if (toc_->appendTrackData(&list, &start, &end) != 0) {
-    delete data;
-    return false;
-  }
-  tocDirty(1);
-  sampleManager_->scanToc(Msf(start).samples(), Msf(end).samples() - 1);
-  return true;
-}
-
-bool TocEdit::curInsertFile()
-{
-  TrackData* data;
-  int ret = curCreateAudioData(&data);
-  if (ret != 0)
-    return false;
-
-  TrackDataList list;
-  list.append(data);
-  if (toc_->insertTrackData(cur_->pos, &list) != 0) {
-    signalError(_("Cannot insert file into a data track"));
-    delete data;
-    return false;
-  }
-  cur_->len = list.length();
-  sampleManager_->insertSamples(cur_->pos, cur_->len, NULL);
-  sampleManager_->scanToc(cur_->pos, cur_->pos + cur_->len);
-  tocDirty(1);
-  return true;
+    TrackDataList list;
+    list.append(data);
+    if (toc_->insertTrackData(job->pos, &list) != 0) {
+        signalError(_("Cannot insert file into a data track"));
+        delete data;
+        return false;
+    }
+    job->len = list.length();
+    sampleManager_->insertSamples(job->pos, job->len, NULL);
+    sampleManager_->scanToc(job->pos, job->pos + job->len);
+    tocDirty(1);
+    return true;
 }
 
 // Creates an audio data object for given filename. Errors are send to
@@ -410,133 +416,158 @@ bool TocEdit::curInsertFile()
 // return: 0: OK
 //         1: cannot open file
 //         2: file has wrong format
-int TocEdit::curCreateAudioData(TrackData **data)
+int TocEdit::curCreateAudioData(QueueJob* job, TrackData **data)
 {
-  unsigned long len;
-  std::string msg;
+    unsigned long len;
+    std::string msg;
 
-  switch (TrackData::checkAudioFile(cur_->cfile.c_str(), &len)) {
-  case 1:
-    msg = _("Could not open file \"");
-    msg += cur_->cfile;
-    msg += "\"";
-    signalError(msg.c_str());
-    return 1; // Cannot open file
+    switch (TrackData::checkAudioFile(job->cfile.c_str(), &len)) {
+    case 1:
+        msg = _("Could not open file \"");
+        msg += job->cfile;
+        msg += "\"";
+        signalError(msg.c_str());
+        return 1; // Cannot open file
 
-  case 2:
-    msg = _("Could not open file \"");
-    msg += cur_->cfile;
-    msg += "\" : wrong file format";
-    signalError(msg.c_str());
-    return 2; // File format error
-  }
+    case 2:
+        msg = _("Could not open file \"");
+        msg += job->cfile;
+        msg += "\" : wrong file format";
+        signalError(msg.c_str());
+        return 2; // File format error
+    }
 
-  *data = new TrackData(cur_->file.c_str(), 0, len);
-  (*data)->effectiveFilename(cur_->cfile.c_str());
+    *data = new TrackData(job->file.c_str(), 0, len);
+    (*data)->effectiveFilename(job->cfile.c_str());
 
-  return 0;
+    return 0;
 }
 
-void TocEdit::curSignalConversionError(FormatSupport::Status err)
+void TocEdit::curSignalConversionError(QueueJob* job,
+                                       FormatSupport::Status err)
 {
-  std::string msg = _("Unable to decode audio file \"");
-  msg += cur_->file;
-  msg += "\" : ";
-  switch (err) {
-  case FormatSupport::FS_DISK_FULL:
-    msg += _("disk is full");
-    break;
-  case FormatSupport::FS_OUTPUT_PROBLEM:
-    msg += _("error creating output file");
-    break;
-  default:
-    msg += _("read error or wrong file format");
-  }
-  signalError(msg.c_str());
+    std::string msg = _("Unable to decode audio file \"");
+    msg += job->file;
+    msg += "\" : ";
+    switch (err) {
+    case FormatSupport::FS_DISK_FULL:
+        msg += _("disk is full");
+        break;
+    case FormatSupport::FS_OUTPUT_PROBLEM:
+        msg += _("error creating output file");
+        break;
+    default:
+        msg += _("read error or wrong file format");
+    }
+    signalError(msg.c_str());
 }
 
 void TocEdit::queueConversion(const char* filename)
 {
-  QueueJob* job = new QueueJob("convert");
-  job->file = filename;
-  queue_.push_back(job);
-
-  if (!threadActive_)
-    activateQueue();
+    QueueJob* job = new QueueJob(this, "convert");
+    job->file = filename;
+    tm_.addJob(job);
+    showOutstanding();
 }
 
 void TocEdit::queueAppendTrack(const char* filename)
 {
-  QueueJob* job = new QueueJob("aptrack");
-  job->op = "aptrack";
-  job->file = filename;
-  queue_.push_back(job);
-
-  if (!threadActive_)
-    activateQueue();
+    QueueJob* job = new QueueJob(this, "aptrack");
+    job->op = "aptrack";
+    job->file = filename;
+    tm_.addJob(job);
+    showOutstanding();
 }
 
 void TocEdit::queueAppendFile(const char* filename)
 {
-  QueueJob* job = new QueueJob("apfile");
-  job->file = filename;
-  queue_.push_back(job);
-
-  if (!threadActive_)
-    activateQueue();
+    QueueJob* job = new QueueJob(this, "apfile");
+    job->file = filename;
+    tm_.addJob(job);
+    showOutstanding();
 }
 
 void TocEdit::queueInsertFile(const char* filename, unsigned long pos)
 {
-  QueueJob* job = new QueueJob("infile");
-  job->file = filename;
-  job->pos = pos;
-  queue_.push_back(job);
-
-  if (!threadActive_)
-    activateQueue();
+    QueueJob* job = new QueueJob(this, "infile");
+    job->file = filename;
+    job->pos = pos;
+    tm_.addJob(job);
+    showOutstanding();
 }
 
 void TocEdit::queueScan(long start, long end)
 {
-  QueueJob* job = new QueueJob("scan");
-  job->pos = start;
-  job->end = end;
-  queue_.push_back(job);
-
-  if (!threadActive_)
-    activateQueue();
+    QueueJob* job = new QueueJob(this, "scan");
+    job->pos = start;
+    job->end = end;
+    tm_.addJob(job);
+    showOutstanding();
 }
 
-void TocEdit::activateQueue()
+void TocEdit::showOutstanding()
 {
-  if (!threadActive_) {
-    threadActive_ = true;
-    blockEdit();
-    signalCancelEnable(true);
-    Glib::signal_idle().connect(sigc::mem_fun(*this,
-                                              &TocEdit::queueThread));
-    guiUpdate();
-  }
-}
-
-void TocEdit::queueAbort()
-{
-  if (threadActive_) {
-    queue_.clear();
-    curState_ = TE_IDLE;
-    if (curConv_) {
-      curConv_->convertAbort();
-      delete curConv_;
-      curConv_ = NULL;
-      signalStatusMessage("");
-    }
-  }
+    signalProgressFraction(tm_.completion());
 }
 
 bool TocEdit::isQueueActive()
 {
-  return threadActive_;
+    return threadActive_;
+}
+
+void TocEdit::taskQueueActive(void)
+{
+    threadActive_ = true;
+    blockEdit();
+    signalCancelEnable(true);
+    signalSpinner(true);
+    guiUpdate();
+}
+
+void TocEdit::taskQueueIdle(void)
+{
+    signalSpinner(false);
+    threadActive_ = false;
+    unblockEdit();
+    signalProgressFraction(0.0);
+    signalCancelEnable(false);
+    guiUpdate();
+}
+
+void TocEdit::taskQueueStatus(Task* tsk, const std::string& msg)
+{
+    Task* job = (Task*)tsk;
+    signalStatusMessage(msg.c_str());
+}
+
+void TocEdit::queueAbort()
+{
+    printf("Aborting jobs, not implemented.\n");
+}
+
+void TocEdit::QueueJob::run()
+{
+    // Runs in the worker thread.
+    auto converter =
+        formatConverter.newConverterStart(file.c_str(),
+                                          cfile, &conv_err);
+    if (!converter || conv_err) return;
+
+    std::string msg = "Decoding audio file ";
+    msg += file;
+    sendUpdate(msg);
+
+    if (!conv_err) {
+        while ((conv_err = converter->convertContinue()) == FormatSupport::FS_IN_PROGRESS);
+    }
+
+    delete(converter);
+}
+
+void TocEdit::QueueJob::completed()
+{
+    // Runs in the main thread.
+    return te->jobFinalize(this);
 }
 
 // The queueThread is run by the Gtk idle thread when asynchronous
@@ -547,98 +578,27 @@ bool TocEdit::isQueueActive()
 // the background without blocking the GUI) can be scheduled by adding
 // a new QueueJob object in the queue_ (see queueXXX methods above).
 
-bool TocEdit::queueThread()
+void TocEdit::jobFinalize(QueueJob* job)
 {
-  static int pulse = 0;
+    std::unique_ptr<QueueJob> delete_when_out_of_scope(job);
+    showOutstanding();
 
-  // If we're idle, pop next queue entry.
-  if (curState_ == TE_IDLE) {
-
-    // Queue empty ? Stop queue thread.
-    if (queue_.empty()) {
-      threadActive_ = false;
-      unblockEdit();
-      signalProgressFraction(0.0);
-      signalCancelEnable(false);
-      guiUpdate();
-      return false; // false means disconnect idle thread
-    }
-
-    if (cur_)
-      delete cur_;
-    cur_ = queue_.front();
-    queue_.pop_front();
-
-    if (cur_->op == "scan") {
-      if (curScan()) {
-        curState_ = TE_READING;
-        signalStatusMessage("Scanning audio data");
-      } else {
-        curState_ = TE_IDLE;
-        return true;
-      }
+    if (job->op == "scan") {
+        if (curScan(job)) {
+            signalStatusMessage("Scanning audio data");
+        } else {
+            return;
+        }
     } else {
-
-      if (curConv_)
-        delete curConv_;
-
-      FormatSupport::Status err;
-      curConv_ = formatConverter.newConverterStart(cur_->file.c_str(),
-                                                   cur_->cfile, &err);
-      if (curConv_) {
-        std::string msg = "Decoding audio file ";
-        msg += cur_->file;
-        curState_ = TE_CONVERTING;
-        signalStatusMessage(msg.c_str());
-
-      } else {
-
-        if (err != FormatSupport::FS_SUCCESS) {
-          curSignalConversionError(err);
-          curState_ = TE_IDLE;
-          return true;
+        if (job->conv_err != FormatSupport::FS_SUCCESS) {
+            curSignalConversionError(job, job->conv_err);
+            return;
         }
         // File is already converted, or can't be converted (it's a WAV
         // or RAW file already).
-        if (cur_->cfile.empty())
-          cur_->cfile = cur_->file;
-        curState_ = TE_CONVERTED;
-      }
+        if (job->cfile.empty())
+            job->cfile = job->file;
     }
-  }
-
-  // ------------------ TE_CONVERTING state: do file format conversion
-
-  if (curState_ == TE_CONVERTING) {
-    // Perform incremental file conversion.
-    FormatSupport::Status status = curConv_->convertContinue();
-    if (pulse++ > 5) {
-      signalProgressPulse();
-      pulse = 0;
-    }
-
-    // Still in progress, likely exit here.
-    if (status == FormatSupport::FS_IN_PROGRESS)
-      return true;
-
-    // Conversion done.
-    delete curConv_;
-    curConv_ = NULL;
-
-    if (status == FormatSupport::FS_SUCCESS)
-      curState_ = TE_CONVERTED;
-    else {
-      curSignalConversionError(status);
-      // Conversion failed, move on with next queue entry.
-      curState_ = TE_IDLE;
-    }
-
-    return true;
-  }
-
-  // ------------------- TE_CONVERTED state: conversion done, prepare reading
-
-  if (curState_ == TE_CONVERTED) {
 
     // Sanity check: the cfile (converted filename) will be read as
     // either a WAV file or a file containing raw samples. If the
@@ -646,126 +606,110 @@ bool TocEdit::queueThread()
     // error. Otherwise it'll be read as a RAW samples file which is
     // not was users expect.
 
-    TrackData::FileType ctype = TrackData::audioFileType(cur_->cfile.c_str());
+    TrackData::FileType ctype = TrackData::audioFileType(job->cfile.c_str());
     if (ctype != TrackData::RAW && ctype != TrackData::WAVE) {
-      std::string msg = _("Cannot decode file");
-      msg += " \"";
-      msg += cur_->cfile;
-      msg += "\" : ";
-      msg += _("unsupported audio format");
-      signalError(msg.c_str());
-      curState_ = TE_IDLE;
-      return true;
+        std::string msg = _("Cannot decode file");
+        msg += " \"";
+        msg += job->cfile;
+        msg += "\" : ";
+        msg += _("unsupported audio format");
+        signalError(msg.c_str());
+        return;
     }
 
     // If all we wanted to do was format conversion, we're done.
-    if (cur_->op == "convert") {
-      toc_->markFileConversion(cur_->file.c_str(), cur_->cfile.c_str());
-      curState_ = TE_IDLE;
-      return true;
+    if (job->op == "convert") {
+        toc_->markFileConversion(job->file.c_str(), job->cfile.c_str());
+        return;
     }
 
-    curState_ = TE_READING;
-    signalProgressFraction(0.0);
+    if (job->op == "aptrack") {
+        if (!curAppendTrack(job)) {
+            return;
+        }
+    } else if (job->op == "apfile") {
+        if (!curAppendFile(job)) {
+            return;
+        }
 
-    if (cur_->op == "aptrack") {
-      if (!curAppendTrack()) {
-        curState_ = TE_IDLE;
-        return true;
-      }
-    } else if (cur_->op == "apfile") {
-      if (!curAppendFile()) {
-        curState_ = TE_IDLE;
-        return true;
-      }
-
-    } else if (cur_->op == "infile") {
-      if (!curInsertFile()) {
-        curState_ = TE_IDLE;
-        return true;
-      }
+    } else if (job->op == "infile") {
+        if (!curInsertFile(job)) {
+            return;
+        }
     }
 
     std::string msg = "Scanning audio file ";
-    msg += cur_->file;
+    msg += job->file;
     signalStatusMessage(msg.c_str());
-  }
 
-  // ------------------- TE_READING state : read/scan WAV samples
-
-  if (curState_ == TE_READING) {
-
-    int result = sampleManager_->readSamples();
+    int result;
+    while ((result = sampleManager_->readSamples()) == 0);
 
     if (result != 0) {
 
-      if (result < 0)
-        signalError(_("An error occurred while reading audio data"));
+        if (result < 0)
+            signalError(_("An error occurred while reading audio data"));
 
-      else {
-        // Post operating code here.
-        if (cur_->op == "aptrack") {
-          updateLevel_ |= UPD_TOC_DATA | UPD_TRACK_DATA;
-          signalFullView();
-          std::string msg = "Appended track ";
-          msg += cur_->file;
-          signalStatusMessage(msg.c_str());
-          guiUpdate();
-        } else if (cur_->op == "apfile") {
-          updateLevel_ |= UPD_TOC_DATA | UPD_TRACK_DATA;
-          signalFullView();
-          std::string msg = "Appended file ";
-          msg += cur_->file;
-          signalStatusMessage(msg.c_str());
-          guiUpdate();
-        } else if (cur_->op == "infile") {
-          updateLevel_ |= UPD_TOC_DATA | UPD_TRACK_DATA | UPD_SAMPLE_SEL;
-          signalFullView();
-          std::string msg = "Inserted file ";
-          msg += cur_->file;
-          signalStatusMessage(msg.c_str());
-          signalSampleSelection(cur_->pos, cur_->pos + cur_->len - 1);
-          guiUpdate();
-        } else if (cur_->op == "scan") {
-          std::stringstream ss;
-          ss << "Scanned ";
-          ss << (cur_->end - cur_->pos + 1);
-          ss << " samples of data";
-          std::string msg = ss.str();
-          signalStatusMessage(msg.c_str());
-          updateLevel_ |= UPD_SAMPLES;
+        else {
+            // Post operating code here.
+            if (job->op == "aptrack") {
+                updateLevel_ |= UPD_TOC_DATA | UPD_TRACK_DATA;
+                signalFullView();
+                std::string msg = "Appended track ";
+                msg += job->file;
+                signalStatusMessage(msg.c_str());
+                guiUpdate();
+            } else if (job->op == "apfile") {
+                updateLevel_ |= UPD_TOC_DATA | UPD_TRACK_DATA;
+                signalFullView();
+                std::string msg = "Appended file ";
+                msg += job->file;
+                signalStatusMessage(msg.c_str());
+                guiUpdate();
+            } else if (job->op == "infile") {
+                updateLevel_ |= UPD_TOC_DATA | UPD_TRACK_DATA | UPD_SAMPLE_SEL;
+                signalFullView();
+                std::string msg = "Inserted file ";
+                msg += job->file;
+                signalStatusMessage(msg.c_str());
+                signalSampleSelection(job->pos, job->pos + job->len - 1);
+                guiUpdate();
+            } else if (job->op == "scan") {
+                std::stringstream ss;
+                ss << "Scanned ";
+                ss << (job->end - job->pos + 1);
+                ss << " samples of data";
+                std::string msg = ss.str();
+                signalStatusMessage(msg.c_str());
+                updateLevel_ |= UPD_SAMPLES;
+            }
         }
-      }
-      curState_ = TE_IDLE;
     }
-    return true;
-  }
-  return true;
 }
 
 int TocEdit::appendSilence(unsigned long length)
 {
-  if (!editable())
-    return 0;
+    if (!editable())
+        return 0;
 
-  if (length > 0) {
-    long start, end;
+    if (length > 0) {
+        long start, end;
 
-    TrackData *data = new TrackData(length);
-    TrackDataList list;
-    list.append(data);
+        TrackData *data = new TrackData(length);
+        TrackDataList list;
+        list.append(data);
 
-    if (toc_->appendTrackData(&list, &start, &end) == 0) {
+        if (toc_->appendTrackData(&list, &start, &end) == 0) {
 
-      sampleManager_->scanToc(Msf(start).samples(), Msf(end).samples() - 1,
-                              true);
+            sampleManager_->scanToc(Msf(start).samples(), Msf(end).samples() - 1,
+                                    true);
       
-      tocDirty(1);
-      updateLevel_ |= UPD_TOC_DATA | UPD_TRACK_DATA;
+            tocDirty(1);
+            updateLevel_ |= UPD_TOC_DATA | UPD_TRACK_DATA;
+        }
     }
-  }
 
-  return 0;
+    return 0;
 }
 
 // Return: 0: OK
@@ -773,166 +717,166 @@ int TocEdit::appendSilence(unsigned long length)
 //         2: error?
 int TocEdit::insertSilence(unsigned long length, unsigned long pos)
 {
-  if (!editable())
-    return 1;
+    if (!editable())
+        return 1;
 
-  if (length > 0) {
-    TrackData *data = new TrackData(length);
-    TrackDataList list;
+    if (length > 0) {
+        TrackData *data = new TrackData(length);
+        TrackDataList list;
 
-    list.append(data);
+        list.append(data);
 
-    if (toc_->insertTrackData(pos, &list) == 0) {
-      sampleManager_->insertSamples(pos, length, NULL);
-      sampleManager_->scanToc(pos, pos + length, true);
+        if (toc_->insertTrackData(pos, &list) == 0) {
+            sampleManager_->insertSamples(pos, length, NULL);
+            sampleManager_->scanToc(pos, pos + length, true);
 
-      tocDirty(1);
-      updateLevel_ |= UPD_TOC_DATA | UPD_TRACK_DATA | UPD_SAMPLE_SEL;
-      return 0;
+            tocDirty(1);
+            updateLevel_ |= UPD_TOC_DATA | UPD_TRACK_DATA | UPD_SAMPLE_SEL;
+            return 0;
+        }
     }
-  }
 
-  return 2;
+    return 2;
 }
 
 
 void TocEdit::setTrackCopyFlag(int trackNr, int flag)
 {
-  if (!editable())
-    return;
+    if (!editable())
+        return;
 
-  Track *t = toc_->getTrack(trackNr);
+    Track *t = toc_->getTrack(trackNr);
   
-  if (t != NULL) {
-    t->copyPermitted(flag);
-    tocDirty(1);
-    updateLevel_ |= UPD_TRACK_DATA;
-  }
+    if (t != NULL) {
+        t->copyPermitted(flag);
+        tocDirty(1);
+        updateLevel_ |= UPD_TRACK_DATA;
+    }
 }
 
 void TocEdit::setTrackPreEmphasisFlag(int trackNr, int flag)
 {
-  if (!editable())
-    return;
+    if (!editable())
+        return;
 
-  Track *t = toc_->getTrack(trackNr);
+    Track *t = toc_->getTrack(trackNr);
 
-  if (t != NULL) {
-    t->preEmphasis(flag);
-    tocDirty(1);
-    updateLevel_ |= UPD_TRACK_DATA;
-  }
+    if (t != NULL) {
+        t->preEmphasis(flag);
+        tocDirty(1);
+        updateLevel_ |= UPD_TRACK_DATA;
+    }
 }
 
 void TocEdit::setTrackAudioType(int trackNr, int flag)
 {
-  if (!editable())
-    return;
+    if (!editable())
+        return;
 
-  Track *t = toc_->getTrack(trackNr);
+    Track *t = toc_->getTrack(trackNr);
 
-  if (t != NULL) {
-    t->audioType(flag);
-    tocDirty(1);
-    updateLevel_ |= UPD_TRACK_DATA;
-  }
+    if (t != NULL) {
+        t->audioType(flag);
+        tocDirty(1);
+        updateLevel_ |= UPD_TRACK_DATA;
+    }
   
 }
 
 void TocEdit::setTrackIsrcCode(int trackNr, const char *s)
 {
-  if (!editable())
-    return;
+    if (!editable())
+        return;
 
-  Track *t = toc_->getTrack(trackNr);
+    Track *t = toc_->getTrack(trackNr);
 
-  if (t != NULL) {
-    if (t->isrc(s) == 0) {
-      tocDirty(1);
-      updateLevel_ |= UPD_TRACK_DATA;
+    if (t != NULL) {
+        if (t->isrc(s) == 0) {
+            tocDirty(1);
+            updateLevel_ |= UPD_TRACK_DATA;
+        }
     }
-  }
 }
 
 void TocEdit::setCdTextItem(int trackNr, CdTextItem::PackType type,
-			    int blockNr, const char *s)
+                            int blockNr, const char *s)
 {
-  if (!editable())
-    return;
+    if (!editable())
+        return;
 
-  if (s != NULL) {
-    CdTextItem *item = new CdTextItem(type, blockNr);
-    item->setText(s);
+    if (s != NULL) {
+        CdTextItem *item = new CdTextItem(type, blockNr);
+        item->setText(s);
 
-    toc_->addCdTextItem(trackNr, item);
-  }
-  else {
-    toc_->removeCdTextItem(trackNr, type, blockNr);
-  }
+        toc_->addCdTextItem(trackNr, item);
+    }
+    else {
+        toc_->removeCdTextItem(trackNr, type, blockNr);
+    }
 
-  tocDirty(1);
+    tocDirty(1);
 
-  updateLevel_ |= (trackNr == 0) ? UPD_TOC_DATA : UPD_TRACK_DATA;
+    updateLevel_ |= (trackNr == 0) ? UPD_TOC_DATA : UPD_TRACK_DATA;
 
 }
 
 void TocEdit::setCdTextGenreItem(int blockNr, int code1, int code2,
-				 const char *description)
+                                 const char *description)
 {
-  if (code1 > 255 || code2 > 255)
-    return;
+    if (code1 > 255 || code2 > 255)
+        return;
 
-  if (!editable())
-    return;
+    if (!editable())
+        return;
 
-  if (code1 < 0 || code2 < 0) {
-    toc_->removeCdTextItem(0, CdTextItem::PackType::GENRE, blockNr);
-  }
-  else {
-    CdTextItem *item = new CdTextItem(CdTextItem::PackType::GENRE, blockNr);
-    item->setGenre((u8)code1, (u8)code2, description);
+    if (code1 < 0 || code2 < 0) {
+        toc_->removeCdTextItem(0, CdTextItem::PackType::GENRE, blockNr);
+    }
+    else {
+        CdTextItem *item = new CdTextItem(CdTextItem::PackType::GENRE, blockNr);
+        item->setGenre((u8)code1, (u8)code2, description);
 
-    toc_->addCdTextItem(0, item);
-  }
+        toc_->addCdTextItem(0, item);
+    }
 
-  tocDirty(1);
+    tocDirty(1);
 
-  updateLevel_ |= UPD_TOC_DATA;
+    updateLevel_ |= UPD_TOC_DATA;
 }
 
 
 void TocEdit::setCdTextLanguage(int blockNr, int langCode)
 {
-  if (!editable())
-    return;
+    if (!editable())
+        return;
 
-  toc_->cdTextLanguage(blockNr, langCode);
-  tocDirty(1);
+    toc_->cdTextLanguage(blockNr, langCode);
+    tocDirty(1);
 
-  updateLevel_ |= UPD_TOC_DATA;
+    updateLevel_ |= UPD_TOC_DATA;
 
 }
 
 void TocEdit::setCatalogNumber(const char *s)
 {
-  if (!editable())
-    return;
+    if (!editable())
+        return;
 
-  if (toc_->catalog(s) == 0) {
-    tocDirty(1);
-    updateLevel_ |= UPD_TOC_DATA;
-  }
+    if (toc_->catalog(s) == 0) {
+        tocDirty(1);
+        updateLevel_ |= UPD_TOC_DATA;
+    }
 
 }
 
 void TocEdit::setTocType(Toc::Type type)
 {
-  if (!editable())
-    return;
+    if (!editable())
+        return;
 
-  toc_->tocType(type);
-  tocDirty(1);
-  updateLevel_ |= UPD_TOC_DATA;
+    toc_->tocType(type);
+    tocDirty(1);
+    updateLevel_ |= UPD_TOC_DATA;
 }
 
 
@@ -943,97 +887,97 @@ void TocEdit::setTocType(Toc::Type type)
 //         3: cannot modify data track
 int TocEdit::removeTrackData(TocEditView *view)
 {
-  TrackDataList *list;
-  unsigned long selMin, selMax;
+    TrackDataList *list;
+    unsigned long selMin, selMax;
 
-  if (!editable())
-    return 0;
+    if (!editable())
+        return 0;
 
-  if (!view->sampleSelection(&selMin, &selMax))
-    return 1;
+    if (!view->sampleSelection(&selMin, &selMax))
+        return 1;
 
-  switch (toc_->removeTrackData(selMin, selMax, &list)) {
-  case 0:
-    if (list != NULL) {
-      if (list->length() > 0) {
-	delete trackDataScrap_;
-	trackDataScrap_ = new TrackDataScrap(list);
-      }
-      else {
-	delete list;
-      }
+    switch (toc_->removeTrackData(selMin, selMax, &list)) {
+    case 0:
+        if (list != NULL) {
+            if (list->length() > 0) {
+                delete trackDataScrap_;
+                trackDataScrap_ = new TrackDataScrap(list);
+            }
+            else {
+                delete list;
+            }
 
-      sampleManager_->removeSamples(selMin, selMax, trackDataScrap_);
+            sampleManager_->removeSamples(selMin, selMax, trackDataScrap_);
 
-      view->sampleSelectionClear();
-      view->sampleMarker(selMin);
+            view->sampleSelectionClear();
+            view->sampleMarker(selMin);
 
-      tocDirty(1);
+            tocDirty(1);
+        }
+        break;
+
+    case 1:
+        return 2;
+        break;
+
+    case 2:
+        return 3;
+        break;
     }
-    break;
-
-  case 1:
-    return 2;
-    break;
-
-  case 2:
-    return 3;
-    break;
-  }
-  return 0;
+    return 0;
 }
 
 // Inserts track data from scrap
 // Return: 0: OK
 //         1: no scrap data to paste
 int TocEdit::insertTrackData(TocEditView *view)
-			     
+           
 {
-  if (!editable())
-    return 0;
+    if (!editable())
+        return 0;
 
-  if (trackDataScrap_ == NULL)
-    return 1;
+    if (trackDataScrap_ == NULL)
+        return 1;
 
-  unsigned long len = trackDataScrap_->trackDataList()->length();
-  unsigned long marker;
+    unsigned long len = trackDataScrap_->trackDataList()->length();
+    unsigned long marker;
 
-  if (view->sampleMarker(&marker) && marker < toc_->length().samples()) {
-    if (toc_->insertTrackData(marker, trackDataScrap_->trackDataList())
-	== 0) {
+    if (view->sampleMarker(&marker) && marker < toc_->length().samples()) {
+        if (toc_->insertTrackData(marker, trackDataScrap_->trackDataList())
+            == 0) {
 
-      sampleManager_->insertSamples(marker, len, trackDataScrap_);
-      sampleManager_->scanToc(marker, marker, true);
-      sampleManager_->scanToc(marker + len - 1, marker + len - 1, true);
+            sampleManager_->insertSamples(marker, len, trackDataScrap_);
+            sampleManager_->scanToc(marker, marker, true);
+            sampleManager_->scanToc(marker + len - 1, marker + len - 1, true);
       
-      view->sampleSelect(marker, marker + len - 1);
+            view->sampleSelect(marker, marker + len - 1);
     
-      tocDirty(1);
+            tocDirty(1);
 //llanero: different views
 //      updateLevel_ |= UPD_TOC_DATA | UPD_TRACK_DATA | UPD_SAMPLE_SEL;
+        }
     }
-  }
-  else {
-    long start, end;
+    else {
+        long start, end;
 
-    if (toc_->appendTrackData(trackDataScrap_->trackDataList(), &start, &end)
-	== 0) {
+        if (toc_->appendTrackData(trackDataScrap_->trackDataList(), &start, &end)
+            == 0) {
 
-      sampleManager_->insertSamples(Msf(start).samples(), 
-				    Msf(end - start).samples(),
-                                    trackDataScrap_);
+            sampleManager_->insertSamples(Msf(start).samples(), 
+                                          Msf(end - start).samples(),
+                                          trackDataScrap_);
 
-      sampleManager_->scanToc(Msf(start).samples(), Msf(start).samples(),
-                              true);
-      if (end > 0) 
-	sampleManager_->scanToc(Msf(start).samples() + len,
-                                Msf(end).samples() - 1, true);
+            sampleManager_->scanToc(Msf(start).samples(), Msf(start).samples(),
+                                    true);
+            if (end > 0) 
+                sampleManager_->scanToc(Msf(start).samples() + len,
+                                        Msf(end).samples() - 1, true);
 
-      view->sampleSelect(Msf(start).samples(), Msf(end).samples() - 1);
+            view->sampleSelect(Msf(start).samples(), Msf(end).samples() - 1);
       
-      tocDirty(1);
-      updateLevel_ |= UPD_TOC_DATA | UPD_TRACK_DATA | UPD_SAMPLE_SEL;
+            tocDirty(1);
+            updateLevel_ |= UPD_TOC_DATA | UPD_TRACK_DATA | UPD_SAMPLE_SEL;
+        }
     }
-  }
-  return 0;
+    return 0;
 }

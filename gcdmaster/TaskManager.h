@@ -22,13 +22,30 @@
 
 #include <sigc++/signal.h>
 #include <string>
+#include <queue>
+#include <thread>
 
 class TaskManager;
 class ThreadPool;
 
+// TaskManager. Accepts tasks that will be executed by a worker thread.
+//
+// A Task has two parts:
+//
+//   - run() : that function is called in a worker thread and can
+//   block and perform potentially long operations.
+//
+//   - completed() : that function is called within the main thread
+//   and therefore cannot block but can safely use GTK+ functions to
+//   update the GUI. The completed() functions are guaranteed to be
+//   called in the order in which the jobs are added.
+
+
 class Task
 {
 public:
+    Task() : done(false) {}
+
     // Runs in worker thread.
     virtual void run() = 0;
 
@@ -39,12 +56,13 @@ public:
     virtual void sendUpdate(const std::string& msg);
 
     TaskManager* tm_;
+    bool done;
 };
 
 class TaskManager
 {
 public:
-    TaskManager();
+    TaskManager(int num_threads = 4);
     ~TaskManager();
 
     sigc::signal0<void> signalQueueStarted;
@@ -54,12 +72,20 @@ public:
 
     void addJob(Task* task);
 
+    int queueSize() { return tasks.size(); }
+    double completion();
+    void resumeCompletions();
+
 private:
-    unsigned outstanding;
     ThreadPool* threadpool;
+    // We keep our own queue to guarantee completion order.
+    std::queue<Task*> tasks;
+    std::thread::id main_thread_id;
 
     void runJob(Task*);
     void jobDone(Task*);
+
+    int total, sofar;
 };
 
 #endif
