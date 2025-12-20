@@ -56,26 +56,26 @@ static int PROCESS_MONITOR_SIGNAL_BLOCKED = 0;
 
 void blockProcessMonitorSignals()
 {
-  if (PROCESS_MONITOR_SIGNAL_BLOCKED == 0)
-    blockSignal(SIGCHLD);
+    if (PROCESS_MONITOR_SIGNAL_BLOCKED == 0)
+        blockSignal(SIGCHLD);
 
-  PROCESS_MONITOR_SIGNAL_BLOCKED++;
+    PROCESS_MONITOR_SIGNAL_BLOCKED++;
 }
 
 void unblockProcessMonitorSignals()
 {
-  if (PROCESS_MONITOR_SIGNAL_BLOCKED > 0) {
-    PROCESS_MONITOR_SIGNAL_BLOCKED--;
+    if (PROCESS_MONITOR_SIGNAL_BLOCKED > 0) {
+        PROCESS_MONITOR_SIGNAL_BLOCKED--;
 
-    if (PROCESS_MONITOR_SIGNAL_BLOCKED == 0)
-      unblockSignal(SIGCHLD);
-  }
+        if (PROCESS_MONITOR_SIGNAL_BLOCKED == 0)
+            unblockSignal(SIGCHLD);
+    }
 }
 
 static RETSIGTYPE signalHandler(int sig)
 {
-  if (sig == SIGCHLD)
-    PROCESS_MONITOR->handleSigChld();
+    if (sig == SIGCHLD)
+        PROCESS_MONITOR->handleSigChld();
 }
 
 void GCDMasterApplication::on_activate()
@@ -103,60 +103,60 @@ int main(int argc, char* argv[])
 {
     app = Glib::RefPtr<GCDMasterApplication>(new GCDMasterApplication());
 
-  // create GConf configuration manager
-  configManager = new ConfigManager();
+    // create GConf configuration manager
+    configManager = new ConfigManager();
 
-  // settings
-  CdDevice::importSettings();
+    // settings
+    CdDevice::importSettings();
 
-  // setup process monitor
-  PROCESS_MONITOR = new ProcessMonitor;
-  installSignalHandler(SIGCHLD, signalHandler);
+    // setup process monitor
+    PROCESS_MONITOR = new ProcessMonitor;
+    installSignalHandler(SIGCHLD, signalHandler);
 
-  // setup periodic GUI updates
-  Glib::signal_timeout().connect(sigc::ptr_fun(&guiUpdatePeriodic), 2000);
+    // setup periodic GUI updates
+    Glib::signal_timeout().connect(sigc::ptr_fun(&guiUpdatePeriodic), 2000);
 
-  installSignalHandler(SIGPIPE, SIG_IGN);
+    installSignalHandler(SIGPIPE, SIG_IGN);
 
-  // scan for SCSI devices
-  CdDevice::scan();
+    // scan for SCSI devices
+    CdDevice::scan();
 
-  // this forces a CdDevice::updateDeviceStatus() so
-  // when gcdmaster is first show we already have the device status
-  guiUpdatePeriodic();
+    // this forces a CdDevice::updateDeviceStatus() so
+    // when gcdmaster is first show we already have the device status
+    guiUpdatePeriodic();
 
-  deviceConfDialog = new DeviceConfDialog;
-  PROGRESS_POOL = new ProgressDialogPool;
+    deviceConfDialog = new DeviceConfDialog;
+    PROGRESS_POOL = new ProgressDialogPool;
 
-  Glib::RefPtr<Gtk::Builder> builder;
-  try {
-      std::string gladedir = CDRDAO_GLADEDIR;
-      auto override = getenv("CDRDAO_HOME");
-      if (override) {
-	  gladedir = override;
-	  gladedir += "/gcdmaster/glade";
-      }
-      gladedir += "/Preferences.glade";
-      builder = Gtk::Builder::create_from_file(gladedir.c_str());
-  } catch(std::exception& ex) {
-    std::cerr << ex.what() << std::endl;
-    exit(1);
-  }
+    Glib::RefPtr<Gtk::Builder> builder;
+    try {
+        std::string gladedir = CDRDAO_GLADEDIR;
+        auto override = getenv("CDRDAO_HOME");
+        if (override) {
+            gladedir = override;
+            gladedir += "/gcdmaster/glade";
+        }
+        gladedir += "/Preferences.glade";
+        builder = Gtk::Builder::create_from_file(gladedir.c_str());
+    } catch(std::exception& ex) {
+        std::cerr << ex.what() << std::endl;
+        exit(1);
+    }
 
-  builder->get_widget_derived("PrefDialog", preferencesDialog);
-  if (!preferencesDialog) {
-      std::cerr << "Unable to create Preferences dialog from glade file\n" 
-          CDRDAO_GLADEDIR
-	  "/Preferences.glade" << std::endl;
-      exit(1);
-  }
+    builder->get_widget_derived("PrefDialog", preferencesDialog);
+    if (!preferencesDialog) {
+        std::cerr << "Unable to create Preferences dialog from glade file\n" 
+            CDRDAO_GLADEDIR
+            "/Preferences.glade" << std::endl;
+        exit(1);
+    }
 
-  //Shows the window and returns when it is closed.
-  int retval = app->run(argc, argv);
+    //Shows the window and returns when it is closed.
+    int retval = app->run(argc, argv);
 
-  // save settings
-  CdDevice::exportSettings();
-  delete configManager;
+    // save settings
+    CdDevice::exportSettings();
+    delete configManager;
 
-  return retval;
+    return retval;
 }
