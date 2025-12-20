@@ -39,7 +39,7 @@ public:
     virtual ~FormatSupport() {}
 
     typedef enum {
-        FS_SUCCESS,
+        FS_SUCCESS = 0,
         FS_IN_PROGRESS,
         FS_WRONG_FORMAT,
         FS_INPUT_PROBLEM,

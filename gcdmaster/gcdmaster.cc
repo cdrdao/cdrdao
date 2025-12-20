@@ -444,7 +444,7 @@ void GCDMaster::createStatusbar()
 {
   container_ = new Gtk::HBox();
   statusbar_ = new Gtk::Statusbar();
-  progressbar_ = new Gtk::ProgressBar;
+  progressbar_ = new Gtk::ProgressBar();
   progressButton_ = new Gtk::Button(_("Cancel"));
   progressButton_->set_sensitive(false);
 
