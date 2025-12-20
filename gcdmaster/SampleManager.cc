@@ -321,7 +321,6 @@ int SampleManagerImpl::readSamples()
     else {
       log_message(-2, "Cannot read audio data: %ld - %ld.", n, ret);
       tocReader_.closeData();
-      tocEdit_->signalProgressFraction(0.0);
       return -1;
     }
     length_ -= n;
@@ -330,15 +329,12 @@ int SampleManagerImpl::readSamples()
   
   if (actBlock_ >= endBlock_ && actBlock_ < burstEnd) {
     tocReader_.closeData();
-    tocEdit_->signalProgressFraction(0.0);
     return 1;
   }
 
   percent_ += percentStep_;
   if (percent_ > 1.0) 
     percent_ = 1.0;
-
-  tocEdit_->signalProgressFraction(percent_);
 
   return 0;
 }

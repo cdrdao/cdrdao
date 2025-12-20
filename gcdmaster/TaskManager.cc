@@ -23,6 +23,7 @@
 #include <thread>
 #include <condition_variable>
 #include <queue>
+#include <cassert>
 
 #include "TaskManager.h"
 
@@ -111,10 +112,10 @@ void Task::sendUpdate(const std::string& msg)
 
 // ********************************************************************
 
-TaskManager::TaskManager()
+TaskManager::TaskManager(int num_threads)
 {
-    outstanding = 0;
-    threadpool = new ThreadPool(4);
+    threadpool = new ThreadPool(num_threads);
+    main_thread_id = std::this_thread::get_id();
 }
 
 TaskManager::~TaskManager()
@@ -125,9 +126,14 @@ TaskManager::~TaskManager()
 // Runs in main thread
 void TaskManager::addJob(Task* job)
 {
-    if (outstanding == 0)
+    assert(std::this_thread::get_id() == main_thread_id);
+    if (tasks.size() == 0) {
+	total = 0;
+	sofar = 0;
 	signalQueueStarted();
-    outstanding++;
+    }
+    tasks.push(job);
+    total++;
     job->tm_ = this;
 
     threadpool->enqueue([this, job]() {this->runJob(job);});
@@ -136,6 +142,7 @@ void TaskManager::addJob(Task* job)
 // Runs in worker thread
 void TaskManager::runJob(Task* job)
 {
+    assert(std::this_thread::get_id() != main_thread_id);
     Glib::signal_idle().connect_once([this, job]() {this->signalJobStarted(job);});
     job->run();
     Glib::signal_idle().connect_once([this, job]() {this->jobDone(job);});
@@ -144,8 +151,23 @@ void TaskManager::runJob(Task* job)
 // Runs in main thread.
 void TaskManager::jobDone(Task* job)
 {
-    job->completed();
-    outstanding--;
-    if (outstanding == 0)
+    assert(std::this_thread::get_id() == main_thread_id);
+    job->done = true;
+    sofar++;
+
+    while (!tasks.empty() && tasks.front()->done) {
+	tasks.front()->completed();
+	tasks.pop();
+    }
+
+    if (tasks.empty())
 	signalQueueEmptied();
+}
+
+double TaskManager::completion()
+{
+    if (total == 0)
+	return 0.0;
+    else
+	return (double)sofar / (double)total;
 }
