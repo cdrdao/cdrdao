@@ -20,8 +20,8 @@
 #ifndef __TRACK_INFO_DIALOG_H__
 #define __TRACK_INFO_DIALOG_H__
 
-#include <gtkmm.h>
 #include <gtk/gtk.h>
+#include <gtkmm.h>
 #include <string>
 
 class Toc;
@@ -29,70 +29,72 @@ class TocEdit;
 class TocEditView;
 class TextEdit;
 
-class TrackInfoDialog : public Gtk::Dialog {
-public:
-  TrackInfoDialog();
-  ~TrackInfoDialog();
+class TrackInfoDialog : public Gtk::Dialog
+{
+  public:
+    TrackInfoDialog();
+    ~TrackInfoDialog();
 
-  bool on_delete_event(GdkEventAny*);
+    bool on_delete_event(GdkEventAny *);
 
-  void update(unsigned long, TocEditView *);
+    void update(unsigned long, TocEditView *);
 
-  void start(TocEditView *);
-  void stop();
+    void start(TocEditView *);
+    void stop();
 
-private:
-  TocEditView *tocEditView_;
-  int active_;
+  private:
+    TocEditView *tocEditView_;
+    int active_;
 
-  int selectedTrack_;
+    int selectedTrack_;
 
-  Gtk::Button *applyButton_;
+    Gtk::Button *applyButton_;
 
-  Gtk::Label *trackNr_;
-  Gtk::Label *pregapLen_;
-  Gtk::Label *trackStart_;
-  Gtk::Label *trackEnd_;
-  Gtk::Label *trackLen_;
-  Gtk::Label *indexMarks_;
+    Gtk::Label *trackNr_;
+    Gtk::Label *pregapLen_;
+    Gtk::Label *trackStart_;
+    Gtk::Label *trackEnd_;
+    Gtk::Label *trackLen_;
+    Gtk::Label *indexMarks_;
 
-  Gtk::CheckButton *copyFlag_;
-  Gtk::CheckButton *preEmphasisFlag_;
+    Gtk::CheckButton *copyFlag_;
+    Gtk::CheckButton *preEmphasisFlag_;
 
-  Gtk::RadioButton *twoChannelAudio_;
-  Gtk::RadioButton *fourChannelAudio_;
+    Gtk::RadioButton *twoChannelAudio_;
+    Gtk::RadioButton *fourChannelAudio_;
 
-  TextEdit *isrcCodeCountry_;
-  TextEdit *isrcCodeOwner_;
-  TextEdit *isrcCodeYear_;
-  TextEdit *isrcCodeSerial_;
+    TextEdit *isrcCodeCountry_;
+    TextEdit *isrcCodeOwner_;
+    TextEdit *isrcCodeYear_;
+    TextEdit *isrcCodeSerial_;
 
-  struct CdTextPage {
-    Gtk::Label *label;
-    Gtk::Entry *title;
-    Gtk::Entry *performer;
-    Gtk::Entry *songwriter;
-    Gtk::Entry *composer;
-    Gtk::Entry *arranger;
-    Gtk::Entry *message;
-    Gtk::Entry *isrc;
-  };
+    struct CdTextPage
+    {
+        Gtk::Label *label;
+        Gtk::Entry *title;
+        Gtk::Entry *performer;
+        Gtk::Entry *songwriter;
+        Gtk::Entry *composer;
+        Gtk::Entry *arranger;
+        Gtk::Entry *message;
+        Gtk::Entry *isrc;
+    };
 
-  CdTextPage cdTextPages_[8];
-  
-  void closeAction();
-  void applyAction();
+    CdTextPage cdTextPages_[8];
 
-  Gtk::VBox *createCdTextPage(int);
+    void closeAction();
+    void applyAction();
 
-  void clear();
-  void clearCdText();
+    Gtk::VBox *createCdTextPage(int);
 
-  const char *checkString(const std::string &);
-  void importCdText(const Toc *, int);
-  void importData(const Toc *, int);
-  void exportCdText(TocEdit *, int);
-  void exportData(TocEdit *, int);
+    void clear();
+    void clearCdText();
+
+    const char *checkString(const std::string &);
+    void importCdText(const Toc *, int);
+    void importData(const Toc *, int);
+    void exportCdText(TocEdit *, int);
+    void exportData(TocEdit *, int);
 };
 
 #endif

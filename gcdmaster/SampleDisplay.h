@@ -20,10 +20,10 @@
 #ifndef __SAMPLE_DISPLAY_H
 #define __SAMPLE_DISPLAY_H
 
-#include <gtkmm.h>
 #include <gdkmm.h>
-#include <pangomm.h>
 #include <gtk/gtk.h>
+#include <gtkmm.h>
+#include <pangomm.h>
 
 #include "TrackManager.h"
 
@@ -33,132 +33,139 @@ class TocEdit;
 
 class SampleDisplay : public Gtk::DrawingArea
 {
-public:
-  SampleDisplay();
+  public:
+    SampleDisplay();
 
-  void setTocEdit(TocEdit *);
-  bool getSelection(unsigned long* start, unsigned long* end);
-  void setSelectedTrackMarker(int trackNr, int indexNr);
-  void setMarker(unsigned long sample);
-  void clearMarker();
-  int  getMarker(unsigned long *);
-  void setView(unsigned long start, unsigned long end);
-  void getView(unsigned long *start, unsigned long *end);
-  void setRegion(unsigned long start, unsigned long end);
-  int  getRegion(unsigned long *start, unsigned long *end);
-  void clearRegion();
-  Glib::RefPtr<Gtk::Adjustment> getAdjustment() { return adjustment_; }
-  void updateTrackMarks();
-  void setCursor(int, unsigned long);
+    void setTocEdit(TocEdit *);
+    bool getSelection(unsigned long *start, unsigned long *end);
+    void setSelectedTrackMarker(int trackNr, int indexNr);
+    void setMarker(unsigned long sample);
+    void clearMarker();
+    int getMarker(unsigned long *);
+    void setView(unsigned long start, unsigned long end);
+    void getView(unsigned long *start, unsigned long *end);
+    void setRegion(unsigned long start, unsigned long end);
+    int getRegion(unsigned long *start, unsigned long *end);
+    void clearRegion();
+    Glib::RefPtr<Gtk::Adjustment> getAdjustment()
+    {
+        return adjustment_;
+    }
+    void updateTrackMarks();
+    void setCursor(int, unsigned long);
 
-  void updateToc(unsigned long, unsigned long);
+    void updateToc(unsigned long, unsigned long);
 
-  sigc::signal1<void, unsigned long> markerSet;
-  sigc::signal1<void, unsigned long> cursorMoved;
-  sigc::signal2<void, unsigned long, unsigned long> selectionSet;
-  sigc::signal0<void> selectionCleared;
-  sigc::signal3<void, const Track *, int, int> trackMarkSelected;
-  sigc::signal4<void, const Track *, int, int, unsigned long> trackMarkMoved;
-  sigc::signal2<void, unsigned long, unsigned long> viewModified;
-  
-protected:
-  bool handleConfigureEvent(GdkEventConfigure *);
-  bool handleMotionNotifyEvent(GdkEventMotion *event);
-  bool handleButtonPressEvent(GdkEventButton*);
-  bool handleButtonReleaseEvent(GdkEventButton*);
-  bool handleEnterEvent(GdkEventCrossing*);
-  bool handleLeaveEvent(GdkEventCrossing*);
-  virtual bool on_draw(const Cairo::RefPtr<Cairo::Context>& cr);
+    sigc::signal1<void, unsigned long> markerSet;
+    sigc::signal1<void, unsigned long> cursorMoved;
+    sigc::signal2<void, unsigned long, unsigned long> selectionSet;
+    sigc::signal0<void> selectionCleared;
+    sigc::signal3<void, const Track *, int, int> trackMarkSelected;
+    sigc::signal4<void, const Track *, int, int, unsigned long> trackMarkMoved;
+    sigc::signal2<void, unsigned long, unsigned long> viewModified;
 
-private:
-  enum DragMode { DRAG_NONE, DRAG_SAMPLE_MARKER, DRAG_TRACK_MARKER };
+  protected:
+    bool handleConfigureEvent(GdkEventConfigure *);
+    bool handleMotionNotifyEvent(GdkEventMotion *event);
+    bool handleButtonPressEvent(GdkEventButton *);
+    bool handleButtonReleaseEvent(GdkEventButton *);
+    bool handleEnterEvent(GdkEventCrossing *);
+    bool handleLeaveEvent(GdkEventCrossing *);
+    virtual bool on_draw(const Cairo::RefPtr<Cairo::Context> &cr);
 
-  Glib::RefPtr<Gtk::Adjustment> adjustment_;
+  private:
+    enum DragMode
+    {
+        DRAG_NONE,
+        DRAG_SAMPLE_MARKER,
+        DRAG_TRACK_MARKER
+    };
 
-  Glib::RefPtr<Gdk::Pixbuf> pixmap_;
-  Glib::RefPtr<Gdk::Pixbuf> trackMarkerPixmap_;
-  Glib::RefPtr<Gdk::Pixbuf> indexMarkerPixmap_;
-  Glib::RefPtr<Gdk::Pixbuf> trackMarkerSelectedPixmap_;
-  Glib::RefPtr<Gdk::Pixbuf> indexMarkerSelectedPixmap_;
-  Glib::RefPtr<Gdk::Pixbuf> trackExtendPixmap_;
-  Glib::RefPtr<Gdk::Pixbuf> indexExtendPixmap_;
+    Glib::RefPtr<Gtk::Adjustment> adjustment_;
 
-  Gdk::Color sampleColor_;
-  Gdk::Color middleLineColor_;
-  Gdk::Color cursorColor_;
-  Gdk::Color markerColor_;
-  Gdk::Color selectionBackgroundColor_;
+    Glib::RefPtr<Gdk::Pixbuf> pixmap_;
+    Glib::RefPtr<Gdk::Pixbuf> trackMarkerPixmap_;
+    Glib::RefPtr<Gdk::Pixbuf> indexMarkerPixmap_;
+    Glib::RefPtr<Gdk::Pixbuf> trackMarkerSelectedPixmap_;
+    Glib::RefPtr<Gdk::Pixbuf> indexMarkerSelectedPixmap_;
+    Glib::RefPtr<Gdk::Pixbuf> trackExtendPixmap_;
+    Glib::RefPtr<Gdk::Pixbuf> indexExtendPixmap_;
 
-  gint width_;
-  gint height_;
-  gint timeLineHeight_;
-  gint timeLineY_;
-  gint timeTickWidth_;
-  gint timeTickSep_;
-  gint sampleStartX_;
-  gint sampleEndX_;
-  gint sampleWidthX_;
+    Gdk::Color sampleColor_;
+    Gdk::Color middleLineColor_;
+    Gdk::Color cursorColor_;
+    Gdk::Color markerColor_;
+    Gdk::Color selectionBackgroundColor_;
 
-  gint trackLineHeight_;
-  gint trackLineY_;
-  gint trackMarkerWidth_;
-  const TrackManager::Entry *pickedTrackMarker_;
+    gint width_;
+    gint height_;
+    gint timeLineHeight_;
+    gint timeLineY_;
+    gint timeTickWidth_;
+    gint timeTickSep_;
+    gint sampleStartX_;
+    gint sampleEndX_;
+    gint sampleWidthX_;
 
-  gint chanSep_;
-  gint chanHeight_;
-  gint lcenter_;
-  gint rcenter_;
+    gint trackLineHeight_;
+    gint trackLineY_;
+    gint trackMarkerWidth_;
+    const TrackManager::Entry *pickedTrackMarker_;
 
-  TrackManager *trackManager_;
+    gint chanSep_;
+    gint chanHeight_;
+    gint lcenter_;
+    gint rcenter_;
 
-  TocEdit *tocEdit_;
-  unsigned long minSample_;
-  unsigned long maxSample_;
-  unsigned long resolution_;
+    TrackManager *trackManager_;
 
-  bool drawCursor_;
-  gint cursorX_;
-  bool cursorControlExtern_;
+    TocEdit *tocEdit_;
+    unsigned long minSample_;
+    unsigned long maxSample_;
+    unsigned long resolution_;
 
-  bool markerSet_;
-  gint markerX_;
-  unsigned long markerSample_;
+    bool drawCursor_;
+    gint cursorX_;
+    bool cursorControlExtern_;
 
-  bool selectionSet_;
-  unsigned long selectionStartSample_;
-  unsigned long selectionEndSample_;
-  gint selectionStart_;
-  gint selectionEnd_;
+    bool markerSet_;
+    gint markerX_;
+    unsigned long markerSample_;
 
-  bool regionSet_;
-  unsigned long regionStartSample_;
-  unsigned long regionEndSample_;
+    bool selectionSet_;
+    unsigned long selectionStartSample_;
+    unsigned long selectionEndSample_;
+    gint selectionStart_;
+    gint selectionEnd_;
 
-  int selectedTrack_;
-  int selectedIndex_;
+    bool regionSet_;
+    unsigned long regionStartSample_;
+    unsigned long regionEndSample_;
 
-  DragMode dragMode_;
-  gint dragStart_, dragEnd_;
-  gint dragStopMin_, dragStopMax_;
-  gint dragLastX_;
+    int selectedTrack_;
+    int selectedIndex_;
 
-  void scrollTo();
-  void readSamples(long startBlock, long endBlock);
-  void updateSamples();
-  void drawCursor(gint);
-  void undrawCursor();
-  void getColor(const char *, Gdk::Color *);
-  unsigned long pixel2sample(gint x);
-  gint sample2pixel(unsigned long);
-  void drawMarker(const Cairo::RefPtr<Cairo::Context>& cr);
-  void removeMarker();
-  void drawTimeTick(const Cairo::RefPtr<Cairo::Context>& cr, gint x, gint y, unsigned long sample);
-  void drawTimeLine(const Cairo::RefPtr<Cairo::Context>& cr);
-  void drawTrackMarker(const Cairo::RefPtr<Cairo::Context>& cr, int mode, gint x, int trackNr, int indexNr,
-		       int selected, int extend);
-  void drawTrackLine(const Cairo::RefPtr<Cairo::Context>& cr);
-  void drawSelection(const Cairo::RefPtr<Cairo::Context>& cr);
+    DragMode dragMode_;
+    gint dragStart_, dragEnd_;
+    gint dragStopMin_, dragStopMax_;
+    gint dragLastX_;
 
+    void scrollTo();
+    void readSamples(long startBlock, long endBlock);
+    void updateSamples();
+    void drawCursor(gint);
+    void undrawCursor();
+    void getColor(const char *, Gdk::Color *);
+    unsigned long pixel2sample(gint x);
+    gint sample2pixel(unsigned long);
+    void drawMarker(const Cairo::RefPtr<Cairo::Context> &cr);
+    void removeMarker();
+    void drawTimeTick(const Cairo::RefPtr<Cairo::Context> &cr, gint x, gint y, unsigned long sample);
+    void drawTimeLine(const Cairo::RefPtr<Cairo::Context> &cr);
+    void drawTrackMarker(const Cairo::RefPtr<Cairo::Context> &cr, int mode, gint x, int trackNr, int indexNr,
+                         int selected, int extend);
+    void drawTrackLine(const Cairo::RefPtr<Cairo::Context> &cr);
+    void drawSelection(const Cairo::RefPtr<Cairo::Context> &cr);
 };
 
 #endif

@@ -17,88 +17,87 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#include <unistd.h>
-#include <stddef.h>
 #include <errno.h>
-#include <string.h>
 #include <signal.h>
+#include <stddef.h>
+#include <string.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <unistd.h>
 
 #include "ProcessMonitor.h"
 #include "xcdrdao.h"
 
-#include "util.h"
 #include "log.h"
-
+#include "util.h"
 
 Process::Process(int pid, int commFd)
 {
-  pid_ = pid;
-  commFd_ = commFd;
+    pid_ = pid;
+    commFd_ = commFd;
 
-  exited_ = 0;
-  exitStatus_ = 0;
+    exited_ = 0;
+    exitStatus_ = 0;
 
-  next_ = NULL;
+    next_ = NULL;
 }
 
 Process::~Process()
 {
-  if (commFd_ >= 0)
-    close(commFd_);
+    if (commFd_ >= 0)
+        close(commFd_);
 
-  next_ = NULL;
+    next_ = NULL;
 }
 
 int Process::pid() const
 {
-  return pid_;
+    return pid_;
 }
 
 int Process::commFd() const
 {
-  return commFd_;
+    return commFd_;
 }
 
 int Process::exited() const
 {
-  return exited_;
+    return exited_;
 }
 
 int Process::exitStatus() const
 {
-  return exitStatus_;
+    return exitStatus_;
 }
-
 
 ProcessMonitor::ProcessMonitor()
 {
-  processes_ = NULL;
-  statusChanged_ = 0;
+    processes_ = NULL;
+    statusChanged_ = 0;
 }
 
 ProcessMonitor::~ProcessMonitor()
 {
-  Process *next;
+    Process *next;
 
-  blockProcessMonitorSignals();
+    blockProcessMonitorSignals();
 
-  while (processes_ != NULL) {
-    next = processes_->next_;
-    delete processes_;
-    processes_ = next;
-  }
+    while (processes_ != NULL)
+    {
+        next = processes_->next_;
+        delete processes_;
+        processes_ = next;
+    }
 
-  unblockProcessMonitorSignals();
+    unblockProcessMonitorSignals();
 }
 
 int ProcessMonitor::statusChanged()
 {
-  int s = statusChanged_;
+    int s = statusChanged_;
 
-  statusChanged_ = 0;
-  return s;
+    statusChanged_ = 0;
+    return s;
 }
 
 /* Starts a child process 'prg' with arguments 'args'.
@@ -107,149 +106,158 @@ int ProcessMonitor::statusChanged()
  * Return: newly allocated 'Process' object or NULL on error
  */
 
-Process *ProcessMonitor::start(const char *prg, const char **args,
-			       int pipeFdArgNum)
+Process *ProcessMonitor::start(const char *prg, const char **args, int pipeFdArgNum)
 {
-  int pid;
-  Process *p;
-  int pipeFds[2];
-  char buf[20];
+    int pid;
+    Process *p;
+    int pipeFds[2];
+    char buf[20];
 
-  if (pipe(pipeFds) != 0) {
-    log_message(-2, "Cannot create pipe: %s", strerror(errno));
-    return NULL;
-  }
-  
-  if (pipeFdArgNum > 0) {
-    snprintf(buf, sizeof(buf),"%d", pipeFds[1]);
-    args[pipeFdArgNum] = buf;
-  }
+    if (pipe(pipeFds) != 0)
+    {
+        log_message(-2, "Cannot create pipe: %s", strerror(errno));
+        return NULL;
+    }
 
-  log_message(0, "Starting: ");
-  for (int i = 0; args[i] != NULL; i++)
-    log_message(0, "%s ", args[i]);
-  log_message(0, "");
+    if (pipeFdArgNum > 0)
+    {
+        snprintf(buf, sizeof(buf), "%d", pipeFds[1]);
+        args[pipeFdArgNum] = buf;
+    }
 
+    log_message(0, "Starting: ");
+    for (int i = 0; args[i] != NULL; i++)
+        log_message(0, "%s ", args[i]);
+    log_message(0, "");
 
-  blockProcessMonitorSignals();
+    blockProcessMonitorSignals();
 
-  pid = fork();
+    pid = fork();
 
-  if (pid == 0) {
-    // we are the new process
+    if (pid == 0)
+    {
+        // we are the new process
 
-    // detach from controlling terminal
-    setsid();
+        // detach from controlling terminal
+        setsid();
 
-    // close reading end of pipe
-    close(pipeFds[0]);
+        // close reading end of pipe
+        close(pipeFds[0]);
 
-    execvp(prg, (char*const*)args);
+        execvp(prg, (char *const *)args);
 
-    log_message(-2, "Cannot execute '%s': %s", prg, strerror(errno));
-    _exit(255);
-  }
-  else if (pid < 0) {
-    log_message(-2, "Cannot fork: %s", strerror(errno));
+        log_message(-2, "Cannot execute '%s': %s", prg, strerror(errno));
+        _exit(255);
+    }
+    else if (pid < 0)
+    {
+        log_message(-2, "Cannot fork: %s", strerror(errno));
+        unblockProcessMonitorSignals();
+        return NULL;
+    }
+
+    // close writing end of pipe
+    close(pipeFds[1]);
+
+    p = new Process(pid, pipeFds[0]);
+
+    p->next_ = processes_;
+    processes_ = p;
+
     unblockProcessMonitorSignals();
-    return NULL;
-  }
 
-
-  // close writing end of pipe
-  close(pipeFds[1]);
-
-  p = new Process(pid, pipeFds[0]);
-  
-  p->next_ = processes_;
-  processes_ = p;
-
-  unblockProcessMonitorSignals();
-
-  return p;
+    return p;
 }
 
 Process *ProcessMonitor::find(Process *p, Process **pred)
 {
-  Process *run;
+    Process *run;
 
-  for (*pred = NULL, run = processes_; run != NULL;
-       *pred = run, run = run->next_) {
-    if (p == run) {
-      return run;
+    for (*pred = NULL, run = processes_; run != NULL; *pred = run, run = run->next_)
+    {
+        if (p == run)
+        {
+            return run;
+        }
     }
-  }
 
-  return NULL;
+    return NULL;
 }
 
 Process *ProcessMonitor::find(int pid)
 {
-  Process *run;
+    Process *run;
 
-  for (run = processes_; run != NULL; run = run->next_) {
-    if (run->pid() == pid) {
-      return run;
+    for (run = processes_; run != NULL; run = run->next_)
+    {
+        if (run->pid() == pid)
+        {
+            return run;
+        }
     }
-  }
 
-  return NULL;
+    return NULL;
 }
 
 void ProcessMonitor::stop(Process *p)
 {
-  kill(p->pid(), SIGTERM);
+    kill(p->pid(), SIGTERM);
 }
 
 void ProcessMonitor::remove(Process *p)
 {
-  Process *act, *pred;
+    Process *act, *pred;
 
-  blockProcessMonitorSignals();
+    blockProcessMonitorSignals();
 
-  if ((act = find(p, &pred)) != NULL) {
-    if (pred == NULL)
-      processes_ = act->next_;
-    else
-      pred->next_ = act->next_;
+    if ((act = find(p, &pred)) != NULL)
+    {
+        if (pred == NULL)
+            processes_ = act->next_;
+        else
+            pred->next_ = act->next_;
 
-    delete act;
-  }
+        delete act;
+    }
 
-  unblockProcessMonitorSignals();
-
+    unblockProcessMonitorSignals();
 }
 
 void ProcessMonitor::handleSigChld()
 {
-  int pid;
-  Process *p;
-  int status;
-  
-  while ((pid = waitpid(-1, &status, WNOHANG)) > 0) {
-    if ((p = find(pid)) != NULL) {
-      p->exited_ = 1;
-      
-      if (WIFEXITED(status)) {
-	p->exitStatus_ = WEXITSTATUS(status);
-      }
-      else if (WIFSIGNALED(status)) {
-	p->exitStatus_ = 254;
-      }
-      else {
-	p->exitStatus_ = 253;
-      }
+    int pid;
+    Process *p;
+    int status;
 
-      statusChanged_ = 1;
-    }
-    else {
-      log_message(-3, "Unknown child with pid %d exited.", pid);
-    }
-  }
+    while ((pid = waitpid(-1, &status, WNOHANG)) > 0)
+    {
+        if ((p = find(pid)) != NULL)
+        {
+            p->exited_ = 1;
 
-  /*
-  if (pid < 0) 
-    log_message(-2, "waitpid failed: %s", strerror(errno));
-    */
+            if (WIFEXITED(status))
+            {
+                p->exitStatus_ = WEXITSTATUS(status);
+            }
+            else if (WIFSIGNALED(status))
+            {
+                p->exitStatus_ = 254;
+            }
+            else
+            {
+                p->exitStatus_ = 253;
+            }
+
+            statusChanged_ = 1;
+        }
+        else
+        {
+            log_message(-3, "Unknown child with pid %d exited.", pid);
+        }
+    }
+
+    /*
+    if (pid < 0)
+      log_message(-2, "waitpid failed: %s", strerror(errno));
+      */
 }
-

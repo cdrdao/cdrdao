@@ -17,65 +17,62 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-
 #ifndef __MESSAGE_BOX_H__
 #define __MESSAGE_BOX_H__
 
-#include <gtkmm.h>
 #include <gtk/gtk.h>
+#include <gtkmm.h>
 #include <stdarg.h>
 
 class MessageBoxBase : public Gtk::Dialog
 {
-public:
-  MessageBoxBase(Gtk::Window *);
-  virtual ~MessageBoxBase();
+  public:
+    MessageBoxBase(Gtk::Window *);
+    virtual ~MessageBoxBase();
 
-  void init(const char *type, const char *titel, int askDontShow, int nButtons,
-	    int defaultButton, Gtk::BuiltinStockID buttons[], va_list);
+    void init(const char *type, const char *titel, int askDontShow, int nButtons, int defaultButton,
+              Gtk::BuiltinStockID buttons[], va_list);
 
-  int run();
+    int run();
 
-  int dontShowAgain() const;
+    int dontShowAgain() const;
 
-protected:
-  int done_;
-  int doneDefault_;
+  protected:
+    int done_;
+    int doneDefault_;
 
-  Gtk::CheckButton *dontShowAgain_;
+    Gtk::CheckButton *dontShowAgain_;
 
-  Gtk::Button *createButton(const Gtk::BuiltinStockID);
-  bool on_delete_event(GdkEventAny*);
-  void buttonAction(int);
+    Gtk::Button *createButton(const Gtk::BuiltinStockID);
+    bool on_delete_event(GdkEventAny *);
+    void buttonAction(int);
 };
 
 class MessageBox : public MessageBoxBase
 {
-public:
-  MessageBox(Gtk::Window *, const char *title, int askDontShow, ...);
-  ~MessageBox();
+  public:
+    MessageBox(Gtk::Window *, const char *title, int askDontShow, ...);
+    ~MessageBox();
 };
 
 class Ask2Box : public MessageBoxBase
 {
-public:
-  Ask2Box(Gtk::Window *, const char *title, int askDontShow,
-	  int defaultButton, ...);
-  ~Ask2Box();
+  public:
+    Ask2Box(Gtk::Window *, const char *title, int askDontShow, int defaultButton, ...);
+    ~Ask2Box();
 };
 
 class Ask3Box : public MessageBoxBase
 {
-public:
-  Ask3Box(Gtk::Window *, const char *title, int askDontShow,
-	  int defaultButton, ...);
-  ~Ask3Box();
+  public:
+    Ask3Box(Gtk::Window *, const char *title, int askDontShow, int defaultButton, ...);
+    ~Ask3Box();
 };
 
 class ErrorBox : public Gtk::MessageDialog
 {
- public:
-    ErrorBox(const char* msg);
+  public:
+    ErrorBox(const char *msg);
 };
 
 #endif

@@ -27,35 +27,38 @@ class TocEdit;
 
 class Project : public Gtk::VBox
 {
-public:
-    Project(Gtk::Window* parent);
+  public:
+    Project(Gtk::Window *parent);
 
-    void         readToc(char *name);
-    void         statusMessage(const char *fmt, ...);
-    void         tocBlockedMsg(const char *);
-    virtual bool closeProject() = 0; 
+    void readToc(char *name);
+    void statusMessage(const char *fmt, ...);
+    void tocBlockedMsg(const char *);
+    virtual bool closeProject() = 0;
     virtual void saveProject();
     virtual void saveAsProject();
     virtual void recordToc2CD() = 0;
-    int          projectNumber();
-    TocEdit*     tocEdit();
+    int projectNumber();
+    TocEdit *tocEdit();
 
-    Gtk::Window* getParentWindow() { return parent_; };
+    Gtk::Window *getParentWindow()
+    {
+        return parent_;
+    };
 
     virtual void update(unsigned long level) = 0;
 
-protected:
-    int  projectNumber_;
+  protected:
+    int projectNumber_;
     bool new_; // If it is a new project (not saved)
 
-    Gtk::Window*            parent_;
-    TocEdit*                tocEdit_;
-    RecordTocDialog*        recordTocDialog_;
-    Gtk::Statusbar*         statusbar_;
-    Gtk::ProgressBar*       progressbar_;
-    Gtk::Spinner*           spinner_;
-    Gtk::Button*            progressButton_;  
-    Gtk::FileChooserDialog* saveFileSelector_;
+    Gtk::Window *parent_;
+    TocEdit *tocEdit_;
+    RecordTocDialog *recordTocDialog_;
+    Gtk::Statusbar *statusbar_;
+    Gtk::ProgressBar *progressbar_;
+    Gtk::Spinner *spinner_;
+    Gtk::Button *progressButton_;
+    Gtk::FileChooserDialog *saveFileSelector_;
 
     void updateWindowTitle();
     virtual void projectInfo() = 0;

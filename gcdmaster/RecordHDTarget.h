@@ -26,24 +26,23 @@ class DeviceList;
 
 class RecordHDTarget : public Gtk::VBox
 {
-public:
-  RecordHDTarget();
+  public:
+    RecordHDTarget();
 
-  void start();
-  void stop();
+    void start();
+    void stop();
 
-  void update(unsigned long level);
-  void cancelAction();
+    void update(unsigned long level);
+    void cancelAction();
 
-  std::string getFilename();
-  std::string getPath();
+    std::string getFilename();
+    std::string getPath();
 
-private:
-  bool active_;
+  private:
+    bool active_;
 
-  Gtk::FileChooserButton *dirEntry_;
-  Gtk::Entry *fileNameEntry_;
-
+    Gtk::FileChooserButton *dirEntry_;
+    Gtk::Entry *fileNameEntry_;
 };
 
 #endif

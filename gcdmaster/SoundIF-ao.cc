@@ -20,37 +20,38 @@
 #include <string.h>
 #include <ao/ao.h>
 
-#include "SoundIF.h"
 #include "Sample.h"
+#include "SoundIF.h"
 #include "util.h"
 
 class SoundIFImpl
 {
-public:
-  int              driverId;
-  ao_device*       device;
-  ao_sample_format format;
+  public:
+    int driverId;
+    ao_device *device;
+    ao_sample_format format;
 };
 
 SoundIF::SoundIF()
 {
-  ao_initialize();
+    ao_initialize();
 
-  impl_ = new SoundIFImpl;
-  impl_->driverId = ao_default_driver_id();
-  memset(&impl_->format, 0, sizeof(impl_->format));
-  impl_->format.bits = 16;
-  impl_->format.rate = 44100;
-  impl_->format.channels = 2;
-  impl_->format.byte_format = AO_FMT_NATIVE;  
+    impl_ = new SoundIFImpl;
+    impl_->driverId = ao_default_driver_id();
+    memset(&impl_->format, 0, sizeof(impl_->format));
+    impl_->format.bits = 16;
+    impl_->format.rate = 44100;
+    impl_->format.channels = 2;
+    impl_->format.byte_format = AO_FMT_NATIVE;
 }
 
 SoundIF::~SoundIF()
 {
-  if (impl_) delete impl_;
-  impl_ = NULL;
-  end();
-  ao_shutdown();
+    if (impl_)
+        delete impl_;
+    impl_ = NULL;
+    end();
+    ao_shutdown();
 }
 
 // Initializes sound interface.
@@ -59,7 +60,7 @@ SoundIF::~SoundIF()
 //         2: cannot setup sound device
 int SoundIF::init()
 {
-  return 0;
+    return 0;
 }
 
 // Acquires sound device for playing.
@@ -68,12 +69,12 @@ int SoundIF::init()
 
 int SoundIF::start()
 {
-  impl_->device = ao_open_live(impl_->driverId, &(impl_->format), NULL);
+    impl_->device = ao_open_live(impl_->driverId, &(impl_->format), NULL);
 
-  if (!impl_->device)
-    return 1;
+    if (!impl_->device)
+        return 1;
 
-  return 0;
+    return 0;
 }
 
 // Playes given sample buffer.
@@ -81,29 +82,29 @@ int SoundIF::start()
 //         1: error occured
 int SoundIF::play(Sample *sbuf, long nofSamples)
 {
-  if (!impl_->device)
-    return 1;
+    if (!impl_->device)
+        return 1;
 
-  swapSamples(sbuf, nofSamples);
+    swapSamples(sbuf, nofSamples);
 
-  int ret = ao_play(impl_->device, (char*)sbuf, nofSamples * sizeof(Sample));
+    int ret = ao_play(impl_->device, (char *)sbuf, nofSamples * sizeof(Sample));
 
-  if (ret == 0)
-    return 1;
+    if (ret == 0)
+        return 1;
 
-  return 0;
+    return 0;
 }
 
 unsigned long SoundIF::getDelay()
 {
-  // Unfortunately, ao doesn't have a getDelay() API, so let's return
-  // a realistic audio buffering value.
-  return 10000;
+    // Unfortunately, ao doesn't have a getDelay() API, so let's return
+    // a realistic audio buffering value.
+    return 10000;
 }
 
 // Finishs playing, sound device is released.
 void SoundIF::end()
 {
-  ao_close(impl_->device);
-  impl_->device = NULL;
+    ao_close(impl_->device);
+    impl_->device = NULL;
 }

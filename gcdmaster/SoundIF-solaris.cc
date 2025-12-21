@@ -45,42 +45,45 @@
  * Sound interface for Solaris. Thanks to Tobias Oetiker <oetiker@ee.ethz.ch>.
  */
 
-#include <sys/audioio.h>
-#include <stdio.h>
 #include <assert.h>
-#include <string.h>
 #include <errno.h>
-#include <unistd.h>
 #include <fcntl.h>
+#include <stdio.h>
+#include <string.h>
+#include <sys/audioio.h>
 #include <sys/ioctl.h>
 #include <sys/types.h>
-
+#include <unistd.h>
 
 #include "SoundIF.h"
 
 #include "Sample.h"
 #include "util.h"
 
-class SoundIFImpl {
-public:
-  SoundIFImpl() { dspFd_ = -1; }
+class SoundIFImpl
+{
+  public:
+    SoundIFImpl()
+    {
+        dspFd_ = -1;
+    }
 
-  int setupDevice();
-  int openDevice();
-  void closeDevice();
+    int setupDevice();
+    int openDevice();
+    void closeDevice();
 
-  int dspFd_; // sound device
+    int dspFd_; // sound device
 };
 
 SoundIF::SoundIF()
 {
-  impl_ = new SoundIFImpl;
+    impl_ = new SoundIFImpl;
 }
 
 SoundIF::~SoundIF()
 {
-  delete impl_;
-  impl_ = NULL;
+    delete impl_;
+    impl_ = NULL;
 }
 
 // Initializes sound interface.
@@ -89,16 +92,17 @@ SoundIF::~SoundIF()
 //         2: cannot setup sound device
 int SoundIF::init()
 {
-  if (impl_->openDevice() != 0)
-    return 1;
+    if (impl_->openDevice() != 0)
+        return 1;
 
-  if (impl_->setupDevice() != 0) {
+    if (impl_->setupDevice() != 0)
+    {
+        impl_->closeDevice();
+        return 2;
+    }
+
     impl_->closeDevice();
-    return 2;
-  }
-
-  impl_->closeDevice();
-  return 0;
+    return 0;
 }
 
 // Acquires sound device for playing.
@@ -106,18 +110,19 @@ int SoundIF::init()
 //        1: error occured
 int SoundIF::start()
 {
-  if (impl_->dspFd_ >= 0)
-    return 0; // already opened
+    if (impl_->dspFd_ >= 0)
+        return 0; // already opened
 
-  if (impl_->openDevice() != 0)
-    return 1;
+    if (impl_->openDevice() != 0)
+        return 1;
 
-  if (impl_->setupDevice() != 0) {
-    impl_->closeDevice();
-    return 1;
-  }
+    if (impl_->setupDevice() != 0)
+    {
+        impl_->closeDevice();
+        return 1;
+    }
 
-  return 0;
+    return 0;
 }
 
 // Playes given sample buffer.
@@ -125,83 +130,86 @@ int SoundIF::start()
 //         1: error occured
 int SoundIF::play(Sample *sbuf, long nofSamples)
 {
-  if (impl_->dspFd_ < 0)
-    return 1;
+    if (impl_->dspFd_ < 0)
+        return 1;
 
-  long ret;
-  long len = nofSamples * sizeof(Sample);
-  long nwritten = 0;
-  char *buf = (char *)sbuf;
+    long ret;
+    long len = nofSamples * sizeof(Sample);
+    long nwritten = 0;
+    char *buf = (char *)sbuf;
 
-  while (len > 0) {
-    ret = write(impl_->dspFd_, buf + nwritten, len);
+    while (len > 0)
+    {
+        ret = write(impl_->dspFd_, buf + nwritten, len);
 
-    if (ret <= 0)
-      return 1;
+        if (ret <= 0)
+            return 1;
 
-    nwritten += ret;
-    len -= ret;
-  }
+        nwritten += ret;
+        len -= ret;
+    }
 
-  return 0;
+    return 0;
 }
 
 unsigned long SoundIF::getDelay()
 {
-  return 0;
+    return 0;
 }
 
 // Finishs playing, sound device is released.
 void SoundIF::end()
 {
-  impl_->closeDevice();
+    impl_->closeDevice();
 }
-
 
 int SoundIFImpl::openDevice()
 {
-  if (dspFd_ >= 0)
-    return 0; // already open
+    if (dspFd_ >= 0)
+        return 0; // already open
 
-  if ((dspFd_ = open("/dev/audio", O_WRONLY | O_NONBLOCK)) < 0) {
-    log_message(-1, _("Cannot open \"/dev/audio\": %s"), strerror(errno));
-    return 1;
-  }
-  /* Clear the non-blocking flag */
-  (void) fcntl(dspFd_, F_SETFL,
-	       (fcntl(dspFd_, F_GETFL, 0) & ~(O_NDELAY | O_NONBLOCK)));
+    if ((dspFd_ = open("/dev/audio", O_WRONLY | O_NONBLOCK)) < 0)
+    {
+        log_message(-1, _("Cannot open \"/dev/audio\": %s"), strerror(errno));
+        return 1;
+    }
+    /* Clear the non-blocking flag */
+    (void)fcntl(dspFd_, F_SETFL, (fcntl(dspFd_, F_GETFL, 0) & ~(O_NDELAY | O_NONBLOCK)));
 
-  return 0;
+    return 0;
 }
-    
+
 void SoundIFImpl::closeDevice()
 {
-  if (dspFd_ >= 0) {
-    close(dspFd_);
-    dspFd_ = -1;
-  }
+    if (dspFd_ >= 0)
+    {
+        close(dspFd_);
+        dspFd_ = -1;
+    }
 }
 
 int SoundIFImpl::setupDevice()
 {
-  struct audio_info auinf;
+    struct audio_info auinf;
 
-  if (dspFd_ < 0)
-    return 1;
-  
-  if (ioctl(dspFd_, AUDIO_GETINFO, &auinf) < 0) {
-    log_message(-1, _("Cannot get state of audio interface: %s"), strerror(errno));
-    return 1;
-  }
-  auinf.play.sample_rate=44100;
-  auinf.play.channels=2;
-  auinf.play.precision=16;
-  auinf.play.encoding=AUDIO_ENCODING_LINEAR;
+    if (dspFd_ < 0)
+        return 1;
 
-  if (ioctl(dspFd_, AUDIO_SETINFO, &auinf) < 0) {
-    log_message(-1, _("Cannot setup audio interface: %s"), strerror(errno));
-    return 1;
-  }
+    if (ioctl(dspFd_, AUDIO_GETINFO, &auinf) < 0)
+    {
+        log_message(-1, _("Cannot get state of audio interface: %s"), strerror(errno));
+        return 1;
+    }
+    auinf.play.sample_rate = 44100;
+    auinf.play.channels = 2;
+    auinf.play.precision = 16;
+    auinf.play.encoding = AUDIO_ENCODING_LINEAR;
 
-  return 0;
+    if (ioctl(dspFd_, AUDIO_SETINFO, &auinf) < 0)
+    {
+        log_message(-1, _("Cannot setup audio interface: %s"), strerror(errno));
+        return 1;
+    }
+
+    return 0;
 }

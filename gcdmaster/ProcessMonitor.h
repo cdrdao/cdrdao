@@ -42,50 +42,51 @@
 #ifndef __PROCESS_MONITOR_H__
 #define __PROCESS_MONITOR_H__
 
-class Process {
-public:
-  Process(int pid, int commFd);
-  ~Process();
+class Process
+{
+  public:
+    Process(int pid, int commFd);
+    ~Process();
 
-  int pid() const;
-  int commFd() const;
+    int pid() const;
+    int commFd() const;
 
-  int exited() const;
-  int exitStatus() const;
+    int exited() const;
+    int exitStatus() const;
 
-private:
-  friend class ProcessMonitor;
+  private:
+    friend class ProcessMonitor;
 
-  int pid_;
-  int commFd_;
+    int pid_;
+    int commFd_;
 
-  int exited_;
-  int exitStatus_;
+    int exited_;
+    int exitStatus_;
 
-  Process *next_;
+    Process *next_;
 };
 
-class ProcessMonitor {
-public:
-  ProcessMonitor();
-  ~ProcessMonitor();
+class ProcessMonitor
+{
+  public:
+    ProcessMonitor();
+    ~ProcessMonitor();
 
-  int statusChanged();
+    int statusChanged();
 
-  Process *start(const char *, const char **args, int pipeFdArgNum);
-  void stop(Process *);
+    Process *start(const char *, const char **args, int pipeFdArgNum);
+    void stop(Process *);
 
-  void remove(Process *);
+    void remove(Process *);
 
-  void handleSigChld();
+    void handleSigChld();
 
-private:
-  int statusChanged_;
-  Process *processes_;
+  private:
+    int statusChanged_;
+    Process *processes_;
 
-  Process *find(Process *, Process **pred);
-  Process *find(int pid);
-
+    Process *find(Process *, Process **pred);
+    Process *find(int pid);
 };
 
 #endif

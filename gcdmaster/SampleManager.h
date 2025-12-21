@@ -27,28 +27,26 @@ class TrackDataScrap;
 
 class SampleManager
 {
-public:
-  SampleManager(unsigned long blocking);
-  ~SampleManager();
+  public:
+    SampleManager(unsigned long blocking);
+    ~SampleManager();
 
-  void setTocEdit(TocEdit *);
+    void setTocEdit(TocEdit *);
 
-  unsigned long blocking() const;
+    unsigned long blocking() const;
 
-  int scanToc(unsigned long start, unsigned long end, bool blocking = false);
+    int scanToc(unsigned long start, unsigned long end, bool blocking = false);
 
-  void getPeak(unsigned long start, unsigned long end,
-	       short *leftNeg, short *leftPos,
-	       short *rightNeg, short *rightPos);
+    void getPeak(unsigned long start, unsigned long end, short *leftNeg, short *leftPos, short *rightNeg,
+                 short *rightPos);
 
-  void removeSamples(unsigned long start, unsigned long end, TrackDataScrap *);
-  void insertSamples(unsigned long pos, unsigned long len,
-		     const TrackDataScrap *);
+    void removeSamples(unsigned long start, unsigned long end, TrackDataScrap *);
+    void insertSamples(unsigned long pos, unsigned long len, const TrackDataScrap *);
 
-  int  readSamples();
+    int readSamples();
 
-private:
-  class SampleManagerImpl *impl_;
+  private:
+    class SampleManagerImpl *impl_;
 };
 
 #endif

@@ -20,30 +20,29 @@
 #ifndef __GCDMASTER_H__
 #define __GCDMASTER_H__
 
-#include <gtkmm.h>
 #include <gtk/gtk.h>
+#include <gtkmm.h>
 
 #include <list>
 
 class ProjectChooser;
 class BlankCDDialog;
-#include "Project.h"
 #include "BlankCDDialog.h"
+#include "Project.h"
 
 class GCDMaster : public Gtk::ApplicationWindow
 {
-public:
+  public:
     GCDMaster();
 
     bool closeProject();
     void closeChooser();
-    bool on_delete_event(GdkEventAny* e);
-    bool openNewProject(const std::string&);
+    bool on_delete_event(GdkEventAny *e);
+    bool openNewProject(const std::string &);
     void openProject();
     void newChooserWindow();
     void newAudioCDProject2();
-    void newAudioCDProject(const char *name, TocEdit *tocEdit,
-                           const char* tracks = NULL);
+    void newAudioCDProject(const char *name, TocEdit *tocEdit, const char *tracks = NULL);
     void newDuplicateCDProject();
     void newDumpCDProject();
 
@@ -59,27 +58,27 @@ public:
 
     static std::list<GCDMaster *> apps;
 
-private:
-    Project* project_;
-    ProjectChooser* chooser_;
+  private:
+    Project *project_;
+    ProjectChooser *chooser_;
     gint project_number;
 
     BlankCDDialog blankCDDialog_;
 
     Gtk::Box box_;
     Gtk::Notebook notebook_;
-    Gtk::HBox* container_;
+    Gtk::HBox *container_;
 
     Glib::RefPtr<Gtk::UIManager> m_refUIManager;
     Glib::RefPtr<Gtk::ActionGroup> m_refActionGroup;
 
-    Gtk::Statusbar* statusbar_;
-    Gtk::ProgressBar* progressbar_;
-    Gtk::Spinner* spinner_;
-    Gtk::Button* progressButton_;
-    Gtk::AboutDialog* about_;
+    Gtk::Statusbar *statusbar_;
+    Gtk::ProgressBar *progressbar_;
+    Gtk::Spinner *spinner_;
+    Gtk::Button *progressButton_;
+    Gtk::AboutDialog *about_;
 
-    Gtk::FileChooserDialog* readFileSelector_;
+    Gtk::FileChooserDialog *readFileSelector_;
     void createMenus();
     void createStatusbar();
     void aboutDialog();
