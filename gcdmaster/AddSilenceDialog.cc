@@ -102,8 +102,7 @@ void AddSilenceDialog::mode(Mode m)
 {
     mode_ = m;
 
-    switch (mode_)
-    {
+    switch (mode_) {
     case M_APPEND:
         set_title(_("Append Silence"));
         break;
@@ -132,8 +131,7 @@ void AddSilenceDialog::update(unsigned long level, TocEditView *view)
     if (!active_)
         return;
 
-    if (view == NULL)
-    {
+    if (view == NULL) {
         applyButton_->set_sensitive(false);
         tocEditView_ = NULL;
         return;
@@ -146,8 +144,7 @@ void AddSilenceDialog::update(unsigned long level, TocEditView *view)
         s += "(*)";
     set_title(s);
 
-    if ((level & UPD_EDITABLE_STATE) || tocEditView_ == NULL)
-    {
+    if ((level & UPD_EDITABLE_STATE) || tocEditView_ == NULL) {
         applyButton_->set_sensitive(view->tocEdit()->editable() ? true : false);
     }
 
@@ -189,8 +186,7 @@ void AddSilenceDialog::applyAction()
         return;
 
     const char *s = minutes_.get_text().c_str();
-    if (s != NULL && *s != 0)
-    {
+    if (s != NULL && *s != 0) {
         val = atol(s);
         length += val * 60 * 75 * SAMPLES_PER_BLOCK;
         snprintf(buf, sizeof(buf), "%ld", val);
@@ -198,8 +194,7 @@ void AddSilenceDialog::applyAction()
     }
 
     s = seconds_.get_text().c_str();
-    if (s != NULL && *s != 0)
-    {
+    if (s != NULL && *s != 0) {
         val = atol(s);
         length += val * 75 * SAMPLES_PER_BLOCK;
         snprintf(buf, sizeof(buf), "%ld", val);
@@ -207,8 +202,7 @@ void AddSilenceDialog::applyAction()
     }
 
     s = frames_.get_text().c_str();
-    if (s != NULL && *s != 0)
-    {
+    if (s != NULL && *s != 0) {
         val = atol(s);
         length += val * SAMPLES_PER_BLOCK;
         snprintf(buf, sizeof(buf), "%ld", val);
@@ -216,20 +210,17 @@ void AddSilenceDialog::applyAction()
     }
 
     s = samples_.get_text().c_str();
-    if (s != NULL && *s != 0)
-    {
+    if (s != NULL && *s != 0) {
         val = atol(s);
         length += val;
         snprintf(buf, sizeof(buf), "%ld", val);
         samples_.set_text(buf);
     }
 
-    if (length > 0)
-    {
+    if (length > 0) {
         unsigned long pos;
 
-        switch (mode_)
-        {
+        switch (mode_) {
         case M_APPEND:
             tocEdit->appendSilence(length);
             update(UPD_TOC_DATA | UPD_TRACK_DATA | UPD_SAMPLE_SEL, tocEditView_);
@@ -238,10 +229,8 @@ void AddSilenceDialog::applyAction()
             signal_tocModified(UPD_SAMPLES);
             break;
         case M_INSERT:
-            if (tocEditView_->sampleMarker(&pos))
-            {
-                if (tocEdit->insertSilence(length, pos) == 0)
-                {
+            if (tocEditView_->sampleMarker(&pos)) {
+                if (tocEdit->insertSilence(length, pos) == 0) {
                     tocEditView_->sampleSelect(pos, pos + length - 1);
                     update(UPD_TOC_DATA | UPD_TRACK_DATA, tocEditView_);
                     signal_tocModified(UPD_TOC_DATA | UPD_TRACK_DATA);

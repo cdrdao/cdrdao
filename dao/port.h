@@ -28,7 +28,7 @@ void mSleep(long milliSeconds);
 void installSignalHandler(int sig, SignalHandler);
 void blockSignal(int sig);
 void unblockSignal(int sig);
-int  setRealTimeScheduling(int priority);
+int setRealTimeScheduling(int priority);
 bool giveUpRootPrivileges();
 
 #endif

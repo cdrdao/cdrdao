@@ -49,24 +49,24 @@
 #define __REMOTE_H__
 
 #define PGSMSG_MIN PGSMSG_RCD_ANALYZING
-#define PGSMSG_RCD_ANALYZING   1
-#define PGSMSG_RCD_EXTRACTING  2 
-#define PGSMSG_WCD_LEADIN      3
-#define PGSMSG_WCD_DATA        4
-#define PGSMSG_WCD_LEADOUT     5
-#define PGSMSG_BLK             6
+#define PGSMSG_RCD_ANALYZING 1
+#define PGSMSG_RCD_EXTRACTING 2
+#define PGSMSG_WCD_LEADIN 3
+#define PGSMSG_WCD_DATA 4
+#define PGSMSG_WCD_LEADOUT 5
+#define PGSMSG_BLK 6
 #define PGSMSG_MAX PGSMSG_BLK
 
 #define PSGMSG_MINSIZE 24
 
 struct ProgressMsg {
-  int status;         // see PGSMSG_* constants
-  int totalTracks;    // total number of tracks
-  int track;          // actually written track
-  int trackProgress;  // progress for current track 0..1000
-  int totalProgress;  // total writing progress 0..1000
-  int bufferFillRate; // buffer fill rate 0..100
-  int writerFillRate; // device write buffer fill rate 0..100
+    int status;         // see PGSMSG_* constants
+    int totalTracks;    // total number of tracks
+    int track;          // actually written track
+    int trackProgress;  // progress for current track 0..1000
+    int totalProgress;  // total writing progress 0..1000
+    int bufferFillRate; // buffer fill rate 0..100
+    int writerFillRate; // device write buffer fill rate 0..100
 };
 
 #endif

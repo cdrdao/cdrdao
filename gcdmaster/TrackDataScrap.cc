@@ -59,8 +59,8 @@ const TrackDataList *TrackDataScrap::trackDataList() const
     return (const TrackDataList *)list_;
 }
 
-void TrackDataScrap::setPeaks(long blocks, short *leftNegSamples, short *leftPosSamples, short *rightNegSamples,
-                              short *rightPosSamples)
+void TrackDataScrap::setPeaks(long blocks, short *leftNegSamples, short *leftPosSamples,
+                              short *rightNegSamples, short *rightPosSamples)
 {
     long i;
 
@@ -71,23 +71,19 @@ void TrackDataScrap::setPeaks(long blocks, short *leftNegSamples, short *leftPos
     delete[] rightNegSamples_;
     delete[] rightPosSamples_;
 
-    if (blocks > 0)
-    {
+    if (blocks > 0) {
         leftNegSamples_ = new short[blocks];
         leftPosSamples_ = new short[blocks];
         rightNegSamples_ = new short[blocks];
         rightPosSamples_ = new short[blocks];
 
-        for (i = 0; i < blocks; i++)
-        {
+        for (i = 0; i < blocks; i++) {
             leftNegSamples_[i] = leftNegSamples[i];
             leftPosSamples_[i] = leftPosSamples[i];
             rightNegSamples_[i] = rightNegSamples[i];
             rightPosSamples_[i] = rightPosSamples[i];
         }
-    }
-    else
-    {
+    } else {
         leftNegSamples_ = NULL;
         leftPosSamples_ = NULL;
         rightNegSamples_ = NULL;
@@ -95,8 +91,8 @@ void TrackDataScrap::setPeaks(long blocks, short *leftNegSamples, short *leftPos
     }
 }
 
-void TrackDataScrap::getPeaks(long blocks, short *leftNegSamples, short *leftPosSamples, short *rightNegSamples,
-                              short *rightPosSamples) const
+void TrackDataScrap::getPeaks(long blocks, short *leftNegSamples, short *leftPosSamples,
+                              short *rightNegSamples, short *rightPosSamples) const
 {
     long n, i;
 
@@ -105,8 +101,7 @@ void TrackDataScrap::getPeaks(long blocks, short *leftNegSamples, short *leftPos
 
     n = (blocks_ < blocks) ? blocks_ : blocks;
 
-    for (i = 0; i < n; i++)
-    {
+    for (i = 0; i < n; i++) {
         leftNegSamples[i] = leftNegSamples_[i];
         leftPosSamples[i] = leftPosSamples_[i];
         rightNegSamples[i] = rightNegSamples_[i];

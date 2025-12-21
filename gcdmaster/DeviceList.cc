@@ -67,8 +67,7 @@ DeviceList::DeviceList(CdDevice::DeviceType filterType)
     listHBox->pack_start(*hbox, TRUE, TRUE, 5);
     listVBox->pack_start(*listHBox, TRUE, TRUE, 5);
 
-    switch (filterType_)
-    {
+    switch (filterType_) {
     case CdDevice::CD_ROM:
         set_label(_(" Available Reader Devices "));
         break;
@@ -87,11 +86,9 @@ std::string DeviceList::selection()
 {
     Gtk::TreeIter i = list_.get_selection()->get_selected();
 
-    if (i)
-    {
+    if (i) {
         return ((std::string)((*i)[listColumns_.dev])).c_str();
-    }
-    else
+    } else
         return std::string();
 }
 
@@ -115,34 +112,30 @@ void DeviceList::import()
 
     listModel_->clear();
 
-    for (drun = CdDevice::first(); drun != NULL; drun = CdDevice::next(drun))
-    {
-        switch (filterType_)
-        {
+    for (drun = CdDevice::first(); drun != NULL; drun = CdDevice::next(drun)) {
+        switch (filterType_) {
         case CdDevice::CD_ROM:
-            if (drun->driverId() > 0 && (drun->deviceType() == CdDevice::CD_ROM ||
-                                         drun->deviceType() == CdDevice::CD_R || drun->deviceType() == CdDevice::CD_RW))
-            {
+            if (drun->driverId() > 0 &&
+                (drun->deviceType() == CdDevice::CD_ROM || drun->deviceType() == CdDevice::CD_R ||
+                 drun->deviceType() == CdDevice::CD_RW)) {
                 appendTableEntry(drun);
             }
             break;
         case CdDevice::CD_R:
-            if (drun->driverId() > 0 && (drun->deviceType() == CdDevice::CD_R || drun->deviceType() == CdDevice::CD_RW))
-            {
+            if (drun->driverId() > 0 &&
+                (drun->deviceType() == CdDevice::CD_R || drun->deviceType() == CdDevice::CD_RW)) {
                 appendTableEntry(drun);
             }
             break;
         case CdDevice::CD_RW:
-            if (drun->driverId() > 0 && (drun->deviceType() == CdDevice::CD_RW))
-            {
+            if (drun->driverId() > 0 && (drun->deviceType() == CdDevice::CD_RW)) {
                 appendTableEntry(drun);
             }
             break;
         }
     }
 
-    if (listModel_->children().size() > 0)
-    {
+    if (listModel_->children().size() > 0) {
         list_.columns_autosize();
         list_.get_selection()->select(Gtk::TreeModel::Path((unsigned)1));
     }
@@ -154,13 +147,11 @@ void DeviceList::importStatus()
     CdDevice *cddev;
 
     Gtk::TreeNodeChildren ch = listModel_->children();
-    for (unsigned i = 0; i < ch.size(); i++)
-    {
+    for (unsigned i = 0; i < ch.size(); i++) {
         Gtk::TreeRow row = ch[i];
         data = row[listColumns_.dev];
 
-        if ((cddev = CdDevice::find(data.c_str())))
-        {
+        if ((cddev = CdDevice::find(data.c_str()))) {
             if (cddev->status() == CdDevice::DEV_READY)
                 list_.get_column(i)->set_clickable(true);
             else
@@ -178,8 +169,7 @@ void DeviceList::selectOne()
     if (list_.get_selection()->count_selected_rows() > 0)
         return;
 
-    for (unsigned i = 0; i < listModel_->children().size(); i++)
-    {
+    for (unsigned i = 0; i < listModel_->children().size(); i++) {
         list_.get_selection()->select(Gtk::TreePath(1, i));
         if (list_.get_selection()->count_selected_rows() > 0)
             break;
@@ -191,25 +181,21 @@ void DeviceList::selectOneBut(const char *targetData)
     if (!targetData)
         return selectOne();
 
-    if (list_.get_selection()->count_selected_rows() == 0)
-    {
+    if (list_.get_selection()->count_selected_rows() == 0) {
 
         Gtk::TreeNodeChildren ch = listModel_->children();
 
-        for (unsigned i = 0; i < ch.size(); i++)
-        {
+        for (unsigned i = 0; i < ch.size(); i++) {
 
             std::string sourceData = (ch[i])[listColumns_.dev];
 
-            if (sourceData != targetData)
-            {
+            if (sourceData != targetData) {
                 list_.get_selection()->select(ch[i]);
                 break;
             }
         }
 
-        if (list_.get_selection()->count_selected_rows() == 0)
-        {
+        if (list_.get_selection()->count_selected_rows() == 0) {
             selectOne();
         }
     }

@@ -19,19 +19,19 @@
  */
 
 #include <config.h>
+#include <ctype.h>
+#include <errno.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ctype.h>
 #include <unistd.h>
-#include <errno.h>
-#include <stdarg.h>
 
 #include "Cue2Toc.h"
 #include "TrackData.h"
 
-#define TCBUFLEN 9	/* Buffer length for timecode strings (HH:MM:SS) */
-#define MAXCMDLEN 10	/* Longest command (currently SONGWRITER) */
+#define TCBUFLEN 9   /* Buffer length for timecode strings (HH:MM:SS) */
+#define MAXCMDLEN 10 /* Longest command (currently SONGWRITER) */
 
 long tc2fr(const char *);
 int fr2tc(char *, long fr);
@@ -43,11 +43,10 @@ int fr2tc(char *, long fr);
  * delimiting characters it must be enclosed in double quotes.
  */
 
-static const char token_delimiter[] = { ' ', '\t', '\n', '\r' };
+static const char token_delimiter[] = {' ', '\t', '\n', '\r'};
 
 /* Return true if c is one of token_delimiter */
-static int
-isdelim(int c)
+static int isdelim(int c)
 {
     int i;
     int n = sizeof(token_delimiter);
@@ -59,59 +58,82 @@ isdelim(int c)
 }
 
 /* Used as return type for get_command and index into cmds */
-enum command { REM, CATALOG, CDTEXTFILE,
-               FILECMD, PERFORMER, SONGWRITER, TITLE, TRACK, FLAGS, DCP,
-               FOURCH, PRE, SCMS, ISRC, PREGAP, INDEX, POSTGAP, BINARY,
-               MOTOROLA, AIFF, WAVE, MP3, OGG, UNKNOWN, END };
+enum command {
+    REM,
+    CATALOG,
+    CDTEXTFILE,
+    FILECMD,
+    PERFORMER,
+    SONGWRITER,
+    TITLE,
+    TRACK,
+    FLAGS,
+    DCP,
+    FOURCH,
+    PRE,
+    SCMS,
+    ISRC,
+    PREGAP,
+    INDEX,
+    POSTGAP,
+    BINARY,
+    MOTOROLA,
+    AIFF,
+    WAVE,
+    MP3,
+    OGG,
+    UNKNOWN,
+    END
+};
 
 /* Except the last two these are the valid CUE commands */
-char cmds[][MAXCMDLEN + 1] = { "REM", "CATALOG", "CDTEXTFILE",
-                               "FILE", "PERFORMER", "SONGWRITER", "TITLE", "TRACK", "FLAGS", "DCP",
-                               "4CH", "PRE", "SCMS", "ISRC", "PREGAP", "INDEX", "POSTGAP", "BINARY",
-                               "MOTOROLA", "AIFF", "WAVE", "MP3", "OGG", "UNKNOWN", "END" };
+char cmds[][MAXCMDLEN + 1] = {"REM",        "CATALOG", "CDTEXTFILE", "FILE",     "PERFORMER",
+                              "SONGWRITER", "TITLE",   "TRACK",      "FLAGS",    "DCP",
+                              "4CH",        "PRE",     "SCMS",       "ISRC",     "PREGAP",
+                              "INDEX",      "POSTGAP", "BINARY",     "MOTOROLA", "AIFF",
+                              "WAVE",       "MP3",     "OGG",        "UNKNOWN",  "END"};
 
 /* These are for error messages */
 static const char *fname = "stdin";
-static long line;		/* current line number */
-static long tokenstart;		/* line where last token started */
+static long line;       /* current line number */
+static long tokenstart; /* line where last token started */
 
 /* To generate meaningful error messages in check_once */
-enum scope { CUESHEET, GLOBAL, ONETRACK };
+enum scope {
+    CUESHEET,
+    GLOBAL,
+    ONETRACK
+};
 
 /* Fatal error while processing input file */
-static void
-err_fail(const char *s)
+static void err_fail(const char *s)
 {
     fprintf(stderr, "%s:%ld: %s\n", fname, tokenstart, s);
     exit(EXIT_FAILURE);
 }
 
 /* Fatal error */
-static void
-err_fail2(const char *s)
+static void err_fail2(const char *s)
 {
     fprintf(stderr, "%s\n", s);
     exit(EXIT_FAILURE);
 }
 
 /* EOF while expecting more */
-static void
-err_earlyend()
+static void err_earlyend()
 {
     fprintf(stderr, "%s:%ld: Premature end of file\n", fname, line);
     exit(EXIT_FAILURE);
 }
 
 /* Warning. Keep on going. */
-static void
-err_warn(const char *s)
+static void err_warn(const char *s)
 {
     fprintf(stderr, "%s:%ld: Warning, %s\n", fname, tokenstart, s);
 }
 
 /* Get next command from file */
-static enum command
-get_command(FILE *f)
+static enum command get_command(FILE *f)
 {
     int c;
     char buf[MAXCMDLEN + 1];
@@ -126,45 +148,72 @@ get_command(FILE *f)
 
     if (c == EOF)
         return END;
-	
+
     tokenstart = line;
 
     /* get command, transform to upper case */
     do {
         buf[i++] = toupper(c);
         c = getc(f);
-    } while (!isdelim(c) && c!= EOF && i < MAXCMDLEN);
+    } while (!isdelim(c) && c != EOF && i < MAXCMDLEN);
 
-    if (!isdelim(c)) return UNKNOWN; /* command longer than MAXCMDLEN */
-    if (c == EOF) return END;
-    if (c == '\n') line++;
+    if (!isdelim(c))
+        return UNKNOWN; /* command longer than MAXCMDLEN */
+    if (c == EOF)
+        return END;
+    if (c == '\n')
+        line++;
 
     buf[i] = '\0';
 
-    if (strcmp(buf, cmds[REM]) == 0) return REM;
-    else if (strcmp(buf, cmds[CATALOG]) == 0) return CATALOG;
-    else if (strcmp(buf, cmds[CDTEXTFILE]) == 0) return CDTEXTFILE;
-    else if (strcmp(buf, cmds[FILECMD]) == 0) return FILECMD;
-    else if (strcmp(buf, cmds[PERFORMER]) == 0) return PERFORMER;
-    else if (strcmp(buf, cmds[SONGWRITER]) == 0) return SONGWRITER;
-    else if (strcmp(buf, cmds[TITLE]) == 0) return TITLE;
-    else if (strcmp(buf, cmds[TRACK]) == 0) return TRACK;
-    else if (strcmp(buf, cmds[FLAGS]) == 0) return FLAGS;
-    else if (strcmp(buf, cmds[DCP]) == 0) return DCP;
-    else if (strcmp(buf, cmds[FOURCH]) == 0) return FOURCH;
-    else if (strcmp(buf, cmds[PRE]) == 0) return PRE;
-    else if (strcmp(buf, cmds[SCMS]) == 0) return SCMS;
-    else if (strcmp(buf, cmds[ISRC]) == 0) return ISRC;
-    else if (strcmp(buf, cmds[PREGAP]) == 0) return PREGAP;
-    else if (strcmp(buf, cmds[INDEX]) == 0) return INDEX;
-    else if (strcmp(buf, cmds[POSTGAP]) == 0) return POSTGAP;
-    else if (strcmp(buf, cmds[BINARY]) == 0) return BINARY;
-    else if (strcmp(buf, cmds[MOTOROLA]) == 0) return MOTOROLA;
-    else if (strcmp(buf, cmds[AIFF]) == 0) return AIFF;
-    else if (strcmp(buf, cmds[WAVE]) == 0) return WAVE;
-    else if (strcmp(buf, cmds[MP3]) == 0) return MP3;
-    else if (strcmp(buf, cmds[OGG]) == 0) return OGG;
-    else return UNKNOWN;
+    if (strcmp(buf, cmds[REM]) == 0)
+        return REM;
+    else if (strcmp(buf, cmds[CATALOG]) == 0)
+        return CATALOG;
+    else if (strcmp(buf, cmds[CDTEXTFILE]) == 0)
+        return CDTEXTFILE;
+    else if (strcmp(buf, cmds[FILECMD]) == 0)
+        return FILECMD;
+    else if (strcmp(buf, cmds[PERFORMER]) == 0)
+        return PERFORMER;
+    else if (strcmp(buf, cmds[SONGWRITER]) == 0)
+        return SONGWRITER;
+    else if (strcmp(buf, cmds[TITLE]) == 0)
+        return TITLE;
+    else if (strcmp(buf, cmds[TRACK]) == 0)
+        return TRACK;
+    else if (strcmp(buf, cmds[FLAGS]) == 0)
+        return FLAGS;
+    else if (strcmp(buf, cmds[DCP]) == 0)
+        return DCP;
+    else if (strcmp(buf, cmds[FOURCH]) == 0)
+        return FOURCH;
+    else if (strcmp(buf, cmds[PRE]) == 0)
+        return PRE;
+    else if (strcmp(buf, cmds[SCMS]) == 0)
+        return SCMS;
+    else if (strcmp(buf, cmds[ISRC]) == 0)
+        return ISRC;
+    else if (strcmp(buf, cmds[PREGAP]) == 0)
+        return PREGAP;
+    else if (strcmp(buf, cmds[INDEX]) == 0)
+        return INDEX;
+    else if (strcmp(buf, cmds[POSTGAP]) == 0)
+        return POSTGAP;
+    else if (strcmp(buf, cmds[BINARY]) == 0)
+        return BINARY;
+    else if (strcmp(buf, cmds[MOTOROLA]) == 0)
+        return MOTOROLA;
+    else if (strcmp(buf, cmds[AIFF]) == 0)
+        return AIFF;
+    else if (strcmp(buf, cmds[WAVE]) == 0)
+        return WAVE;
+    else if (strcmp(buf, cmds[MP3]) == 0)
+        return MP3;
+    else if (strcmp(buf, cmds[OGG]) == 0)
+        return OGG;
+    else
+        return UNKNOWN;
 }
 
 /* Skip leading token delimiters then read at most n chars from f into s.
@@ -172,8 +221,7 @@ get_command(FILE *f)
  * really n + 1. Return number of characters written to s. The only case to
  * return zero is on EOF before any character was read.
  * Exit the program indicating failure if string is longer than n. */
-static size_t
-get_string(FILE *f, char *s, size_t n)
+static size_t get_string(FILE *f, char *s, size_t n)
 {
     int c;
     size_t i = 0;
@@ -192,11 +240,13 @@ get_string(FILE *f, char *s, size_t n)
 
     if (c == '\"') {
         c = getc(f);
-        if (c == '\n') line++;
+        if (c == '\n')
+            line++;
         while (c != '\"' && c != EOF && i < n) {
             s[i++] = c;
             c = getc(f);
-            if (c == '\n') line++;
+            if (c == '\n')
+                line++;
         }
         if (i == n && c != '\"' && c != EOF)
             err_fail("String too long");
@@ -208,8 +258,10 @@ get_string(FILE *f, char *s, size_t n)
         if (i == n && !isdelim(c) && c != EOF)
             err_fail("String too long");
     }
-    if (i == 0) err_fail("Empty string");
-    if (c == '\n') line++;
+    if (i == 0)
+        err_fail("Empty string");
+    if (c == '\n')
+        line++;
     s[i] = '\0';
 
     return i;
@@ -218,33 +270,37 @@ get_string(FILE *f, char *s, size_t n)
 /* Return track mode */
 static TrackData::Mode get_track_mode(FILE *f)
 {
-  char buf[] = "MODE1/2048";
-  char *pbuf = buf;
+    char buf[] = "MODE1/2048";
+    char *pbuf = buf;
 
-  if (get_string(f, buf, sizeof(buf) - 1) < 1)
-    err_fail("Illegal track mode");
+    if (get_string(f, buf, sizeof(buf) - 1) < 1)
+        err_fail("Illegal track mode");
 
-  /* transform to upper case */
-  while (*pbuf) {
-    *pbuf = toupper(*pbuf);
-    pbuf++;
-  }
+    /* transform to upper case */
+    while (*pbuf) {
+        *pbuf = toupper(*pbuf);
+        pbuf++;
+    }
 
-  if (strcmp(buf, "AUDIO") == 0) return TrackData::AUDIO;
-  if (strcmp(buf, "MODE1/2048") == 0) return TrackData::MODE1;
-  if (strcmp(buf, "MODE1/2352") == 0) return TrackData::MODE1_RAW;
-  if (strcmp(buf, "MODE2/2336") == 0) return TrackData::MODE2;
-  if (strcmp(buf, "MODE2/2352") == 0) return TrackData::MODE2_RAW;
+    if (strcmp(buf, "AUDIO") == 0)
+        return TrackData::AUDIO;
+    if (strcmp(buf, "MODE1/2048") == 0)
+        return TrackData::MODE1;
+    if (strcmp(buf, "MODE1/2352") == 0)
+        return TrackData::MODE1_RAW;
+    if (strcmp(buf, "MODE2/2336") == 0)
+        return TrackData::MODE2;
+    if (strcmp(buf, "MODE2/2352") == 0)
+        return TrackData::MODE2_RAW;
 
-  err_fail("Unsupported track mode");
-  return TrackData::AUDIO;
+    err_fail("Unsupported track mode");
+    return TrackData::AUDIO;
 }
 
 static void check_once(enum command cmd, char *s, enum scope sc);
 
 /* Read at most CDTEXTLEN chars into s */
-static void
-get_cdtext(FILE *f, enum command cmd, char *s, enum scope sc)
+static void get_cdtext(FILE *f, enum command cmd, char *s, enum scope sc)
 {
     check_once(cmd, s, sc);
     if (get_string(f, s, CDTEXTLEN) < 1)
@@ -255,35 +311,38 @@ get_cdtext(FILE *f, enum command cmd, char *s, enum scope sc)
    is not Null the cmd has already been seen in input. In this case print
    a message end exit program indicating failure. The only purpose of the
    arguments cmd and sc is to print meaningful error messages. */
-static void
-check_once(enum command cmd, char *s, enum scope sc)
+static void check_once(enum command cmd, char *s, enum scope sc)
 {
     if (s[0] == '\0')
         return;
     fprintf(stderr, "%s:%ld: %s allowed only once", fname, line, cmds[cmd]);
     switch (sc) {
-    case CUESHEET:	fprintf(stderr, "\n"); break;
-    case GLOBAL:	fprintf(stderr, " in global section\n"); break;
-    case ONETRACK:	fprintf(stderr, " per track\n"); break;
+    case CUESHEET:
+        fprintf(stderr, "\n");
+        break;
+    case GLOBAL:
+        fprintf(stderr, " in global section\n");
+        break;
+    case ONETRACK:
+        fprintf(stderr, " per track\n");
+        break;
     }
     exit(EXIT_FAILURE);
 }
 
 /* Allocate, initialize and return new track */
-static struct trackspec*
-new_track(void)
+static struct trackspec *new_track(void)
 {
     struct trackspec *track;
     int i;
 
-    if ((track = (struct trackspec*) malloc(sizeof(struct trackspec)))
-        == NULL)
+    if ((track = (struct trackspec *)malloc(sizeof(struct trackspec))) == NULL)
         err_fail("Memory allocation error in new_track()");
 
-    track->copy = track->pre_emphasis = track->four_channel_audio 
-        = track->pregap_data_from_file = 0;
-    track->isrc[0] = track->title[0] = track->performer[0]
-        = track->songwriter[0] = track->filename[0] = '\0';
+    track->copy = track->pre_emphasis = track->four_channel_audio = track->pregap_data_from_file =
+        0;
+    track->isrc[0] = track->title[0] = track->performer[0] = track->songwriter[0] =
+        track->filename[0] = '\0';
     track->pregap = track->start = track->postgap = -1;
 
     for (i = 0; i < NUM_OF_INDEXES; i++)
@@ -294,8 +353,7 @@ new_track(void)
 }
 
 /* Read the cuefile and return a pointer to the cuesheet */
-struct cuesheet*
-read_cue(const char *cuefile, const char *wavefile)
+struct cuesheet *read_cue(const char *cuefile, const char *wavefile)
 {
     FILE *f;
     enum command cmd;
@@ -305,19 +363,21 @@ read_cue(const char *cuefile, const char *wavefile)
     int c;
     char file[FILENAMELEN + 1];
     char timecode_buffer[TCBUFLEN];
-    char devnull[FILENAMELEN + 1];	/* just for eating CDTEXTFILE arg */
+    char devnull[FILENAMELEN + 1]; /* just for eating CDTEXTFILE arg */
 
     if (NULL == cuefile) {
         f = stdin;
     } else if (NULL == (f = fopen(cuefile, "r"))) {
-        fprintf(stderr, "Could not open file \"%s\" for "
-                "reading: %s\n", cuefile, strerror(errno));
+        fprintf(stderr,
+                "Could not open file \"%s\" for "
+                "reading: %s\n",
+                cuefile, strerror(errno));
         exit(EXIT_FAILURE);
     }
     if (cuefile)
         fname = cuefile;
 
-    if ((cs = (struct cuesheet*) malloc(sizeof(struct cuesheet))) == NULL)
+    if ((cs = (struct cuesheet *)malloc(sizeof(struct cuesheet))) == NULL)
         err_fail("Memory allocation error in read_cue()");
 
     cs->catalog[0] = '\0';
@@ -393,7 +453,6 @@ read_cue(const char *cuefile, const char *wavefile)
             err_fail("Command not allowed in global section");
             break;
         }
-
     }
 
     /* leaving global section, entering track specifications */
@@ -401,7 +460,7 @@ read_cue(const char *cuefile, const char *wavefile)
         err_fail("TRACK without previous FILE");
 
     while (cmd != END) {
-        switch(cmd) {
+        switch (cmd) {
         case UNKNOWN:
             err_fail("Unknown command");
         case REM:
@@ -410,7 +469,7 @@ read_cue(const char *cuefile, const char *wavefile)
                 c = getc(f);
             break;
         case TRACK:
-            if (track == NULL)	/* first track */
+            if (track == NULL) /* first track */
                 cs->tracklist = track = new_track();
             else {
                 track = track->next = new_track();
@@ -419,18 +478,21 @@ read_cue(const char *cuefile, const char *wavefile)
             /* the CUE format is "TRACK nn MODE" but we are not
                interested in the track number */
             while (isdelim(c = getc(f)))
-                if (c == '\n') line++;
-            while (!isdelim(c = getc(f))) ;
-            if (c == '\n') line++;
+                if (c == '\n')
+                    line++;
+            while (!isdelim(c = getc(f)))
+                ;
+            if (c == '\n')
+                line++;
 
             track->mode = get_track_mode(f);
 
             /* audio tracks with binary files seem quite common */
             /*
-              if (track->mode == AUDIO && filetype == BINARY
-              || track->mode != AUDIO && filetype == WAVE)
-              err_fail("File and track type mismatch");
-            */
+               if (track->mode == AUDIO && filetype == BINARY
+               || track->mode != AUDIO && filetype == WAVE)
+               err_fail("File and track type mismatch");
+             */
 
             strcpy(track->filename, file);
             break;
@@ -449,25 +511,27 @@ read_cue(const char *cuefile, const char *wavefile)
                 err_fail("ISRC must be 12 characters long");
             break;
         case FLAGS:
-            if (track->copy || track->pre_emphasis 
-                || track->four_channel_audio)
+            if (track->copy || track->pre_emphasis || track->four_channel_audio)
                 err_fail("FLAGS allowed only once per track");
 
             /* get the flags */
             cmd = get_command(f);
-            while (cmd == DCP || cmd == FOURCH || cmd == PRE
-                   || cmd == SCMS) {
+            while (cmd == DCP || cmd == FOURCH || cmd == PRE || cmd == SCMS) {
                 switch (cmd) {
                 case DCP:
-                    track->copy = 1; break;
+                    track->copy = 1;
+                    break;
                 case FOURCH:
-                    track->four_channel_audio = 1; break;
+                    track->four_channel_audio = 1;
+                    break;
                 case PRE:
-                    track->pre_emphasis = 1; break;
+                    track->pre_emphasis = 1;
+                    break;
                 case SCMS:
                     err_warn("serial copy management "
                              "system flag not supported "
-                             "by cdrdao"); break;
+                             "by cdrdao");
+                    break;
                 default:
                     err_fail("Should not get here");
                 }
@@ -475,7 +539,8 @@ read_cue(const char *cuefile, const char *wavefile)
             }
             /* current non-FLAG command is already in cmd, so
                avoid get_command() call below */
-            continue; break;
+            continue;
+            break;
         case PREGAP:
             if (track->pregap != -1)
                 err_fail("PREGAP allowed only once per track");
@@ -513,8 +578,7 @@ read_cue(const char *cuefile, const char *wavefile)
                 if (track->pregap != -1)
                     err_fail("PREGAP allowed only once "
                              "per track");
-                if (get_string(f, timecode_buffer,
-                               TCBUFLEN - 1) < 1)
+                if (get_string(f, timecode_buffer, TCBUFLEN - 1) < 1)
                     err_earlyend();
                 /* This is only a temporary value until
                    index 01 is read */
@@ -527,16 +591,14 @@ read_cue(const char *cuefile, const char *wavefile)
                 if (track->start != -1)
                     err_fail("Each index allowed only "
                              "once per track");
-                if (get_string(f, timecode_buffer,
-                               TCBUFLEN - 1) < 1)
+                if (get_string(f, timecode_buffer, TCBUFLEN - 1) < 1)
                     err_fail("Missing timecode");
                 track->start = tc2fr(timecode_buffer);
                 if (track->start == -1)
                     err_fail("Timecode out of range");
                 /* Fix the pregap value */
                 if (track->pregap_data_from_file)
-                    track->pregap = track->start
-                        - track->pregap;
+                    track->pregap = track->start - track->pregap;
                 break;
             case 2:
                 if (track->start == -1)
@@ -544,22 +606,20 @@ read_cue(const char *cuefile, const char *wavefile)
                 if (track->indexes[n - 2] != -1)
                     err_fail("Each index allowed only "
                              "once per track");
-                if (get_string(f, timecode_buffer,
-                               TCBUFLEN - 1) < 1)
+                if (get_string(f, timecode_buffer, TCBUFLEN - 1) < 1)
                     err_fail("Missing timecode");
                 track->indexes[n - 2] = tc2fr(timecode_buffer);
                 if (track->indexes[n - 2] == -1)
                     err_fail("Timecode out of range");
                 break;
-            default:	/* the other 97 indexes */
+            default: /* the other 97 indexes */
                 /* check if previous index is there */
                 if (track->indexes[n - 3] == -1)
                     err_fail("Indexes must be sequential");
                 if (track->indexes[n - 2] != -1)
                     err_fail("Each index allowed only "
                              "once per track");
-                if (get_string(f, timecode_buffer,
-                               TCBUFLEN - 1) < 1)
+                if (get_string(f, timecode_buffer, TCBUFLEN - 1) < 1)
                     err_fail("Missing timecode");
                 track->indexes[n - 2] = tc2fr(timecode_buffer);
                 if (track->indexes[n - 2] == -1)
@@ -595,7 +655,7 @@ read_cue(const char *cuefile, const char *wavefile)
             err_fail("Command not allowed in track spec");
             break;
         }
-		
+
         cmd = get_command(f);
     }
 
@@ -603,8 +663,7 @@ read_cue(const char *cuefile, const char *wavefile)
 }
 
 /* Deduce the disc session type from the track modes */
-static enum session_type
-determine_session_type(struct trackspec *list)
+static enum session_type determine_session_type(struct trackspec *list)
 {
     struct trackspec *track = list;
     /* set to true if track of corresponding type is found */
@@ -615,21 +674,26 @@ determine_session_type(struct trackspec *list)
     while (track != NULL) {
         switch (track->mode) {
         case TrackData::AUDIO:
-            audio = 1; break;
-        case TrackData::MODE1: case TrackData::MODE1_RAW:
-            mode1 = 1; break;
-        case TrackData::MODE2: case TrackData::MODE2_RAW:
-            mode2 = 1; break;
-        default:	/* should never get here */
+            audio = 1;
+            break;
+        case TrackData::MODE1:
+        case TrackData::MODE1_RAW:
+            mode1 = 1;
+            break;
+        case TrackData::MODE2:
+        case TrackData::MODE2_RAW:
+            mode2 = 1;
+            break;
+        default: /* should never get here */
             err_fail2("Don't know how this could happen, but here "
                       "is a track with an unknown mode :|");
         }
         track = track->next;
     }
 
-    /* CD_DA	only audio
-     * CD_ROM	only mode1 with or without audio
-     * CD_ROM_XA	only mode2 with or without audio
+    /* CD_DA    only audio
+     * CD_ROM   only mode1 with or without audio
+     * CD_ROM_XA        only mode2 with or without audio
      */
     if (audio && !mode1 && !mode2)
         return CD_DA;
@@ -642,18 +706,15 @@ determine_session_type(struct trackspec *list)
 }
 
 /* Return true if cuesheet contains any CD-Text data */
-static int
-contains_cdtext(struct cuesheet *cs)
+static int contains_cdtext(struct cuesheet *cs)
 {
     struct trackspec *track = cs->tracklist;
 
-    if (cs->title[0] != '\0' || cs->performer[0] != '\0'
-        || cs->songwriter[0] != '\0')
+    if (cs->title[0] != '\0' || cs->performer[0] != '\0' || cs->songwriter[0] != '\0')
         return 1;
 
     while (track) {
-        if (track->title[0] != '\0' || track->performer[0] != '\0'
-            || track->songwriter[0] != '\0')
+        if (track->title[0] != '\0' || track->performer[0] != '\0' || track->songwriter[0] != '\0')
             return 1;
         track = track->next;
     }
@@ -666,8 +727,7 @@ contains_cdtext(struct cuesheet *cs)
    printed. Every eight spaces are replaced by a single tabulator. The
    return value is the return value of fprintf(). */
 
-static int ifprintf(std::ostream& o, int indent, int level,
-                    const char *format, ...)
+static int ifprintf(std::ostream &o, int indent, int level, const char *format, ...)
 {
     static char twolines[161];
 
@@ -693,8 +753,7 @@ static int ifprintf(std::ostream& o, int indent, int level,
 /* Write a track to the file f. The arguments i and l are the indentation
    amount and level (see ifprintf above). Do not write CD-Text data if
    cdtext is zero. */
-static void
-write_track(struct trackspec *tr, std::ostream& f, int i, int l, int cdtext)
+static void write_track(struct trackspec *tr, std::ostream &f, int i, int l, int cdtext)
 {
     char timecode_buffer[TCBUFLEN];
     long start = 0, len = 0;
@@ -702,13 +761,24 @@ write_track(struct trackspec *tr, std::ostream& f, int i, int l, int cdtext)
 
     f << std::endl;
     ifprintf(f, i, l++, "TRACK ");
-    switch(tr->mode) {
-    case TrackData::AUDIO:	f << "AUDIO\n"; break;
-    case TrackData::MODE1:	f << "MODE1\n"; break;
-    case TrackData::MODE1_RAW:	f << "MODE1_RAW\n"; break;
-    case TrackData::MODE2:	f << "MODE2\n"; break;
-    case TrackData::MODE2_RAW:	f << "MODE2_RAW\n"; break;
-    default:	err_fail2("Unknown track mode"); /* cant get here */
+    switch (tr->mode) {
+    case TrackData::AUDIO:
+        f << "AUDIO\n";
+        break;
+    case TrackData::MODE1:
+        f << "MODE1\n";
+        break;
+    case TrackData::MODE1_RAW:
+        f << "MODE1_RAW\n";
+        break;
+    case TrackData::MODE2:
+        f << "MODE2\n";
+        break;
+    case TrackData::MODE2_RAW:
+        f << "MODE2_RAW\n";
+        break;
+    default:
+        err_fail2("Unknown track mode"); /* cant get here */
     }
 
     /* Flags and ISRC */
@@ -722,8 +792,7 @@ write_track(struct trackspec *tr, std::ostream& f, int i, int l, int cdtext)
         ifprintf(f, i, l, "ISRC \"%s\"\n", tr->isrc);
 
     /* CD-Text data */
-    if (cdtext && (tr->title[0] != '\0' || tr->performer[0] != '\0'
-                   || tr->songwriter[0] != '\0')) {
+    if (cdtext && (tr->title[0] != '\0' || tr->performer[0] != '\0' || tr->songwriter[0] != '\0')) {
         ifprintf(f, i, l++, "CD_TEXT {\n");
         ifprintf(f, i, l++, "LANGUAGE 0 {\n");
         if (tr->title[0] != '\0')
@@ -731,10 +800,9 @@ write_track(struct trackspec *tr, std::ostream& f, int i, int l, int cdtext)
         if (tr->performer[0] != '\0')
             ifprintf(f, i, l, "PERFORMER \"%s\"\n", tr->performer);
         if (tr->songwriter[0] != '\0')
-            ifprintf(f, i, l, "SONGWRITER \"%s\"\n",
-                     tr->songwriter);
-        ifprintf(f, i, --l, "}\n");	/* LANGUAGE 0 { */
-        ifprintf(f, i, --l, "}\n");	/* CD_TEXT { */
+            ifprintf(f, i, l, "SONGWRITER \"%s\"\n", tr->songwriter);
+        ifprintf(f, i, --l, "}\n"); /* LANGUAGE 0 { */
+        ifprintf(f, i, --l, "}\n"); /* CD_TEXT { */
     }
 
     /* Pregap with zero data */
@@ -758,32 +826,28 @@ write_track(struct trackspec *tr, std::ostream& f, int i, int l, int cdtext)
             err_fail2("Track start out of range");
         f << timecode_buffer;
     } else {
-      if (tr->start) {
-        long datastart = (tr->pregap_data_from_file ?
-                          tr->start - tr->pregap : tr->start);
-        ifprintf(f, i, l, "DATAFILE \"%s\" #%d", tr->filename,
-                 datastart * AUDIO_BLOCK_LEN);
-        start = datastart;
-      } else {
-        ifprintf(f, i, l, "DATAFILE \"%s\"", tr->filename);
-      }
+        if (tr->start) {
+            long datastart = (tr->pregap_data_from_file ? tr->start - tr->pregap : tr->start);
+            ifprintf(f, i, l, "DATAFILE \"%s\" #%d", tr->filename, datastart * AUDIO_BLOCK_LEN);
+            start = datastart;
+        } else {
+            ifprintf(f, i, l, "DATAFILE \"%s\"", tr->filename);
+        }
     }
 
     /* If next track has the same filename and specified a start
        value use the difference between start of this and start of
        the next track as the length of the current track */
-    if (tr->next
-        && strcmp(tr->filename, tr->next->filename) == 0
-        && tr->next->start != -1) {
-      if (tr->next->pregap_data_from_file)
-        len = tr->next->start - tr->next->pregap - start;
-      else
-        len = tr->next->start - start;
-      if (fr2tc(timecode_buffer, len) == -1)
-        err_fail2("Track length out of range");
-      f << ' ' << timecode_buffer << std::endl;
+    if (tr->next && strcmp(tr->filename, tr->next->filename) == 0 && tr->next->start != -1) {
+        if (tr->next->pregap_data_from_file)
+            len = tr->next->start - tr->next->pregap - start;
+        else
+            len = tr->next->start - start;
+        if (fr2tc(timecode_buffer, len) == -1)
+            err_fail2("Track length out of range");
+        f << ' ' << timecode_buffer << std::endl;
     } else {
-      f << std::endl;
+        f << std::endl;
     }
 
     /* Pregap with data from file */
@@ -809,16 +873,15 @@ write_track(struct trackspec *tr, std::ostream& f, int i, int l, int cdtext)
             err_fail2("Index out of range");
         ifprintf(f, i, l, "INDEX %s\n", timecode_buffer);
     }
-
 }
 
 // Write the cuesheet cs to the output stream. Do not write CD-Text
 // data if cdt is zero.
 
-void write_toc(std::ostream& f, struct cuesheet *cs, bool cdt)
+void write_toc(std::ostream &f, struct cuesheet *cs, bool cdt)
 {
-    int i = 4;		/* number of chars for indentation */
-    int l = 0;		/* current leven of indentation */
+    int i = 4; /* number of chars for indentation */
+    int l = 0; /* current leven of indentation */
     bool cdtext = contains_cdtext(cs) && cdt;
     struct trackspec *track = cs->tracklist;
 
@@ -832,10 +895,17 @@ void write_toc(std::ostream& f, struct cuesheet *cs, bool cdt)
         ifprintf(f, i, l, "CATALOG \"%s\"\n", cs->catalog);
 
     switch (cs->type) {
-    case CD_DA:	ifprintf(f, i, l, "CD_DA\n"); break;
-    case CD_ROM:	ifprintf(f, i, l, "CD_ROM\n"); break;
-    case CD_ROM_XA:	ifprintf(f, i, l, "CD_ROM_XA\n"); break;
-    default:	err_fail2("Should never get here");
+    case CD_DA:
+        ifprintf(f, i, l, "CD_DA\n");
+        break;
+    case CD_ROM:
+        ifprintf(f, i, l, "CD_ROM\n");
+        break;
+    case CD_ROM_XA:
+        ifprintf(f, i, l, "CD_ROM_XA\n");
+        break;
+    default:
+        err_fail2("Should never get here");
     }
 
     if (cdtext) {
@@ -849,8 +919,7 @@ void write_toc(std::ostream& f, struct cuesheet *cs, bool cdt)
         if (cs->performer[0] != '\0')
             ifprintf(f, i, l, "PERFORMER \"%s\"\n", cs->performer);
         if (cs->songwriter[0] != '\0')
-            ifprintf(f, i, l, "SONGWRITER \"%s\"\n",
-                     cs->songwriter);
+            ifprintf(f, i, l, "SONGWRITER \"%s\"\n", cs->songwriter);
         ifprintf(f, i, --l, "}\n");
         ifprintf(f, i, --l, "}\n");
     }
@@ -868,119 +937,116 @@ void write_toc(std::ostream& f, struct cuesheet *cs, bool cdt)
    "0" (interpreted as "00:00:00"), "1:2" ("00:01:02") and so on.
    Returns -1 on error (argument NULL or some value out of range) */
 
-#define MAXDIGITS	2
-#define NUMOFNUMS	3
+#define MAXDIGITS 2
+#define NUMOFNUMS 3
 
-long
-tc2fr(const char *tc)
+long tc2fr(const char *tc)
 {
-	int minutes = 0;
-	int seconds = 0;
-	int frames = 0;
-	long totalframes = 0;
+    int minutes = 0;
+    int seconds = 0;
+    int frames = 0;
+    long totalframes = 0;
 
-	char tmp[MAXDIGITS + 1];
-	int nums[NUMOFNUMS];
-	int n = 0;
-	int i = 0;
-	int last_was_colon = 0;
-	int stop = 0;
+    char tmp[MAXDIGITS + 1];
+    int nums[NUMOFNUMS];
+    int n = 0;
+    int i = 0;
+    int last_was_colon = 0;
+    int stop = 0;
 
-	if (tc == NULL)
-		return -1;
+    if (tc == NULL)
+        return -1;
 
-	for (i = 0; i <= MAXDIGITS; i++)
-		tmp[i] = '\0';
+    for (i = 0; i <= MAXDIGITS; i++)
+        tmp[i] = '\0';
 
-	while (isspace(*tc))
-		tc++;
+    while (isspace(*tc))
+        tc++;
 
-	for (n = 0; n < NUMOFNUMS; n++) {
-		if (n > 0) {
-			if (tc[0] != ':') {
-				--n;
-				break;
-			} else
-				tc++;
-		}
+    for (n = 0; n < NUMOFNUMS; n++) {
+        if (n > 0) {
+            if (tc[0] != ':') {
+                --n;
+                break;
+            } else
+                tc++;
+        }
 
-		for (i = 0; i < MAXDIGITS; i++) {
+        for (i = 0; i < MAXDIGITS; i++) {
 
-			if (isdigit(tc[i])) {
-				tmp[i] = tc[i];
-				last_was_colon = 0;
-			} else if (tc[i] == ':') {
-				if (i == 0)
-					stop = 1;
-				break;
-			} else { 
-				stop = 1;
-				break;
-			}
-		}
-		
-		if (i != 0) {
-			tmp[i] = '\0';
-			nums[n] = atoi(tmp);
-			tc = &tc[i];
-		} else
-			--n;
+            if (isdigit(tc[i])) {
+                tmp[i] = tc[i];
+                last_was_colon = 0;
+            } else if (tc[i] == ':') {
+                if (i == 0)
+                    stop = 1;
+                break;
+            } else {
+                stop = 1;
+                break;
+            }
+        }
 
-		if (stop)
-			break;
-	}
+        if (i != 0) {
+            tmp[i] = '\0';
+            nums[n] = atoi(tmp);
+            tc = &tc[i];
+        } else
+            --n;
 
-	if (n == NUMOFNUMS)
-		--n;
-	
-	frames = seconds = minutes = 0;
+        if (stop)
+            break;
+    }
 
-	switch (n) {
-	case 0:
-		frames = nums[0];
-		break;
-	case 1:
-		seconds = nums[0];
-		frames = nums[1];
-		break;
-	case 2:
-		minutes = nums[0];
-		seconds = nums[1];
-		frames = nums[2];
-		break;
-	}
+    if (n == NUMOFNUMS)
+        --n;
 
-	totalframes = ((60 * minutes) + seconds) * 75 + frames;
+    frames = seconds = minutes = 0;
 
-	if (seconds > 59 || frames > 74)
-		return -1;
+    switch (n) {
+    case 0:
+        frames = nums[0];
+        break;
+    case 1:
+        seconds = nums[0];
+        frames = nums[1];
+        break;
+    case 2:
+        minutes = nums[0];
+        seconds = nums[1];
+        frames = nums[2];
+        break;
+    }
 
-	return totalframes;
+    totalframes = ((60 * minutes) + seconds) * 75 + frames;
+
+    if (seconds > 59 || frames > 74)
+        return -1;
+
+    return totalframes;
 }
-
 
 /* Writes formatted timecode string ("MM:SS:FF") into tc, calculated from
    frame number fr.
    Returns -1 on error (frames value out of range) */
 
-int
-fr2tc(char *tc, long fr)
+int fr2tc(char *tc, long fr)
 {
-	int m;
-	int s;
-	int f;
+    int m;
+    int s;
+    int f;
 
-	if (fr > 449999 || fr < 0) {	/* 99:59:74 */
-		strcpy(tc, "00:00:00");
-		return -1;
-	}
+    if (fr > 449999 || fr < 0) { /* 99:59:74 */
+        strcpy(tc, "00:00:00");
+        return -1;
+    }
 
-	f = fr % 75;
-	fr -= f;
-	s = (fr / 75) % 60;
-	fr -= s * 75;
-	m = fr / 75 / 60;
+    f = fr % 75;
+    fr -= f;
+    s = (fr / 75) % 60;
+    fr -= s * 75;
+    m = fr / 75 / 60;
 
-	snprintf(tc, TCBUFLEN, "%02d:%02d:%02d", m, s, f);
-	return 0;
+    snprintf(tc, TCBUFLEN, "%02d:%02d:%02d", m, s, f);
+    return 0;
 }

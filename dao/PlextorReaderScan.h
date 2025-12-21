@@ -22,36 +22,35 @@
 
 #include "PlextorReader.h"
 
-#define OPT_PLEX_USE_PQ       0x0001 // use PQ sub-channel data for scanning
-#define OPT_PLEX_PQ_BCD       0x0002 // PQ sub-channel contains BCD numbers
-#define OPT_PLEX_READ_ISRC    0x0004 // force reading of ISRC code with
-                                     // READ SUB CHANNEL instead taking it from
-                                     // the sub-channel data
+#define OPT_PLEX_USE_PQ 0x0001 // use PQ sub-channel data for scanning
+#define OPT_PLEX_PQ_BCD 0x0002 // PQ sub-channel contains BCD numbers
+#define OPT_PLEX_READ_ISRC                                                                         \
+    0x0004 // force reading of ISRC code with
+           // READ SUB CHANNEL instead taking it from
+           // the sub-channel data
 
-class PlextorReaderScan : public PlextorReader {
-public:
+class PlextorReaderScan : public PlextorReader
+{
+  public:
+    PlextorReaderScan(ScsiIf *scsiIf, unsigned long options);
+    ~PlextorReaderScan();
+    static CdrDriver *instance(ScsiIf *scsiIf, unsigned long options);
 
-  PlextorReaderScan(ScsiIf *scsiIf, unsigned long options);
-  ~PlextorReaderScan();
-  static CdrDriver *instance(ScsiIf *scsiIf, unsigned long options);
+    Toc *readDisk(int session, const char *);
 
-  Toc *readDisk(int session, const char *);
+    unsigned long getReadCapabilites(const CdToc *, int) const
+    {
+        return 0;
+    }
 
-  unsigned long getReadCapabilites(const CdToc *, int) const { return 0; }
+  protected:
+    int analyzeTrack(TrackData::Mode, int trackNr, long startLba, long endLba, Msf *index,
+                     int *indexCnt, long *pregap, char *isrcCode, unsigned char *ctl);
 
-protected:
+    int readSubChannels(TrackData::SubChannelMode, long lba, long len, SubChannel ***, Sample *);
 
-  int analyzeTrack(TrackData::Mode, int trackNr, long startLba, long endLba,
-		   Msf *index,
-		   int *indexCnt, long *pregap, char *isrcCode,
-		   unsigned char *ctl);
-
-  int readSubChannels(TrackData::SubChannelMode, long lba, long len,
-		      SubChannel ***, Sample *);
-
-  int readAudioRange(ReadDiskInfo *, int fd, long start, long end,
-		     int startTrack, int endTrack, TrackInfo *);
-
+    int readAudioRange(ReadDiskInfo *, int fd, long start, long end, int startTrack, int endTrack,
+                       TrackInfo *);
 };
 
 #endif

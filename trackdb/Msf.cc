@@ -19,68 +19,67 @@
 
 #include <config.h>
 
-#include <stdio.h>
 #include <assert.h>
+#include <stdio.h>
 
 #include "Msf.h"
 
 Msf::Msf()
 {
-  min_ = sec_ = frac_ = 0;
-  lba_ = 0;
+    min_ = sec_ = frac_ = 0;
+    lba_ = 0;
 }
 
 Msf::Msf(int min, int sec, int frac)
 {
-  // assert(frac >= 0 && frac < 75);
-  // assert(sec >= 0 && sec < 60);
-  // assert(min >= 0);
+    // assert(frac >= 0 && frac < 75);
+    // assert(sec >= 0 && sec < 60);
+    // assert(min >= 0);
 
-  min_ = min;
-  sec_ = sec;
-  frac_ = frac;
+    min_ = min;
+    sec_ = sec;
+    frac_ = frac;
 
-  lba_ = min_ * 4500 + sec_ * 75 + frac_;
+    lba_ = min_ * 4500 + sec_ * 75 + frac_;
 }
 
 Msf::Msf(long lba)
 {
-  if (lba < 0)
-    lba = 0;
+    if (lba < 0)
+        lba = 0;
 
-  lba_ = lba;
-  lba2Msf();
+    lba_ = lba;
+    lba2Msf();
 }
 
 void Msf::lba2Msf()
 {
-  long lba = lba_;
+    long lba = lba_;
 
-  min_ = lba / 4500;
-  lba %= 4500;
+    min_ = lba / 4500;
+    lba %= 4500;
 
-  sec_ = lba / 75;
-  lba %= 75;
+    sec_ = lba / 75;
+    lba %= 75;
 
-  frac_ = lba;
+    frac_ = lba;
 }
 
 const char *Msf::str() const
 {
-  static char buf[20];
+    static char buf[20];
 
-  snprintf(buf, sizeof(buf), "%02d:%02d:%02d", min_, sec_, frac_);
+    snprintf(buf, sizeof(buf), "%02d:%02d:%02d", min_, sec_, frac_);
 
-  return buf;
+    return buf;
 }
 
 Msf operator+(const Msf &m1, const Msf &m2)
 {
-  return Msf(m1.lba() + m2.lba());
+    return Msf(m1.lba() + m2.lba());
 }
 
 Msf operator-(const Msf &m1, const Msf &m2)
 {
-  return Msf(m1.lba() - m2.lba());
+    return Msf(m1.lba() - m2.lba());
 }
-

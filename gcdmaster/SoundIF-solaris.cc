@@ -95,8 +95,7 @@ int SoundIF::init()
     if (impl_->openDevice() != 0)
         return 1;
 
-    if (impl_->setupDevice() != 0)
-    {
+    if (impl_->setupDevice() != 0) {
         impl_->closeDevice();
         return 2;
     }
@@ -116,8 +115,7 @@ int SoundIF::start()
     if (impl_->openDevice() != 0)
         return 1;
 
-    if (impl_->setupDevice() != 0)
-    {
+    if (impl_->setupDevice() != 0) {
         impl_->closeDevice();
         return 1;
     }
@@ -138,8 +136,7 @@ int SoundIF::play(Sample *sbuf, long nofSamples)
     long nwritten = 0;
     char *buf = (char *)sbuf;
 
-    while (len > 0)
-    {
+    while (len > 0) {
         ret = write(impl_->dspFd_, buf + nwritten, len);
 
         if (ret <= 0)
@@ -168,8 +165,7 @@ int SoundIFImpl::openDevice()
     if (dspFd_ >= 0)
         return 0; // already open
 
-    if ((dspFd_ = open("/dev/audio", O_WRONLY | O_NONBLOCK)) < 0)
-    {
+    if ((dspFd_ = open("/dev/audio", O_WRONLY | O_NONBLOCK)) < 0) {
         log_message(-1, _("Cannot open \"/dev/audio\": %s"), strerror(errno));
         return 1;
     }
@@ -181,8 +177,7 @@ int SoundIFImpl::openDevice()
 
 void SoundIFImpl::closeDevice()
 {
-    if (dspFd_ >= 0)
-    {
+    if (dspFd_ >= 0) {
         close(dspFd_);
         dspFd_ = -1;
     }
@@ -195,8 +190,7 @@ int SoundIFImpl::setupDevice()
     if (dspFd_ < 0)
         return 1;
 
-    if (ioctl(dspFd_, AUDIO_GETINFO, &auinf) < 0)
-    {
+    if (ioctl(dspFd_, AUDIO_GETINFO, &auinf) < 0) {
         log_message(-1, _("Cannot get state of audio interface: %s"), strerror(errno));
         return 1;
     }
@@ -205,8 +199,7 @@ int SoundIFImpl::setupDevice()
     auinf.play.precision = 16;
     auinf.play.encoding = AUDIO_ENCODING_LINEAR;
 
-    if (ioctl(dspFd_, AUDIO_SETINFO, &auinf) < 0)
-    {
+    if (ioctl(dspFd_, AUDIO_SETINFO, &auinf) < 0) {
         log_message(-1, _("Cannot setup audio interface: %s"), strerror(errno));
         return 1;
     }

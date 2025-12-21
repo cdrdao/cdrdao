@@ -41,8 +41,7 @@ class DeviceConfDialog : public Gtk::Window
 
     Gtk::TreeIter selectedRow_;
 
-    struct DeviceData
-    {
+    struct DeviceData {
         std::string dev;
         int driverId;
         int deviceType;

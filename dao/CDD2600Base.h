@@ -27,22 +27,22 @@
 class Toc;
 class Track;
 
-class CDD2600Base {
-public:
-  CDD2600Base(CdrDriver *);
-  ~CDD2600Base();
+class CDD2600Base
+{
+  public:
+    CDD2600Base(CdrDriver *);
+    ~CDD2600Base();
 
-protected:
-  int modeSelectBlockSize(int blockSize, int showMsg);
-  int modeSelectSpeed(int readSpeed, int writeSpeed, int simulate,
-		      int showMessage);
-  int modeSelectCatalog(const Toc *);
+  protected:
+    int modeSelectBlockSize(int blockSize, int showMsg);
+    int modeSelectSpeed(int readSpeed, int writeSpeed, int simulate, int showMessage);
+    int modeSelectCatalog(const Toc *);
 
-  int readSessionInfo(long *, long *, int showMessage);
-  int writeSession(const Toc *, int multiSession, long lbaOffset);
+    int readSessionInfo(long *, long *, int showMessage);
+    int writeSession(const Toc *, int multiSession, long lbaOffset);
 
-private:
-  CdrDriver *driver_; // driver for sending SCSI commands
+  private:
+    CdrDriver *driver_; // driver for sending SCSI commands
 };
 
 #endif

@@ -102,35 +102,31 @@ void DuplicateCDProject::start()
     std::string sourceData = sourceList->selection();
     std::string targetData = targetList->selection();
 
-    if (sourceData.empty())
-    {
+    if (sourceData.empty()) {
         Gtk::MessageDialog d(*parent_, _("Please select one reader device"), Gtk::MESSAGE_INFO);
         d.run();
         return;
     }
 
-    if (targetData.empty())
-    {
-        Gtk::MessageDialog d(*parent_, _("Please select at least one recorder device"), Gtk::MESSAGE_INFO);
+    if (targetData.empty()) {
+        Gtk::MessageDialog d(*parent_, _("Please select at least one recorder device"),
+                             Gtk::MESSAGE_INFO);
         d.run();
         return;
     }
 
     // Read options
     int onTheFly = CDSource->getOnTheFly();
-    if (onTheFly)
-    {
+    if (onTheFly) {
         // We can't make on the fly copy with the same device, check that
         // We can only have one source device selected
 
-        if (sourceData == targetData)
-        {
+        if (sourceData == targetData) {
 
             // If the user selects the same device for reading and writing
             // we can't do on the fly copying. More complex situations with
             // multiple target devices are not handled
-            if (configManager->getDuplicateOnTheFlyWarning())
-            {
+            if (configManager->getDuplicateOnTheFlyWarning()) {
 
                 Ask2Box msg(parent_, "Request", 1, 2,
                             _("To duplicate a CD using the same device for reading "
@@ -138,13 +134,11 @@ void DuplicateCDProject::start()
                             _("you need to copy the CD to disk before burning"), "",
                             _("Proceed and copy to disk before burning?"), NULL);
 
-                switch (msg.run())
-                {
+                switch (msg.run()) {
                 case 1: // proceed without on the fly
                     CDSource->setOnTheFly(false);
                     onTheFly = 0;
-                    if (msg.dontShowAgain())
-                    {
+                    if (msg.dontShowAgain()) {
                         configManager->setDuplicateOnTheFlyWarning(false);
                     }
                     break;
@@ -152,9 +146,7 @@ void DuplicateCDProject::start()
                     return;
                     break;
                 }
-            }
-            else
-            {
+            } else {
                 CDSource->setOnTheFly(false);
                 onTheFly = 0;
             }
@@ -193,14 +185,12 @@ void DuplicateCDProject::start()
     if (writeDevice == NULL)
         return;
 
-    if (writeDevice->duplicateDao(*parent_, simulate, multiSession, burnSpeed, eject, reload, buffer, onTheFly,
-                                  correction, subChanReadMode, readDevice) != 0)
-    {
-        Gtk::MessageDialog md(*parent_, _("Cannot start disk-at-once duplication"), Gtk::MESSAGE_ERROR);
+    if (writeDevice->duplicateDao(*parent_, simulate, multiSession, burnSpeed, eject, reload,
+                                  buffer, onTheFly, correction, subChanReadMode, readDevice) != 0) {
+        Gtk::MessageDialog md(*parent_, _("Cannot start disk-at-once duplication"),
+                              Gtk::MESSAGE_ERROR);
         md.run();
-    }
-    else
-    {
+    } else {
         guiUpdate(UPD_CD_DEVICE_STATUS);
     }
 }
@@ -215,19 +205,15 @@ void DuplicateCDProject::update(unsigned long level)
     CDSource->update(level);
     CDTarget->update(level);
 
-    if (level & UPD_CD_DEVICE_STATUS)
-    {
+    if (level & UPD_CD_DEVICE_STATUS) {
         DeviceList *sourceList = CDSource->getDeviceList();
         DeviceList *targetList = CDTarget->getDeviceList();
 
         targetList->selectOne();
 
-        if (targetList->selection().empty())
-        {
+        if (targetList->selection().empty()) {
             sourceList->selectOne();
-        }
-        else
-        {
+        } else {
             sourceList->selectOneBut(targetList->selection().c_str());
         }
     }

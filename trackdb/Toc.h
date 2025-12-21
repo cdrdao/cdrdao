@@ -22,33 +22,51 @@
 
 #include <iostream>
 #include <list>
+#include <memory>
 #include <string>
 #include <vector>
-#include <memory>
 
-#include "util.h"
-#include "Track.h"
 #include "CdTextContainer.h"
 #include "CdTextItem.h"
+#include "Track.h"
+#include "util.h"
 
-class Toc {
-public:
+class Toc
+{
+  public:
     Toc();
     Toc(const Toc &);
     ~Toc();
 
-    enum class Type { CD_DA, CD_ROM, CD_I, CD_ROM_XA };
+    enum class Type {
+        CD_DA,
+        CD_ROM,
+        CD_I,
+        CD_ROM_XA
+    };
 
     // sets/returns toc type
     void tocType(Type);
     Type tocType() const;
 
-    void firstTrackNo(int i) { firstTrackNo_ = i; }
-    int firstTrackNo() const { return firstTrackNo_; }
+    void firstTrackNo(int i)
+    {
+        firstTrackNo_ = i;
+    }
+    int firstTrackNo() const
+    {
+        return firstTrackNo_;
+    }
 
-    int nofTracks() const { return nofTracks_; }
+    int nofTracks() const
+    {
+        return nofTracks_;
+    }
 
-    Msf length() const { return length_; }
+    Msf length() const
+    {
+        return length_;
+    }
 
     // returns mode that should be used for lead-in and gap
     TrackData::Mode leadInMode() const;
@@ -70,26 +88,36 @@ public:
     void appendTrack(const TrackDataList *, long *start, long *end);
     int appendTrackData(const TrackDataList *, long *start, long *end);
 
-    int removeTrackData(unsigned long start, unsigned long end,
-                        TrackDataList **);
+    int removeTrackData(unsigned long start, unsigned long end, TrackDataList **);
     int insertTrackData(unsigned long pos, const TrackDataList *list);
 
-    static Toc *read(const std::string&);
-    int write(const std::string&, bool conversions = false) const;
+    static Toc *read(const std::string &);
+    int write(const std::string &, bool conversions = false) const;
 
-    int catalogValid() const { return catalogValid_; }
+    int catalogValid() const
+    {
+        return catalogValid_;
+    }
 
     int catalog(const char *); // sets catalog number
-    char catalog(int i) const { return catalog_[i]; } // BCD
+    char catalog(int i) const
+    {
+        return catalog_[i];
+    } // BCD
     const char *catalog() const;
 
     void addCdTextItem(int trackNr, CdTextItem *);
     void removeCdTextItem(int trackNr, CdTextItem::PackType, int blockNr);
     int existCdTextBlock(int blockNr) const;
-    const CdTextItem *getCdTextItem(int trackNr, int blockNr,
-                                    CdTextItem::PackType) const;
-    int nofCdTextItems() { return cdtext_.count(); }
-    CdTextContainer& globalCdTextItems() { return cdtext_; }
+    const CdTextItem *getCdTextItem(int trackNr, int blockNr, CdTextItem::PackType) const;
+    int nofCdTextItems()
+    {
+        return cdtext_.count();
+    }
+    CdTextContainer &globalCdTextItems()
+    {
+        return cdtext_;
+    }
     void cdTextLanguage(int blockNr, int lang);
     int cdTextLanguage(int blockNr) const;
 
@@ -97,11 +125,10 @@ public:
     Util::Encoding cdTextEncoding(int blockNr) const;
     void enforceTextEncoding();
 
-    void trackSummary(int *nofAudioTracks, int *nofMode1Tracks,
-                      int *nofMode2Tracks) const;
+    void trackSummary(int *nofAudioTracks, int *nofMode1Tracks, int *nofMode2Tracks) const;
 
     // Verification methods
-    bool resolveFilenames(const char* tocFilename);
+    bool resolveFilenames(const char *tocFilename);
     int check() const;
     int checkCdTextData() const;
 
@@ -111,52 +138,81 @@ public:
     // if conversions is true, the TOc is printed with the converted WAV
     // or RAW filenames instead of the original ones.
 
-    void print(std::ostream &, PrintParams& params) const;
+    void print(std::ostream &, PrintParams &params) const;
 
-    void collectFiles(std::set<std::string>& list);
-    void markFileConversion(const char* src, const char* dst);
+    void collectFiles(std::set<std::string> &list);
+    void markFileConversion(const char *src, const char *dst);
 
     static const char *tocType2String(Type);
 
-private:
+  private:
     struct TrackEntry {
-        TrackEntry() : absStart(0), start(0), end(0) {
-            trackNr = 0; track = 0; next = 0; pred = 0;
+        TrackEntry() : absStart(0), start(0), end(0)
+        {
+            trackNr = 0;
+            track = 0;
+            next = 0;
+            pred = 0;
         }
 
         int trackNr;
         Track *track;
         Msf absStart; // absoulte track start (end of last track)
-        Msf start; // logical track start (after pre-gap)
+        Msf start;    // logical track start (after pre-gap)
         Msf end;
 
         struct TrackEntry *next;
         struct TrackEntry *pred;
     };
 
-public:
+  public:
     // Allow iterations over tracks
     struct Iterator {
         using iterator_category = std::bidirectional_iterator_tag;
         using difference_type = std::ptrdiff_t;
         using value_type = Track;
-        using pointer = TrackEntry*;
-        using reference= Track&;
+        using pointer = TrackEntry *;
+        using reference = Track &;
 
-        Iterator(pointer item) : m_ptr(item) {}
-        friend bool operator==(const Iterator& a, const Iterator& b) { return a.m_ptr == b.m_ptr; }
-        friend bool operator!=(const Iterator& a, const Iterator& b) { return a.m_ptr != b.m_ptr; }
-        Iterator& operator++() { m_ptr = m_ptr->next; return *this; }
-        Iterator& operator--() { m_ptr = m_ptr->pred; return *this; }
-        reference operator*() const { return *(m_ptr->track); }
+        Iterator(pointer item) : m_ptr(item)
+        {
+        }
+        friend bool operator==(const Iterator &a, const Iterator &b)
+        {
+            return a.m_ptr == b.m_ptr;
+        }
+        friend bool operator!=(const Iterator &a, const Iterator &b)
+        {
+            return a.m_ptr != b.m_ptr;
+        }
+        Iterator &operator++()
+        {
+            m_ptr = m_ptr->next;
+            return *this;
+        }
+        Iterator &operator--()
+        {
+            m_ptr = m_ptr->pred;
+            return *this;
+        }
+        reference operator*() const
+        {
+            return *(m_ptr->track);
+        }
 
         pointer m_ptr;
     };
 
-    Iterator begin() { return Iterator(tracks_); }
-    Iterator end() { return Iterator(lastTrack_); }
+    Iterator begin()
+    {
+        return Iterator(tracks_);
+    }
+    Iterator end()
+    {
+        return Iterator(lastTrack_);
+    }
 
-private:
+  private:
     friend class TocImpl;
     friend class TocParserGram;
     friend class TocReader;
@@ -188,62 +244,57 @@ private:
     CdTextContainer cdtext_;
 };
 
-
-class TocReader {
-public:
+class TocReader
+{
+  public:
     TocReader(const Toc * = 0);
     ~TocReader();
 
     void init(const Toc *);
 
     int openData();
-    //long readData(long lba, char *buf, long len);
+    // long readData(long lba, char *buf, long len);
     int seekSample(unsigned long sample);
     long readSamples(Sample *buf, long len);
     void closeData();
 
-    const char* curFilename();
+    const char *curFilename();
 
-private:
+  private:
     const Toc *toc_;
 
     TrackReader reader;
 
     const Toc::TrackEntry *readTrack_; // actual read track
-    long readPos_; // actual read position (blocks)
-    long readPosSample_; // actual read position (samples)
-    int open_; // != 0 indicates that toc was opened for reading data
+    long readPos_;                     // actual read position (blocks)
+    long readPosSample_;               // actual read position (samples)
+    int open_;                         // != 0 indicates that toc was opened for reading data
 };
 
-
-class TrackIterator {
-public:
+class TrackIterator
+{
+  public:
     TrackIterator(const Toc *);
     ~TrackIterator();
 
     const Track *find(int trackNr, Msf &start, Msf &end);
-    const Track *find(unsigned long sample, Msf &start, Msf &end,
-                      int *trackNr);
+    const Track *find(unsigned long sample, Msf &start, Msf &end, int *trackNr);
     const Track *first(Msf &start, Msf &end);
     const Track *first();
     const Track *next(Msf &start, Msf &end);
     const Track *next();
 
-private:
+  private:
     const Toc *toc_;
     Toc::TrackEntry *iterator_;
 };
 
-
-
-inline
-void Toc::tocType(Type t)
+inline void Toc::tocType(Type t)
 {
     tocType_ = t;
 }
 
-inline
-Toc::Type Toc::tocType() const
+inline Toc::Type Toc::tocType() const
 {
     return tocType_;
 }

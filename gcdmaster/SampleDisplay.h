@@ -74,8 +74,7 @@ class SampleDisplay : public Gtk::DrawingArea
     virtual bool on_draw(const Cairo::RefPtr<Cairo::Context> &cr);
 
   private:
-    enum DragMode
-    {
+    enum DragMode {
         DRAG_NONE,
         DRAG_SAMPLE_MARKER,
         DRAG_TRACK_MARKER
@@ -160,10 +159,11 @@ class SampleDisplay : public Gtk::DrawingArea
     gint sample2pixel(unsigned long);
     void drawMarker(const Cairo::RefPtr<Cairo::Context> &cr);
     void removeMarker();
-    void drawTimeTick(const Cairo::RefPtr<Cairo::Context> &cr, gint x, gint y, unsigned long sample);
+    void drawTimeTick(const Cairo::RefPtr<Cairo::Context> &cr, gint x, gint y,
+                      unsigned long sample);
     void drawTimeLine(const Cairo::RefPtr<Cairo::Context> &cr);
-    void drawTrackMarker(const Cairo::RefPtr<Cairo::Context> &cr, int mode, gint x, int trackNr, int indexNr,
-                         int selected, int extend);
+    void drawTrackMarker(const Cairo::RefPtr<Cairo::Context> &cr, int mode, gint x, int trackNr,
+                         int indexNr, int selected, int extend);
     void drawTrackLine(const Cairo::RefPtr<Cairo::Context> &cr);
     void drawSelection(const Cairo::RefPtr<Cairo::Context> &cr);
 };

@@ -30,41 +30,31 @@
  *
  */
 
-
 /* Sense code printing for direct SCSI implementations */
 
 struct StringTable {
-  int code;
-  const char *message;
+    int code;
+    const char *message;
 };
 
 static StringTable SENSE_KEYS[] = {
-  { 0x00, "NO SENSE" },
-  { 0x01, "RECOVERED ERROR" },
-  { 0x02, "NOT READY" },
-  { 0x03, "MEDIUM ERROR" },
-  { 0x04, "HARDWARE ERROR" },
-  { 0x05, "ILLEGAL REQUEST" },
-  { 0x06, "UNIT ATTENTION" },
-  { 0x08, "BLANK CHECK" },
-  { 0x09, "VENDOR SPECIFIC" },
-  { 0x0b, "ABORTED COMMAND" },
-  { 0x0d, "VOLUME OVERFLOW" },
-  { 0x0e, "MISCOMPARE" },
-  { 0x00, (char *)0 }
-};
+    {0x00, "NO SENSE"},        {0x01, "RECOVERED ERROR"}, {0x02, "NOT READY"},
+    {0x03, "MEDIUM ERROR"},    {0x04, "HARDWARE ERROR"},  {0x05, "ILLEGAL REQUEST"},
+    {0x06, "UNIT ATTENTION"},  {0x08, "BLANK CHECK"},     {0x09, "VENDOR SPECIFIC"},
+    {0x0b, "ABORTED COMMAND"}, {0x0d, "VOLUME OVERFLOW"}, {0x0e, "MISCOMPARE"},
+    {0x00, (char *)0}};
 
 static const char *getFromStringTable(const StringTable *t, int code)
 {
-  while (t->message != NULL) {
-    if (t->code == code) {
-      return t->message;
+    while (t->message != NULL) {
+        if (t->code == code) {
+            return t->message;
+        }
+
+        t += 1;
     }
 
-    t += 1;
-  }
-
-  return NULL;
+    return NULL;
 }
 
 // Prints decoded sense message, if 'ignoreUnitAttention' is != 0 and sense
@@ -74,25 +64,24 @@ static const char *getFromStringTable(const StringTable *t, int code)
 //         1: sense key indicates error
 static int decodeSense(const unsigned char *buf, int len)
 {
-  int code = buf[2] & 0x0f;
-  const char *msg;
+    int code = buf[2] & 0x0f;
+    const char *msg;
 
-  if (code == 0) {
-    return 0;
-  }
+    if (code == 0) {
+        return 0;
+    }
 
-  msg = getFromStringTable(SENSE_KEYS, code);
+    msg = getFromStringTable(SENSE_KEYS, code);
 
-  log_message(-2, "SCSI command failed:");
-  log_message(-2, "  sense key 0x%x: %s.", code, 
-	  msg != NULL ? msg : "unknown code");
-    
-  if (len > 0x0c && buf[7] != 0) {
-    log_message(-2, "  additional sense code: 0x%x", buf[0x0c]);
-  }
-  if (len > 0x0d && buf[7] != 0) {
-    log_message(-2, "  additional sense code qualifier: 0x%x", buf[0x0d]);
-  }
+    log_message(-2, "SCSI command failed:");
+    log_message(-2, "  sense key 0x%x: %s.", code, msg != NULL ? msg : "unknown code");
 
-  return 1;
+    if (len > 0x0c && buf[7] != 0) {
+        log_message(-2, "  additional sense code: 0x%x", buf[0x0c]);
+    }
+    if (len > 0x0d && buf[7] != 0) {
+        log_message(-2, "  additional sense code qualifier: 0x%x", buf[0x0d]);
+    }
+
+    return 1;
 }

@@ -27,28 +27,28 @@ class Track;
 
 class CdTextEncoder;
 
-class SonyCDU948 : public SonyCDU920 {
-public:
-  SonyCDU948(ScsiIf *scsiIf, unsigned long options);
-  ~SonyCDU948();
-  static CdrDriver *instance(ScsiIf *scsiIf, unsigned long options);
+class SonyCDU948 : public SonyCDU920
+{
+  public:
+    SonyCDU948(ScsiIf *scsiIf, unsigned long options);
+    ~SonyCDU948();
+    static CdrDriver *instance(ScsiIf *scsiIf, unsigned long options);
 
-  int checkToc(const Toc *);
+    int checkToc(const Toc *);
 
-  int multiSession(int);
-  int speed(int);
+    int multiSession(int);
+    int speed(int);
 
-  int initDao(const Toc *);
-  int startDao();
+    int initDao(const Toc *);
+    int startDao();
 
-protected:
-  CdTextEncoder *cdTextEncoder_;
+  protected:
+    CdTextEncoder *cdTextEncoder_;
 
-  int selectSpeed();
-  int setWriteParameters();
+    int selectSpeed();
+    int setWriteParameters();
 
-  int writeCdTextLeadIn();
-
+    int writeCdTextLeadIn();
 };
 
 #endif

@@ -27,8 +27,7 @@ class AudioCDProject;
 class AddFileDialog : public Gtk::FileChooserDialog
 {
   public:
-    enum Mode
-    {
+    enum Mode {
         M_APPEND_TRACK,
         M_APPEND_FILE,
         M_INSERT_FILE

@@ -20,23 +20,25 @@
 #ifndef __FORMATSUPPORT_H__
 #define __FORMATSUPPORT_H__
 
-#include <string>
 #include "config.h"
+#include <string>
 
 #ifdef HAVE_AO
 #include <ao/ao.h>
 #endif
 
-#include "util.h"
 #include "TrackData.h"
+#include "util.h"
 
 // Quick abstract class declarations. Format converters should derive
 // their own FormatSupport and FormatSupportManager.
 
 class FormatSupport
 {
-public:
-    virtual ~FormatSupport() {}
+  public:
+    virtual ~FormatSupport()
+    {
+    }
 
     typedef enum {
         FS_SUCCESS = 0,
@@ -60,20 +62,20 @@ public:
     // FS_IN_PROGRESS.
     virtual Status convertStart(const std::string from, const std::string to) = 0;
     virtual Status convertContinue() = 0;
-    virtual void   convertAbort() = 0;
-  
+    virtual void convertAbort() = 0;
+
     // Specify what this object converts to. Should only returns either
     // TrackData::WAVE or TrackData::RAW
     virtual TrackData::FileType format() = 0;
 
     // Common WAV output functions
-    virtual Status setup_wav_output(const std::string& wav_file);
-    virtual Status write_wav_output(char* samples, u32 num_bytes);
+    virtual Status setup_wav_output(const std::string &wav_file);
+    virtual Status write_wav_output(char *samples, u32 num_bytes);
     virtual Status close_wav_output();
 
-protected:
+  protected:
 #ifdef HAVE_AO
-    ao_device* ao_dev_;
+    ao_device *ao_dev_;
     ao_sample_format ao_format_;
 #endif
 };

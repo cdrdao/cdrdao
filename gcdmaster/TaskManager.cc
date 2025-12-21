@@ -46,12 +46,10 @@ class ThreadPool
 
 ThreadPool::ThreadPool(unsigned num_threads)
 {
-    for (unsigned i = 0; i < num_threads; i++)
-    {
+    for (unsigned i = 0; i < num_threads; i++) {
         stop = false;
         workers.emplace_back([this] {
-            while (true)
-            {
+            while (true) {
                 std::function<void()> task;
                 {
                     std::unique_lock<std::mutex> lock(queue_mutex);
@@ -76,8 +74,7 @@ ThreadPool::~ThreadPool()
         stop = true;
     }
     condition.notify_all();
-    for (std::thread &worker : workers)
-    {
+    for (std::thread &worker : workers) {
         if (worker.joinable())
             worker.join();
     }
@@ -104,9 +101,9 @@ unsigned ThreadPool::outstanding_tasks()
 
 void Task::sendUpdate(const std::string &msg)
 {
-    if (tm_)
-    {
-        Glib::signal_idle().connect_once([this, msg]() { (this->tm_)->signalJobUpdate(this, msg); });
+    if (tm_) {
+        Glib::signal_idle().connect_once(
+            [this, msg]() { (this->tm_)->signalJobUpdate(this, msg); });
     }
 }
 
@@ -127,8 +124,7 @@ TaskManager::~TaskManager()
 void TaskManager::addJob(Task *job)
 {
     assert(std::this_thread::get_id() == main_thread_id);
-    if (tasks.size() == 0)
-    {
+    if (tasks.size() == 0) {
         total = 0;
         sofar = 0;
         signalQueueStarted();
@@ -156,8 +152,7 @@ void TaskManager::jobDone(Task *job)
     job->done = true;
     sofar++;
 
-    while (!tasks.empty() && tasks.front()->done)
-    {
+    while (!tasks.empty() && tasks.front()->done) {
         tasks.front()->completed();
         tasks.pop();
     }

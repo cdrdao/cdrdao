@@ -22,30 +22,42 @@
 
 #include "TrackData.h"
 
-class SubTrack : public TrackData {
-public:
-  enum Type { PAD, DATA };
+class SubTrack : public TrackData
+{
+  public:
+    enum Type {
+        PAD,
+        DATA
+    };
 
-  SubTrack(Type, unsigned long start, const TrackData &);
-  SubTrack(Type, const TrackData &);
-  SubTrack(const SubTrack &);
-  ~SubTrack();
+    SubTrack(Type, unsigned long start, const TrackData &);
+    SubTrack(Type, const TrackData &);
+    SubTrack(const SubTrack &);
+    ~SubTrack();
 
-  Type type() const { return type_; }
-  unsigned long start() const { return start_; }
-  void start(unsigned long s) { start_ = s; }
+    Type type() const
+    {
+        return type_;
+    }
+    unsigned long start() const
+    {
+        return start_;
+    }
+    void start(unsigned long s)
+    {
+        start_ = s;
+    }
 
-private:
-  unsigned long start_; // start postion (samples) within containing track
-  Type type_;
+  private:
+    unsigned long start_; // start postion (samples) within containing track
+    Type type_;
 
-  class SubTrack *next_;
-  class SubTrack *pred_;
+    class SubTrack *next_;
+    class SubTrack *pred_;
 
-  friend class Track;
-  friend class TrackReader;
-  friend class SubTrackIterator;
+    friend class Track;
+    friend class TrackReader;
+    friend class SubTrackIterator;
 };
-
 
 #endif

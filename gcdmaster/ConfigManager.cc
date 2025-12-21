@@ -34,8 +34,7 @@ ConfigManager::ConfigManager()
 
 ConfigManager::~ConfigManager()
 {
-    if (settings_->get_has_unapplied())
-    {
+    if (settings_->get_has_unapplied()) {
         settings_->apply();
     }
 }

@@ -1,0 +1,6 @@
+BasedOnStyle: Microsoft
+ColumnLimit: 100
+BraceWrapping:
+    BeforeElse: false
+BreakBeforeBraces: Linux
+UseTab: Never

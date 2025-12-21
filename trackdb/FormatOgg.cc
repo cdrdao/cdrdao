@@ -17,12 +17,11 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#include <stdio.h>
 #include <cstring>
+#include <stdio.h>
 
-#include "log.h"
 #include "FormatOgg.h"
-
+#include "log.h"
 
 FormatSupport::Status FormatOgg::convertStart(std::string from, std::string to)
 {
@@ -57,8 +56,7 @@ FormatSupport::Status FormatOgg::oggInit()
 {
     fin_ = fopen(src_file_.c_str(), "r");
     if (!fin_) {
-        log_message(-2, "Could not open input file \"%s\": %s", src_file_.c_str(),
-                    strerror(errno));
+        log_message(-2, "Could not open input file \"%s\": %s", src_file_.c_str(), strerror(errno));
         return FS_INPUT_PROBLEM;
     }
 
@@ -101,7 +99,7 @@ FormatSupport::Status FormatOgg::oggExit()
 //
 //
 
-FormatSupport* FormatOggManager::newConverter(const char* extension)
+FormatSupport *FormatOggManager::newConverter(const char *extension)
 {
     if (strcmp(extension, "ogg") == 0)
         return new FormatOgg;
@@ -109,9 +107,8 @@ FormatSupport* FormatOggManager::newConverter(const char* extension)
     return NULL;
 }
 
-int FormatOggManager::supportedExtensions(std::list<std::string>& list)
+int FormatOggManager::supportedExtensions(std::list<std::string> &list)
 {
     list.push_front("ogg");
     return 1;
 }
-

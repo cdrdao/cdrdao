@@ -46,8 +46,7 @@ class Track;
 class TrackManager
 {
   public:
-    struct Entry
-    {
+    struct Entry {
         Entry(const Track *t, int tn, int in, gint x)
         {
             track = t;
@@ -86,8 +85,7 @@ class TrackManager
     const Entry *next();
 
   private:
-    struct EntryList
-    {
+    struct EntryList {
         Entry *ent;
         EntryList *next;
     };

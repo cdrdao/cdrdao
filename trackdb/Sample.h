@@ -33,31 +33,45 @@
 
 // represents one audio sample
 struct Sample {
-  unsigned char msbLeft;
-  unsigned char lsbLeft;
-  unsigned char msbRight;
-  unsigned char lsbRight;
+    unsigned char msbLeft;
+    unsigned char lsbLeft;
+    unsigned char msbRight;
+    unsigned char lsbRight;
 
-  short left() const  { return (msbLeft  << 8) | lsbLeft;  }
-  short right() const { return (msbRight << 8) | lsbRight; }
+    short left() const
+    {
+        return (msbLeft << 8) | lsbLeft;
+    }
+    short right() const
+    {
+        return (msbRight << 8) | lsbRight;
+    }
 
-  void left(short d) { msbLeft = d >> 8; lsbLeft = d; }
-  void right(short d) { msbRight = d >> 8; lsbRight = d; }
+    void left(short d)
+    {
+        msbLeft = d >> 8;
+        lsbLeft = d;
+    }
+    void right(short d)
+    {
+        msbRight = d >> 8;
+        lsbRight = d;
+    }
 
-  void swap();
+    void swap();
 };
 
 inline void Sample::swap()
 {
-  char tmp;
+    char tmp;
 
-  tmp = msbLeft;
-  msbLeft = lsbLeft;
-  lsbLeft = tmp;
+    tmp = msbLeft;
+    msbLeft = lsbLeft;
+    lsbLeft = tmp;
 
-  tmp = msbRight;
-  msbRight = lsbRight;
-  lsbRight = tmp;
+    tmp = msbRight;
+    msbRight = lsbRight;
+    lsbRight = tmp;
 }
 
 #endif

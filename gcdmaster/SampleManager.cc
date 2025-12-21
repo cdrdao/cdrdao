@@ -63,8 +63,8 @@ class SampleManagerImpl : public sigc::trackable
     gfloat percent_;
     gfloat percentStep_;
 
-    void getPeak(unsigned long start, unsigned long end, short *leftNeg, short *leftPos, short *rightNeg,
-                 short *rightPos);
+    void getPeak(unsigned long start, unsigned long end, short *leftNeg, short *leftPos,
+                 short *rightNeg, short *rightPos);
     int scanToc(unsigned long start, unsigned long end, bool blocking);
 
     int readSamples();
@@ -107,8 +107,8 @@ int SampleManager::readSamples()
     return impl_->readSamples();
 }
 
-void SampleManager::getPeak(unsigned long start, unsigned long end, short *leftNeg, short *leftPos, short *rightNeg,
-                            short *rightPos)
+void SampleManager::getPeak(unsigned long start, unsigned long end, short *leftNeg, short *leftPos,
+                            short *rightNeg, short *rightPos)
 {
     impl_->getPeak(start, end, leftNeg, leftPos, rightNeg, rightPos);
 }
@@ -158,8 +158,8 @@ SampleManagerImpl::~SampleManagerImpl()
     tocEdit_ = NULL;
 }
 
-void SampleManagerImpl::getPeak(unsigned long start, unsigned long end, short *leftNeg, short *leftPos, short *rightNeg,
-                                short *rightPos)
+void SampleManagerImpl::getPeak(unsigned long start, unsigned long end, short *leftNeg,
+                                short *leftPos, short *rightNeg, short *rightPos)
 {
     *leftNeg = *leftPos = 0;
     *rightNeg = *rightPos = 0;
@@ -171,8 +171,7 @@ void SampleManagerImpl::getPeak(unsigned long start, unsigned long end, short *l
     if (startBlock >= blocks_ || endBlock >= blocks_)
         return;
 
-    for (i = startBlock; i <= endBlock; i++)
-    {
+    for (i = startBlock; i <= endBlock; i++) {
         assert(leftNegSamples_[i] <= 0);
         assert(rightNegSamples_[i] <= 0);
         assert(leftPosSamples_[i] >= 0);
@@ -220,8 +219,7 @@ int SampleManagerImpl::scanToc(unsigned long start, unsigned long end, bool bloc
 
     reallocSamples(end);
 
-    for (i = actBlock_; i <= endBlock_; i++)
-    {
+    for (i = actBlock_; i <= endBlock_; i++) {
         leftNegSamples_[i] = rightNegSamples_[i] = -16000;
         leftPosSamples_[i] = rightPosSamples_[i] = 16000;
     }
@@ -229,28 +227,22 @@ int SampleManagerImpl::scanToc(unsigned long start, unsigned long end, bool bloc
     if (tocReader_.openData() != 0)
         return 2;
 
-    if (tocReader_.seekSample(actBlock_ * blocking_) != 0)
-    {
+    if (tocReader_.seekSample(actBlock_ * blocking_) != 0) {
         tocReader_.closeData();
         return 2;
     }
 
     long len = endBlock_ - actBlock_ + 1;
 
-    if (len < 2000)
-    {
+    if (len < 2000) {
         burstBlock_ = len;
         percentStep_ = 1.0;
         // withGui_ = false;
-    }
-    else if (len < 10000)
-    {
+    } else if (len < 10000) {
         burstBlock_ = len / 100;
         percentStep_ = 0.01;
         // withGui_ = true;
-    }
-    else
-    {
+    } else {
         burstBlock_ = 75;
         percentStep_ = gfloat(burstBlock_) / gfloat(len);
         // withGui_ = true;
@@ -261,8 +253,7 @@ int SampleManagerImpl::scanToc(unsigned long start, unsigned long end, bool bloc
 
     percent_ = 0;
 
-    if (blocking)
-    {
+    if (blocking) {
         while (readSamples() == 0)
             ;
         return 0;
@@ -285,8 +276,7 @@ int SampleManagerImpl::readSamples()
     long burstEnd = actBlock_ + burstBlock_;
 
     const char *cf = tocReader_.curFilename();
-    if (cf && cf != curFilename_)
-    {
+    if (cf && cf != curFilename_) {
         std::string msg = "Scanning audio data \"";
         msg += cf;
         msg += "\"";
@@ -295,14 +285,11 @@ int SampleManagerImpl::readSamples()
         guiUpdate(UPD_SAMPLES);
     }
 
-    for (; actBlock_ <= endBlock_ && actBlock_ < burstEnd && length_ > 0; actBlock_++)
-    {
+    for (; actBlock_ <= endBlock_ && actBlock_ < burstEnd && length_ > 0; actBlock_++) {
         n = length_ > blocking_ ? blocking_ : length_;
-        if ((ret = tocReader_.readSamples(block_, n)) == n)
-        {
+        if ((ret = tocReader_.readSamples(block_, n)) == n) {
             lpossum = lnegsum = rpossum = rnegsum = 0;
-            for (j = 0; j < n; j++)
-            {
+            for (j = 0; j < n; j++) {
                 short d = block_[j].left();
                 if (d > lpossum)
                     lpossum = d;
@@ -319,9 +306,7 @@ int SampleManagerImpl::readSamples()
             leftPosSamples_[actBlock_] = lpossum;
             rightNegSamples_[actBlock_] = rnegsum;
             rightPosSamples_[actBlock_] = rpossum;
-        }
-        else
-        {
+        } else {
             log_message(-2, "Cannot read audio data: %ld - %ld.", n, ret);
             tocReader_.closeData();
             return -1;
@@ -329,8 +314,7 @@ int SampleManagerImpl::readSamples()
         length_ -= n;
     }
 
-    if (actBlock_ >= endBlock_ && actBlock_ < burstEnd)
-    {
+    if (actBlock_ >= endBlock_ && actBlock_ < burstEnd) {
         tocReader_.closeData();
         return 1;
     }
@@ -353,8 +337,7 @@ void SampleManagerImpl::reallocSamples(unsigned long maxSample)
     if (maxBlock > blocks_)
         blocks_ = maxBlock;
 
-    if (blocks_ > samplesSize_)
-    {
+    if (blocks_ > samplesSize_) {
         long newSize = samplesSize_ + chunk_;
         while (newSize < blocks_)
             newSize += chunk_;
@@ -364,8 +347,7 @@ void SampleManagerImpl::reallocSamples(unsigned long maxSample)
         short *newRightNeg = new short[newSize];
         short *newRightPos = new short[newSize];
 
-        for (i = 0; i < samplesSize_; i++)
-        {
+        for (i = 0; i < samplesSize_; i++) {
             newLeftNeg[i] = leftNegSamples_[i];
             newLeftPos[i] = leftPosSamples_[i];
             newRightNeg[i] = rightNegSamples_[i];
@@ -399,8 +381,7 @@ void SampleManagerImpl::removeSamples(unsigned long start, unsigned long end, Tr
 
     slength_ -= slen;
 
-    if (slength_ == 0)
-    {
+    if (slength_ == 0) {
         blocks_ = 0;
         return;
     }
@@ -412,13 +393,11 @@ void SampleManagerImpl::removeSamples(unsigned long start, unsigned long end, Tr
     bstart = start / blocking_;
 
     if (scrap != NULL)
-        scrap->setPeaks(blen, &(leftNegSamples_[bstart]), &(leftPosSamples_[bstart]), &(rightNegSamples_[bstart]),
-                        &(rightPosSamples_[bstart]));
+        scrap->setPeaks(blen, &(leftNegSamples_[bstart]), &(leftPosSamples_[bstart]),
+                        &(rightNegSamples_[bstart]), &(rightPosSamples_[bstart]));
 
-    if (blen > 0)
-    {
-        for (i = bstart; i < blocks_; i++)
-        {
+    if (blen > 0) {
+        for (i = bstart; i < blocks_; i++) {
             leftNegSamples_[i] = leftNegSamples_[i + blen];
             leftPosSamples_[i] = leftPosSamples_[i + blen];
             rightNegSamples_[i] = rightNegSamples_[i + blen];
@@ -427,7 +406,8 @@ void SampleManagerImpl::removeSamples(unsigned long start, unsigned long end, Tr
     }
 }
 
-void SampleManagerImpl::insertSamples(unsigned long pos, unsigned long len, const TrackDataScrap *scrap)
+void SampleManagerImpl::insertSamples(unsigned long pos, unsigned long len,
+                                      const TrackDataScrap *scrap)
 {
     long blen;
     long bpos;
@@ -448,10 +428,8 @@ void SampleManagerImpl::insertSamples(unsigned long pos, unsigned long len, cons
 
     blen = blocks_ - oldBlocks;
 
-    if (blen > 0)
-    {
-        for (i = blocks_ - 1; i >= bpos + blen; i--)
-        {
+    if (blen > 0) {
+        for (i = blocks_ - 1; i >= bpos + blen; i--) {
             leftNegSamples_[i] = leftNegSamples_[i - blen];
             leftPosSamples_[i] = leftPosSamples_[i - blen];
             rightNegSamples_[i] = rightNegSamples_[i - blen];
@@ -459,8 +437,7 @@ void SampleManagerImpl::insertSamples(unsigned long pos, unsigned long len, cons
         }
 
         // initialize the new region
-        for (i = bpos; i < bpos + blen; i++)
-        {
+        for (i = bpos; i < bpos + blen; i++) {
             leftNegSamples_[i] = -16000;
             leftPosSamples_[i] = 16000;
             rightNegSamples_[i] = -16000;
@@ -468,7 +445,7 @@ void SampleManagerImpl::insertSamples(unsigned long pos, unsigned long len, cons
         }
 
         if (scrap != NULL)
-            scrap->getPeaks(blen, &(leftNegSamples_[bpos]), &(leftPosSamples_[bpos]), &(rightNegSamples_[bpos]),
-                            &(rightPosSamples_[bpos]));
+            scrap->getPeaks(blen, &(leftNegSamples_[bpos]), &(leftPosSamples_[bpos]),
+                            &(rightNegSamples_[bpos]), &(rightPosSamples_[bpos]));
     }
 }

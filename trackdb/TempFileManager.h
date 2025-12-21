@@ -20,29 +20,35 @@
 #ifndef __TEMPFILEMANAGER_H__
 #define __TEMPFILEMANAGER_H__
 
-#include <string>
 #include <map>
+#include <string>
 
-class TempFileManager {
- public:
+class TempFileManager
+{
+  public:
     TempFileManager();
 
     // The destructor will delete all temp files (unless keepTemps is
     // set) that have not expired yet.
     virtual ~TempFileManager();
 
-    bool setTempDirectory(const char* path);
-    void setKeepTemps(bool b) { keepTemps_ = b; }
-    void setPrefix(const char* prefix) { prefix_ = prefix; }
+    bool setTempDirectory(const char *path);
+    void setKeepTemps(bool b)
+    {
+        keepTemps_ = b;
+    }
+    void setPrefix(const char *prefix)
+    {
+        prefix_ = prefix;
+    }
 
     // Create a new temporary file, associated with given 'key'. The
     // given name string is set to the temporaty file. Returns false
     // is a new file was created, returns true if a temporary file
     // already exists.
-    bool getTempFile(std::string& name, const char* key,
-                     const char* extension = NULL);
+    bool getTempFile(std::string &name, const char *key, const char *extension = NULL);
 
- private:
+  private:
     std::string path_;
     std::string prefix_;
     std::map<std::string, std::string> map_;

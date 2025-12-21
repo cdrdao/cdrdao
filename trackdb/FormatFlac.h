@@ -29,22 +29,25 @@
 
 class FormatFlac : public FormatSupport, FLAC::Decoder::File
 {
-public:
+  public:
     FormatFlac();
     virtual ~FormatFlac();
 
     Status convertStart(std::string from, std::string to);
     Status convertContinue();
-    void   convertAbort();
+    void convertAbort();
 
-    TrackData::FileType format() { return TrackData::WAVE; }
+    TrackData::FileType format()
+    {
+        return TrackData::WAVE;
+    }
 
     FLAC__StreamDecoderWriteStatus write_callback(const ::FLAC__Frame *frame,
-                                                  const FLAC__int32 * const buffer[]);
+                                                  const FLAC__int32 *const buffer[]);
     void metadata_callback(const ::FLAC__StreamMetadata *metadata);
     void error_callback(FLAC__StreamDecoderErrorStatus status);
 
-private:
+  private:
     std::string source_file, dest_file;
     bool started;
 
@@ -63,9 +66,9 @@ private:
 
 class FormatFlacManager : public FormatSupportManager
 {
-public:
-    FormatSupport* newConverter(const char* extension);
-    int supportedExtensions(std::list<std::string>&);
+  public:
+    FormatSupport *newConverter(const char *extension);
+    int supportedExtensions(std::list<std::string> &);
 };
 
 #endif

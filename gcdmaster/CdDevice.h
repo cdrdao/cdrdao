@@ -33,8 +33,7 @@ class ScsiIf;
 class CdDevice : public sigc::trackable
 {
   public:
-    enum Status
-    {
+    enum Status {
         DEV_READY,
         DEV_RECORDING,
         DEV_READING,
@@ -45,15 +44,13 @@ class CdDevice : public sigc::trackable
         DEV_FAULT,
         DEV_UNKNOWN
     };
-    enum DeviceType
-    {
+    enum DeviceType {
         CD_R,
         CD_RW,
         CD_ROM
     };
 
-    enum Action
-    {
+    enum Action {
         A_RECORD,
         A_READ,
         A_DUPLICATE,
@@ -129,23 +126,25 @@ class CdDevice : public sigc::trackable
         return ejectCd(true);
     }
 
-    bool recordDao(Gtk::Window &parent, TocEdit *, int simulate, int multiSession, int speed, int eject, int reload,
-                   int buffer, int overburn);
+    bool recordDao(Gtk::Window &parent, TocEdit *, int simulate, int multiSession, int speed,
+                   int eject, int reload, int buffer, int overburn);
     void abortDaoRecording();
 
-    int extractDao(Gtk::Window &parent, const char *tocFileName, int correction, int readSubChanMode);
+    int extractDao(Gtk::Window &parent, const char *tocFileName, int correction,
+                   int readSubChanMode);
     void abortDaoReading();
 
-    int duplicateDao(Gtk::Window &parent, int simulate, int multiSession, int speed, int eject, int reload, int buffer,
-                     int onthefly, int correction, int readSubChanMode, CdDevice *readdev);
+    int duplicateDao(Gtk::Window &parent, int simulate, int multiSession, int speed, int eject,
+                     int reload, int buffer, int onthefly, int correction, int readSubChanMode,
+                     CdDevice *readdev);
     void abortDaoDuplication();
 
     int blank(Gtk::Window *parent, int fast, int speed, int eject, int reload);
     void abortBlank();
 
     int progressStatusChanged();
-    void progress(int *status, int *totalTracks, int *track, int *trackProgress, int *totalProgress, int *bufferFill,
-                  int *writerFill) const;
+    void progress(int *status, int *totalTracks, int *track, int *trackProgress, int *totalProgress,
+                  int *bufferFill, int *writerFill) const;
 
     static int maxDriverId();
     static const char *driverName(int id);

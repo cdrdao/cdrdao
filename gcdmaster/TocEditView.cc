@@ -47,13 +47,10 @@ TocEdit *TocEditView::tocEdit() const
 
 void TocEditView::sampleMarker(unsigned long sample)
 {
-    if (sample < tocEdit_->toc()->length().samples())
-    {
+    if (sample < tocEdit_->toc()->length().samples()) {
         sampleMarker_ = sample;
         sampleMarkerValid_ = true;
-    }
-    else
-    {
+    } else {
         sampleMarkerValid_ = false;
     }
 }
@@ -70,8 +67,7 @@ void TocEditView::sampleSelectAll()
 {
     unsigned long slength = tocEdit_->toc()->length().samples();
 
-    if (slength)
-    {
+    if (slength) {
         sampleSelectionMin_ = 0;
         sampleSelectionMax_ = slength - 1;
         sampleSelectionValid_ = true;
@@ -82,30 +78,25 @@ void TocEditView::sampleSelect(unsigned long smin, unsigned long smax)
 {
     unsigned long tmp;
 
-    if (smin > smax)
-    {
+    if (smin > smax) {
         tmp = smin;
         smin = smax;
         smax = tmp;
     }
 
-    if (smax < tocEdit_->toc()->length().samples())
-    {
+    if (smax < tocEdit_->toc()->length().samples()) {
         sampleSelectionMin_ = smin;
         sampleSelectionMax_ = smax;
 
         sampleSelectionValid_ = true;
-    }
-    else
-    {
+    } else {
         sampleSelectionValid_ = false;
     }
 }
 
 bool TocEditView::sampleSelectionClear()
 {
-    if (sampleSelectionValid_)
-    {
+    if (sampleSelectionValid_) {
         sampleSelectionValid_ = false;
         return true;
     }
@@ -114,8 +105,7 @@ bool TocEditView::sampleSelectionClear()
 
 bool TocEditView::sampleSelection(unsigned long *smin, unsigned long *smax) const
 {
-    if (sampleSelectionValid_)
-    {
+    if (sampleSelectionValid_) {
         *smin = sampleSelectionMin_;
         *smax = sampleSelectionMax_;
     }
@@ -125,8 +115,7 @@ bool TocEditView::sampleSelection(unsigned long *smin, unsigned long *smax) cons
 
 bool TocEditView::sampleView(unsigned long smin, unsigned long smax)
 {
-    if (smin <= smax && smax < tocEdit_->lengthSample())
-    {
+    if (smin <= smax && smax < tocEdit_->lengthSample()) {
         sampleViewMin_ = smin;
         sampleViewMax_ = smax;
         return true;
@@ -150,8 +139,7 @@ void TocEditView::sampleViewFull()
 
 void TocEditView::sampleViewUpdate()
 {
-    if (sampleViewMax_ >= tocEdit_->lengthSample())
-    {
+    if (sampleViewMax_ >= tocEdit_->lengthSample()) {
         unsigned long len = sampleViewMax_ - sampleViewMin_;
 
         if ((sampleViewMax_ = tocEdit_->lengthSample()) > 0)
@@ -168,14 +156,12 @@ void TocEditView::sampleViewUpdate()
 
 void TocEditView::sampleViewInclude(unsigned long smin, unsigned long smax)
 {
-    if (smin < sampleViewMin_)
-    {
+    if (smin < sampleViewMin_) {
         sampleViewMin_ = smin;
         tocEdit_->updateLevel_ |= UPD_SAMPLES;
     }
 
-    if (smax < tocEdit_->lengthSample() && smax > sampleViewMax_)
-    {
+    if (smax < tocEdit_->lengthSample() && smax > sampleViewMax_) {
         sampleViewMax_ = smax;
         tocEdit_->updateLevel_ |= UPD_SAMPLES;
     }
@@ -183,13 +169,10 @@ void TocEditView::sampleViewInclude(unsigned long smin, unsigned long smax)
 
 void TocEditView::trackSelection(int tnum)
 {
-    if (tnum > 0)
-    {
+    if (tnum > 0) {
         trackSelection_ = tnum;
         trackSelectionValid_ = 1;
-    }
-    else
-    {
+    } else {
         trackSelectionValid_ = 0;
     }
 }
@@ -204,13 +187,10 @@ int TocEditView::trackSelection(int *tnum) const
 
 void TocEditView::indexSelection(int inum)
 {
-    if (inum >= 0)
-    {
+    if (inum >= 0) {
         indexSelection_ = inum;
         indexSelectionValid_ = 1;
-    }
-    else
-    {
+    } else {
         indexSelectionValid_ = 0;
     }
 }

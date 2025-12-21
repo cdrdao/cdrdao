@@ -63,19 +63,15 @@ void Project::updateWindowTitle()
 
 void Project::saveProject()
 {
-    if (new_)
-    {
+    if (new_) {
         saveAsProject();
         return;
     }
 
-    if (tocEdit_->saveToc() == 0)
-    {
+    if (tocEdit_->saveToc() == 0) {
         statusMessage(_("Project saved to \"%s\"."), tocEdit_->filename());
         guiUpdate(UPD_TOC_DIRTY);
-    }
-    else
-    {
+    } else {
         std::string s(_("Cannot save toc to \""));
         s += tocEdit_->filename();
         s += "\":";
@@ -87,9 +83,9 @@ void Project::saveProject()
 
 void Project::saveAsProject()
 {
-    if (!saveFileSelector_)
-    {
-        saveFileSelector_ = new Gtk::FileChooserDialog(_("Save Project"), Gtk::FILE_CHOOSER_ACTION_SAVE);
+    if (!saveFileSelector_) {
+        saveFileSelector_ =
+            new Gtk::FileChooserDialog(_("Save Project"), Gtk::FILE_CHOOSER_ACTION_SAVE);
         saveFileSelector_->add_button(Gtk::Stock::CANCEL, Gtk::RESPONSE_CANCEL);
         saveFileSelector_->add_button(Gtk::Stock::OK, Gtk::RESPONSE_OK);
         saveFileSelector_->set_transient_for(*parent_);
@@ -99,28 +95,24 @@ void Project::saveAsProject()
     int result = saveFileSelector_->run();
     saveFileSelector_->hide();
 
-    if (result == Gtk::RESPONSE_OK)
-    {
+    if (result == Gtk::RESPONSE_OK) {
 
         char *s = g_strdup(saveFileSelector_->get_filename().c_str());
 
-        if (s != NULL && *s != 0 && s[strlen(s) - 1] != '/')
-        {
+        if (s != NULL && *s != 0 && s[strlen(s) - 1] != '/') {
 
-            if (tocEdit_->saveAsToc(stripCwd(s)) == 0)
-            {
+            if (tocEdit_->saveAsToc(stripCwd(s)) == 0) {
                 statusMessage(_("Project saved to \"%s\"."), tocEdit_->filename());
                 new_ = false; // The project is now saved
                 updateWindowTitle();
                 guiUpdate(UPD_TOC_DIRTY);
-            }
-            else
-            {
+            } else {
 
                 std::string m(_("Cannot save toc to \""));
                 m += tocEdit_->filename();
                 m += "\":";
-                MessageBox msg(saveFileSelector_, _("Save Project"), 0, m.c_str(), strerror(errno), NULL);
+                MessageBox msg(saveFileSelector_, _("Save Project"), 0, m.c_str(), strerror(errno),
+                               NULL);
                 msg.run();
             }
         }

@@ -12,17 +12,18 @@ Gtk::StockID Icons::DUMPCD("gcdmaster-dumpcd");
 Gtk::StockID Icons::RECORD("gcdmaster-record");
 
 struct Icons::IconEntry Icons::iconList[] = {
-    {Icons::PLAY, play_pixbuf},           {Icons::STOP, stop_pixbuf},     {Icons::PAUSE, pause_pixbuf},
-    {Icons::GCDMASTER, gcdmaster_pixbuf}, {Icons::OPEN, open_pixbuf},     {Icons::AUDIOCD, audiocd_pixbuf},
-    {Icons::COPYCD, copycd_pixbuf},       {Icons::DUMPCD, dumpcd_pixbuf}, {Icons::RECORD, record_pixbuf}};
+    {Icons::PLAY, play_pixbuf},     {Icons::STOP, stop_pixbuf},
+    {Icons::PAUSE, pause_pixbuf},   {Icons::GCDMASTER, gcdmaster_pixbuf},
+    {Icons::OPEN, open_pixbuf},     {Icons::AUDIOCD, audiocd_pixbuf},
+    {Icons::COPYCD, copycd_pixbuf}, {Icons::DUMPCD, dumpcd_pixbuf},
+    {Icons::RECORD, record_pixbuf}};
 
 void Icons::registerStockIcons()
 {
     Glib::RefPtr<Gtk::IconFactory> factory = Gtk::IconFactory::create();
     factory->add_default();
 
-    for (unsigned i = 0; i < G_N_ELEMENTS(iconList); i++)
-    {
+    for (unsigned i = 0; i < G_N_ELEMENTS(iconList); i++) {
         Glib::RefPtr<Gdk::Pixbuf> pixbuf = Gdk::Pixbuf::create_from_inline(-1, iconList[i].pixbuf);
 
         Gtk::IconSource *source = new Gtk::IconSource;

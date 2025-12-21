@@ -30,32 +30,46 @@
 #undef min
 #endif
 
-class Msf {
-private:
+class Msf
+{
+  private:
+    int min_;  // minutes
+    int sec_;  // seconds
+    int frac_; // fractions (blocks)
 
-  int min_; // minutes
-  int sec_; // seconds 
-  int frac_; // fractions (blocks)
+    long lba_; // logical block address
 
-  long lba_; // logical block address
+    void lba2Msf();
 
-  void lba2Msf();
+  public:
+    Msf(int min, int sec, int frac);
+    Msf(long lba);
+    Msf();
 
-public:
-  Msf(int min, int sec, int frac);
-  Msf(long lba);
-  Msf();
+    int min() const
+    {
+        return min_;
+    }
+    int sec() const
+    {
+        return sec_;
+    }
+    int frac() const
+    {
+        return frac_;
+    }
 
-  int min() const { return min_; }
-  int sec() const { return sec_; }
-  int frac() const { return frac_; }
-  
-  long lba() const { return lba_; }
+    long lba() const
+    {
+        return lba_;
+    }
 
-  unsigned long samples() const { return lba_ * SAMPLES_PER_BLOCK; }
+    unsigned long samples() const
+    {
+        return lba_ * SAMPLES_PER_BLOCK;
+    }
 
-  const char *str() const;
-
+    const char *str() const;
 };
 
 Msf operator+(const Msf &m1, const Msf &m2);

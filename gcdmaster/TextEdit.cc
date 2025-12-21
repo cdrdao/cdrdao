@@ -63,35 +63,23 @@ void TextEdit::insert_text_impl(const gchar *c, gint p2, gint *p3)
     char *s = new char[strlen(c) + 1];
     char *p = s;
 
-    while (*c != 0)
-    {
-        if (islower(*c))
-        {
-            if (!lower_)
-            {
+    while (*c != 0) {
+        if (islower(*c)) {
+            if (!lower_) {
                 if (upper_)
                     *p++ = toupper(*c);
-            }
-            else
+            } else
                 *p++ = *c;
-        }
-        else if (isupper(*c))
-        {
-            if (!upper_)
-            {
+        } else if (isupper(*c)) {
+            if (!upper_) {
                 if (lower_)
                     *p++ = tolower(*c);
-            }
-            else
+            } else
                 *p++ = *c;
-        }
-        else if (isdigit(*c))
-        {
+        } else if (isdigit(*c)) {
             if (digits_)
                 *p++ = *c;
-        }
-        else if (isspace(*c))
-        {
+        } else if (isspace(*c)) {
             if (space_)
                 *p++ = *c;
         }

@@ -23,205 +23,268 @@
 #include <iostream>
 #include <memory>
 
-#include "SubTrack.h"
-#include "Msf.h"
 #include "CdTextContainer.h"
 #include "CdTextItem.h"
+#include "Msf.h"
+#include "SubTrack.h"
 #include "util.h"
 
 class TrackDataList;
 
-class Track {
-public:
-  Track(TrackData::Mode, TrackData::SubChannelMode);
-  Track(const Track &);
-  ~Track();
-  
-  TrackData::Mode type() const { return type_; }
-  TrackData::SubChannelMode subChannelType() const { return subChannelType_; }
+class Track
+{
+  public:
+    Track(TrackData::Mode, TrackData::SubChannelMode);
+    Track(const Track &);
+    ~Track();
 
-  int audioCutMode() const { return audioCutMode_; }
+    TrackData::Mode type() const
+    {
+        return type_;
+    }
+    TrackData::SubChannelMode subChannelType() const
+    {
+        return subChannelType_;
+    }
 
-  Msf length() const { return length_; }
+    int audioCutMode() const
+    {
+        return audioCutMode_;
+    }
 
-  Msf start() const { return start_; }
-  int start(Msf);
+    Msf length() const
+    {
+        return length_;
+    }
 
-  Msf end() const { return end_; }
-  int end(Msf);
+    Msf start() const
+    {
+        return start_;
+    }
+    int start(Msf);
 
-  int isPadded() const;
+    Msf end() const
+    {
+        return end_;
+    }
+    int end(Msf);
 
-  int nofSubTracks() const { return nofSubTracks_; }
+    int isPadded() const;
 
-  // return first/last sub-track
-  const SubTrack *firstSubTrack() const;
-  const SubTrack *lastSubTrack() const;
+    int nofSubTracks() const
+    {
+        return nofSubTracks_;
+    }
 
-  int append(const SubTrack &);
+    // return first/last sub-track
+    const SubTrack *firstSubTrack() const;
+    const SubTrack *lastSubTrack() const;
 
-  int nofIndices() const { return nofIndices_; }
+    int append(const SubTrack &);
 
-  int appendIndex(const Msf &);
-  int addIndex(const Msf &index);
-  int removeIndex(int);
-  Msf getIndex(int) const;
+    int nofIndices() const
+    {
+        return nofIndices_;
+    }
 
-  int moveIndex(int index, long lba);
-  TrackDataList *removeToEnd(unsigned long samplePos);
-  TrackDataList *removeFromStart(unsigned long sample);
+    int appendIndex(const Msf &);
+    int addIndex(const Msf &index);
+    int removeIndex(int);
+    Msf getIndex(int) const;
 
-  void prependTrackData(const TrackDataList *);
-  void appendTrackData(const TrackDataList *);
-  void appendTrackData(const Track *);
+    int moveIndex(int index, long lba);
+    TrackDataList *removeToEnd(unsigned long samplePos);
+    TrackDataList *removeFromStart(unsigned long sample);
 
-  TrackDataList *removeTrackData(unsigned long start, unsigned long end);
-  void insertTrackData(unsigned long pos, const TrackDataList *list);
+    void prependTrackData(const TrackDataList *);
+    void appendTrackData(const TrackDataList *);
+    void appendTrackData(const Track *);
 
-  // fills provided buffer with an audio block that contains zero data
-  // encoded with given mode
-  static void encodeZeroData(int encMode, TrackData::Mode, 
-			     TrackData::SubChannelMode, long lba,
-			     unsigned char *);
+    TrackDataList *removeTrackData(unsigned long start, unsigned long end);
+    void insertTrackData(unsigned long pos, const TrackDataList *list);
 
-  int check(int trackNr) const;
+    // fills provided buffer with an audio block that contains zero data
+    // encoded with given mode
+    static void encodeZeroData(int encMode, TrackData::Mode, TrackData::SubChannelMode, long lba,
+                               unsigned char *);
 
-  int isrcValid() const { return isrcValid_; }
+    int check(int trackNr) const;
 
-  // set ISRC code from given string
-  int isrc(const char *); // sets ISRC code
-  const char *isrc() const;
+    int isrcValid() const
+    {
+        return isrcValid_;
+    }
 
-  char isrcCountry(int i) const { return isrcCountry_[i]; } // ASCII
-  char isrcOwner(int i) const { return isrcOwner_[i]; }     // ASCII
-  char isrcYear(int i) const { return isrcYear_[i]; }       // BCD
-  char isrcSerial(int i) const { return isrcSerial_[i]; }   // BCD
+    // set ISRC code from given string
+    int isrc(const char *); // sets ISRC code
+    const char *isrc() const;
 
-  // return/set COPY flag (1: copy permitted, 0: copy not permitted)
-  int  copyPermitted() const { return flags_.copy; }
-  void copyPermitted(int c) { flags_.copy = c != 0 ? 1 : 0; }
+    char isrcCountry(int i) const
+    {
+        return isrcCountry_[i];
+    } // ASCII
+    char isrcOwner(int i) const
+    {
+        return isrcOwner_[i];
+    } // ASCII
+    char isrcYear(int i) const
+    {
+        return isrcYear_[i];
+    } // BCD
+    char isrcSerial(int i) const
+    {
+        return isrcSerial_[i];
+    } // BCD
 
-  // return/set PRE-EMPHASIS flag (1: audio with pre-emphasis,
-  // 0: audio without pre-emphasis
-  int  preEmphasis() const { return flags_.preEmphasis; }
-  void preEmphasis(int p) { flags_.preEmphasis = p != 0 ? 1 : 0; }
+    // return/set COPY flag (1: copy permitted, 0: copy not permitted)
+    int copyPermitted() const
+    {
+        return flags_.copy;
+    }
+    void copyPermitted(int c)
+    {
+        flags_.copy = c != 0 ? 1 : 0;
+    }
 
-  // return/set audio type (0: two channel audio, 1: four channel audio)
-  int  audioType() const { return flags_.audioType; }
-  void audioType(int t) { flags_.audioType = t != 0 ? 1 : 0; }
+    // return/set PRE-EMPHASIS flag (1: audio with pre-emphasis,
+    // 0: audio without pre-emphasis
+    int preEmphasis() const
+    {
+        return flags_.preEmphasis;
+    }
+    void preEmphasis(int p)
+    {
+        flags_.preEmphasis = p != 0 ? 1 : 0;
+    }
 
-  void addCdTextItem(CdTextItem*);
-  void removeCdTextItem(CdTextItem::PackType, int blockNr);
-  int  existCdTextBlock(int n) const { return cdtext_.existBlock(n); }
-  const CdTextItem *getCdTextItem(int blockNr, CdTextItem::PackType t) const {
-    return cdtext_.getPack(blockNr, t);
-  }
-  const CdTextContainer& getCdTextItems() const { return cdtext_; }
+    // return/set audio type (0: two channel audio, 1: four channel audio)
+    int audioType() const
+    {
+        return flags_.audioType;
+    }
+    void audioType(int t)
+    {
+        flags_.audioType = t != 0 ? 1 : 0;
+    }
 
-  void print(std::ostream &, PrintParams&) const;
+    void addCdTextItem(CdTextItem *);
+    void removeCdTextItem(CdTextItem::PackType, int blockNr);
+    int existCdTextBlock(int n) const
+    {
+        return cdtext_.existBlock(n);
+    }
+    const CdTextItem *getCdTextItem(int blockNr, CdTextItem::PackType t) const
+    {
+        return cdtext_.getPack(blockNr, t);
+    }
+    const CdTextContainer &getCdTextItems() const
+    {
+        return cdtext_;
+    }
 
-  void collectFiles(std::set<std::string>& set);
-  void markFileConversion(const char* src, const char* dst);
-  bool resolveFilename(const char* path);
-  bool recomputeLength();
+    void print(std::ostream &, PrintParams &) const;
 
-private:
-  friend class TocParserGram;
-  friend class Toc;
-  friend class TrackReader;
-  friend class SubTrackIterator;
+    void collectFiles(std::set<std::string> &set);
+    void markFileConversion(const char *src, const char *dst);
+    bool resolveFilename(const char *path);
+    bool recomputeLength();
 
-  TrackData::Mode type_; // track type
-  TrackData::SubChannelMode subChannelType_; // sub-channel mode
-  int audioCutMode_; /* -1: undefined
-			 1: lengths of all sub-tracks are in units of samples
-			 0: lengths of all sub-tracks are in byte units
-		     */
+  private:
+    friend class TocParserGram;
+    friend class Toc;
+    friend class TrackReader;
+    friend class SubTrackIterator;
 
-  Msf length_; // total length of track
-  Msf start_;  // logical start of track data, end of pre-gap
-               // (where index switches from 0 to 1)
-  Msf end_;    // end of track data, start of post-gap
-  
-  int nofSubTracks_;    // number of sub tracks
-  SubTrack *subTracks_; // list of subtracks
-  SubTrack *lastSubTrack_; // points to last sub-track in list
+    TrackData::Mode type_;                     // track type
+    TrackData::SubChannelMode subChannelType_; // sub-channel mode
+    int audioCutMode_;                         /* -1: undefined
+                                       1: lengths of all sub-tracks are in units of samples
+                                       0: lengths of all sub-tracks are in byte units
+                                       */
 
-  int nofIndices_;      // number of index increments
-  Msf *index_;          // index increment times
+    Msf length_; // total length of track
+    Msf start_;  // logical start of track data, end of pre-gap
+                 // (where index switches from 0 to 1)
+    Msf end_;    // end of track data, start of post-gap
 
+    int nofSubTracks_;       // number of sub tracks
+    SubTrack *subTracks_;    // list of subtracks
+    SubTrack *lastSubTrack_; // points to last sub-track in list
 
-  int  isrcValid_;
-  char isrcCountry_[2];
-  char isrcOwner_[3];
-  char isrcYear_[2];
-  char isrcSerial_[5];
-  
-  struct {
-    unsigned int copy : 1;
-    unsigned int preEmphasis : 1;
-    unsigned int audioType : 1;
-  } flags_;
+    int nofIndices_; // number of index increments
+    Msf *index_;     // index increment times
 
-  CdTextContainer cdtext_;
+    int isrcValid_;
+    char isrcCountry_[2];
+    char isrcOwner_[3];
+    char isrcYear_[2];
+    char isrcSerial_[5];
 
-  void update();
+    struct {
+        unsigned int copy : 1;
+        unsigned int preEmphasis : 1;
+        unsigned int audioType : 1;
+    } flags_;
 
-  void insertSubTrackAfter(SubTrack *, SubTrack *newSubtrack);
-  SubTrack *removeSubTrack(SubTrack *);
+    CdTextContainer cdtext_;
 
-  void countSubTracks();
-  void mergeSubTracks();
+    void update();
 
-  SubTrack *findSubTrack(unsigned long sample) const;
-  void checkConsistency();
+    void insertSubTrackAfter(SubTrack *, SubTrack *newSubtrack);
+    SubTrack *removeSubTrack(SubTrack *);
+
+    void countSubTracks();
+    void mergeSubTracks();
+
+    SubTrack *findSubTrack(unsigned long sample) const;
+    void checkConsistency();
 };
 
-class TrackReader {
-public:
-  TrackReader(const Track * = 0);
-  ~TrackReader();
+class TrackReader
+{
+  public:
+    TrackReader(const Track * = 0);
+    ~TrackReader();
 
-  void init(const Track *);
+    void init(const Track *);
 
-  int openData();
-  long readData(int raw, int subChanEncodingMode, long lba, char *buf,
-		long len);
-  int seekSample(unsigned long sample);
-  long readSamples(Sample *buf, long len);
-  void closeData();
+    int openData();
+    long readData(int raw, int subChanEncodingMode, long lba, char *buf, long len);
+    int seekSample(unsigned long sample);
+    long readSamples(Sample *buf, long len);
+    void closeData();
 
-  const char* curFilename();
+    const char *curFilename();
 
-private:
-  const Track *track_;
+  private:
+    const Track *track_;
 
-  TrackDataReader reader;
+    TrackDataReader reader;
 
-  long readPos_; // current read position (blocks)
-  long readPosSample_; // current read position (samples)
-  const SubTrack *readSubTrack_; // actual read sub-track
-  int open_; // 1 indicates the 'openData()' was called
+    long readPos_;                 // current read position (blocks)
+    long readPosSample_;           // current read position (samples)
+    const SubTrack *readSubTrack_; // actual read sub-track
+    int open_;                     // 1 indicates the 'openData()' was called
 
-  unsigned long subChanDelayLineIndex_;
-  unsigned char subChanDelayLine_[8][24];
+    unsigned long subChanDelayLineIndex_;
+    unsigned char subChanDelayLine_[8][24];
 
-
-  long readTrackData(Sample *buf, long len);
-  int readBlock(int raw, int subChanEncodingMode, long lba, Sample *buf);
+    long readTrackData(Sample *buf, long len);
+    int readBlock(int raw, int subChanEncodingMode, long lba, Sample *buf);
 };
 
-class SubTrackIterator {
-public:
-  SubTrackIterator(const Track *);
-  ~SubTrackIterator();
+class SubTrackIterator
+{
+  public:
+    SubTrackIterator(const Track *);
+    ~SubTrackIterator();
 
-  const SubTrack *first();
-  const SubTrack *next();
+    const SubTrack *first();
+    const SubTrack *next();
 
-private:
-  const Track *track_;
-  SubTrack *iterator_;
+  private:
+    const Track *track_;
+    SubTrack *iterator_;
 };
 
 #endif

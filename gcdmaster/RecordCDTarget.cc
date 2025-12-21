@@ -74,7 +74,8 @@ RecordCDTarget::RecordCDTarget(Gtk::Window *parent)
     speedButton_ = new Gtk::CheckButton("Use max.", 0);
     speedButton_->set_active(true);
     speedButton_->show();
-    speedButton_->signal_toggled().connect(sigc::mem_fun(*this, &RecordCDTarget::speedButtonChanged));
+    speedButton_->signal_toggled().connect(
+        sigc::mem_fun(*this, &RecordCDTarget::speedButtonChanged));
     hbox->pack_start(*speedButton_, true, true);
     vbox->pack_start(*hbox);
 
@@ -131,8 +132,7 @@ void RecordCDTarget::start()
 
 void RecordCDTarget::stop()
 {
-    if (active_)
-    {
+    if (active_) {
         hide();
         active_ = 0;
     }
@@ -140,10 +140,9 @@ void RecordCDTarget::stop()
 
 void RecordCDTarget::moreOptions()
 {
-    if (!moreOptionsDialog_)
-    {
-        moreOptionsDialog_ =
-            new Gtk::MessageDialog(*parent_, "Target options", false, Gtk::MESSAGE_QUESTION, Gtk::BUTTONS_CLOSE, true);
+    if (!moreOptionsDialog_) {
+        moreOptionsDialog_ = new Gtk::MessageDialog(
+            *parent_, "Target options", false, Gtk::MESSAGE_QUESTION, Gtk::BUTTONS_CLOSE, true);
 
         Gtk::Box *box = moreOptionsDialog_->get_vbox();
         Gtk::Frame *frame = new Gtk::Frame(" More Target Options ");
@@ -181,7 +180,8 @@ void RecordCDTarget::moreOptions()
         hbox->pack_start(*label, false, false);
         bufferRAMLabel_ = new Gtk::Label("= 1.72 Mb buffer.", 0);
         hbox->pack_start(*bufferRAMLabel_, true, true);
-        adjustment->signal_value_changed().connect(sigc::mem_fun(*this, &RecordCDTarget::updateBufferRAMLabel));
+        adjustment->signal_value_changed().connect(
+            sigc::mem_fun(*this, &RecordCDTarget::updateBufferRAMLabel));
 
         vbox->pack_start(*hbox);
     }
@@ -256,19 +256,15 @@ int RecordCDTarget::checkEjectWarning(Gtk::Window *parent)
 {
     // If ejecting the CD after recording is requested issue a warning message
     // because buffer under runs may occur for other devices that are recording.
-    if (getEject())
-    {
-        if (configManager->getEjectWarning())
-        {
+    if (getEject()) {
+        if (configManager->getEjectWarning()) {
             Ask3Box msg(parent, "Request", 1, 2, "Ejecting a CD may block the SCSI bus and",
                         "cause buffer under runs when other devices", "are still recording.", "",
                         "Keep the eject setting anyway?", NULL);
 
-            switch (msg.run())
-            {
+            switch (msg.run()) {
             case 1: // keep eject setting
-                if (msg.dontShowAgain())
-                {
+                if (msg.dontShowAgain()) {
                     configManager->setEjectWarning(false);
                 }
                 return 1;
@@ -298,19 +294,15 @@ bool RecordCDTarget::getReload()
 int RecordCDTarget::checkReloadWarning(Gtk::Window *parent)
 {
     // The same is true for reloading the disk.
-    if (getReload())
-    {
-        if (configManager->getReloadWarning())
-        {
+    if (getReload()) {
+        if (configManager->getReloadWarning()) {
             Ask3Box msg(parent, "Request", 1, 2, "Reloading a CD may block the SCSI bus and",
                         "cause buffer under runs when other devices", "are still recording.", "",
                         "Keep the reload setting anyway?", NULL);
 
-            switch (msg.run())
-            {
+            switch (msg.run()) {
             case 1: // keep reload setting
-                if (msg.dontShowAgain())
-                {
+                if (msg.dontShowAgain()) {
                     configManager->setReloadWarning(false);
                 }
                 return 1;
@@ -339,12 +331,9 @@ void RecordCDTarget::updateBufferRAMLabel()
 
 void RecordCDTarget::speedButtonChanged()
 {
-    if (speedButton_->get_active())
-    {
+    if (speedButton_->get_active()) {
         speedSpinButton_->set_sensitive(false);
-    }
-    else
-    {
+    } else {
         speedSpinButton_->set_sensitive(true);
     }
 }
@@ -356,10 +345,8 @@ void RecordCDTarget::speedChanged()
 
     new_speed = speedSpinButton_->get_value_as_int();
 
-    if ((new_speed % 2) == 1)
-    {
-        if (new_speed > 2)
-        {
+    if ((new_speed % 2) == 1) {
+        if (new_speed > 2) {
             if (new_speed > speed_)
                 new_speed = new_speed + 1;
             else

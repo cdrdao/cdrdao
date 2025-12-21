@@ -100,8 +100,7 @@ RecordTocDialog::~RecordTocDialog()
 
 void RecordTocDialog::start(Gtk::Window *parent)
 {
-    if (!active_)
-    {
+    if (!active_) {
         active_ = true;
         TocSource->start();
         CDTarget->start();
@@ -151,17 +150,16 @@ void RecordTocDialog::startAction()
 
     DeviceList *targetList = CDTarget->getDeviceList();
 
-    if (targetList->selection().empty())
-    {
-        Gtk::MessageDialog md(*this, _("Please select at least one recorder device"), Gtk::MESSAGE_INFO);
+    if (targetList->selection().empty()) {
+        Gtk::MessageDialog md(*this, _("Please select at least one recorder device"),
+                              Gtk::MESSAGE_INFO);
         md.run();
         return;
     }
 
     Toc *toc = tocEdit_->toc();
 
-    if (toc->nofTracks() == 0 || toc->length().lba() < 300)
-    {
+    if (toc->nofTracks() == 0 || toc->length().lba() < 300) {
         Gtk::MessageDialog md(*this,
                               _("Current toc contains no tracks or length "
                                 "of at least one track is < 4 seconds"),
@@ -170,8 +168,7 @@ void RecordTocDialog::startAction()
         return;
     }
 
-    switch (toc->checkCdTextData())
-    {
+    switch (toc->checkCdTextData()) {
     case 0: // OK
         break;
     case 1: // warning
@@ -179,13 +176,12 @@ void RecordTocDialog::startAction()
         Ask2Box msg(this, _("CD-TEXT Inconsistency"), 0, 2,
                     _("Inconsistencies were detected in the defined CD-TEXT "
                       "data"),
-                    _("which may produce undefined results. See the console"), _("output for more details."), "",
-                    _("Do you want to proceed anyway?"), NULL);
+                    _("which may produce undefined results. See the console"),
+                    _("output for more details."), "", _("Do you want to proceed anyway?"), NULL);
 
         if (msg.run() != 1)
             return;
-    }
-    break;
+    } break;
     default: // error
     {
         MessageBox msg(this, _("CD-TEXT Error"), 0,
@@ -194,8 +190,7 @@ void RecordTocDialog::startAction()
                        _("See the console output for more details."), NULL);
         msg.run();
         return;
-    }
-    break;
+    } break;
     }
 
     int simulate;
@@ -220,8 +215,7 @@ void RecordTocDialog::startAction()
     int buffer = CDTarget->getBuffer();
 
     DeviceList *target = CDTarget->getDeviceList();
-    if (target->selection().empty())
-    {
+    if (target->selection().empty()) {
         Gtk::MessageDialog d(*this, _("Please select a writer device"), Gtk::MESSAGE_INFO);
         d.run();
         return;
@@ -230,16 +224,13 @@ void RecordTocDialog::startAction()
     std::string targetData = target->selection();
     CdDevice *writeDevice = CdDevice::find(targetData.c_str());
 
-    if (writeDevice)
-    {
-        if (!writeDevice->recordDao(*this, tocEdit_, simulate, multiSession, burnSpeed, eject, reload, buffer,
-                                    overburn))
-        {
-            Gtk::MessageDialog d(*this, _("Cannot start disk-at-once recording"), Gtk::MESSAGE_ERROR);
+    if (writeDevice) {
+        if (!writeDevice->recordDao(*this, tocEdit_, simulate, multiSession, burnSpeed, eject,
+                                    reload, buffer, overburn)) {
+            Gtk::MessageDialog d(*this, _("Cannot start disk-at-once recording"),
+                                 Gtk::MESSAGE_ERROR);
             d.run();
-        }
-        else
-        {
+        } else {
             guiUpdate(UPD_CD_DEVICE_STATUS);
         }
     }
