@@ -45,30 +45,30 @@
 #ifndef __TEXT_EDIT_H__
 #define __TEXT_EDIT_H__
 
-#include <gtkmm.h>
 #include <gtk/gtk.h>
+#include <gtkmm.h>
 
 class TextEdit : public Gtk::Entry
 {
-public:
-  TextEdit(const char *sample);
-  ~TextEdit();
+  public:
+    TextEdit(const char *sample);
+    ~TextEdit();
 
-  void upperCase(int);
-  void lowerCase(int);
-  void digits(int);
-  void space(int);
+    void upperCase(int);
+    void lowerCase(int);
+    void digits(int);
+    void space(int);
 
-protected:
-  virtual void insert_text_impl(const gchar *p1,gint p2,gint *p3);
+  protected:
+    virtual void insert_text_impl(const gchar *p1, gint p2, gint *p3);
 
-private:
-  unsigned int upper_ : 1;
-  unsigned int lower_ : 1;
-  unsigned int digits_ : 1;
-  unsigned int space_ : 1;
+  private:
+    unsigned int upper_ : 1;
+    unsigned int lower_ : 1;
+    unsigned int digits_ : 1;
+    unsigned int space_ : 1;
 
-  void setSize(const char *sample);
+    void setSize(const char *sample);
 };
 
 #endif

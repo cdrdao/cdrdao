@@ -17,394 +17,404 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#include "config.h"
 #include "CdTextDialog.h"
+#include "config.h"
 
-#include <gtkmm.h>
 #include <glibmm/i18n.h>
+#include <gtkmm.h>
 
 #include <stddef.h>
 #include <string.h>
 
-#include "TocEdit.h"
 #include "Toc.h"
+#include "TocEdit.h"
 #include "util.h"
 
 #include "guiUpdate.h"
 
 CdTextDialog::CdTextDialog()
 {
-  int i;
-  Gtk::VBox *contents = manage(new Gtk::VBox);
-  char buf[20];
+    int i;
+    Gtk::VBox *contents = manage(new Gtk::VBox);
+    char buf[20];
 
-  active_ = false;
-  tocEdit_ = NULL;
-  trackEntries_ = 0;
+    active_ = false;
+    tocEdit_ = NULL;
+    trackEntries_ = 0;
 
-  set_hexpand(true);
-  set_vexpand(true);
+    set_hexpand(true);
+    set_vexpand(true);
 
-  languages_ = manage(new Gtk::Notebook);
+    languages_ = manage(new Gtk::Notebook);
 
-  for (i = 0; i < 8; i++) {
-    page_[i].table = new Gtk::Grid();
-    page_[i].table->set_row_homogeneous(false);
-    page_[i].table->set_row_spacing(5);
-    page_[i].table->set_column_spacing(5);
-    page_[i].performer = manage(new Gtk::Entry);
-    page_[i].title = manage(new Gtk::Entry);
-    page_[i].tabLabel = new Gtk::Label("");
-    page_[i].performerButton =
-      new Gtk::CheckButton(_("Enable Performer Entries"));
-    page_[i].performerButton->set_active(false);
-    page_[i].performerButton->signal_toggled().
-      connect(bind(mem_fun(*this, &CdTextDialog::activatePerformerAction), i));
-    page_[i].tracks = NULL;
-    page_[i].table->attach(*(new Gtk::Label(_("Performer"))), 1, 0);
-    page_[i].table->attach(*(new Gtk::Label(_("Title"))), 2, 0);
+    for (i = 0; i < 8; i++)
+    {
+        page_[i].table = new Gtk::Grid();
+        page_[i].table->set_row_homogeneous(false);
+        page_[i].table->set_row_spacing(5);
+        page_[i].table->set_column_spacing(5);
+        page_[i].performer = manage(new Gtk::Entry);
+        page_[i].title = manage(new Gtk::Entry);
+        page_[i].tabLabel = new Gtk::Label("");
+        page_[i].performerButton = new Gtk::CheckButton(_("Enable Performer Entries"));
+        page_[i].performerButton->set_active(false);
+        page_[i].performerButton->signal_toggled().connect(
+            bind(mem_fun(*this, &CdTextDialog::activatePerformerAction), i));
+        page_[i].tracks = NULL;
+        page_[i].table->attach(*(new Gtk::Label(_("Performer"))), 1, 0);
+        page_[i].table->attach(*(new Gtk::Label(_("Title"))), 2, 0);
+
+        {
+            Gtk::HBox *hbox = manage(new Gtk::HBox);
+            hbox->pack_end(*(new Gtk::Label(_("Album"))));
+
+            page_[i].table->attach(*hbox, 0, 1);
+            page_[i].title->set_hexpand(true);
+            page_[i].table->attach(*(page_[i].title), 2, 1);
+            page_[i].table->attach(*(page_[i].performer), 1, 1);
+        }
+
+        {
+            Gtk::HBox *hbox = manage(new Gtk::HBox);
+
+            hbox->pack_start(*(page_[i].performerButton));
+            page_[i].table->attach(*hbox, 1, 2);
+        }
+
+        {
+            Gtk::HBox *hbox1 = manage(new Gtk::HBox);
+            Gtk::VBox *vbox1 = manage(new Gtk::VBox);
+
+            hbox1->pack_start(*(page_[i].table), true, true, 5);
+            vbox1->pack_start(*hbox1, false, false, 5);
+
+            Gtk::ScrolledWindow *swin = manage(new Gtk::ScrolledWindow);
+            swin->set_propagate_natural_height();
+            swin->set_policy(Gtk::POLICY_AUTOMATIC, Gtk::POLICY_AUTOMATIC);
+            swin->show_all();
+            swin->add(*vbox1);
+
+            snprintf(buf, sizeof(buf), " %d ", i);
+            languages_->append_page(*swin, *(page_[i].tabLabel));
+        }
+    }
+
+    contents->pack_start(*languages_);
 
     {
-      Gtk::HBox *hbox = manage(new Gtk::HBox);
-      hbox->pack_end(*(new Gtk::Label(_("Album"))));
+        Gtk::HBox *hbox = manage(new Gtk::HBox);
 
-      page_[i].table->attach(*hbox, 0, 1);
-      page_[i].title->set_hexpand(true);
-      page_[i].table->attach(*(page_[i].title), 2, 1);
-      page_[i].table->attach(*(page_[i].performer), 1, 1);
-    }
-    
-    {
-      Gtk::HBox *hbox = manage(new Gtk::HBox);
-
-      hbox->pack_start(*(page_[i].performerButton));
-      page_[i].table->attach(*hbox, 1, 2);
+        hbox->pack_start(*contents, true, true, 10);
+        get_vbox()->pack_start(*hbox, true, true, 10);
     }
 
-    {
-      Gtk::HBox *hbox1 = manage(new Gtk::HBox);
-      Gtk::VBox *vbox1 = manage(new Gtk::VBox);
+    Gtk::HButtonBox *bbox = new Gtk::HButtonBox(Gtk::BUTTONBOX_SPREAD);
 
-      hbox1->pack_start(*(page_[i].table), true, true, 5);
-      vbox1->pack_start(*hbox1, false, false, 5);
+    applyButton_ = new Gtk::Button(Gtk::StockID(Gtk::Stock::APPLY));
+    bbox->pack_start(*applyButton_);
+    applyButton_->signal_clicked().connect(mem_fun(*this, &CdTextDialog::applyAction));
 
-      Gtk::ScrolledWindow *swin = manage(new Gtk::ScrolledWindow);
-      swin->set_propagate_natural_height();
-      swin->set_policy(Gtk::POLICY_AUTOMATIC, Gtk::POLICY_AUTOMATIC);
-      swin->show_all();
-      swin->add(*vbox1);
+    Gtk::Button *fillButton = new Gtk::Button(_(" Fill Performer "));
 
-      snprintf(buf, sizeof(buf)," %d ", i);
-      languages_->append_page(*swin, *(page_[i].tabLabel));
-    }
-  }
+    fillButton->signal_clicked().connect(mem_fun(*this, &CdTextDialog::fillPerformerAction));
 
-  contents->pack_start(*languages_);
+    Gtk::Button *cancelButton = new Gtk::Button(Gtk::StockID(Gtk::Stock::CLOSE));
+    bbox->pack_start(*cancelButton);
+    cancelButton->signal_clicked().connect(mem_fun(*this, &CdTextDialog::stop));
 
-  {
-    Gtk::HBox *hbox = manage(new Gtk::HBox);
+    get_action_area()->pack_start(*bbox);
 
-    hbox->pack_start(*contents, true, true, 10);
-    get_vbox()->pack_start(*hbox, true, true, 10);
-  }
-
-  Gtk::HButtonBox *bbox = new Gtk::HButtonBox(Gtk::BUTTONBOX_SPREAD);
-  
-  applyButton_ = new Gtk::Button(Gtk::StockID(Gtk::Stock::APPLY));
-  bbox->pack_start(*applyButton_);
-  applyButton_->signal_clicked().connect(mem_fun(*this, &CdTextDialog::applyAction));
-  
-  Gtk::Button *fillButton = new Gtk::Button(_(" Fill Performer "));
-
-  fillButton->signal_clicked().connect(mem_fun(*this, &CdTextDialog::fillPerformerAction));
-
-  Gtk::Button *cancelButton = new Gtk::Button(Gtk::StockID(Gtk::Stock::CLOSE));
-  bbox->pack_start(*cancelButton);
-  cancelButton->signal_clicked().connect(mem_fun(*this, &CdTextDialog::stop));
-
-  get_action_area()->pack_start(*bbox);
-
-  show_all_children();
-  set_title(_("CD-TEXT Entry"));
+    show_all_children();
+    set_title(_("CD-TEXT Entry"));
 }
 
 CdTextDialog::~CdTextDialog()
 {
 }
 
-bool CdTextDialog::on_delete_event(GdkEventAny*)
+bool CdTextDialog::on_delete_event(GdkEventAny *)
 {
-  stop();
-  return 1;
+    stop();
+    return 1;
 }
 
 void CdTextDialog::updateTabLabels()
 {
-  const Toc *toc = tocEdit_->toc();
-  int l;
+    const Toc *toc = tocEdit_->toc();
+    int l;
 
-  for (l = 0; l < 8; l++) {
-    const char *s = CdTextContainer::languageName(toc->cdTextLanguage(l));
+    for (l = 0; l < 8; l++)
+    {
+        const char *s = CdTextContainer::languageName(toc->cdTextLanguage(l));
 
-    if (page_[l].tabLabel->get_label() != s)
-      page_[l].tabLabel->set_label(s);
-  }
+        if (page_[l].tabLabel->get_label() != s)
+            page_[l].tabLabel->set_label(s);
+    }
 }
 
 void CdTextDialog::adjustTableEntries(int n)
 {
-  int i, l;
-  char buf[20];
+    int i, l;
+    char buf[20];
 
-  if (trackEntries_ == n)
-    return;
+    if (trackEntries_ == n)
+        return;
 
-  for (l = 0; l < 8; l++) {
-    if (n < trackEntries_) {
+    for (l = 0; l < 8; l++)
+    {
+        if (n < trackEntries_)
+        {
 
-      for (i = n; i < trackEntries_; i++) {
-	delete page_[l].tracks[i].performer;
-	delete page_[l].tracks[i].title;
-	delete page_[l].tracks[i].hbox;
-	delete page_[l].tracks[i].label;
-      }
+            for (i = n; i < trackEntries_; i++)
+            {
+                delete page_[l].tracks[i].performer;
+                delete page_[l].tracks[i].title;
+                delete page_[l].tracks[i].hbox;
+                delete page_[l].tracks[i].label;
+            }
+        }
+        else
+        {
+            int performerActive = page_[l].performerButton->get_active();
+
+            TableEntry *newTracks = new TableEntry[n];
+
+            for (i = 0; i < trackEntries_; i++)
+                newTracks[i] = page_[l].tracks[i];
+
+            delete[] page_[l].tracks;
+            page_[l].tracks = newTracks;
+
+            for (i = trackEntries_; i < n; i++)
+            {
+                snprintf(buf, sizeof(buf), _("Track %02d"), i + 1);
+
+                page_[l].tracks[i].performer = manage(new Gtk::Entry);
+                page_[l].tracks[i].performer->set_sensitive(performerActive);
+                page_[l].tracks[i].title = manage(new Gtk::Entry);
+                page_[l].tracks[i].label = new Gtk::Label(buf);
+                page_[l].tracks[i].hbox = manage(new Gtk::HBox);
+
+                page_[l].tracks[i].hbox->pack_end(*(page_[l].tracks[i].label), Gtk::PACK_SHRINK);
+
+                page_[l].table->attach(*(page_[l].tracks[i].hbox), 0, i + 3);
+                page_[l].table->attach(*(page_[l].tracks[i].title), 2, i + 3);
+                page_[l].table->attach(*(page_[l].tracks[i].performer), 1, i + 3);
+            }
+
+            page_[l].table->show_all();
+        }
     }
-    else {
-      int performerActive = page_[l].performerButton->get_active();
 
-      TableEntry *newTracks = new TableEntry[n];
-
-      for (i = 0; i < trackEntries_; i++)
-	newTracks[i] = page_[l].tracks[i];
-
-      delete[] page_[l].tracks;
-      page_[l].tracks = newTracks;
-
-      for (i = trackEntries_; i < n; i++) {
-	snprintf(buf, sizeof(buf),_("Track %02d"), i + 1);
-	
-	page_[l].tracks[i].performer = manage(new Gtk::Entry);
-	page_[l].tracks[i].performer->set_sensitive(performerActive);
-	page_[l].tracks[i].title = manage(new Gtk::Entry);
-	page_[l].tracks[i].label = new Gtk::Label(buf);
-	page_[l].tracks[i].hbox = manage(new Gtk::HBox);
-
-	page_[l].tracks[i].hbox->pack_end(*(page_[l].tracks[i].label),
-                                          Gtk::PACK_SHRINK);
-
-	page_[l].table->attach(*(page_[l].tracks[i].hbox),
-			       0, i + 3);
-	page_[l].table->attach(*(page_[l].tracks[i].title),
-			       2, i + 3);
-	page_[l].table->attach(*(page_[l].tracks[i].performer),
-			       1, i + 3);
-      }
-
-      page_[l].table->show_all();
-    }
-  }
-
-  trackEntries_ = n;
+    trackEntries_ = n;
 }
 
 void CdTextDialog::update(unsigned long level, TocEdit *view)
 {
-  if (view != tocEdit_) {
-    tocEdit_ = view;
-    level = UPD_ALL;
-  }
+    if (view != tocEdit_)
+    {
+        tocEdit_ = view;
+        level = UPD_ALL;
+    }
 
-  std::string s(view->filename());
-  s += " - ";
-  s += APP_NAME;
-  if (view->tocDirty())
-    s += "(*)";
-  set_title(s);
+    std::string s(view->filename());
+    s += " - ";
+    s += APP_NAME;
+    if (view->tocDirty())
+        s += "(*)";
+    set_title(s);
 
-  if (level & UPD_TOC_DATA) {
-    updateTabLabels();
-  }
-  
-  if ((level & UPD_TOC_DATA) ||
-      (level & UPD_TRACK_DATA)) {
-    importData();
-  }
+    if (level & UPD_TOC_DATA)
+    {
+        updateTabLabels();
+    }
 
-  if (level & UPD_EDITABLE_STATE) {
-    applyButton_->set_sensitive(tocEdit_->editable() ? true : false);
-  }
+    if ((level & UPD_TOC_DATA) || (level & UPD_TRACK_DATA))
+    {
+        importData();
+    }
+
+    if (level & UPD_EDITABLE_STATE)
+    {
+        applyButton_->set_sensitive(tocEdit_->editable() ? true : false);
+    }
 }
 
 void CdTextDialog::start(TocEdit *view)
 {
-  update(UPD_ALL, view);
-  present();
-  active_ = true;
+    update(UPD_ALL, view);
+    present();
+    active_ = true;
 }
 
 void CdTextDialog::stop()
 {
-  hide();
-  active_ = false;
+    hide();
+    active_ = false;
 }
 
 void CdTextDialog::applyAction()
 {
-  if (tocEdit_ == NULL || !tocEdit_->editable())
-    return;
+    if (tocEdit_ == NULL || !tocEdit_->editable())
+        return;
 
-  exportData();
+    exportData();
 
-  guiUpdate();
+    guiUpdate();
 }
 
 void CdTextDialog::fillPerformerAction()
 {
-  int l = languages_->get_current_page();
+    int l = languages_->get_current_page();
 
-  if (l >= 0 && l <= 7) {
-    int i;
-    const char *s = checkString(page_[l].performer->get_text());
+    if (l >= 0 && l <= 7)
+    {
+        int i;
+        const char *s = checkString(page_[l].performer->get_text());
 
-    if (s == NULL)
-      return;
+        if (s == NULL)
+            return;
 
-    char *performer = strdupCC(s);
+        char *performer = strdupCC(s);
 
-    for (i = 0; i < trackEntries_; i++) {
-      if (checkString(page_[l].tracks[i].performer->get_text()) == NULL)
-	page_[l].tracks[i].performer->set_text(performer);
+        for (i = 0; i < trackEntries_; i++)
+        {
+            if (checkString(page_[l].tracks[i].performer->get_text()) == NULL)
+                page_[l].tracks[i].performer->set_text(performer);
+        }
+
+        delete[] performer;
     }
-
-    delete[] performer;
-  }
 }
 
 void CdTextDialog::activatePerformerAction(int l)
 {
-  int i;
-  int val = page_[l].performerButton->get_active();
+    int i;
+    int val = page_[l].performerButton->get_active();
 
-  for (i = 0; i < trackEntries_; i++) {
-    page_[l].tracks[i].performer->set_sensitive(val);
-  }
+    for (i = 0; i < trackEntries_; i++)
+    {
+        page_[l].tracks[i].performer->set_sensitive(val);
+    }
 }
 
 void CdTextDialog::importData()
 {
-  const CdTextItem *item; 
-  const Toc *toc = tocEdit_->toc();
-  int i, l;
-  int n = toc->nofTracks();
+    const CdTextItem *item;
+    const Toc *toc = tocEdit_->toc();
+    int i, l;
+    int n = toc->nofTracks();
 
-  adjustTableEntries(n);
+    adjustTableEntries(n);
 
-  for (l = 0; l < 8; l++) {
-    if ((item = toc->getCdTextItem(0, l, CdTextItem::PackType::TITLE)) != NULL)
-      page_[l].title->set_text(item->getText());
-    else
-      page_[l].title->set_text("");
+    for (l = 0; l < 8; l++)
+    {
+        if ((item = toc->getCdTextItem(0, l, CdTextItem::PackType::TITLE)) != NULL)
+            page_[l].title->set_text(item->getText());
+        else
+            page_[l].title->set_text("");
 
-    if ((item = toc->getCdTextItem(0, l, CdTextItem::PackType::PERFORMER))
-	!= NULL)
-      page_[l].performer->set_text(item->getText());
-    else
-      page_[l].performer->set_text("");
+        if ((item = toc->getCdTextItem(0, l, CdTextItem::PackType::PERFORMER)) != NULL)
+            page_[l].performer->set_text(item->getText());
+        else
+            page_[l].performer->set_text("");
 
-    for (i = 0; i < n; i++) {
-      if ((item = toc->getCdTextItem(i + 1, l, CdTextItem::PackType::TITLE))
-	  != NULL)
-	page_[l].tracks[i].title->set_text(item->getText());
-      else
-	page_[l].tracks[i].title->set_text("");
+        for (i = 0; i < n; i++)
+        {
+            if ((item = toc->getCdTextItem(i + 1, l, CdTextItem::PackType::TITLE)) != NULL)
+                page_[l].tracks[i].title->set_text(item->getText());
+            else
+                page_[l].tracks[i].title->set_text("");
 
-      if ((item = toc->getCdTextItem(i + 1, l, CdTextItem::PackType::PERFORMER))
-	  != NULL)
-	page_[l].tracks[i].performer->set_text(item->getText());
-      else
-	page_[l].tracks[i].performer->set_text("");
+            if ((item = toc->getCdTextItem(i + 1, l, CdTextItem::PackType::PERFORMER)) != NULL)
+                page_[l].tracks[i].performer->set_text(item->getText());
+            else
+                page_[l].tracks[i].performer->set_text("");
+        }
     }
-  }
 }
 
 void CdTextDialog::exportData()
 {
-  int i, l;
+    int i, l;
 
-  for (l = 0; l < 8; l++) {
-    setCdTextItem(CdTextItem::PackType::TITLE, 0, l,
-		  checkString(page_[l].title->get_text()));
-    setCdTextItem(CdTextItem::PackType::PERFORMER, 0, l,
-		  checkString(page_[l].performer->get_text()));
+    for (l = 0; l < 8; l++)
+    {
+        setCdTextItem(CdTextItem::PackType::TITLE, 0, l, checkString(page_[l].title->get_text()));
+        setCdTextItem(CdTextItem::PackType::PERFORMER, 0, l, checkString(page_[l].performer->get_text()));
 
-    for (i = 0; i < trackEntries_; i++) {
-      setCdTextItem(CdTextItem::PackType::TITLE, i + 1, l,
-		    checkString(page_[l].tracks[i].title->get_text()));
-      setCdTextItem(CdTextItem::PackType::PERFORMER, i + 1, l,
-		    checkString(page_[l].tracks[i].performer->get_text()));
+        for (i = 0; i < trackEntries_; i++)
+        {
+            setCdTextItem(CdTextItem::PackType::TITLE, i + 1, l, checkString(page_[l].tracks[i].title->get_text()));
+            setCdTextItem(CdTextItem::PackType::PERFORMER, i + 1, l,
+                          checkString(page_[l].tracks[i].performer->get_text()));
+        }
     }
-  }
 }
 
-void CdTextDialog::setCdTextItem(CdTextItem::PackType type, int trackNr,
-				 int l, const char *s)
+void CdTextDialog::setCdTextItem(CdTextItem::PackType type, int trackNr, int l, const char *s)
 {
-  const CdTextItem *item; 
-  TocEdit *tocEdit = tocEdit_;
-  const Toc *toc = tocEdit->toc();
-  CdTextItem *newItem;
-  
-  if (s != NULL) {
-    newItem = new CdTextItem(type, l);
-    newItem->setText(s);
-  }  else
-    newItem = NULL;
+    const CdTextItem *item;
+    TocEdit *tocEdit = tocEdit_;
+    const Toc *toc = tocEdit->toc();
+    CdTextItem *newItem;
 
-  if ((item = toc->getCdTextItem(trackNr, l, type)) != NULL) {
-    if (newItem == NULL)
-      tocEdit->setCdTextItem(trackNr, type, l, NULL);
-    else if (*newItem != *item) 
-      tocEdit->setCdTextItem(trackNr, type, l, s);
-  }
-  else if (newItem != NULL) {
-    tocEdit->setCdTextItem(trackNr, type, l, s);
-  }
+    if (s != NULL)
+    {
+        newItem = new CdTextItem(type, l);
+        newItem->setText(s);
+    }
+    else
+        newItem = NULL;
 
-  delete newItem;
+    if ((item = toc->getCdTextItem(trackNr, l, type)) != NULL)
+    {
+        if (newItem == NULL)
+            tocEdit->setCdTextItem(trackNr, type, l, NULL);
+        else if (*newItem != *item)
+            tocEdit->setCdTextItem(trackNr, type, l, s);
+    }
+    else if (newItem != NULL)
+    {
+        tocEdit->setCdTextItem(trackNr, type, l, s);
+    }
+
+    delete newItem;
 }
 
 const char *CdTextDialog::checkString(const std::string &str)
 {
-  static char *buf = NULL;
-  static long bufLen = 0;
-  char *p, *s;
-  long len = strlen(str.c_str());
+    static char *buf = NULL;
+    static long bufLen = 0;
+    char *p, *s;
+    long len = strlen(str.c_str());
 
-  if (len == 0)
-    return NULL;
+    if (len == 0)
+        return NULL;
 
-  if (buf == NULL || len + 1 > bufLen) {
-    delete[] buf;
-    bufLen = len + 1;
-    buf = new char[bufLen];
-  }
+    if (buf == NULL || len + 1 > bufLen)
+    {
+        delete[] buf;
+        bufLen = len + 1;
+        buf = new char[bufLen];
+    }
 
-  strcpy(buf, str.c_str());
+    strcpy(buf, str.c_str());
 
-  s = buf;
-  p = buf + len - 1;
+    s = buf;
+    p = buf + len - 1;
 
-  while (*s != 0 && isspace(*s))
-    s++;
+    while (*s != 0 && isspace(*s))
+        s++;
 
-  if (*s == 0)
-    return NULL;
+    if (*s == 0)
+        return NULL;
 
-  while (p > s && isspace(*p)) {
-    *p = 0;
-    p--;
-  }
-  
-  return s;
+    while (p > s && isspace(*p))
+    {
+        *p = 0;
+        p--;
+    }
+
+    return s;
 }
-

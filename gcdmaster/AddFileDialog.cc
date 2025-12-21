@@ -18,162 +18,169 @@
  */
 
 #include "config.h"
-#include <stdio.h>
+#include <assert.h>
 #include <limits.h>
 #include <math.h>
-#include <assert.h>
+#include <stdio.h>
 
-#include <gtkmm.h>
 #include <glibmm/i18n.h>
+#include <gtkmm.h>
 
-#include "config.h"
 #include "AddFileDialog.h"
-#include "guiUpdate.h"
-#include "TocEdit.h"
-#include "Sample.h"
-#include "util.h"
 #include "AudioCDProject.h"
+#include "Sample.h"
+#include "TocEdit.h"
+#include "config.h"
+#include "guiUpdate.h"
+#include "util.h"
 #include "xcdrdao.h"
 
-AddFileDialog::AddFileDialog(AudioCDProject *project)
-    : Gtk::FileChooserDialog("")
+AddFileDialog::AddFileDialog(AudioCDProject *project) : Gtk::FileChooserDialog("")
 {
-  active_ = false;
-  project_ = project;
+    active_ = false;
+    project_ = project;
 
-  set_select_multiple(true);
-  set_transient_for(*project->getParentWindow ());
-  mode(M_APPEND_TRACK);
+    set_select_multiple(true);
+    set_transient_for(*project->getParentWindow());
+    mode(M_APPEND_TRACK);
 
-  Glib::RefPtr<Gtk::FileFilter> filter_tocs = Gtk::FileFilter::create();
-  std::string fname = "Audio Files (wav";
+    Glib::RefPtr<Gtk::FileFilter> filter_tocs = Gtk::FileFilter::create();
+    std::string fname = "Audio Files (wav";
 #ifdef HAVE_MP3_SUPPORT
-  fname = fname + ", mp3, m3u";
+    fname = fname + ", mp3, m3u";
 #endif
 #ifdef HAVE_OGG_SUPPORT
-  fname = fname + ", ogg";
+    fname = fname + ", ogg";
 #endif
-  fname = fname + ")";
-  filter_tocs->set_name(fname);
+    fname = fname + ")";
+    filter_tocs->set_name(fname);
 
-  filter_tocs->add_pattern("*.wav");
+    filter_tocs->add_pattern("*.wav");
 #ifdef HAVE_OGG_SUPPORT
-  filter_tocs->add_pattern("*.ogg");
+    filter_tocs->add_pattern("*.ogg");
 #endif
 #ifdef HAVE_MP3_SUPPORT
-  filter_tocs->add_pattern("*.mp3");
-  filter_tocs->add_pattern("*.m3u");
+    filter_tocs->add_pattern("*.mp3");
+    filter_tocs->add_pattern("*.m3u");
 #endif
 #ifdef HAVE_FLAC_SUPPORT
-  filter_tocs->add_pattern("*.flac");
+    filter_tocs->add_pattern("*.flac");
 #endif
-  add_filter(filter_tocs);
+    add_filter(filter_tocs);
 
-  Glib::RefPtr<Gtk::FileFilter> filter_all = Gtk::FileFilter::create();
-  filter_all->set_name("Any files");
-  filter_all->add_pattern("*");
-  add_filter(filter_all);
+    Glib::RefPtr<Gtk::FileFilter> filter_all = Gtk::FileFilter::create();
+    filter_all->set_name("Any files");
+    filter_all->add_pattern("*");
+    add_filter(filter_all);
 
-  add_button(Gtk::Stock::CLOSE, Gtk::RESPONSE_CANCEL);
-  add_button(Gtk::Stock::ADD, Gtk::RESPONSE_OK);
+    add_button(Gtk::Stock::CLOSE, Gtk::RESPONSE_CANCEL);
+    add_button(Gtk::Stock::ADD, Gtk::RESPONSE_OK);
 }
 
 void AddFileDialog::mode(Mode m)
 {
-  mode_ = m;
+    mode_ = m;
 
-  switch (mode_) {
-  case M_APPEND_TRACK:
-    set_title(_("Append Track"));
-    break;
-  case M_APPEND_FILE:
-    set_title(_("Append File"));
-    break;
-  case M_INSERT_FILE:
-    set_title(_("Insert File"));
-    break;
-  }
+    switch (mode_)
+    {
+    case M_APPEND_TRACK:
+        set_title(_("Append Track"));
+        break;
+    case M_APPEND_FILE:
+        set_title(_("Append File"));
+        break;
+    case M_INSERT_FILE:
+        set_title(_("Insert File"));
+        break;
+    }
 }
 
 void AddFileDialog::start()
 {
-  if (active_) {
-    get_window()->raise();
-    return;
-  }
-
-  active_ = true;
-  show();
-
-  bool contFlag = true;
-
-  while (contFlag) {
-
-    int result = run();
-
-    switch (result) {
-    case Gtk::RESPONSE_CANCEL:
-      contFlag = false;
-      break;
-    case Gtk::RESPONSE_OK:
-      contFlag = applyAction();
-      break;
+    if (active_)
+    {
+        get_window()->raise();
+        return;
     }
-  }
 
-  stop();
+    active_ = true;
+    show();
+
+    bool contFlag = true;
+
+    while (contFlag)
+    {
+
+        int result = run();
+
+        switch (result)
+        {
+        case Gtk::RESPONSE_CANCEL:
+            contFlag = false;
+            break;
+        case Gtk::RESPONSE_OK:
+            contFlag = applyAction();
+            break;
+        }
+    }
+
+    stop();
 }
 
 void AddFileDialog::stop()
 {
-  if (active_) {
-    hide();
-    active_ = false;
-  }
+    if (active_)
+    {
+        hide();
+        active_ = false;
+    }
 }
 
-bool AddFileDialog::on_delete_event(GdkEventAny*)
+bool AddFileDialog::on_delete_event(GdkEventAny *)
 {
-  stop();
-  return 1;
+    stop();
+    return 1;
 }
 
 bool AddFileDialog::applyAction()
 {
-  std::vector<std::string> sfiles = get_filenames();
-  std::list<std::string> files;
+    std::vector<std::string> sfiles = get_filenames();
+    std::list<std::string> files;
 
-  for (std::vector<std::string>::const_iterator i = sfiles.begin();
-       i != sfiles.end(); i++) {
+    for (std::vector<std::string>::const_iterator i = sfiles.begin(); i != sfiles.end(); i++)
+    {
 
-    const char *s = stripCwd((*i).c_str());
+        const char *s = stripCwd((*i).c_str());
 
-    if (s && *s != 0 && s[strlen(s) - 1] != '/') {
+        if (s && *s != 0 && s[strlen(s) - 1] != '/')
+        {
 
-      if (Util::fileExtension(s) == Util::FileExtension::M3U)
-        parseM3u(s, files);
-      else
-        files.push_back(s);
+            if (Util::fileExtension(s) == Util::FileExtension::M3U)
+                parseM3u(s, files);
+            else
+                files.push_back(s);
+        }
     }
-  }
 
-  if (files.size() > 0) {
-    switch (mode_) {
-    case M_APPEND_TRACK:
-      project_->appendTracks(files);
-      break;
-      
-    case M_APPEND_FILE:
-      project_->appendFiles(files);
-      break;
+    if (files.size() > 0)
+    {
+        switch (mode_)
+        {
+        case M_APPEND_TRACK:
+            project_->appendTracks(files);
+            break;
 
-    case M_INSERT_FILE:
-      project_->insertFiles(files);
-      break;
+        case M_APPEND_FILE:
+            project_->appendFiles(files);
+            break;
+
+        case M_INSERT_FILE:
+            project_->insertFiles(files);
+            break;
+        }
+        if (files.size() > 1)
+            return false;
     }
-    if (files.size() > 1)
-      return false;
-  }
 
-  return true;
+    return true;
 }

@@ -40,28 +40,27 @@
 
 class TrackDataList;
 
-class TrackDataScrap {
-public:
-  TrackDataScrap(TrackDataList *);
-  ~TrackDataScrap();
+class TrackDataScrap
+{
+  public:
+    TrackDataScrap(TrackDataList *);
+    ~TrackDataScrap();
 
-  const TrackDataList *trackDataList() const;
+    const TrackDataList *trackDataList() const;
 
-  void setPeaks(long blocks,
-		short *leftNegSamples, short *leftPosSamples,
-		short *rightNegSamples, short *rightPosSamples);
-  void getPeaks(long blocks,
-		short *leftNegSamples, short *leftPosSamples,
-		short *rightNegSamples, short *rightPosSamples) const;
+    void setPeaks(long blocks, short *leftNegSamples, short *leftPosSamples, short *rightNegSamples,
+                  short *rightPosSamples);
+    void getPeaks(long blocks, short *leftNegSamples, short *leftPosSamples, short *rightNegSamples,
+                  short *rightPosSamples) const;
 
-private:
-  TrackDataList *list_;
-  long blocks_;
+  private:
+    TrackDataList *list_;
+    long blocks_;
 
-  short *leftNegSamples_;
-  short *leftPosSamples_;
-  short *rightNegSamples_;
-  short *rightPosSamples_;
+    short *leftNegSamples_;
+    short *leftPosSamples_;
+    short *rightNegSamples_;
+    short *rightPosSamples_;
 };
 
 #endif

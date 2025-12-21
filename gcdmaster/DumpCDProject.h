@@ -20,26 +20,32 @@
 #ifndef __DUMP_CD_PROJECT_H__
 #define __DUMP_CD_PROJECT_H__
 
+#include "Project.h"
+
 class RecordCDSource;
 class RecordHDTarget;
 
 class DumpCDProject : public Project
 {
-public:
-  DumpCDProject(Gtk::Window *parent);
-  ~DumpCDProject();
-  bool closeProject();
+  public:
+    DumpCDProject(Gtk::Window *parent);
+    ~DumpCDProject();
+    bool closeProject();
 
- protected:
-  virtual void createToolbar() {};
+  protected:
+    virtual void createToolbar() {};
 
-private:
-  RecordCDSource *CDSource;
-  RecordHDTarget *HDTarget;
+  private:
+    RecordCDSource *CDSource;
+    RecordHDTarget *HDTarget;
 
-  void start();
-  void recordToc2CD() {}
-  void projectInfo() {}
-  void update(unsigned long level);
+    void start();
+    void recordToc2CD()
+    {
+    }
+    void projectInfo()
+    {
+    }
+    void update(unsigned long level);
 };
 #endif

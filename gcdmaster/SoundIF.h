@@ -24,22 +24,22 @@ class Sample;
 
 class SoundIF
 {
- public:
-  SoundIF();
-  ~SoundIF();
+  public:
+    SoundIF();
+    ~SoundIF();
 
-  int init();
+    int init();
 
-  int start();
+    int start();
 
-  int play(Sample *, long);
+    int play(Sample *, long);
 
-  unsigned long getDelay();
+    unsigned long getDelay();
 
-  void end();
+    void end();
 
-private:
-  class SoundIFImpl *impl_;
+  private:
+    class SoundIFImpl *impl_;
 };
 
 #endif

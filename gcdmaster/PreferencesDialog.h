@@ -24,13 +24,13 @@
 
 class PreferencesDialog : public Gtk::Dialog
 {
- public:
-    PreferencesDialog(BaseObjectType* cobject, const Glib::RefPtr<Gtk::Builder>& refBuilder);
+  public:
+    PreferencesDialog(BaseObjectType *cobject, const Glib::RefPtr<Gtk::Builder> &refBuilder);
     virtual ~PreferencesDialog();
 
     void show();
 
- protected:
+  protected:
     void readFromGConf();
     bool saveToGConf();
     void on_button_apply();
@@ -42,14 +42,14 @@ class PreferencesDialog : public Gtk::Dialog
 
     Glib::RefPtr<Gtk::Builder> m_refBuilder;
 
-    Gtk::Button* _applyButton;
-    Gtk::Button* _cancelButton;
-    Gtk::Button* _okButton;
-    Gtk::Entry*  _tempDirEntry;
-    Gtk::FileChooserDialog* _tempDirDialog;
-    Gtk::Button* _browseButton;
-    Gtk::Button* _browseCancel;
-    Gtk::Button* _browseOpen;
+    Gtk::Button *_applyButton;
+    Gtk::Button *_cancelButton;
+    Gtk::Button *_okButton;
+    Gtk::Entry *_tempDirEntry;
+    Gtk::FileChooserDialog *_tempDirDialog;
+    Gtk::Button *_browseButton;
+    Gtk::Button *_browseCancel;
+    Gtk::Button *_browseOpen;
 };
 
 #endif

@@ -45,26 +45,30 @@
 #include "Sample.h"
 #include "util.h"
 
-class SoundIFImpl {
-public:
-  SoundIFImpl() { dspFd_ = -1; }
+class SoundIFImpl
+{
+  public:
+    SoundIFImpl()
+    {
+        dspFd_ = -1;
+    }
 
-  int setupDevice();
-  int openDevice();
-  void closeDevice();
+    int setupDevice();
+    int openDevice();
+    void closeDevice();
 
-  int dspFd_; // sound device
+    int dspFd_; // sound device
 };
 
 SoundIF::SoundIF()
 {
-  impl_ = new SoundIFImpl;
+    impl_ = new SoundIFImpl;
 }
 
 SoundIF::~SoundIF()
 {
-  delete impl_;
-  impl_ = NULL;
+    delete impl_;
+    impl_ = NULL;
 }
 
 // Initializes sound interface.
@@ -73,16 +77,17 @@ SoundIF::~SoundIF()
 //         2: cannot setup sound device
 int SoundIF::init()
 {
-  if (impl_->openDevice() != 0)
-    return 1;
+    if (impl_->openDevice() != 0)
+        return 1;
 
-  if (impl_->setupDevice() != 0) {
+    if (impl_->setupDevice() != 0)
+    {
+        impl_->closeDevice();
+        return 2;
+    }
+
     impl_->closeDevice();
-    return 2;
-  }
-
-  impl_->closeDevice();
-  return 0;
+    return 0;
 }
 
 // Acquires sound device for playing.
@@ -90,18 +95,19 @@ int SoundIF::init()
 //        1: error occured
 int SoundIF::start()
 {
-  if (impl_->dspFd_ >= 0)
-    return 0; // already opened
+    if (impl_->dspFd_ >= 0)
+        return 0; // already opened
 
-  if (impl_->openDevice() != 0)
-    return 1;
+    if (impl_->openDevice() != 0)
+        return 1;
 
-  if (impl_->setupDevice() != 0) {
-    impl_->closeDevice();
-    return 1;
-  }
+    if (impl_->setupDevice() != 0)
+    {
+        impl_->closeDevice();
+        return 1;
+    }
 
-  return 0;
+    return 0;
 }
 
 // Playes given sample buffer.
@@ -109,55 +115,55 @@ int SoundIF::start()
 //         1: error occured
 int SoundIF::play(Sample *sbuf, long nofSamples)
 {
-  if (impl_->dspFd_ < 0)
-    return 1;
+    if (impl_->dspFd_ < 0)
+        return 1;
 
-  // ...
-  
-  return 0;
+    // ...
+
+    return 0;
 }
 
 unsigned long SoundIF::getDelay()
 {
-  if (impl_->dspFd_ < 0)
-    return 1;
+    if (impl_->dspFd_ < 0)
+        return 1;
 
-  // ...
+    // ...
 
-  return 0;
+    return 0;
 }
 
 // Finishs playing, sound device is released.
 void SoundIF::end()
 {
-  impl_->closeDevice();
+    impl_->closeDevice();
 }
-
 
 int SoundIFImpl::openDevice()
 {
-  if (dspFd_ >= 0)
-    return 0; // already open
+    if (dspFd_ >= 0)
+        return 0; // already open
 
-  // ...
+    // ...
 
-  return 1;
+    return 1;
 }
-    
+
 void SoundIFImpl::closeDevice()
 {
-  if (dspFd_ >= 0) {
-    // ...
-    dspFd_ = -1;
-  }
+    if (dspFd_ >= 0)
+    {
+        // ...
+        dspFd_ = -1;
+    }
 }
 
 int SoundIFImpl::setupDevice()
 {
-  if (dspFd_ < 0)
-    return 1;
-  
-  // ...
+    if (dspFd_ < 0)
+        return 1;
 
-  return 0;
+    // ...
+
+    return 0;
 }

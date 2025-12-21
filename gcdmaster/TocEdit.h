@@ -20,14 +20,14 @@
 #ifndef __TOC_EDIT_H__
 #define __TOC_EDIT_H__
 
-#include <string>
 #include <list>
 #include <sigc++/signal.h>
+#include <string>
 
-#include "Toc.h"
 #include "CdTextItem.h"
 #include "FormatConverter.h"
 #include "TaskManager.h"
+#include "Toc.h"
 
 class Toc;
 class TrackData;
@@ -35,8 +35,9 @@ class TrackDataScrap;
 class SampleManager;
 class TocEditView;
 
-class TocEdit {
-public:
+class TocEdit
+{
+  public:
     TocEdit(Toc *, const char *);
     ~TocEdit();
 
@@ -48,11 +49,17 @@ public:
     unsigned long lengthSample() const;
 
     void tocDirty(bool);
-    bool tocDirty() const            { return tocDirty_; }
+    bool tocDirty() const
+    {
+        return tocDirty_;
+    }
 
     void blockEdit();
     void unblockEdit();
-    bool editable() const            { return (editBlocked_ == 0); }
+    bool editable() const
+    {
+        return (editBlocked_ == 0);
+    }
 
     // returns and resets update level
     unsigned long updateLevel();
@@ -63,7 +70,7 @@ public:
     int readToc(const char *);
     int saveToc();
     int saveAsToc(const char *);
-  
+
     int moveTrackMarker(int trackNr, int indexNr, long lba);
     int addTrackMarker(long lba);
     int removeTrackMarker(int trackNr, int indexNr);
@@ -71,10 +78,10 @@ public:
     int addPregap(long lba);
 
     // Asynchronous interface.
-    void queueConversion(const char* filename);
-    void queueAppendTrack(const char* filename);
-    void queueAppendFile(const char* filename);
-    void queueInsertFile(const char* filename, unsigned long pos);
+    void queueConversion(const char *filename);
+    void queueAppendTrack(const char *filename);
+    void queueAppendFile(const char *filename);
+    void queueInsertFile(const char *filename, unsigned long pos);
     void queueScan(long start, long end);
 
     // Abort all queued work.
@@ -88,16 +95,14 @@ public:
 
     int removeTrackData(TocEditView *);
     int insertTrackData(TocEditView *);
-  
+
     void setTrackCopyFlag(int trackNr, int flag);
     void setTrackPreEmphasisFlag(int trackNr, int flag);
     void setTrackAudioType(int trackNr, int flag);
     void setTrackIsrcCode(int trackNr, const char *);
 
-    void setCdTextItem(int trackNr, CdTextItem::PackType, int blockNr,
-                       const char *);
-    void setCdTextGenreItem(int blockNr, int code1, int code2,
-                            const char *description);
+    void setCdTextItem(int trackNr, CdTextItem::PackType, int blockNr, const char *);
+    void setCdTextGenreItem(int blockNr, int code1, int code2, const char *description);
     void setCdTextLanguage(int blockNr, int langCode);
 
     void setCatalogNumber(const char *);
@@ -107,13 +112,13 @@ public:
     sigc::signal0<void> signalProgressPulse;
     sigc::signal1<void, bool> signalSpinner;
     sigc::signal1<void, double> signalProgressFraction;
-    sigc::signal1<void, const char*> signalStatusMessage;
+    sigc::signal1<void, const char *> signalStatusMessage;
     sigc::signal0<void> signalFullView;
     sigc::signal2<void, unsigned long, unsigned long> signalSampleSelection;
     sigc::signal1<void, bool> signalCancelEnable;
-    sigc::signal1<void, const char*> signalError;
-  
-private:
+    sigc::signal1<void, const char *> signalError;
+
+  private:
     Toc *toc_;
     SampleManager *sampleManager_;
     TaskManager tm_;
@@ -123,22 +128,31 @@ private:
     TrackDataScrap *trackDataScrap_;
 
     bool tocDirty_;
-    int  editBlocked_;
+    int editBlocked_;
 
     unsigned long updateLevel_;
 
     class QueueJob : public Task
     {
-    public:
-        QueueJob(TocEdit* t, const char* o) { te = t; op = o; pos = 0; end = 0; len = 0; }
-        ~QueueJob() {}
+      public:
+        QueueJob(TocEdit *t, const char *o)
+        {
+            te = t;
+            op = o;
+            pos = 0;
+            end = 0;
+            len = 0;
+        }
+        ~QueueJob()
+        {
+        }
         std::string op;
         std::string file;
         std::string cfile;
         long pos;
         long end;
         long len;
-        TocEdit* te;
+        TocEdit *te;
         FormatSupport::Status conv_err;
 
         void run();
@@ -150,15 +164,15 @@ private:
 
     void taskQueueActive(void);
     void taskQueueIdle(void);
-    void taskQueueStatus(Task*, const std::string&);
+    void taskQueueStatus(Task *, const std::string &);
 
-    bool curScan(QueueJob*);
-    bool curAppendTrack(QueueJob*);
-    bool curAppendFile(QueueJob*);
-    bool curInsertFile(QueueJob*);
-    int  curCreateAudioData(QueueJob*, TrackData **);
-    void curSignalConversionError(QueueJob*, FormatSupport::Status);
-    void jobFinalize(QueueJob*);
+    bool curScan(QueueJob *);
+    bool curAppendTrack(QueueJob *);
+    bool curAppendFile(QueueJob *);
+    bool curInsertFile(QueueJob *);
+    int curCreateAudioData(QueueJob *, TrackData **);
+    void curSignalConversionError(QueueJob *, FormatSupport::Status);
+    void jobFinalize(QueueJob *);
 
     friend class TocEditView;
 };

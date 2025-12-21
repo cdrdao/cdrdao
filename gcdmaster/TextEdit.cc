@@ -19,19 +19,19 @@
 
 #include "TextEdit.h"
 
-#include <stddef.h>
-#include <ctype.h>
 #include <cstring>
+#include <ctype.h>
+#include <stddef.h>
 
 TextEdit::TextEdit(const char *sample) : Gtk::Entry()
 {
-  upper_ = 1;
-  lower_ = 1;
-  digits_ = 1;
-  space_ = 1;
+    upper_ = 1;
+    lower_ = 1;
+    digits_ = 1;
+    space_ = 1;
 
-  if (sample != NULL && *sample != 0)
-    setSize(sample);
+    if (sample != NULL && *sample != 0)
+        setSize(sample);
 }
 
 TextEdit::~TextEdit()
@@ -40,72 +40,79 @@ TextEdit::~TextEdit()
 
 void TextEdit::upperCase(int f)
 {
-  upper_ = (f != 0) ? 1 : 0;
+    upper_ = (f != 0) ? 1 : 0;
 }
 
 void TextEdit::lowerCase(int f)
 {
-  lower_ = (f != 0) ? 1 : 0;
+    lower_ = (f != 0) ? 1 : 0;
 }
 
 void TextEdit::digits(int f)
 {
-  digits_ = (f != 0) ? 1 : 0;
+    digits_ = (f != 0) ? 1 : 0;
 }
 
 void TextEdit::space(int f)
 {
-  space_ = (f != 0) ? 1 : 0;
+    space_ = (f != 0) ? 1 : 0;
 }
 
 void TextEdit::insert_text_impl(const gchar *c, gint p2, gint *p3)
 {
-  char *s = new char[strlen(c) + 1];
-  char *p = s;
+    char *s = new char[strlen(c) + 1];
+    char *p = s;
 
-  while (*c != 0) {
-    if (islower(*c)) {
-      if (!lower_) {
-	if (upper_)
-	  *p++ = toupper(*c);
-      }
-      else 
-	*p++ = *c;
-    }
-    else if (isupper(*c)) {
-      if (!upper_) {
-	if (lower_)
-	  *p++ = tolower(*c);
-      }
-      else
-	*p++ = *c;
-    }
-    else if (isdigit(*c)) {
-      if (digits_)
-	*p++ = *c;
-    }
-    else if (isspace(*c)) {
-      if (space_)
-	*p++ = *c;
-    }
-    
-    c++;
-  }
+    while (*c != 0)
+    {
+        if (islower(*c))
+        {
+            if (!lower_)
+            {
+                if (upper_)
+                    *p++ = toupper(*c);
+            }
+            else
+                *p++ = *c;
+        }
+        else if (isupper(*c))
+        {
+            if (!upper_)
+            {
+                if (lower_)
+                    *p++ = tolower(*c);
+            }
+            else
+                *p++ = *c;
+        }
+        else if (isdigit(*c))
+        {
+            if (digits_)
+                *p++ = *c;
+        }
+        else if (isspace(*c))
+        {
+            if (space_)
+                *p++ = *c;
+        }
 
-  *p = 0;
+        c++;
+    }
 
-  insert_text(s, p2, *p3);
+    *p = 0;
 
-  delete[] s;
+    insert_text(s, p2, *p3);
+
+    delete[] s;
 }
 
 void TextEdit::setSize(const char *sample)
 {
-  Glib::RefPtr<Pango::Context> context = get_layout()->get_context();
-  Pango::FontDescription fdesc = context->get_font_description();
+    Glib::RefPtr<Pango::Context> context = get_layout()->get_context();
+    Pango::FontDescription fdesc = context->get_font_description();
 
-  int cw = context->get_metrics(fdesc).get_approximate_char_width() / 1000;
-  int ch = context->get_metrics(fdesc).get_ascent() / 1000;
+    int cw = context->get_metrics(fdesc).get_approximate_char_width() / 1000;
+    int ch = context->get_metrics(fdesc).get_ascent() / 1000;
 
-  set_size_request((strlen(sample) * cw) + 8, -1);
+    set_size_request((strlen(sample) * cw) + 8, -1);
 }
