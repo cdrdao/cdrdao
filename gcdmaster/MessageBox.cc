@@ -18,213 +18,201 @@
  */
 
 #include "config.h"
-#include <stddef.h>
 #include <stdarg.h>
+#include <stddef.h>
 
-#include <gtkmm.h>
 #include <glibmm/i18n.h>
+#include <gtkmm.h>
 
 #include "MessageBox.h"
 
-MessageBoxBase::MessageBoxBase(Gtk::Window * win)
+MessageBoxBase::MessageBoxBase(Gtk::Window *win)
 {
-  done_ = 0;
-  doneDefault_ = 0;
+    done_ = 0;
+    doneDefault_ = 0;
 
-  dontShowAgain_ = NULL;
+    dontShowAgain_ = NULL;
 
-  if (win != NULL) {
-    set_transient_for(*win);
-    set_modal(true);
-  }
+    if (win != NULL)
+    {
+        set_transient_for(*win);
+        set_modal(true);
+    }
 
-  set_position(Gtk::WIN_POS_CENTER);
+    set_position(Gtk::WIN_POS_CENTER);
 }
 
 MessageBoxBase::~MessageBoxBase()
 {
-  delete dontShowAgain_;
-  dontShowAgain_ = NULL;
+    delete dontShowAgain_;
+    dontShowAgain_ = NULL;
 }
 
 Gtk::Button *MessageBoxBase::createButton(const Gtk::BuiltinStockID id)
 {
-  return new Gtk::Button(Gtk::StockID(id));
+    return new Gtk::Button(Gtk::StockID(id));
 }
 
-void MessageBoxBase::init(const char *type, const char *title, int askDontShow,
-			  int nButtons, int defaultButton,
+void MessageBoxBase::init(const char *type, const char *title, int askDontShow, int nButtons, int defaultButton,
                           Gtk::BuiltinStockID buttons[], va_list args)
 {
-  int i;
-  const char *s;
+    int i;
+    const char *s;
 
-  done_ = 0;
-  doneDefault_ = defaultButton;
+    done_ = 0;
+    doneDefault_ = defaultButton;
 
-  set_title(title);
+    set_title(title);
 
-  Gtk::HButtonBox* bbox = manage(new Gtk::HButtonBox(Gtk::BUTTONBOX_SPREAD));
-  bbox->show();
+    Gtk::HButtonBox *bbox = manage(new Gtk::HButtonBox(Gtk::BUTTONBOX_SPREAD));
+    bbox->show();
 
-  Gtk::VBox* contents = manage(new Gtk::VBox);
-  contents->show();
-  
-  for (i = 1; i <= nButtons; i++) {
-    Gtk::Button* button = manage(createButton(buttons[i - 1]));
-    button->show();
-    button->signal_clicked().connect(bind(mem_fun(*this,
-                                               &MessageBoxBase::buttonAction),
-                                          i));
-    bbox->add(*button);
-  }
+    Gtk::VBox *contents = manage(new Gtk::VBox);
+    contents->show();
 
-  while ((s = va_arg(args, const char *)) != NULL) {
-    Gtk::HBox* lbox = manage(new Gtk::HBox);
-    lbox->show();
-    Gtk::Label* label = manage(new Gtk::Label(s));
-    label->show();
-    lbox->pack_start(*label, Gtk::PACK_SHRINK);
-    contents->pack_start(*lbox, Gtk::PACK_SHRINK);
-  }
+    for (i = 1; i <= nButtons; i++)
+    {
+        Gtk::Button *button = manage(createButton(buttons[i - 1]));
+        button->show();
+        button->signal_clicked().connect(bind(mem_fun(*this, &MessageBoxBase::buttonAction), i));
+        bbox->add(*button);
+    }
 
-  if (askDontShow) {
-    dontShowAgain_ = new Gtk::CheckButton(_("Don't show this message again"));
-    dontShowAgain_->set_active(FALSE);
-    dontShowAgain_->show();
+    while ((s = va_arg(args, const char *)) != NULL)
+    {
+        Gtk::HBox *lbox = manage(new Gtk::HBox);
+        lbox->show();
+        Gtk::Label *label = manage(new Gtk::Label(s));
+        label->show();
+        lbox->pack_start(*label, Gtk::PACK_SHRINK);
+        contents->pack_start(*lbox, Gtk::PACK_SHRINK);
+    }
 
-    Gtk::HBox* box = manage(new Gtk::HBox);
-    Gtk::Label* label = manage(new Gtk::Label(""));
+    if (askDontShow)
+    {
+        dontShowAgain_ = new Gtk::CheckButton(_("Don't show this message again"));
+        dontShowAgain_->set_active(FALSE);
+        dontShowAgain_->show();
 
-    label->show();
-    box->show();
-    box->pack_end(*dontShowAgain_, Gtk::PACK_SHRINK);
-    contents->pack_start(*label, Gtk::PACK_SHRINK);
-    contents->pack_start(*box, Gtk::PACK_SHRINK);
-  }
+        Gtk::HBox *box = manage(new Gtk::HBox);
+        Gtk::Label *label = manage(new Gtk::Label(""));
 
+        label->show();
+        box->show();
+        box->pack_end(*dontShowAgain_, Gtk::PACK_SHRINK);
+        contents->pack_start(*label, Gtk::PACK_SHRINK);
+        contents->pack_start(*box, Gtk::PACK_SHRINK);
+    }
 
-  Gtk::HBox* hcontens = manage(new Gtk::HBox);
-  hcontens->show();
+    Gtk::HBox *hcontens = manage(new Gtk::HBox);
+    hcontens->show();
 
-  hcontens->pack_start(*contents, TRUE, TRUE, 10);
-  get_vbox()->pack_start(*hcontens, FALSE, FALSE, 10);
-  get_vbox()->show();
+    hcontens->pack_start(*contents, TRUE, TRUE, 10);
+    get_vbox()->pack_start(*hcontens, FALSE, FALSE, 10);
+    get_vbox()->show();
 
-  
-  get_action_area()->pack_start(*bbox);
-  get_action_area()->show();
-    
+    get_action_area()->pack_start(*bbox);
+    get_action_area()->show();
 }
 
 void MessageBoxBase::buttonAction(int act)
 {
-  done_ = act;
+    done_ = act;
 }
 
-bool MessageBoxBase::on_delete_event(GdkEventAny*)
+bool MessageBoxBase::on_delete_event(GdkEventAny *)
 {
-  done_ = doneDefault_;
-  return 1;
+    done_ = doneDefault_;
+    return 1;
 }
 
 int MessageBoxBase::run()
 {
-  Gtk::Main *app = Gtk::Main::instance();
+    Gtk::Main *app = Gtk::Main::instance();
 
-  show();
+    show();
 
-  do {
-    app->iteration();
-  }  while (done_ == 0);
+    do
+    {
+        app->iteration();
+    } while (done_ == 0);
 
-  hide();
-  return done_;
+    hide();
+    return done_;
 }
 
 int MessageBoxBase::dontShowAgain() const
 {
-  if (dontShowAgain_ != NULL)
-    return dontShowAgain_->get_active() ? 1 : 0;
-  else
-    return 0;
+    if (dontShowAgain_ != NULL)
+        return dontShowAgain_->get_active() ? 1 : 0;
+    else
+        return 0;
 }
 
-
-MessageBox::MessageBox(Gtk::Window *win, const char *title,
-		       int askDontShow, ...) : MessageBoxBase(win)
+MessageBox::MessageBox(Gtk::Window *win, const char *title, int askDontShow, ...) : MessageBoxBase(win)
 {
-  va_list args;
-  Gtk::BuiltinStockID buttons[1];
+    va_list args;
+    Gtk::BuiltinStockID buttons[1];
 
-  buttons[0] = Gtk::Stock::OK;
+    buttons[0] = Gtk::Stock::OK;
 
-  va_start(args, askDontShow);
+    va_start(args, askDontShow);
 
-  init("info", title, askDontShow, 1, 1, buttons, args);
+    init("info", title, askDontShow, 1, 1, buttons, args);
 
-  va_end(args);
+    va_end(args);
 }
-
 
 MessageBox::~MessageBox()
 {
 }
 
-Ask2Box::Ask2Box(Gtk::Window *win, const char *title, int askDontShow,
-		 int defaultButton, ...)
-  : MessageBoxBase(win)
+Ask2Box::Ask2Box(Gtk::Window *win, const char *title, int askDontShow, int defaultButton, ...) : MessageBoxBase(win)
 
 {
-  va_list args;
-  Gtk::BuiltinStockID buttons[2];
-  
-  buttons[0] = Gtk::Stock::YES;
-  buttons[1] = Gtk::Stock::NO;
+    va_list args;
+    Gtk::BuiltinStockID buttons[2];
 
-  if (defaultButton < 0 || defaultButton > 2)
-    defaultButton = 0;
+    buttons[0] = Gtk::Stock::YES;
+    buttons[1] = Gtk::Stock::NO;
 
-  va_start(args, defaultButton);
+    if (defaultButton < 0 || defaultButton > 2)
+        defaultButton = 0;
 
-  init("question", title, askDontShow, 2, defaultButton,
-       buttons, args);
+    va_start(args, defaultButton);
 
-  va_end(args);
-  
+    init("question", title, askDontShow, 2, defaultButton, buttons, args);
+
+    va_end(args);
 }
 
 Ask2Box::~Ask2Box()
 {
 }
 
-Ask3Box::Ask3Box(Gtk::Window *win, const char *title, int askDontShow,
-		 int defaultButton, ...)
-  : MessageBoxBase(win)
+Ask3Box::Ask3Box(Gtk::Window *win, const char *title, int askDontShow, int defaultButton, ...) : MessageBoxBase(win)
 {
-  va_list args;
-  Gtk::BuiltinStockID buttons[3];
-  
-  buttons[0] = Gtk::Stock::YES;
-  buttons[1] = Gtk::Stock::NO;
-  buttons[2] = Gtk::Stock::CANCEL;
+    va_list args;
+    Gtk::BuiltinStockID buttons[3];
 
-  if (defaultButton < 0 || defaultButton > 3)
-    defaultButton = 0;
+    buttons[0] = Gtk::Stock::YES;
+    buttons[1] = Gtk::Stock::NO;
+    buttons[2] = Gtk::Stock::CANCEL;
 
-  va_start(args, defaultButton);
+    if (defaultButton < 0 || defaultButton > 3)
+        defaultButton = 0;
 
-  init("question", title, askDontShow, 3, defaultButton, buttons, args);
+    va_start(args, defaultButton);
 
-  va_end(args);
-  
+    init("question", title, askDontShow, 3, defaultButton, buttons, args);
+
+    va_end(args);
 }
 
 Ask3Box::~Ask3Box()
 {
 }
 
-ErrorBox::ErrorBox(const char* msg)
-	: MessageDialog(msg, false, Gtk::MESSAGE_ERROR)
+ErrorBox::ErrorBox(const char *msg) : MessageDialog(msg, false, Gtk::MESSAGE_ERROR)
 {
 }

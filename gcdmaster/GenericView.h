@@ -26,17 +26,16 @@ class TocEditView;
 
 class GenericView : public Gtk::VBox
 {
-public:
-  GenericView();
-  ~GenericView();
+  public:
+    GenericView();
+    ~GenericView();
 
-  virtual TocEditView *tocEditView() const;
+    virtual TocEditView *tocEditView() const;
 
-  virtual void update(unsigned long level) = 0;
+    virtual void update(unsigned long level) = 0;
 
-protected:
-  TocEditView *tocEditView_;
-
+  protected:
+    TocEditView *tocEditView_;
 };
 
 #endif

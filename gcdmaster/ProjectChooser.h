@@ -24,11 +24,11 @@
 
 class ProjectChooser : public Gtk::VBox
 {
- public:
-  ProjectChooser();
+  public:
+    ProjectChooser();
 
-  sigc::signal0<void> newAudioCDProject;
-  sigc::signal0<void> newDuplicateCDProject;
-  sigc::signal0<void> newDumpCDProject;
+    sigc::signal0<void> newAudioCDProject;
+    sigc::signal0<void> newDuplicateCDProject;
+    sigc::signal0<void> newDumpCDProject;
 };
 #endif

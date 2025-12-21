@@ -27,78 +27,85 @@ class CdDevice;
 
 class DeviceConfDialog : public Gtk::Window
 {
-public:
-  DeviceConfDialog();
-  ~DeviceConfDialog();
-
-  void start();
-  void stop();
-
-  void update(unsigned long level);
-
-private:
-  bool active_;
-
-  Gtk::TreeIter selectedRow_;
-
-  struct DeviceData {
-    std::string dev;
-    int driverId;
-    int deviceType;
-    unsigned long options;
-  };
-
-  // ------------------------------------- Device TreeView
-
-  class ListColumns : public Gtk::TreeModel::ColumnRecord {
   public:
-    ListColumns() {
-      add(dev); add(vendor); add(model); add(status); add(data);
+    DeviceConfDialog();
+    ~DeviceConfDialog();
+
+    void start();
+    void stop();
+
+    void update(unsigned long level);
+
+  private:
+    bool active_;
+
+    Gtk::TreeIter selectedRow_;
+
+    struct DeviceData
+    {
+        std::string dev;
+        int driverId;
+        int deviceType;
+        unsigned long options;
     };
 
-    Gtk::TreeModelColumn<std::string> dev;
-    Gtk::TreeModelColumn<std::string> vendor;
-    Gtk::TreeModelColumn<std::string> model;
-    Gtk::TreeModelColumn<std::string> status;
-    Gtk::TreeModelColumn<DeviceData*> data;
-  };
-  Gtk::TreeView list_;
-  Glib::RefPtr<Gtk::ListStore> listModel_;
-  ListColumns listColumns_;
+    // ------------------------------------- Device TreeView
 
-  Gtk::Frame listFrame_;
-  Gtk::Frame settingFrame_;
-  Gtk::Frame addDeviceFrame_;
+    class ListColumns : public Gtk::TreeModel::ColumnRecord
+    {
+      public:
+        ListColumns()
+        {
+            add(dev);
+            add(vendor);
+            add(model);
+            add(status);
+            add(data);
+        };
 
-  Gtk::ComboBoxText driverMenu_;
-  Gtk::ComboBoxText devtypeMenu_;
+        Gtk::TreeModelColumn<std::string> dev;
+        Gtk::TreeModelColumn<std::string> vendor;
+        Gtk::TreeModelColumn<std::string> model;
+        Gtk::TreeModelColumn<std::string> status;
+        Gtk::TreeModelColumn<DeviceData *> data;
+    };
+    Gtk::TreeView list_;
+    Glib::RefPtr<Gtk::ListStore> listModel_;
+    ListColumns listColumns_;
 
-  Gtk::Entry devEntry_;
-  Gtk::Entry vendorEntry_;
-  Gtk::Entry productEntry_;
-  Gtk::Entry driverOptionsEntry_;
+    Gtk::Frame listFrame_;
+    Gtk::Frame settingFrame_;
+    Gtk::Frame addDeviceFrame_;
 
-  const char *checkString(const std::string &str);
+    Gtk::ComboBoxText driverMenu_;
+    Gtk::ComboBoxText devtypeMenu_;
 
-  void setDriverId();
-  void setDeviceType();
+    Gtk::Entry devEntry_;
+    Gtk::Entry vendorEntry_;
+    Gtk::Entry productEntry_;
+    Gtk::Entry driverOptionsEntry_;
 
-  void selectionChanged();
+    const char *checkString(const std::string &str);
 
-  void closeAction();
-  void resetAction();
-  void applyAction();
-  void addDeviceAction();
-  void deleteDeviceAction();
-  void rescanAction();
+    void setDriverId();
+    void setDeviceType();
 
-  Gtk::TreeIter appendTableEntry(CdDevice *);
-  void import();
-  void importConfiguration(Gtk::TreeIter);
-  void importStatus();
+    void selectionChanged();
 
-  void exportData();
-  void exportConfiguration(Gtk::TreeIter);
+    void closeAction();
+    void resetAction();
+    void applyAction();
+    void addDeviceAction();
+    void deleteDeviceAction();
+    void rescanAction();
+
+    Gtk::TreeIter appendTableEntry(CdDevice *);
+    void import();
+    void importConfiguration(Gtk::TreeIter);
+    void importStatus();
+
+    void exportData();
+    void exportConfiguration(Gtk::TreeIter);
 };
 
 #endif

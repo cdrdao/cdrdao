@@ -20,8 +20,8 @@
 #ifndef __TOC_INFO_DIALOG_H__
 #define __TOC_INFO_DIALOG_H__
 
-#include <gtkmm.h>
 #include <gtk/gtk.h>
+#include <gtkmm.h>
 
 #include "Toc.h"
 
@@ -30,90 +30,94 @@ class TextEdit;
 
 class TocInfoDialog : public Gtk::Dialog
 {
-public:
-  TocInfoDialog(Gtk::Window* parent);
-  ~TocInfoDialog();
-
-  bool on_delete_event(GdkEventAny*);
-
-  void update(unsigned long, TocEdit *);
-
-  void start(TocEdit *);
-  void stop();
-
-private:
-  TocEdit *tocEdit_;
-  bool active_;
-
-  Gtk::Button *applyButton_;
-  Gtk::Label *tocLength_;
-  Gtk::Label *nofTracks_;
-
-  TextEdit *catalog_;
-
-  //Tree model columns:
-  class ModelColumns : public Gtk::TreeModel::ColumnRecord
-  {
   public:
+    TocInfoDialog(Gtk::Window *parent);
+    ~TocInfoDialog();
 
-    ModelColumns()
-    { add(m_col_id); add(m_col_name); }
+    bool on_delete_event(GdkEventAny *);
 
-    Gtk::TreeModelColumn<int> m_col_id;
-    Gtk::TreeModelColumn<Glib::ustring> m_col_name;
-  };
+    void update(unsigned long, TocEdit *);
 
-  Gtk::ComboBoxText tocType_;
-  Toc::Type selectedTocType_;
+    void start(TocEdit *);
+    void stop();
 
-  struct BlockValue {
-    int block;
-    int value;
-  };
+  private:
+    TocEdit *tocEdit_;
+    bool active_;
 
-  struct CdTextPage {
-    Gtk::ComboBoxText *language;
-    int selectedLanguage;
+    Gtk::Button *applyButton_;
+    Gtk::Label *tocLength_;
+    Gtk::Label *nofTracks_;
 
-    Gtk::ComboBoxText *genre;
-    int selectedGenre;
-    
-    Gtk::Label *label;
-    Gtk::Entry *title;
-    Gtk::Entry *performer;
-    Gtk::Entry *songwriter;
-    Gtk::Entry *composer;
-    Gtk::Entry *arranger;
-    Gtk::Entry *message;
-    Gtk::Entry *catalog;
-    Gtk::Entry *upcEan;
-    Gtk::Entry *genreInfo;
-  };
+    TextEdit *catalog_;
 
-  CdTextPage cdTextPages_[8];
+    // Tree model columns:
+    class ModelColumns : public Gtk::TreeModel::ColumnRecord
+    {
+      public:
+        ModelColumns()
+        {
+            add(m_col_id);
+            add(m_col_name);
+        }
 
-  void closeAction();
-  void applyAction();
+        Gtk::TreeModelColumn<int> m_col_id;
+        Gtk::TreeModelColumn<Glib::ustring> m_col_name;
+    };
 
-  void createCdTextLanguageMenu(int);
-  void createCdTextGenreMenu(int n);
-  Gtk::VBox *createCdTextPage(int);
+    Gtk::ComboBoxText tocType_;
+    Toc::Type selectedTocType_;
 
-  void clear();
-  void clearCdText();
+    struct BlockValue
+    {
+        int block;
+        int value;
+    };
 
-  const char *checkString(const std::string &);
-  int getCdTextLanguageIndex(int code);
-  int getCdTextGenreIndex(int code1, int code2);
+    struct CdTextPage
+    {
+        Gtk::ComboBoxText *language;
+        int selectedLanguage;
 
-  void importCdText(const Toc *);
-  void importData(const Toc *);
-  void exportCdText(TocEdit *);
-  void exportData(TocEdit *);
+        Gtk::ComboBoxText *genre;
+        int selectedGenre;
 
-  void setSelectedTocType();
-  void setSelectedCDTextLanguage(int);
-  void setSelectedCDTextGenre(int);
+        Gtk::Label *label;
+        Gtk::Entry *title;
+        Gtk::Entry *performer;
+        Gtk::Entry *songwriter;
+        Gtk::Entry *composer;
+        Gtk::Entry *arranger;
+        Gtk::Entry *message;
+        Gtk::Entry *catalog;
+        Gtk::Entry *upcEan;
+        Gtk::Entry *genreInfo;
+    };
+
+    CdTextPage cdTextPages_[8];
+
+    void closeAction();
+    void applyAction();
+
+    void createCdTextLanguageMenu(int);
+    void createCdTextGenreMenu(int n);
+    Gtk::VBox *createCdTextPage(int);
+
+    void clear();
+    void clearCdText();
+
+    const char *checkString(const std::string &);
+    int getCdTextLanguageIndex(int code);
+    int getCdTextGenreIndex(int code1, int code2);
+
+    void importCdText(const Toc *);
+    void importData(const Toc *);
+    void exportCdText(TocEdit *);
+    void exportData(TocEdit *);
+
+    void setSelectedTocType();
+    void setSelectedCDTextLanguage(int);
+    void setSelectedCDTextGenre(int);
 };
 
 #endif

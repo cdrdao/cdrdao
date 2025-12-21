@@ -22,52 +22,52 @@
 
 class TocEdit;
 
-class TocEditView {
-public:
-  TocEditView(TocEdit *);
-  ~TocEditView();
+class TocEditView
+{
+  public:
+    TocEditView(TocEdit *);
+    ~TocEditView();
 
-  TocEdit *tocEdit() const;
+    TocEdit *tocEdit() const;
 
-  void sampleMarker(unsigned long);
-  bool sampleMarker(unsigned long *) const;
+    void sampleMarker(unsigned long);
+    bool sampleMarker(unsigned long *) const;
 
-  void sampleSelect(unsigned long, unsigned long);
-  void sampleSelectAll();
-  bool sampleSelection(unsigned long *, unsigned long *) const;
-  bool sampleSelectionClear();
+    void sampleSelect(unsigned long, unsigned long);
+    void sampleSelectAll();
+    bool sampleSelection(unsigned long *, unsigned long *) const;
+    bool sampleSelectionClear();
 
-  void sampleViewFull();
-  void sampleViewUpdate();
-  void sampleViewInclude(unsigned long, unsigned long);
-  void sampleView(unsigned long *, unsigned long *) const;
-  bool sampleView(unsigned long smin, unsigned long smax);
+    void sampleViewFull();
+    void sampleViewUpdate();
+    void sampleViewInclude(unsigned long, unsigned long);
+    void sampleView(unsigned long *, unsigned long *) const;
+    bool sampleView(unsigned long smin, unsigned long smax);
 
-  void trackSelection(int);
-  int trackSelection(int *) const;
+    void trackSelection(int);
+    int trackSelection(int *) const;
 
-  void indexSelection(int);
-  int indexSelection(int *) const;
-  
-private:
-  TocEdit *tocEdit_;
+    void indexSelection(int);
+    int indexSelection(int *) const;
 
-  bool sampleMarkerValid_;
-  unsigned long sampleMarker_;
+  private:
+    TocEdit *tocEdit_;
 
-  bool sampleSelectionValid_;
-  unsigned long sampleSelectionMin_;
-  unsigned long sampleSelectionMax_;
+    bool sampleMarkerValid_;
+    unsigned long sampleMarker_;
 
-  unsigned long sampleViewMin_;
-  unsigned long sampleViewMax_;
-  
-  int trackSelectionValid_;
-  int trackSelection_;
+    bool sampleSelectionValid_;
+    unsigned long sampleSelectionMin_;
+    unsigned long sampleSelectionMax_;
 
-  int indexSelectionValid_;
-  int indexSelection_;
+    unsigned long sampleViewMin_;
+    unsigned long sampleViewMax_;
 
+    int trackSelectionValid_;
+    int trackSelection_;
+
+    int indexSelectionValid_;
+    int indexSelection_;
 };
 
 #endif

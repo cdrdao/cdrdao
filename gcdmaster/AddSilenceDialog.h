@@ -20,44 +20,48 @@
 #ifndef __ADD_SILENCE_DIALOG_H__
 #define __ADD_SILENCE_DIALOG_H__
 
-#include <gtkmm.h>
 #include <gtk/gtk.h>
+#include <gtkmm.h>
 
 class TocEditView;
 
 class AddSilenceDialog : public Gtk::Dialog
 {
-public:
-  enum Mode { M_APPEND, M_INSERT };
+  public:
+    enum Mode
+    {
+        M_APPEND,
+        M_INSERT
+    };
 
-  AddSilenceDialog();
-  ~AddSilenceDialog();
+    AddSilenceDialog();
+    ~AddSilenceDialog();
 
-  void start(TocEditView *);
-  void stop();
+    void start(TocEditView *);
+    void stop();
 
-  void mode(Mode);
-  void update(unsigned long level, TocEditView *);
-  sigc::signal1<void, unsigned long> signal_tocModified;
-  sigc::signal0<void> signal_fullView;
+    void mode(Mode);
+    void update(unsigned long level, TocEditView *);
+    sigc::signal1<void, unsigned long> signal_tocModified;
+    sigc::signal0<void> signal_fullView;
 
-  bool on_delete_event(GdkEventAny*);
+    bool on_delete_event(GdkEventAny *);
 
-private:
-  TocEditView *tocEditView_;
-  bool active_;
-  Mode mode_;
+  private:
+    TocEditView *tocEditView_;
+    bool active_;
+    Mode mode_;
 
-  Gtk::Button *applyButton_;
+    Gtk::Button *applyButton_;
 
-  Gtk::Entry minutes_;
-  Gtk::Entry seconds_;
-  Gtk::Entry frames_;
-  Gtk::Entry samples_;
+    Gtk::Entry minutes_;
+    Gtk::Entry seconds_;
+    Gtk::Entry frames_;
+    Gtk::Entry samples_;
 
-  void clearAction();
-  void closeAction();
-  void applyAction();
+    void clearAction();
+    void closeAction();
+    void applyAction();
 };
 
 #endif

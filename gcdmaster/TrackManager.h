@@ -43,55 +43,63 @@
 class Toc;
 class Track;
 
-class TrackManager {
-public:
-  struct Entry {
-    Entry(const Track *t, int tn, int in, gint x) {
-      track = t; trackNr = tn; indexNr = in; xpos = x;
-      extend = 0; drawn = 1; selected = 0;
-    }
-    const Track *track;
-    int trackNr;
-    int indexNr;
-    gint xpos;
-    unsigned int extend : 1;
-    unsigned int drawn : 1;
-    unsigned int selected : 1;
-  };
+class TrackManager
+{
+  public:
+    struct Entry
+    {
+        Entry(const Track *t, int tn, int in, gint x)
+        {
+            track = t;
+            trackNr = tn;
+            indexNr = in;
+            xpos = x;
+            extend = 0;
+            drawn = 1;
+            selected = 0;
+        }
+        const Track *track;
+        int trackNr;
+        int indexNr;
+        gint xpos;
+        unsigned int extend : 1;
+        unsigned int drawn : 1;
+        unsigned int selected : 1;
+    };
 
-  TrackManager(gint trackMarkerWidth);
-  ~TrackManager();
+    TrackManager(gint trackMarkerWidth);
+    ~TrackManager();
 
-  void update(const Toc *, unsigned long start, unsigned long end, gint width);
+    void update(const Toc *, unsigned long start, unsigned long end, gint width);
 
-  // returns entry that is picked at given x-postion
-  const Entry *pick(gint x, gint *stopXMin, gint *stopXMax); 
+    // returns entry that is picked at given x-postion
+    const Entry *pick(gint x, gint *stopXMin, gint *stopXMax);
 
-  // selects given entry, use 'NULL' to unselect all
-  void select(const Entry *);
+    // selects given entry, use 'NULL' to unselect all
+    void select(const Entry *);
 
-  // selected entry with specified track/index
-  void select(int trackNr, int indexNr);
+    // selected entry with specified track/index
+    void select(int trackNr, int indexNr);
 
-  // iterates entries
-  const Entry *first();
-  const Entry *next();
+    // iterates entries
+    const Entry *first();
+    const Entry *next();
 
+  private:
+    struct EntryList
+    {
+        Entry *ent;
+        EntryList *next;
+    };
 
-private:
-  struct EntryList {
-    Entry *ent;
-    EntryList *next;
-  };
+    gint trackMarkerWidth_;
+    gint width_;
+    EntryList *entries_;
+    EntryList *lastEntry_;
+    EntryList *iterator_;
 
-  gint trackMarkerWidth_;
-  gint width_;
-  EntryList *entries_;
-  EntryList *lastEntry_;
-  EntryList *iterator_;
-
-  void clear();
-  void append(Entry *);
+    void clear();
+    void append(Entry *);
 };
 
 #endif

@@ -17,22 +17,22 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#include <stdio.h>
+#include <assert.h>
 #include <limits.h>
 #include <math.h>
-#include <assert.h>
+#include <stdio.h>
 
-#include <gtkmm.h>
 #include <glibmm/i18n.h>
+#include <gtkmm.h>
 
-#include "config.h"
-#include "RecordTocSource.h"
 #include "MessageBox.h"
+#include "RecordTocSource.h"
+#include "config.h"
 #include "xcdrdao.h"
 
 #include "CdDevice.h"
-#include "guiUpdate.h"
 #include "TocEdit.h"
+#include "guiUpdate.h"
 
 #include "DeviceList.h"
 
@@ -40,92 +40,96 @@
 
 RecordTocSource::RecordTocSource(TocEdit *tocEdit)
 {
-  Gtk::Table *table;
-  Gtk::Label *label;  
+    Gtk::Table *table;
+    Gtk::Label *label;
 
-  active_ = false;
-  tocEdit_ = tocEdit;
+    active_ = false;
+    tocEdit_ = tocEdit;
 
-  // device settings
-  Gtk::Frame *infoFrame = manage(new Gtk::Frame(_(" Project Information ")));
-  
-  table = manage(new Gtk::Table(5, 2, FALSE));
-  table->set_row_spacings(5);
-  table->set_col_spacings(5);
-  table->set_border_width(10);
+    // device settings
+    Gtk::Frame *infoFrame = manage(new Gtk::Frame(_(" Project Information ")));
 
-  label = manage(new Gtk::Label(_("Project name: "), 1));
-  table->attach(*label, 0, 1, 0, 1);
-  table->attach(projectLabel_, 1, 2, 0, 1);
+    table = manage(new Gtk::Table(5, 2, FALSE));
+    table->set_row_spacings(5);
+    table->set_col_spacings(5);
+    table->set_border_width(10);
 
-  label = manage(new Gtk::Label(_("Toc Type: "), 1));
-  table->attach(*label, 0, 1, 1, 2);
-  table->attach(tocTypeLabel_, 1, 2, 1, 2);
+    label = manage(new Gtk::Label(_("Project name: "), 1));
+    table->attach(*label, 0, 1, 0, 1);
+    table->attach(projectLabel_, 1, 2, 0, 1);
 
-  label = manage(new Gtk::Label(_("Tracks: "), 1));
-  table->attach(*label, 0, 1, 2, 3);
-  table->attach(nofTracksLabel_, 1, 2, 2, 3);
+    label = manage(new Gtk::Label(_("Toc Type: "), 1));
+    table->attach(*label, 0, 1, 1, 2);
+    table->attach(tocTypeLabel_, 1, 2, 1, 2);
 
-  label = manage(new Gtk::Label(_("Length: "), 1));
-  table->attach(*label, 0, 1, 3, 4);
-  table->attach(tocLengthLabel_, 1, 2, 3, 4);
+    label = manage(new Gtk::Label(_("Tracks: "), 1));
+    table->attach(*label, 0, 1, 2, 3);
+    table->attach(nofTracksLabel_, 1, 2, 2, 3);
 
-  infoFrame->add(*table);
-  pack_start(*infoFrame, Gtk::PACK_SHRINK);
+    label = manage(new Gtk::Label(_("Length: "), 1));
+    table->attach(*label, 0, 1, 3, 4);
+    table->attach(tocLengthLabel_, 1, 2, 3, 4);
+
+    infoFrame->add(*table);
+    pack_start(*infoFrame, Gtk::PACK_SHRINK);
 }
 
 void RecordTocSource::start()
 {
-  active_ = true;
-  update(UPD_ALL);
-  show_all();
+    active_ = true;
+    update(UPD_ALL);
+    show_all();
 }
 
 void RecordTocSource::stop()
 {
-  if (active_) {
-    hide();
-    active_ = false;
-  }
+    if (active_)
+    {
+        hide();
+        active_ = false;
+    }
 }
 
 void RecordTocSource::update(unsigned long level)
 {
-  update(level, tocEdit_);
+    update(level, tocEdit_);
 }
 
 void RecordTocSource::update(unsigned long level, TocEdit *tedit)
 {
-  if (!active_)
-    return;
+    if (!active_)
+        return;
 
-  if (tocEdit_ != tedit) {
-    level = UPD_ALL;
-    tocEdit_ = tedit;
-  }
-
-  if (tocEdit_ == NULL) {
-    projectLabel_.set_text("");
-    tocTypeLabel_.set_text("");
-    nofTracksLabel_.set_text("");
-    tocLengthLabel_.set_text("");
-  }
-  else {
-    if (level & UPD_TOC_DATA) {
-      char label[256];
-      char buf[50];
-      const Toc *toc = tocEdit_->toc();
-
-      projectLabel_.set_text(tocEdit_->filename());
-
-      tocTypeLabel_.set_text(toc->tocType2String(toc->tocType()));
-
-      snprintf(label, sizeof(label), "%d", toc->nofTracks());
-      nofTracksLabel_.set_text(label);
-      
-      snprintf(buf, sizeof(buf),"%d:%02d:%02d", toc->length().min(),
-	      toc->length().sec(), toc->length().frac());
-      tocLengthLabel_.set_text(buf);
+    if (tocEdit_ != tedit)
+    {
+        level = UPD_ALL;
+        tocEdit_ = tedit;
     }
-  }
+
+    if (tocEdit_ == NULL)
+    {
+        projectLabel_.set_text("");
+        tocTypeLabel_.set_text("");
+        nofTracksLabel_.set_text("");
+        tocLengthLabel_.set_text("");
+    }
+    else
+    {
+        if (level & UPD_TOC_DATA)
+        {
+            char label[256];
+            char buf[50];
+            const Toc *toc = tocEdit_->toc();
+
+            projectLabel_.set_text(tocEdit_->filename());
+
+            tocTypeLabel_.set_text(toc->tocType2String(toc->tocType()));
+
+            snprintf(label, sizeof(label), "%d", toc->nofTracks());
+            nofTracksLabel_.set_text(label);
+
+            snprintf(buf, sizeof(buf), "%d:%02d:%02d", toc->length().min(), toc->length().sec(), toc->length().frac());
+            tocLengthLabel_.set_text(buf);
+        }
+    }
 }

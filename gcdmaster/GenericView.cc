@@ -19,18 +19,17 @@
 
 #include "GenericView.h"
 
-
 GenericView::GenericView()
 {
-  tocEditView_ = (TocEditView*)0;
+    tocEditView_ = (TocEditView *)0;
 }
 
 GenericView::~GenericView()
 {
-  tocEditView_ = (TocEditView*)0;
+    tocEditView_ = (TocEditView *)0;
 }
 
 TocEditView *GenericView::tocEditView() const
 {
-  return tocEditView_;
+    return tocEditView_;
 }

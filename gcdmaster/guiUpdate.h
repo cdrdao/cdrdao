@@ -22,19 +22,19 @@
 
 #define APP_NAME "Gnome CD Master"
 
-#define UPD_ALL              0xffffffff
-#define UPD_TOC_DATA         0x00000001
-#define UPD_TRACK_DATA       0x00000002
-#define UPD_SAMPLES          0x00000004
-#define UPD_TRACK_MARK_SEL   0x00000008
-#define UPD_SAMPLE_SEL       0x00000010
-#define UPD_SAMPLE_MARKER    0x00000020
-#define UPD_EDITABLE_STATE   0x00000040
-#define UPD_TOC_DIRTY        0x00000080
-#define UPD_CD_DEVICES       0x00000100
+#define UPD_ALL 0xffffffff
+#define UPD_TOC_DATA 0x00000001
+#define UPD_TRACK_DATA 0x00000002
+#define UPD_SAMPLES 0x00000004
+#define UPD_TRACK_MARK_SEL 0x00000008
+#define UPD_SAMPLE_SEL 0x00000010
+#define UPD_SAMPLE_MARKER 0x00000020
+#define UPD_EDITABLE_STATE 0x00000040
+#define UPD_TOC_DIRTY 0x00000080
+#define UPD_CD_DEVICES 0x00000100
 #define UPD_CD_DEVICE_STATUS 0x00000200
-#define UPD_PROGRESS_STATUS  0x00000400
-#define UPD_PLAY_STATUS      0x00000800
+#define UPD_PROGRESS_STATUS 0x00000400
+#define UPD_PLAY_STATUS 0x00000800
 
 extern void guiUpdate(unsigned long level = 0);
 extern bool guiUpdatePeriodic();

@@ -20,9 +20,9 @@
 #ifndef __TASK_MANAGER_H__
 #define __TASK_MANAGER_H__
 
+#include <queue>
 #include <sigc++/signal.h>
 #include <string>
-#include <queue>
 #include <thread>
 
 class TaskManager;
@@ -40,11 +40,12 @@ class ThreadPool;
 //   update the GUI. The completed() functions are guaranteed to be
 //   called in the order in which the jobs are added.
 
-
 class Task
 {
-public:
-    Task() : done(false) {}
+  public:
+    Task() : done(false)
+    {
+    }
 
     // Runs in worker thread.
     virtual void run() = 0;
@@ -53,37 +54,40 @@ public:
     virtual void completed() = 0;
 
     // Can be called in worker thread.
-    virtual void sendUpdate(const std::string& msg);
+    virtual void sendUpdate(const std::string &msg);
 
-    TaskManager* tm_;
+    TaskManager *tm_;
     bool done;
 };
 
 class TaskManager
 {
-public:
+  public:
     TaskManager(int num_threads = 4);
     ~TaskManager();
 
     sigc::signal0<void> signalQueueStarted;
     sigc::signal0<void> signalQueueEmptied;
-    sigc::signal1<void, Task*> signalJobStarted;
-    sigc::signal2<void, Task*, const std::string&> signalJobUpdate;
+    sigc::signal1<void, Task *> signalJobStarted;
+    sigc::signal2<void, Task *, const std::string &> signalJobUpdate;
 
-    void addJob(Task* task);
+    void addJob(Task *task);
 
-    int queueSize() { return tasks.size(); }
+    int queueSize()
+    {
+        return tasks.size();
+    }
     double completion();
     void resumeCompletions();
 
-private:
-    ThreadPool* threadpool;
+  private:
+    ThreadPool *threadpool;
     // We keep our own queue to guarantee completion order.
-    std::queue<Task*> tasks;
+    std::queue<Task *> tasks;
     std::thread::id main_thread_id;
 
-    void runJob(Task*);
-    void jobDone(Task*);
+    void runJob(Task *);
+    void jobDone(Task *);
 
     int total, sofar;
 };

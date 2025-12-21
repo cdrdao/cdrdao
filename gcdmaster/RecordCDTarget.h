@@ -20,62 +20,67 @@
 #ifndef __RECORD_CD_TARGET_H
 #define __RECORD_CD_TARGET_H
 
-#include <gtkmm.h>
 #include <gtk/gtk.h>
+#include <gtkmm.h>
 
 class TocEdit;
 class CdDevice;
 class DeviceList;
 
-class RecordCDTarget : public Gtk::VBox {
-public:
-  RecordCDTarget(Gtk::Window *);
-  ~RecordCDTarget();
-  
-  void start();
-  void stop();
+class RecordCDTarget : public Gtk::VBox
+{
+  public:
+    RecordCDTarget(Gtk::Window *);
+    ~RecordCDTarget();
 
-  void update(unsigned long level);
+    void start();
+    void stop();
 
-  DeviceList *getDeviceList() { return DEVICES;}
-  int getMultisession();
-  int getCopies();
-  int getSpeed();
-  bool getEject();
-  bool getOverburn();
-  int checkEjectWarning(Gtk::Window *);
-  bool getReload();
-  int checkReloadWarning(Gtk::Window *);
-  int getBuffer();
+    void update(unsigned long level);
 
-  void cancelAction();
-private:
-  int active_;
+    DeviceList *getDeviceList()
+    {
+        return DEVICES;
+    }
+    int getMultisession();
+    int getCopies();
+    int getSpeed();
+    bool getEject();
+    bool getOverburn();
+    int checkEjectWarning(Gtk::Window *);
+    bool getReload();
+    int checkReloadWarning(Gtk::Window *);
+    int getBuffer();
 
-  DeviceList *DEVICES;
+    void cancelAction();
 
-  int speed_;
+  private:
+    int active_;
 
-  Gtk::Window *parent_;
-  Gtk::MessageDialog *moreOptionsDialog_;
+    DeviceList *DEVICES;
 
-  Gtk::CheckButton *closeSessionButton_;
-  Gtk::CheckButton *ejectButton_;
-  Gtk::CheckButton *reloadButton_;
-  Gtk::CheckButton *overburnButton_;
+    int speed_;
 
-  Gtk::SpinButton *copiesSpinButton_;
-  Gtk::SpinButton *speedSpinButton_;
-  Gtk::CheckButton *speedButton_;
+    Gtk::Window *parent_;
+    Gtk::MessageDialog *moreOptionsDialog_;
 
-  Gtk::SpinButton *bufferSpinButton_;
-  Gtk::Label *bufferRAMLabel_;
+    Gtk::CheckButton *closeSessionButton_;
+    Gtk::CheckButton *ejectButton_;
+    Gtk::CheckButton *reloadButton_;
+    Gtk::CheckButton *overburnButton_;
 
-  void updateBufferRAMLabel();
+    Gtk::SpinButton *copiesSpinButton_;
+    Gtk::SpinButton *speedSpinButton_;
+    Gtk::CheckButton *speedButton_;
 
-  void moreOptions();
+    Gtk::SpinButton *bufferSpinButton_;
+    Gtk::Label *bufferRAMLabel_;
 
-  void speedButtonChanged();
-  void speedChanged();
+    void updateBufferRAMLabel();
+
+    void moreOptions();
+
+    void speedButtonChanged();
+    void speedChanged();
 };
 #endif

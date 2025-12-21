@@ -20,67 +20,69 @@
 #ifndef __CD_TEXT_DIALOG_H__
 #define __CD_TEXT_DIALOG_H__
 
-#include <gtkmm.h>
 #include <gtk/gtk.h>
+#include <gtkmm.h>
 
-//#include "Toc.h"
+// #include "Toc.h"
 #include "CdTextItem.h"
 
 class TocEdit;
 
 class CdTextDialog : public Gtk::Dialog
 {
-public:
-  CdTextDialog();
-  ~CdTextDialog();
+  public:
+    CdTextDialog();
+    ~CdTextDialog();
 
-  bool on_delete_event(GdkEventAny*);
+    bool on_delete_event(GdkEventAny *);
 
-  void update(unsigned long, TocEdit *);
+    void update(unsigned long, TocEdit *);
 
-  void start(TocEdit *);
-  void stop();
+    void start(TocEdit *);
+    void stop();
 
-private:
-  bool active_;
+  private:
+    bool active_;
 
-  TocEdit *tocEdit_;
-  int trackEntries_;
+    TocEdit *tocEdit_;
+    int trackEntries_;
 
-  Gtk::Button *applyButton_;
-  Gtk::Notebook *languages_;
+    Gtk::Button *applyButton_;
+    Gtk::Notebook *languages_;
 
-  struct TableEntry {
-    Gtk::Entry *performer;
-    Gtk::Entry *title;
-    Gtk::Label *label;
-    Gtk::HBox *hbox;
-  };
+    struct TableEntry
+    {
+        Gtk::Entry *performer;
+        Gtk::Entry *title;
+        Gtk::Label *label;
+        Gtk::HBox *hbox;
+    };
 
-  struct Language {
-    Gtk::Grid *table;
-    Gtk::Entry *performer;
-    Gtk::Entry *title;
-    Gtk::Label *tabLabel;
+    struct Language
+    {
+        Gtk::Grid *table;
+        Gtk::Entry *performer;
+        Gtk::Entry *title;
+        Gtk::Label *tabLabel;
 
-    Gtk::CheckButton *performerButton;
-    
-    TableEntry *tracks;
-  };
+        Gtk::CheckButton *performerButton;
 
-  Language page_[8];
+        TableEntry *tracks;
+    };
 
-  void adjustTableEntries(int);
-  void updateTabLabels();
-  void applyAction();
-  void fillPerformerAction();
-  void activatePerformerAction(int);
+    Language page_[8];
 
-  void importData();
-  void exportData();
-  void setCdTextItem(CdTextItem::PackType, int trackNr, int l, const char *);
+    void adjustTableEntries(int);
+    void updateTabLabels();
+    void applyAction();
+    void fillPerformerAction();
+    void activatePerformerAction(int);
 
-  const char *checkString(const std::string &);
+    void importData();
+    void exportData();
+    void setCdTextItem(CdTextItem::PackType, int trackNr, int l, const char *);
+
+    const char *checkString(const std::string &);
 };
 
 #endif

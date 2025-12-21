@@ -18,88 +18,86 @@
  */
 
 #include "config.h"
-#include <stdio.h>
+#include <assert.h>
 #include <limits.h>
 #include <math.h>
-#include <assert.h>
+#include <stdio.h>
 
-#include <gtkmm.h>
 #include <glibmm/i18n.h>
+#include <gtkmm.h>
 
-#include "RecordHDTarget.h"
 #include "MessageBox.h"
+#include "RecordHDTarget.h"
 #include "xcdrdao.h"
 
 #include "CdDevice.h"
-#include "guiUpdate.h"
 #include "TocEdit.h"
+#include "guiUpdate.h"
 
 RecordHDTarget::RecordHDTarget()
 {
-  active_ = false;
+    active_ = false;
 
-  set_spacing(10);
+    set_spacing(10);
 
-  // device settings
-  Gtk::Frame *recordOptionsFrame = manage(
-      new Gtk::Frame(_(" Record Options ")));
+    // device settings
+    Gtk::Frame *recordOptionsFrame = manage(new Gtk::Frame(_(" Record Options ")));
 
-  Gtk::Table *table = manage(new Gtk::Table(2, 2, false));
-  table->set_row_spacings(2);
-  table->set_col_spacings(10);
-  table->set_border_width(5);
+    Gtk::Table *table = manage(new Gtk::Table(2, 2, false));
+    table->set_row_spacings(2);
+    table->set_col_spacings(10);
+    table->set_border_width(5);
 
-  recordOptionsFrame->add(*table);
-  recordOptionsFrame->show_all();
-  pack_start(*recordOptionsFrame, Gtk::PACK_SHRINK);
+    recordOptionsFrame->add(*table);
+    recordOptionsFrame->show_all();
+    pack_start(*recordOptionsFrame, Gtk::PACK_SHRINK);
 
-  Gtk::Label *label = manage(new Gtk::Label(_("Directory: ")));
-  table->attach(*label, 0, 1, 0, 1, Gtk::FILL);
+    Gtk::Label *label = manage(new Gtk::Label(_("Directory: ")));
+    table->attach(*label, 0, 1, 0, 1, Gtk::FILL);
 
-  dirEntry_ = manage(
-      new Gtk::FileChooserButton(Gtk::FILE_CHOOSER_ACTION_SELECT_FOLDER));
-  table->attach(*dirEntry_, 1, 2, 0, 1);
+    dirEntry_ = manage(new Gtk::FileChooserButton(Gtk::FILE_CHOOSER_ACTION_SELECT_FOLDER));
+    table->attach(*dirEntry_, 1, 2, 0, 1);
 
-  label = manage(new Gtk::Label(_("Name: ")));
-  table->attach(*label, 0, 1, 1, 2, Gtk::FILL);
+    label = manage(new Gtk::Label(_("Name: ")));
+    table->attach(*label, 0, 1, 1, 2, Gtk::FILL);
 
-  fileNameEntry_ = manage(new Gtk::Entry);
-  table->attach(*fileNameEntry_, 1, 2, 1, 2);
+    fileNameEntry_ = manage(new Gtk::Entry);
+    table->attach(*fileNameEntry_, 1, 2, 1, 2);
 }
 
 void RecordHDTarget::start()
 {
-  active_ = true;
-  update(UPD_ALL);
-  show();
+    active_ = true;
+    update(UPD_ALL);
+    show();
 }
 
 void RecordHDTarget::stop()
 {
-  if (active_) {
-    hide();
-    active_ = false;
-  }
+    if (active_)
+    {
+        hide();
+        active_ = false;
+    }
 }
 
 void RecordHDTarget::update(unsigned long level)
 {
-  if (!active_)
-    return;
+    if (!active_)
+        return;
 }
 
 void RecordHDTarget::cancelAction()
 {
-  stop();
+    stop();
 }
 
 std::string RecordHDTarget::getFilename()
 {
-  return fileNameEntry_->get_text();
+    return fileNameEntry_->get_text();
 }
 
 std::string RecordHDTarget::getPath()
 {
-  return dirEntry_->get_filename();
+    return dirEntry_->get_filename();
 }
-

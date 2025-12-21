@@ -20,9 +20,9 @@
 #ifndef __PROGRESS_DIALOG_H__
 #define __PROGRESS_DIALOG_H__
 
-#include <sys/time.h>
-#include <gtkmm.h>
 #include <gtk/gtk.h>
+#include <gtkmm.h>
+#include <sys/time.h>
 
 class TocEdit;
 class CdDevice;
@@ -31,86 +31,83 @@ class ProgressDialogPool;
 
 class ProgressDialog : public Gtk::Dialog
 {
-public:
-  ProgressDialog(ProgressDialogPool *father);
-  ~ProgressDialog();
+  public:
+    ProgressDialog(ProgressDialogPool *father);
+    ~ProgressDialog();
 
-  bool on_delete_event(GdkEventAny*);
+    bool on_delete_event(GdkEventAny *);
 
-private:
-  friend class ProgressDialogPool;
+  private:
+    friend class ProgressDialogPool;
 
-  ProgressDialogPool *poolFather_;
+    ProgressDialogPool *poolFather_;
 
-  bool active_;
-  CdDevice *device_;
+    bool active_;
+    CdDevice *device_;
 
-  int finished_;
-  int actStatus_;
-  int actTrack_;
-  int actTrackProgress_;
-  int actTotalProgress_;
-  int actBufferFill_;
-  int actWriterFill_;
+    int finished_;
+    int actStatus_;
+    int actTrack_;
+    int actTrackProgress_;
+    int actTotalProgress_;
+    int actBufferFill_;
+    int actWriterFill_;
 
-  int actCloseButtonLabel_;
+    int actCloseButtonLabel_;
 
-  Gtk::Label *currentTime_;
-  Gtk::Label *remainingTime_;
+    Gtk::Label *currentTime_;
+    Gtk::Label *remainingTime_;
 
-  long leadTime_;
-  bool leadTimeFilled_;
+    long leadTime_;
+    bool leadTimeFilled_;
 
-  struct timeval time_;
-  bool time();
+    struct timeval time_;
+    bool time();
 
-  Gtk::Button *cancelButton_;
-  Gtk::Button *closeButton_;
-  Gtk::Button *ejectButton_;
-  Gtk::Label *tocName_;
+    Gtk::Button *cancelButton_;
+    Gtk::Button *closeButton_;
+    Gtk::Button *ejectButton_;
+    Gtk::Label *tocName_;
 
-  Gtk::Label *statusMsg_;;
-  Gtk::ProgressBar *trackProgress_;
-  Gtk::Label *trackLabel_;
-  Gtk::ProgressBar *totalProgress_;
-  Gtk::ProgressBar *bufferFillRate_;
-  Gtk::ProgressBar *writerFillRate_;
-  Gtk::Label *bufferFillRateLabel_;
-  Gtk::Label *writerFillRateLabel_;
-  void needBufferProgress(bool visible);
-  void needTrackProgress(bool visible);
+    Gtk::Label *statusMsg_;
+    ;
+    Gtk::ProgressBar *trackProgress_;
+    Gtk::Label *trackLabel_;
+    Gtk::ProgressBar *totalProgress_;
+    Gtk::ProgressBar *bufferFillRate_;
+    Gtk::ProgressBar *writerFillRate_;
+    Gtk::Label *bufferFillRateLabel_;
+    Gtk::Label *writerFillRateLabel_;
+    void needBufferProgress(bool visible);
+    void needTrackProgress(bool visible);
 
-  ProgressDialog *poolNext_;
+    ProgressDialog *poolNext_;
 
-  void update(unsigned long);
-  void start(CdDevice *, const char *tocFileName);
-  void stop();
-  void closeAction();
-  void ejectAction();
-  void clear();
-  void setCloseButtonLabel(int l);
-
+    void update(unsigned long);
+    void start(CdDevice *, const char *tocFileName);
+    void stop();
+    void closeAction();
+    void ejectAction();
+    void clear();
+    void setCloseButtonLabel(int l);
 };
 
 class ProgressDialogPool
 {
-public:
-  ProgressDialogPool();
-  ~ProgressDialogPool();
+  public:
+    ProgressDialogPool();
+    ~ProgressDialogPool();
 
-  void update(unsigned long);
-  
-  ProgressDialog* start(CdDevice*, const char* tocFileName,
-                        bool showBuffer = true, bool showTrack = true);
-  ProgressDialog* start(Gtk::Window& parent_window,
-                        CdDevice*, const char* tocFileName,
-                        bool showBuffer = true, bool showTrack = true);
-  void stop(ProgressDialog*);
+    void update(unsigned long);
 
-private:
-  ProgressDialog* activeDialogs_;
-  ProgressDialog* pool_;
+    ProgressDialog *start(CdDevice *, const char *tocFileName, bool showBuffer = true, bool showTrack = true);
+    ProgressDialog *start(Gtk::Window &parent_window, CdDevice *, const char *tocFileName, bool showBuffer = true,
+                          bool showTrack = true);
+    void stop(ProgressDialog *);
+
+  private:
+    ProgressDialog *activeDialogs_;
+    ProgressDialog *pool_;
 };
-
 
 #endif

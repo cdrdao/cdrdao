@@ -17,19 +17,18 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#include <iostream>
 #include <glibmm/i18n.h>
+#include <iostream>
 
-#include "config.h"
-#include "PreferencesDialog.h"
-#include "MessageBox.h"
-#include "trackdb/TempFileManager.h"
 #include "ConfigManager.h"
+#include "MessageBox.h"
+#include "PreferencesDialog.h"
+#include "config.h"
+#include "trackdb/TempFileManager.h"
 #include "xcdrdao.h"
 
-PreferencesDialog::PreferencesDialog(BaseObjectType* cobject, const Glib::RefPtr<Gtk::Builder>& refBuilder)
-	: Gtk::Dialog(cobject),
-	  m_refBuilder(refBuilder)
+PreferencesDialog::PreferencesDialog(BaseObjectType *cobject, const Glib::RefPtr<Gtk::Builder> &refBuilder)
+    : Gtk::Dialog(cobject), m_refBuilder(refBuilder)
 {
     m_refBuilder->get_widget("ApplyButton", _applyButton);
     m_refBuilder->get_widget("OkButton", _okButton);
@@ -40,25 +39,19 @@ PreferencesDialog::PreferencesDialog(BaseObjectType* cobject, const Glib::RefPtr
     m_refBuilder->get_widget("TempBrowseCancel", _browseCancel);
     m_refBuilder->get_widget("TempBrowseOpen", _browseOpen);
 
-	if (!_applyButton || !_okButton || !_cancelButton || !_tempDirEntry
-			|| !_tempDirDialog || !_browseButton || !_browseCancel
-			|| !_browseOpen) {
-		std::cerr << "Unable to create all GUI widgets from glade file\n";
-		exit(1);
-	}
+    if (!_applyButton || !_okButton || !_cancelButton || !_tempDirEntry || !_tempDirDialog || !_browseButton ||
+        !_browseCancel || !_browseOpen)
+    {
+        std::cerr << "Unable to create all GUI widgets from glade file\n";
+        exit(1);
+    }
 
-	_applyButton->signal_clicked().connect(
-			sigc::mem_fun(*this, &PreferencesDialog::on_button_apply));
-	_cancelButton->signal_clicked().connect(
-			sigc::mem_fun(*this, &PreferencesDialog::on_button_cancel));
-	_okButton->signal_clicked().connect(
-			sigc::mem_fun(*this, &PreferencesDialog::on_button_ok));
-	_browseButton->signal_clicked().connect(
-			sigc::mem_fun(*this, &PreferencesDialog::on_button_browse));
-	_browseCancel->signal_clicked().connect(
-			sigc::mem_fun(*this, &PreferencesDialog::on_button_browse_cancel));
-	_browseOpen->signal_clicked().connect(
-			sigc::mem_fun(*this, &PreferencesDialog::on_button_browse_open));
+    _applyButton->signal_clicked().connect(sigc::mem_fun(*this, &PreferencesDialog::on_button_apply));
+    _cancelButton->signal_clicked().connect(sigc::mem_fun(*this, &PreferencesDialog::on_button_cancel));
+    _okButton->signal_clicked().connect(sigc::mem_fun(*this, &PreferencesDialog::on_button_ok));
+    _browseButton->signal_clicked().connect(sigc::mem_fun(*this, &PreferencesDialog::on_button_browse));
+    _browseCancel->signal_clicked().connect(sigc::mem_fun(*this, &PreferencesDialog::on_button_browse_cancel));
+    _browseOpen->signal_clicked().connect(sigc::mem_fun(*this, &PreferencesDialog::on_button_browse_open));
 
     _tempDirDialog->hide();
 
@@ -78,28 +71,32 @@ void PreferencesDialog::show()
 
 void PreferencesDialog::readFromGConf()
 {
-  _tempDirEntry->set_text(configManager->getTempDir());
+    _tempDirEntry->set_text(configManager->getTempDir());
 }
 
 bool PreferencesDialog::saveToGConf()
 {
-  const Glib::ustring& text = _tempDirEntry->get_text();
+    const Glib::ustring &text = _tempDirEntry->get_text();
 
-  if (!tempFileManager.setTempDirectory(text.c_str())) {
+    if (!tempFileManager.setTempDirectory(text.c_str()))
+    {
 
-    ErrorBox errBox(_("The directory you entered cannot be used as a "
-        "temporary files directory."));
-    errBox.run();
-    readFromGConf();
-    return false;
-  }
+        ErrorBox errBox(_("The directory you entered cannot be used as a "
+                          "temporary files directory."));
+        errBox.run();
+        readFromGConf();
+        return false;
+    }
 
-  try {
-    configManager->setTempDir(text);
-  } catch (const Glib::Error& error) {
-    std::cerr << error.what() << std::endl;
-  }
-  return true;
+    try
+    {
+        configManager->setTempDir(text);
+    }
+    catch (const Glib::Error &error)
+    {
+        std::cerr << error.what() << std::endl;
+    }
+    return true;
 }
 
 void PreferencesDialog::on_button_apply()
@@ -116,7 +113,7 @@ void PreferencesDialog::on_button_cancel()
 void PreferencesDialog::on_button_ok()
 {
     if (saveToGConf())
-	hide();
+        hide();
 }
 
 void PreferencesDialog::on_button_browse()

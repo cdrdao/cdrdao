@@ -26,28 +26,28 @@ class RecordCDTarget;
 
 class RecordTocDialog : public Gtk::Window
 {
-public:
-  RecordTocDialog(TocEdit *);
-  ~RecordTocDialog();
+  public:
+    RecordTocDialog(TocEdit *);
+    ~RecordTocDialog();
 
-  void start(Gtk::Window *);
-  void update(unsigned long level);
+    void start(Gtk::Window *);
+    void update(unsigned long level);
 
-private:
-  RecordTocSource *TocSource;
-  RecordCDTarget *CDTarget;
+  private:
+    RecordTocSource *TocSource;
+    RecordCDTarget *CDTarget;
 
-  TocEdit *tocEdit_;
-  bool active_;
+    TocEdit *tocEdit_;
+    bool active_;
 
-  Gtk::RadioButton* simulate_rb;
-  Gtk::RadioButton* simulateBurn_rb;
-  Gtk::RadioButton* burn_rb;
+    Gtk::RadioButton *simulate_rb;
+    Gtk::RadioButton *simulateBurn_rb;
+    Gtk::RadioButton *burn_rb;
 
-  void stop();
-  void startAction();
+    void stop();
+    void startAction();
 
-  bool on_delete_event(GdkEventAny*);
+    bool on_delete_event(GdkEventAny *);
 };
 
 #endif

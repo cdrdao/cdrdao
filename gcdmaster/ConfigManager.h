@@ -25,14 +25,14 @@
 
 class ConfigManager
 {
- public:
+  public:
     ConfigManager();
     virtual ~ConfigManager();
 
     Glib::ustring getCdrdaoPath() const;
 
     Glib::ustring getTempDir() const;
-    void setTempDir(const Glib::ustring& dir) const;
+    void setTempDir(const Glib::ustring &dir) const;
 
     bool getEjectWarning() const;
     void setEjectWarning(bool value);
@@ -43,12 +43,11 @@ class ConfigManager
     bool getReloadWarning() const;
     void setReloadWarning(bool value);
 
-    void setConfiguredDevices(const std::vector<Glib::ustring>& strings);
+    void setConfiguredDevices(const std::vector<Glib::ustring> &strings);
     std::vector<Glib::ustring> getConfiguredDevices(void) const;
 
- protected:
+  protected:
     Glib::RefPtr<Gio::Settings> settings_;
 };
 
 #endif
-
