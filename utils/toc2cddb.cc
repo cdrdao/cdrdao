@@ -4,7 +4,7 @@
  *
  *  Cdrdao
  *	 Copyright (C) 2002 Andreas Mueller <andreas@daneb.de>
- *  Toc2cddb 
+ *  Toc2cddb
  *	 Copyright (C) 2003 Giuseppe "Cowo" Corbelli <cowo@lugbs.linux.it>
  *	 Parts by Andreas Mueller <andreas@daneb.de>
  *
@@ -23,17 +23,17 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 #include <config.h>
+#include <stdarg.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <stdlib.h>
-#include <stdarg.h>
 #ifdef HAVE_GETOPT_H
 #include <getopt.h>
 #endif
-#include <string>
-#include "util.h"
 #include "Toc.h"
+#include "util.h"
+#include <string>
 
 #define FRAME_OFFSET 150
 #define FRAMES_PER_SECOND 75
@@ -47,199 +47,207 @@ const char *calcCddbId(const Toc *toc);
 void message_args(int level, int addNewLine, const char *fmt, va_list args);
 void message(int level, const char *fmt, ...);
 
-static void printVersion()	{
-	message (1, "toc2cddb version %s - (C) Giuseppe \"Cowo\" Corbelli <cowo@lugbs.linux.it>", VERSION);
-	message (1, "Is a part of cdrdao - (C) Andreas Mueller <andreas@daneb.de>");
-}
-static void printUsage()	{
-	message (0, "toc2cddb converts a cdrdao TOC file into a cddb file and prints it to stdout.");
-	message (0, "Usage: toc2cddb {-V | -h | toc-file}");
+static void printVersion()
+{
+    message(1, "toc2cddb version %s - (C) Giuseppe \"Cowo\" Corbelli <cowo@lugbs.linux.it>",
+            VERSION);
+    message(1, "Is a part of cdrdao - (C) Andreas Mueller <andreas@daneb.de>");
 }
 
-int main (int argc, char *argv[])	{
-	const char *tocFile = NULL;
-	Toc *toc = NULL;
-	const Track *track = NULL;
-	int cdTextLanguage = 0;
-	int c = 0;
+static void printUsage()
+{
+    message(0, "toc2cddb converts a cdrdao TOC file into a cddb file and prints it to stdout.");
+    message(0, "Usage: toc2cddb {-V | -h | toc-file}");
+}
 
-	while ((c = getopt(argc, argv, "Vh")) != EOF) {
-    	switch (c) {
-			case 'V':
-				printVersion ();
-				exit (EXIT_SUCCESS);
-			case 'h':
-				printUsage ();
-				exit (EXIT_SUCCESS);
-			case '?':
-				message(-2, "Invalid option: %c", optopt);
-				exit (EXIT_FAILURE);
-		}
-	}
-	if (optind < argc) {
-		tocFile = strdupCC(argv[optind]);
-    	optind++;
-	}	else	{
-    	message(-2, "Missing toc-file name.");
-    	printUsage ();
-    	exit (EXIT_FAILURE);
-	}
-	if (optind != argc) {
-		message(-2, "More arguments than expected.");
-		printUsage ();
-    	exit (EXIT_FAILURE);	
-	}
+int main(int argc, char *argv[])
+{
+    const char *tocFile = NULL;
+    Toc *toc = NULL;
+    const Track *track = NULL;
+    int cdTextLanguage = 0;
+    int c = 0;
 
-	if ((toc = Toc::read(tocFile)) == NULL)
-		message(-10, "Failed to read toc-file '%s'.", tocFile);
-	
-	if (toc->tocType () != Toc::Type::CD_DA)
-		message (-10, "Toc does not refer to a CDDA");
+    while ((c = getopt(argc, argv, "Vh")) != EOF) {
+        switch (c) {
+        case 'V':
+            printVersion();
+            exit(EXIT_SUCCESS);
+        case 'h':
+            printUsage();
+            exit(EXIT_SUCCESS);
+        case '?':
+            message(-2, "Invalid option: %c", optopt);
+            exit(EXIT_FAILURE);
+        }
+    }
+    if (optind < argc) {
+        tocFile = strdupCC(argv[optind]);
+        optind++;
+    } else {
+        message(-2, "Missing toc-file name.");
+        printUsage();
+        exit(EXIT_FAILURE);
+    }
+    if (optind != argc) {
+        message(-2, "More arguments than expected.");
+        printUsage();
+        exit(EXIT_FAILURE);
+    }
 
-	int ntracks = toc->nofTracks ();
-	if (ntracks < 1)
-		message (-10, "Wrong no. of tracks: %d. Expected >= 0.", ntracks);
+    if ((toc = Toc::read(tocFile)) == NULL)
+        message(-10, "Failed to read toc-file '%s'.", tocFile);
 
-	cout << "# xmcd\n#\n# Track frame offsets:\n#" << endl;
-	
-	{
-		TrackIterator titr (toc);
-		Msf start, end;
-		for (track=titr.first (start, end); track != NULL; track=titr.next (start,end))
-			cout << "# " << start.lba()+FRAME_OFFSET << endl;
-	
-		int seconds = (end.min () * 60) + end.sec () + (FRAME_OFFSET/FRAMES_PER_SECOND);
-		cout << "#\n# Disc length: " << seconds << " seconds\n#" << endl;
-	}
-	
-	cout << "# Revision: 0\n# Submitted via: cdrdao-" << VERSION << endl;
-	cout << "DISCID=" << calcCddbId (toc) << endl;
+    if (toc->tocType() != Toc::Type::CD_DA)
+        message(-10, "Toc does not refer to a CDDA");
 
-	{
-		const CdTextItem *cdTextItem = NULL;
-		string album(""), albumPerformer(""), genre("");
+    int ntracks = toc->nofTracks();
+    if (ntracks < 1)
+        message(-10, "Wrong no. of tracks: %d. Expected >= 0.", ntracks);
 
-		if ((cdTextItem = toc->getCdTextItem(0, cdTextLanguage, CdTextItem::PackType::TITLE)) != NULL)
-			album = (const char*)cdTextItem->data();
-	
-		if ((cdTextItem = toc->getCdTextItem(0, cdTextLanguage, CdTextItem::PackType::PERFORMER)) != NULL)
-			albumPerformer = (const char*)cdTextItem->data();
+    cout << "# xmcd\n#\n# Track frame offsets:\n#" << endl;
 
-		cout << "DTITLE=" << albumPerformer << " / " << album << endl;
-		cout << "DYEAR=" << endl;
-	
-		if ((cdTextItem = toc->getCdTextItem(0, cdTextLanguage, CdTextItem::PackType::GENRE)) != NULL)
-			genre = (const char*)cdTextItem->data();
+    {
+        TrackIterator titr(toc);
+        Msf start, end;
+        for (track = titr.first(start, end); track != NULL; track = titr.next(start, end))
+            cout << "# " << start.lba() + FRAME_OFFSET << endl;
 
-		cout << "DGENRE=" << genre << endl;
-		
-		string title("");
-		for (int i = 1; i <= ntracks; i++)	{
-			if ((cdTextItem = toc->getCdTextItem(i, cdTextLanguage, CdTextItem::PackType::TITLE)) != NULL)
-				title = (const char*)cdTextItem->data();
-			cout << "TTITLE" << i-1 << "=" << title << endl;
-		}
-	}
+        int seconds = (end.min() * 60) + end.sec() + (FRAME_OFFSET / FRAMES_PER_SECOND);
+        cout << "#\n# Disc length: " << seconds << " seconds\n#" << endl;
+    }
 
-	// Don't know what EXTD means, nor EXTT
-	cout << "EXTD=" << endl;
-	for (int i = 1; i <= ntracks; i++)
-		cout << "EXTT" << i-1 << "=" << endl;
+    cout << "# Revision: 0\n# Submitted via: cdrdao-" << VERSION << endl;
+    cout << "DISCID=" << calcCddbId(toc) << endl;
 
-	cout << "PLAYORDER=" << endl;
+    {
+        const CdTextItem *cdTextItem = NULL;
+        string album(""), albumPerformer(""), genre("");
 
-	delete[] tocFile;
-	exit (EXIT_SUCCESS);
+        if ((cdTextItem = toc->getCdTextItem(0, cdTextLanguage, CdTextItem::PackType::TITLE)) !=
+            NULL)
+            album = (const char *)cdTextItem->data();
+
+        if ((cdTextItem = toc->getCdTextItem(0, cdTextLanguage, CdTextItem::PackType::PERFORMER)) !=
+            NULL)
+            albumPerformer = (const char *)cdTextItem->data();
+
+        cout << "DTITLE=" << albumPerformer << " / " << album << endl;
+        cout << "DYEAR=" << endl;
+
+        if ((cdTextItem = toc->getCdTextItem(0, cdTextLanguage, CdTextItem::PackType::GENRE)) !=
+            NULL)
+            genre = (const char *)cdTextItem->data();
+
+        cout << "DGENRE=" << genre << endl;
+
+        string title("");
+        for (int i = 1; i <= ntracks; i++) {
+            if ((cdTextItem = toc->getCdTextItem(i, cdTextLanguage, CdTextItem::PackType::TITLE)) !=
+                NULL)
+                title = (const char *)cdTextItem->data();
+            cout << "TTITLE" << i - 1 << "=" << title << endl;
+        }
+    }
+
+    // Don't know what EXTD means, nor EXTT
+    cout << "EXTD=" << endl;
+    for (int i = 1; i <= ntracks; i++)
+        cout << "EXTT" << i - 1 << "=" << endl;
+
+    cout << "PLAYORDER=" << endl;
+
+    delete[] tocFile;
+    exit(EXIT_SUCCESS);
 }
 
 static unsigned int cddbSum(unsigned int n)
 {
-  unsigned int ret;
+    unsigned int ret;
 
-  ret = 0;
-  while (n > 0) {
-    ret += (n % 10);
-    n /= 10;
-  }
+    ret = 0;
+    while (n > 0) {
+        ret += (n % 10);
+        n /= 10;
+    }
 
-  return ret;
+    return ret;
 }
 
 const char *calcCddbId(const Toc *toc)
 {
-  const Track *t;
-  Msf start, end;
-  unsigned int n = 0;
-  unsigned int o = 0;
-  int tcount = 0;
-  static char buf[20];
-  unsigned long id;
+    const Track *t;
+    Msf start, end;
+    unsigned int n = 0;
+    unsigned int o = 0;
+    int tcount = 0;
+    static char buf[20];
+    unsigned long id;
 
-  TrackIterator itr(toc);
+    TrackIterator itr(toc);
 
-  for (t = itr.first(start, end); t != NULL; t = itr.next(start, end)) {
-    if (t->type() == TrackData::AUDIO) {
-      n += cddbSum(start.min() * 60 + start.sec() + 2/* gap offset */);
-      o  = end.min() * 60 + end.sec();
-      tcount++;
+    for (t = itr.first(start, end); t != NULL; t = itr.next(start, end)) {
+        if (t->type() == TrackData::AUDIO) {
+            n += cddbSum(start.min() * 60 + start.sec() + 2 /* gap offset */);
+            o = end.min() * 60 + end.sec();
+            tcount++;
+        }
     }
-  }
 
-  id = (n % 0xff) << 24 | o << 8 | tcount;
-  snprintf(buf, sizeof(buf), "%08lx", id);
+    id = (n % 0xff) << 24 | o << 8 | tcount;
+    snprintf(buf, sizeof(buf), "%08lx", id);
 
-  return buf;
+    return buf;
 }
 
 void message_args(int level, int addNewLine, const char *fmt, va_list args)
 {
-  long len = strlen(fmt);
-  char last = len > 0 ? fmt[len - 1] : 0;
+    long len = strlen(fmt);
+    char last = len > 0 ? fmt[len - 1] : 0;
 
-  if (level < 0) {
-    switch (level) {
-    case -1:
-      fprintf(stderr, "WARNING: ");
-      break;
-    case -2:
-      fprintf(stderr, "ERROR: ");
-      break;
-    case -3:
-      fprintf(stderr, "INTERNAL ERROR: ");
-      break;
-    default:
-      fprintf(stderr, "FATAL ERROR: ");
-      break;
+    if (level < 0) {
+        switch (level) {
+        case -1:
+            fprintf(stderr, "WARNING: ");
+            break;
+        case -2:
+            fprintf(stderr, "ERROR: ");
+            break;
+        case -3:
+            fprintf(stderr, "INTERNAL ERROR: ");
+            break;
+        default:
+            fprintf(stderr, "FATAL ERROR: ");
+            break;
+        }
+        vfprintf(stderr, fmt, args);
+        if (addNewLine) {
+            if (last != ' ' && last != '\r')
+                fprintf(stderr, "\n");
+        }
+
+        fflush(stderr);
+        if (level <= -10)
+            exit(1);
+    } else if (level <= VERBOSE) {
+        vfprintf(stderr, fmt, args);
+
+        if (addNewLine) {
+            if (last != ' ' && last != '\r')
+                fprintf(stderr, "\n");
+        }
+
+        fflush(stderr);
     }
-    vfprintf(stderr, fmt, args);
-    if (addNewLine) {
-      if (last != ' ' && last != '\r')
-	fprintf(stderr, "\n");
-    }
-
-    fflush(stderr);
-    if (level <= -10)
-      exit(1);
-  }
-  else if (level <= VERBOSE) {
-    vfprintf(stderr, fmt, args);
-
-    if (addNewLine) {
-      if (last != ' ' && last != '\r')
-	fprintf(stderr, "\n");
-    }
-
-    fflush(stderr);
-  }
 }
 
 void message(int level, const char *fmt, ...)
 {
-  va_list args;
+    va_list args;
 
-  va_start(args, fmt);
+    va_start(args, fmt);
 
-  message_args(level, 1, fmt, args);
+    message_args(level, 1, fmt, args);
 
-  va_end(args);
+    va_end(args);
 }

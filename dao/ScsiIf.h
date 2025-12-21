@@ -23,15 +23,15 @@
 #ifndef __SCSIIF_H__
 #define __SCSIIF_H__
 
+#include "util.h"
 #include <stdlib.h>
 #include <string>
-#include "util.h"
 
 typedef struct {
     unsigned char p_len;
     unsigned cd_r_read : 1;
     unsigned cd_rw_read : 1;
-    unsigned method2  : 1;
+    unsigned method2 : 1;
     unsigned dvd_rom_read : 1;
     unsigned dvd_r_read : 1;
     unsigned dvd_ram_read : 1;
@@ -39,7 +39,7 @@ typedef struct {
     unsigned cd_r_write : 1;
     unsigned cd_rw_write : 1;
     unsigned test_write : 1;
-    unsigned res_3_3  : 1;
+    unsigned res_3_3 : 1;
     unsigned dvd_r_write : 1;
     unsigned dvd_ram_write : 1;
     unsigned res_3_67 : 2;
@@ -51,8 +51,7 @@ class ScsiIfImpl;
 
 class ScsiIf
 {
-public:
-   
+  public:
     //! \brief Constructor. Does not do SCSI initialization.
     //
     // Sets up some internal data and gets page size.
@@ -61,18 +60,27 @@ public:
     ~ScsiIf();
 
     //! \brief Accessor method: vendor string of the device.
-    const char *vendor() const { return vendor_; }
+    const char *vendor() const
+    {
+        return vendor_;
+    }
     //! \brief Accessor method: product string of the device.
-    const char *product() const { return product_; }
+    const char *product() const
+    {
+        return product_;
+    }
     //! \brief Accessor method: revision string of the device.
-    const char *revision() const { return revision_; }
+    const char *revision() const
+    {
+        return revision_;
+    }
 
     //! \brief Accessor method: SCSI bus this device is connected to.
-    const int bus ();
+    const int bus();
     //! \brief Accessor method: SCSI ID of the device.
-    const int id ();
+    const int id();
     /*! \brief Accessor method: SCSI LUN of the device. */
-    const int lun ();
+    const int lun();
 
     //! \brief Opens the scsi device. Issues an inquiry to test the
     // communication. Gets max DMA transfer length.
@@ -82,9 +90,12 @@ public:
     //   - 1 device could not be opened
     //   - 2 inquiry failed
     int init();
-  
+
     // \brief Accessor method: returns max DMA transfer length.
-    int maxDataLen() const { return maxDataLen_; }
+    int maxDataLen() const
+    {
+        return maxDataLen_;
+    }
 
     //! \brief Sends a SCSI command and receives data
     // \param cmd Buffer with CDB
@@ -103,9 +114,8 @@ public:
     //   - 0 OK
     //   - 1 scsi command failed (os level, no sense data available)
     //   - 2 scsi command failed (sense data available)
-    int sendCmd(const u8 *cmd, int cmdLen,
-		const u8 *dataOut, int dataOutLen,
-		u8 *dataIn, int dataInLen, int showMessage = 1);
+    int sendCmd(const u8 *cmd, int cmdLen, const u8 *dataOut, int dataOutLen, u8 *dataIn,
+                int dataInLen, int showMessage = 1);
 
     //! \brief Return the actual sense buffer
     // \param len will be overwritten and contain
@@ -113,7 +123,7 @@ public:
     //	\return buffer contains last sense data available. The
     //	      buffer is owned and must not be freed.
     const u8 *getSense(int &len) const;
-  
+
     //! \brief Prints extended status information of the last SCSI command.
     // Prints the following SCSI codes:
     //  - command transport status
@@ -139,23 +149,23 @@ public:
     int testUnitReady();
 
     //! \brief Check for mmc capability. Return whether the
-    //driver/drive can read and write CD-R and CD-RW disks.
-    cd_page_2a* checkMmc();
+    // driver/drive can read and write CD-R and CD-RW disks.
+    cd_page_2a *checkMmc();
 
     struct ScanData {
-	std::string dev;
-	// This is crazy, but the schily header #define vendor, product
-	// and revision. Talk about namespace pollution...
-	char vendor[9];
-	char product[17];
-	char revision[5];
+        std::string dev;
+        // This is crazy, but the schily header #define vendor, product
+        // and revision. Talk about namespace pollution...
+        char vendor[9];
+        char product[17];
+        char revision[5];
     };
 
     //! Scans for all SCSI devices and returns a newly allocated
     // 'ScanData' array.
-    static ScanData *scan(int *len, char* scsi_dev_path = NULL);
+    static ScanData *scan(int *len, char *scsi_dev_path = NULL);
 
-private:
+  private:
     char vendor_[9];
     char product_[17];
     char revision_[5];

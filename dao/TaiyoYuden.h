@@ -24,41 +24,44 @@
 #ifndef __TAIYO_YUDEN_H__
 #define __TAIYO_YUDEN_H__
 
+#include "CDD2600Base.h"
 #include "CdrDriver.h"
 #include "PlextorReader.h"
-#include "CDD2600Base.h"
 
-class TaiyoYuden : public PlextorReader, private CDD2600Base {
-public:
-  TaiyoYuden(ScsiIf *scsiIf, unsigned long options);
-  ~TaiyoYuden();
+class TaiyoYuden : public PlextorReader, private CDD2600Base
+{
+  public:
+    TaiyoYuden(ScsiIf *scsiIf, unsigned long options);
+    ~TaiyoYuden();
 
-  static CdrDriver *instance(ScsiIf *scsiIf, unsigned long options);
+    static CdrDriver *instance(ScsiIf *scsiIf, unsigned long options);
 
-  // takes little endian samples
-  int bigEndianSamples() const { return 0; }
+    // takes little endian samples
+    int bigEndianSamples() const
+    {
+        return 0;
+    }
 
-  int speed(int);
+    int speed(int);
 
-  DiskInfo *diskInfo();
+    DiskInfo *diskInfo();
 
-  int loadUnload(int) const;
+    int loadUnload(int) const;
 
-  int checkToc(const Toc *);
-  int initDao(const Toc *);
-  int startDao();
-  int finishDao();
-  void abortDao();
+    int checkToc(const Toc *);
+    int initDao(const Toc *);
+    int startDao();
+    int finishDao();
+    void abortDao();
 
-  int writeData(TrackData::Mode, TrackData::SubChannelMode, long &lba,
-		const char *buf, long len);
+    int writeData(TrackData::Mode, TrackData::SubChannelMode, long &lba, const char *buf, long len);
 
-protected:
-  DiskInfo diskInfo_;
+  protected:
+    DiskInfo diskInfo_;
 
-private:
-  long leadInLength_;
-  long leadOutLength_;
+  private:
+    long leadInLength_;
+    long leadOutLength_;
 };
 
 #endif

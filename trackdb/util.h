@@ -27,12 +27,12 @@
 #include <string>
 #include <vector>
 
-typedef unsigned char  u8;
-typedef signed char    s8;
+typedef unsigned char u8;
+typedef signed char s8;
 typedef unsigned short u16;
-typedef signed short   s16;
-typedef unsigned int   u32;
-typedef signed int     s32;
+typedef signed short s16;
+typedef unsigned int u32;
+typedef signed int s32;
 
 class Sample;
 
@@ -52,41 +52,50 @@ int bcd2int(unsigned char);
 
 const char *stripCwd(const char *fname);
 
-bool resolveFilename(std::string& dest, const char* file, const char* path);
+bool resolveFilename(std::string &dest, const char *file, const char *path);
 
 namespace Util
 {
 
 enum class FileExtension {
-  UNKNOWN = 0,
-  TOC,
-  CUE,
-  WAV,
-  MP3,
-  OGG,
-  M3U,
-  FLAC
+    UNKNOWN = 0,
+    TOC,
+    CUE,
+    WAV,
+    MP3,
+    OGG,
+    M3U,
+    FLAC
 };
 
-FileExtension fileExtension(const char* fname);
+FileExtension fileExtension(const char *fname);
 
-enum class Encoding { UNSET,LATIN, ASCII, MSJIS, KOREAN, MANDARIN, UTF8 };
+enum class Encoding {
+    UNSET,
+    LATIN,
+    ASCII,
+    MSJIS,
+    KOREAN,
+    MANDARIN,
+    UTF8
+};
 
-bool from_utf8(const std::string& input, std::vector<u8>& output, Encoding enc);
-std::string to_utf8(const u8* input, size_t input_size, Encoding enc);
+bool from_utf8(const std::string &input, std::vector<u8> &output, Encoding enc);
+std::string to_utf8(const u8 *input, size_t input_size, Encoding enc);
 
 Encoding characterCodeToEncoding(u8);
-const char* encodingToString(Encoding);
+const char *encodingToString(Encoding);
 
-bool isStrictAscii(const char* ptr);
-bool isValidUTF8(const char* ptr);
-bool processMixedString(std::string& str, bool& is_utf8);
+bool isStrictAscii(const char *ptr);
+bool isValidUTF8(const char *ptr);
+bool processMixedString(std::string &str, bool &is_utf8);
 
-}
+} // namespace Util
 
-struct PrintParams
-{
-    PrintParams() : conversions(false), to_file(false), no_utf8(false) {}
+struct PrintParams {
+    PrintParams() : conversions(false), to_file(false), no_utf8(false)
+    {
+    }
     bool conversions;
     bool to_file;
     bool no_utf8;

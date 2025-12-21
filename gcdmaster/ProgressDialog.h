@@ -100,9 +100,10 @@ class ProgressDialogPool
 
     void update(unsigned long);
 
-    ProgressDialog *start(CdDevice *, const char *tocFileName, bool showBuffer = true, bool showTrack = true);
-    ProgressDialog *start(Gtk::Window &parent_window, CdDevice *, const char *tocFileName, bool showBuffer = true,
+    ProgressDialog *start(CdDevice *, const char *tocFileName, bool showBuffer = true,
                           bool showTrack = true);
+    ProgressDialog *start(Gtk::Window &parent_window, CdDevice *, const char *tocFileName,
+                          bool showBuffer = true, bool showTrack = true);
     void stop(ProgressDialog *);
 
   private:

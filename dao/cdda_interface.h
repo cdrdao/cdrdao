@@ -20,22 +20,19 @@
 
 #include <sys/types.h>
 
-typedef struct cdrom_drive{
-  long nsectors; /* number of sectors that can be read at once */
-  void *cdr;     /* pointer to a CdrDriver object */
+typedef struct cdrom_drive {
+    long nsectors; /* number of sectors that can be read at once */
+    void *cdr;     /* pointer to a CdrDriver object */
 } cdrom_drive;
-
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-extern long cdda_read(cdrom_drive *d, void *buffer,
-		       long beginsector, long sectors);
+extern long cdda_read(cdrom_drive *d, void *buffer, long beginsector, long sectors);
 
 #ifdef __cplusplus
 }
 #endif
 
 #endif
-

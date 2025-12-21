@@ -30,15 +30,16 @@
 #ifndef __CD_TEXT_ENCODER_H__
 #define __CD_TEXT_ENCODER_H__
 
-#include "CdrDriver.h"
-#include "CdTextItem.h"
 #include "CdTextContainer.h"
+#include "CdTextItem.h"
+#include "CdrDriver.h"
 
 class CdTextItem;
 class PWSubChannel96;
 
-class CdTextEncoder {
-public:
+class CdTextEncoder
+{
+  public:
     CdTextEncoder(const Toc *);
     ~CdTextEncoder();
 
@@ -48,7 +49,7 @@ public:
 
     static u8 characterCode(Util::Encoding);
 
-private:
+  private:
     struct CdTextSizeInfo {
         unsigned char characterCode;
         unsigned char firstTrack;
@@ -60,7 +61,7 @@ private:
     };
 
     const Toc *toc_;
-  
+
     CdTextSizeInfo sizeInfo_[8];
 
     long packCount_;
@@ -84,7 +85,6 @@ private:
     void buildSubChannels();
 
     void encodeCdTextItem(int, int, const CdTextItem *);
-
 };
 
 #endif

@@ -33,8 +33,7 @@ MessageBoxBase::MessageBoxBase(Gtk::Window *win)
 
     dontShowAgain_ = NULL;
 
-    if (win != NULL)
-    {
+    if (win != NULL) {
         set_transient_for(*win);
         set_modal(true);
     }
@@ -53,8 +52,8 @@ Gtk::Button *MessageBoxBase::createButton(const Gtk::BuiltinStockID id)
     return new Gtk::Button(Gtk::StockID(id));
 }
 
-void MessageBoxBase::init(const char *type, const char *title, int askDontShow, int nButtons, int defaultButton,
-                          Gtk::BuiltinStockID buttons[], va_list args)
+void MessageBoxBase::init(const char *type, const char *title, int askDontShow, int nButtons,
+                          int defaultButton, Gtk::BuiltinStockID buttons[], va_list args)
 {
     int i;
     const char *s;
@@ -70,16 +69,14 @@ void MessageBoxBase::init(const char *type, const char *title, int askDontShow, 
     Gtk::VBox *contents = manage(new Gtk::VBox);
     contents->show();
 
-    for (i = 1; i <= nButtons; i++)
-    {
+    for (i = 1; i <= nButtons; i++) {
         Gtk::Button *button = manage(createButton(buttons[i - 1]));
         button->show();
         button->signal_clicked().connect(bind(mem_fun(*this, &MessageBoxBase::buttonAction), i));
         bbox->add(*button);
     }
 
-    while ((s = va_arg(args, const char *)) != NULL)
-    {
+    while ((s = va_arg(args, const char *)) != NULL) {
         Gtk::HBox *lbox = manage(new Gtk::HBox);
         lbox->show();
         Gtk::Label *label = manage(new Gtk::Label(s));
@@ -88,8 +85,7 @@ void MessageBoxBase::init(const char *type, const char *title, int askDontShow, 
         contents->pack_start(*lbox, Gtk::PACK_SHRINK);
     }
 
-    if (askDontShow)
-    {
+    if (askDontShow) {
         dontShowAgain_ = new Gtk::CheckButton(_("Don't show this message again"));
         dontShowAgain_->set_active(FALSE);
         dontShowAgain_->show();
@@ -132,8 +128,7 @@ int MessageBoxBase::run()
 
     show();
 
-    do
-    {
+    do {
         app->iteration();
     } while (done_ == 0);
 
@@ -149,7 +144,8 @@ int MessageBoxBase::dontShowAgain() const
         return 0;
 }
 
-MessageBox::MessageBox(Gtk::Window *win, const char *title, int askDontShow, ...) : MessageBoxBase(win)
+MessageBox::MessageBox(Gtk::Window *win, const char *title, int askDontShow, ...)
+    : MessageBoxBase(win)
 {
     va_list args;
     Gtk::BuiltinStockID buttons[1];
@@ -167,7 +163,8 @@ MessageBox::~MessageBox()
 {
 }
 
-Ask2Box::Ask2Box(Gtk::Window *win, const char *title, int askDontShow, int defaultButton, ...) : MessageBoxBase(win)
+Ask2Box::Ask2Box(Gtk::Window *win, const char *title, int askDontShow, int defaultButton, ...)
+    : MessageBoxBase(win)
 
 {
     va_list args;
@@ -190,7 +187,8 @@ Ask2Box::~Ask2Box()
 {
 }
 
-Ask3Box::Ask3Box(Gtk::Window *win, const char *title, int askDontShow, int defaultButton, ...) : MessageBoxBase(win)
+Ask3Box::Ask3Box(Gtk::Window *win, const char *title, int askDontShow, int defaultButton, ...)
+    : MessageBoxBase(win)
 {
     va_list args;
     Gtk::BuiltinStockID buttons[3];

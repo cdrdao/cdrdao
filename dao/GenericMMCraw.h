@@ -24,9 +24,9 @@
 #include "PQChannelEncoder.h"
 #include "PWSubChannel96.h"
 
-class GenericMMCraw : public GenericMMC, private PQChannelEncoder {
-public:
-
+class GenericMMCraw : public GenericMMC, private PQChannelEncoder
+{
+  public:
     GenericMMCraw(ScsiIf *scsiIf, unsigned long options);
     ~GenericMMCraw();
 
@@ -40,15 +40,13 @@ public:
     int startDao();
     int finishDao();
 
-    int writeData(TrackData::Mode, TrackData::SubChannelMode, long &lba,
-                  const char *buf, long len);
+    int writeData(TrackData::Mode, TrackData::SubChannelMode, long &lba, const char *buf, long len);
 
-protected:
-  
+  protected:
     int setWriteParameters(int);
 
-private:  
-    u8 *encodeBuffer_; // buffer for encoding sub-channels
+  private:
+    u8 *encodeBuffer_;  // buffer for encoding sub-channels
     u8 *encSubChannel_; // holds encoded sub-channels
 
     SubChannel *subChannel_; // sub channel template
@@ -59,7 +57,7 @@ private:
                             2: 96 byte PW packed
                             3: 96 byte PW raw
                          */
-  
+
     long cdTextStartLba_;
     long cdTextEndLba_;
     const PWSubChannel96 **cdTextSubChannels_;

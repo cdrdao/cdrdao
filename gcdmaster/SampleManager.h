@@ -37,8 +37,8 @@ class SampleManager
 
     int scanToc(unsigned long start, unsigned long end, bool blocking = false);
 
-    void getPeak(unsigned long start, unsigned long end, short *leftNeg, short *leftPos, short *rightNeg,
-                 short *rightPos);
+    void getPeak(unsigned long start, unsigned long end, short *leftNeg, short *leftPos,
+                 short *rightNeg, short *rightPos);
 
     void removeSamples(unsigned long start, unsigned long end, TrackDataScrap *);
     void insertSamples(unsigned long pos, unsigned long len, const TrackDataScrap *);

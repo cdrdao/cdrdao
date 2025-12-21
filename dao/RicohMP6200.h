@@ -24,27 +24,27 @@
 #ifndef __RICOH_MP6200_H__
 #define __RICOH_MP6200_H__
 
-#include "GenericMMC.h"
 #include "CDD2600Base.h"
+#include "GenericMMC.h"
 
-class RicohMP6200 : public GenericMMC, private CDD2600Base {
-public:
-  RicohMP6200(ScsiIf *scsiIf, unsigned long options);
-  ~RicohMP6200();
-  static CdrDriver *instance(ScsiIf *scsiIf, unsigned long options);
+class RicohMP6200 : public GenericMMC, private CDD2600Base
+{
+  public:
+    RicohMP6200(ScsiIf *scsiIf, unsigned long options);
+    ~RicohMP6200();
+    static CdrDriver *instance(ScsiIf *scsiIf, unsigned long options);
 
-  int initDao(const Toc *);
-  int startDao();
-  int finishDao();
-  void abortDao();
+    int initDao(const Toc *);
+    int startDao();
+    int finishDao();
+    void abortDao();
 
-  int writeData(TrackData::Mode, TrackData::SubChannelMode, long &lba,
-		const char *buf, long len);
+    int writeData(TrackData::Mode, TrackData::SubChannelMode, long &lba, const char *buf, long len);
 
-  int loadUnload(int unload) const;
+    int loadUnload(int unload) const;
 
-protected:
-  int setWriteParameters();
+  protected:
+    int setWriteParameters();
 };
 
 #endif

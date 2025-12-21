@@ -27,23 +27,23 @@ class Track;
 class CdTextEncoder;
 
 // use PQ sub-channel data for scanning
-#define OPT_MMC_USE_PQ       0x0001
+#define OPT_MMC_USE_PQ 0x0001
 
 // PQ sub-channel contains BCD numbers
-#define OPT_MMC_PQ_BCD       0x0002
+#define OPT_MMC_PQ_BCD 0x0002
 
 // force reading of ISRC code with READ SUB CHANNEL instead taking it
 // from the sub-channel data
-#define OPT_MMC_READ_ISRC    0x0004
+#define OPT_MMC_READ_ISRC 0x0004
 
 // take MCN from the sub-channel data instead using READ SUB CHANNEL
-#define OPT_MMC_SCAN_MCN     0x0008
+#define OPT_MMC_SCAN_MCN 0x0008
 
 // drive supports CD-TEXT writing
-#define OPT_MMC_CD_TEXT      0x0010
+#define OPT_MMC_CD_TEXT 0x0010
 
 // drive does not support
-#define OPT_MMC_NO_SUBCHAN   0x0020
+#define OPT_MMC_NO_SUBCHAN 0x0020
 
 // disable BURN-Proof
 #define OPT_MMC_NO_BURNPROOF 0x0040
@@ -52,7 +52,7 @@ class CdTextEncoder;
 #define OPT_MMC_NO_RW_PACKED 0x0080
 
 // use RW sub-channel data for scanning
-#define OPT_MMC_USE_RAW_RW   0x0100
+#define OPT_MMC_USE_RAW_RW 0x0100
 
 // drive supports Yamaha's Force Speed feature
 #define OPT_MMC_YAMAHA_FORCE_SPEED 0x0200
@@ -61,38 +61,41 @@ class CdTextEncoder;
 
 class GenericMMC : public CdrDriver
 {
-public:
+  public:
     GenericMMC(ScsiIf *scsiIf, unsigned long options);
     ~GenericMMC();
 
     static CdrDriver *instance(ScsiIf *scsiIf, unsigned long options);
 
-/*! \brief See what subchannel reading modes are available
+    /*! \brief See what subchannel reading modes are available
 
-  For each data/audio track it tries PQ subchannel (using GenericMMC::readCdTest);
-  it may result in:
-  - not supported
-  - BCD format
-  - HEX format
-  - unknown (error printout)
+      For each data/audio track it tries PQ subchannel (using GenericMMC::readCdTest);
+      it may result in:
+      - not supported
+      - BCD format
+      - HEX format
+      - unknown (error printout)
 
-  Then it tries
-  - Raw PW
-  - Cooked PW
+      Then it tries
+      - Raw PW
+      - Cooked PW
 
-  You may skip some tests if you have initialized the driver with something
-  like OPT_MMC_USE_PQ.
-  \param CdToc* Toc of the disc, used to compute track lengths
-  \param int Number of tracks to use for the test
-  \return Binary OR of the capabilities.
-  \sa CDR_READ_CAP_DATA_PW_RAW and similar.
-*/
+      You may skip some tests if you have initialized the driver with something
+      like OPT_MMC_USE_PQ.
+      \param CdToc* Toc of the disc, used to compute track lengths
+      \param int Number of tracks to use for the test
+      \return Binary OR of the capabilities.
+      \sa CDR_READ_CAP_DATA_PW_RAW and similar.
+    */
     unsigned long getReadCapabilities(const CdToc *, int) const;
 
     /*! \brief MMC compatible drives take little endian samples
       \return 0
     */
-    int bigEndianSamples() const { return 0; }
+    int bigEndianSamples() const
+    {
+        return 0;
+    }
 
     /*! \brief Sanity checking of the TOC
 
@@ -209,8 +212,7 @@ public:
       \param len Number of blocks to write
       \return 0 if OK, 1 if WRITE command failed
     */
-    int writeData(TrackData::Mode, TrackData::SubChannelMode, long &lba,
-                  const char *buf, long len);
+    int writeData(TrackData::Mode, TrackData::SubChannelMode, long &lba, const char *buf, long len);
 
     /*! \brief Gets useful parameters about the device.
 
@@ -236,7 +238,7 @@ public:
     */
     int subChannelEncodingMode(TrackData::SubChannelMode) const;
 
-protected:
+  protected:
     int scsiTimeout_;              // Timeout for commands on the target
     Msf leadInStart_;              // Start of lead-in
     long leadInLen_;               // Length of lead-in
@@ -268,8 +270,7 @@ protected:
     */
     virtual int getStartOfSession(long *);
     /*! \brief Still unused */
-    virtual int getFeature(unsigned int feature, u8 *buf,
-                           unsigned long bufLen, int showMsg);
+    virtual int getFeature(unsigned int feature, u8 *buf, unsigned long bufLen, int showMsg);
 
     /*! \brief Reads Media Catalog Number
 
@@ -373,8 +374,7 @@ protected:
       - 0x40 if encodingMode==0 and SUBCHAN_RW(_RAW)
       - 0x40 if encodingMode==1 and SUBCHAN_RW(_RAW)
     */
-    unsigned char subChannelDataForm(TrackData::SubChannelMode,
-                                     int encodingMode);
+    unsigned char subChannelDataForm(TrackData::SubChannelMode, int encodingMode);
 
     /*! \brief Writes the subchannel data in the leadin section, used in CD-TEXT
 
@@ -386,21 +386,18 @@ protected:
     */
     int writeCdTextLeadIn();
 
-    int analyzeTrack(TrackData::Mode, int trackNr, long startLba, long endLba,
-                     Msf *index,
-                     int *indexCnt, long *pregap, char *isrcCode,
-                     unsigned char *ctl);
+    int analyzeTrack(TrackData::Mode, int trackNr, long startLba, long endLba, Msf *index,
+                     int *indexCnt, long *pregap, char *isrcCode, unsigned char *ctl);
 
     int getTrackIndex(long lba, int *trackNr, int *indexNr, unsigned char *ctl);
 
-    int readSubChannels(TrackData::SubChannelMode, long lba, long len,
-                        SubChannel ***, Sample *);
+    int readSubChannels(TrackData::SubChannelMode, long lba, long len, SubChannel ***, Sample *);
 
     /*!
       \brief retrieve mode of the track that starts at the specified trackStartLba.
 
-      Uses READ CD (0xBE) command with byte 9 == 0xF8 (SYNC + Header + Userdata + EDC_ECC + C2 and block errors,
-      No subchannels) to retrieve the sector addressed as trackStartLba. Uses
+      Uses READ CD (0xBE) command with byte 9 == 0xF8 (SYNC + Header + Userdata + EDC_ECC + C2 and
+      block errors, No subchannels) to retrieve the sector addressed as trackStartLba. Uses
       CdrDriver::determineSectorMode to identify track mode.
       \return TrackData::Mode
     */
@@ -408,11 +405,11 @@ protected:
 
     CdRawToc *getRawToc(int sessionNr, int *len);
 
-    long readTrackData(TrackData::Mode, TrackData::SubChannelMode,
-                       long lba, long len, unsigned char *buf);
+    long readTrackData(TrackData::Mode, TrackData::SubChannelMode, long lba, long len,
+                       unsigned char *buf);
 
-    int readAudioRange(ReadDiskInfo *, int fd, long start, long end,
-                       int startTrack, int endTrack, TrackInfo *);
+    int readAudioRange(ReadDiskInfo *, int fd, long start, long end, int startTrack, int endTrack,
+                       TrackInfo *);
 
     int readCdTest(long lba, long len, int subChanMode) const;
 

@@ -20,68 +20,69 @@
 #ifndef __FORMATCONVERTER_H__
 #define __FORMATCONVERTER_H__
 
-#include <string>
-#include <map>
 #include <list>
+#include <map>
+#include <string>
 
-#include "Toc.h"
 #include "FormatSupport.h"
+#include "Toc.h"
 
 class FormatSupportManager
 {
-public:
-    virtual ~FormatSupportManager() {}
+  public:
+    virtual ~FormatSupportManager()
+    {
+    }
 
     // Acts as virtual constructor. Returns a new converter if this
     // converter understands the given file extension.
-    virtual FormatSupport* newConverter(const char* extension) = 0;
+    virtual FormatSupport *newConverter(const char *extension) = 0;
 
     // Add supported file extensions to list. Returns number added.
-    virtual int supportedExtensions(std::list<std::string>&) = 0;
+    virtual int supportedExtensions(std::list<std::string> &) = 0;
 };
-
 
 // The global format conversion class. A single global instance of
 // this class exists and manages all format conversions.
 
 class FormatConverter
 {
-public:
+  public:
     FormatConverter();
     virtual ~FormatConverter();
 
     // Returns true if the converter understands this format
-    bool canConvert(const char* fn);
+    bool canConvert(const char *fn);
 
     // Convert file, return tempory file with WAV or RAW data (based on
     // temp file extension).Returns NULL if conversion failed.
-    const char* convert(const char* src, FormatSupport::Status* st = NULL);
+    const char *convert(const char *src, FormatSupport::Status *st = NULL);
 
     // Convert all files contained in a given Toc object, and update the
     // Toc accordingly. This is a big time blocking call.
-    FormatSupport::Status convert(Toc* toc);
+    FormatSupport::Status convert(Toc *toc);
 
     // Dynamic allocator.
-    FormatSupport* newConverter(const char* src);
+    FormatSupport *newConverter(const char *src);
 
     // Do it yourself. Returns a converter and starts it. Sets dst to
     // the converter file name (or clears it if no converter
     // found). Returns NULL if file can't be converted.
-    FormatSupport* newConverterStart(const char* src, std::string& dst,
-                                     FormatSupport::Status* status = NULL);
+    FormatSupport *newConverterStart(const char *src, std::string &dst,
+                                     FormatSupport::Status *status = NULL);
 
     // Add all supported extensions to string list. Returns number added.
-    int supportedExtensions(std::list<std::string>&);
+    int supportedExtensions(std::list<std::string> &);
 
-private:
-    std::list<std::string*> tempFiles_;
-    std::list<FormatSupportManager*> managers_;
+  private:
+    std::list<std::string *> tempFiles_;
+    std::list<FormatSupportManager *> managers_;
 };
 
 extern FormatConverter formatConverter;
 
 // Utility for parsing M3U files
 
-bool parseM3u(const char* m3ufile, std::list<std::string>& list);
+bool parseM3u(const char *m3ufile, std::list<std::string> &list);
 
 #endif

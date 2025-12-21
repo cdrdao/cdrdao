@@ -20,42 +20,44 @@
 #ifndef __FORMATOGG_H__
 #define __FORMATOGG_H__
 
-#include <string>
 #include <stdlib.h>
+#include <string>
 #include <vorbis/vorbisfile.h>
 
 #include "FormatConverter.h"
 
-
 class FormatOgg : public FormatSupport
 {
-public:
+  public:
     FormatOgg() {};
 
     Status convertStart(std::string from, std::string to);
     Status convertContinue();
-    void   convertAbort();
+    void convertAbort();
 
-    TrackData::FileType format() { return TrackData::WAVE; }
+    TrackData::FileType format()
+    {
+        return TrackData::WAVE;
+    }
 
-protected:
+  protected:
     virtual Status oggInit();
     virtual Status oggDecodeFrame();
     virtual Status oggExit();
 
-private:
-    std::string    src_file_;
-    std::string    dst_file_;
-    char           buffer_[4096];
-    FILE*          fin_;
+  private:
+    std::string src_file_;
+    std::string dst_file_;
+    char buffer_[4096];
+    FILE *fin_;
     OggVorbis_File vorbisFile_;
 };
 
 class FormatOggManager : public FormatSupportManager
 {
-public:
-    FormatSupport* newConverter(const char* extension);
-    int supportedExtensions(std::list<std::string>&);
+  public:
+    FormatSupport *newConverter(const char *extension);
+    int supportedExtensions(std::list<std::string> &);
 };
 
 #endif

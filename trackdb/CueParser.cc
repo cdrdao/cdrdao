@@ -24,17 +24,17 @@
 #include "Cue2Toc.h"
 #include "Toc.h"
 
-extern Toc *parseToc(const char* , const char *);
+extern Toc *parseToc(const char *, const char *);
 
 Toc *parseCue(FILE *fp, const char *filename)
 {
-    struct cuesheet* cue = read_cue(filename, NULL);
+    struct cuesheet *cue = read_cue(filename, NULL);
 
     std::ostringstream oss(std::ostringstream::out);
     write_toc(oss, cue, true);
 
     std::string ossstr = oss.str();
-    const char* content = ossstr.c_str();
+    const char *content = ossstr.c_str();
 
     return parseToc(content, filename);
 }

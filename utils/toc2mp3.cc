@@ -19,28 +19,28 @@
 
 #include <config.h>
 
+#include <errno.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <errno.h>
-#include <stdarg.h>
 #ifdef HAVE_GETOPT_H
 #include <getopt.h>
 #endif
-#include <string>
-#include <vector>
-#include <sys/types.h>
-#include <sys/stat.h>
 #include <fcntl.h>
 #include <iconv.h>
 #include <langinfo.h>
+#include <string>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <vector>
 
 #include <lame/lame.h>
 
-#include "util.h"
-#include "Toc.h"
 #include "CdTextItem.h"
+#include "Toc.h"
+#include "util.h"
 
 using namespace std;
 
@@ -57,709 +57,683 @@ static string SEPARATOR = "_";
 
 void message_args(int level, int addNewLine, const char *fmt, va_list args)
 {
-  long len = strlen(fmt);
-  char last = len > 0 ? fmt[len - 1] : 0;
+    long len = strlen(fmt);
+    char last = len > 0 ? fmt[len - 1] : 0;
 
-  if (level < 0) {
-    switch (level) {
-    case -1:
-      fprintf(stderr, "WARNING: ");
-      break;
-    case -2:
-      fprintf(stderr, "ERROR: ");
-      break;
-    case -3:
-      fprintf(stderr, "INTERNAL ERROR: ");
-      break;
-    default:
-      fprintf(stderr, "FATAL ERROR: ");
-      break;
+    if (level < 0) {
+        switch (level) {
+        case -1:
+            fprintf(stderr, "WARNING: ");
+            break;
+        case -2:
+            fprintf(stderr, "ERROR: ");
+            break;
+        case -3:
+            fprintf(stderr, "INTERNAL ERROR: ");
+            break;
+        default:
+            fprintf(stderr, "FATAL ERROR: ");
+            break;
+        }
+        vfprintf(stderr, fmt, args);
+        if (addNewLine) {
+            if (last != ' ' && last != '\r')
+                fprintf(stderr, "\n");
+        }
+
+        fflush(stderr);
+        if (level <= -10)
+            exit(1);
+    } else if (level <= VERBOSE) {
+        vfprintf(stderr, fmt, args);
+
+        if (addNewLine) {
+            if (last != ' ' && last != '\r')
+                fprintf(stderr, "\n");
+        }
+
+        fflush(stderr);
     }
-    vfprintf(stderr, fmt, args);
-    if (addNewLine) {
-      if (last != ' ' && last != '\r')
-	fprintf(stderr, "\n");
-    }
-
-    fflush(stderr);
-    if (level <= -10)
-      exit(1);
-  }
-  else if (level <= VERBOSE) {
-    vfprintf(stderr, fmt, args);
-
-    if (addNewLine) {
-      if (last != ' ' && last != '\r')
-	fprintf(stderr, "\n");
-    }
-
-    fflush(stderr);
-  }
 }
 
 void message(int level, const char *fmt, ...)
 {
-  va_list args;
+    va_list args;
 
-  va_start(args, fmt);
+    va_start(args, fmt);
 
-  message_args(level, 1, fmt, args);
+    message_args(level, 1, fmt, args);
 
-  va_end(args);
+    va_end(args);
 }
 
 void lame_message(const char *fmt, va_list args)
 {
-  message_args(1, 0, fmt, args);
+    message_args(1, 0, fmt, args);
 }
 
 void lame_error_message(const char *fmt, va_list args)
 {
-  message_args(-2, 0, fmt, args);
+    message_args(-2, 0, fmt, args);
 }
-
 
 static void printVersion()
 {
-  message(1, "toc2mp3 version %s - (C) Andreas Mueller <andreas@daneb.de>",
-	  VERSION);
-  message(1, "");
+    message(1, "toc2mp3 version %s - (C) Andreas Mueller <andreas@daneb.de>", VERSION);
+    message(1, "");
 }
 
 static void printUsage()
 {
-  message(0, "Usage: %s [-v #] [-d target-dir ] [-c] { -V | toc-file }", PRGNAME);
-  message(0, "\nConverts an audio CD disk image (.toc file) to mp3 files.");
-  message(0, "Each track will be written to a separate mp3 file.");
-  message(0, "Special care is taken that the mp3 files can be played in sequence");
-  message(0, "without having unwanted noise at the transition points.");
-  message(0, "CD-TEXT information (if available) is used to set ID3 (v2) tags and to");
-  message(0, "construct the name of the mp3 files.\n");
-  message(0, "Options:");
-  message(0, "  -h               Shows this help.");
-  message(0, "  -v <n>           Sets verbose level to <n> (0..2).");
-  message(0, "  -V               Displays version and exit");
-  message(0, "  -d <target-dir>  Specifies directory the mp3 files will be");
-  message(0, "                   written to.");
-  message(0, "  -c               Adds a sub-directory composed out of CD title");
-  message(0, "                   and author to <target-dir> specified with -d.");
-  message(0, "  -J <encoding>    Force text decoding to given iconv-compatible encoding\n"
-          "                   (default ISO-8859-1)");
-  message(0, "  -s <separator>   Filename separator for title, artist (default \"_\")");
-  message(0, "  -n               Dry run, show created files but don't actually encode");
-  message(0, "  -b <bit rate>    Sets bit rate used for encoding (default %d kbit/s).",
-	  DEFAULT_ENCODER_BITRATE);
-  message(0, "  -r <quality>     Use VBR (variable bit rate) encoding (0->9, 0 being highest quality).");
-  message(0, "                   See below for supported bit rates.");
+    message(0, "Usage: %s [-v #] [-d target-dir ] [-c] { -V | toc-file }", PRGNAME);
+    message(0, "\nConverts an audio CD disk image (.toc file) to mp3 files.");
+    message(0, "Each track will be written to a separate mp3 file.");
+    message(0, "Special care is taken that the mp3 files can be played in sequence");
+    message(0, "without having unwanted noise at the transition points.");
+    message(0, "CD-TEXT information (if available) is used to set ID3 (v2) tags and to");
+    message(0, "construct the name of the mp3 files.\n");
+    message(0, "Options:");
+    message(0, "  -h               Shows this help.");
+    message(0, "  -v <n>           Sets verbose level to <n> (0..2).");
+    message(0, "  -V               Displays version and exit");
+    message(0, "  -d <target-dir>  Specifies directory the mp3 files will be");
+    message(0, "                   written to.");
+    message(0, "  -c               Adds a sub-directory composed out of CD title");
+    message(0, "                   and author to <target-dir> specified with -d.");
+    message(0, "  -J <encoding>    Force text decoding to given iconv-compatible encoding\n"
+               "                   (default ISO-8859-1)");
+    message(0, "  -s <separator>   Filename separator for title, artist (default \"_\")");
+    message(0, "  -n               Dry run, show created files but don't actually encode");
+    message(0, "  -b <bit rate>    Sets bit rate used for encoding (default %d kbit/s).",
+            DEFAULT_ENCODER_BITRATE);
+    message(
+        0,
+        "  -r <quality>     Use VBR (variable bit rate) encoding (0->9, 0 being highest quality).");
+    message(0, "                   See below for supported bit rates.");
 
-  message(0, "");
+    message(0, "");
 
-  message(0, "LAME encoder version: %s", get_lame_version());
-  message(0, "Supported bit rates: ");
-  for (int i = 0; i < 16 && lame_get_bitrate(1, i) >= 0; i++) {
-    message(0, "%d ", lame_get_bitrate(1, i));
-  }
-  message(0, "");
+    message(0, "LAME encoder version: %s", get_lame_version());
+    message(0, "Supported bit rates: ");
+    for (int i = 0; i < 16 && lame_get_bitrate(1, i) >= 0; i++) {
+        message(0, "%d ", lame_get_bitrate(1, i));
+    }
+    message(0, "");
 }
 
-static int parseCommandLine(int argc, char **argv, char **tocFile,
-			    int *bitrate, int* vbr)
+static int parseCommandLine(int argc, char **argv, char **tocFile, int *bitrate, int *vbr)
 {
-  int c;
-  int printVersion = 0;
-  extern char *optarg;
-  extern int optind, opterr, optopt;
-  ENCODING = "ISO-8859-1";
+    int c;
+    int printVersion = 0;
+    extern char *optarg;
+    extern int optind, opterr, optopt;
+    ENCODING = "ISO-8859-1";
 
-  opterr = 0;
+    opterr = 0;
 
-  while ((c = getopt(argc, argv, "Vhcv:d:b:J:ns:r:")) != EOF) {
-    switch (c) {
-    case 'V':
-      printVersion = 1;
-      break;
+    while ((c = getopt(argc, argv, "Vhcv:d:b:J:ns:r:")) != EOF) {
+        switch (c) {
+        case 'V':
+            printVersion = 1;
+            break;
 
-    case 'v':
-      if (optarg != NULL) {
-	if ((VERBOSE = atoi(optarg)) < 0) {
-	  message(-2, "Invalid verbose level: %s", optarg);
-	  return 0;
-	}
-      }
-      else {
-	message(-2, "Missing verbose level after option '-v'.");
-	return 0;
-      }
-      break;
+        case 'v':
+            if (optarg != NULL) {
+                if ((VERBOSE = atoi(optarg)) < 0) {
+                    message(-2, "Invalid verbose level: %s", optarg);
+                    return 0;
+                }
+            } else {
+                message(-2, "Missing verbose level after option '-v'.");
+                return 0;
+            }
+            break;
 
-    case 'b':
-      if (optarg != NULL) {
-	*bitrate = atoi(optarg);
-      }
-      else {
-	message(-2, "Missing bit rate value after option '-b'.");
-	return 0;
-      }
-      break;
+        case 'b':
+            if (optarg != NULL) {
+                *bitrate = atoi(optarg);
+            } else {
+                message(-2, "Missing bit rate value after option '-b'.");
+                return 0;
+            }
+            break;
 
-    case 'r':
-	if (optarg != NULL) {
-	    *vbr = atoi(optarg);
-	    if (*vbr < 0 || *vbr > 9) {
-		message(-2, "VBR quality must be between 0 and 9.");
-		return 0;
-	    }
-	} else {
-	    message(-2, "Missing VBR quality value");
-	    return 0;
-	}
-	break;
-    case 'n':
-      DRY_RUN = true;
-      break;
+        case 'r':
+            if (optarg != NULL) {
+                *vbr = atoi(optarg);
+                if (*vbr < 0 || *vbr > 9) {
+                    message(-2, "VBR quality must be between 0 and 9.");
+                    return 0;
+                }
+            } else {
+                message(-2, "Missing VBR quality value");
+                return 0;
+            }
+            break;
+        case 'n':
+            DRY_RUN = true;
+            break;
 
-    case 'c':
-      CREATE_ALBUM_DIRECTORY = 1;
-      break;
+        case 'c':
+            CREATE_ALBUM_DIRECTORY = 1;
+            break;
 
-    case 'h':
-      return 0;
-      break;
+        case 'h':
+            return 0;
+            break;
 
-    case 'J':
-      ENCODING = optarg;
-      break;
+        case 'J':
+            ENCODING = optarg;
+            break;
 
-    case 's':
-      SEPARATOR = optarg;
-      break;
+        case 's':
+            SEPARATOR = optarg;
+            break;
 
-    case 'd':
-      if (optarg != NULL) {
-	TARGET_DIRECTORY = optarg;
-      }
-      else {
-	message(-2, "Missing target directory after option '-d'.");
-	return 0;
-      }
-      break;
+        case 'd':
+            if (optarg != NULL) {
+                TARGET_DIRECTORY = optarg;
+            } else {
+                message(-2, "Missing target directory after option '-d'.");
+                return 0;
+            }
+            break;
 
-    case '?':
-      message(-2, "Invalid option: %c", optopt);
-      return 0;
-      break;
+        case '?':
+            message(-2, "Invalid option: %c", optopt);
+            return 0;
+            break;
+        }
     }
-  }
 
-  if (printVersion) {
-    return 1;
-  }
+    if (printVersion) {
+        return 1;
+    }
 
-  if (optind < argc) {
-    *tocFile = strdupCC(argv[optind]);
-    optind++;
-  }
-  else {
-    message(-2, "Missing toc-file name.");
-    return 0;
-  }
+    if (optind < argc) {
+        *tocFile = strdupCC(argv[optind]);
+        optind++;
+    } else {
+        message(-2, "Missing toc-file name.");
+        return 0;
+    }
 
-  if (optind != argc) {
-    message(-2, "More arguments than expected.");
-    return 0;
-  }
+    if (optind != argc) {
+        message(-2, "More arguments than expected.");
+        return 0;
+    }
 
-  return 2;
+    return 2;
 }
 
 lame_global_flags *init_encoder(int bitrate, int vbr)
 {
-  lame_global_flags *lf;
-  int bitrateOk = 0;
+    lame_global_flags *lf;
+    int bitrateOk = 0;
 
-  for (int i = 0; lame_get_bitrate(1, i) >= 0 && !bitrateOk; i++) {
-    if (bitrate == lame_get_bitrate(1, i))
-      bitrateOk = 1;
-  }
+    for (int i = 0; lame_get_bitrate(1, i) >= 0 && !bitrateOk; i++) {
+        if (bitrate == lame_get_bitrate(1, i))
+            bitrateOk = 1;
+    }
 
-  if (!bitrateOk) {
-    message(-2, "Invalid bit rate: %d kbit/s", bitrate);
-    return NULL;
-  }
+    if (!bitrateOk) {
+        message(-2, "Invalid bit rate: %d kbit/s", bitrate);
+        return NULL;
+    }
 
-  if ((lf = lame_init()) == NULL) {
-    return NULL;
-  }
+    if ((lf = lame_init()) == NULL) {
+        return NULL;
+    }
 
-  lame_set_msgf(lf, lame_message);
-  lame_set_debugf(lf, lame_message);
-  lame_set_errorf(lf, lame_error_message);
+    lame_set_msgf(lf, lame_message);
+    lame_set_debugf(lf, lame_message);
+    lame_set_errorf(lf, lame_error_message);
 
-  lame_set_in_samplerate(lf, 44100);
-  lame_set_num_channels(lf, 2);
+    lame_set_in_samplerate(lf, 44100);
+    lame_set_num_channels(lf, 2);
 
-  if (vbr >= 0) {
-      lame_set_VBR(lf, vbr_default);
-      lame_set_VBR_quality(lf, vbr);
-      lame_set_VBR_mean_bitrate_kbps(lf, bitrate);
-  } else {
-      lame_set_brate(lf, bitrate);
-  }
-  
-  lame_set_quality(lf, 2);
+    if (vbr >= 0) {
+        lame_set_VBR(lf, vbr_default);
+        lame_set_VBR_quality(lf, vbr);
+        lame_set_VBR_mean_bitrate_kbps(lf, bitrate);
+    } else {
+        lame_set_brate(lf, bitrate);
+    }
 
-  return lf;
+    lame_set_quality(lf, 2);
+
+    return lf;
 }
 
-string to_utf8(const string& input)
+string to_utf8(const string &input)
 {
-  if (ENCODING == "UTF-8")
-    return input;
-  ICONV_CONST char* src = (ICONV_CONST char*)alloca(input.size() + 1);
-  strcpy(src, input.c_str());
-  size_t srclen = strlen(src);
-  size_t dstlen = srclen * 4;
-  char* dst = (char*)alloca(dstlen);
-  char* orig_dst = dst;
-  auto icv = iconv_open("UTF-8", ENCODING.c_str());
-  if (!icv)
-    return input;
-  if (iconv(icv, &src, &srclen, &dst, &dstlen) == (size_t)-1) {
-    fputs(strerror(errno), stderr);
-    return input;
-  }
-  *dst = 0;
-  return string(orig_dst);
+    if (ENCODING == "UTF-8")
+        return input;
+    ICONV_CONST char *src = (ICONV_CONST char *)alloca(input.size() + 1);
+    strcpy(src, input.c_str());
+    size_t srclen = strlen(src);
+    size_t dstlen = srclen * 4;
+    char *dst = (char *)alloca(dstlen);
+    char *orig_dst = dst;
+    auto icv = iconv_open("UTF-8", ENCODING.c_str());
+    if (!icv)
+        return input;
+    if (iconv(icv, &src, &srclen, &dst, &dstlen) == (size_t)-1) {
+        fputs(strerror(errno), stderr);
+        return input;
+    }
+    *dst = 0;
+    return string(orig_dst);
 }
 
-vector<short unsigned int> to_utf16(const string& input)
+vector<short unsigned int> to_utf16(const string &input)
 {
-  vector<short unsigned int> vec;
+    vector<short unsigned int> vec;
 
-  ICONV_CONST char* src = (ICONV_CONST char*)alloca(input.size() + 1);
-  strcpy(src, input.c_str());
-  size_t srclen = strlen(src);
-  size_t dstlen = srclen * 4;
-  vec.resize(dstlen / 2);
-  char* dst = (char*)(&vec[0]);
-  char* orig_dst = dst;
-  auto icv = iconv_open("UTF-16//TRANSLIT", ENCODING.c_str());
-  if (!icv)
+    ICONV_CONST char *src = (ICONV_CONST char *)alloca(input.size() + 1);
+    strcpy(src, input.c_str());
+    size_t srclen = strlen(src);
+    size_t dstlen = srclen * 4;
+    vec.resize(dstlen / 2);
+    char *dst = (char *)(&vec[0]);
+    char *orig_dst = dst;
+    auto icv = iconv_open("UTF-16//TRANSLIT", ENCODING.c_str());
+    if (!icv)
+        return vec;
+    if (iconv(icv, &src, &srclen, &dst, &dstlen) == (size_t)-1) {
+        fputs(strerror(errno), stderr);
+        return vec;
+    }
+    vec.resize((dst - orig_dst) / 2);
+    vec.push_back(0);
     return vec;
-  if (iconv(icv, &src, &srclen, &dst, &dstlen) == (size_t)-1) {
-    fputs(strerror(errno), stderr);
-    return vec;
-  }
-  vec.resize((dst - orig_dst) / 2);
-  vec.push_back(0);
-  return vec;
 }
 
-void set_id3v2tag(lame_global_flags* lf, int type, const string &str)
+void set_id3v2tag(lame_global_flags *lf, int type, const string &str)
 {
-  if (ENCODING != "ISO-8859-1") {
-    auto dst = to_utf16(str);
+    if (ENCODING != "ISO-8859-1") {
+        auto dst = to_utf16(str);
+        switch (type) {
+        case 'a':
+            id3tag_set_textinfo_utf16(lf, "TPE1", (short unsigned int *)&dst[0]);
+            break;
+        case 't':
+            id3tag_set_textinfo_utf16(lf, "TIT2", (short unsigned int *)&dst[0]);
+            break;
+        case 'l':
+            id3tag_set_textinfo_utf16(lf, "TALB", (short unsigned int *)&dst[0]);
+            break;
+        }
+        return;
+    }
+
     switch (type) {
     case 'a':
-      id3tag_set_textinfo_utf16(lf, "TPE1", (short unsigned int*)&dst[0]);
-      break;
+        id3tag_set_artist(lf, str.c_str());
+        break;
     case 't':
-      id3tag_set_textinfo_utf16(lf, "TIT2", (short unsigned int*)&dst[0]);
-      break;
+        id3tag_set_title(lf, str.c_str());
+        break;
     case 'l':
-      id3tag_set_textinfo_utf16(lf, "TALB", (short unsigned int*)&dst[0]);
-      break;
+        id3tag_set_album(lf, str.c_str());
+        break;
     }
-    return;
-  }
-
-  switch (type)
-  {
-  case 'a':
-    id3tag_set_artist(lf, str.c_str());
-    break;
-  case 't':
-    id3tag_set_title(lf, str.c_str());
-    break;
-  case 'l':
-    id3tag_set_album(lf, str.c_str());
-    break;
-  }
 }
 
-void set_id3_tags(lame_global_flags *lf, int tracknr, const string &title,
-		  const string &artist, const string &album)
+void set_id3_tags(lame_global_flags *lf, int tracknr, const string &title, const string &artist,
+                  const string &album)
 {
-  char buf[100];
+    char buf[100];
 
-  id3tag_init(lf);
+    id3tag_init(lf);
 
-  id3tag_add_v2(lf);
+    id3tag_add_v2(lf);
 
-  if (!title.empty())
-    set_id3v2tag(lf, 't', title.c_str());
+    if (!title.empty())
+        set_id3v2tag(lf, 't', title.c_str());
 
-  if (!artist.empty())
-    set_id3v2tag(lf, 'a', artist.c_str());
+    if (!artist.empty())
+        set_id3v2tag(lf, 'a', artist.c_str());
 
-  if (!album.empty())
-    set_id3v2tag(lf, 'l', album.c_str());
+    if (!album.empty())
+        set_id3v2tag(lf, 'l', album.c_str());
 
-  if (tracknr > 0 && tracknr <= 255) {
-    snprintf(buf, sizeof(buf), "%d", tracknr);
-    id3tag_set_track(lf, buf);
-  }
+    if (tracknr > 0 && tracknr <= 255) {
+        snprintf(buf, sizeof(buf), "%d", tracknr);
+        id3tag_set_track(lf, buf);
+    }
 }
 
-int encode_track(lame_global_flags *lf, const Toc *toc, 
-		 const string &fileName, long startLba,
-		 long len)
+int encode_track(lame_global_flags *lf, const Toc *toc, const string &fileName, long startLba,
+                 long len)
 {
-  int fd;
-  int ret = 1;
-  TocReader reader(toc);
-  Sample audioData[SAMPLES_PER_BLOCK];
-  short int leftSamples[SAMPLES_PER_BLOCK];
-  short int rightSamples[SAMPLES_PER_BLOCK];
-  unsigned char mp3buffer[LAME_MAXMP3BUFFER];
+    int fd;
+    int ret = 1;
+    TocReader reader(toc);
+    Sample audioData[SAMPLES_PER_BLOCK];
+    short int leftSamples[SAMPLES_PER_BLOCK];
+    short int rightSamples[SAMPLES_PER_BLOCK];
+    unsigned char mp3buffer[LAME_MAXMP3BUFFER];
 
-  if (reader.openData() != 0) {
-    message(-2, "Cannot open audio data.");
-    return 0;
-  }
-
-  if (reader.seekSample(Msf(startLba).samples()) != 0) {
-    message(-2, "Cannot seek to start sample of track.");
-    return 0;
-  }
-
-  if ((fd = open(fileName.c_str(), O_WRONLY|O_CREAT|O_TRUNC, 0666)) < 0) {
-    message(-2, "Cannot open \"%s\" for writing: %s", fileName.c_str(),
-	    strerror(errno));
-    return 0;
-  }
-
-  while (len > 0) {
-    if (reader.readSamples(audioData, SAMPLES_PER_BLOCK) != SAMPLES_PER_BLOCK) {
-      message(-2, "Cannot read audio data.");
-      ret = 0;
-      break;
+    if (reader.openData() != 0) {
+        message(-2, "Cannot open audio data.");
+        return 0;
     }
 
-    for (int i = 0; i < SAMPLES_PER_BLOCK; i++) {
-      leftSamples[i] = audioData[i].left();
-      rightSamples[i] = audioData[i].right();
+    if (reader.seekSample(Msf(startLba).samples()) != 0) {
+        message(-2, "Cannot seek to start sample of track.");
+        return 0;
     }
 
-    int count = lame_encode_buffer(lf, leftSamples, rightSamples,
-				   SAMPLES_PER_BLOCK, mp3buffer,
-				   sizeof(mp3buffer));
-
-    if (count < 0) {
-      message(-2, "Lame encoder failed: %d", count);
-      ret = 0;
-      break;
+    if ((fd = open(fileName.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0666)) < 0) {
+        message(-2, "Cannot open \"%s\" for writing: %s", fileName.c_str(), strerror(errno));
+        return 0;
     }
 
-    if (count > 0) {
-      if (fullWrite(fd, mp3buffer, count) != count) {
-	message(-2, "Failed to write encoded data: %s", strerror(errno));
-	ret = 0;
-	break;
-      }
+    while (len > 0) {
+        if (reader.readSamples(audioData, SAMPLES_PER_BLOCK) != SAMPLES_PER_BLOCK) {
+            message(-2, "Cannot read audio data.");
+            ret = 0;
+            break;
+        }
+
+        for (int i = 0; i < SAMPLES_PER_BLOCK; i++) {
+            leftSamples[i] = audioData[i].left();
+            rightSamples[i] = audioData[i].right();
+        }
+
+        int count = lame_encode_buffer(lf, leftSamples, rightSamples, SAMPLES_PER_BLOCK, mp3buffer,
+                                       sizeof(mp3buffer));
+
+        if (count < 0) {
+            message(-2, "Lame encoder failed: %d", count);
+            ret = 0;
+            break;
+        }
+
+        if (count > 0) {
+            if (fullWrite(fd, mp3buffer, count) != count) {
+                message(-2, "Failed to write encoded data: %s", strerror(errno));
+                ret = 0;
+                break;
+            }
+        }
+
+        len--;
     }
 
-    len--;
-  }
-    
-  if (ret != 0) {
-    int count = lame_encode_flush_nogap(lf, mp3buffer, sizeof(mp3buffer));
+    if (ret != 0) {
+        int count = lame_encode_flush_nogap(lf, mp3buffer, sizeof(mp3buffer));
 
-    if (count > 0) {
-      if (fullWrite(fd, mp3buffer, count) != count) {
-	message(-2, "Failed to write encoded data: %s", strerror(errno));
-	ret = 0;
-      }
+        if (count > 0) {
+            if (fullWrite(fd, mp3buffer, count) != count) {
+                message(-2, "Failed to write encoded data: %s", strerror(errno));
+                ret = 0;
+            }
+        }
     }
-  }
 
-  if (close(fd) != 0) {
-    message(-2, "Failed to close encoded data file: %s", strerror(errno));
-    ret = 0;
-  }
-
-  if (ret != 0) {
-    FILE *fp = fopen(fileName.c_str(), "a+");
-
-    if (fp != NULL) {
-      lame_mp3_tags_fid(lf, fp);
-      fclose(fp);
+    if (close(fd) != 0) {
+        message(-2, "Failed to close encoded data file: %s", strerror(errno));
+        ret = 0;
     }
-    else {
-      message(-2, "Cannot reopen output file for adding headers: %s",
-	      strerror(errno));
-      ret = 0;
-    }
-  }
 
-  return ret;
+    if (ret != 0) {
+        FILE *fp = fopen(fileName.c_str(), "a+");
+
+        if (fp != NULL) {
+            lame_mp3_tags_fid(lf, fp);
+            fclose(fp);
+        } else {
+            message(-2, "Cannot reopen output file for adding headers: %s", strerror(errno));
+            ret = 0;
+        }
+    }
+
+    return ret;
 }
 
 string &clean_string(string &s)
 {
-  int i = 0;
-  int len = s.length();
-  char c;
+    int i = 0;
+    int len = s.length();
+    char c;
 
-  while (i < len && (c = s[i]) != 0) {
-    if (c == '_') {
-      s[i] = ' ';
-      i++;
+    while (i < len && (c = s[i]) != 0) {
+        if (c == '_') {
+            s[i] = ' ';
+            i++;
+        } else if (iscntrl(c) || c == '/') {
+            s.erase(i, 1);
+            len = s.length();
+        } else {
+            i++;
+        }
     }
-    else if (iscntrl(c) || c == '/') {
-      s.erase(i, 1);
-      len = s.length();
+
+    len = s.length();
+
+    for (i = 0; i < len && s[i] != 0 && isspace(s[i]); i++)
+        ;
+
+    if (i >= len) {
+        // string just contains space
+        s = "";
     }
-    else {
-        i++;
-    }
-  }
 
-  len = s.length();
-
-  for (i = 0; i < len && s[i] != 0 && isspace(s[i]); i++) ;
-
-  if (i >= len) {
-    // string just contains space
-    s = "";
-  }
-
-  return s;
+    return s;
 }
 
 int main(int argc, char **argv)
 {
-  char *tocFile;
-  int bitrate = DEFAULT_ENCODER_BITRATE;
-  int vbr = -1;
-  Toc *toc;
-  lame_global_flags *lf;
-  string album, albumPerformer, title, performer;
-  int cdTextLanguage = 0;
-  const CdTextItem *cdTextItem;
-  char *tocfileBaseName, *p;
-  char sbuf[100];
-  int err = 0;
+    char *tocFile;
+    int bitrate = DEFAULT_ENCODER_BITRATE;
+    int vbr = -1;
+    Toc *toc;
+    lame_global_flags *lf;
+    string album, albumPerformer, title, performer;
+    int cdTextLanguage = 0;
+    const CdTextItem *cdTextItem;
+    char *tocfileBaseName, *p;
+    char sbuf[100];
+    int err = 0;
 
-  setlocale(LC_CTYPE, "");
+    setlocale(LC_CTYPE, "");
 
-  PRGNAME = *argv;
+    PRGNAME = *argv;
 
-  switch (parseCommandLine(argc, argv, &tocFile, &bitrate, &vbr)) {
-  case 0:
-    printUsage();
-    exit(1);
-    break;
-    
-  case 1:
-    printf("%s\n", VERSION);
-    exit(0);
-    break;
-  }
+    switch (parseCommandLine(argc, argv, &tocFile, &bitrate, &vbr)) {
+    case 0:
+        printUsage();
+        exit(1);
+        break;
 
-  printVersion();
-
-  if ((toc = Toc::read(tocFile)) == NULL) {
-    message(-10, "Failed to read toc-file '%s'.", tocFile);
-  }
-
-  if ((lf = init_encoder(bitrate, vbr)) == NULL) {
-    message(-10, "Cannot initialize lame encoder");
-  }
-
-
-  if ((p = strrchr(tocFile, '/')) != NULL)
-    tocfileBaseName = strdupCC(p + 1);
-  else
-    tocfileBaseName = strdupCC(tocFile);
-
-  if ((p = strrchr(tocfileBaseName, '.')) != NULL &&
-      (strcmp(p, ".toc") == 0 || strcmp(p, ".cue") == 0)) {
-    *p = 0;
-  }
-
-  if (strlen(tocfileBaseName) == 0) {
-    delete[] tocfileBaseName;
-    tocfileBaseName = strdupCC("unknown");
-  }
-
-  if ((cdTextItem = toc->getCdTextItem(0, cdTextLanguage, 
-				       CdTextItem::PackType::TITLE)) != NULL) {
-    album = (const char*)cdTextItem->data();
-    clean_string(album);
-    if (album.empty())
-      album = tocfileBaseName;
-  }
-  else {
-    album = tocfileBaseName;
-  }
-
-  if ((cdTextItem = toc->getCdTextItem(0, cdTextLanguage, 
-				       CdTextItem::PackType::PERFORMER)) != NULL) {
-    albumPerformer = (const char*)cdTextItem->data();
-    clean_string(albumPerformer);
-  }
-  else {
-    albumPerformer = "";
-  }
-
-
-  string mp3TargetDir;
-
-  if (!TARGET_DIRECTORY.empty()) {
-    mp3TargetDir = TARGET_DIRECTORY;
-
-    if (*(TARGET_DIRECTORY.end() - 1) != '/')
-      mp3TargetDir += "/";
-    
-    if (CREATE_ALBUM_DIRECTORY) {
-      if (!album.empty() && !albumPerformer.empty()) {
-	mp3TargetDir += albumPerformer;
-	mp3TargetDir += SEPARATOR;
-	mp3TargetDir += album;
-      }
-      else {
-	mp3TargetDir += tocfileBaseName;
-      }
-
-      if (mkdir(mp3TargetDir.c_str(), 0777) != 0) {
-	message(-10, "Cannot create album directory \"%s\": %s",
-		mp3TargetDir.c_str(), strerror(errno));
-      }
-
-      mp3TargetDir += "/";
-    }
-  }
-
-
-  Msf astart, aend, nstart, nend;
-  const Track *actTrack, *nextTrack;
-  int trackNr;
-  TrackIterator titr(toc);
-  int firstEncodedTrack = 1;
-
-  trackNr = 1;
-  actTrack = titr.first(astart, aend);
-  nextTrack = titr.next(nstart, nend);
-  
-  while (actTrack != NULL && err == 0) {
-
-    if (actTrack->type() == TrackData::AUDIO) {
-
-      // Retrieve CD-TEXT data for track title and performer
-      if ((cdTextItem = toc->getCdTextItem(trackNr, cdTextLanguage, 
-					   CdTextItem::PackType::TITLE)) != NULL) {
-	title = (const char*)cdTextItem->data();
-	clean_string(title);
-      }
-      else {
-	title = "";
-      }
-
-      if ((cdTextItem = toc->getCdTextItem(trackNr, cdTextLanguage, 
-					   CdTextItem::PackType::PERFORMER)) != NULL) {
-	performer = (const char*)cdTextItem->data();
-	clean_string(performer);
-      }
-      else {
-	performer = "";
-      }
-      
-      // build mp3 file name
-      string mp3FileName;
-      
-      snprintf(sbuf, sizeof(sbuf), "%02d", trackNr);
-      
-      mp3FileName += sbuf;
-      mp3FileName += SEPARATOR;
-      
-      if (!title.empty()) {
-	mp3FileName += to_utf8(title);
-	mp3FileName += SEPARATOR;
-      }
-      
-      mp3FileName += to_utf8(album);
-      
-      if (!albumPerformer.empty()) {
-	mp3FileName += SEPARATOR;
-	mp3FileName += to_utf8(albumPerformer);
-      }
-      
-      mp3FileName += ".mp3";
-
-
-      long len = aend.lba() - astart.lba();
-      
-      if (nextTrack != NULL && nextTrack->type() == TrackData::AUDIO)
-	len += nextTrack->start().lba();
-
-      if (len > 0) {
-	set_id3_tags(lf, trackNr, title, performer, album);
-
-	if (firstEncodedTrack) {
-	  if (lame_init_params(lf) < 0) {
-	    message(-2, "Setting of lame parameters failed");
-	    err = 1;
-	    break;
-	  }
-	  message(1, "Lame encoder settings:");
-	  lame_print_config(lf);
-	  if (vbr >= 0)
-	      message(1, "VBR encoding set at quality %d", vbr);
-	  else
-	      message(1, "Selected bit rate: %d kbit/s", bitrate);
-
-	  if (VERBOSE >= 2)
-	    lame_print_internals(lf);
-
-	  message(1, "");
-
-
-	  message(1, "Starting encoding to target directory \"%s\"...",
-		  mp3TargetDir.empty() ? "." : mp3TargetDir.c_str());
-
-	  firstEncodedTrack = 0;
-	}
-	else {
-	  if (lame_init_bitstream(lf) != 0) {
-	    message(-2, "Cannot initialize bit stream.");
-	    err = 1;
-	    break;
-	  }
-	}
-
-	message(1, "Encoding track %d to \"%s\"...", trackNr,
-		mp3FileName.c_str());
-
-	if (!DRY_RUN &&
-            !encode_track(lf, toc, mp3TargetDir + mp3FileName, astart.lba(), len)) {
-	  message(-2, "Encoding of track %d failed.", trackNr);
-	  err = 1;
-	  break;
-	}
-      }
+    case 1:
+        printf("%s\n", VERSION);
+        exit(0);
+        break;
     }
 
-    actTrack = nextTrack;
-    astart = nstart;
-    aend = nend;
-    trackNr++;
+    printVersion();
 
-    if (actTrack != NULL)
-      nextTrack = titr.next(nstart, nend);
-  }
+    if ((toc = Toc::read(tocFile)) == NULL) {
+        message(-10, "Failed to read toc-file '%s'.", tocFile);
+    }
 
-  lame_close(lf);
+    if ((lf = init_encoder(bitrate, vbr)) == NULL) {
+        message(-10, "Cannot initialize lame encoder");
+    }
 
-  exit(err);
+    if ((p = strrchr(tocFile, '/')) != NULL)
+        tocfileBaseName = strdupCC(p + 1);
+    else
+        tocfileBaseName = strdupCC(tocFile);
+
+    if ((p = strrchr(tocfileBaseName, '.')) != NULL &&
+        (strcmp(p, ".toc") == 0 || strcmp(p, ".cue") == 0)) {
+        *p = 0;
+    }
+
+    if (strlen(tocfileBaseName) == 0) {
+        delete[] tocfileBaseName;
+        tocfileBaseName = strdupCC("unknown");
+    }
+
+    if ((cdTextItem = toc->getCdTextItem(0, cdTextLanguage, CdTextItem::PackType::TITLE)) != NULL) {
+        album = (const char *)cdTextItem->data();
+        clean_string(album);
+        if (album.empty())
+            album = tocfileBaseName;
+    } else {
+        album = tocfileBaseName;
+    }
+
+    if ((cdTextItem = toc->getCdTextItem(0, cdTextLanguage, CdTextItem::PackType::PERFORMER)) !=
+        NULL) {
+        albumPerformer = (const char *)cdTextItem->data();
+        clean_string(albumPerformer);
+    } else {
+        albumPerformer = "";
+    }
+
+    string mp3TargetDir;
+
+    if (!TARGET_DIRECTORY.empty()) {
+        mp3TargetDir = TARGET_DIRECTORY;
+
+        if (*(TARGET_DIRECTORY.end() - 1) != '/')
+            mp3TargetDir += "/";
+
+        if (CREATE_ALBUM_DIRECTORY) {
+            if (!album.empty() && !albumPerformer.empty()) {
+                mp3TargetDir += albumPerformer;
+                mp3TargetDir += SEPARATOR;
+                mp3TargetDir += album;
+            } else {
+                mp3TargetDir += tocfileBaseName;
+            }
+
+            if (mkdir(mp3TargetDir.c_str(), 0777) != 0) {
+                message(-10, "Cannot create album directory \"%s\": %s", mp3TargetDir.c_str(),
+                        strerror(errno));
+            }
+
+            mp3TargetDir += "/";
+        }
+    }
+
+    Msf astart, aend, nstart, nend;
+    const Track *actTrack, *nextTrack;
+    int trackNr;
+    TrackIterator titr(toc);
+    int firstEncodedTrack = 1;
+
+    trackNr = 1;
+    actTrack = titr.first(astart, aend);
+    nextTrack = titr.next(nstart, nend);
+
+    while (actTrack != NULL && err == 0) {
+
+        if (actTrack->type() == TrackData::AUDIO) {
+
+            // Retrieve CD-TEXT data for track title and performer
+            if ((cdTextItem = toc->getCdTextItem(trackNr, cdTextLanguage,
+                                                 CdTextItem::PackType::TITLE)) != NULL) {
+                title = (const char *)cdTextItem->data();
+                clean_string(title);
+            } else {
+                title = "";
+            }
+
+            if ((cdTextItem = toc->getCdTextItem(trackNr, cdTextLanguage,
+                                                 CdTextItem::PackType::PERFORMER)) != NULL) {
+                performer = (const char *)cdTextItem->data();
+                clean_string(performer);
+            } else {
+                performer = "";
+            }
+
+            // build mp3 file name
+            string mp3FileName;
+
+            snprintf(sbuf, sizeof(sbuf), "%02d", trackNr);
+
+            mp3FileName += sbuf;
+            mp3FileName += SEPARATOR;
+
+            if (!title.empty()) {
+                mp3FileName += to_utf8(title);
+                mp3FileName += SEPARATOR;
+            }
+
+            mp3FileName += to_utf8(album);
+
+            if (!albumPerformer.empty()) {
+                mp3FileName += SEPARATOR;
+                mp3FileName += to_utf8(albumPerformer);
+            }
+
+            mp3FileName += ".mp3";
+
+            long len = aend.lba() - astart.lba();
+
+            if (nextTrack != NULL && nextTrack->type() == TrackData::AUDIO)
+                len += nextTrack->start().lba();
+
+            if (len > 0) {
+                set_id3_tags(lf, trackNr, title, performer, album);
+
+                if (firstEncodedTrack) {
+                    if (lame_init_params(lf) < 0) {
+                        message(-2, "Setting of lame parameters failed");
+                        err = 1;
+                        break;
+                    }
+                    message(1, "Lame encoder settings:");
+                    lame_print_config(lf);
+                    if (vbr >= 0)
+                        message(1, "VBR encoding set at quality %d", vbr);
+                    else
+                        message(1, "Selected bit rate: %d kbit/s", bitrate);
+
+                    if (VERBOSE >= 2)
+                        lame_print_internals(lf);
+
+                    message(1, "");
+
+                    message(1, "Starting encoding to target directory \"%s\"...",
+                            mp3TargetDir.empty() ? "." : mp3TargetDir.c_str());
+
+                    firstEncodedTrack = 0;
+                } else {
+                    if (lame_init_bitstream(lf) != 0) {
+                        message(-2, "Cannot initialize bit stream.");
+                        err = 1;
+                        break;
+                    }
+                }
+
+                message(1, "Encoding track %d to \"%s\"...", trackNr, mp3FileName.c_str());
+
+                if (!DRY_RUN &&
+                    !encode_track(lf, toc, mp3TargetDir + mp3FileName, astart.lba(), len)) {
+                    message(-2, "Encoding of track %d failed.", trackNr);
+                    err = 1;
+                    break;
+                }
+            }
+        }
+
+        actTrack = nextTrack;
+        astart = nstart;
+        aend = nend;
+        trackNr++;
+
+        if (actTrack != NULL)
+            nextTrack = titr.next(nstart, nend);
+    }
+
+    lame_close(lf);
+
+    exit(err);
 }

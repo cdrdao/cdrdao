@@ -100,10 +100,9 @@ BlankCDDialog::BlankCDDialog()
 
 void BlankCDDialog::moreOptions()
 {
-    if (!moreOptionsDialog_)
-    {
-        moreOptionsDialog_ =
-            new Gtk::MessageDialog(*this, _("Blank options"), false, Gtk::MESSAGE_QUESTION, Gtk::BUTTONS_CLOSE, true);
+    if (!moreOptionsDialog_) {
+        moreOptionsDialog_ = new Gtk::MessageDialog(
+            *this, _("Blank options"), false, Gtk::MESSAGE_QUESTION, Gtk::BUTTONS_CLOSE, true);
 
         Gtk::Box *box = moreOptionsDialog_->get_vbox();
         Gtk::Frame *frame = new Gtk::Frame(_(" More Blank Options "));
@@ -170,8 +169,7 @@ void BlankCDDialog::update(unsigned long level)
 
     if (level & UPD_CD_DEVICES)
         Devices->import();
-    else if (level & UPD_CD_DEVICE_STATUS)
-    {
+    else if (level & UPD_CD_DEVICE_STATUS) {
         Devices->importStatus();
         Devices->selectOne();
     }
@@ -185,9 +183,9 @@ bool BlankCDDialog::on_delete_event(GdkEventAny *)
 
 void BlankCDDialog::startAction()
 {
-    if (Devices->selection().empty())
-    {
-        Gtk::MessageDialog d(*this, _("Please select at least one recorder device"), Gtk::MESSAGE_WARNING);
+    if (Devices->selection().empty()) {
+        Gtk::MessageDialog d(*this, _("Please select at least one recorder device"),
+                             Gtk::MESSAGE_WARNING);
         d.run();
         return;
     }
@@ -206,14 +204,11 @@ void BlankCDDialog::startAction()
 
     CdDevice *writeDevice = CdDevice::find(targetData.c_str());
 
-    if (writeDevice)
-    {
-        if (writeDevice->blank(parent_, fast, burnSpeed, eject, reload) != 0)
-        {
+    if (writeDevice) {
+        if (writeDevice->blank(parent_, fast, burnSpeed, eject, reload) != 0) {
             Gtk::MessageDialog d(*this, _("Cannot start blanking"), Gtk::MESSAGE_ERROR);
             d.run();
-        }
-        else
+        } else
             guiUpdate(UPD_CD_DEVICE_STATUS);
     }
 
@@ -222,12 +217,9 @@ void BlankCDDialog::startAction()
 
 void BlankCDDialog::speedButtonChanged()
 {
-    if (speedButton_->get_active())
-    {
+    if (speedButton_->get_active()) {
         speedSpinButton_->set_sensitive(false);
-    }
-    else
-    {
+    } else {
         speedSpinButton_->set_sensitive(true);
     }
 }
@@ -237,16 +229,11 @@ void BlankCDDialog::speedChanged()
     // FIXME: get max burn speed from selected burner(s)
     int new_speed = speedSpinButton_->get_value_as_int();
 
-    if ((new_speed % 2) == 1)
-    {
-        if (new_speed > 2)
-        {
-            if (new_speed > speed_)
-            {
+    if ((new_speed % 2) == 1) {
+        if (new_speed > 2) {
+            if (new_speed > speed_) {
                 new_speed = new_speed + 1;
-            }
-            else
-            {
+            } else {
                 new_speed = new_speed - 1;
             }
         }
@@ -267,19 +254,15 @@ int BlankCDDialog::checkEjectWarning(Gtk::Window *parent)
 {
     // If ejecting the CD after recording is requested issue a warning message
     // because buffer under runs may occur for other devices that are recording.
-    if (getEject())
-    {
-        if (configManager->getEjectWarning())
-        {
+    if (getEject()) {
+        if (configManager->getEjectWarning()) {
             Ask3Box msg(parent, _("Request"), 1, 2, _("Ejecting a CD may block the SCSI bus and"),
-                        _("cause buffer under runs when other devices"), _("are still recording."), "",
-                        _("Keep the eject setting anyway?"), NULL);
+                        _("cause buffer under runs when other devices"), _("are still recording."),
+                        "", _("Keep the eject setting anyway?"), NULL);
 
-            switch (msg.run())
-            {
+            switch (msg.run()) {
             case 1: // keep eject setting
-                if (msg.dontShowAgain())
-                {
+                if (msg.dontShowAgain()) {
                     configManager->setEjectWarning(false);
                 }
                 return 1;
@@ -309,19 +292,15 @@ bool BlankCDDialog::getReload()
 int BlankCDDialog::checkReloadWarning(Gtk::Window *parent)
 {
     // The same is true for reloading the disk.
-    if (getReload())
-    {
-        if (configManager->getReloadWarning())
-        {
+    if (getReload()) {
+        if (configManager->getReloadWarning()) {
             Ask3Box msg(parent, _("Request"), 1, 2, _("Reloading a CD may block the SCSI bus and"),
-                        _("cause buffer under runs when other devices"), _("are still recording."), "",
-                        _("Keep the reload setting anyway?"), NULL);
+                        _("cause buffer under runs when other devices"), _("are still recording."),
+                        "", _("Keep the reload setting anyway?"), NULL);
 
-            switch (msg.run())
-            {
+            switch (msg.run()) {
             case 1: // keep reload setting
-                if (msg.dontShowAgain())
-                {
+                if (msg.dontShowAgain()) {
                     configManager->setReloadWarning(false);
                 }
                 return 1;
@@ -342,8 +321,7 @@ int BlankCDDialog::checkReloadWarning(Gtk::Window *parent)
 
 int BlankCDDialog::getSpeed()
 {
-    if (moreOptionsDialog_)
-    {
+    if (moreOptionsDialog_) {
         if (speedButton_->get_active())
             return 0;
         else

@@ -20,8 +20,8 @@
 #ifndef __LEC_H__
 #define __LEC_H__
 
-#include <sys/types.h>
 #include "config.h"
+#include <sys/types.h>
 
 #ifndef TRUE
 #define TRUE 1

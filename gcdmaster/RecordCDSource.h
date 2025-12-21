@@ -44,14 +44,12 @@ class RecordCDSource : public Gtk::VBox
     }
     void onTheFlyOption(bool);
 
-    struct CorrectionTable
-    {
+    struct CorrectionTable {
         int correction;
         const char *name;
     };
 
-    struct SubChanReadModeTable
-    {
+    struct SubChanReadModeTable {
         int mode;
         const char *name;
     };

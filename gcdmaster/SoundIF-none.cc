@@ -80,8 +80,7 @@ int SoundIF::init()
     if (impl_->openDevice() != 0)
         return 1;
 
-    if (impl_->setupDevice() != 0)
-    {
+    if (impl_->setupDevice() != 0) {
         impl_->closeDevice();
         return 2;
     }
@@ -101,8 +100,7 @@ int SoundIF::start()
     if (impl_->openDevice() != 0)
         return 1;
 
-    if (impl_->setupDevice() != 0)
-    {
+    if (impl_->setupDevice() != 0) {
         impl_->closeDevice();
         return 1;
     }
@@ -151,8 +149,7 @@ int SoundIFImpl::openDevice()
 
 void SoundIFImpl::closeDevice()
 {
-    if (dspFd_ >= 0)
-    {
+    if (dspFd_ >= 0) {
         // ...
         dspFd_ = -1;
     }

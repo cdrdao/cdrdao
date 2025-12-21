@@ -17,39 +17,44 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-
 #ifndef __TRACKDATALIST_H__
 #define __TRACKDATALIST_H__
 
 class TrackData;
 
-class TrackDataList {
-public:
-  TrackDataList();
-  ~TrackDataList() { clear(); }
-  
-  void append(TrackData *);
-  void clear();
-  
-  long count() const { return count_; }
+class TrackDataList
+{
+  public:
+    TrackDataList();
+    ~TrackDataList()
+    {
+        clear();
+    }
 
-  unsigned long length() const;
+    void append(TrackData *);
+    void clear();
 
-  const TrackData *first() const;
-  const TrackData *next() const;
+    long count() const
+    {
+        return count_;
+    }
 
-private:
-  struct Entry {
-    TrackData *data;
-    Entry *next;
-  };
+    unsigned long length() const;
 
-  Entry *list_;
-  Entry *last_;
-  Entry *iterator_;
+    const TrackData *first() const;
+    const TrackData *next() const;
 
-  long count_;
+  private:
+    struct Entry {
+        TrackData *data;
+        Entry *next;
+    };
+
+    Entry *list_;
+    Entry *last_;
+    Entry *iterator_;
+
+    long count_;
 };
-
 
 #endif

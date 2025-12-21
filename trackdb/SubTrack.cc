@@ -23,30 +23,28 @@
 
 #include "SubTrack.h"
 
-SubTrack::SubTrack(Type t, unsigned long start, const TrackData &data) 
-  : TrackData(data)
+SubTrack::SubTrack(Type t, unsigned long start, const TrackData &data) : TrackData(data)
 {
-  type_ = t;
-  start_ = start;
-  next_ = pred_ = NULL;
+    type_ = t;
+    start_ = start;
+    next_ = pred_ = NULL;
 }
 
-SubTrack::SubTrack(Type t, const TrackData &data) 
-  : TrackData(data)
+SubTrack::SubTrack(Type t, const TrackData &data) : TrackData(data)
 {
-  type_ = t;
-  start_ = 0;
-  next_ = pred_ = NULL;
+    type_ = t;
+    start_ = 0;
+    next_ = pred_ = NULL;
 }
 
 SubTrack::SubTrack(const SubTrack &obj) : TrackData(obj)
 {
-  type_ = obj.type_;
-  start_ = obj.start_;
-  next_ = pred_ = NULL;
+    type_ = obj.type_;
+    start_ = obj.start_;
+    next_ = pred_ = NULL;
 }
 
 SubTrack::~SubTrack()
 {
-  next_ = pred_ = NULL;
+    next_ = pred_ = NULL;
 }

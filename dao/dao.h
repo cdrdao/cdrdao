@@ -20,10 +20,9 @@
 #ifndef __DAO_H__
 #define __DAO_H__
 
-#include "Toc.h"
 #include "CdrDriver.h"
+#include "Toc.h"
 
-int writeDiskAtOnce(const Toc *, CdrDriver *, int nofBuffers, int swap,
-		    int testMode, int speed);
+int writeDiskAtOnce(const Toc *, CdrDriver *, int nofBuffers, int swap, int testMode, int speed);
 
 #endif

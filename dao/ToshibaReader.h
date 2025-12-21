@@ -25,18 +25,19 @@
 class Toc;
 class Track;
 
-class ToshibaReader : public PlextorReader {
-public:
+class ToshibaReader : public PlextorReader
+{
+  public:
+    ToshibaReader(ScsiIf *scsiIf, unsigned long options);
+    static CdrDriver *instance(ScsiIf *scsiIf, unsigned long options);
 
-  ToshibaReader(ScsiIf *scsiIf, unsigned long options);
-  static CdrDriver *instance(ScsiIf *scsiIf, unsigned long options);
+    unsigned long getReadCapabilites(const CdToc *, int) const
+    {
+        return 0;
+    }
 
-  unsigned long getReadCapabilites(const CdToc *, int) const { return 0; }
-
-protected:
-  int readSubChannels(TrackData::SubChannelMode, long lba, long len,
-		      SubChannel ***, Sample *);
-
+  protected:
+    int readSubChannels(TrackData::SubChannelMode, long lba, long len, SubChannel ***, Sample *);
 };
 
 #endif

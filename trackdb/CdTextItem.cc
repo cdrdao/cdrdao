@@ -18,15 +18,15 @@
  */
 
 #include <assert.h>
-#include <string.h>
 #include <ctype.h>
-#include <stdio.h>
 #include <iomanip>
+#include <stdio.h>
+#include <string.h>
 
-#include "CdTextItem.h"
 #include "CdTextContainer.h"
-#include "util.h"
+#include "CdTextItem.h"
 #include "log.h"
+#include "util.h"
 
 CdTextItem::CdTextItem(PackType packType, int blockNr)
 {
@@ -37,21 +37,21 @@ CdTextItem::CdTextItem(PackType packType, int blockNr)
     encoding_ = Util::Encoding::UNSET;
 }
 
-void CdTextItem::setData(const u8* buffer, size_t buffer_len)
+void CdTextItem::setData(const u8 *buffer, size_t buffer_len)
 {
     data_.resize(buffer_len);
     memcpy(data_.data(), buffer, buffer_len);
     dataType_ = DataType::BINARY;
 }
 
-void CdTextItem::setRawText(const u8* buffer, size_t buffer_len)
+void CdTextItem::setRawText(const u8 *buffer, size_t buffer_len)
 {
     setData(buffer, buffer_len);
     dataType_ = DataType::SBCC;
     updateEncoding();
 }
 
-void CdTextItem::setRawText(const std::string& str)
+void CdTextItem::setRawText(const std::string &str)
 {
     data_.resize(str.size() + 1);
     auto writer = data_.begin();
@@ -62,19 +62,19 @@ void CdTextItem::setRawText(const std::string& str)
     updateEncoding();
 }
 
-void CdTextItem::setText(const char* utf8_text)
+void CdTextItem::setText(const char *utf8_text)
 {
     u8text = utf8_text;
     dataType_ = DataType::SBCC;
     updateEncoding();
 }
 
-void CdTextItem::setTextFromToc(const char* text)
+void CdTextItem::setTextFromToc(const char *text)
 {
     if (Util::isValidUTF8(text))
         setText(text);
     else
-        setRawText((u8*)text, strlen(text));
+        setRawText((u8 *)text, strlen(text));
 }
 
 void CdTextItem::setGenre(u8 genreCode1, u8 genreCode2, const char *description)
@@ -85,14 +85,14 @@ void CdTextItem::setGenre(u8 genreCode1, u8 genreCode2, const char *description)
     data_.push_back(genreCode2);
 
     if (description) {
-        const char* ptr = description;
+        const char *ptr = description;
         while (*ptr)
             data_.push_back(*ptr++);
         data_.push_back(0);
     }
 }
 
-void CdTextItem::print(std::ostream &out, PrintParams& params) const
+void CdTextItem::print(std::ostream &out, PrintParams &params) const
 {
     char buf[20];
     out << packType2String(isTrackPack(), packType_);
@@ -121,8 +121,7 @@ void CdTextItem::print(std::ostream &out, PrintParams& params) const
                 printchar(c, false);
         }
         out << "\"";
-    }
-    else {
+    } else {
         long i = 0;
 
         out << " {";
@@ -130,8 +129,7 @@ void CdTextItem::print(std::ostream &out, PrintParams& params) const
             if (i == 0) {
                 snprintf(buf, sizeof(buf), "%2d", c);
                 out << buf;
-            }
-            else {
+            } else {
                 if (i % 12 == 0)
                     out << ",\n               ";
                 else
@@ -149,9 +147,8 @@ void CdTextItem::print(std::ostream &out, PrintParams& params) const
 
 int CdTextItem::operator==(const CdTextItem &obj)
 {
-    return !(packType_ != obj.packType_ || blockNr_ != obj.blockNr_ ||
-             dataType_ != obj.dataType_ || data_ != obj.data_ ||
-             u8text != obj.u8text);
+    return !(packType_ != obj.packType_ || blockNr_ != obj.blockNr_ || dataType_ != obj.dataType_ ||
+             data_ != obj.data_ || u8text != obj.u8text);
 }
 
 int CdTextItem::operator!=(const CdTextItem &obj)

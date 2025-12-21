@@ -81,8 +81,7 @@ void AddFileDialog::mode(Mode m)
 {
     mode_ = m;
 
-    switch (mode_)
-    {
+    switch (mode_) {
     case M_APPEND_TRACK:
         set_title(_("Append Track"));
         break;
@@ -97,8 +96,7 @@ void AddFileDialog::mode(Mode m)
 
 void AddFileDialog::start()
 {
-    if (active_)
-    {
+    if (active_) {
         get_window()->raise();
         return;
     }
@@ -108,13 +106,11 @@ void AddFileDialog::start()
 
     bool contFlag = true;
 
-    while (contFlag)
-    {
+    while (contFlag) {
 
         int result = run();
 
-        switch (result)
-        {
+        switch (result) {
         case Gtk::RESPONSE_CANCEL:
             contFlag = false;
             break;
@@ -129,8 +125,7 @@ void AddFileDialog::start()
 
 void AddFileDialog::stop()
 {
-    if (active_)
-    {
+    if (active_) {
         hide();
         active_ = false;
     }
@@ -147,13 +142,11 @@ bool AddFileDialog::applyAction()
     std::vector<std::string> sfiles = get_filenames();
     std::list<std::string> files;
 
-    for (std::vector<std::string>::const_iterator i = sfiles.begin(); i != sfiles.end(); i++)
-    {
+    for (std::vector<std::string>::const_iterator i = sfiles.begin(); i != sfiles.end(); i++) {
 
         const char *s = stripCwd((*i).c_str());
 
-        if (s && *s != 0 && s[strlen(s) - 1] != '/')
-        {
+        if (s && *s != 0 && s[strlen(s) - 1] != '/') {
 
             if (Util::fileExtension(s) == Util::FileExtension::M3U)
                 parseM3u(s, files);
@@ -162,10 +155,8 @@ bool AddFileDialog::applyAction()
         }
     }
 
-    if (files.size() > 0)
-    {
-        switch (mode_)
-        {
+    if (files.size() > 0) {
+        switch (mode_) {
         case M_APPEND_TRACK:
             project_->appendTracks(files);
             break;

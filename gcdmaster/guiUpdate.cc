@@ -32,8 +32,7 @@
 void guiUpdate(unsigned long level)
 {
     std::list<GCDMaster *>::iterator i = GCDMaster::apps.begin();
-    for (; i != GCDMaster::apps.end(); i++)
-    {
+    for (; i != GCDMaster::apps.end(); i++) {
         (*i)->update(level);
     }
 

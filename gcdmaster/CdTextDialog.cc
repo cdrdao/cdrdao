@@ -47,8 +47,7 @@ CdTextDialog::CdTextDialog()
 
     languages_ = manage(new Gtk::Notebook);
 
-    for (i = 0; i < 8; i++)
-    {
+    for (i = 0; i < 8; i++) {
         page_[i].table = new Gtk::Grid();
         page_[i].table->set_row_homogeneous(false);
         page_[i].table->set_row_spacing(5);
@@ -143,8 +142,7 @@ void CdTextDialog::updateTabLabels()
     const Toc *toc = tocEdit_->toc();
     int l;
 
-    for (l = 0; l < 8; l++)
-    {
+    for (l = 0; l < 8; l++) {
         const char *s = CdTextContainer::languageName(toc->cdTextLanguage(l));
 
         if (page_[l].tabLabel->get_label() != s)
@@ -160,21 +158,16 @@ void CdTextDialog::adjustTableEntries(int n)
     if (trackEntries_ == n)
         return;
 
-    for (l = 0; l < 8; l++)
-    {
-        if (n < trackEntries_)
-        {
+    for (l = 0; l < 8; l++) {
+        if (n < trackEntries_) {
 
-            for (i = n; i < trackEntries_; i++)
-            {
+            for (i = n; i < trackEntries_; i++) {
                 delete page_[l].tracks[i].performer;
                 delete page_[l].tracks[i].title;
                 delete page_[l].tracks[i].hbox;
                 delete page_[l].tracks[i].label;
             }
-        }
-        else
-        {
+        } else {
             int performerActive = page_[l].performerButton->get_active();
 
             TableEntry *newTracks = new TableEntry[n];
@@ -185,8 +178,7 @@ void CdTextDialog::adjustTableEntries(int n)
             delete[] page_[l].tracks;
             page_[l].tracks = newTracks;
 
-            for (i = trackEntries_; i < n; i++)
-            {
+            for (i = trackEntries_; i < n; i++) {
                 snprintf(buf, sizeof(buf), _("Track %02d"), i + 1);
 
                 page_[l].tracks[i].performer = manage(new Gtk::Entry);
@@ -211,8 +203,7 @@ void CdTextDialog::adjustTableEntries(int n)
 
 void CdTextDialog::update(unsigned long level, TocEdit *view)
 {
-    if (view != tocEdit_)
-    {
+    if (view != tocEdit_) {
         tocEdit_ = view;
         level = UPD_ALL;
     }
@@ -224,18 +215,15 @@ void CdTextDialog::update(unsigned long level, TocEdit *view)
         s += "(*)";
     set_title(s);
 
-    if (level & UPD_TOC_DATA)
-    {
+    if (level & UPD_TOC_DATA) {
         updateTabLabels();
     }
 
-    if ((level & UPD_TOC_DATA) || (level & UPD_TRACK_DATA))
-    {
+    if ((level & UPD_TOC_DATA) || (level & UPD_TRACK_DATA)) {
         importData();
     }
 
-    if (level & UPD_EDITABLE_STATE)
-    {
+    if (level & UPD_EDITABLE_STATE) {
         applyButton_->set_sensitive(tocEdit_->editable() ? true : false);
     }
 }
@@ -267,8 +255,7 @@ void CdTextDialog::fillPerformerAction()
 {
     int l = languages_->get_current_page();
 
-    if (l >= 0 && l <= 7)
-    {
+    if (l >= 0 && l <= 7) {
         int i;
         const char *s = checkString(page_[l].performer->get_text());
 
@@ -277,8 +264,7 @@ void CdTextDialog::fillPerformerAction()
 
         char *performer = strdupCC(s);
 
-        for (i = 0; i < trackEntries_; i++)
-        {
+        for (i = 0; i < trackEntries_; i++) {
             if (checkString(page_[l].tracks[i].performer->get_text()) == NULL)
                 page_[l].tracks[i].performer->set_text(performer);
         }
@@ -292,8 +278,7 @@ void CdTextDialog::activatePerformerAction(int l)
     int i;
     int val = page_[l].performerButton->get_active();
 
-    for (i = 0; i < trackEntries_; i++)
-    {
+    for (i = 0; i < trackEntries_; i++) {
         page_[l].tracks[i].performer->set_sensitive(val);
     }
 }
@@ -307,8 +292,7 @@ void CdTextDialog::importData()
 
     adjustTableEntries(n);
 
-    for (l = 0; l < 8; l++)
-    {
+    for (l = 0; l < 8; l++) {
         if ((item = toc->getCdTextItem(0, l, CdTextItem::PackType::TITLE)) != NULL)
             page_[l].title->set_text(item->getText());
         else
@@ -319,8 +303,7 @@ void CdTextDialog::importData()
         else
             page_[l].performer->set_text("");
 
-        for (i = 0; i < n; i++)
-        {
+        for (i = 0; i < n; i++) {
             if ((item = toc->getCdTextItem(i + 1, l, CdTextItem::PackType::TITLE)) != NULL)
                 page_[l].tracks[i].title->set_text(item->getText());
             else
@@ -338,14 +321,14 @@ void CdTextDialog::exportData()
 {
     int i, l;
 
-    for (l = 0; l < 8; l++)
-    {
+    for (l = 0; l < 8; l++) {
         setCdTextItem(CdTextItem::PackType::TITLE, 0, l, checkString(page_[l].title->get_text()));
-        setCdTextItem(CdTextItem::PackType::PERFORMER, 0, l, checkString(page_[l].performer->get_text()));
+        setCdTextItem(CdTextItem::PackType::PERFORMER, 0, l,
+                      checkString(page_[l].performer->get_text()));
 
-        for (i = 0; i < trackEntries_; i++)
-        {
-            setCdTextItem(CdTextItem::PackType::TITLE, i + 1, l, checkString(page_[l].tracks[i].title->get_text()));
+        for (i = 0; i < trackEntries_; i++) {
+            setCdTextItem(CdTextItem::PackType::TITLE, i + 1, l,
+                          checkString(page_[l].tracks[i].title->get_text()));
             setCdTextItem(CdTextItem::PackType::PERFORMER, i + 1, l,
                           checkString(page_[l].tracks[i].performer->get_text()));
         }
@@ -359,23 +342,18 @@ void CdTextDialog::setCdTextItem(CdTextItem::PackType type, int trackNr, int l, 
     const Toc *toc = tocEdit->toc();
     CdTextItem *newItem;
 
-    if (s != NULL)
-    {
+    if (s != NULL) {
         newItem = new CdTextItem(type, l);
         newItem->setText(s);
-    }
-    else
+    } else
         newItem = NULL;
 
-    if ((item = toc->getCdTextItem(trackNr, l, type)) != NULL)
-    {
+    if ((item = toc->getCdTextItem(trackNr, l, type)) != NULL) {
         if (newItem == NULL)
             tocEdit->setCdTextItem(trackNr, type, l, NULL);
         else if (*newItem != *item)
             tocEdit->setCdTextItem(trackNr, type, l, s);
-    }
-    else if (newItem != NULL)
-    {
+    } else if (newItem != NULL) {
         tocEdit->setCdTextItem(trackNr, type, l, s);
     }
 
@@ -392,8 +370,7 @@ const char *CdTextDialog::checkString(const std::string &str)
     if (len == 0)
         return NULL;
 
-    if (buf == NULL || len + 1 > bufLen)
-    {
+    if (buf == NULL || len + 1 > bufLen) {
         delete[] buf;
         bufLen = len + 1;
         buf = new char[bufLen];
@@ -410,8 +387,7 @@ const char *CdTextDialog::checkString(const std::string &str)
     if (*s == 0)
         return NULL;
 
-    while (p > s && isspace(*p))
-    {
+    while (p > s && isspace(*p)) {
         *p = 0;
         p--;
     }

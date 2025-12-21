@@ -82,8 +82,7 @@ ProcessMonitor::~ProcessMonitor()
 
     blockProcessMonitorSignals();
 
-    while (processes_ != NULL)
-    {
+    while (processes_ != NULL) {
         next = processes_->next_;
         delete processes_;
         processes_ = next;
@@ -113,14 +112,12 @@ Process *ProcessMonitor::start(const char *prg, const char **args, int pipeFdArg
     int pipeFds[2];
     char buf[20];
 
-    if (pipe(pipeFds) != 0)
-    {
+    if (pipe(pipeFds) != 0) {
         log_message(-2, "Cannot create pipe: %s", strerror(errno));
         return NULL;
     }
 
-    if (pipeFdArgNum > 0)
-    {
+    if (pipeFdArgNum > 0) {
         snprintf(buf, sizeof(buf), "%d", pipeFds[1]);
         args[pipeFdArgNum] = buf;
     }
@@ -134,8 +131,7 @@ Process *ProcessMonitor::start(const char *prg, const char **args, int pipeFdArg
 
     pid = fork();
 
-    if (pid == 0)
-    {
+    if (pid == 0) {
         // we are the new process
 
         // detach from controlling terminal
@@ -148,9 +144,7 @@ Process *ProcessMonitor::start(const char *prg, const char **args, int pipeFdArg
 
         log_message(-2, "Cannot execute '%s': %s", prg, strerror(errno));
         _exit(255);
-    }
-    else if (pid < 0)
-    {
+    } else if (pid < 0) {
         log_message(-2, "Cannot fork: %s", strerror(errno));
         unblockProcessMonitorSignals();
         return NULL;
@@ -173,10 +167,8 @@ Process *ProcessMonitor::find(Process *p, Process **pred)
 {
     Process *run;
 
-    for (*pred = NULL, run = processes_; run != NULL; *pred = run, run = run->next_)
-    {
-        if (p == run)
-        {
+    for (*pred = NULL, run = processes_; run != NULL; *pred = run, run = run->next_) {
+        if (p == run) {
             return run;
         }
     }
@@ -188,10 +180,8 @@ Process *ProcessMonitor::find(int pid)
 {
     Process *run;
 
-    for (run = processes_; run != NULL; run = run->next_)
-    {
-        if (run->pid() == pid)
-        {
+    for (run = processes_; run != NULL; run = run->next_) {
+        if (run->pid() == pid) {
             return run;
         }
     }
@@ -210,8 +200,7 @@ void ProcessMonitor::remove(Process *p)
 
     blockProcessMonitorSignals();
 
-    if ((act = find(p, &pred)) != NULL)
-    {
+    if ((act = find(p, &pred)) != NULL) {
         if (pred == NULL)
             processes_ = act->next_;
         else
@@ -229,29 +218,20 @@ void ProcessMonitor::handleSigChld()
     Process *p;
     int status;
 
-    while ((pid = waitpid(-1, &status, WNOHANG)) > 0)
-    {
-        if ((p = find(pid)) != NULL)
-        {
+    while ((pid = waitpid(-1, &status, WNOHANG)) > 0) {
+        if ((p = find(pid)) != NULL) {
             p->exited_ = 1;
 
-            if (WIFEXITED(status))
-            {
+            if (WIFEXITED(status)) {
                 p->exitStatus_ = WEXITSTATUS(status);
-            }
-            else if (WIFSIGNALED(status))
-            {
+            } else if (WIFSIGNALED(status)) {
                 p->exitStatus_ = 254;
-            }
-            else
-            {
+            } else {
                 p->exitStatus_ = 253;
             }
 
             statusChanged_ = 1;
-        }
-        else
-        {
+        } else {
             log_message(-3, "Unknown child with pid %d exited.", pid);
         }
     }
