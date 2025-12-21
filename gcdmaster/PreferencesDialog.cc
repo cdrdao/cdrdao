@@ -27,7 +27,8 @@
 #include "trackdb/TempFileManager.h"
 #include "xcdrdao.h"
 
-PreferencesDialog::PreferencesDialog(BaseObjectType *cobject, const Glib::RefPtr<Gtk::Builder> &refBuilder)
+PreferencesDialog::PreferencesDialog(BaseObjectType *cobject,
+                                     const Glib::RefPtr<Gtk::Builder> &refBuilder)
     : Gtk::Dialog(cobject), m_refBuilder(refBuilder)
 {
     m_refBuilder->get_widget("ApplyButton", _applyButton);
@@ -39,19 +40,23 @@ PreferencesDialog::PreferencesDialog(BaseObjectType *cobject, const Glib::RefPtr
     m_refBuilder->get_widget("TempBrowseCancel", _browseCancel);
     m_refBuilder->get_widget("TempBrowseOpen", _browseOpen);
 
-    if (!_applyButton || !_okButton || !_cancelButton || !_tempDirEntry || !_tempDirDialog || !_browseButton ||
-        !_browseCancel || !_browseOpen)
-    {
+    if (!_applyButton || !_okButton || !_cancelButton || !_tempDirEntry || !_tempDirDialog ||
+        !_browseButton || !_browseCancel || !_browseOpen) {
         std::cerr << "Unable to create all GUI widgets from glade file\n";
         exit(1);
     }
 
-    _applyButton->signal_clicked().connect(sigc::mem_fun(*this, &PreferencesDialog::on_button_apply));
-    _cancelButton->signal_clicked().connect(sigc::mem_fun(*this, &PreferencesDialog::on_button_cancel));
+    _applyButton->signal_clicked().connect(
+        sigc::mem_fun(*this, &PreferencesDialog::on_button_apply));
+    _cancelButton->signal_clicked().connect(
+        sigc::mem_fun(*this, &PreferencesDialog::on_button_cancel));
     _okButton->signal_clicked().connect(sigc::mem_fun(*this, &PreferencesDialog::on_button_ok));
-    _browseButton->signal_clicked().connect(sigc::mem_fun(*this, &PreferencesDialog::on_button_browse));
-    _browseCancel->signal_clicked().connect(sigc::mem_fun(*this, &PreferencesDialog::on_button_browse_cancel));
-    _browseOpen->signal_clicked().connect(sigc::mem_fun(*this, &PreferencesDialog::on_button_browse_open));
+    _browseButton->signal_clicked().connect(
+        sigc::mem_fun(*this, &PreferencesDialog::on_button_browse));
+    _browseCancel->signal_clicked().connect(
+        sigc::mem_fun(*this, &PreferencesDialog::on_button_browse_cancel));
+    _browseOpen->signal_clicked().connect(
+        sigc::mem_fun(*this, &PreferencesDialog::on_button_browse_open));
 
     _tempDirDialog->hide();
 
@@ -78,8 +83,7 @@ bool PreferencesDialog::saveToGConf()
 {
     const Glib::ustring &text = _tempDirEntry->get_text();
 
-    if (!tempFileManager.setTempDirectory(text.c_str()))
-    {
+    if (!tempFileManager.setTempDirectory(text.c_str())) {
 
         ErrorBox errBox(_("The directory you entered cannot be used as a "
                           "temporary files directory."));
@@ -88,12 +92,9 @@ bool PreferencesDialog::saveToGConf()
         return false;
     }
 
-    try
-    {
+    try {
         configManager->setTempDir(text);
-    }
-    catch (const Glib::Error &error)
-    {
+    } catch (const Glib::Error &error) {
         std::cerr << error.what() << std::endl;
     }
     return true;

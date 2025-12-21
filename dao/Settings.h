@@ -23,40 +23,41 @@
 #include <string>
 #include <vector>
 
-class Settings {
-public:
-  Settings();
-  ~Settings();
+class Settings
+{
+  public:
+    Settings();
+    ~Settings();
 
-  int read(const char *);
-  int write(const char *) const; 
+    int read(const char *);
+    int write(const char *) const;
 
-  const int *getInteger(const char *) const;
-  const char *getString(const char *) const;
-  bool getStrings(const char *, std::vector<std::string>& strings) const;
+    const int *getInteger(const char *) const;
+    const char *getString(const char *) const;
+    bool getStrings(const char *, std::vector<std::string> &strings) const;
 
-  void set(const char *, int);
-  void set(const char *, const char *);
-  void set(const char *, const std::vector<std::string>& strings);
+    void set(const char *, int);
+    void set(const char *, const char *);
+    void set(const char *, const std::vector<std::string> &strings);
 
-  // Key name definitions
-  static const char* setWriteSpeed;
-  static const char* setWriteDriver;
-  static const char* setWriteDevice;
-  static const char* setWriteBuffers;
-  static const char* setUserCapacity;
-  static const char* setFullBurn;
-  static const char* setReadSpeed;
-  static const char* setReadDriver;
-  static const char* setReadDevice;
-  static const char* setReadParanoiaMode;
-  static const char* setCddbServerList;
-  static const char* setCddbTimeout;
-  static const char* setCddbDbDir;
-  static const char* setTmpFileDir;
+    // Key name definitions
+    static const char *setWriteSpeed;
+    static const char *setWriteDriver;
+    static const char *setWriteDevice;
+    static const char *setWriteBuffers;
+    static const char *setUserCapacity;
+    static const char *setFullBurn;
+    static const char *setReadSpeed;
+    static const char *setReadDriver;
+    static const char *setReadDevice;
+    static const char *setReadParanoiaMode;
+    static const char *setCddbServerList;
+    static const char *setCddbTimeout;
+    static const char *setCddbDbDir;
+    static const char *setTmpFileDir;
 
-private:
-  class SettingsImpl *impl_;
+  private:
+    class SettingsImpl *impl_;
 };
 
 #endif

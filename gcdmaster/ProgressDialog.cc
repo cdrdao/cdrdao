@@ -149,8 +149,7 @@ void ProgressDialog::start(CdDevice *device, const char *tocFileName)
     if (device == NULL)
         return;
 
-    if (active_)
-    {
+    if (active_) {
         raise();
         return;
     }
@@ -180,8 +179,7 @@ void ProgressDialog::start(CdDevice *device, const char *tocFileName)
 
 void ProgressDialog::stop()
 {
-    if (active_)
-    {
+    if (active_) {
         hide();
         active_ = false;
         device_ = NULL;
@@ -190,8 +188,7 @@ void ProgressDialog::stop()
 
 bool ProgressDialog::on_delete_event(GdkEventAny *)
 {
-    if (finished_)
-    {
+    if (finished_) {
         poolFather_->stop(this);
     }
     return true;
@@ -200,69 +197,58 @@ bool ProgressDialog::on_delete_event(GdkEventAny *)
 void ProgressDialog::ejectAction()
 {
     if (device_)
-        if (device_->ejectCd())
-        {
+        if (device_->ejectCd()) {
             ejectButton_->set_sensitive(false);
         }
 }
 
 void ProgressDialog::closeAction()
 {
-    if (finished_)
-    {
+    if (finished_) {
         poolFather_->stop(this);
         return;
     }
 
-    switch (device_->action())
-    {
+    switch (device_->action()) {
     case CdDevice::A_RECORD: {
         Ask2Box msg(this, _("Abort Recording"), 0, 2, _("Abort recording process?"), NULL);
 
-        if (msg.run() == 1 && device_ != NULL)
-        {
+        if (msg.run() == 1 && device_ != NULL) {
             cancelButton_->set_sensitive(false);
             ejectButton_->set_sensitive(true);
             device_->abortDaoRecording();
         }
-    }
-    break;
+    } break;
 
     case CdDevice::A_READ: {
         Ask2Box msg(this, _("Abort Reading"), 0, 2, _("Abort reading process?"), NULL);
 
-        if (msg.run() == 1 && device_ != NULL)
-        {
+        if (msg.run() == 1 && device_ != NULL) {
             cancelButton_->set_sensitive(false);
             ejectButton_->set_sensitive(true);
             device_->abortDaoReading();
         }
-    }
-    break;
+    } break;
 
     case CdDevice::A_DUPLICATE: {
         Ask2Box msg(this, _("Abort Process"), 0, 2, _("Abort duplicating process?"), NULL);
 
-        if (msg.run() == 1 && device_ != NULL)
-        {
+        if (msg.run() == 1 && device_ != NULL) {
             cancelButton_->set_sensitive(false);
             ejectButton_->set_sensitive(true);
             device_->abortDaoDuplication();
         }
-    }
-    break;
+    } break;
 
     case CdDevice::A_BLANK: {
         Ask2Box msg(this, _("Abort Process"), 0, 2, _("Abort blanking process?"), NULL);
 
-        if (msg.run() == 1 && device_ != NULL)
-        {
+        if (msg.run() == 1 && device_ != NULL) {
             cancelButton_->set_sensitive(false);
             ejectButton_->set_sensitive(true);
             device_->abortBlank();
         }
-    }
-    break;
+    } break;
     default:
         break;
     }
@@ -309,17 +295,15 @@ void ProgressDialog::update(unsigned long level)
     if (finished_)
         return;
 
-    if ((level & UPD_PROGRESS_STATUS) && device_->progressStatusChanged())
-    {
-        device_->progress(&status, &totalTracks, &track, &trackProgress, &totalProgress, &bufferFill, &writerFill);
+    if ((level & UPD_PROGRESS_STATUS) && device_->progressStatusChanged()) {
+        device_->progress(&status, &totalTracks, &track, &trackProgress, &totalProgress,
+                          &bufferFill, &writerFill);
 
-        if (status != actStatus_ || track != actTrack_)
-        {
+        if (status != actStatus_ || track != actTrack_) {
             actStatus_ = status;
             actTrack_ = track;
 
-            switch (status)
-            {
+            switch (status) {
             case PGSMSG_RCD_ANALYZING:
                 actTrack_ = track;
 
@@ -365,15 +349,13 @@ void ProgressDialog::update(unsigned long level)
             }
         }
 
-        if (trackProgress != actTrackProgress_)
-        {
+        if (trackProgress != actTrackProgress_) {
             actTrackProgress_ = trackProgress;
             if (trackProgress <= 1000)
                 trackProgress_->set_fraction(trackProgress / 1000.0);
         }
 
-        if (totalProgress != actTotalProgress_)
-        {
+        if (totalProgress != actTotalProgress_) {
             if (actTotalProgress_ == 0)
                 gettimeofday(&time_, 0);
             actTotalProgress_ = totalProgress;
@@ -381,28 +363,23 @@ void ProgressDialog::update(unsigned long level)
                 totalProgress_->set_fraction(totalProgress / 1000.0);
         }
 
-        if (bufferFill != actBufferFill_)
-        {
+        if (bufferFill != actBufferFill_) {
             actBufferFill_ = bufferFill;
             if (bufferFill <= 1000)
                 bufferFillRate_->set_fraction(bufferFill / 100.0);
         }
 
-        if (writerFill != actWriterFill_)
-        {
+        if (writerFill != actWriterFill_) {
             actWriterFill_ = writerFill;
             if (writerFill <= 1000)
                 writerFillRate_->set_fraction(writerFill / 100.0);
         }
     }
 
-    switch (device_->action())
-    {
+    switch (device_->action()) {
     case CdDevice::A_RECORD:
-        if (device_->status() != CdDevice::DEV_RECORDING)
-        {
-            switch (device_->exitStatus())
-            {
+        if (device_->status() != CdDevice::DEV_RECORDING) {
+            switch (device_->exitStatus()) {
             case 0:
                 statusMsg_->set_text(_("Recording finished successfully."));
                 break;
@@ -425,10 +402,8 @@ void ProgressDialog::update(unsigned long level)
         break;
 
     case CdDevice::A_READ:
-        if (device_->status() != CdDevice::DEV_READING)
-        {
-            switch (device_->exitStatus())
-            {
+        if (device_->status() != CdDevice::DEV_READING) {
+            switch (device_->exitStatus()) {
             case 0:
                 statusMsg_->set_text(_("Reading finished successfully."));
                 break;
@@ -452,10 +427,8 @@ void ProgressDialog::update(unsigned long level)
         break;
 
     case CdDevice::A_DUPLICATE:
-        if (device_->status() != CdDevice::DEV_RECORDING)
-        {
-            switch (device_->exitStatus())
-            {
+        if (device_->status() != CdDevice::DEV_RECORDING) {
+            switch (device_->exitStatus()) {
             case 0:
                 statusMsg_->set_text(_("CD copying finished successfully."));
                 break;
@@ -479,10 +452,8 @@ void ProgressDialog::update(unsigned long level)
         break;
 
     case CdDevice::A_BLANK:
-        if (device_->status() != CdDevice::DEV_BLANKING)
-        {
-            switch (device_->exitStatus())
-            {
+        if (device_->status() != CdDevice::DEV_BLANKING) {
+            switch (device_->exitStatus()) {
             case 0:
                 statusMsg_->set_text(_("Blanking finished successfully."));
                 break;
@@ -512,15 +483,14 @@ void ProgressDialog::update(unsigned long level)
 }
 
 // Sets label of close button.
-// l: 1: 'abort'	--> CANCEL gnome stock button (i18n)
+// l: 1: 'abort'        --> CANCEL gnome stock button (i18n)
 //    2: 'dismiss'  --> CLOSE  gnome stock button (i18n)
 void ProgressDialog::setCloseButtonLabel(int l)
 {
     if (actCloseButtonLabel_ == l)
         return;
 
-    switch (l)
-    {
+    switch (l) {
     case 1:
         closeButton_->hide();
         cancelButton_->show();
@@ -551,14 +521,12 @@ bool ProgressDialog::time()
     snprintf(buf, sizeof(buf), "%ld:%02ld:%02ld", hours, mins, secs);
     currentTime_->set_text(buf);
 
-    if (actTotalProgress_ > 10)
-    {
+    if (actTotalProgress_ > 10) {
         // Hack!
         //  Denis: no shit
         gfloat aux1, aux2, aux3;
 
-        if (!leadTimeFilled_)
-        {
+        if (!leadTimeFilled_) {
             leadTime_ = time;
             leadTimeFilled_ = true;
         }
@@ -584,15 +552,12 @@ bool ProgressDialog::time()
 
 void ProgressDialog::needBufferProgress(bool visible)
 {
-    if (visible)
-    {
+    if (visible) {
         bufferFillRate_->show();
         bufferFillRateLabel_->show();
         writerFillRate_->show();
         writerFillRateLabel_->show();
-    }
-    else
-    {
+    } else {
         bufferFillRate_->hide();
         bufferFillRateLabel_->hide();
         writerFillRate_->hide();
@@ -602,13 +567,10 @@ void ProgressDialog::needBufferProgress(bool visible)
 
 void ProgressDialog::needTrackProgress(bool visible)
 {
-    if (visible)
-    {
+    if (visible) {
         trackProgress_->show();
         trackLabel_->show();
-    }
-    else
-    {
+    } else {
         trackProgress_->hide();
         trackLabel_->hide();
     }
@@ -632,16 +594,14 @@ void ProgressDialogPool::update(unsigned long status)
         run->update(status);
 }
 
-ProgressDialog *ProgressDialogPool::start(CdDevice *device, const char *tocFileName, bool showBuffer, bool showTrack)
+ProgressDialog *ProgressDialogPool::start(CdDevice *device, const char *tocFileName,
+                                          bool showBuffer, bool showTrack)
 {
     ProgressDialog *dialog;
 
-    if (pool_ == NULL)
-    {
+    if (pool_ == NULL) {
         dialog = new ProgressDialog(this);
-    }
-    else
-    {
+    } else {
         dialog = pool_;
         pool_ = pool_->poolNext_;
     }
@@ -657,8 +617,8 @@ ProgressDialog *ProgressDialogPool::start(CdDevice *device, const char *tocFileN
     return dialog;
 }
 
-ProgressDialog *ProgressDialogPool::start(Gtk::Window &parent, CdDevice *device, const char *tocFileName,
-                                          bool showBuffer, bool showTrack)
+ProgressDialog *ProgressDialogPool::start(Gtk::Window &parent, CdDevice *device,
+                                          const char *tocFileName, bool showBuffer, bool showTrack)
 {
     ProgressDialog *dialog = start(device, tocFileName, showBuffer, showTrack);
     dialog->set_transient_for(parent);
@@ -669,8 +629,7 @@ void ProgressDialogPool::stop(ProgressDialog *dialog)
 {
     ProgressDialog *run, *pred;
 
-    for (pred = NULL, run = activeDialogs_; run != NULL; pred = run, run = run->poolNext_)
-    {
+    for (pred = NULL, run = activeDialogs_; run != NULL; pred = run, run = run->poolNext_) {
         if (run == dialog)
             break;
     }

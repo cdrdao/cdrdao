@@ -21,13 +21,13 @@
 #ifdef HAVE_AO
 #include <ao/ao.h>
 #endif
-#include <fstream>
 #include <cstring>
+#include <fstream>
 
-#include "config.h"
-#include "log.h"
 #include "FormatConverter.h"
 #include "TempFileManager.h"
+#include "config.h"
+#include "log.h"
 
 #ifdef HAVE_MP3_SUPPORT
 #include "FormatMp3.h"
@@ -42,201 +42,199 @@
 FormatConverter::FormatConverter()
 {
 #if defined(HAVE_MP3_SUPPORT) | defined(HAVE_OGG_SUPPORT) || defined(HAVE_FLAC_SUPPORT)
-  ao_initialize();
+    ao_initialize();
 #endif
 #ifdef HAVE_MP3_SUPPORT
-  managers_.push_front(new FormatMp3Manager);
+    managers_.push_front(new FormatMp3Manager);
 #endif
 #ifdef HAVE_OGG_SUPPORT
-  managers_.push_front(new FormatOggManager);
+    managers_.push_front(new FormatOggManager);
 #endif
 #ifdef HAVE_FLAC_SUPPORT
-  managers_.push_front(new FormatFlacManager);
+    managers_.push_front(new FormatFlacManager);
 #endif
 }
 
 FormatConverter::~FormatConverter()
 {
-  std::list<FormatSupportManager*>::iterator i = managers_.begin();
-  while (i != managers_.end()) {
-    delete *i++;
-  }
+    std::list<FormatSupportManager *>::iterator i = managers_.begin();
+    while (i != managers_.end()) {
+        delete *i++;
+    }
 #if defined(HAVE_MP3_SUPPORT) || defined(HAVE_OGG_SUPPORT)
     ao_shutdown();
 #endif
 }
 
-FormatSupport* FormatConverter::newConverter(const char* fn)
+FormatSupport *FormatConverter::newConverter(const char *fn)
 {
-  const char* ext = strrchr(fn, '.');
-  if (!ext)
-    return NULL;
-  ext++;
+    const char *ext = strrchr(fn, '.');
+    if (!ext)
+        return NULL;
+    ext++;
 
-  FormatSupport* candidate = NULL;
-  std::list<FormatSupportManager*>::iterator i = managers_.begin();
-  while (i != managers_.end()) {
-    FormatSupportManager* mgr = *i++;
+    FormatSupport *candidate = NULL;
+    std::list<FormatSupportManager *>::iterator i = managers_.begin();
+    while (i != managers_.end()) {
+        FormatSupportManager *mgr = *i++;
 
-    candidate = mgr->newConverter(ext);
-    if (candidate)
-      break;
-  }
-
-  return candidate;
-}
-
-FormatSupport* FormatConverter::newConverterStart(const char* src,
-                                                  std::string& dst,
-                                                  FormatSupport::Status* st)
-{
-  if (st)
-    *st = FormatSupport::FS_SUCCESS;
-
-  FormatSupport* candidate = newConverter(src);
-
-  if (candidate) {
-    const char* extension;
-    if (candidate->format() == TrackData::WAVE)
-      extension = "wav";
-    else
-      extension = "raw";
-
-    bool exists = tempFileManager.getTempFile(dst, src, extension);
-
-    if (exists) {
-      delete candidate;
-      return NULL;
+        candidate = mgr->newConverter(ext);
+        if (candidate)
+            break;
     }
 
-    FormatSupport::Status ret = candidate->convertStart(src, dst.c_str());
+    return candidate;
+}
+
+FormatSupport *FormatConverter::newConverterStart(const char *src, std::string &dst,
+                                                  FormatSupport::Status *st)
+{
     if (st)
-        *st = ret;
+        *st = FormatSupport::FS_SUCCESS;
 
-    if (ret == FormatSupport::FS_SUCCESS)
-      return candidate;
-    else
-      delete candidate;
-  }
+    FormatSupport *candidate = newConverter(src);
 
-  dst = "";
-  return NULL;
-}
+    if (candidate) {
+        const char *extension;
+        if (candidate->format() == TrackData::WAVE)
+            extension = "wav";
+        else
+            extension = "raw";
 
-bool FormatConverter::canConvert(const char* fn)
-{
-  FormatSupport* c = newConverter(fn);
+        bool exists = tempFileManager.getTempFile(dst, src, extension);
 
-  if (!c)
-    return false;
+        if (exists) {
+            delete candidate;
+            return NULL;
+        }
 
-  delete c;
-  return true;
-}
+        FormatSupport::Status ret = candidate->convertStart(src, dst.c_str());
+        if (st)
+            *st = ret;
 
-const char* FormatConverter::convert(const char* fn,
-                                     FormatSupport::Status* err)
-{
-  *err = FormatSupport::FS_SUCCESS;
-
-  FormatSupport* c = newConverter(fn);
-
-  if (!c)
-    return NULL;
-
-  std::string* file = new std::string;
-  const char* extension;
-  if (c->format() == TrackData::WAVE)
-      extension = "wav";
-  else
-      extension = "raw";
-
-  bool exists = tempFileManager.getTempFile(*file, fn, extension);
-
-  if (!exists) {
-    log_message(2, "Decoding file \"%s\"", fn);
-    *err = c->convert(fn, file->c_str());
-
-    if (*err != FormatSupport::FS_SUCCESS)
-      return NULL;
-    
-    tempFiles_.push_front(file);
-  }
-
-  return file->c_str();
-}
-
-int FormatConverter::supportedExtensions(std::list<std::string>& list)
-{
-  int num = 0;
-
-  std::list<FormatSupportManager*>::iterator i = managers_.begin();
-  for (;i != managers_.end(); i++) {
-    num += (*i)->supportedExtensions(list);
-  }
-  return num;
-}
-
-FormatSupport::Status FormatConverter::convert(Toc* toc)
-{
-  FormatSupport::Status err;
-
-  std::set<std::string> set;
-
-  toc->collectFiles(set);
-
-  std::set<std::string>::iterator i = set.begin();
-
-  for (; i != set.end(); i++) {
-
-    const char* dst = convert((*i).c_str(), &err);
-    if (!dst && err != FormatSupport::FS_SUCCESS)
-      return FormatSupport::FS_OTHER_ERROR;
-
-    if (dst)
-      toc->markFileConversion((*i).c_str(), dst);
-  }
-
-  return FormatSupport::FS_SUCCESS;
-}
-
-bool parseM3u(const char* m3ufile, std::list<std::string>& list)
-{
-  // You'd think STL would be smart enough to NOT have to use a stack
-  // buffer like this. STL is so poorly designed there's no any other
-  // way.
-  char buffer[1024];
-
-  std::string dir = m3ufile;
-  dir = dir.substr(0, dir.rfind("/"));
-  dir += "/";
-
-  std::ifstream file(m3ufile, std::ios::in);
-
-  if (!file.is_open())
-    return false;
-
-  while (!file.eof()) {
-    file.getline(buffer, 1024);
-
-    std::string e = buffer;
-    if (!e.empty() && (*(e.begin())) != '#') {
-
-      if (e[0] != '/')
-        e = dir + e;
-
-      int n;
-      while ((n = e.find('\r')) >= 0)
-        e.erase(n, 1);
-      while ((n = e.find('\n')) >= 0)
-        e.erase(n, 1);
-
-      list.push_back(e);
+        if (ret == FormatSupport::FS_SUCCESS)
+            return candidate;
+        else
+            delete candidate;
     }
-  }
 
-  file.close();
-  return true;
+    dst = "";
+    return NULL;
+}
+
+bool FormatConverter::canConvert(const char *fn)
+{
+    FormatSupport *c = newConverter(fn);
+
+    if (!c)
+        return false;
+
+    delete c;
+    return true;
+}
+
+const char *FormatConverter::convert(const char *fn, FormatSupport::Status *err)
+{
+    *err = FormatSupport::FS_SUCCESS;
+
+    FormatSupport *c = newConverter(fn);
+
+    if (!c)
+        return NULL;
+
+    std::string *file = new std::string;
+    const char *extension;
+    if (c->format() == TrackData::WAVE)
+        extension = "wav";
+    else
+        extension = "raw";
+
+    bool exists = tempFileManager.getTempFile(*file, fn, extension);
+
+    if (!exists) {
+        log_message(2, "Decoding file \"%s\"", fn);
+        *err = c->convert(fn, file->c_str());
+
+        if (*err != FormatSupport::FS_SUCCESS)
+            return NULL;
+
+        tempFiles_.push_front(file);
+    }
+
+    return file->c_str();
+}
+
+int FormatConverter::supportedExtensions(std::list<std::string> &list)
+{
+    int num = 0;
+
+    std::list<FormatSupportManager *>::iterator i = managers_.begin();
+    for (; i != managers_.end(); i++) {
+        num += (*i)->supportedExtensions(list);
+    }
+    return num;
+}
+
+FormatSupport::Status FormatConverter::convert(Toc *toc)
+{
+    FormatSupport::Status err;
+
+    std::set<std::string> set;
+
+    toc->collectFiles(set);
+
+    std::set<std::string>::iterator i = set.begin();
+
+    for (; i != set.end(); i++) {
+
+        const char *dst = convert((*i).c_str(), &err);
+        if (!dst && err != FormatSupport::FS_SUCCESS)
+            return FormatSupport::FS_OTHER_ERROR;
+
+        if (dst)
+            toc->markFileConversion((*i).c_str(), dst);
+    }
+
+    return FormatSupport::FS_SUCCESS;
+}
+
+bool parseM3u(const char *m3ufile, std::list<std::string> &list)
+{
+    // You'd think STL would be smart enough to NOT have to use a stack
+    // buffer like this. STL is so poorly designed there's no any other
+    // way.
+    char buffer[1024];
+
+    std::string dir = m3ufile;
+    dir = dir.substr(0, dir.rfind("/"));
+    dir += "/";
+
+    std::ifstream file(m3ufile, std::ios::in);
+
+    if (!file.is_open())
+        return false;
+
+    while (!file.eof()) {
+        file.getline(buffer, 1024);
+
+        std::string e = buffer;
+        if (!e.empty() && (*(e.begin())) != '#') {
+
+            if (e[0] != '/')
+                e = dir + e;
+
+            int n;
+            while ((n = e.find('\r')) >= 0)
+                e.erase(n, 1);
+            while ((n = e.find('\n')) >= 0)
+                e.erase(n, 1);
+
+            list.push_back(e);
+        }
+    }
+
+    file.close();
+    return true;
 }
 
 FormatConverter formatConverter;

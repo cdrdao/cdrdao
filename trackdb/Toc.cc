@@ -19,30 +19,30 @@
 
 #include <config.h>
 
-#include <stdio.h>
 #include <assert.h>
-#include <errno.h>
-#include <string.h>
 #include <ctype.h>
+#include <errno.h>
+#include <stdio.h>
+#include <string.h>
 #include <unistd.h>
 
 #include <fstream>
 #include <iostream>
 #include <sstream>
 
-#include "Toc.h"
-#include "util.h"
-#include "log.h"
-#include "TrackDataList.h"
 #include "CdTextItem.h"
 #include "CueParser.h"
 #include "FormatConverter.h"
+#include "Toc.h"
+#include "TrackDataList.h"
+#include "log.h"
+#include "util.h"
 
 using std::string;
 
 #ifdef UNIXWARE
 extern "C" {
-    extern int      strcasecmp(const char *, const char *);
+extern int strcasecmp(const char *, const char *);
 }
 #endif
 
@@ -51,7 +51,8 @@ extern Toc *parseToc(FILE *fp, const char *filename);
 Toc::Toc() : length_(0)
 {
     tocType_ = Type::CD_DA;
-    nofTracks_ = 0; firstTrackNo_ = 0;
+    nofTracks_ = 0;
+    firstTrackNo_ = 0;
     tracks_ = lastTrack_ = NULL;
 
     catalogValid_ = 0;
@@ -74,7 +75,6 @@ Toc::Toc(const Toc &obj) : length_(0), cdtext_(obj.cdtext_)
         append(trun->track);
 }
 
-
 Toc::~Toc()
 {
     TrackEntry *run = tracks_;
@@ -88,7 +88,6 @@ Toc::~Toc()
     }
 }
 
-
 // appends track
 // return: 0: OK
 //         1: first track contains pregap
@@ -96,8 +95,7 @@ int Toc::append(const Track *t)
 {
     if (tracks_ == NULL) {
         tracks_ = lastTrack_ = new TrackEntry;
-    }
-    else {
+    } else {
         lastTrack_->next = new TrackEntry;
         lastTrack_->next->pred = lastTrack_;
         lastTrack_ = lastTrack_->next;
@@ -114,7 +112,7 @@ void Toc::update()
 {
     TrackEntry *run;
     long length = 0; // length of disc in blocks
-    long tlength; // length of single track in blocks
+    long tlength;    // length of single track in blocks
     int tnum;
 
     for (run = tracks_, tnum = 1; run != NULL; run = run->next, tnum++) {
@@ -131,17 +129,15 @@ void Toc::update()
     length_ = Msf(length);
 }
 
-
-
-Toc *Toc::read(const string& filename)
+Toc *Toc::read(const string &filename)
 {
     FILE *fp;
     Toc *ret;
     const char *p;
 
     if ((fp = fopen(filename.c_str(), "r")) == NULL) {
-        log_message(-2, "Cannot open toc file '%s' for reading: %s",
-                    filename.c_str(), strerror(errno));
+        log_message(-2, "Cannot open toc file '%s' for reading: %s", filename.c_str(),
+                    strerror(errno));
         return NULL;
     }
 
@@ -155,15 +151,16 @@ Toc *Toc::read(const string& filename)
     return ret;
 }
 
-bool Toc::resolveFilenames(const char* filename)
+bool Toc::resolveFilenames(const char *filename)
 {
     // Resolve all relative filenames to absoluate paths wrt to the toc
     // file current directory.
     std::string path = filename;
     path = path.substr(0, path.rfind('/'));
-    if (path.empty()) path = ".";
+    if (path.empty())
+        path = ".";
 
-    for (TrackEntry* t = tracks_; t != NULL; t = t->next)
+    for (TrackEntry *t = tracks_; t != NULL; t = t->next)
         if (!t->track->resolveFilename(path.c_str()))
             return false;
 
@@ -174,15 +171,14 @@ bool Toc::resolveFilenames(const char* filename)
 // Return: 0: OK
 //         1: error occured
 
-int Toc::write(const string& filename, bool conversions) const
+int Toc::write(const string &filename, bool conversions) const
 {
     assert(!filename.empty());
 
     std::ofstream out(filename);
 
     if (!out) {
-        log_message(-2, "Cannot open file \"%s\" for writing: %s",
-                    filename.c_str(),
+        log_message(-2, "Cannot open file \"%s\" for writing: %s", filename.c_str(),
                     strerror(errno));
         return 1;
     }
@@ -209,7 +205,7 @@ int Toc::check() const
 
 bool Toc::recomputeLength()
 {
-    for (TrackEntry* t = tracks_; t; t = t->next) {
+    for (TrackEntry *t = tracks_; t; t = t->next) {
         if (!t->track->recomputeLength())
             return false;
     }
@@ -247,7 +243,6 @@ int Toc::catalog(const char *s)
     return 0;
 }
 
-
 const char *Toc::catalog() const
 {
     static char buf[14];
@@ -265,7 +260,7 @@ const char *Toc::catalog() const
 }
 
 // writes contents in TOC file syntax
-void Toc::print(std::ostream &out, PrintParams& params) const
+void Toc::print(std::ostream &out, PrintParams &params) const
 {
     int i;
     TrackEntry *t;
@@ -296,15 +291,15 @@ bool Toc::convertFilesToWav()
     return (status == FormatSupport::FS_SUCCESS);
 }
 
-void Toc::collectFiles(std::set<std::string>& set)
+void Toc::collectFiles(std::set<std::string> &set)
 {
-    for (TrackEntry* t = tracks_; t != NULL; t = t->next)
+    for (TrackEntry *t = tracks_; t != NULL; t = t->next)
         t->track->collectFiles(set);
 }
 
-void Toc::markFileConversion(const char* src, const char* dst)
+void Toc::markFileConversion(const char *src, const char *dst)
 {
-    for (TrackEntry* t = tracks_; t != NULL; t = t->next)
+    for (TrackEntry *t = tracks_; t != NULL; t = t->next)
         t->track->markFileConversion(src, dst);
 }
 
@@ -365,17 +360,14 @@ int Toc::moveTrackMarker(int trackNr, int indexNr, long lba)
         return 2;
     }
 
-    if (indexNr <= 1 &&
-        (act->track->type() != TrackData::AUDIO ||
-         act->track->subChannelType() != TrackData::SUBCHAN_NONE))
+    if (indexNr <= 1 && (act->track->type() != TrackData::AUDIO ||
+                         act->track->subChannelType() != TrackData::SUBCHAN_NONE))
         return 6;
 
-    if ((indexNr == 0 || (indexNr == 1 && act->track->start().lba() == 0)) &&
-        act->pred != NULL &&
+    if ((indexNr == 0 || (indexNr == 1 && act->track->start().lba() == 0)) && act->pred != NULL &&
         (act->pred->track->type() != TrackData::AUDIO ||
          act->track->subChannelType() != TrackData::SUBCHAN_NONE))
         return 6;
-
 
     if (indexNr == 0 && act->track->start().lba() == 0)
         return 2;
@@ -386,8 +378,7 @@ int Toc::moveTrackMarker(int trackNr, int indexNr, long lba)
     if (lba < 0 || lba >= length().lba())
         return 3;
 
-    if ((indexNr == 1 && (act->track->start().lba() > 0 || trackNr == 1)) ||
-        indexNr > 1) {
+    if ((indexNr == 1 && (act->track->start().lba() > 0 || trackNr == 1)) || indexNr > 1) {
         // change track/index position within track
         if (indexNr == 1) {
             if (lba > act->end.lba() - 4 * 75)
@@ -395,8 +386,7 @@ int Toc::moveTrackMarker(int trackNr, int indexNr, long lba)
 
             if (lba <= act->absStart.lba() && trackNr > 1)
                 return 3;
-        }
-        else {
+        } else {
             if (lba - act->absStart.lba() <= 0)
                 return 3;
         }
@@ -407,8 +397,7 @@ int Toc::moveTrackMarker(int trackNr, int indexNr, long lba)
         case 2:
             return 5;
         }
-    }
-    else {
+    } else {
         // move track start position, we need to shift audio data from
         // on track to the other
 
@@ -433,8 +422,7 @@ int Toc::moveTrackMarker(int trackNr, int indexNr, long lba)
 
             if (indexNr == 1)
                 act->track->moveIndex(1, 0); // remove intermediate pre-gap
-        }
-        else if (lba > act->absStart.lba()) {
+        } else if (lba > act->absStart.lba()) {
             // move to the right
 
             if (indexNr == 1) {
@@ -449,8 +437,7 @@ int Toc::moveTrackMarker(int trackNr, int indexNr, long lba)
 
                 // remove intermediate pre-gap
                 act->track->start(Msf(0));
-            }
-            else {
+            } else {
                 // adjust pre-gap
                 if (lba >= act->start.lba())
                     return 5;
@@ -458,11 +445,9 @@ int Toc::moveTrackMarker(int trackNr, int indexNr, long lba)
                 act->track->start(Msf(act->start.lba() - lba));
             }
 
-            dataList =
-                act->track->removeFromStart(Msf(lba - act->absStart.lba()).samples());
+            dataList = act->track->removeFromStart(Msf(lba - act->absStart.lba()).samples());
             act->pred->track->appendTrackData(dataList);
             delete dataList;
-
         }
     }
 
@@ -523,13 +508,11 @@ int Toc::removeTrackMarker(int trackNr, int indexNr)
             return 2; // no pre-gap
 
         act->track->start(Msf(0));
-    }
-    else if (indexNr > 1) {
+    } else if (indexNr > 1) {
         // index increment
         if (act->track->removeIndex(indexNr - 2) != 0)
             return 2;
-    }
-    else if (indexNr == 0) {
+    } else if (indexNr == 0) {
         // remove pre-gap, audio data of pre-gap is appended to previous track
         unsigned long len = act->track->start().samples();
 
@@ -537,11 +520,10 @@ int Toc::removeTrackMarker(int trackNr, int indexNr)
             return 2; // track has no pre-gap
 
         act->track->start(Msf(0));
-        TrackDataList *dataList =  act->track->removeFromStart(len);
+        TrackDataList *dataList = act->track->removeFromStart(len);
         act->pred->track->appendTrackData(dataList);
         delete dataList;
-    }
-    else {
+    } else {
         // index == 1, remove track completely
 
         act->pred->track->appendTrackData(act->track);
@@ -613,9 +595,7 @@ int Toc::addTrackMarker(long lba)
     if (act->end.lba() - lba < 4 * 75)
         return 3;
 
-
-    TrackDataList *dataList =
-        act->track->removeToEnd(Msf(lba - act->absStart.lba()).samples());
+    TrackDataList *dataList = act->track->removeToEnd(Msf(lba - act->absStart.lba()).samples());
 
     Track *t = new Track(act->track->type(), act->track->subChannelType());
     t->appendTrackData(dataList);
@@ -641,7 +621,6 @@ int Toc::addTrackMarker(long lba)
 
     return 0;
 }
-
 
 // Adds pre-gap add given LBA.
 // return: 0: OK
@@ -678,8 +657,7 @@ int Toc::addPregap(long lba)
     if (lba - act->start.lba() < 4 * 75)
         return 3;
 
-    TrackDataList *dataList =
-        act->track->removeToEnd(Msf(lba - act->absStart.lba()).samples());
+    TrackDataList *dataList = act->track->removeToEnd(Msf(lba - act->absStart.lba()).samples());
     act->next->track->prependTrackData(dataList);
     delete dataList;
 
@@ -693,10 +671,10 @@ int Toc::addPregap(long lba)
 
 void Toc::fixLengths()
 {
-    TrackEntry* te;
+    TrackEntry *te;
     int i;
 
-    for (i = 0 , te = tracks_; te; te = te->next, i++) {
+    for (i = 0, te = tracks_; te; te = te->next, i++) {
         printf("%d : Track %d\n", i, te->trackNr);
     }
 }
@@ -720,7 +698,6 @@ void Toc::checkConsistency()
     if (cnt != nofTracks_)
         log_message(-3, "Toc::checkConsistency: wrong sub track counter.");
 }
-
 
 // Appends a track with given audio data. 'start' is filled with
 // first LBA of new track, 'end' is filled with last LBA + 1 of new track.
@@ -767,7 +744,6 @@ int Toc::appendTrackData(const TrackDataList *list, long *start, long *end)
     if (lastTrack_->track->subChannelType() != TrackData::SUBCHAN_NONE)
         return 1;
 
-
     *start = length().lba();
 
     for (run = list->first(); run != NULL; run = list->next())
@@ -786,8 +762,7 @@ int Toc::appendTrackData(const TrackDataList *list, long *start, long *end)
 //         1: samples range covers more than one track
 //         2: cannot modify a data track
 //         3: illegal 'start' position
-int Toc::removeTrackData(unsigned long start, unsigned long end,
-			 TrackDataList **list)
+int Toc::removeTrackData(unsigned long start, unsigned long end, TrackDataList **list)
 {
     TrackEntry *tent = findTrack(start);
 
@@ -826,7 +801,6 @@ int Toc::insertTrackData(unsigned long pos, const TrackDataList *list)
     if (tent != NULL && tent->track->subChannelType() != TrackData::SUBCHAN_NONE)
         return 1;
 
-
     if (tent != NULL) {
         tent->track->insertTrackData(pos - tent->absStart.samples(), list);
 
@@ -834,15 +808,12 @@ int Toc::insertTrackData(unsigned long pos, const TrackDataList *list)
         checkConsistency();
 
         return 0;
-    }
-    else {
+    } else {
         long start, end;
 
         return appendTrackData(list, &start, &end);
     }
-
 }
-
 
 // Returns mode that should be used for lead-in. The mode of first track's
 // first sub-track is used.
@@ -902,8 +873,7 @@ void Toc::addCdTextItem(int trackNr, CdTextItem *item)
 
     if (trackNr == 0) {
         cdtext_.add(item);
-    }
-    else {
+    } else {
         item->trackNr(trackNr);
         TrackEntry *track = findTrackByNumber(trackNr);
 
@@ -922,8 +892,7 @@ void Toc::removeCdTextItem(int trackNr, CdTextItem::PackType type, int blockNr)
 
     if (trackNr == 0) {
         cdtext_.remove(type, blockNr);
-    }
-    else {
+    } else {
         TrackEntry *track = findTrackByNumber(trackNr);
 
         if (track == NULL) {
@@ -948,8 +917,7 @@ int Toc::existCdTextBlock(int blockNr) const
     return 0;
 }
 
-const CdTextItem *Toc::getCdTextItem(int trackNr, int blockNr,
-				     CdTextItem::PackType type) const
+const CdTextItem *Toc::getCdTextItem(int trackNr, int blockNr, CdTextItem::PackType type) const
 {
     if (trackNr == 0) {
         return cdtext_.getPack(blockNr, type);
@@ -966,7 +934,6 @@ const CdTextItem *Toc::getCdTextItem(int trackNr, int blockNr,
 void Toc::cdTextLanguage(int blockNr, int lang)
 {
     cdtext_.language(blockNr, lang);
-
 }
 
 int Toc::cdTextLanguage(int blockNr) const
@@ -987,11 +954,10 @@ void Toc::enforceTextEncoding()
 {
     cdtext_.enforceEncoding(&cdtext_);
 
-    for (auto run = tracks_; run; run = run ->next) {
+    for (auto run = tracks_; run; run = run->next) {
         run->track->cdtext_.enforceEncoding(&cdtext_);
     }
 }
-
 
 // Check the consistency of the CD-TEXT data.
 // Return: 0: OK
@@ -1019,9 +985,13 @@ int Toc::checkCdTextData() const
 
             if (l - 1 != last) {
                 if (last == -1)
-                    log_message(-2, "CD-TEXT: Language number %d: Language numbers must start at 0.", l);
+                    log_message(
+                        -2, "CD-TEXT: Language number %d: Language numbers must start at 0.", l);
                 else
-                    log_message(-2, "CD-TEXT: Language number %d: Language numbers are not continuously used.", l);
+                    log_message(
+                        -2,
+                        "CD-TEXT: Language number %d: Language numbers are not continuously used.",
+                        l);
 
                 if (err < 2)
                     err = 2;
@@ -1037,7 +1007,6 @@ int Toc::checkCdTextData() const
         if (err < 1)
             err = 1;
     }
-
 
     for (l = 0, last = -1; l <= 7; l++) {
         if (cdTextLanguage(l) < 0)
@@ -1075,64 +1044,61 @@ int Toc::checkCdTextData() const
         }
 
         if (titleCnt > 0 && titleCnt != nofTracks_ + 1) {
-            log_message(-2, "CD-TEXT: Language %d: %s field not defined for all tracks or disk.",
-                        l, CdTextItem::packType2String(1, CdTextItem::PackType::TITLE));
+            log_message(-2, "CD-TEXT: Language %d: %s field not defined for all tracks or disk.", l,
+                        CdTextItem::packType2String(1, CdTextItem::PackType::TITLE));
             if (err < 2)
                 err = 2;
-        }
-        else if (titleCnt == 0) {
-            log_message(-1, "CD-TEXT: Language %d: %s field is not defined.",
-                        l, CdTextItem::packType2String(1, CdTextItem::PackType::TITLE));
+        } else if (titleCnt == 0) {
+            log_message(-1, "CD-TEXT: Language %d: %s field is not defined.", l,
+                        CdTextItem::packType2String(1, CdTextItem::PackType::TITLE));
             if (err < 1)
                 err = 1;
         }
 
         if (performerCnt > 0 && performerCnt != nofTracks_ + 1) {
-            log_message(-2, "CD-TEXT: Language %d: %s field not defined for all tracks or disk.",
-                        l, CdTextItem::packType2String(1, CdTextItem::PackType::PERFORMER));
+            log_message(-2, "CD-TEXT: Language %d: %s field not defined for all tracks or disk.", l,
+                        CdTextItem::packType2String(1, CdTextItem::PackType::PERFORMER));
             if (err < 2)
                 err = 2;
-        }
-        else if (performerCnt == 0) {
-            log_message(-1, "CD-TEXT: Language %d: %s field is not defined.",
-                        l, CdTextItem::packType2String(1, CdTextItem::PackType::PERFORMER));
+        } else if (performerCnt == 0) {
+            log_message(-1, "CD-TEXT: Language %d: %s field is not defined.", l,
+                        CdTextItem::packType2String(1, CdTextItem::PackType::PERFORMER));
             if (err < 1)
                 err = 1;
         }
 
         if (songwriterCnt > 0 && songwriterCnt != nofTracks_ + 1) {
-            log_message(-2, "CD-TEXT: Language %d: %s field not defined for all tracks or disk.",
-                        l, CdTextItem::packType2String(1, CdTextItem::PackType::SONGWRITER));
+            log_message(-2, "CD-TEXT: Language %d: %s field not defined for all tracks or disk.", l,
+                        CdTextItem::packType2String(1, CdTextItem::PackType::SONGWRITER));
             if (err < 2)
                 err = 2;
         }
 
         if (composerCnt > 0 && composerCnt != nofTracks_ + 1) {
-            log_message(-2, "CD-TEXT: Language %d: %s field not defined for all tracks or disk.",
-                        l, CdTextItem::packType2String(1, CdTextItem::PackType::COMPOSER));
+            log_message(-2, "CD-TEXT: Language %d: %s field not defined for all tracks or disk.", l,
+                        CdTextItem::packType2String(1, CdTextItem::PackType::COMPOSER));
             if (err < 2)
                 err = 2;
         }
 
         if (arrangerCnt > 0 && arrangerCnt != nofTracks_ + 1) {
-            log_message(-2, "CD-TEXT: Language %d: %s field not defined for all tracks or disk.",
-                        l, CdTextItem::packType2String(1, CdTextItem::PackType::ARRANGER));
+            log_message(-2, "CD-TEXT: Language %d: %s field not defined for all tracks or disk.", l,
+                        CdTextItem::packType2String(1, CdTextItem::PackType::ARRANGER));
             if (err < 2)
                 err = 2;
         }
 
         if (messageCnt > 0 && messageCnt != nofTracks_ + 1) {
-            log_message(-2, "CD-TEXT: Language %d: %s field not defined for all tracks or disk.",
-                        l, CdTextItem::packType2String(1, CdTextItem::PackType::MESSAGE));
+            log_message(-2, "CD-TEXT: Language %d: %s field not defined for all tracks or disk.", l,
+                        CdTextItem::packType2String(1, CdTextItem::PackType::MESSAGE));
             if (err < 2)
                 err = 2;
         }
 
         if ((isrcCnt > 0 && isrcCnt != nofTracks_) ||
-            (isrcCnt == 0 &&
-             cdtext_.getPack(l, CdTextItem::PackType::UPCEAN_ISRC) != NULL)) {
-            log_message(-2, "CD-TEXT: Language %d: %s field not defined for all tracks.",
-                        l, CdTextItem::packType2String(1, CdTextItem::PackType::UPCEAN_ISRC));
+            (isrcCnt == 0 && cdtext_.getPack(l, CdTextItem::PackType::UPCEAN_ISRC) != NULL)) {
+            log_message(-2, "CD-TEXT: Language %d: %s field not defined for all tracks.", l,
+                        CdTextItem::packType2String(1, CdTextItem::PackType::UPCEAN_ISRC));
             if (err < 2)
                 err = 2;
         }
@@ -1141,9 +1107,7 @@ int Toc::checkCdTextData() const
     return err;
 }
 
-
-void Toc::trackSummary(int *nofAudioTracks, int *nofMode1Tracks,
-		       int *nofMode2Tracks) const
+void Toc::trackSummary(int *nofAudioTracks, int *nofMode1Tracks, int *nofMode2Tracks) const
 {
     TrackEntry *run;
 
@@ -1214,8 +1178,7 @@ const Track *TrackIterator::find(int trackNr, Msf &start, Msf &end)
     return NULL;
 }
 
-const Track *TrackIterator::find(unsigned long sample, Msf &start, Msf &end,
-                                 int *trackNr)
+const Track *TrackIterator::find(unsigned long sample, Msf &start, Msf &end, int *trackNr)
 {
     Track *t;
 
@@ -1257,8 +1220,7 @@ const Track *TrackIterator::next(Msf &start, Msf &end)
         t = iterator_->track;
         iterator_ = iterator_->next;
         return t;
-    }
-    else {
+    } else {
         return NULL;
     }
 }
@@ -1282,7 +1244,7 @@ TocReader::TocReader(const Toc *t) : reader(NULL)
     open_ = 0;
 }
 
-TocReader::~TocReader ()
+TocReader::~TocReader()
 {
     if (open_) {
         closeData();
@@ -1434,7 +1396,7 @@ long TocReader::readSamples(Sample *buf, long len)
     }
 
     do {
-        n = reader.readSamples(buf + nread , len);
+        n = reader.readSamples(buf + nread, len);
 
         if (n < 0)
             return -1;
@@ -1460,7 +1422,7 @@ long TocReader::readSamples(Sample *buf, long len)
     return nread;
 }
 
-const char* TocReader::curFilename()
+const char *TocReader::curFilename()
 {
     return reader.curFilename();
 }

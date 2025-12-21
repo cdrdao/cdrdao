@@ -64,8 +64,7 @@ void blockProcessMonitorSignals()
 
 void unblockProcessMonitorSignals()
 {
-    if (PROCESS_MONITOR_SIGNAL_BLOCKED > 0)
-    {
+    if (PROCESS_MONITOR_SIGNAL_BLOCKED > 0) {
         PROCESS_MONITOR_SIGNAL_BLOCKED--;
 
         if (PROCESS_MONITOR_SIGNAL_BLOCKED == 0)
@@ -87,12 +86,11 @@ void GCDMasterApplication::on_activate()
     appwindow->present();
 }
 
-void GCDMasterApplication::on_open(const Gio::Application::type_vec_files &files, const Glib::ustring &)
+void GCDMasterApplication::on_open(const Gio::Application::type_vec_files &files,
+                                   const Glib::ustring &)
 {
-    for (const auto &file : files)
-    {
-        if (file->is_native())
-        {
+    for (const auto &file : files) {
+        if (file->is_native()) {
             auto window = new GCDMaster();
             window->openNewProject(file->get_path());
             add_window(*window);
@@ -131,28 +129,24 @@ int main(int argc, char *argv[])
     PROGRESS_POOL = new ProgressDialogPool;
 
     Glib::RefPtr<Gtk::Builder> builder;
-    try
-    {
+    try {
         std::string gladedir = CDRDAO_GLADEDIR;
         auto override = getenv("CDRDAO_HOME");
-        if (override)
-        {
+        if (override) {
             gladedir = override;
             gladedir += "/gcdmaster/glade";
         }
         gladedir += "/Preferences.glade";
         builder = Gtk::Builder::create_from_file(gladedir.c_str());
-    }
-    catch (std::exception &ex)
-    {
+    } catch (std::exception &ex) {
         std::cerr << ex.what() << std::endl;
         exit(1);
     }
 
     builder->get_widget_derived("PrefDialog", preferencesDialog);
-    if (!preferencesDialog)
-    {
-        std::cerr << "Unable to create Preferences dialog from glade file\n" CDRDAO_GLADEDIR "/Preferences.glade"
+    if (!preferencesDialog) {
+        std::cerr << "Unable to create Preferences dialog from glade file\n" CDRDAO_GLADEDIR
+                     "/Preferences.glade"
                   << std::endl;
         exit(1);
     }

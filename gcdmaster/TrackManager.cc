@@ -64,8 +64,7 @@ void TrackManager::clear()
 {
     EntryList *next;
 
-    while (entries_ != NULL)
-    {
+    while (entries_ != NULL) {
         next = entries_->next;
         delete entries_->ent;
         delete entries_;
@@ -110,8 +109,7 @@ void TrackManager::select(const Entry *ent)
 {
     EntryList *run;
 
-    for (run = entries_; run != NULL; run = run->next)
-    {
+    for (run = entries_; run != NULL; run = run->next) {
         if (run->ent == ent)
             run->ent->selected = 1;
         else
@@ -123,8 +121,7 @@ void TrackManager::select(int trackNr, int indexNr)
 {
     EntryList *run;
 
-    for (run = entries_; run != NULL; run = run->next)
-    {
+    for (run = entries_; run != NULL; run = run->next) {
         if (run->ent->trackNr == trackNr && run->ent->indexNr == indexNr)
             run->ent->selected = 1;
         else
@@ -137,11 +134,9 @@ const TrackManager::Entry *TrackManager::pick(gint x, gint *stopXMin, gint *stop
     EntryList *run;
     Entry *pred;
 
-    for (run = entries_, pred = NULL; run != NULL; pred = run->ent, run = run->next)
-    {
-        if ((run->ent->indexNr == 1 || run->ent->selected) && run->ent->extend == 0 && run->ent->drawn &&
-            x >= run->ent->xpos && x < run->ent->xpos + trackMarkerWidth_)
-        {
+    for (run = entries_, pred = NULL; run != NULL; pred = run->ent, run = run->next) {
+        if ((run->ent->indexNr == 1 || run->ent->selected) && run->ent->extend == 0 &&
+            run->ent->drawn && x >= run->ent->xpos && x < run->ent->xpos + trackMarkerWidth_) {
 
             if (stopXMin != NULL)
                 *stopXMin = pred != NULL ? pred->xpos + 1 : 0;
@@ -153,11 +148,9 @@ const TrackManager::Entry *TrackManager::pick(gint x, gint *stopXMin, gint *stop
         }
     }
 
-    for (run = entries_, pred = NULL; run != NULL; pred = run->ent, run = run->next)
-    {
-        if (run->ent->indexNr != 1 && run->ent->extend == 0 && run->ent->drawn && x >= run->ent->xpos &&
-            x < run->ent->xpos + trackMarkerWidth_)
-        {
+    for (run = entries_, pred = NULL; run != NULL; pred = run->ent, run = run->next) {
+        if (run->ent->indexNr != 1 && run->ent->extend == 0 && run->ent->drawn &&
+            x >= run->ent->xpos && x < run->ent->xpos + trackMarkerWidth_) {
 
             if (stopXMin != NULL)
                 *stopXMin = pred != NULL ? pred->xpos : 0;
@@ -199,35 +192,26 @@ void TrackManager::update(const Toc *toc, unsigned long start, unsigned long end
 
     nindex = t->nofIndices();
 
-    if (startLba < tstart.lba())
-    {
+    if (startLba < tstart.lba()) {
         // 'start' is in pre-gap of track
         ent = new Entry(t, trackNr, 0, 0);
 
         markStart = tstart.lba() - t->start().lba();
         index = 0;
-    }
-    else
-    {
-        if (nindex == 0 || startLba <= tstart.lba() + t->getIndex(0).lba())
-        {
+    } else {
+        if (nindex == 0 || startLba <= tstart.lba() + t->getIndex(0).lba()) {
             markStart = tstart.lba();
             index = 1;
-        }
-        else
-        {
-            for (index = 3; index - 2 < nindex; index++)
-            {
+        } else {
+            for (index = 3; index - 2 < nindex; index++) {
                 if (startLba >= tstart.lba() + t->getIndex(index - 3).lba() &&
-                    startLba < tstart.lba() + t->getIndex(index - 2).lba())
-                {
+                    startLba < tstart.lba() + t->getIndex(index - 2).lba()) {
                     markStart = tstart.lba() + t->getIndex(index - 3).lba();
                     index--;
                     break;
                 }
             }
-            if (markStart == -1)
-            {
+            if (markStart == -1) {
                 markStart = tstart.lba() + t->getIndex(nindex - 1).lba();
                 index = nindex + 1;
             }
@@ -247,20 +231,18 @@ void TrackManager::update(const Toc *toc, unsigned long start, unsigned long end
 
     index++;
 
-    for (; index - 2 < nindex; index++)
-    {
+    for (; index - 2 < nindex; index++) {
         if (tstart.lba() + t->getIndex(index - 2).lba() > endLba)
             break;
 
-        append(new Entry(t, trackNr, index, lba2pixel(tstart.lba() + t->getIndex(index - 2).lba())));
+        append(
+            new Entry(t, trackNr, index, lba2pixel(tstart.lba() + t->getIndex(index - 2).lba())));
     }
 
-    while ((t = itr.next(tstart, tend)) != NULL)
-    {
+    while ((t = itr.next(tstart, tend)) != NULL) {
         trackNr++;
 
-        if (t->start().lba() != 0)
-        {
+        if (t->start().lba() != 0) {
             if (tstart.lba() - t->start().lba() > endLba)
                 break;
 
@@ -276,14 +258,13 @@ void TrackManager::update(const Toc *toc, unsigned long start, unsigned long end
 
         nindex = t->nofIndices();
 
-        for (index = 0; index < nindex; index++)
-        {
-            if (tstart.lba() + t->getIndex(index).lba() > endLba)
-            {
+        for (index = 0; index < nindex; index++) {
+            if (tstart.lba() + t->getIndex(index).lba() > endLba) {
                 last = 1;
                 break;
             }
-            append(new Entry(t, trackNr, index + 2, lba2pixel(tstart.lba() + t->getIndex(index).lba())));
+            append(new Entry(t, trackNr, index + 2,
+                             lba2pixel(tstart.lba() + t->getIndex(index).lba())));
         }
 
         if (last)

@@ -50,16 +50,14 @@ class CdTextDialog : public Gtk::Dialog
     Gtk::Button *applyButton_;
     Gtk::Notebook *languages_;
 
-    struct TableEntry
-    {
+    struct TableEntry {
         Gtk::Entry *performer;
         Gtk::Entry *title;
         Gtk::Label *label;
         Gtk::HBox *hbox;
     };
 
-    struct Language
-    {
+    struct Language {
         Gtk::Grid *table;
         Gtk::Entry *performer;
         Gtk::Entry *title;

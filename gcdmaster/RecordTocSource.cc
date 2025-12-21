@@ -83,8 +83,7 @@ void RecordTocSource::start()
 
 void RecordTocSource::stop()
 {
-    if (active_)
-    {
+    if (active_) {
         hide();
         active_ = false;
     }
@@ -100,23 +99,18 @@ void RecordTocSource::update(unsigned long level, TocEdit *tedit)
     if (!active_)
         return;
 
-    if (tocEdit_ != tedit)
-    {
+    if (tocEdit_ != tedit) {
         level = UPD_ALL;
         tocEdit_ = tedit;
     }
 
-    if (tocEdit_ == NULL)
-    {
+    if (tocEdit_ == NULL) {
         projectLabel_.set_text("");
         tocTypeLabel_.set_text("");
         nofTracksLabel_.set_text("");
         tocLengthLabel_.set_text("");
-    }
-    else
-    {
-        if (level & UPD_TOC_DATA)
-        {
+    } else {
+        if (level & UPD_TOC_DATA) {
             char label[256];
             char buf[50];
             const Toc *toc = tocEdit_->toc();
@@ -128,7 +122,8 @@ void RecordTocSource::update(unsigned long level, TocEdit *tedit)
             snprintf(label, sizeof(label), "%d", toc->nofTracks());
             nofTracksLabel_.set_text(label);
 
-            snprintf(buf, sizeof(buf), "%d:%02d:%02d", toc->length().min(), toc->length().sec(), toc->length().frac());
+            snprintf(buf, sizeof(buf), "%d:%02d:%02d", toc->length().min(), toc->length().sec(),
+                     toc->length().frac());
             tocLengthLabel_.set_text(buf);
         }
     }

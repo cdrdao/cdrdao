@@ -28,8 +28,7 @@ class TocEditView;
 class AddSilenceDialog : public Gtk::Dialog
 {
   public:
-    enum Mode
-    {
+    enum Mode {
         M_APPEND,
         M_INSERT
     };

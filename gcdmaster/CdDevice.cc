@@ -52,8 +52,9 @@
 CdDevice *CdDevice::DEVICE_LIST_ = NULL;
 
 const char *CdDevice::DRIVER_NAMES_[DRIVER_IDS] = {
-    "Undefined",   "cdd2600",     "generic-mmc", "generic-mmc-raw", "plextor", "plextor-scan", "ricoh-mp6200",
-    "sony-cdu920", "sony-cdu948", "taiyo-yuden", "teac-cdr55",      "toshiba", "yamaha-cdr10x"};
+    "Undefined",    "cdd2600",      "generic-mmc",  "generic-mmc-raw", "plextor",
+    "plextor-scan", "ricoh-mp6200", "sony-cdu920",  "sony-cdu948",     "taiyo-yuden",
+    "teac-cdr55",   "toshiba",      "yamaha-cdr10x"};
 
 CdDevice::CdDevice(const char *dev, const char *vendor, const char *product)
 {
@@ -109,8 +110,7 @@ Glib::ustring CdDevice::settingString() const
     s += product_;
     s += "',";
 
-    switch (deviceType_)
-    {
+    switch (deviceType_) {
     case CD_R:
         s += "CD_R";
         break;
@@ -157,19 +157,15 @@ int CdDevice::autoSelectDriver()
 
     driverName = CdrDriver::selectDriver(1, vendor_.c_str(), product_.c_str(), &options);
 
-    if (driverName)
-    {
+    if (driverName) {
         driverId_ = driverName2Id(driverName);
         driverOptions_ = options;
-    }
-    else
-    {
+    } else {
         cd_page_2a *p2a;
 
         ScsiIf *sif = new ScsiIf(dev_.c_str());
 
-        if (sif && sif->init() == 0 && (p2a = sif->checkMmc()))
-        {
+        if (sif && sif->init() == 0 && (p2a = sif->checkMmc())) {
 
             driverId_ = driverName2Id("generic-mmc");
             if (p2a->cd_r_read)
@@ -178,9 +174,7 @@ int CdDevice::autoSelectDriver()
                 deviceType_ = CD_R;
             if (p2a->cd_rw_write)
                 deviceType_ = CD_RW;
-        }
-        else
-        {
+        } else {
             driverId_ = DRIVER_ID_DEFAULT;
             driverOptions_ = 0;
         }
@@ -195,10 +189,8 @@ int CdDevice::updateStatus()
 {
     Status newStatus = status_;
 
-    if (process_ != NULL)
-    {
-        if (process_->exited())
-        {
+    if (process_ != NULL) {
+        if (process_->exited()) {
             newStatus = DEV_UNKNOWN;
             exitStatus_ = process_->exitStatus();
 
@@ -207,23 +199,20 @@ int CdDevice::updateStatus()
             PROCESS_MONITOR->remove(process_);
             process_ = NULL;
 
-            if (slaveDevice_ != NULL)
-            {
+            if (slaveDevice_ != NULL) {
                 slaveDevice_->status(DEV_UNKNOWN);
                 slaveDevice_ = NULL;
             }
         }
     }
 
-    if (status_ == DEV_READY || status_ == DEV_BUSY || status_ == DEV_NO_DISK || status_ == DEV_UNKNOWN)
-    {
+    if (status_ == DEV_READY || status_ == DEV_BUSY || status_ == DEV_NO_DISK ||
+        status_ == DEV_UNKNOWN) {
         if (scsiIf_ == NULL)
             createScsiIf();
 
-        if (scsiIf_ != NULL)
-        {
-            switch (scsiIf_->testUnitReady())
-            {
+        if (scsiIf_ != NULL) {
+            switch (scsiIf_->testUnitReady()) {
             case 0:
                 newStatus = DEV_READY;
                 break;
@@ -238,15 +227,12 @@ int CdDevice::updateStatus()
                 newStatus = DEV_BUSY;
                 break;
             }
-        }
-        else
-        {
+        } else {
             newStatus = DEV_FAULT;
         }
     }
 
-    if (newStatus != status_)
-    {
+    if (newStatus != status_) {
         status_ = newStatus;
         return 1;
     }
@@ -271,31 +257,24 @@ bool CdDevice::updateProgress(Glib::IOCondition cond, int fd)
     FD_ZERO(&fds);
     FD_SET(fd, &fds);
 
-    while (select(fd + 1, &fds, NULL, NULL, &timeout) > 0 && FD_ISSET(fd, &fds))
-    {
+    while (select(fd + 1, &fds, NULL, NULL, &timeout) > 0 && FD_ISSET(fd, &fds)) {
         FD_ZERO(&fds);
         FD_SET(fd, &fds);
 
         state = 0;
 
-        while (state < 4)
-        {
-            if (read(fd, buf, 1) != 1)
-            {
+        while (state < 4) {
+            if (read(fd, buf, 1) != 1) {
                 // message(-2, "Reading of msg sync failed.");
                 return false;
             }
 
-            if (buf[0] == msgSync[state])
-            {
+            if (buf[0] == msgSync[state]) {
                 state++;
-            }
-            else
-            {
+            } else {
                 state = 0;
 
-                if (buf[0] == msgSync[state])
-                {
+                if (buf[0] == msgSync[state]) {
                     state++;
                 }
             }
@@ -304,11 +283,10 @@ bool CdDevice::updateProgress(Glib::IOCondition cond, int fd)
         ProgressMsg msg;
 
         int msgsize = read(fd, (char *)&msg, sizeof(msg));
-        if (msgsize >= PSGMSG_MINSIZE)
-        {
-            if (msg.status >= PGSMSG_MIN && msg.status <= PGSMSG_MAX && msg.track >= 0 && msg.totalProgress >= 0 &&
-                msg.totalProgress <= 1000 && msg.bufferFillRate >= 0 && msg.bufferFillRate <= 100)
-            {
+        if (msgsize >= PSGMSG_MINSIZE) {
+            if (msg.status >= PGSMSG_MIN && msg.status <= PGSMSG_MAX && msg.track >= 0 &&
+                msg.totalProgress >= 0 && msg.totalProgress <= 1000 && msg.bufferFillRate >= 0 &&
+                msg.bufferFillRate <= 100) {
                 progressStatus_ = msg.status;
                 progressTotalTracks_ = msg.totalTracks;
                 progressTrack_ = msg.track;
@@ -322,9 +300,7 @@ bool CdDevice::updateProgress(Glib::IOCondition cond, int fd)
 
                 progressStatusChanged_ = 1;
             }
-        }
-        else
-        {
+        } else {
             log_message(-1, _("Reading of progress message failed."));
         }
     }
@@ -362,8 +338,7 @@ bool CdDevice::ejectCd(bool load)
     if (!scsiIf_)
         createScsiIf();
 
-    if (scsiIf_)
-    {
+    if (scsiIf_) {
         CdrDriver *driver = CdrDriver::createDriver(driverName(driverId_), driverOptions_, scsiIf_);
 
         int ret = driver->loadUnload((load ? 0 : 1));
@@ -376,8 +351,8 @@ bool CdDevice::ejectCd(bool load)
 
 // Starts a 'cdrdao' for recording given toc. Returns false if an
 // error occured and the process was not successfully launched.
-bool CdDevice::recordDao(Gtk::Window &parent, TocEdit *tocEdit, int simulate, int multiSession, int speed, int eject,
-                         int reload, int buffer, int overburn)
+bool CdDevice::recordDao(Gtk::Window &parent, TocEdit *tocEdit, int simulate, int multiSession,
+                         int speed, int eject, int reload, int buffer, int overburn)
 {
     std::string tocFileName;
     const char *args[30];
@@ -389,7 +364,8 @@ bool CdDevice::recordDao(Gtk::Window &parent, TocEdit *tocEdit, int simulate, in
     char bufferbuf[20];
     int remoteFdArgNum = 0;
 
-    if ((status_ != DEV_READY && status_ != DEV_FAULT && status_ != DEV_UNKNOWN) || process_ != NULL)
+    if ((status_ != DEV_READY && status_ != DEV_FAULT && status_ != DEV_UNKNOWN) ||
+        process_ != NULL)
         return false;
 
     // Not ideal, but NO alternatives with C++14.
@@ -399,8 +375,7 @@ bool CdDevice::recordDao(Gtk::Window &parent, TocEdit *tocEdit, int simulate, in
     // Write out temporary toc file containing all the converted wav
     // files (don't want to rely on cdrdao doing the mp3->wav
     // translation, besides it's already been done).
-    if (tocEdit->toc()->write(tocFileName, true != 0))
-    {
+    if (tocEdit->toc()->write(tocFileName, true != 0)) {
         log_message(-2, _("Cannot write temporary toc-file."));
         return false;
     }
@@ -424,8 +399,7 @@ bool CdDevice::recordDao(Gtk::Window &parent, TocEdit *tocEdit, int simulate, in
     if (multiSession)
         args[n++] = "--multi";
 
-    if (speed > 0)
-    {
+    if (speed > 0) {
         snprintf(speedbuf, sizeof(speedbuf), "%d", speed);
         args[n++] = "--speed";
         args[n++] = speedbuf;
@@ -443,15 +417,13 @@ bool CdDevice::recordDao(Gtk::Window &parent, TocEdit *tocEdit, int simulate, in
     args[n++] = "--device";
     args[n++] = (char *)dev_.c_str();
 
-    if (driverId_ > 0)
-    {
+    if (driverId_ > 0) {
         snprintf(drivername, sizeof(drivername), "%s:0x%lx", driverName(driverId_), driverOptions_);
         args[n++] = "--driver";
         args[n++] = drivername;
     }
 
-    if (buffer >= 10)
-    {
+    if (buffer >= 10) {
         snprintf(bufferbuf, sizeof(bufferbuf), "%i", buffer);
         args[n++] = "--buffers";
         args[n++] = bufferbuf;
@@ -472,21 +444,18 @@ bool CdDevice::recordDao(Gtk::Window &parent, TocEdit *tocEdit, int simulate, in
 
     process_ = PROCESS_MONITOR->start(execName.c_str(), args, remoteFdArgNum);
 
-    if (process_ != NULL)
-    {
+    if (process_ != NULL) {
         status_ = DEV_RECORDING;
         action_ = A_RECORD;
 
-        if (process_->commFd() >= 0)
-        {
-            Glib::signal_io().connect(bind(mem_fun(*this, &CdDevice::updateProgress), process_->commFd()),
-                                      process_->commFd(), Glib::IO_IN | Glib::IO_HUP);
+        if (process_->commFd() >= 0) {
+            Glib::signal_io().connect(
+                bind(mem_fun(*this, &CdDevice::updateProgress), process_->commFd()),
+                process_->commFd(), Glib::IO_IN | Glib::IO_HUP);
         }
 
         return true;
-    }
-    else
-    {
+    } else {
         unlink(tocFileName.c_str());
         return false;
     }
@@ -494,16 +463,14 @@ bool CdDevice::recordDao(Gtk::Window &parent, TocEdit *tocEdit, int simulate, in
 
 void CdDevice::abortDaoRecording()
 {
-    if (process_ != NULL && !process_->exited())
-    {
+    if (process_ != NULL && !process_->exited()) {
         PROCESS_MONITOR->stop(process_);
     }
 }
 
 int CdDevice::progressStatusChanged()
 {
-    if (progressStatusChanged_)
-    {
+    if (progressStatusChanged_) {
         progressStatusChanged_ = 0;
         return 1;
     }
@@ -511,8 +478,8 @@ int CdDevice::progressStatusChanged()
     return 0;
 }
 
-void CdDevice::progress(int *status, int *totalTracks, int *track, int *trackProgress, int *totalProgress,
-                        int *bufferFill, int *writerFill) const
+void CdDevice::progress(int *status, int *totalTracks, int *track, int *trackProgress,
+                        int *totalProgress, int *bufferFill, int *writerFill) const
 {
     *status = progressStatus_;
     *totalTracks = progressTotalTracks_;
@@ -526,7 +493,8 @@ void CdDevice::progress(int *status, int *totalTracks, int *track, int *trackPro
 // Starts a 'cdrdao' for reading whole cd.
 // Return: 0: OK, process succesfully launched
 //         1: error occured
-int CdDevice::extractDao(Gtk::Window &parent, const char *tocFileName, int correction, int readSubChanMode)
+int CdDevice::extractDao(Gtk::Window &parent, const char *tocFileName, int correction,
+                         int readSubChanMode)
 {
     const char *args[30];
     int n = 0;
@@ -536,7 +504,8 @@ int CdDevice::extractDao(Gtk::Window &parent, const char *tocFileName, int corre
     char correctionbuf[20];
     int remoteFdArgNum = 0;
 
-    if ((status_ != DEV_READY && status_ != DEV_FAULT && status_ != DEV_UNKNOWN) || process_ != NULL)
+    if ((status_ != DEV_READY && status_ != DEV_FAULT && status_ != DEV_UNKNOWN) ||
+        process_ != NULL)
         return 1;
 
     Glib::ustring execName = configManager->getCdrdaoPath();
@@ -554,8 +523,7 @@ int CdDevice::extractDao(Gtk::Window &parent, const char *tocFileName, int corre
 
     args[n++] = "--read-raw";
 
-    switch (readSubChanMode)
-    {
+    switch (readSubChanMode) {
     case 1:
         args[n++] = "--read-subchan";
         args[n++] = "rw";
@@ -570,8 +538,7 @@ int CdDevice::extractDao(Gtk::Window &parent, const char *tocFileName, int corre
     args[n++] = "--device";
     args[n++] = (char *)dev_.c_str();
 
-    if (driverId_ > 0)
-    {
+    if (driverId_ > 0) {
         snprintf(drivername, sizeof(drivername), "%s:0x%lx", driverName(driverId_), driverOptions_);
         args[n++] = "--driver";
         args[n++] = drivername;
@@ -599,28 +566,24 @@ int CdDevice::extractDao(Gtk::Window &parent, const char *tocFileName, int corre
 
     process_ = PROCESS_MONITOR->start(execName.c_str(), args, remoteFdArgNum);
 
-    if (process_ != NULL)
-    {
+    if (process_ != NULL) {
         status_ = DEV_READING;
         action_ = A_READ;
 
-        if (process_->commFd() >= 0)
-        {
-            Glib::signal_io().connect(bind(mem_fun(*this, &CdDevice::updateProgress), process_->commFd()),
-                                      process_->commFd(), Glib::IO_IN | Glib::IO_PRI | Glib::IO_ERR | Glib::IO_HUP);
+        if (process_->commFd() >= 0) {
+            Glib::signal_io().connect(
+                bind(mem_fun(*this, &CdDevice::updateProgress), process_->commFd()),
+                process_->commFd(), Glib::IO_IN | Glib::IO_PRI | Glib::IO_ERR | Glib::IO_HUP);
         }
         return 0;
-    }
-    else
-    {
+    } else {
         return 1;
     }
 }
 
 void CdDevice::abortDaoReading()
 {
-    if (process_ != NULL && !process_->exited())
-    {
+    if (process_ != NULL && !process_->exited()) {
         PROCESS_MONITOR->stop(process_);
     }
 }
@@ -628,8 +591,9 @@ void CdDevice::abortDaoReading()
 // Starts a 'cdrdao' for duplicating a CD.
 // Return: 0: OK, process succesfully launched
 //         1: error occured
-int CdDevice::duplicateDao(Gtk::Window &parent, int simulate, int multiSession, int speed, int eject, int reload,
-                           int buffer, int onthefly, int correction, int readSubChanMode, CdDevice *readdev)
+int CdDevice::duplicateDao(Gtk::Window &parent, int simulate, int multiSession, int speed,
+                           int eject, int reload, int buffer, int onthefly, int correction,
+                           int readSubChanMode, CdDevice *readdev)
 {
     const char *args[30];
     int n = 0;
@@ -643,10 +607,12 @@ int CdDevice::duplicateDao(Gtk::Window &parent, int simulate, int multiSession, 
     int remoteFdArgNum = 0;
 
     int rdstat = readdev->status();
-    if ((rdstat != DEV_READY && rdstat != DEV_UNKNOWN && rdstat != DEV_FAULT) || readdev->process() != NULL)
+    if ((rdstat != DEV_READY && rdstat != DEV_UNKNOWN && rdstat != DEV_FAULT) ||
+        readdev->process() != NULL)
         return 1;
 
-    if ((status_ != DEV_READY && status_ != DEV_FAULT && status_ != DEV_UNKNOWN) || process_ != NULL)
+    if ((status_ != DEV_READY && status_ != DEV_FAULT && status_ != DEV_UNKNOWN) ||
+        process_ != NULL)
         return 1;
 
     Glib::ustring execName = configManager->getCdrdaoPath();
@@ -672,8 +638,7 @@ int CdDevice::duplicateDao(Gtk::Window &parent, int simulate, int multiSession, 
     args[n++] = "--paranoia-mode";
     args[n++] = correctionbuf;
 
-    if (speed > 0)
-    {
+    if (speed > 0) {
         snprintf(speedbuf, sizeof(speedbuf), "%d", speed);
         args[n++] = "--speed";
         args[n++] = speedbuf;
@@ -688,8 +653,7 @@ int CdDevice::duplicateDao(Gtk::Window &parent, int simulate, int multiSession, 
     if (onthefly)
         args[n++] = "--on-the-fly";
 
-    switch (readSubChanMode)
-    {
+    switch (readSubChanMode) {
     case 1:
         args[n++] = "--read-subchan";
         args[n++] = "rw";
@@ -704,29 +668,25 @@ int CdDevice::duplicateDao(Gtk::Window &parent, int simulate, int multiSession, 
     args[n++] = "--device";
     args[n++] = (char *)dev_.c_str();
 
-    if (driverId_ > 0)
-    {
+    if (driverId_ > 0) {
         snprintf(drivername, sizeof(drivername), "%s:0x%lx", driverName(driverId_), driverOptions_);
         args[n++] = "--driver";
         args[n++] = drivername;
     }
 
-    if (readdev != this)
-    { // reader and write the same, skip source device
+    if (readdev != this) { // reader and write the same, skip source device
 
         args[n++] = "--source-device";
         args[n++] = (char *)readdev->dev();
 
-        if (readdev->driverId() > 0)
-        {
-            snprintf(r_drivername, sizeof(r_drivername), "%s:0x%lx", driverName(readdev->driverId()),
-                     readdev->driverOptions());
+        if (readdev->driverId() > 0) {
+            snprintf(r_drivername, sizeof(r_drivername), "%s:0x%lx",
+                     driverName(readdev->driverId()), readdev->driverOptions());
             args[n++] = "--source-driver";
             args[n++] = r_drivername;
         }
     }
-    if (buffer >= 10)
-    {
+    if (buffer >= 10) {
         snprintf(bufferbuf, sizeof(bufferbuf), "%i", buffer);
         args[n++] = "--buffers";
         args[n++] = bufferbuf;
@@ -745,32 +705,28 @@ int CdDevice::duplicateDao(Gtk::Window &parent, int simulate, int multiSession, 
 
     process_ = PROCESS_MONITOR->start(execName.c_str(), args, remoteFdArgNum);
 
-    if (process_ != NULL)
-    {
+    if (process_ != NULL) {
         slaveDevice_ = readdev;
         slaveDevice_->status(DEV_READING);
         status_ = DEV_RECORDING;
 
         action_ = A_DUPLICATE;
 
-        if (process_->commFd() >= 0)
-        {
-            Glib::signal_io().connect(bind(mem_fun(*this, &CdDevice::updateProgress), process_->commFd()),
-                                      process_->commFd(), Glib::IO_IN | Glib::IO_HUP);
+        if (process_->commFd() >= 0) {
+            Glib::signal_io().connect(
+                bind(mem_fun(*this, &CdDevice::updateProgress), process_->commFd()),
+                process_->commFd(), Glib::IO_IN | Glib::IO_HUP);
         }
 
         return 0;
-    }
-    else
-    {
+    } else {
         return 1;
     }
 }
 
 void CdDevice::abortDaoDuplication()
 {
-    if (process_ != NULL && !process_->exited())
-    {
+    if (process_ != NULL && !process_->exited()) {
         PROCESS_MONITOR->stop(process_);
     }
 }
@@ -788,7 +744,8 @@ int CdDevice::blank(Gtk::Window *parent, int fast, int speed, int eject, int rel
     const char *s;
     int remoteFdArgNum = 0;
 
-    if ((status_ != DEV_READY && status_ != DEV_FAULT && status_ != DEV_UNKNOWN) || process_ != NULL)
+    if ((status_ != DEV_READY && status_ != DEV_FAULT && status_ != DEV_UNKNOWN) ||
+        process_ != NULL)
         return 1;
 
     Glib::ustring execName = configManager->getCdrdaoPath();
@@ -811,8 +768,7 @@ int CdDevice::blank(Gtk::Window *parent, int fast, int speed, int eject, int rel
     else
         args[n++] = "full";
 
-    if (speed > 0)
-    {
+    if (speed > 0) {
         snprintf(speedbuf, sizeof(speedbuf), "%d", speed);
         args[n++] = "--speed";
         args[n++] = speedbuf;
@@ -827,8 +783,7 @@ int CdDevice::blank(Gtk::Window *parent, int fast, int speed, int eject, int rel
     args[n++] = "--device";
     args[n++] = (char *)dev_.c_str();
 
-    if (driverId_ > 0)
-    {
+    if (driverId_ > 0) {
         snprintf(drivername, sizeof(drivername), "%s:0x%lx", driverName(driverId_), driverOptions_);
         args[n++] = "--driver";
         args[n++] = drivername;
@@ -850,28 +805,24 @@ int CdDevice::blank(Gtk::Window *parent, int fast, int speed, int eject, int rel
 
     process_ = PROCESS_MONITOR->start(execName.c_str(), args, remoteFdArgNum);
 
-    if (process_ != NULL)
-    {
+    if (process_ != NULL) {
         status_ = DEV_BLANKING;
         action_ = A_BLANK;
 
-        if (process_->commFd() >= 0)
-        {
-            Glib::signal_io().connect(bind(mem_fun(*this, &CdDevice::updateProgress), process_->commFd()),
-                                      process_->commFd(), Glib::IO_IN | Glib::IO_HUP);
+        if (process_->commFd() >= 0) {
+            Glib::signal_io().connect(
+                bind(mem_fun(*this, &CdDevice::updateProgress), process_->commFd()),
+                process_->commFd(), Glib::IO_IN | Glib::IO_HUP);
         }
         return 0;
-    }
-    else
-    {
+    } else {
         return 1;
     }
 }
 
 void CdDevice::abortBlank()
 {
-    if (process_ != NULL && !process_->exited())
-    {
+    if (process_ != NULL && !process_->exited()) {
         PROCESS_MONITOR->stop(process_);
     }
 }
@@ -886,8 +837,7 @@ void CdDevice::createScsiIf()
     delete scsiIf_;
     scsiIf_ = new ScsiIf(dev_.c_str());
 
-    if (scsiIf_->init() != 0)
-    {
+    if (scsiIf_->init() != 0) {
         delete scsiIf_;
         scsiIf_ = NULL;
         scsiIfInitFailed_ = 1;
@@ -898,8 +848,7 @@ int CdDevice::driverName2Id(const char *driverName)
 {
     int i;
 
-    for (i = 1; i < DRIVER_IDS; i++)
-    {
+    for (i = 1; i < DRIVER_IDS; i++) {
         if (strcmp(DRIVER_NAMES_[i], driverName) == 0)
             return i;
     }
@@ -914,12 +863,9 @@ int CdDevice::maxDriverId()
 
 const char *CdDevice::driverName(int id)
 {
-    if (id >= 0 && id < DRIVER_IDS)
-    {
+    if (id >= 0 && id < DRIVER_IDS) {
         return DRIVER_NAMES_[id];
-    }
-    else
-    {
+    } else {
         return "Undefined";
     }
 }
@@ -928,8 +874,7 @@ const char *CdDevice::status2string(Status s)
 {
     const char *ret = NULL;
 
-    switch (s)
-    {
+    switch (s) {
     case DEV_READY:
         ret = "Ready";
         break;
@@ -966,8 +911,7 @@ const char *CdDevice::deviceType2string(DeviceType t)
 {
     const char *ret = NULL;
 
-    switch (t)
-    {
+    switch (t) {
     case CD_R:
         ret = "CD-R";
         break;
@@ -993,10 +937,8 @@ void CdDevice::importSettings()
     std::vector<Glib::ustring> settingsStrings = configManager->getConfiguredDevices();
     std::vector<Glib::ustring>::iterator i;
 
-    for (i = settingsStrings.begin(); i != settingsStrings.end(); ++i)
-    {
-        if (!i->empty())
-        {
+    for (i = settingsStrings.begin(); i != settingsStrings.end(); ++i) {
+        if (!i->empty()) {
             if ((dev = CdDevice::add(i->c_str())) != NULL)
                 dev->manuallyConfigured(true);
         }
@@ -1012,23 +954,18 @@ void CdDevice::exportSettings()
 
     std::vector<Glib::ustring> settingStrings;
 
-    for (drun = first(), n = 0; drun != NULL; drun = next(drun))
-    {
+    for (drun = first(), n = 0; drun != NULL; drun = next(drun)) {
 
-        if (drun->manuallyConfigured())
-        {
+        if (drun->manuallyConfigured()) {
             settingStrings.push_back(drun->settingString());
 
             n++;
         }
     }
 
-    try
-    {
+    try {
         configManager->setConfiguredDevices(settingStrings);
-    }
-    catch (const Glib::Error &e)
-    {
+    } catch (const Glib::Error &e) {
         std::cerr << e.what() << std::endl;
     }
 }
@@ -1037,21 +974,17 @@ CdDevice *CdDevice::add(const char *dev, const char *vendor, const char *product
 {
     CdDevice *run, *pred, *ent;
 
-    for (pred = NULL, run = DEVICE_LIST_; run != NULL; pred = run, run = run->next_)
-    {
+    for (pred = NULL, run = DEVICE_LIST_; run != NULL; pred = run, run = run->next_) {
         if (strcmp(run->dev(), dev) == 0)
             return run;
     }
 
     ent = new CdDevice(dev, vendor, product);
 
-    if (pred != NULL)
-    {
+    if (pred != NULL) {
         ent->next_ = pred->next_;
         pred->next_ = ent;
-    }
-    else
-    {
+    } else {
         ent->next_ = DEVICE_LIST_;
         DEVICE_LIST_ = ent;
     }
@@ -1072,21 +1005,17 @@ static char *nextToken(char *&p)
     if (*p == 0)
         return NULL;
 
-    if (*p == '\'')
-    {
+    if (*p == '\'') {
         p++;
         val = p;
 
         while (*p != 0 && *p != '\'')
             p++;
 
-        if (*p == 0)
-        {
+        if (*p == 0) {
             // error, no matching ' found
             return NULL;
-        }
-        else
-        {
+        } else {
             *p++ = 0;
 
             // skip over ,
@@ -1096,9 +1025,7 @@ static char *nextToken(char *&p)
             if (*p == ',')
                 p++;
         }
-    }
-    else
-    {
+    } else {
         val = p;
 
         while (*p != 0 && *p != ',')
@@ -1185,8 +1112,7 @@ CdDevice *CdDevice::find(const char *dev)
 {
     CdDevice *run;
 
-    for (run = DEVICE_LIST_; run != NULL; run = run->next_)
-    {
+    for (run = DEVICE_LIST_; run != NULL; run = run->next_) {
         if (strcmp(run->dev(), dev) == 0)
             return run;
     }
@@ -1199,8 +1125,7 @@ void CdDevice::scan()
     int i, len;
     ScsiIf::ScanData *sdata = ScsiIf::scan(&len);
 
-    if (sdata)
-    {
+    if (sdata) {
         for (i = 0; i < len; i++)
             CdDevice::add(sdata[i].dev.c_str(), sdata[i].vendor, sdata[i].product);
         delete[] sdata;
@@ -1208,20 +1133,16 @@ void CdDevice::scan()
 
 #ifdef SCSI_ATAPI
     sdata = ScsiIf::scan(&len, "ATA");
-    if (sdata)
-    {
+    if (sdata) {
         for (i = 0; i < len; i++)
             CdDevice::add(sdata[i].dev.c_str(), sdata[i].vendor, sdata[i].product);
         delete[] sdata;
-    }
-    else
-    {
+    } else {
         // Only scan for ATAPI devices if we got nothing on the ATA
         // interface, otherwise every device would show up twice on the
         // list.
         sdata = ScsiIf::scan(&len, "ATAPI");
-        if (sdata)
-        {
+        if (sdata) {
             for (i = 0; i < len; i++)
                 CdDevice::add(sdata[i].dev.c_str(), sdata[i].vendor, sdata[i].product);
             delete[] sdata;
@@ -1234,12 +1155,10 @@ void CdDevice::remove(const char *dev)
 {
     CdDevice *run, *pred;
 
-    for (pred = NULL, run = DEVICE_LIST_; run != NULL; pred = run, run = run->next_)
-    {
-        if (strcmp(run->dev(), dev) == 0)
-        {
-            if (run->status() == DEV_RECORDING || run->status() == DEV_BLANKING || run->status() == DEV_READING ||
-                run->status() == DEV_WAITING)
+    for (pred = NULL, run = DEVICE_LIST_; run != NULL; pred = run, run = run->next_) {
+        if (strcmp(run->dev(), dev) == 0) {
+            if (run->status() == DEV_RECORDING || run->status() == DEV_BLANKING ||
+                run->status() == DEV_READING || run->status() == DEV_WAITING)
                 return;
 
             if (pred != NULL)
@@ -1257,8 +1176,7 @@ void CdDevice::clear()
 {
     CdDevice *next;
 
-    while (DEVICE_LIST_ != NULL)
-    {
+    while (DEVICE_LIST_ != NULL) {
         next = DEVICE_LIST_->next_;
         delete DEVICE_LIST_;
         DEVICE_LIST_ = next;
@@ -1297,8 +1215,7 @@ int CdDevice::updateDeviceStatus()
 
     blockProcessMonitorSignals();
 
-    for (run = DEVICE_LIST_; run != NULL; run = run->next_)
-    {
+    for (run = DEVICE_LIST_; run != NULL; run = run->next_) {
         if (run->updateStatus())
             newStatus = 1;
     }

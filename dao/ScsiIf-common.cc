@@ -23,52 +23,50 @@
 //         2: not ready, no disk in drive
 //         3: scsi command failed
 
-
-
 int ScsiIf::testUnitReady()
 {
-  unsigned char cmd[6];
-  const unsigned char *senseData;
-  int senseLen;
-  int ret = 0;
+    unsigned char cmd[6];
+    const unsigned char *senseData;
+    int senseLen;
+    int ret = 0;
 
-  memset(cmd, 0, 6);
+    memset(cmd, 0, 6);
 
-  switch (sendCmd(cmd, 6, NULL, 0, NULL, 0, 0)) {
-  case 1:
-    ret = 3;
-    break;
+    switch (sendCmd(cmd, 6, NULL, 0, NULL, 0, 0)) {
+    case 1:
+        ret = 3;
+        break;
 
-  case 2:
-    senseData = getSense(senseLen);
+    case 2:
+        senseData = getSense(senseLen);
 
-    switch (senseData[2] & 0x0f) {
-    case 0x02: // Not ready
-      switch (senseData[12]) {
-      case 0x3a: // medium not present
-	ret = 2;
-	break;
+        switch (senseData[2] & 0x0f) {
+        case 0x02: // Not ready
+            switch (senseData[12]) {
+            case 0x3a: // medium not present
+                ret = 2;
+                break;
 
-      default:
-	ret = 1;
-	break;
-      }
-      break;
+            default:
+                ret = 1;
+                break;
+            }
+            break;
 
-    case 0x06: // Unit attention
-      ret = 0;
-      break;
+        case 0x06: // Unit attention
+            ret = 0;
+            break;
 
-    default:
-      ret = 3;
-      break;
+        default:
+            ret = 3;
+            break;
+        }
     }
-  }
 
-  return ret;
+    return ret;
 }
 
-cd_page_2a* ScsiIf::checkMmc()
+cd_page_2a *ScsiIf::checkMmc()
 {
     static const int MODE_SENSE_G1_CMD = 0x5a;
     static const int MODE_MAX_SIZE = 256;
@@ -86,13 +84,13 @@ cd_page_2a* ScsiIf::checkMmc()
     cmd[0] = MODE_SENSE_G1_CMD; // MODE SENSE(10)
     cmd[2] = MODE_CD_CAP_PAGE;
     cmd[8] = MODE_PAGE_HEADER_SIZE;
-    if (sendCmd((unsigned char*)&cmd, 10, NULL, 0, mode,
-		MODE_PAGE_HEADER_SIZE) != 0) {
-	return NULL;
+    if (sendCmd((unsigned char *)&cmd, 10, NULL, 0, mode, MODE_PAGE_HEADER_SIZE) != 0) {
+        return NULL;
     }
 
     int len = ((mode[0] << 8) + mode[1]) + 2; // +2 is for address field
-    if (len > MODE_MAX_SIZE) len = MODE_MAX_SIZE;
+    if (len > MODE_MAX_SIZE)
+        len = MODE_MAX_SIZE;
 
     // Now we have the length of page 0x2a, read the whole page.
     memset(mode, 0, MODE_PAGE_HEADER_SIZE);
@@ -100,9 +98,9 @@ cd_page_2a* ScsiIf::checkMmc()
     cmd[0] = MODE_SENSE_G1_CMD; // MODE SENSE(10)
     cmd[2] = MODE_CD_CAP_PAGE;
     cmd[8] = len;
-    if (sendCmd((unsigned char*)&cmd, 10, NULL, 0, mode, len) != 0) {
-	return NULL;
+    if (sendCmd((unsigned char *)&cmd, 10, NULL, 0, mode, len) != 0) {
+        return NULL;
     }
 
-  return (cd_page_2a*)(mode + 9);
+    return (cd_page_2a *)(mode + 9);
 }

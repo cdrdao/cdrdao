@@ -20,13 +20,18 @@
 #ifndef __CDTEXTITEM_H__
 #define __CDTEXTITEM_H__
 
+#include "util.h"
 #include <iostream>
 #include <vector>
-#include "util.h"
 
-class CdTextItem {
-public:
-    enum class DataType { SBCC, DBCC, BINARY };
+class CdTextItem
+{
+  public:
+    enum class DataType {
+        SBCC,
+        DBCC,
+        BINARY
+    };
 
     enum class PackType {
         TITLE = 0x80,
@@ -44,36 +49,67 @@ public:
         RES3 = 0x8c,
         CLOSED = 0x8d,
         UPCEAN_ISRC = 0x8e,
-        SIZE_INFO = 0x8f };
+        SIZE_INFO = 0x8f
+    };
 
     CdTextItem(PackType packType, int blockNr);
     CdTextItem(const CdTextItem &) = default;
 
-    void setData(const u8* buffer, size_t buffer_len);
-    void setRawText(const u8* buffer, size_t buffer_len);
+    void setData(const u8 *buffer, size_t buffer_len);
+    void setRawText(const u8 *buffer, size_t buffer_len);
     void setRawText(const std::string &buffer);
-    void setText(const char* utf8_text);
-    void setTextFromToc(const char* text);
+    void setText(const char *utf8_text);
+    void setTextFromToc(const char *text);
     void setGenre(u8 genreCode1, u8 genreCode2, const char *description);
 
-    DataType dataType() const { return dataType_; }
-    PackType packType() const { return packType_; }
+    DataType dataType() const
+    {
+        return dataType_;
+    }
+    PackType packType() const
+    {
+        return packType_;
+    }
 
-    int blockNr() const { return blockNr_; }
+    int blockNr() const
+    {
+        return blockNr_;
+    }
 
-    bool isTrackPack() const { return trackNr_ > 0; }
-    void trackNr(int t) { trackNr_ = t; }
-    int trackNr() const { return trackNr_; }
+    bool isTrackPack() const
+    {
+        return trackNr_ > 0;
+    }
+    void trackNr(int t)
+    {
+        trackNr_ = t;
+    }
+    int trackNr() const
+    {
+        return trackNr_;
+    }
 
     void encoding(Util::Encoding e);
-    Util::Encoding encoding() const { return encoding_; }
+    Util::Encoding encoding() const
+    {
+        return encoding_;
+    }
 
-    const u8* data() const { return data_.data(); }
-    size_t dataLen() const { return data_.size(); }
+    const u8 *data() const
+    {
+        return data_.data();
+    }
+    size_t dataLen() const
+    {
+        return data_.size();
+    }
 
-    const std::string& getText() const { return u8text; }
+    const std::string &getText() const
+    {
+        return u8text;
+    }
 
-    void print(std::ostream &, PrintParams& params) const;
+    void print(std::ostream &, PrintParams &params) const;
 
     int operator==(const CdTextItem &);
     int operator!=(const CdTextItem &);
@@ -83,7 +119,7 @@ public:
     static PackType int2PackType(int);
     static int isBinaryPack(PackType);
 
-private:
+  private:
     DataType dataType_;
     PackType packType_;
     int blockNr_; // 0 ... 7

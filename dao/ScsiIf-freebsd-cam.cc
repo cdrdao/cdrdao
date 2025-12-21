@@ -41,36 +41,37 @@
 
 #include "decodeSense.cc"
 
-class ScsiIfImpl {
-public:
-	char *			devname;
-	struct cam_device *	dev;
-	union ccb *		ccb;
-	int			timeout;	/* timeout in ms */
+class ScsiIfImpl
+{
+  public:
+    char *devname;
+    struct cam_device *dev;
+    union ccb *ccb;
+    int timeout; /* timeout in ms */
 };
 
 ScsiIf::ScsiIf(const char *devname)
 {
-	impl_ = new ScsiIfImpl;
-	impl_->devname = strdupCC(devname);
-	impl_->dev = NULL;
-	impl_->ccb = NULL;
-	impl_->timeout = 5000;
+    impl_ = new ScsiIfImpl;
+    impl_->devname = strdupCC(devname);
+    impl_->dev = NULL;
+    impl_->ccb = NULL;
+    impl_->timeout = 5000;
 
-	maxDataLen_ = 32 * 1024;
-	vendor_[0] = 0;
-	product_[0] = 0;
-	revision_[0] = 0;
+    maxDataLen_ = 32 * 1024;
+    vendor_[0] = 0;
+    product_[0] = 0;
+    revision_[0] = 0;
 }
 
 ScsiIf::~ScsiIf()
 {
-	if (impl_->ccb)
-		cam_freeccb(impl_->ccb);
-	if (impl_->dev) 
-		cam_close_device(impl_->dev);
-	delete[] impl_->devname;
-	delete impl_;
+    if (impl_->ccb)
+        cam_freeccb(impl_->ccb);
+    if (impl_->dev)
+        cam_close_device(impl_->dev);
+    delete[] impl_->devname;
+    delete impl_;
 }
 
 // opens scsi device
@@ -79,158 +80,136 @@ ScsiIf::~ScsiIf()
 //         2: inquiry failed
 int ScsiIf::init()
 {
-	if ((impl_->dev = cam_open_device(impl_->devname, O_RDWR)) == NULL) {
-		log_message(-2, "%s", cam_errbuf);
-		return 1;
-	}
-  
-	impl_->ccb = cam_getccb(impl_->dev);
-	if (impl_->ccb == NULL) {
-		log_message(-2, "init: error allocating ccb");
-		return 1;
-	}
+    if ((impl_->dev = cam_open_device(impl_->devname, O_RDWR)) == NULL) {
+        log_message(-2, "%s", cam_errbuf);
+        return 1;
+    }
 
-	if (inquiry()) 
-		return 2;
+    impl_->ccb = cam_getccb(impl_->dev);
+    if (impl_->ccb == NULL) {
+        log_message(-2, "init: error allocating ccb");
+        return 1;
+    }
 
-	return 0;
+    if (inquiry())
+        return 2;
+
+    return 0;
 }
 
 // Sets given timeout value in seconds and returns old timeout.
 // return: old timeout
 int ScsiIf::timeout(int t)
 {
-	int old = impl_->timeout;
-	impl_->timeout = t*1000;
-	return old/1000;
+    int old = impl_->timeout;
+    impl_->timeout = t * 1000;
+    return old / 1000;
 }
 
 // sends a scsi command and receives data
 // return 0: OK
 //        1: scsi command failed (os level, no sense data available)
 //        2: scsi command failed (sense data available)
-int ScsiIf::sendCmd(const unsigned char *cmd, int cmdLen, 
-		    const unsigned char *dataOut, int dataOutLen,
-		    unsigned char *dataIn, int dataInLen,
-		    int showMessage)
+int ScsiIf::sendCmd(const unsigned char *cmd, int cmdLen, const unsigned char *dataOut,
+                    int dataOutLen, unsigned char *dataIn, int dataInLen, int showMessage)
 {
-	int		retval;
-	int		flags = CAM_DIR_NONE;
-	u_int8_t *	data_ptr = NULL;
-	size_t		data_len = 0;
+    int retval;
+    int flags = CAM_DIR_NONE;
+    u_int8_t *data_ptr = NULL;
+    size_t data_len = 0;
 
-	bzero(impl_->ccb, sizeof(union ccb));
-	bcopy(cmd, &impl_->ccb->csio.cdb_io.cdb_bytes, cmdLen);
+    bzero(impl_->ccb, sizeof(union ccb));
+    bcopy(cmd, &impl_->ccb->csio.cdb_io.cdb_bytes, cmdLen);
 
-	if (dataOut && dataOutLen > 0) {
-		data_ptr = (u_int8_t*) dataOut;
-		data_len = dataOutLen;
-		flags = CAM_DIR_OUT;
-	}
-	else if (dataIn && dataInLen > 0) {
-		data_ptr = dataIn;
-		data_len = dataInLen;
-		flags = CAM_DIR_IN;
-	}
+    if (dataOut && dataOutLen > 0) {
+        data_ptr = (u_int8_t *)dataOut;
+        data_len = dataOutLen;
+        flags = CAM_DIR_OUT;
+    } else if (dataIn && dataInLen > 0) {
+        data_ptr = dataIn;
+        data_len = dataInLen;
+        flags = CAM_DIR_IN;
+    }
 
-	cam_fill_csio(&impl_->ccb->csio,
-		      DEF_RETRY_COUNT,
-		      NULL,
-		      flags | CAM_DEV_QFRZDIS,
-		      MSG_SIMPLE_Q_TAG,
-		      data_ptr,
-		      data_len,
-		      SSD_FULL_SIZE,
-		      cmdLen,
-		      impl_->timeout);
-	if ((retval = cam_send_ccb(impl_->dev, impl_->ccb)) < 0
-	||  (impl_->ccb->ccb_h.status & CAM_STATUS_MASK) != CAM_REQ_CMP) {
-		if (retval < 0) {
-			log_message(-2, "sendCmd: error sending command");
-			return 1;
-		}
+    cam_fill_csio(&impl_->ccb->csio, DEF_RETRY_COUNT, NULL, flags | CAM_DEV_QFRZDIS,
+                  MSG_SIMPLE_Q_TAG, data_ptr, data_len, SSD_FULL_SIZE, cmdLen, impl_->timeout);
+    if ((retval = cam_send_ccb(impl_->dev, impl_->ccb)) < 0 ||
+        (impl_->ccb->ccb_h.status & CAM_STATUS_MASK) != CAM_REQ_CMP) {
+        if (retval < 0) {
+            log_message(-2, "sendCmd: error sending command");
+            return 1;
+        }
 
-		if ((impl_->ccb->ccb_h.status & CAM_STATUS_MASK) ==
-		    CAM_SCSI_STATUS_ERROR) {
-                        if (showMessage)
-			        printError();
+        if ((impl_->ccb->ccb_h.status & CAM_STATUS_MASK) == CAM_SCSI_STATUS_ERROR) {
+            if (showMessage)
+                printError();
 
-			return 2;
-		}
-		return 1;
-	}
+            return 2;
+        }
+        return 1;
+    }
 
-	return 0;
+    return 0;
 }
 
 const unsigned char *ScsiIf::getSense(int &len) const
 {
-	len = impl_->ccb->csio.sense_len;
-	return (const unsigned char*) &impl_->ccb->csio.sense_data;
+    len = impl_->ccb->csio.sense_len;
+    return (const unsigned char *)&impl_->ccb->csio.sense_data;
 }
 
 void ScsiIf::printError()
 {
-        decodeSense((const unsigned char*) &impl_->ccb->csio.sense_data,
-		    impl_->ccb->csio.sense_len);
+    decodeSense((const unsigned char *)&impl_->ccb->csio.sense_data, impl_->ccb->csio.sense_len);
 }
 
 int ScsiIf::inquiry()
 {
-	int i;
-	struct scsi_inquiry_data inq_data;
+    int i;
+    struct scsi_inquiry_data inq_data;
 
-	bzero(impl_->ccb, sizeof(union ccb));
-	bzero(&inq_data, sizeof(inq_data));
+    bzero(impl_->ccb, sizeof(union ccb));
+    bzero(&inq_data, sizeof(inq_data));
 
-	scsi_inquiry(&impl_->ccb->csio,
-		     DEF_RETRY_COUNT,
-		     NULL,
-		     MSG_SIMPLE_Q_TAG,
-		     (u_int8_t*) &inq_data,
-		     sizeof(inq_data),
-		     0,
-		     0,
-		     SSD_FULL_SIZE,
-		     impl_->timeout);
-	impl_->ccb->ccb_h.flags |= CAM_DEV_QFRZDIS;
+    scsi_inquiry(&impl_->ccb->csio, DEF_RETRY_COUNT, NULL, MSG_SIMPLE_Q_TAG, (u_int8_t *)&inq_data,
+                 sizeof(inq_data), 0, 0, SSD_FULL_SIZE, impl_->timeout);
+    impl_->ccb->ccb_h.flags |= CAM_DEV_QFRZDIS;
 
-	if (cam_send_ccb(impl_->dev, impl_->ccb) < 0) {
-		if ((impl_->ccb->ccb_h.status & CAM_STATUS_MASK) !=
-		    CAM_SCSI_STATUS_ERROR) {
-			log_message(-2, "%s", cam_errbuf);
-			return 1;
-		}
+    if (cam_send_ccb(impl_->dev, impl_->ccb) < 0) {
+        if ((impl_->ccb->ccb_h.status & CAM_STATUS_MASK) != CAM_SCSI_STATUS_ERROR) {
+            log_message(-2, "%s", cam_errbuf);
+            return 1;
+        }
 
-		printError();
-		return 1;
-	}
+        printError();
+        return 1;
+    }
 
-	strncpy(vendor_, inq_data.vendor, 8);
-	vendor_[8] = 0;
+    strncpy(vendor_, inq_data.vendor, 8);
+    vendor_[8] = 0;
 
-	strncpy(product_, inq_data.product, 16);
-	product_[16] = 0;
+    strncpy(product_, inq_data.product, 16);
+    product_[16] = 0;
 
-	strncpy(revision_, inq_data.revision, 4);
-	revision_[4] = 0;
+    strncpy(revision_, inq_data.revision, 4);
+    revision_[4] = 0;
 
-	for (i = 7; i >= 0 && vendor_[i] == ' '; i--)
-		vendor_[i] = 0;
+    for (i = 7; i >= 0 && vendor_[i] == ' '; i--)
+        vendor_[i] = 0;
 
-	for (i = 15; i >= 0 && product_[i] == ' '; i--)
-		product_[i] = 0;
+    for (i = 15; i >= 0 && product_[i] == ' '; i--)
+        product_[i] = 0;
 
-	for (i = 3; i >= 0 && revision_[i] == ' '; i--)
-		revision_[i] = 0;
+    for (i = 3; i >= 0 && revision_[i] == ' '; i--)
+        revision_[i] = 0;
 
-	return 0;
+    return 0;
 }
 
-ScsiIf::ScanData *ScsiIf::scan(int *len, char* scsi_dev_path)
+ScsiIf::ScanData *ScsiIf::scan(int *len, char *scsi_dev_path)
 {
-  *len = 0;
-  return NULL;
+    *len = 0;
+    return NULL;
 }
 
 #include "ScsiIf-common.cc"

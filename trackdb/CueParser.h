@@ -22,4 +22,4 @@
 
 #include "Toc.h"
 
-Toc* parseCue(FILE* fp, const char* filename);
+Toc *parseCue(FILE *fp, const char *filename);

@@ -21,10 +21,9 @@
 
 #include <samplerate.h>
 
-#include "log.h"
 #include "FormatFlac.h"
+#include "log.h"
 #include "util.h"
-
 
 //
 // FLAC support
@@ -98,7 +97,7 @@ bool FormatFlac::setup_output()
     auto ostatus = setup_wav_output(dest_file);
     if (ostatus != FS_SUCCESS)
         return false;
-    
+
     return true;
 }
 
@@ -130,7 +129,7 @@ FormatSupport::Status FormatFlac::resample()
         std::vector<s16> pcm_data;
         pcm_data.resize(num_samples);
         src_float_to_short_array(sroutput.data(), pcm_data.data(), num_samples);
-        auto wstatus = write_wav_output((char*)pcm_data.data(), pcm_data.size() * 2);
+        auto wstatus = write_wav_output((char *)pcm_data.data(), pcm_data.size() * 2);
         return wstatus;
     }
     return FS_SUCCESS;
@@ -147,9 +146,8 @@ void FormatFlac::finalize()
 //
 //
 
-FLAC__StreamDecoderWriteStatus
-FormatFlac::write_callback(const ::FLAC__Frame *frame,
-                           const FLAC__int32 * const buffer[])
+FLAC__StreamDecoderWriteStatus FormatFlac::write_callback(const ::FLAC__Frame *frame,
+                                                          const FLAC__int32 *const buffer[])
 {
     if (!channels)
         channels = frame->header.channels;
@@ -185,14 +183,16 @@ FormatFlac::write_callback(const ::FLAC__Frame *frame,
                     sample >>= (bits_per_sample - 16);
                 }
                 // Clamp to int16_t range
-                if (sample > 32767) sample = 32767;
-                if (sample < -32768) sample = -32768;
+                if (sample > 32767)
+                    sample = 32767;
+                if (sample < -32768)
+                    sample = -32768;
 
                 pcm_data.push_back(static_cast<s16>(sample));
             }
         }
     }
-    write_wav_output((char*)pcm_data.data(), pcm_data.size() * 2);
+    write_wav_output((char *)pcm_data.data(), pcm_data.size() * 2);
 
     return FLAC__STREAM_DECODER_WRITE_STATUS_CONTINUE;
 }
@@ -205,11 +205,10 @@ void FormatFlac::metadata_callback(const ::FLAC__StreamMetadata *metadata)
         channels = metadata->data.stream_info.channels;
         src_samples.reserve(metadata->data.stream_info.total_samples);
         need_resampling = (sample_rate != TARGET_SAMPLE_RATE);
-        log_message(1, "Reading FLAC file %s, %lu Hz, %u bps",
-                    source_file.c_str(), sample_rate, bits_per_sample);
+        log_message(1, "Reading FLAC file %s, %lu Hz, %u bps", source_file.c_str(), sample_rate,
+                    bits_per_sample);
         log_message(1, "  %llu total samples", metadata->data.stream_info.total_samples);
     }
-    
 }
 
 void FormatFlac::error_callback(FLAC__StreamDecoderErrorStatus status)
@@ -223,7 +222,7 @@ void FormatFlac::error_callback(FLAC__StreamDecoderErrorStatus status)
 //
 //
 
-FormatSupport* FormatFlacManager::newConverter(const char* extension)
+FormatSupport *FormatFlacManager::newConverter(const char *extension)
 {
     if (strcasecmp(extension, "flac") == 0)
         return new FormatFlac;
@@ -231,10 +230,9 @@ FormatSupport* FormatFlacManager::newConverter(const char* extension)
     return NULL;
 }
 
-int FormatFlacManager::supportedExtensions(std::list<std::string>& list)
+int FormatFlacManager::supportedExtensions(std::list<std::string> &list)
 {
     list.push_front("flac");
     list.push_front("FLAC");
     return 1;
 }
-

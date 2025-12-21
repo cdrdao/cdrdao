@@ -68,14 +68,12 @@ class TocInfoDialog : public Gtk::Dialog
     Gtk::ComboBoxText tocType_;
     Toc::Type selectedTocType_;
 
-    struct BlockValue
-    {
+    struct BlockValue {
         int block;
         int value;
     };
 
-    struct CdTextPage
-    {
+    struct CdTextPage {
         Gtk::ComboBoxText *language;
         int selectedLanguage;
 

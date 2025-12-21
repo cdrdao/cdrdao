@@ -19,8 +19,7 @@ class Icons
     static Gtk::StockID RECORD;
 
   private:
-    static struct IconEntry
-    {
+    static struct IconEntry {
         Gtk::StockID &name;
         const guint8 *pixbuf;
     } iconList[];

@@ -200,8 +200,7 @@ TrackInfoDialog::TrackInfoDialog()
 
     Gtk::Notebook *notebook = new Gtk::Notebook;
 
-    for (i = 0; i < 8; i++)
-    {
+    for (i = 0; i < 8; i++) {
         vbox = createCdTextPage(i);
         notebook->append_page(*vbox, *(cdTextPages_[i].label));
     }
@@ -240,8 +239,7 @@ TrackInfoDialog::~TrackInfoDialog()
 
 void TrackInfoDialog::start(TocEditView *view)
 {
-    if (active_)
-    {
+    if (active_) {
         raise();
         return;
     }
@@ -254,8 +252,7 @@ void TrackInfoDialog::start(TocEditView *view)
 
 void TrackInfoDialog::stop()
 {
-    if (active_)
-    {
+    if (active_) {
         hide();
         active_ = 0;
     }
@@ -377,8 +374,7 @@ void TrackInfoDialog::update(unsigned long level, TocEditView *view)
 
     tocEditView_ = view;
 
-    if (view == NULL || !view->trackSelection(&selectedTrack_))
-    {
+    if (view == NULL || !view->trackSelection(&selectedTrack_)) {
         selectedTrack_ = 0;
         applyButton_->set_sensitive(FALSE);
         clear();
@@ -392,14 +388,11 @@ void TrackInfoDialog::update(unsigned long level, TocEditView *view)
         s += "(*)";
     set_title(s);
 
-    if (level & (UPD_TRACK_DATA | UPD_TRACK_MARK_SEL))
-    {
+    if (level & (UPD_TRACK_DATA | UPD_TRACK_MARK_SEL)) {
         toc = view->tocEdit()->toc();
         importData(toc, selectedTrack_);
         applyButton_->set_sensitive(view->tocEdit()->editable() ? TRUE : FALSE);
-    }
-    else if (level & UPD_EDITABLE_STATE)
-    {
+    } else if (level & UPD_EDITABLE_STATE) {
         applyButton_->set_sensitive(view->tocEdit()->editable() ? TRUE : FALSE);
     }
 }
@@ -408,8 +401,7 @@ void TrackInfoDialog::clearCdText()
 {
     int l;
 
-    for (l = 0; l < 8; l++)
-    {
+    for (l = 0; l < 8; l++) {
         cdTextPages_[l].title->set_text("");
         cdTextPages_[l].title->set_editable(false);
 
@@ -453,8 +445,7 @@ const char *TrackInfoDialog::checkString(const std::string &str)
     if (len == 0)
         return NULL;
 
-    if (buf == NULL || len + 1 > bufLen)
-    {
+    if (buf == NULL || len + 1 > bufLen) {
         delete[] buf;
         bufLen = len + 1;
         buf = new char[bufLen];
@@ -471,8 +462,7 @@ const char *TrackInfoDialog::checkString(const std::string &str)
     if (*s == 0)
         return NULL;
 
-    while (p > s && isspace(*p))
-    {
+    while (p > s && isspace(*p)) {
         *p = 0;
         p--;
     }
@@ -485,8 +475,7 @@ void TrackInfoDialog::importCdText(const Toc *toc, int trackNr)
     int l;
     const CdTextItem *item;
 
-    for (l = 0; l < 8; l++)
-    {
+    for (l = 0; l < 8; l++) {
         if ((item = toc->getCdTextItem(trackNr, l, CdTextItem::PackType::TITLE)) != NULL)
             cdTextPages_[l].title->set_text((const char *)item->data());
         else
@@ -539,8 +528,7 @@ void TrackInfoDialog::importData(const Toc *toc, int trackNr)
 
     const Track *track = itr.find(trackNr, start, end);
 
-    if (track == NULL)
-    {
+    if (track == NULL) {
         clear();
         return;
     }
@@ -548,7 +536,8 @@ void TrackInfoDialog::importData(const Toc *toc, int trackNr)
     snprintf(buf, sizeof(buf), "%d", trackNr);
     trackNr_->set_text(buf);
 
-    snprintf(buf, sizeof(buf), "%3d:%02d:%02d", track->start().min(), track->start().sec(), track->start().frac());
+    snprintf(buf, sizeof(buf), "%3d:%02d:%02d", track->start().min(), track->start().sec(),
+             track->start().frac());
     pregapLen_->set_text(buf);
 
     snprintf(buf, sizeof(buf), "%3d:%02d:%02d", start.min(), start.sec(), start.frac());
@@ -577,23 +566,22 @@ void TrackInfoDialog::importData(const Toc *toc, int trackNr)
     else
         fourChannelAudio_->set_active(true);
 
-    if (track->isrcValid())
-    {
+    if (track->isrcValid()) {
         snprintf(buf, sizeof(buf), "%c%c", track->isrcCountry(0), track->isrcCountry(1));
         isrcCodeCountry_->set_text(buf);
 
-        snprintf(buf, sizeof(buf), "%c%c%c", track->isrcOwner(0), track->isrcOwner(1), track->isrcOwner(2));
+        snprintf(buf, sizeof(buf), "%c%c%c", track->isrcOwner(0), track->isrcOwner(1),
+                 track->isrcOwner(2));
         isrcCodeOwner_->set_text(buf);
 
         snprintf(buf, sizeof(buf), "%c%c", '0' + track->isrcYear(0), '0' + track->isrcYear(1));
         isrcCodeYear_->set_text(buf);
 
-        snprintf(buf, sizeof(buf), "%c%c%c%c%c", '0' + track->isrcSerial(0), '0' + track->isrcSerial(1),
-                 '0' + track->isrcSerial(2), '0' + track->isrcSerial(3), '0' + track->isrcSerial(4));
+        snprintf(buf, sizeof(buf), "%c%c%c%c%c", '0' + track->isrcSerial(0),
+                 '0' + track->isrcSerial(1), '0' + track->isrcSerial(2), '0' + track->isrcSerial(3),
+                 '0' + track->isrcSerial(4));
         isrcCodeSerial_->set_text(buf);
-    }
-    else
-    {
+    } else {
         isrcCodeCountry_->set_text("");
         isrcCodeOwner_->set_text("");
         isrcCodeYear_->set_text("");
@@ -623,8 +611,7 @@ void TrackInfoDialog::exportData(TocEdit *tocEdit, int trackNr)
     if (t->copyPermitted() != flag)
         tocEdit->setTrackCopyFlag(trackNr, flag);
 
-    if (t->type() == TrackData::AUDIO)
-    {
+    if (t->type() == TrackData::AUDIO) {
         flag = preEmphasisFlag_->get_active() ? 1 : 0;
         if (t->preEmphasis() != flag)
             tocEdit->setTrackPreEmphasisFlag(trackNr, flag);
@@ -634,30 +621,23 @@ void TrackInfoDialog::exportData(TocEdit *tocEdit, int trackNr)
             tocEdit->setTrackAudioType(trackNr, flag);
 
         buf[0] = 0;
-        if ((s = checkString(isrcCodeCountry_->get_text())) != NULL && strlen(s) == 2)
-        {
+        if ((s = checkString(isrcCodeCountry_->get_text())) != NULL && strlen(s) == 2) {
             strcat(buf, s);
         }
-        if ((s = checkString(isrcCodeOwner_->get_text())) != NULL && strlen(s) == 3)
-        {
+        if ((s = checkString(isrcCodeOwner_->get_text())) != NULL && strlen(s) == 3) {
             strcat(buf, s);
         }
-        if ((s = checkString(isrcCodeYear_->get_text())) != NULL && strlen(s) == 2)
-        {
+        if ((s = checkString(isrcCodeYear_->get_text())) != NULL && strlen(s) == 2) {
             strcat(buf, s);
         }
-        if ((s = checkString(isrcCodeSerial_->get_text())) != NULL && strlen(s) == 5)
-        {
+        if ((s = checkString(isrcCodeSerial_->get_text())) != NULL && strlen(s) == 5) {
             strcat(buf, s);
         }
 
-        if (strlen(buf) == 0)
-        {
+        if (strlen(buf) == 0) {
             if (t->isrcValid())
                 tocEdit->setTrackIsrcCode(trackNr, NULL);
-        }
-        else if (strlen(buf) == 12)
-        {
+        } else if (strlen(buf) == 12) {
             if ((s = t->isrc()) == NULL || strcmp(s, buf) != 0)
                 tocEdit->setTrackIsrcCode(trackNr, buf);
         }
@@ -675,164 +655,128 @@ void TrackInfoDialog::exportCdText(TocEdit *tocEdit, int trackNr)
     const CdTextItem *item;
     CdTextItem *newItem;
 
-    for (l = 0; l < 8; l++)
-    {
+    for (l = 0; l < 8; l++) {
         // Title
-        if ((s = checkString(cdTextPages_[l].title->get_text())) != NULL)
-        {
+        if ((s = checkString(cdTextPages_[l].title->get_text())) != NULL) {
             newItem = new CdTextItem(CdTextItem::PackType::TITLE, l);
             newItem->setText(s);
-        }
-        else
+        } else
             newItem = NULL;
 
-        if ((item = toc->getCdTextItem(trackNr, l, CdTextItem::PackType::TITLE)) != NULL)
-        {
+        if ((item = toc->getCdTextItem(trackNr, l, CdTextItem::PackType::TITLE)) != NULL) {
             if (newItem == NULL)
                 tocEdit->setCdTextItem(trackNr, CdTextItem::PackType::TITLE, l, NULL);
             else if (*newItem != *item)
                 tocEdit->setCdTextItem(trackNr, CdTextItem::PackType::TITLE, l, s);
-        }
-        else if (newItem != NULL)
-        {
+        } else if (newItem != NULL) {
             tocEdit->setCdTextItem(trackNr, CdTextItem::PackType::TITLE, l, s);
         }
 
         delete newItem;
 
         // Performer
-        if ((s = checkString(cdTextPages_[l].performer->get_text())) != NULL)
-        {
+        if ((s = checkString(cdTextPages_[l].performer->get_text())) != NULL) {
             newItem = new CdTextItem(CdTextItem::PackType::PERFORMER, l);
             newItem->setText(s);
-        }
-        else
+        } else
             newItem = NULL;
 
-        if ((item = toc->getCdTextItem(trackNr, l, CdTextItem::PackType::PERFORMER)) != NULL)
-        {
+        if ((item = toc->getCdTextItem(trackNr, l, CdTextItem::PackType::PERFORMER)) != NULL) {
             if (newItem == NULL)
                 tocEdit->setCdTextItem(trackNr, CdTextItem::PackType::PERFORMER, l, NULL);
             else if (*newItem != *item)
                 tocEdit->setCdTextItem(trackNr, CdTextItem::PackType::PERFORMER, l, s);
-        }
-        else if (newItem != NULL)
-        {
+        } else if (newItem != NULL) {
             tocEdit->setCdTextItem(trackNr, CdTextItem::PackType::PERFORMER, l, s);
         }
 
         delete newItem;
 
         // Songwriter
-        if ((s = checkString(cdTextPages_[l].songwriter->get_text())) != NULL)
-        {
+        if ((s = checkString(cdTextPages_[l].songwriter->get_text())) != NULL) {
             newItem = new CdTextItem(CdTextItem::PackType::SONGWRITER, l);
             newItem->setText(s);
-        }
-        else
+        } else
             newItem = NULL;
 
-        if ((item = toc->getCdTextItem(trackNr, l, CdTextItem::PackType::SONGWRITER)) != NULL)
-        {
+        if ((item = toc->getCdTextItem(trackNr, l, CdTextItem::PackType::SONGWRITER)) != NULL) {
             if (newItem == NULL)
                 tocEdit->setCdTextItem(trackNr, CdTextItem::PackType::SONGWRITER, l, NULL);
             else if (*newItem != *item)
                 tocEdit->setCdTextItem(trackNr, CdTextItem::PackType::SONGWRITER, l, s);
-        }
-        else if (newItem != NULL)
-        {
+        } else if (newItem != NULL) {
             tocEdit->setCdTextItem(trackNr, CdTextItem::PackType::SONGWRITER, l, s);
         }
 
         delete newItem;
 
         // Composer
-        if ((s = checkString(cdTextPages_[l].composer->get_text())) != NULL)
-        {
+        if ((s = checkString(cdTextPages_[l].composer->get_text())) != NULL) {
             newItem = new CdTextItem(CdTextItem::PackType::COMPOSER, l);
             newItem->setText(s);
-        }
-        else
+        } else
             newItem = NULL;
 
-        if ((item = toc->getCdTextItem(trackNr, l, CdTextItem::PackType::COMPOSER)) != NULL)
-        {
+        if ((item = toc->getCdTextItem(trackNr, l, CdTextItem::PackType::COMPOSER)) != NULL) {
             if (newItem == NULL)
                 tocEdit->setCdTextItem(trackNr, CdTextItem::PackType::COMPOSER, l, NULL);
             else if (*newItem != *item)
                 tocEdit->setCdTextItem(trackNr, CdTextItem::PackType::COMPOSER, l, s);
-        }
-        else if (newItem != NULL)
-        {
+        } else if (newItem != NULL) {
             tocEdit->setCdTextItem(trackNr, CdTextItem::PackType::COMPOSER, l, s);
         }
 
         delete newItem;
 
         // Arranger
-        if ((s = checkString(cdTextPages_[l].arranger->get_text())) != NULL)
-        {
+        if ((s = checkString(cdTextPages_[l].arranger->get_text())) != NULL) {
             newItem = new CdTextItem(CdTextItem::PackType::ARRANGER, l);
             newItem->setText(s);
-        }
-        else
+        } else
             newItem = NULL;
 
-        if ((item = toc->getCdTextItem(trackNr, l, CdTextItem::PackType::ARRANGER)) != NULL)
-        {
+        if ((item = toc->getCdTextItem(trackNr, l, CdTextItem::PackType::ARRANGER)) != NULL) {
             if (newItem == NULL)
                 tocEdit->setCdTextItem(trackNr, CdTextItem::PackType::ARRANGER, l, NULL);
             else if (*newItem != *item)
                 tocEdit->setCdTextItem(trackNr, CdTextItem::PackType::ARRANGER, l, s);
-        }
-        else if (newItem != NULL)
-        {
+        } else if (newItem != NULL) {
             tocEdit->setCdTextItem(trackNr, CdTextItem::PackType::ARRANGER, l, s);
         }
 
         delete newItem;
 
         // Message
-        if ((s = checkString(cdTextPages_[l].message->get_text())) != NULL)
-        {
+        if ((s = checkString(cdTextPages_[l].message->get_text())) != NULL) {
             newItem = new CdTextItem(CdTextItem::PackType::MESSAGE, l);
             newItem->setText(s);
-        }
-        else
+        } else
             newItem = NULL;
 
-        if ((item = toc->getCdTextItem(trackNr, l, CdTextItem::PackType::MESSAGE)) != NULL)
-        {
+        if ((item = toc->getCdTextItem(trackNr, l, CdTextItem::PackType::MESSAGE)) != NULL) {
             if (newItem == NULL)
                 tocEdit->setCdTextItem(trackNr, CdTextItem::PackType::MESSAGE, l, NULL);
             else if (*newItem != *item)
                 tocEdit->setCdTextItem(trackNr, CdTextItem::PackType::MESSAGE, l, s);
-        }
-        else if (newItem != NULL)
-        {
+        } else if (newItem != NULL) {
             tocEdit->setCdTextItem(trackNr, CdTextItem::PackType::MESSAGE, l, s);
         }
 
         delete newItem;
 
         // Isrc
-        if ((s = checkString(cdTextPages_[l].isrc->get_text())) != NULL)
-        {
+        if ((s = checkString(cdTextPages_[l].isrc->get_text())) != NULL) {
             newItem = new CdTextItem(CdTextItem::PackType::UPCEAN_ISRC, l);
             newItem->setText(s);
-        }
-        else
+        } else
             newItem = NULL;
 
-        if ((item = toc->getCdTextItem(trackNr, l, CdTextItem::PackType::UPCEAN_ISRC)) != NULL)
-        {
+        if ((item = toc->getCdTextItem(trackNr, l, CdTextItem::PackType::UPCEAN_ISRC)) != NULL) {
             if (newItem == NULL)
                 tocEdit->setCdTextItem(trackNr, CdTextItem::PackType::UPCEAN_ISRC, l, NULL);
             else if (*newItem != *item)
                 tocEdit->setCdTextItem(trackNr, CdTextItem::PackType::UPCEAN_ISRC, l, s);
-        }
-        else if (newItem != NULL)
-        {
+        } else if (newItem != NULL) {
             tocEdit->setCdTextItem(trackNr, CdTextItem::PackType::UPCEAN_ISRC, l, s);
         }
 

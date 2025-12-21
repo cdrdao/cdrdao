@@ -36,8 +36,8 @@
 
 #define MAX_DEVICE_TYPE_ID 2
 
-static CdDevice::DeviceType ID2DEVICE_TYPE[MAX_DEVICE_TYPE_ID + 1] = {CdDevice::CD_ROM, CdDevice::CD_R,
-                                                                      CdDevice::CD_RW};
+static CdDevice::DeviceType ID2DEVICE_TYPE[MAX_DEVICE_TYPE_ID + 1] = {
+    CdDevice::CD_ROM, CdDevice::CD_R, CdDevice::CD_RW};
 
 DeviceConfDialog::DeviceConfDialog()
 {
@@ -60,20 +60,18 @@ DeviceConfDialog::DeviceConfDialog()
     list_.append_column(_("Model"), listColumns_.model);
     list_.append_column(_("Status"), listColumns_.status);
 
-    if (list_.get_selection())
-    {
+    if (list_.get_selection()) {
         selectedRow_ = list_.get_selection()->get_selected();
-        list_.get_selection()->signal_changed().connect(mem_fun(*this, &DeviceConfDialog::selectionChanged));
+        list_.get_selection()->signal_changed().connect(
+            mem_fun(*this, &DeviceConfDialog::selectionChanged));
     }
 
-    for (i = 0; i <= CdDevice::maxDriverId(); i++)
-    {
+    for (i = 0; i <= CdDevice::maxDriverId(); i++) {
         driverMenu_.append(CdDevice::driverName(i));
     }
     driverMenu_.signal_changed().connect(sigc::mem_fun(*this, &DeviceConfDialog::setDriverId));
 
-    for (i = 0; i <= MAX_DEVICE_TYPE_ID; i++)
-    {
+    for (i = 0; i <= MAX_DEVICE_TYPE_ID; i++) {
         devtypeMenu_.append(CdDevice::deviceType2string(ID2DEVICE_TYPE[i]));
     }
     devtypeMenu_.signal_changed().connect(sigc::mem_fun(*this, &DeviceConfDialog::setDeviceType));
@@ -204,8 +202,7 @@ DeviceConfDialog::~DeviceConfDialog()
 
 void DeviceConfDialog::start()
 {
-    if (active_)
-    {
+    if (active_) {
         present();
         return;
     }
@@ -276,8 +273,7 @@ void DeviceConfDialog::addDeviceAction()
 
     cddev = CdDevice::add(dev.c_str(), vendor.c_str(), product.c_str());
 
-    if (cddev)
-    {
+    if (cddev) {
         cddev->manuallyConfigured(true);
         Gtk::TreeIter new_entry = appendTableEntry(cddev);
         list_.get_selection()->select(new_entry);
@@ -291,14 +287,13 @@ void DeviceConfDialog::deleteDeviceAction()
     DeviceData *data;
     CdDevice *dev;
 
-    if (selectedRow_)
-    {
+    if (selectedRow_) {
 
         data = (*selectedRow_)[listColumns_.data];
 
         dev = CdDevice::find(data->dev.c_str());
-        if (dev == NULL || dev->status() == CdDevice::DEV_RECORDING || dev->status() == CdDevice::DEV_BLANKING)
-        {
+        if (dev == NULL || dev->status() == CdDevice::DEV_RECORDING ||
+            dev->status() == CdDevice::DEV_BLANKING) {
             // don't remove device that is currently busy
             return;
         }
@@ -329,8 +324,7 @@ Gtk::TreeIter DeviceConfDialog::appendTableEntry(CdDevice *dev)
     data->driverId = dev->driverId();
     data->options = dev->driverOptions();
 
-    switch (dev->deviceType())
-    {
+    switch (dev->deviceType()) {
     case CdDevice::CD_ROM:
         data->deviceType = 0;
         break;
@@ -363,13 +357,11 @@ void DeviceConfDialog::import()
 
     listModel_->clear();
 
-    for (drun = CdDevice::first(); drun != NULL; drun = CdDevice::next(drun))
-    {
+    for (drun = CdDevice::first(); drun != NULL; drun = CdDevice::next(drun)) {
         appendTableEntry(drun);
     }
 
-    if (listModel_->children().size() > 0)
-    {
+    if (listModel_->children().size() > 0) {
         list_.columns_autosize();
         list_.get_selection()->select(Gtk::TreeModel::Path((unsigned)1));
     }
@@ -380,8 +372,7 @@ void DeviceConfDialog::importConfiguration(Gtk::TreeIter row)
     char buf[50];
     DeviceData *data;
 
-    if (selectedRow_)
-    {
+    if (selectedRow_) {
 
         data = (*selectedRow_)[listColumns_.data];
         driverMenu_.set_sensitive(true);
@@ -391,9 +382,7 @@ void DeviceConfDialog::importConfiguration(Gtk::TreeIter row)
         driverOptionsEntry_.set_sensitive(true);
         snprintf(buf, sizeof(buf), "0x%lx", data->options);
         driverOptionsEntry_.set_text(buf);
-    }
-    else
-    {
+    } else {
 
         driverMenu_.set_active(0);
         driverMenu_.set_sensitive(false);
@@ -410,12 +399,10 @@ void DeviceConfDialog::importStatus()
     CdDevice *dev;
 
     Gtk::TreeNodeChildren ch = listModel_->children();
-    for (unsigned i = 0; i < ch.size(); i++)
-    {
+    for (unsigned i = 0; i < ch.size(); i++) {
         Gtk::TreeRow row = ch[i];
         data = row[listColumns_.data];
-        if (data && (dev = CdDevice::find(data->dev.c_str())))
-        {
+        if (data && (dev = CdDevice::find(data->dev.c_str()))) {
             row[listColumns_.status] = CdDevice::status2string(dev->status());
         }
     }
@@ -427,12 +414,10 @@ void DeviceConfDialog::exportConfiguration(Gtk::TreeIter row)
 {
     DeviceData *data;
 
-    if (row)
-    {
+    if (row) {
         data = (*row)[listColumns_.data];
 
-        if (data)
-        {
+        if (data) {
             data->options = strtoul(driverOptionsEntry_.get_text().c_str(), NULL, 0);
         }
     }
@@ -445,27 +430,22 @@ void DeviceConfDialog::exportData()
     std::string s;
 
     Gtk::TreeNodeChildren ch = listModel_->children();
-    for (unsigned i = 0; i < ch.size(); i++)
-    {
+    for (unsigned i = 0; i < ch.size(); i++) {
         Gtk::TreeRow row = ch[i];
         data = row[listColumns_.data];
-        if (data && (dev = CdDevice::find(data->dev.c_str())))
-        {
+        if (data && (dev = CdDevice::find(data->dev.c_str()))) {
 
-            if (dev->driverId() != data->driverId)
-            {
+            if (dev->driverId() != data->driverId) {
                 dev->driverId(data->driverId);
                 dev->manuallyConfigured(true);
             }
 
-            if (dev->deviceType() != ID2DEVICE_TYPE[data->deviceType])
-            {
+            if (dev->deviceType() != ID2DEVICE_TYPE[data->deviceType]) {
                 dev->deviceType(ID2DEVICE_TYPE[data->deviceType]);
                 dev->manuallyConfigured(true);
             }
 
-            if (dev->driverOptions() != data->options)
-            {
+            if (dev->driverOptions() != data->options) {
                 dev->driverOptions(data->options);
                 dev->manuallyConfigured(true);
             }
@@ -476,8 +456,7 @@ void DeviceConfDialog::exportData()
 void DeviceConfDialog::setDriverId(void)
 {
     int id = driverMenu_.get_active_row_number();
-    if (selectedRow_ && id >= 0 && id <= CdDevice::maxDriverId())
-    {
+    if (selectedRow_ && id >= 0 && id <= CdDevice::maxDriverId()) {
         DeviceData *data = (*selectedRow_)[listColumns_.data];
         if (data)
             data->driverId = id;
@@ -487,8 +466,7 @@ void DeviceConfDialog::setDriverId(void)
 void DeviceConfDialog::setDeviceType(void)
 {
     int id = devtypeMenu_.get_active_row_number();
-    if (selectedRow_ && id >= 0 && id <= MAX_DEVICE_TYPE_ID)
-    {
+    if (selectedRow_ && id >= 0 && id <= MAX_DEVICE_TYPE_ID) {
         DeviceData *data = (*selectedRow_)[listColumns_.data];
         if (data)
             data->deviceType = id;
@@ -499,8 +477,7 @@ void DeviceConfDialog::selectionChanged()
 {
     Gtk::TreeIter new_sel = list_.get_selection()->get_selected();
 
-    if ((bool)selectedRow_ != (bool)new_sel || selectedRow_ != new_sel)
-    {
+    if ((bool)selectedRow_ != (bool)new_sel || selectedRow_ != new_sel) {
 
         if (selectedRow_)
             exportConfiguration(selectedRow_);
@@ -520,8 +497,7 @@ const char *DeviceConfDialog::checkString(const std::string &str)
     if (len == 0)
         return NULL;
 
-    if (buf == NULL || len + 1 > bufLen)
-    {
+    if (buf == NULL || len + 1 > bufLen) {
         delete[] buf;
         bufLen = len + 1;
         buf = new char[bufLen];
@@ -538,8 +514,7 @@ const char *DeviceConfDialog::checkString(const std::string &str)
     if (*s == 0)
         return NULL;
 
-    while (p > s && isspace(*p))
-    {
+    while (p > s && isspace(*p)) {
         *p = 0;
         p--;
     }

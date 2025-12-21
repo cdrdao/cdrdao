@@ -39,15 +39,16 @@
 
 #define MAX_CORRECTION_ID 3
 
-static RecordCDSource::CorrectionTable CORRECTION_TABLE[MAX_CORRECTION_ID + 1] = {{3, N_("Jitter + scratch (slow)")},
-                                                                                  {2, N_("Jitter + checks")},
-                                                                                  {1, N_("Jitter correction")},
-                                                                                  {0, N_("No checking (fast)")}};
+static RecordCDSource::CorrectionTable CORRECTION_TABLE[MAX_CORRECTION_ID + 1] = {
+    {3, N_("Jitter + scratch (slow)")},
+    {2, N_("Jitter + checks")},
+    {1, N_("Jitter correction")},
+    {0, N_("No checking (fast)")}};
 
 #define MAX_SUBCHAN_READ_MODE_ID 2
 
-static RecordCDSource::SubChanReadModeTable SUBCHAN_READ_MODE_TABLE[MAX_SUBCHAN_READ_MODE_ID + 1] = {
-    {0, N_("none")}, {1, N_("R-W packed")}, {2, N_("R-W raw")}};
+static RecordCDSource::SubChanReadModeTable SUBCHAN_READ_MODE_TABLE[MAX_SUBCHAN_READ_MODE_ID + 1] =
+    {{0, N_("none")}, {1, N_("R-W packed")}, {2, N_("R-W raw")}};
 
 RecordCDSource::RecordCDSource(Gtk::Window *parent)
 {
@@ -94,7 +95,8 @@ RecordCDSource::RecordCDSource(Gtk::Window *parent)
     speedButton_ = new Gtk::CheckButton(_("Use max."), 0);
     speedButton_->set_active(true);
     speedButton_->show();
-    speedButton_->signal_toggled().connect(sigc::mem_fun(*this, &RecordCDSource::speedButtonChanged));
+    speedButton_->signal_toggled().connect(
+        sigc::mem_fun(*this, &RecordCDSource::speedButtonChanged));
     hbox->pack_start(*speedButton_, true, true);
     vbox->pack_start(*hbox);
 
@@ -129,8 +131,7 @@ RecordCDSource::~RecordCDSource()
 
 void RecordCDSource::start()
 {
-    if (active_)
-    {
+    if (active_) {
         get_parent_window()->raise();
         return;
     }
@@ -144,8 +145,7 @@ void RecordCDSource::start()
 
 void RecordCDSource::stop()
 {
-    if (active_)
-    {
+    if (active_) {
         hide();
         active_ = 0;
     }
@@ -164,8 +164,7 @@ void RecordCDSource::update(unsigned long level)
 
 void RecordCDSource::moreOptions()
 {
-    if (!moreOptionsDialog_)
-    {
+    if (!moreOptionsDialog_) {
         Gtk::Table *table;
         Gtk::Label *label;
 
@@ -174,8 +173,8 @@ void RecordCDSource::moreOptions()
         table->set_col_spacings(10);
         table->set_border_width(5);
 
-        moreOptionsDialog_ = new Gtk::MessageDialog(*parent_, _("Source options"), false, Gtk::MESSAGE_QUESTION,
-                                                    Gtk::BUTTONS_CLOSE, true);
+        moreOptionsDialog_ = new Gtk::MessageDialog(
+            *parent_, _("Source options"), false, Gtk::MESSAGE_QUESTION, Gtk::BUTTONS_CLOSE, true);
 
         Gtk::Box *box = moreOptionsDialog_->get_vbox();
         Gtk::Frame *frame = new Gtk::Frame(_(" More Source Options "));
@@ -195,11 +194,11 @@ void RecordCDSource::moreOptions()
         ignoreIncorrectTOCButton_->set_active(false);
         table->attach(*ignoreIncorrectTOCButton_, 0, 1, 1, 2);
 
-        for (int i = 0; i <= MAX_CORRECTION_ID; i++)
-        {
+        for (int i = 0; i <= MAX_CORRECTION_ID; i++) {
             correctionMenu_.append(CORRECTION_TABLE[i].name);
         }
-        correctionMenu_.signal_changed().connect(sigc::mem_fun(*this, &RecordCDSource::setCorrection));
+        correctionMenu_.signal_changed().connect(
+            sigc::mem_fun(*this, &RecordCDSource::setCorrection));
         correctionMenu_.set_active(correction_);
 
         Gtk::Alignment *align;
@@ -210,11 +209,11 @@ void RecordCDSource::moreOptions()
         table->attach(*align, 0, 1, 2, 3, Gtk::FILL);
         table->attach(correctionMenu_, 1, 2, 2, 3);
 
-        for (int i = 0; i <= MAX_SUBCHAN_READ_MODE_ID; i++)
-        {
+        for (int i = 0; i <= MAX_SUBCHAN_READ_MODE_ID; i++) {
             subChanReadModeMenu_.append(SUBCHAN_READ_MODE_TABLE[i].name);
         }
-        subChanReadModeMenu_.signal_changed().connect(sigc::mem_fun(*this, &RecordCDSource::setSubChanReadMode));
+        subChanReadModeMenu_.signal_changed().connect(
+            sigc::mem_fun(*this, &RecordCDSource::setSubChanReadMode));
         subChanReadModeMenu_.set_active(subChanReadMode_);
 
         label = new Gtk::Label(_("Sub-Channel Reading Mode:"));
@@ -265,12 +264,9 @@ int RecordCDSource::getSubChanReadMode()
 
 void RecordCDSource::speedButtonChanged()
 {
-    if (speedButton_->get_active())
-    {
+    if (speedButton_->get_active()) {
         speedSpinButton_->set_sensitive(false);
-    }
-    else
-    {
+    } else {
         speedSpinButton_->set_sensitive(true);
     }
 }

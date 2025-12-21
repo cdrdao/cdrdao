@@ -17,80 +17,76 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-
 #include <config.h>
 
-
-#include "TrackDataList.h"
 #include "TrackData.h"
+#include "TrackDataList.h"
 
 TrackDataList::TrackDataList()
 {
-  list_ = last_ = NULL;
-  iterator_ = NULL;
-  count_ = 0;
+    list_ = last_ = NULL;
+    iterator_ = NULL;
+    count_ = 0;
 }
 
- 
 void TrackDataList::append(TrackData *a)
 {
-  Entry *ent = new Entry;
+    Entry *ent = new Entry;
 
-  ent->data = a;
-  ent->next = NULL;
+    ent->data = a;
+    ent->next = NULL;
 
-  if (list_ == NULL) 
-    list_ = ent;
-  else
-    last_->next = ent;
+    if (list_ == NULL)
+        list_ = ent;
+    else
+        last_->next = ent;
 
-  last_ = ent;
+    last_ = ent;
 
-  count_++;
+    count_++;
 }
 
 unsigned long TrackDataList::length() const
 {
-  unsigned long len = 0;
-  Entry *run;
+    unsigned long len = 0;
+    Entry *run;
 
-  for (run = list_; run != NULL; run = run->next) 
-    len += run->data->length();
+    for (run = list_; run != NULL; run = run->next)
+        len += run->data->length();
 
-  return len;
+    return len;
 }
 
 void TrackDataList::clear()
 {
-  Entry *next;
+    Entry *next;
 
-  while (list_ != NULL) {
-    next = list_->next;
+    while (list_ != NULL) {
+        next = list_->next;
 
-    delete list_->data;
-    delete list_;
+        delete list_->data;
+        delete list_;
 
-    list_ = next;
-  }
+        list_ = next;
+    }
 
-  last_ = NULL;
-  iterator_ = NULL;
-  count_ = 0;
+    last_ = NULL;
+    iterator_ = NULL;
+    count_ = 0;
 }
 
 const TrackData *TrackDataList::first() const
 {
-  if ((((TrackDataList *)this)->iterator_ = list_) != NULL)
-    return iterator_->data;
-  else
-    return NULL;
+    if ((((TrackDataList *)this)->iterator_ = list_) != NULL)
+        return iterator_->data;
+    else
+        return NULL;
 }
 
 const TrackData *TrackDataList::next() const
 {
-  if (iterator_ == NULL ||
-      (((TrackDataList *)this)->iterator_ = iterator_->next) == NULL)
-    return NULL;
-  else
-    return iterator_->data;
+    if (iterator_ == NULL || (((TrackDataList *)this)->iterator_ = iterator_->next) == NULL)
+        return NULL;
+    else
+        return iterator_->data;
 }

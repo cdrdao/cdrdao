@@ -34,8 +34,7 @@ class AddFileDialog;
 class AddSilenceDialog;
 class Track;
 
-enum
-{
+enum {
     TARGET_URI_LIST,
 };
 
@@ -49,8 +48,7 @@ class AudioCDView : public GenericView
 
     void update(unsigned long level = 0);
 
-    enum Mode
-    {
+    enum Mode {
         ZOOM,
         SELECT
     };

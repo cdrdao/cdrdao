@@ -28,46 +28,47 @@
 #define NUM_OF_INDEXES 98
 
 enum session_type {
-	CD_DA = 1,	/* only audio tracks */
-	CD_ROM,		/* mode1 [and audio] */
-	CD_ROM_XA,	/* mode2 form1 or mode2 form2 [and audio] */
-	INVALID		/* invalid mixture of track modes */
+    CD_DA = 1, /* only audio tracks */
+    CD_ROM,    /* mode1 [and audio] */
+    CD_ROM_XA, /* mode2 form1 or mode2 form2 [and audio] */
+    INVALID    /* invalid mixture of track modes */
 };
 
-enum track_mode {	/* corresponding TRACK types in CUE format: */
-	AUDIO = 1,	/* AUDIO (2352)	*/
-	MODE1,		/* MODE1/2048	*/
-	MODE1_RAW,	/* MODE1/2352	*/
-	MODE2,		/* MODE2/2336	*/
-	MODE2_RAW	/* MODE2/2352 	*/
+enum track_mode { /* corresponding TRACK types in CUE format: */
+    AUDIO = 1,    /* AUDIO (2352)	*/
+    MODE1,        /* MODE1/2048	*/
+    MODE1_RAW,    /* MODE1/2352	*/
+    MODE2,        /* MODE2/2336	*/
+    MODE2_RAW     /* MODE2/2352 	*/
 };
 
 struct trackspec {
-	enum track_mode mode;
-	int copy;			/* boolean */
-	int pre_emphasis;		/* boolean */
-	int four_channel_audio;		/* boolean */
-	char isrc[13];
-	char title[CDTEXTLEN + 1];
-	char performer[CDTEXTLEN + 1];
-	char songwriter[CDTEXTLEN + 1];
-	char filename[FILENAMELEN + 1];;
-	long pregap;			/* Pre-gap in frames */
-	int pregap_data_from_file;	/* boolean */
-	long start;			/* track start in frames */
-	long postgap;			/* Post-gap in frames */
-	long indexes[NUM_OF_INDEXES];	/* indexes in frames */
-	struct trackspec *next;
+    enum track_mode mode;
+    int copy;               /* boolean */
+    int pre_emphasis;       /* boolean */
+    int four_channel_audio; /* boolean */
+    char isrc[13];
+    char title[CDTEXTLEN + 1];
+    char performer[CDTEXTLEN + 1];
+    char songwriter[CDTEXTLEN + 1];
+    char filename[FILENAMELEN + 1];
+    ;
+    long pregap;                  /* Pre-gap in frames */
+    int pregap_data_from_file;    /* boolean */
+    long start;                   /* track start in frames */
+    long postgap;                 /* Post-gap in frames */
+    long indexes[NUM_OF_INDEXES]; /* indexes in frames */
+    struct trackspec *next;
 };
 
 struct cuesheet {
-	char catalog[14];
-	enum session_type type;
-	char title[CDTEXTLEN + 1];
-	char performer[CDTEXTLEN + 1];
-	char songwriter[CDTEXTLEN + 1];
-	struct trackspec *tracklist;
+    char catalog[14];
+    enum session_type type;
+    char title[CDTEXTLEN + 1];
+    char performer[CDTEXTLEN + 1];
+    char songwriter[CDTEXTLEN + 1];
+    struct trackspec *tracklist;
 };
 
-struct cuesheet *read_cue(const char*, const char*);
-void write_toc(const char *, struct cuesheet*, int);
+struct cuesheet *read_cue(const char *, const char *);
+void write_toc(const char *, struct cuesheet *, int);

@@ -17,8 +17,8 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#include <assert.h>
 #include <algorithm>
+#include <assert.h>
 
 #include "CdTextContainer.h"
 #include "CdTextItem.h"
@@ -29,36 +29,19 @@ struct LanguageCode {
 };
 
 static LanguageCode LANGUAGE_CODES[] = {
-    { 0x75, "Chinese" },
-    { 0x06, "Czech" },
-    { 0x07, "Danish" },
-    { 0x1d, "Dutch" },
-    { 0x09, "English" },
-    { 0x27, "Finnish" },
-    { 0x0f, "French" },
-    { 0x08, "German" },
-    { 0x70, "Greek" },
-    { 0x1b, "Hungarian" },
-    { 0x15, "Italian" },
-    { 0x69, "Japanese" },
-    { 0x65, "Korean" },
-    { 0x1e, "Norwegian" },
-    { 0x20, "Polish" },
-    { 0x21, "Portuguese" },
-    { 0x56, "Russian" },
-    { 0x26, "Slovene" },
-    { 0x0a, "Spanish" },
-    { 0x28, "Swedish" }
-};
+    {0x75, "Chinese"}, {0x06, "Czech"},     {0x07, "Danish"},  {0x1d, "Dutch"},
+    {0x09, "English"}, {0x27, "Finnish"},   {0x0f, "French"},  {0x08, "German"},
+    {0x70, "Greek"},   {0x1b, "Hungarian"}, {0x15, "Italian"}, {0x69, "Japanese"},
+    {0x65, "Korean"},  {0x1e, "Norwegian"}, {0x20, "Polish"},  {0x21, "Portuguese"},
+    {0x56, "Russian"}, {0x26, "Slovene"},   {0x0a, "Spanish"}, {0x28, "Swedish"}};
 
 static int NOF_LANGUAGE_CODES = sizeof(LANGUAGE_CODES) / sizeof(LanguageCode);
 
-CdTextContainer::CdTextContainer()
-    : languages(8, -1), encodings(8, Util::Encoding::UNSET)
+CdTextContainer::CdTextContainer() : languages(8, -1), encodings(8, Util::Encoding::UNSET)
 {
 }
 
-void CdTextContainer::print(int isTrack, std::ostream &out, PrintParams& params) const
+void CdTextContainer::print(int isTrack, std::ostream &out, PrintParams &params) const
 {
     int i;
     int foundLanguageMapping;
@@ -91,7 +74,7 @@ void CdTextContainer::print(int isTrack, std::ostream &out, PrintParams& params)
 
         out << "  LANGUAGE " << actBlockNr << " {\n";
 
-        for (const auto& item : items_) {
+        for (const auto &item : items_) {
             if (item->blockNr() != actBlockNr) {
                 actBlockNr = item->blockNr();
                 out << "  }\n  LANGUAGE " << actBlockNr << " {\n";
@@ -105,19 +88,19 @@ void CdTextContainer::print(int isTrack, std::ostream &out, PrintParams& params)
     }
 }
 
-void CdTextContainer::add(CdTextItem* item)
+void CdTextContainer::add(CdTextItem *item)
 {
     remove(item->packType(), item->blockNr());
 
     items_.emplace_back(item);
 
     std::sort(items_.begin(), items_.end(),
-              [](std::shared_ptr<CdTextItem> a,
-                 std::shared_ptr<CdTextItem> b) {
+              [](std::shared_ptr<CdTextItem> a, std::shared_ptr<CdTextItem> b) {
                   if (a->blockNr() != b->blockNr())
                       return a->blockNr() < b->blockNr();
                   else
-                      return a->packType() < b->packType(); });
+                      return a->packType() < b->packType();
+              });
 }
 
 void CdTextContainer::remove(CdTextItem::PackType type, int blockNr)
@@ -130,17 +113,16 @@ void CdTextContainer::remove(CdTextItem::PackType type, int blockNr)
 
 bool CdTextContainer::existBlock(int blockNr) const
 {
-    for (const auto& item : items_)
+    for (const auto &item : items_)
         if (item->blockNr() == blockNr)
             return true;
 
     return false;
 }
 
-const CdTextItem *CdTextContainer::getPack(int blockNr,
-					   CdTextItem::PackType type) const
+const CdTextItem *CdTextContainer::getPack(int blockNr, CdTextItem::PackType type) const
 {
-    for (const auto& item : items_)
+    for (const auto &item : items_)
         if (item->blockNr() == blockNr && item->packType() == type)
             return item.get();
 
@@ -154,7 +136,6 @@ void CdTextContainer::language(int blockNr, int lang)
 
     languages[blockNr] = lang;
 }
-
 
 int CdTextContainer::language(int blockNr) const
 {
@@ -170,10 +151,10 @@ void CdTextContainer::encoding(int blockNr, Util::Encoding enc)
     encodings[blockNr] = enc;
 }
 
-void CdTextContainer::enforceEncoding(CdTextContainer* global)
+void CdTextContainer::enforceEncoding(CdTextContainer *global)
 {
     if (global == this) {
-        for (auto& e : encodings)
+        for (auto &e : encodings)
             if (e == Util::Encoding::UNSET)
                 e = Util::Encoding::LATIN;
     } else {

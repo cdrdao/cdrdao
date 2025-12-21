@@ -20,27 +20,30 @@
 #ifndef __CDTEXTCONTAINER_H__
 #define __CDTEXTCONTAINER_H__
 
-#include <iterator>
 #include <iostream>
-#include <vector>
+#include <iterator>
 #include <memory>
+#include <vector>
 
-#include "util.h"
 #include "CdTextItem.h"
+#include "util.h"
 
-
-class CdTextContainer {
-public:
+class CdTextContainer
+{
+  public:
     CdTextContainer();
     CdTextContainer(const CdTextContainer &) = default;
 
-    long count() const { return items_.size(); }
+    long count() const
+    {
+        return items_.size();
+    }
 
-    void add(CdTextItem*);
+    void add(CdTextItem *);
 
     void remove(CdTextItem::PackType, int blockNr);
 
-    void print(int isTrack, std::ostream &, PrintParams&) const;
+    void print(int isTrack, std::ostream &, PrintParams &) const;
 
     // checks if a pack exists for given 'blockNr' (language)
     bool existBlock(int blockNr) const;
@@ -55,38 +58,58 @@ public:
     // sets/returns character encoding for block nr
     void encoding(int blockNr, Util::Encoding enc);
     Util::Encoding encoding(int blockNr) const;
-    void enforceEncoding(CdTextContainer* global);
+    void enforceEncoding(CdTextContainer *global);
 
     static const char *languageName(int lang);
 
     // Allow iteration over CD-TEXT items
     struct Iterator {
         using iterator_category = std::forward_iterator_tag;
-        using difference_type   = std::ptrdiff_t;
+        using difference_type = std::ptrdiff_t;
         using value_type = CdTextItem;
         using pointer = std::vector<std::shared_ptr<CdTextItem>>::const_iterator;
-        using reference = CdTextItem&;
+        using reference = CdTextItem &;
 
-        Iterator(pointer item) : m_ptr(item) {}
-        friend bool operator==(const Iterator& a, const Iterator& b) { return a.m_ptr == b.m_ptr; }
-        friend bool operator!=(const Iterator& a, const Iterator& b) { return a.m_ptr != b.m_ptr; }
-        Iterator& operator++() { m_ptr++; return *this; }
-        reference operator*() const { return *(*m_ptr); }
+        Iterator(pointer item) : m_ptr(item)
+        {
+        }
+        friend bool operator==(const Iterator &a, const Iterator &b)
+        {
+            return a.m_ptr == b.m_ptr;
+        }
+        friend bool operator!=(const Iterator &a, const Iterator &b)
+        {
+            return a.m_ptr != b.m_ptr;
+        }
+        Iterator &operator++()
+        {
+            m_ptr++;
+            return *this;
+        }
+        reference operator*() const
+        {
+            return *(*m_ptr);
+        }
 
         pointer m_ptr;
     };
 
-    Iterator begin() const { return Iterator(items_.begin()); }
-    Iterator end() const { return Iterator(items_.end()); }
+    Iterator begin() const
+    {
+        return Iterator(items_.begin());
+    }
+    Iterator end() const
+    {
+        return Iterator(items_.end());
+    }
 
-private:
+  private:
     std::vector<std::shared_ptr<CdTextItem>> items_;
 
-    std::vector<int> languages; // mapping from block nr to language code
+    std::vector<int> languages;            // mapping from block nr to language code
     std::vector<Util::Encoding> encodings; // mapping from block_nr to encoding
 
     void setDefaultLanguageMapping();
-
 };
 
 #endif

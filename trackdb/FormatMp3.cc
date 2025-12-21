@@ -21,18 +21,17 @@
 //  mpg321 - a fully free clone of mpg123.
 //  Copyright (C) 2001 Joe Drew <drew@debian.org>
 
+#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <string.h>
-#include <fcntl.h>
-#include <sys/types.h>
-#include <sys/stat.h>
 #include <sys/mman.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
 
-#include "log.h"
 #include "FormatMp3.h"
-
+#include "log.h"
 
 FormatMp3::FormatMp3()
 {
@@ -73,15 +72,13 @@ FormatSupport::Status FormatMp3::madInit()
     struct stat st;
 
     if (stat(src_file_.c_str(), &st) != 0) {
-        log_message(-2, "Could not stat input file \"%s\": %s", src_file_.c_str(),
-                    strerror(errno));
+        log_message(-2, "Could not stat input file \"%s\": %s", src_file_.c_str(), strerror(errno));
         return FS_INPUT_PROBLEM;
     }
 
     mapped_fd_ = open(src_file_.c_str(), O_RDONLY);
     if (!mapped_fd_) {
-        log_message(-2, "Could not open input file \"%s\": %s", src_file_.c_str(),
-                    strerror(errno));
+        log_message(-2, "Could not open input file \"%s\": %s", src_file_.c_str(), strerror(errno));
         return FS_INPUT_PROBLEM;
     }
 
@@ -102,7 +99,7 @@ FormatSupport::Status FormatMp3::madInit()
     mad_frame_init(&frame_);
     mad_synth_init(&synth_);
     mad_stream_options(&stream_, 0);
-    mad_stream_buffer(&stream_, (unsigned char*)start_, length_);
+    mad_stream_buffer(&stream_, (unsigned char *)start_, length_);
 
     return FS_SUCCESS;
 }
@@ -111,11 +108,10 @@ FormatSupport::Status FormatMp3::madDecodeFrame()
 {
     if (mad_frame_decode(&frame_, &stream_) == -1) {
 
-        if (stream_.error != MAD_ERROR_BUFLEN &&
-            stream_.error != MAD_ERROR_LOSTSYNC) {
-            log_message(-1, "Decoding error 0x%04x (%s) at byte offset %u",
-                        stream_.error, mad_stream_errorstr(&stream_),
-                        stream_.this_frame - (unsigned char*)start_);
+        if (stream_.error != MAD_ERROR_BUFLEN && stream_.error != MAD_ERROR_LOSTSYNC) {
+            log_message(-1, "Decoding error 0x%04x (%s) at byte offset %u", stream_.error,
+                        mad_stream_errorstr(&stream_),
+                        stream_.this_frame - (unsigned char *)start_);
         }
 
         if (stream_.error == MAD_ERROR_BUFLEN)
@@ -146,8 +142,7 @@ unsigned long FormatMp3::prng(unsigned long state)
     return (state * 0x0019660dL + 0x3c6ef35fL) & 0xffffffffL;
 }
 
-signed long FormatMp3::audio_linear_dither(unsigned int bits,
-                                           mad_fixed_t sample,
+signed long FormatMp3::audio_linear_dither(unsigned int bits, mad_fixed_t sample,
                                            struct audio_dither *dither)
 {
     unsigned int scalebits;
@@ -155,7 +150,7 @@ signed long FormatMp3::audio_linear_dither(unsigned int bits,
 
     enum {
         MIN = -MAD_F_ONE,
-        MAX =  MAD_F_ONE - 1
+        MAX = MAD_F_ONE - 1
     };
 
     /* noise shape */
@@ -171,7 +166,7 @@ signed long FormatMp3::audio_linear_dither(unsigned int bits,
     mask = (1L << scalebits) - 1;
 
     /* dither */
-    random  = prng(dither->random);
+    random = prng(dither->random);
     output += (random & mask) - (dither->random & mask);
 
     dither->random = random;
@@ -182,8 +177,7 @@ signed long FormatMp3::audio_linear_dither(unsigned int bits,
 
         if (sample > MAX)
             sample = MAX;
-    }
-    else if (output < MIN) {
+    } else if (output < MIN) {
         output = MIN;
 
         if (sample < MIN)
@@ -202,18 +196,18 @@ signed long FormatMp3::audio_linear_dither(unsigned int bits,
 
 FormatSupport::Status FormatMp3::madOutput()
 {
-    struct mad_pcm* pcm = &synth_.pcm;
+    struct mad_pcm *pcm = &synth_.pcm;
     int nsamples = pcm->length;
     mad_fixed_t const *left_ch = pcm->samples[0], *right_ch = pcm->samples[1];
-    
-    char* ptr = buffer_;
+
+    char *ptr = buffer_;
     signed int sample;
     mad_fixed_t tempsample;
 
     if (pcm->channels == 2) {
         while (nsamples--) {
             tempsample = (mad_fixed_t)(*left_ch++);
-            sample = (signed int)audio_linear_dither(16, tempsample,&dither_);
+            sample = (signed int)audio_linear_dither(16, tempsample, &dither_);
 
 #ifndef WORDS_BIGENDIAN
             *ptr++ = (unsigned char)(sample >> 0);
@@ -222,7 +216,7 @@ FormatSupport::Status FormatMp3::madOutput()
             *ptr++ = (unsigned char)(sample >> 8);
             *ptr++ = (unsigned char)(sample >> 0);
 #endif
-            
+
             tempsample = (mad_fixed_t)(*right_ch++);
             sample = (signed int)audio_linear_dither(16, tempsample, &dither_);
 #ifndef WORDS_BIGENDIAN
@@ -239,9 +233,9 @@ FormatSupport::Status FormatMp3::madOutput()
 
     } else {
         while (nsamples--) {
-            tempsample = (mad_fixed_t)((*left_ch++)/MAD_F_ONE);
+            tempsample = (mad_fixed_t)((*left_ch++) / MAD_F_ONE);
             sample = (signed int)audio_linear_dither(16, tempsample, &dither_);
-            
+
             /* Just duplicate the sample across both channels. */
 #ifndef WORDS_BIGENDIAN
             *ptr++ = (unsigned char)(sample >> 0);
@@ -269,7 +263,7 @@ FormatSupport::Status FormatMp3::madOutput()
 //
 //
 
-FormatSupport* FormatMp3Manager::newConverter(const char* extension)
+FormatSupport *FormatMp3Manager::newConverter(const char *extension)
 {
     if (strcmp(extension, "mp3") == 0)
         return new FormatMp3;
@@ -277,9 +271,8 @@ FormatSupport* FormatMp3Manager::newConverter(const char* extension)
     return NULL;
 }
 
-int FormatMp3Manager::supportedExtensions(std::list<std::string>& list)
+int FormatMp3Manager::supportedExtensions(std::list<std::string> &list)
 {
     list.push_front("mp3");
     return 1;
 }
-

@@ -25,69 +25,66 @@
 class Toc;
 class Track;
 
-class SonyCDU920 : public CdrDriver {
-public:
+class SonyCDU920 : public CdrDriver
+{
+  public:
+    SonyCDU920(ScsiIf *scsiIf, unsigned long options);
+    ~SonyCDU920();
+    static CdrDriver *instance(ScsiIf *scsiIf, unsigned long options);
 
-  SonyCDU920(ScsiIf *scsiIf, unsigned long options);
-  ~SonyCDU920();
-  static CdrDriver *instance(ScsiIf *scsiIf, unsigned long options);
+    unsigned long getReadCapabilities(const CdToc *, int) const
+    {
+        return 0;
+    }
 
-  unsigned long getReadCapabilities(const CdToc *, int) const { return 0; }
+    int bigEndianSamples() const;
 
-  int bigEndianSamples() const;
+    int multiSession(int);
+    int speed(int);
 
-  int multiSession(int);
-  int speed(int);
+    int loadUnload(int) const;
 
-  int loadUnload(int) const;
-  
-  int initDao(const Toc *);
-  int startDao();
-  int finishDao();
-  void abortDao();
-  int writeData(TrackData::Mode, TrackData::SubChannelMode, long &lba,
-		const char *buf, long len);
+    int initDao(const Toc *);
+    int startDao();
+    int finishDao();
+    void abortDao();
+    int writeData(TrackData::Mode, TrackData::SubChannelMode, long &lba, const char *buf, long len);
 
-  DiskInfo *diskInfo();
-  Toc *readDiskToc(int session, const char *audioFilename);
+    DiskInfo *diskInfo();
+    Toc *readDiskToc(int session, const char *audioFilename);
 
-protected:
-  int scsiTimeout_;
-  Msf leadInStart_; // start of lead-in
-  long leadInLen_;  // length of lead-in
-  
-  DiskInfo diskInfo_;
+  protected:
+    int scsiTimeout_;
+    Msf leadInStart_; // start of lead-in
+    long leadInLen_;  // length of lead-in
 
-  int getSessionInfo();
+    DiskInfo diskInfo_;
 
-  int readCatalog(Toc *, long startLba, long endLba);
-  int readIsrc(int, char *);
+    int getSessionInfo();
 
-  virtual int selectSpeed();        // overloaded by 'SonyCDU948'
-  virtual int setWriteParameters(); // overloaded by 'SonyCDU948'
+    int readCatalog(Toc *, long startLba, long endLba);
+    int readIsrc(int, char *);
 
-  unsigned char *createCueSheet(unsigned char leadInDataForm,
-				long *cueSheetLen);
-  int sendCueSheet(unsigned char leadInDataForm);
+    virtual int selectSpeed();        // overloaded by 'SonyCDU948'
+    virtual int setWriteParameters(); // overloaded by 'SonyCDU948'
 
-  int readBufferCapacity(long *capacity);
+    unsigned char *createCueSheet(unsigned char leadInDataForm, long *cueSheetLen);
+    int sendCueSheet(unsigned char leadInDataForm);
 
-  int analyzeTrack(TrackData::Mode, int trackNr, long startLba, long endLba,
-		   Msf *index,
-		   int *indexCnt, long *pregap, char *isrcCode,
-		   unsigned char *ctl);
+    int readBufferCapacity(long *capacity);
 
-  int readSubChannels(TrackData::SubChannelMode, long lba, long len,
-		      SubChannel ***, Sample *);
+    int analyzeTrack(TrackData::Mode, int trackNr, long startLba, long endLba, Msf *index,
+                     int *indexCnt, long *pregap, char *isrcCode, unsigned char *ctl);
 
-  CdRawToc *getRawToc(int sessionNr, int *len);
+    int readSubChannels(TrackData::SubChannelMode, long lba, long len, SubChannel ***, Sample *);
 
-  long readTrackData(TrackData::Mode, TrackData::SubChannelMode,
-		     long lba, long len, unsigned char *buf);
+    CdRawToc *getRawToc(int sessionNr, int *len);
 
-  int readAudioRange(ReadDiskInfo *, int fd, long start, long end,
-		     int startTrack, int endTrack, TrackInfo *);
+    long readTrackData(TrackData::Mode, TrackData::SubChannelMode, long lba, long len,
+                       unsigned char *buf);
 
+    int readAudioRange(ReadDiskInfo *, int fd, long start, long end, int startTrack, int endTrack,
+                       TrackInfo *);
 };
 
 #endif

@@ -68,8 +68,7 @@ class TrackInfoDialog : public Gtk::Dialog
     TextEdit *isrcCodeYear_;
     TextEdit *isrcCodeSerial_;
 
-    struct CdTextPage
-    {
+    struct CdTextPage {
         Gtk::Label *label;
         Gtk::Entry *title;
         Gtk::Entry *performer;

@@ -23,7 +23,7 @@
 // Initialize log code. Must be called first.
 void log_init();
 
-// Log given formatted message. 
+// Log given formatted message.
 //
 // Level definitions:
 //   -1 : warning
@@ -39,4 +39,3 @@ void log_message(int level, const char *fmt, ...);
 void log_set_verbose(int level);
 
 #endif
-

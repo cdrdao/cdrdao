@@ -37,8 +37,7 @@ class TocEdit;
 class AudioCDProject : public Project
 {
   public:
-    enum PlayStatus
-    {
+    enum PlayStatus {
         PLAYING,
         PAUSED,
         STOPPED

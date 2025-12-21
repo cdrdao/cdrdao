@@ -74,8 +74,7 @@ void RecordHDTarget::start()
 
 void RecordHDTarget::stop()
 {
-    if (active_)
-    {
+    if (active_) {
         hide();
         active_ = false;
     }
