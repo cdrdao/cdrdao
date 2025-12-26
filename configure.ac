@@ -23,6 +23,12 @@ AC_ARG_WITH(ogg-support,[  --with-ogg-support      enable OGG format support (de
 
 AC_ARG_WITH(mp3-support,[  --with-mp3-support      enable MP3 format support (default is YES)],[],[with_mp3_support=yes])
 
+if test "$prefix" = "NONE"; then
+  AC_DEFINE(PREFIX, [], [prefix])
+else
+  AC_DEFINE_UNQUOTED(PREFIX, ["$prefix"], [prefix])
+fi
+
 dnl Checks for programs.
 AC_PROG_CC
 AC_PROG_CXX
