@@ -209,7 +209,7 @@ case "$host" in
       scsilib_objs="ScsiIf-linux.o sg_err.o"
       ;;
 
-  *-freebsd*)
+  *-freebsd* | *-dragonfly*)
       scsilib_libs="-lcam"
       scsilib_objs="ScsiIf-freebsd-cam.o"
       ;;
