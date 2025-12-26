@@ -17,6 +17,7 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+#include <string.h>
 #include <ao/ao.h>
 
 #include "SoundIF.h"
@@ -37,6 +38,7 @@ SoundIF::SoundIF()
 
   impl_ = new SoundIFImpl;
   impl_->driverId = ao_default_driver_id();
+  memset(&impl_->format, 0, sizeof(impl_->format));
   impl_->format.bits = 16;
   impl_->format.rate = 44100;
   impl_->format.channels = 2;
