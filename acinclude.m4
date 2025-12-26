@@ -50,9 +50,7 @@ main ()
   char *tmp_version;
   lame_version_t lame_version;
 
-  /* HP/UX 0 (%@#!) writes to sscanf strings */
-  tmp_version = strdup("$1");
-  if (sscanf(tmp_version, "%d.%d", &major, &minor) != 2) {
+  if (sscanf("$1", "%d.%d", &major, &minor) != 2) {
      printf("%s, bad version string\n", "$1");
      exit(1);
   }
