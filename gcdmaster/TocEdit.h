@@ -159,12 +159,16 @@ class TocEdit
         void completed();
     };
 
-    bool threadActive_;
+    int outstanding;
+    int completed;
+
     void showOutstanding();
 
-    void taskQueueActive(void);
-    void taskQueueIdle(void);
-    void taskQueueStatus(Task *, const std::string &);
+    void taskQueueStarted();
+    void taskQueueDone();
+
+    void addJobToThreadQueue(QueueJob*);
+    void threadQueueStatus(Task *, const std::string &);
 
     bool curScan(QueueJob *);
     bool curAppendTrack(QueueJob *);
@@ -172,7 +176,7 @@ class TocEdit
     bool curInsertFile(QueueJob *);
     int curCreateAudioData(QueueJob *, TrackData **);
     void curSignalConversionError(QueueJob *, FormatSupport::Status);
-    void jobFinalize(QueueJob *);
+    void runCompletion(QueueJob *);
 
     friend class TocEditView;
 };

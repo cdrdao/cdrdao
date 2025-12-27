@@ -19,6 +19,7 @@
 
 #include "TocEdit.h"
 #include "config.h"
+#include "log.h"
 
 #include <cassert>
 #include <glibmm/i18n.h>
@@ -44,7 +45,6 @@ TocEdit::TocEdit(Toc *t, const char *filename)
     sampleManager_ = NULL;
     filename_ = NULL;
     trackDataScrap_ = NULL;
-    threadActive_ = false;
 
     updateLevel_ = 0;
     editBlocked_ = false;
@@ -54,9 +54,9 @@ TocEdit::TocEdit(Toc *t, const char *filename)
     else
         toc(t, filename);
 
-    tm_.signalQueueStarted.connect(sigc::mem_fun(*this, &TocEdit::taskQueueActive));
-    tm_.signalQueueEmptied.connect(sigc::mem_fun(*this, &TocEdit::taskQueueIdle));
-    tm_.signalJobUpdate.connect(sigc::mem_fun(*this, &TocEdit::taskQueueStatus));
+    tm_.signalQueueStarted.connect(sigc::mem_fun(*this, &TocEdit::taskQueueStarted));
+    tm_.signalQueueEmptied.connect(sigc::mem_fun(*this, &TocEdit::taskQueueDone));
+    tm_.signalJobUpdate.connect(sigc::mem_fun(*this, &TocEdit::threadQueueStatus));
 }
 
 TocEdit::~TocEdit()
@@ -460,8 +460,7 @@ void TocEdit::queueConversion(const char *filename)
 {
     QueueJob *job = new QueueJob(this, "convert");
     job->file = filename;
-    tm_.addJob(job);
-    showOutstanding();
+    addJobToThreadQueue(job);
 }
 
 void TocEdit::queueAppendTrack(const char *filename)
@@ -469,16 +468,14 @@ void TocEdit::queueAppendTrack(const char *filename)
     QueueJob *job = new QueueJob(this, "aptrack");
     job->op = "aptrack";
     job->file = filename;
-    tm_.addJob(job);
-    showOutstanding();
+    addJobToThreadQueue(job);
 }
 
 void TocEdit::queueAppendFile(const char *filename)
 {
     QueueJob *job = new QueueJob(this, "apfile");
     job->file = filename;
-    tm_.addJob(job);
-    showOutstanding();
+    addJobToThreadQueue(job);
 }
 
 void TocEdit::queueInsertFile(const char *filename, unsigned long pos)
@@ -486,8 +483,7 @@ void TocEdit::queueInsertFile(const char *filename, unsigned long pos)
     QueueJob *job = new QueueJob(this, "infile");
     job->file = filename;
     job->pos = pos;
-    tm_.addJob(job);
-    showOutstanding();
+    addJobToThreadQueue(job);
 }
 
 void TocEdit::queueScan(long start, long end)
@@ -495,6 +491,11 @@ void TocEdit::queueScan(long start, long end)
     QueueJob *job = new QueueJob(this, "scan");
     job->pos = start;
     job->end = end;
+    addJobToThreadQueue(job);
+}
+
+void TocEdit::addJobToThreadQueue(QueueJob* job)
+{
     tm_.addJob(job);
     showOutstanding();
 }
@@ -504,31 +505,30 @@ void TocEdit::showOutstanding()
     signalProgressFraction(tm_.completion());
 }
 
-bool TocEdit::isQueueActive()
+void TocEdit::taskQueueStarted()
 {
-    return threadActive_;
-}
-
-void TocEdit::taskQueueActive(void)
-{
-    threadActive_ = true;
-    blockEdit();
     signalCancelEnable(true);
     signalSpinner(true);
+    blockEdit();
+    showOutstanding();
     guiUpdate();
 }
 
-void TocEdit::taskQueueIdle(void)
+void TocEdit::taskQueueDone()
 {
-    signalSpinner(false);
-    threadActive_ = false;
-    unblockEdit();
     signalProgressFraction(0.0);
+    signalSpinner(false);
+    unblockEdit();
     signalCancelEnable(false);
     guiUpdate();
 }
 
-void TocEdit::taskQueueStatus(Task *tsk, const std::string &msg)
+bool TocEdit::isQueueActive()
+{
+    return tm_.isActive();
+}
+
+void TocEdit::threadQueueStatus(Task *tsk, const std::string &msg)
 {
     Task *job = (Task *)tsk;
     signalStatusMessage(msg.c_str());
@@ -561,20 +561,12 @@ void TocEdit::QueueJob::run()
 void TocEdit::QueueJob::completed()
 {
     // Runs in the main thread.
-    return te->jobFinalize(this);
+    te->runCompletion(this);
+    delete this;
 }
 
-// The queueThread is run by the Gtk idle thread when asynchronous
-// work has to be done, such as decoding an MP3 file or reading
-// samples from a WAV file.
-//
-// Asynchronous work (i.e. CPU-intensive work that has do be done in
-// the background without blocking the GUI) can be scheduled by adding
-// a new QueueJob object in the queue_ (see queueXXX methods above).
-
-void TocEdit::jobFinalize(QueueJob *job)
+void TocEdit::runCompletion(QueueJob *job)
 {
-    std::unique_ptr<QueueJob> delete_when_out_of_scope(job);
     showOutstanding();
 
     if (job->op == "scan") {
@@ -636,8 +628,11 @@ void TocEdit::jobFinalize(QueueJob *job)
     signalStatusMessage(msg.c_str());
 
     int result;
-    while ((result = sampleManager_->readSamples()) == 0)
-        ;
+    while ((result = sampleManager_->readSamples()) == 0) {
+        while (Gtk::Main::events_pending()) {
+            Gtk::Main::iteration();
+        }
+    }
 
     if (result != 0) {
 
