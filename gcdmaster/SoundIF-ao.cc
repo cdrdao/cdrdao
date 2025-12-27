@@ -18,6 +18,7 @@
  */
 
 #include <ao/ao.h>
+#include <cstring>
 
 #include "Sample.h"
 #include "SoundIF.h"
