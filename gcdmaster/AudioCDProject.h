@@ -44,6 +44,7 @@ class AudioCDProject : public Project
     };
 
     AudioCDProject(int number, const char *name, TocEdit *tocEdit, Gtk::Window *parent);
+    ~AudioCDProject();
 
     void add_menus(Glib::RefPtr<Gtk::UIManager> m_refUIManager);
     void configureAppBar(Gtk::Statusbar *s, Gtk::ProgressBar *p, Gtk::Button *b);

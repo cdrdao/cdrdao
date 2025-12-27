@@ -32,6 +32,8 @@
 
 /* Sense code printing for direct SCSI implementations */
 
+#include "log.h"
+
 struct StringTable {
     int code;
     const char *message;

@@ -18,6 +18,7 @@
  */
 
 #include "config.h"
+#include "log.h"
 
 #include <assert.h>
 #include <cstring>
@@ -94,6 +95,12 @@ AudioCDProject::AudioCDProject(int number, const char *name, TocEdit *tocEdit, G
 
     guiUpdate(UPD_ALL);
     show_all();
+}
+
+AudioCDProject::~AudioCDProject()
+{
+    if (playBuffer_)
+	delete playBuffer_;
 }
 
 void AudioCDProject::add_menus(Glib::RefPtr<Gtk::UIManager> m_refUIManager)
@@ -253,7 +260,7 @@ void AudioCDProject::spin(bool val)
 {
     auto window = parent_->get_window();
     if (val) {
-        Glib::RefPtr<Gdk::Cursor> busy = Gdk::Cursor::create(window->get_display(), "watch");
+        auto busy = Gdk::Cursor::create(window->get_display(), Gdk::WATCH);
         window->set_cursor(busy);
     } else {
         window->set_cursor();

@@ -33,19 +33,18 @@ class ThreadPool;
 // A Task has two parts:
 //
 //   - run() : that function is called in a worker thread and can
-//   block and perform potentially long operations.
+//   block and perform potentially long operations. May run in
+//   parallel with other tasks run() functions.
 //
 //   - completed() : that function is called within the main thread
 //   and therefore cannot block but can safely use GTK+ functions to
 //   update the GUI. The completed() functions are guaranteed to be
-//   called in the order in which the jobs are added.
+//   called in the order in which the jobs are added, one at a time.
 
 class Task
 {
   public:
-    Task() : done(false)
-    {
-    }
+    Task() : done(false) {}
 
     // Runs in worker thread.
     virtual void run() = 0;
@@ -58,6 +57,7 @@ class Task
 
     TaskManager *tm_;
     bool done;
+    int id;
 };
 
 class TaskManager
@@ -72,24 +72,23 @@ class TaskManager
     sigc::signal2<void, Task *, const std::string &> signalJobUpdate;
 
     void addJob(Task *task);
-
-    int queueSize()
-    {
-        return tasks.size();
-    }
+    bool isActive() { return active; }
     double completion();
-    void resumeCompletions();
 
   private:
     ThreadPool *threadpool;
     // We keep our own queue to guarantee completion order.
     std::queue<Task *> tasks;
+    std::queue<Task *> completionQueue;
     std::thread::id main_thread_id;
+    bool completionThread();
 
     void runJob(Task *);
     void jobDone(Task *);
 
-    int total, sofar;
+    int num_added, num_completed;
+    bool active;
+    int nextid;
 };
 
 #endif
