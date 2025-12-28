@@ -438,24 +438,6 @@ int TocEdit::curCreateAudioData(QueueJob *job, TrackData **data)
     return 0;
 }
 
-void TocEdit::curSignalConversionError(QueueJob *job, FormatSupport::Status err)
-{
-    std::string msg = _("Unable to decode audio file \"");
-    msg += job->file;
-    msg += "\" : ";
-    switch (err) {
-    case FormatSupport::FS_DISK_FULL:
-        msg += _("disk is full");
-        break;
-    case FormatSupport::FS_OUTPUT_PROBLEM:
-        msg += _("error creating output file");
-        break;
-    default:
-        msg += _("read error or wrong file format");
-    }
-    signalError(msg.c_str());
-}
-
 void TocEdit::queueConversion(const char *filename)
 {
     QueueJob *job = new QueueJob(this, "convert");
@@ -561,7 +543,10 @@ void TocEdit::QueueJob::run()
 void TocEdit::QueueJob::completed()
 {
     // Runs in the main thread.
-    te->runCompletion(this);
+    if (exception.empty())
+	te->runCompletion(this);
+    else
+	te->signalError(exception.c_str());
     delete this;
 }
 
@@ -576,10 +561,6 @@ void TocEdit::runCompletion(QueueJob *job)
             return;
         }
     } else {
-        if (job->conv_err != FormatSupport::FS_SUCCESS) {
-            curSignalConversionError(job, job->conv_err);
-            return;
-        }
         // File is already converted, or can't be converted (it's a WAV
         // or RAW file already).
         if (job->cfile.empty())

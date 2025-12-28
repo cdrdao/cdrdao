@@ -175,7 +175,6 @@ class TocEdit
     bool curAppendFile(QueueJob *);
     bool curInsertFile(QueueJob *);
     int curCreateAudioData(QueueJob *, TrackData **);
-    void curSignalConversionError(QueueJob *, FormatSupport::Status);
     void runCompletion(QueueJob *);
 
     friend class TocEditView;

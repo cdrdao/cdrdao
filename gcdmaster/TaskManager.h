@@ -57,7 +57,7 @@ class Task
 
     TaskManager *tm_;
     bool done;
-    int id;
+    std::string exception;
 };
 
 class TaskManager
@@ -88,7 +88,6 @@ class TaskManager
 
     int num_added, num_completed;
     bool active;
-    int nextid;
 };
 
 #endif
