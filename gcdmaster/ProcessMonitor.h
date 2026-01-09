@@ -44,7 +44,7 @@
 
 class Process
 {
-  public:
+public:
     Process(int pid, int commFd);
     ~Process();
 
@@ -54,7 +54,7 @@ class Process
     int exited() const;
     int exitStatus() const;
 
-  private:
+private:
     friend class ProcessMonitor;
 
     int pid_;
@@ -66,9 +66,8 @@ class Process
     Process *next_;
 };
 
-class ProcessMonitor
-{
-  public:
+class ProcessMonitor {
+public:
     ProcessMonitor();
     ~ProcessMonitor();
 
@@ -81,12 +80,13 @@ class ProcessMonitor
 
     void handleSigChld();
 
-  private:
+private:
     int statusChanged_;
     Process *processes_;
 
     Process *find(Process *, Process **pred);
     Process *find(int pid);
+
 };
 
 #endif

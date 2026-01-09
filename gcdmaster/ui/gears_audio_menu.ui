@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<interface>
+  <!-- interface-requires gtk+ 3.0 -->
+  <menu id="audiocd-menu">
+    <section>
+      <item>
+        <attribute name="label" translatable="yes">Save</attribute>
+        <attribute name="action">box.save</attribute>
+      </item>
+      <item>
+        <attribute name="label" translatable="yes">Save As...</attribute>
+        <attribute name="action">box.save-as</attribute>
+      </item>
+    </section>
+    <section>
+      <item>
+        <attribute name="label" translatable="yes">Track Info</attribute>
+        <attribute name="action">box.track-info</attribute>
+      </item>
+    </section>
+  </menu>
+</interface>

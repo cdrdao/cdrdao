@@ -20,34 +20,26 @@
 #ifndef __CONFIG_MANAGER_H
 #define __CONFIG_MANAGER_H
 
-#include <giomm/settings.h>
-#include <string>
+#include <glibmm.h>
+#include <giomm.h>
 
 class ConfigManager
 {
-  public:
+ public:
     ConfigManager();
-    virtual ~ConfigManager();
+    virtual ~ConfigManager() {}
 
-    Glib::ustring getCdrdaoPath() const;
+    void set(const Glib::ustring key, const Glib::ustring value);
+    void set(const Glib::ustring key, const bool value);
+    void set(const Glib::ustring key, Glib::StringArrayHandle array);
 
-    Glib::ustring getTempDir() const;
-    void setTempDir(const Glib::ustring &dir) const;
+    Glib::ustring get_string(const Glib::ustring key);
+    Glib::StringArrayHandle get_string_array(const Glib::ustring key);
+    bool get_bool(const Glib::ustring key);
 
-    bool getEjectWarning() const;
-    void setEjectWarning(bool value);
-
-    bool getDuplicateOnTheFlyWarning() const;
-    void setDuplicateOnTheFlyWarning(bool value);
-
-    bool getReloadWarning() const;
-    void setReloadWarning(bool value);
-
-    void setConfiguredDevices(const std::vector<Glib::ustring> &strings);
-    std::vector<Glib::ustring> getConfiguredDevices(void) const;
-
-  protected:
-    Glib::RefPtr<Gio::Settings> settings_;
+ protected:
+    Glib::RefPtr<Gio::Settings> client_;
 };
 
 #endif
+

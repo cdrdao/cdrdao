@@ -20,14 +20,12 @@
 #ifndef __RECORD_TOC_SOURCE_H
 #define __RECORD_TOC_SOURCE_H
 
-#include <gtk/gtk.h>
 #include <gtkmm.h>
 
 class TocEdit;
 
-class RecordTocSource : public Gtk::VBox
-{
-  public:
+class RecordTocSource : public Gtk::VBox {
+public:
     RecordTocSource(TocEdit *);
 
     void start();
@@ -36,14 +34,15 @@ class RecordTocSource : public Gtk::VBox
     void update(unsigned long level);
     void update(unsigned long level, TocEdit *);
 
-  private:
-    TocEdit *tocEdit_;
+private:
+    TocEdit* tocEdit_;
     bool active_;
 
     Gtk::Label projectLabel_;
     Gtk::Label tocTypeLabel_;
     Gtk::Label nofTracksLabel_;
     Gtk::Label tocLengthLabel_;
+
 };
 
 #endif

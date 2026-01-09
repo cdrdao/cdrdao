@@ -17,24 +17,34 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#include "DuplicateCDProject.h"
-#include "ConfigManager.h"
-#include "DeviceList.h"
-#include "Icons.h"
-#include "MessageBox.h"
+#include "guiUpdate.h"
 #include "Project.h"
+#include "gcdmaster.h"
+#include "DuplicateCDProject.h"
+#include "xcdrdao.h"
+#include "ConfigManager.h"
 #include "RecordCDSource.h"
 #include "RecordCDTarget.h"
-#include "config.h"
-#include "guiUpdate.h"
-#include "xcdrdao.h"
+#include "DeviceList.h"
+#include "MessageBox.h"
 
-#include <glibmm/i18n.h>
+
 #include <gtkmm.h>
+#include <glibmm/i18n.h>
 
-DuplicateCDProject::DuplicateCDProject(Gtk::Window *parent) : Project(parent)
+DuplicateCDProject*
+DuplicateCDProject::create(Glib::RefPtr<Gtk::Builder>& builder,
+                           GCDWindow* parent)
 {
-    Gtk::VBox *vbox = new Gtk::VBox;
+    DuplicateCDProject* project = new DuplicateCDProject(parent);
+    return project;
+}
+
+
+DuplicateCDProject::DuplicateCDProject(GCDWindow *parent)
+    : Project(parent)
+{
+    Gtk::VBox *vbox = manage(new Gtk::VBox);
     vbox->set_border_width(10);
     vbox->set_spacing(10);
     Gtk::HBox *hbox = manage(new Gtk::HBox);
@@ -68,7 +78,8 @@ DuplicateCDProject::DuplicateCDProject(Gtk::Window *parent) : Project(parent)
 
     hbox->pack_start(*frameBox, true, false);
 
-    Gtk::Image *pixmap = manage(new Gtk::Image(Icons::GCDMASTER, Gtk::ICON_SIZE_DIALOG));
+    Gtk::Image *pixmap = manage(new Gtk::Image);
+    pixmap->set_from_resource("/org/gnome/gcdmaster/copycd.png");
     Gtk::Label *startLabel = manage(new Gtk::Label(_("Start")));
     Gtk::VBox *startBox = manage(new Gtk::VBox);
     Gtk::Button *button = manage(new Gtk::Button());
@@ -103,19 +114,21 @@ void DuplicateCDProject::start()
     std::string targetData = targetList->selection();
 
     if (sourceData.empty()) {
-        Gtk::MessageDialog d(*parent_, _("Please select one reader device"), Gtk::MESSAGE_INFO);
-        d.run();
-        return;
-    }
-
-    if (targetData.empty()) {
-        Gtk::MessageDialog d(*parent_, _("Please select at least one recorder device"),
+        Gtk::MessageDialog d(*parent_, _("Please select one reader device"),
                              Gtk::MESSAGE_INFO);
         d.run();
         return;
     }
 
-    // Read options
+    if (targetData.empty()) {
+        Gtk::MessageDialog d(*parent_,
+                             _("Please select at least one recorder device"),
+                             Gtk::MESSAGE_INFO);
+        d.run();
+        return;
+    }
+
+    //Read options
     int onTheFly = CDSource->getOnTheFly();
     if (onTheFly) {
         // We can't make on the fly copy with the same device, check that
@@ -126,8 +139,7 @@ void DuplicateCDProject::start()
             // If the user selects the same device for reading and writing
             // we can't do on the fly copying. More complex situations with
             // multiple target devices are not handled
-            if (configManager->getDuplicateOnTheFlyWarning()) {
-
+            if (configManager->get_bool("onthefly-warning")) {
                 Ask2Box msg(parent_, "Request", 1, 2,
                             _("To duplicate a CD using the same device for reading "
                               "and writing"),
@@ -138,9 +150,8 @@ void DuplicateCDProject::start()
                 case 1: // proceed without on the fly
                     CDSource->setOnTheFly(false);
                     onTheFly = 0;
-                    if (msg.dontShowAgain()) {
-                        configManager->setDuplicateOnTheFlyWarning(false);
-                    }
+                    if (msg.dontShowAgain())
+                        configManager->set("onthefly-warning", false);
                     break;
                 default: // do not proceed
                     return;
@@ -184,9 +195,10 @@ void DuplicateCDProject::start()
     CdDevice *writeDevice = CdDevice::find(targetData.c_str());
     if (writeDevice == NULL)
         return;
-
-    if (writeDevice->duplicateDao(*parent_, simulate, multiSession, burnSpeed, eject, reload,
-                                  buffer, onTheFly, correction, subChanReadMode, readDevice) != 0) {
+  
+    if (writeDevice->duplicateDao(*parent_, simulate, multiSession, burnSpeed,
+                                  eject, reload, buffer, onTheFly, correction,
+                                  subChanReadMode, readDevice) != 0) {
         Gtk::MessageDialog md(*parent_, _("Cannot start disk-at-once duplication"),
                               Gtk::MESSAGE_ERROR);
         md.run();
@@ -197,7 +209,7 @@ void DuplicateCDProject::start()
 
 bool DuplicateCDProject::closeProject()
 {
-    return true; // Close the project
+    return true;  // Close the project
 }
 
 void DuplicateCDProject::update(unsigned long level)
@@ -205,7 +217,8 @@ void DuplicateCDProject::update(unsigned long level)
     CDSource->update(level);
     CDTarget->update(level);
 
-    if (level & UPD_CD_DEVICE_STATUS) {
+    if (level & UPD_CD_DEVICE_STATUS)
+    {
         DeviceList *sourceList = CDSource->getDeviceList();
         DeviceList *targetList = CDTarget->getDeviceList();
 

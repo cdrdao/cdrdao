@@ -21,90 +21,93 @@
 
 #include <stddef.h>
 
+#include "util.h"
 #include "TrackData.h"
 #include "TrackDataList.h"
-#include "util.h"
 
 TrackDataScrap::TrackDataScrap(TrackDataList *l)
 {
-    list_ = l;
-    blocks_ = 0;
+  list_ = l;
+  blocks_ = 0;
 
-    leftNegSamples_ = NULL;
-    leftPosSamples_ = NULL;
-    rightNegSamples_ = NULL;
-    rightPosSamples_ = NULL;
+  leftNegSamples_ = NULL;
+  leftPosSamples_ = NULL;
+  rightNegSamples_ = NULL;
+  rightPosSamples_ = NULL;
 }
 
 TrackDataScrap::~TrackDataScrap()
 {
-    delete list_;
-    list_ = NULL;
+  delete list_;
+  list_ = NULL;
 
-    delete[] leftNegSamples_;
-    leftNegSamples_ = NULL;
+  delete[] leftNegSamples_;
+  leftNegSamples_ = NULL;
 
-    delete[] leftPosSamples_;
-    leftPosSamples_ = NULL;
+  delete[] leftPosSamples_;
+  leftPosSamples_ = NULL;
 
-    delete[] rightNegSamples_;
-    rightNegSamples_ = NULL;
+  delete[] rightNegSamples_;
+  rightNegSamples_ = NULL;
 
-    delete[] rightPosSamples_;
-    rightPosSamples_ = NULL;
+  delete[] rightPosSamples_;
+  rightPosSamples_ = NULL;
 }
 
 const TrackDataList *TrackDataScrap::trackDataList() const
 {
-    return (const TrackDataList *)list_;
+  return (const TrackDataList*)list_;
 }
 
-void TrackDataScrap::setPeaks(long blocks, short *leftNegSamples, short *leftPosSamples,
-                              short *rightNegSamples, short *rightPosSamples)
+void TrackDataScrap::setPeaks(long blocks,
+			      short *leftNegSamples, short *leftPosSamples,
+			      short *rightNegSamples, short *rightPosSamples)
 {
-    long i;
+  long i;
 
-    blocks_ = blocks;
+  blocks_ = blocks;
 
-    delete[] leftNegSamples_;
-    delete[] leftPosSamples_;
-    delete[] rightNegSamples_;
-    delete[] rightPosSamples_;
+  delete[] leftNegSamples_;
+  delete[] leftPosSamples_;
+  delete[] rightNegSamples_;
+  delete[] rightPosSamples_;
 
-    if (blocks > 0) {
-        leftNegSamples_ = new short[blocks];
-        leftPosSamples_ = new short[blocks];
-        rightNegSamples_ = new short[blocks];
-        rightPosSamples_ = new short[blocks];
+  if (blocks > 0) {
+    leftNegSamples_ = new short[blocks];
+    leftPosSamples_ = new short[blocks];
+    rightNegSamples_ = new short[blocks];
+    rightPosSamples_ = new short[blocks];
 
-        for (i = 0; i < blocks; i++) {
-            leftNegSamples_[i] = leftNegSamples[i];
-            leftPosSamples_[i] = leftPosSamples[i];
-            rightNegSamples_[i] = rightNegSamples[i];
-            rightPosSamples_[i] = rightPosSamples[i];
-        }
-    } else {
-        leftNegSamples_ = NULL;
-        leftPosSamples_ = NULL;
-        rightNegSamples_ = NULL;
-        rightPosSamples_ = NULL;
+    for (i = 0; i < blocks; i++) {
+      leftNegSamples_[i] = leftNegSamples[i];
+      leftPosSamples_[i] = leftPosSamples[i];
+      rightNegSamples_[i] = rightNegSamples[i];
+      rightPosSamples_[i] = rightPosSamples[i];
     }
+  }
+  else {
+    leftNegSamples_ = NULL;
+    leftPosSamples_ = NULL;
+    rightNegSamples_ = NULL;
+    rightPosSamples_ = NULL;
+  }    
 }
 
-void TrackDataScrap::getPeaks(long blocks, short *leftNegSamples, short *leftPosSamples,
-                              short *rightNegSamples, short *rightPosSamples) const
+void TrackDataScrap::getPeaks(long blocks, short *leftNegSamples,
+			      short *leftPosSamples, short *rightNegSamples,
+			      short *rightPosSamples) const
 {
-    long n, i;
+  long n, i;
 
-    if (leftNegSamples_ == NULL)
-        return;
+  if (leftNegSamples_ == NULL)
+    return;
 
-    n = (blocks_ < blocks) ? blocks_ : blocks;
-
-    for (i = 0; i < n; i++) {
-        leftNegSamples[i] = leftNegSamples_[i];
-        leftPosSamples[i] = leftPosSamples_[i];
-        rightNegSamples[i] = rightNegSamples_[i];
-        rightPosSamples[i] = rightPosSamples_[i];
-    }
+  n = (blocks_ < blocks) ? blocks_ : blocks;
+  
+  for (i = 0; i < n; i++) {
+    leftNegSamples[i] = leftNegSamples_[i];
+    leftPosSamples[i] = leftPosSamples_[i];
+    rightNegSamples[i] = rightNegSamples_[i];
+    rightPosSamples[i] = rightPosSamples_[i];
+  }
 }

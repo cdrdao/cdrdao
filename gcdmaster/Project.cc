@@ -18,35 +18,43 @@
  */
 
 #include <errno.h>
-#include <glibmm/i18n.h>
 #include <gtkmm.h>
+#include <glibmm/i18n.h>
 
 #include "config.h"
 
-#include "AudioCDView.h"
-#include "MessageBox.h"
 #include "Project.h"
-#include "RecordTocDialog.h"
-#include "TocEdit.h"
-#include "TocEditView.h"
-#include "gcdmaster.h"
-#include "guiUpdate.h"
 #include "util.h"
 #include "xcdrdao.h"
+#include "guiUpdate.h"
+#include "gcdmaster.h"
+#include "MessageBox.h"
+// #include "AudioCDView.h"
+#include "TocEdit.h"
+// #include "TocEditView.h"
+// #include "RecordTocDialog.h"
 
-Project::Project(Gtk::Window *parent)
+Project::Project(BaseObjectType* cobject,
+                 const Glib::RefPtr<Gtk::Builder>& builder) :
+    Gtk::VBox(cobject)
 {
-    parent_ = parent;
     new_ = true;
     saveFileSelector_ = 0;
     recordTocDialog_ = 0;
-    parent_ = NULL;
-    progressbar_ = NULL;
     progressButton_ = NULL;
     tocEdit_ = NULL;
     saveFileSelector_ = NULL;
-    projectNumber_ = 0;
-    statusbar_ = NULL;
+}
+
+Project::Project(GCDWindow* window)
+{
+    parent_ = window;
+    new_ = true;
+    saveFileSelector_ = 0;
+    recordTocDialog_ = 0;
+    progressButton_ = NULL;
+    tocEdit_ = NULL;
+    saveFileSelector_ = NULL;
 }
 
 void Project::updateWindowTitle()
@@ -71,12 +79,14 @@ void Project::saveProject()
     if (tocEdit_->saveToc() == 0) {
         statusMessage(_("Project saved to \"%s\"."), tocEdit_->filename());
         guiUpdate(UPD_TOC_DIRTY);
+
     } else {
         std::string s(_("Cannot save toc to \""));
         s += tocEdit_->filename();
-        s += "\":";
-
-        MessageBox msg(parent_, _("Save Project"), 0, s.c_str(), strerror(errno), NULL);
+        s+= "\":";
+    
+        MessageBox msg(parent_, _("Save Project"), 0, s.c_str(), strerror(errno),
+                       NULL);
         msg.run();
     }
 }
@@ -85,7 +95,8 @@ void Project::saveAsProject()
 {
     if (!saveFileSelector_) {
         saveFileSelector_ =
-            new Gtk::FileChooserDialog(_("Save Project"), Gtk::FILE_CHOOSER_ACTION_SAVE);
+            new Gtk::FileChooserDialog(_("Save Project"),
+                                       Gtk::FILE_CHOOSER_ACTION_SAVE);
         saveFileSelector_->add_button(Gtk::Stock::CANCEL, Gtk::RESPONSE_CANCEL);
         saveFileSelector_->add_button(Gtk::Stock::OK, Gtk::RESPONSE_OK);
         saveFileSelector_->set_transient_for(*parent_);
@@ -106,19 +117,19 @@ void Project::saveAsProject()
                 new_ = false; // The project is now saved
                 updateWindowTitle();
                 guiUpdate(UPD_TOC_DIRTY);
+
             } else {
 
                 std::string m(_("Cannot save toc to \""));
                 m += tocEdit_->filename();
                 m += "\":";
-                MessageBox msg(saveFileSelector_, _("Save Project"), 0, m.c_str(), strerror(errno),
-                               NULL);
+                MessageBox msg(saveFileSelector_, _("Save Project"), 0, m.c_str(),
+                               strerror(errno), NULL);
                 msg.run();
             }
         }
 
-        if (s)
-            g_free(s);
+        if (s) g_free(s);
     }
 }
 
@@ -132,6 +143,11 @@ TocEdit *Project::tocEdit()
     return tocEdit_;
 }
 
+void Project::set_status_target(Gtk::Label* w)
+{
+    status_label_ = w;
+}
+
 void Project::statusMessage(const char *fmt, ...)
 {
     va_list args;
@@ -139,7 +155,8 @@ void Project::statusMessage(const char *fmt, ...)
 
     char *s = g_strdup_vprintf(fmt, args);
 
-    statusbar_->push(s);
+    if (status_label_)
+        status_label_->set_text(s);
 
     free(s);
 
@@ -150,7 +167,6 @@ void Project::tocBlockedMsg(const char *op)
 {
     MessageBox msg(parent_, op, 0,
                    _("Cannot perform requested operation because "
-                     "project is in read-only state."),
-                   NULL);
+                     "project is in read-only state."), NULL);
     msg.run();
 }

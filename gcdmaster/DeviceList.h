@@ -20,8 +20,8 @@
 #ifndef __DEVICE_LIST_H
 #define __DEVICE_LIST_H
 
-#include <gtk/gtk.h>
 #include <gtkmm.h>
+#include <gtk/gtk.h>
 #include <string>
 
 class TocEdit;
@@ -29,40 +29,37 @@ class TocEdit;
 
 class DeviceList : public Gtk::Frame
 {
+ public:
+  DeviceList(CdDevice::DeviceType filterType);
+  ~DeviceList() {};
+
+  std::string selection();
+  void selectOne();
+  void selectOneBut(const char *targetData);
+  void appendTableEntry(CdDevice *);
+  void import();
+  void importStatus();
+
+private:
+  TocEdit* tocEdit_;
+
+  int speed_;
+  CdDevice::DeviceType filterType_;
+
+  class ListColumns : public Gtk::TreeModel::ColumnRecord {
   public:
-    DeviceList(CdDevice::DeviceType filterType);
-    ~DeviceList() {};
-
-    std::string selection();
-    void selectOne();
-    void selectOneBut(const char *targetData);
-    void appendTableEntry(CdDevice *);
-    void import();
-    void importStatus();
-
-  private:
-    CdDevice::DeviceType filterType_;
-
-    class ListColumns : public Gtk::TreeModel::ColumnRecord
-    {
-      public:
-        ListColumns()
-        {
-            add(dev);
-            add(vendor);
-            add(model);
-            add(status);
-        };
-
-        Gtk::TreeModelColumn<std::string> dev;
-        Gtk::TreeModelColumn<std::string> vendor;
-        Gtk::TreeModelColumn<std::string> model;
-        Gtk::TreeModelColumn<std::string> status;
+    ListColumns() {
+      add(dev); add(description);  add(status);
     };
 
-    Gtk::TreeView list_;
-    Glib::RefPtr<Gtk::ListStore> listModel_;
-    ListColumns listColumns_;
+    Gtk::TreeModelColumn<std::string> dev;
+    Gtk::TreeModelColumn<std::string> description;
+    Gtk::TreeModelColumn<std::string> status;
+  };
+
+  Gtk::TreeView list_;
+  Glib::RefPtr<Gtk::ListStore> listModel_;
+  ListColumns listColumns_;
 };
 
 #endif

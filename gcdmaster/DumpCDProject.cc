@@ -17,27 +17,34 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#include "DumpCDProject.h"
-#include "DeviceList.h"
-#include "Icons.h"
-#include "MessageBox.h"
+#include "gcdmaster.h"
+#include "guiUpdate.h"
 #include "Project.h"
+#include "DumpCDProject.h"
 #include "RecordCDSource.h"
 #include "RecordHDTarget.h"
-#include "config.h"
-#include "guiUpdate.h"
+#include "DeviceList.h"
+#include "MessageBox.h"
 #include "util.h"
 
-#include <glibmm/i18n.h>
 #include <gtkmm.h>
+#include <glibmm/i18n.h>
 
-DumpCDProject::DumpCDProject(Gtk::Window *parent) : Project(parent)
+DumpCDProject*
+DumpCDProject::create(Glib::RefPtr<Gtk::Builder>& builder,
+                      GCDWindow* parent)
+{
+    DumpCDProject* project = new DumpCDProject(parent);
+    return project;
+}
+
+DumpCDProject::DumpCDProject(GCDWindow *parent)
+    : Project(parent)
 {
     // Top vbox
-    Gtk::VBox *top_vbox = manage(new Gtk::VBox);
+    Gtk::VBox* top_vbox = manage(new Gtk::VBox);
     top_vbox->set_border_width(10);
     top_vbox->set_spacing(10);
-    parent_ = parent;
 
     CDSource = manage(new RecordCDSource(parent_));
     CDSource->onTheFlyOption(false);
@@ -48,10 +55,11 @@ DumpCDProject::DumpCDProject(Gtk::Window *parent) : Project(parent)
     HDTarget->start();
     top_vbox->pack_start(*HDTarget, Gtk::PACK_SHRINK);
 
-    Gtk::HButtonBox *bbox = manage(new Gtk::HButtonBox);
+    Gtk::HButtonBox* bbox = new Gtk::HButtonBox;
     bbox->set_spacing(10);
 
-    Gtk::Image *pixmap = manage(new Gtk::Image(Icons::DUMPCD, Gtk::ICON_SIZE_DIALOG));
+    Gtk::Image *pixmap = manage(new Gtk::Image);
+    pixmap->set_from_resource("/org/gnome/gcdmaster/dumpcd.png");
     Gtk::Label *startLabel = manage(new Gtk::Label(_("Start")));
     Gtk::VBox *startBox = manage(new Gtk::VBox);
     Gtk::Button *button = manage(new Gtk::Button());
@@ -76,7 +84,8 @@ void DumpCDProject::start()
     DeviceList *sourceList = CDSource->getDeviceList();
 
     if (sourceList->selection().empty()) {
-        Gtk::MessageDialog d(*parent_, _("Please select one reader device"), Gtk::MESSAGE_INFO);
+        Gtk::MessageDialog d(*parent_, _("Please select one reader device"),
+                             Gtk::MESSAGE_INFO);
         d.run();
         return;
     }
@@ -88,7 +97,8 @@ void DumpCDProject::start()
     std::string imageName = HDTarget->getFilename();
 
     if (imageName == "") {
-        Gtk::MessageDialog d(*parent_, _("Please specify a name for the image"), Gtk::MESSAGE_INFO);
+        Gtk::MessageDialog d(*parent_, _("Please specify a name for the image"),
+                             Gtk::MESSAGE_INFO);
         d.run();
         return;
     }
@@ -120,7 +130,8 @@ void DumpCDProject::start()
 
         if (len == 0) {
             imagePath = imageName;
-        } else {
+        }
+        else {
             imagePath = path;
 
             if (s[len - 1] != '/')
@@ -141,26 +152,28 @@ void DumpCDProject::start()
         s += binPath;
         s += _("\" already exists.");
 
-        Ask2Box msg(parent_, _("Dump CD"), 0, 1, s.c_str(), _("Do you want to overwrite it?"), "",
-                    NULL);
+        Ask2Box msg(parent_, _("Dump CD"), 0, 1, s.c_str(),
+                    _("Do you want to overwrite it?"), "", NULL);
 
-        if (msg.run() != 1)
+        if (msg.run() != 1) 
             return;
     }
 
-    if (access(tocPath.c_str(), R_OK) == 0) {
+    if (access(tocPath.c_str(), R_OK) == 0) 
+    {
         std::string s = _("The toc-file \"");
         s += tocPath;
         s += _("\" already exists.");
 
-        Ask2Box msg(parent_, _("Dump CD"), 0, 1, s.c_str(), _("Do you want to overwrite it?"), "",
-                    NULL);
+        Ask2Box msg(parent_, _("Dump CD"), 0, 1, s.c_str(),
+                    _("Do you want to overwrite it?"), "", NULL);
 
         switch (msg.run()) {
         case 1: // remove the file an continue
-            if (unlink(tocPath.c_str()) != -0) {
-                MessageBox msg(parent_, _("Dump CD"), 0, _("Cannot delete toc-file"),
-                               tocPath.c_str(), NULL);
+            if (unlink(tocPath.c_str()) != -0)
+            {
+                MessageBox msg(parent_, _("Dump CD"), 0,
+                               _("Cannot delete toc-file"), tocPath.c_str(), NULL);
                 msg.run();
                 return;
             }
@@ -181,7 +194,9 @@ void DumpCDProject::start()
     if (readDevice == NULL)
         return;
 
-    if (readDevice->extractDao(*parent_, imagePath.c_str(), correction, subChanReadMode) != 0) {
+    if (readDevice->extractDao(*parent_, imagePath.c_str(), correction,
+                               subChanReadMode)
+        != 0) {
         Gtk::MessageDialog d(*parent_, _("Cannot start reading"), Gtk::MESSAGE_ERROR);
         d.run();
     } else {
@@ -191,11 +206,12 @@ void DumpCDProject::start()
 
 bool DumpCDProject::closeProject()
 {
-    return true; // Close the project
+    return true;  // Close the project
 }
 
 void DumpCDProject::update(unsigned long level)
 {
+    printf("DumpCDProject update (%d)\n", level);
     CDSource->update(level);
     HDTarget->update(level);
 

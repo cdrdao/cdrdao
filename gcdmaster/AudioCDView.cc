@@ -1,4 +1,4 @@
-/*  cdrdao - write audio CD-Rs in disc-at-once mode
+/* - write audio CD-Rs in disc-at-once mode
  *
  *  Copyright (C) 1998-2000  Andreas Mueller <mueller@daneb.ping.de>
  *
@@ -17,28 +17,31 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+#include <gtkmm.h>
 #include <glibmm/convert.h>
 #include <glibmm/i18n.h>
-#include <gtkmm.h>
 #include <iostream>
 
+#include "config.h"
+#include "xcdrdao.h"
+#include "gcdmaster.h"
+#include "guiUpdate.h"
 #include "MessageBox.h"
 #include "SampleDisplay.h"
 #include "TocEdit.h"
 #include "TocEditView.h"
-#include "config.h"
-#include "guiUpdate.h"
 #include "util.h"
-#include "xcdrdao.h"
 
-#include "AddFileDialog.h"
-#include "AddSilenceDialog.h"
 #include "AudioCDProject.h"
 #include "AudioCDView.h"
 #include "Project.h"
 #include "TrackInfoDialog.h"
+#include "AddFileDialog.h"
+#include "AddSilenceDialog.h"
 
-AudioCDView::AudioCDView(AudioCDProject *project) : addFileDialog_(project)
+AudioCDView::AudioCDView(AudioCDProject *project,
+                         Glib::RefPtr<Gio::SimpleActionGroup> ag)
+    : addFileDialog_(project), m_action_group(ag)
 {
     project_ = project;
     tocEditView_ = new TocEditView(project->tocEdit());
@@ -48,90 +51,93 @@ AudioCDView::AudioCDView(AudioCDProject *project) : addFileDialog_(project)
     trackInfoDialog_ = 0;
     addSilenceDialog_ = 0;
 
-    std::vector<Gtk::TargetEntry> drop_types;
-    drop_types.push_back(Gtk::TargetEntry("text/uri-list", Gtk::TargetFlags(0), TARGET_URI_LIST));
+    std::list<Gtk::TargetEntry> drop_types;
 
-    drag_dest_set(drop_types);
-    signal_drag_data_received().connect(sigc::mem_fun(*this, &AudioCDView::drag_data_received_cb));
+    drop_types.push_back(Gtk::TargetEntry("text/uri-list", Gtk::TargetFlags(0),
+                                          TARGET_URI_LIST));
 
-    sampleDisplay_ = new SampleDisplay;
+    //  drag_dest_set(drop_types);
+    signal_drag_data_received().
+        connect(sigc::mem_fun(*this, &AudioCDView::drag_data_received_cb));
+
+    sampleDisplay_ = manage(new SampleDisplay);
     sampleDisplay_->setTocEdit(project->tocEdit());
 
-    sampleDisplay_->set_size_request(200, 200);
+    sampleDisplay_->set_size_request(200,200);
 
-    pack_start(*sampleDisplay_, TRUE, TRUE);
-    sampleDisplay_->override_font(Pango::FontDescription("Monospace 8"));
-    sampleDisplay_->show();
+    pack_start(*sampleDisplay_);
+    Pango::FontDescription sdfont;
+    sdfont.set_family("Monospace");
+    sampleDisplay_->override_font(sdfont);
 
-    Gtk::HScrollbar *scrollBar = new Gtk::HScrollbar(sampleDisplay_->getAdjustment());
-    pack_start(*scrollBar, FALSE, FALSE);
-    scrollBar->show();
+    scrollbar_ = manage(new Gtk::HScrollbar(sampleDisplay_->get_adjustment()));
+    pack_start(*scrollbar_, Gtk::PACK_SHRINK);
 
     Gtk::Label *label;
     Gtk::HBox *selectionInfoBox = new Gtk::HBox;
 
-    // FIXME: Calculate entry width for the current font.
+//FIXME: Calculate entry width for the current font.
     gint entry_width = 90;
 
-    markerPos_ = new Gtk::Entry;
+    markerPos_ = manage(new Gtk::Entry);
     markerPos_->set_editable(true);
     markerPos_->set_size_request(entry_width, -1);
-    markerPos_->signal_activate().connect(sigc::mem_fun(*this, &AudioCDView::markerSet));
+    markerPos_->signal_activate().
+        connect(sigc::mem_fun(*this, &AudioCDView::markerSet));
 
-    cursorPos_ = new Gtk::Label;
+    cursorPos_ = manage(new Gtk::Label);
     cursorPos_->set_size_request(entry_width, -1);
 
-    selectionStartPos_ = new Gtk::Entry;
+    selectionStartPos_ = manage(new Gtk::Entry);
     selectionStartPos_->set_editable(true);
     selectionStartPos_->set_size_request(entry_width, -1);
-    selectionStartPos_->signal_activate().connect(sigc::mem_fun(*this, &AudioCDView::selectionSet));
+    selectionStartPos_->signal_activate().
+        connect(sigc::mem_fun(*this, &AudioCDView::selectionSet));
 
-    selectionEndPos_ = new Gtk::Entry;
+    selectionEndPos_ = manage(new Gtk::Entry);
     selectionEndPos_->set_editable(true);
     selectionEndPos_->set_size_request(entry_width, -1);
-    selectionEndPos_->signal_activate().connect(sigc::mem_fun(*this, &AudioCDView::selectionSet));
+    selectionEndPos_->signal_activate().
+        connect(sigc::mem_fun(*this, &AudioCDView::selectionSet));
 
-    label = new Gtk::Label(_("Cursor: "));
+    label = manage(new Gtk::Label(_("Cursor: ")));
     selectionInfoBox->pack_start(*label, FALSE, FALSE);
     selectionInfoBox->pack_start(*cursorPos_);
-    label->show();
-    cursorPos_->show();
 
-    label = new Gtk::Label(_("Marker: "));
+    label = manage(new Gtk::Label(_("Marker: ")));
     selectionInfoBox->pack_start(*label, FALSE, FALSE);
     selectionInfoBox->pack_start(*markerPos_);
-    label->show();
-    markerPos_->show();
 
-    label = new Gtk::Label(_("Selection: "));
+    label = manage(new Gtk::Label(_("Selection: ")));
     selectionInfoBox->pack_start(*label, FALSE, FALSE);
     selectionInfoBox->pack_start(*selectionStartPos_);
-    label->show();
-    selectionStartPos_->show();
 
-    label = new Gtk::Label(" - ");
+    label = manage(new Gtk::Label(" - "));
     selectionInfoBox->pack_start(*label, FALSE, FALSE);
     selectionInfoBox->pack_start(*selectionEndPos_);
-    label->show();
-    selectionEndPos_->show();
 
     selectionInfoBox->set_border_width(2);
     pack_start(*selectionInfoBox, FALSE, FALSE);
-    selectionInfoBox->show();
 
     setMode(SELECT);
 
-    sampleDisplay_->markerSet.connect(sigc::mem_fun(*this, &AudioCDView::markerSetCallback));
-    sampleDisplay_->selectionSet.connect(sigc::mem_fun(*this, &AudioCDView::selectionSetCallback));
-    sampleDisplay_->selectionCleared.connect(
-        sigc::mem_fun(*this, &AudioCDView::selectionClearedCallback));
-    sampleDisplay_->cursorMoved.connect(sigc::mem_fun(*this, &AudioCDView::cursorMovedCallback));
-    sampleDisplay_->trackMarkSelected.connect(
-        sigc::mem_fun(*this, &AudioCDView::trackMarkSelectedCallback));
-    sampleDisplay_->trackMarkMoved.connect(
-        sigc::mem_fun(*this, &AudioCDView::trackMarkMovedCallback));
-    sampleDisplay_->viewModified.connect(sigc::mem_fun(*this, &AudioCDView::viewModifiedCallback));
+    sampleDisplay_->markerSet.
+        connect(sigc::mem_fun(*this, &AudioCDView::markerSetCallback));
+    sampleDisplay_->selectionSet.
+        connect(sigc::mem_fun(*this, &AudioCDView::selectionSetCallback));
+    sampleDisplay_->selectionCleared.
+        connect(sigc::mem_fun(*this, &AudioCDView::selectionClearedCallback));
+    sampleDisplay_->cursorMoved.
+        connect(sigc::mem_fun(*this, &AudioCDView::cursorMovedCallback));
+    sampleDisplay_->trackMarkSelected.
+        connect(sigc::mem_fun(*this, &AudioCDView::trackMarkSelectedCallback));
+    sampleDisplay_->trackMarkMoved.
+        connect(sigc::mem_fun(*this, &AudioCDView::trackMarkMovedCallback));
+    sampleDisplay_->viewModified.
+        connect(sigc::mem_fun(*this, &AudioCDView::viewModifiedCallback));
 
+    add_menus();
+    show_all_children();
     tocEditView_->sampleViewFull();
 }
 
@@ -142,107 +148,90 @@ AudioCDView::~AudioCDView()
 
     if (addSilenceDialog_)
         delete addSilenceDialog_;
+
+    if (tocEditView_)
+        delete tocEditView_;
 }
 
-void AudioCDView::add_menus(Glib::RefPtr<Gtk::UIManager> m_refUIManager)
+void AudioCDView::add_menus()
 {
-    m_refActionGroup = Gtk::ActionGroup::create("AudioCDView");
+    m_action_group->add_action("track-info",
+                               sigc::mem_fun(*this, &AudioCDView::trackInfo));
+    m_action_group->add_action("sample-cut",
+                               sigc::mem_fun(*this, &AudioCDView::cutTrackData));
+    m_action_group->add_action("sample-paste",
+                               sigc::mem_fun(*this, &AudioCDView::pasteTrackData));
+    m_action_group->add_action("select-all",
+                               sigc::mem_fun(*this, &AudioCDView::selectAll));
+    m_action_group->add_action("add-track-mark",
+                               sigc::mem_fun(*this, &AudioCDView::addTrackMark));
+    m_action_group->add_action("add-index-mark",
+                               sigc::mem_fun(*this, &AudioCDView::addIndexMark));
+    m_action_group->add_action("add-pre-gap",
+                               sigc::mem_fun(*this, &AudioCDView::addPregap));
+    m_action_group->add_action("remove-track-mark",
+                               sigc::mem_fun(*this, &AudioCDView::removeTrackMark));
+    m_action_group->add_action("append-track",
+                               sigc::mem_fun(*this, &AudioCDView::appendTrack));
+    m_action_group->add_action("append-file",
+                               sigc::mem_fun(*this, &AudioCDView::appendFile));
+    m_action_group->add_action("insert-file",
+                               sigc::mem_fun(*this, &AudioCDView::insertFile));
+    m_action_group->add_action("append-silence",
+                               sigc::mem_fun(*this, &AudioCDView::appendSilence));
+    m_action_group->add_action("insert-silence",
+                               sigc::mem_fun(*this, &AudioCDView::insertSilence));
 
-    m_refActionGroup->add(Gtk::Action::create("TrackInfo", Gtk::Stock::PROPERTIES,
-                                              _("Track Info..."), _("Edit track data")),
-                          sigc::mem_fun(*this, &AudioCDView::trackInfo));
+#define ADD_ACCEL(n, k) \
+    gcdmaster->set_accel_for_action("box." #n, "<Primary>" #k)
 
-    m_refActionGroup->add(
-        Gtk::Action::create("Cut", Gtk::Stock::CUT, _("Cut"), _("Cut out selected samples")),
-        Gtk::AccelKey("<control>x"), sigc::mem_fun(*this, &AudioCDView::cutTrackData));
-
-    m_refActionGroup->add(Gtk::Action::create("Paste", Gtk::Stock::PASTE, _("Paste"),
-                                              _("Paste previously cut samples")),
-                          Gtk::AccelKey("<control>v"),
-                          sigc::mem_fun(*this, &AudioCDView::pasteTrackData));
-
-    m_refActionGroup->add(
-        Gtk::Action::create("SelectAll", _("Select All"), _("Select entire sample")),
-        Gtk::AccelKey("<control>a"), sigc::mem_fun(*this, &AudioCDView::selectAll));
-
-    m_refActionGroup->add(Gtk::Action::create("AddTrackMark", _("Add Track Mark"),
-                                              _("Add track marker at current marker position")),
-                          Gtk::AccelKey("<control>m"),
-                          sigc::mem_fun(*this, &AudioCDView::addTrackMark));
-
-    m_refActionGroup->add(Gtk::Action::create("AddIndexMark", _("Add Index Mark"),
-                                              _("Add index marker at current marker position")),
-                          sigc::mem_fun(*this, &AudioCDView::addIndexMark));
-
-    m_refActionGroup->add(Gtk::Action::create("AddPreGap", _("Add Pre-Gap"),
-                                              _("Add pre-gap at current marker position")),
-                          sigc::mem_fun(*this, &AudioCDView::addPregap));
-
-    m_refActionGroup->add(Gtk::Action::create("RemoveTrackMark", _("Remove Track Mark"),
-                                              _("Remove selected track/index marker or pre-gap")),
-                          Gtk::AccelKey("<control>D"),
-                          sigc::mem_fun(*this, &AudioCDView::removeTrackMark));
-
-    m_refActionGroup->add(Gtk::Action::create("AppendTrack", _("Append Track"),
-                                              _("Append track with data from audio file")),
-                          Gtk::AccelKey("<control>T"),
-                          sigc::mem_fun(*this, &AudioCDView::appendTrack));
-
-    m_refActionGroup->add(Gtk::Action::create("AppendFile", _("Append File"),
-                                              _("Append data from audio file to last track")),
-                          Gtk::AccelKey("<control>F"),
-                          sigc::mem_fun(*this, &AudioCDView::appendFile));
-
-    m_refActionGroup->add(
-        Gtk::Action::create("InsertFile", _("Insert File"),
-                            _("Insert data from audio file at current marker position")),
-        Gtk::AccelKey("<control>I"), sigc::mem_fun(*this, &AudioCDView::insertFile));
-
-    m_refActionGroup->add(Gtk::Action::create("AppendSilence", _("Append Silence"),
-                                              _("Append silence to last track")),
-                          sigc::mem_fun(*this, &AudioCDView::appendSilence));
-
-    m_refActionGroup->add(Gtk::Action::create("InsertSilence", _("Insert Silence"),
-                                              _("Insert silence at current marker position")),
-                          sigc::mem_fun(*this, &AudioCDView::insertSilence));
-
-    m_refUIManager->insert_action_group(m_refActionGroup);
-
+    ADD_ACCEL(sample-cut, x);
+    ADD_ACCEL(sample-paste, v);
+    ADD_ACCEL(select-all, a);
+    ADD_ACCEL(add-track-mark, m);
+    ADD_ACCEL(remove-track-mark, d);
+    ADD_ACCEL(append-track, t);
+    ADD_ACCEL(append-file, f);
+    ADD_ACCEL(insert-file, i);
     // Merge menuitems
-    try {
-        Glib::ustring ui_info = "<ui>"
-                                "  <menubar name='MenuBar'>"
-                                "    <menu action='EditMenu'>"
-                                "      <menuitem action='TrackInfo'/>"
-                                "    <separator/>"
-                                "      <menuitem action='Cut'/>"
-                                "      <menuitem action='Paste'/>"
-                                "    <separator/>"
-                                "      <menuitem action='SelectAll'/>"
-                                "    <separator/>"
-                                "      <menuitem action='AddTrackMark'/>"
-                                "      <menuitem action='AddIndexMark'/>"
-                                "      <menuitem action='AddPreGap'/>"
-                                "      <menuitem action='RemoveTrackMark'/>"
-                                "    <separator/>"
-                                "      <menuitem action='AppendTrack'/>"
-                                "      <menuitem action='AppendFile'/>"
-                                "      <menuitem action='InsertFile'/>"
-                                "    <separator/>"
-                                "      <menuitem action='AppendSilence'/>"
-                                "      <menuitem action='InsertSilence'/>"
-                                "    </menu>"
-                                "  </menubar>"
-                                "</ui>";
+    try
+    {
+        Glib::ustring ui_info =
+            "<ui>"
+            "  <menubar name='MenuBar'>"
+            "    <menu action='EditMenu'>"
+            "      <menuitem action='TrackInfo'/>"
+            "    <separator/>"
+            "      <menuitem action='Cut'/>"
+            "      <menuitem action='Paste'/>"
+            "    <separator/>"
+            "      <menuitem action='SelectAll'/>"
+            "    <separator/>"
+            "      <menuitem action='AddTrackMark'/>"
+            "      <menuitem action='AddIndexMark'/>"
+            "      <menuitem action='AddPreGap'/>"
+            "      <menuitem action='RemoveTrackMark'/>"
+            "    <separator/>"
+            "      <menuitem action='AppendTrack'/>"
+            "      <menuitem action='AppendFile'/>"
+            "      <menuitem action='InsertFile'/>"
+            "    <separator/>"
+            "      <menuitem action='AppendSilence'/>"
+            "      <menuitem action='InsertSilence'/>"
+            "    </menu>"
+            "  </menubar>"
+            "</ui>";
 
-        m_refUIManager->add_ui_from_string(ui_info);
-    } catch (const Glib::Error &ex) {
-        std::cerr << "merging menus failed: " << ex.what();
+    }
+    catch(const Glib::Error& ex)
+    {
+        std::cerr << "merging menus failed: " <<  ex.what();
     }
 }
 
 void AudioCDView::update(unsigned long level)
 {
+    printf("update %0x\n", level);
     if (level & (UPD_TOC_DIRTY | UPD_TOC_DATA)) {
         cursorPos_->set_text("");
     }
@@ -250,9 +239,11 @@ void AudioCDView::update(unsigned long level)
     if (level & UPD_TRACK_MARK_SEL) {
         int trackNr, indexNr;
 
-        if (tocEditView_->trackSelection(&trackNr) && tocEditView_->indexSelection(&indexNr)) {
+        if (tocEditView_->trackSelection(&trackNr) &&
+            tocEditView_->indexSelection(&indexNr)) {
             sampleDisplay_->setSelectedTrackMarker(trackNr, indexNr);
-        } else {
+        }
+        else {
             sampleDisplay_->setSelectedTrackMarker(0, 0);
         }
     }
@@ -262,7 +253,8 @@ void AudioCDView::update(unsigned long level)
 
         tocEditView_->sampleView(&smin, &smax);
         sampleDisplay_->updateToc(smin, smax);
-    } else if (level & (UPD_TRACK_DATA | UPD_TRACK_MARK_SEL)) {
+    }
+    else if (level & (UPD_TRACK_DATA | UPD_TRACK_MARK_SEL)) {
         sampleDisplay_->updateTrackMarks();
     }
 
@@ -271,10 +263,11 @@ void AudioCDView::update(unsigned long level)
 
         if (tocEditView_->sampleMarker(&marker)) {
             markerPos_->set_text(sample2string(marker));
-            sampleDisplay_->setMarker(marker);
-        } else {
+            sampleDisplay_->set_marker(marker);
+        }
+        else {
             markerPos_->set_text("");
-            sampleDisplay_->clearMarker();
+            sampleDisplay_->clear_marker();
         }
     }
 
@@ -295,14 +288,18 @@ void AudioCDView::update(unsigned long level)
     if (level & UPD_PLAY_STATUS) {
         switch (project_->playStatus()) {
         case AudioCDProject::PLAYING:
-            sampleDisplay_->setCursor(1, project_->playPosition() - project_->getDelay());
+            sampleDisplay_->setCursor(1, project_->playPosition() -
+                                      project_->getDelay());
             // FIXME: What about using a separate cursor for playing?
-            cursorPos_->set_text(sample2string(project_->playPosition() - project_->getDelay()));
+            cursorPos_->set_text(sample2string(project_->playPosition() -
+                                               project_->getDelay()));
             break;
         case AudioCDProject::PAUSED:
-            sampleDisplay_->setCursor(1, project_->playPosition() - project_->getDelay());
+            sampleDisplay_->setCursor(1, project_->playPosition() -
+                                      project_->getDelay());
             // FIXME: What about using a separate cursor for playing?
-            cursorPos_->set_text(sample2string(project_->playPosition() - project_->getDelay()));
+            cursorPos_->set_text(sample2string(project_->playPosition() -
+                                               project_->getDelay()));
             break;
         case AudioCDProject::STOPPED:
             sampleDisplay_->setCursor(0, 0);
@@ -319,6 +316,11 @@ void AudioCDView::update(unsigned long level)
 
     if (addSilenceDialog_ != 0)
         addSilenceDialog_->update(level, tocEditView_);
+
+    if (!tocEditView_ || tocEditView_->is_sample_view_full())
+        scrollbar_->hide();
+    else
+        scrollbar_->show();
 }
 
 void AudioCDView::zoomIn()
@@ -383,7 +385,7 @@ int AudioCDView::getMarker(unsigned long *sample)
     if (tocEditView_->tocEdit()->lengthSample() == 0)
         return 0;
 
-    if (sampleDisplay_->getMarker(sample) == 0) {
+    if (sampleDisplay_->get_marker(sample) == 0) {
         project_->statusMessage(_("Please set marker."));
         return 0;
     }
@@ -391,7 +393,8 @@ int AudioCDView::getMarker(unsigned long *sample)
     return 1;
 }
 
-void AudioCDView::trackMarkSelectedCallback(const Track *, int trackNr, int indexNr)
+void AudioCDView::trackMarkSelectedCallback(const Track *, int trackNr,
+                                            int indexNr)
 {
     tocEditView_->trackSelection(trackNr);
     tocEditView_->indexSelection(indexNr);
@@ -406,13 +409,15 @@ void AudioCDView::markerSetCallback(unsigned long sample)
 }
 
 // Called when the user makes a selection on the SampleDisplay
-void AudioCDView::selectionSetCallback(unsigned long start, unsigned long end)
+void AudioCDView::selectionSetCallback(unsigned long start,
+                                       unsigned long end)
 {
-    if (mode_ == ZOOM) {
+    if (mode_ == ZOOM ) {
         if (tocEditView_->sampleView(start, end)) {
             update(UPD_SAMPLES);
         }
-    } else {
+    }
+    else {
         tocEditView_->sampleSelect(start, end);
         update(UPD_SAMPLE_SEL);
     }
@@ -440,9 +445,8 @@ void AudioCDView::cursorMovedCallback(unsigned long pos)
 
 void AudioCDView::viewModifiedCallback(unsigned long start, unsigned long end)
 {
-    if (tocEditView_->sampleView(start, end)) {
+    if (tocEditView_->sampleView(start, end))
         update(UPD_SAMPLES);
-    }
 }
 
 void AudioCDView::setMode(Mode m)
@@ -462,16 +466,20 @@ void AudioCDView::markerSet()
 // Called when the user enters a value in one of the two selection entries
 void AudioCDView::selectionSet()
 {
-    unsigned long s1 = string2sample(selectionStartPos_->get_text().c_str());
-    unsigned long s2 = string2sample(selectionEndPos_->get_text().c_str());
+    unsigned long s1 =
+        string2sample(selectionStartPos_->get_text().c_str());
+    unsigned long s2 =
+        string2sample(selectionEndPos_->get_text().c_str());
 
     tocEditView_->sampleSelect(s1, s2);
     update(UPD_SAMPLE_SEL);
 }
 
-void AudioCDView::drag_data_received_cb(const Glib::RefPtr<Gdk::DragContext> &context, int x, int y,
-                                        const Gtk::SelectionData &selection_data, guint info,
-                                        guint time)
+void
+AudioCDView::drag_data_received_cb(const Glib::RefPtr<Gdk::DragContext>&
+                                   context, int x, int y,
+                                   const Gtk::SelectionData& selection_data,
+                                   guint info, guint time)
 {
     switch (info) {
 
@@ -490,7 +498,7 @@ void AudioCDView::drag_data_received_cb(const Glib::RefPtr<Gdk::DragContext> &co
             std::string fn;
             try {
                 fn = Glib::filename_from_uri(sub);
-            } catch (std::exception &e) {
+            } catch (std::exception& e) {
                 fn.clear();
             }
 
@@ -504,13 +512,10 @@ void AudioCDView::drag_data_received_cb(const Glib::RefPtr<Gdk::DragContext> &co
 #ifdef HAVE_MP3_SUPPORT
                 || type == Util::FileExtension::MP3
 #endif
-#ifdef HAVE_FLAC_SUPPORT
-                || type == Util::FileExtension::FLAC
-#endif
 #ifdef HAVE_OGG_SUPPORT
                 || type == Util::FileExtension::OGG
 #endif
-            ) {
+                ) {
                 project_->appendTrack(fn.c_str());
             }
         }
@@ -527,10 +532,11 @@ void AudioCDView::trackInfo()
             trackInfoDialog_ = new TrackInfoDialog();
 
         trackInfoDialog_->start(tocEditView_);
+
     } else {
 
-        Gtk::MessageDialog md(*project_->getParentWindow(), _("Please select a track first"),
-                              Gtk::MESSAGE_INFO);
+        Gtk::MessageDialog md(*project_->get_parent_window(),
+                              _("Please select a track first"));
         md.run();
     }
 }
@@ -545,8 +551,7 @@ void AudioCDView::cutTrackData()
     switch (project_->tocEdit()->removeTrackData(tocEditView_)) {
     case 0:
         project_->statusMessage(_("Removed selected samples."));
-        signal_tocModified(UPD_TOC_DATA | UPD_TRACK_DATA | UPD_SAMPLE_SEL | UPD_SAMPLE_MARKER |
-                           UPD_SAMPLES);
+        signal_tocModified(UPD_TOC_DATA | UPD_TRACK_DATA | UPD_SAMPLE_SEL | UPD_SAMPLE_MARKER | UPD_SAMPLES);
         break;
     case 1:
         project_->statusMessage(_("Please select samples."));
@@ -704,7 +709,8 @@ void AudioCDView::removeTrackMark()
         return;
     }
 
-    if (tocEditView_->trackSelection(&trackNr) && tocEditView_->indexSelection(&indexNr)) {
+    if (tocEditView_->trackSelection(&trackNr) &&
+        tocEditView_->indexSelection(&indexNr)) {
         switch (project_->tocEdit()->removeTrackMarker(trackNr, indexNr)) {
         case 0:
             project_->statusMessage(_("Removed track/index marker."));
@@ -721,7 +727,8 @@ void AudioCDView::removeTrackMark()
                                       "please report."));
             break;
         }
-    } else {
+    }
+    else {
         project_->statusMessage(_("Please select a track/index mark."));
     }
 }
@@ -741,8 +748,8 @@ int AudioCDView::snapSampleToBlock(unsigned long sample, long *block)
     return 1;
 }
 
-void AudioCDView::trackMarkMovedCallback(const Track *, int trackNr, int indexNr,
-                                         unsigned long sample)
+void AudioCDView::trackMarkMovedCallback(const Track *, int trackNr,
+                                         int indexNr, unsigned long sample)
 {
     if (!project_->tocEdit()->editable()) {
         project_->tocBlockedMsg(_("Move Track Marker"));
@@ -794,9 +801,11 @@ void AudioCDView::appendSilence()
 {
     if (addSilenceDialog_ == 0) {
         addSilenceDialog_ = new AddSilenceDialog();
-        addSilenceDialog_->set_transient_for(*project_->getParentWindow());
-        addSilenceDialog_->signal_tocModified.connect(sigc::mem_fun(*this, &AudioCDView::update));
-        addSilenceDialog_->signal_fullView.connect(sigc::mem_fun(*this, &AudioCDView::fullView));
+        addSilenceDialog_->set_transient_for(*project_->get_parent_window ());
+        addSilenceDialog_->signal_tocModified.
+            connect(sigc::mem_fun(*this, &AudioCDView::update));
+        addSilenceDialog_->signal_fullView.
+            connect(sigc::mem_fun(*this, &AudioCDView::fullView));
     }
 
     addSilenceDialog_->mode(AddSilenceDialog::M_APPEND);
@@ -825,7 +834,7 @@ const char *AudioCDView::sample2string(unsigned long sample)
     unsigned long frame = sample / 588;
     sample %= 588;
 
-    snprintf(buf, sizeof(buf), "%2lu:%02lu:%02lu.%03lu", min, sec, frame, sample);
+    sprintf(buf, "%2lu:%02lu:%02lu.%03lu", min, sec, frame, sample);
 
     return buf;
 }
@@ -852,4 +861,9 @@ unsigned long AudioCDView::string2sample(const char *str)
         n = 0;
 
     return Msf(m, s, f).samples() + n;
+}
+
+TocEditView* AudioCDView::tocEditView() const
+{
+    return tocEditView_;
 }

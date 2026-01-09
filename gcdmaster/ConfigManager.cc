@@ -19,82 +19,37 @@
 
 #include "ConfigManager.h"
 
-static const char *NAME_SCHEMA = "org.gnome.gcdmaster";
-static const char *KEY_CDRDAO_PATH = "cdrdao-path";
-static const char *KEY_TEMP_DIR = "temp-dir";
-static const char *KEY_RECORD_EJECT_WARNING = "record-eject-warning";
-static const char *KEY_RELOAD_EJECT_WARNING = "record-reload-warning";
-static const char *KEY_DUPLICATE_ON_THE_FLY_WARNING = "duplicate-on-the-fly-warning";
-static const char *KEY_CONFIGURED_DEVICES = "configured-devices";
-
 ConfigManager::ConfigManager()
 {
-    settings_ = Gio::Settings::create(NAME_SCHEMA);
+    client_ = Gio::Settings::create("org.gnome.gcdmaster");
 }
 
-ConfigManager::~ConfigManager()
+void ConfigManager::set(const Glib::ustring key, const Glib::ustring value)
 {
-    if (settings_->get_has_unapplied()) {
-        settings_->apply();
-    }
+    client_->set_string(key, value);
 }
 
-Glib::ustring ConfigManager::getCdrdaoPath() const
+void ConfigManager::set(const Glib::ustring key, Glib::StringArrayHandle sa)
 {
-    return settings_->get_string(KEY_CDRDAO_PATH);
+    client_->set_string_array(key, sa);
 }
 
-void ConfigManager::setTempDir(const Glib::ustring &dir) const
+void ConfigManager::set(const Glib::ustring key, bool value)
 {
-    settings_->set_string(KEY_TEMP_DIR, dir);
-    settings_->apply();
+    client_->set_boolean(key, value);
 }
 
-Glib::ustring ConfigManager::getTempDir() const
+Glib::ustring ConfigManager::get_string(const Glib::ustring key)
 {
-    return settings_->get_string(KEY_TEMP_DIR);
+    return client_->get_string(key);
 }
 
-bool ConfigManager::getEjectWarning() const
+Glib::StringArrayHandle ConfigManager::get_string_array(const Glib::ustring key)
 {
-    return settings_->get_boolean(KEY_RECORD_EJECT_WARNING);
+    return client_->get_string_array(key);
 }
 
-void ConfigManager::setEjectWarning(bool value)
+bool ConfigManager::get_bool(const Glib::ustring key)
 {
-    settings_->set_boolean(KEY_RECORD_EJECT_WARNING, value);
-    settings_->apply();
-}
-
-bool ConfigManager::getReloadWarning() const
-{
-    return settings_->get_boolean(KEY_RELOAD_EJECT_WARNING);
-}
-
-void ConfigManager::setReloadWarning(bool value)
-{
-    settings_->set_boolean(KEY_RELOAD_EJECT_WARNING, value);
-    settings_->apply();
-}
-
-bool ConfigManager::getDuplicateOnTheFlyWarning() const
-{
-    return settings_->get_boolean(KEY_DUPLICATE_ON_THE_FLY_WARNING);
-}
-
-void ConfigManager::setDuplicateOnTheFlyWarning(bool value)
-{
-    settings_->set_boolean(KEY_DUPLICATE_ON_THE_FLY_WARNING, value);
-    settings_->apply();
-}
-
-void ConfigManager::setConfiguredDevices(const std::vector<Glib::ustring> &strings)
-{
-    settings_->set_string_array(KEY_CONFIGURED_DEVICES, strings);
-    settings_->apply();
-}
-
-std::vector<Glib::ustring> ConfigManager::getConfiguredDevices(void) const
-{
-    return settings_->get_string_array(KEY_CONFIGURED_DEVICES);
+    return client_->get_boolean(key);
 }

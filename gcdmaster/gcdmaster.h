@@ -20,69 +20,117 @@
 #ifndef __GCDMASTER_H__
 #define __GCDMASTER_H__
 
-#include <gtk/gtk.h>
 #include <gtkmm.h>
 
 #include <list>
 
-class ProjectChooser;
-class BlankCDDialog;
-#include "BlankCDDialog.h"
 #include "Project.h"
+#include "BlankCDWindow.h"
+#include "ProjectChooser.h"
+#include "PreferencesDialog.h"
 
-class GCDMaster : public Gtk::ApplicationWindow
+/*
+ * Application Window class
+ */
+
+class GCDWindow : public Gtk::ApplicationWindow
 {
-  public:
-    GCDMaster();
+public:
+    GCDWindow(BaseObjectType* cobject,
+              const Glib::RefPtr<Gtk::Builder>& builder);
 
-    bool closeProject();
-    void closeChooser();
-    bool on_delete_event(GdkEventAny *e);
-    bool openNewProject(const std::string &);
-    void openProject();
-    void newChooserWindow();
-    void newAudioCDProject2();
-    void newAudioCDProject(const char *name, TocEdit *tocEdit, const char *tracks = NULL);
-    void newDuplicateCDProject();
-    void newDumpCDProject();
+    enum class What { CHOOSER, AUDIOCD, DUPLICATE, BLANKCD, DUMP };
+
+    static GCDWindow* create(Glib::RefPtr<Gtk::Builder> b, What what,
+                             const char*, TocEdit*);
+
+    Project* project() { return project_; }
 
     void update(unsigned long level);
+    void set_menu(Glib::RefPtr<Gio::MenuModel> model);
 
-    void configureDevices();
-    void configurePreferences();
-    void blankCDRW();
+protected:
+    void set_project(Project* project);
 
-    void registerStockIcons();
+private:
+    Project* project_;
+    Gtk::Notebook* notebook_;
+    Gtk::MenuButton* gears_;
+};
 
-    static void appClose();
+/* 
+ * Main GCDMaster application
+ */
 
-    static std::list<GCDMaster *> apps;
+class GCDMaster : public Gtk::Application
+{
+public:
+  GCDMaster();
 
-  private:
-    Project *project_;
-    ProjectChooser *chooser_;
-    gint project_number;
+  void newChooserWindow();
+  void newDuplicateCDProject();
+  void newDumpCDProject();
+  void newEmptyAudioCDProject();
+  void newAudioCDProject(const char* name = NULL, TocEdit* tocEdit = NULL);
 
-    BlankCDDialog blankCDDialog_;
+  void update(unsigned long level);
 
-    Gtk::Box box_;
-    Gtk::Notebook notebook_;
-    Gtk::HBox *container_;
+private:
+  gint project_number_;
+  Glib::RefPtr<Gtk::Builder> builder_;
 
-    Glib::RefPtr<Gtk::UIManager> m_refUIManager;
-    Glib::RefPtr<Gtk::ActionGroup> m_refActionGroup;
+  // Override default signal handlers.
+  void on_startup() override;
+  void on_activate() override;
+  void on_action_quit();
+  void on_action_preferences();
+  void on_action_about();
+  void on_action_blank_cdrw();
+  void on_action_open();
+  void on_open(const type_vec_files& files, const Glib::ustring& hint) override;
 
-    Gtk::Statusbar *statusbar_;
-    Gtk::ProgressBar *progressbar_;
-    Gtk::Spinner *spinner_;
-    Gtk::Button *progressButton_;
-    Gtk::AboutDialog *about_;
+//  bool closeProject();
+//  void closeChooser();
+//  bool on_delete_event(GdkEventAny* e);
+  bool openNewProject(const char*);
+//void openProject();
+  /* void newDumpCDProject(); */
 
-    Gtk::FileChooserDialog *readFileSelector_;
-    void createMenus();
-    void createStatusbar();
-    void aboutDialog();
-    void on_about_ok(int);
+  /* void configureDevices(); */
+  /* void configurePreferences(); */
+
+  /* void registerStockIcons(); */
+
+  /* static void appClose(); */
+
+//  Project* project_;
+
+  // Dialogs
+  Glib::RefPtr<PreferencesDialog> preferencesDialog_;
+  Glib::RefPtr<Gtk::AboutDialog> aboutDialog_;
+
+  // Windows
+  BlankCDWindow* blankCDWindow_;
+
+  Gtk::FileChooserDialog m_open_file_chooser;
+  Glib::RefPtr<Gtk::FileFilter> open_filter_;
+  Glib::RefPtr<Gtk::FileFilter> all_filter_;
+
+  int argc_;
+  char** argv_;
+
+  /* Gtk::Notebook notebook_; */
+
+  /* Glib::RefPtr<Gtk::UIManager> m_refUIManager; */
+  /* Glib::RefPtr<Gtk::ActionGroup> m_refActionGroup; */
+
+  /* //Gnome::UI::AppBar* statusbar_;   */
+  /* Gtk::ProgressBar* progressbar_;   */
+  /* Gtk::Button* progressButton_;   */
+
+  /* Gtk::FileChooserDialog* readFileSelector_; */
+  /* void createMenus(); */
+  /* void createStatusbar(); */
 };
 
 #endif

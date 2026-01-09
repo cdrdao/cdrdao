@@ -18,72 +18,72 @@
  */
 
 #include <gtkmm.h>
-#include <iostream>
-#include <string>
 
-#include "Icons.h"
-#include "ProjectChooser.h"
+#include "xcdrdao.h"
 #include "gcdmaster.h"
 #include "guiUpdate.h"
-#include "xcdrdao.h"
+#include "ProjectChooser.h"
 
 #define ICON_PADDING 10
 #define LABEL_PADDING 10
 #define BUTTONS_RELIEF Gtk::RELIEF_NORMAL
 
-ProjectChooser::ProjectChooser()
+
+ProjectChooser::ProjectChooser(BaseObjectType* cobject,
+                               const Glib::RefPtr<Gtk::Builder>& builder) :
+    Project(cobject, builder)
 {
-    Glib::RefPtr<Gtk::Builder> builder;
-    try {
-        std::string glade_path(CDRDAO_GLADEDIR);
-        auto override = getenv("CDRDAO_HOME");
-        if (override) {
-            glade_path = override;
-            glade_path += "/gcdmaster/glade";
-        }
-        glade_path += "/ProjectChooser.glade";
-        builder = Gtk::Builder::create_from_file(glade_path.c_str(), "mainbox");
-    } catch (const Glib::Exception &ex) {
-        try {
-            builder = Gtk::Builder::create_from_file("glade/ProjectChooser.glade", "mainbox");
-        } catch (const Glib::Exception &ex) {
-            std::cerr << ex.what() << std::endl;
-            return;
-        }
-    }
+    Gtk::Button* button;
 
-    Gtk::Box *pBox = 0;
-    builder->get_widget("mainbox", pBox);
-    if (!pBox)
-        return;
+#define MAP_BUTTON_TO_ACTION(id, method) \
+    builder->get_widget(#id, button);    \
+    if (button)                          \
+        button->signal_clicked()         \
+            .connect(sigc::mem_fun(*this, &ProjectChooser::method))
 
-    Gtk::Image *pImage = 0;
-    builder->get_widget("AudioImage", pImage);
-    if (pImage) {
-        pImage->set(Icons::AUDIOCD, Gtk::ICON_SIZE_DIALOG);
-    }
-    builder->get_widget("CopyImage", pImage);
-    if (pImage) {
-        pImage->set(Icons::COPYCD, Gtk::ICON_SIZE_DIALOG);
-    }
-    builder->get_widget("DumpImage", pImage);
-    if (pImage) {
-        pImage->set(Icons::DUMPCD, Gtk::ICON_SIZE_DIALOG);
-    }
+    MAP_BUTTON_TO_ACTION(AudioButton, on_new_audio_cd);
+    MAP_BUTTON_TO_ACTION(CopyButton, on_new_duplicate_cd);
+    MAP_BUTTON_TO_ACTION(DumpButton, on_new_dump_cd);
+}
 
-    Gtk::Button *pButton = 0;
-    builder->get_widget("AudioButton", pButton);
-    if (pButton) {
-        pButton->signal_clicked().connect(ProjectChooser::newAudioCDProject);
-    }
-    builder->get_widget("CopyButton", pButton);
-    if (pButton) {
-        pButton->signal_clicked().connect(ProjectChooser::newDuplicateCDProject);
-    }
-    builder->get_widget("DumpButton", pButton);
-    if (pButton) {
-        pButton->signal_clicked().connect(ProjectChooser::newDumpCDProject);
-    }
+ProjectChooser::~ProjectChooser()
+{
+    printf("Chooser deleted.\n");
+}
 
-    pack_start(*pBox);
+ProjectChooser* ProjectChooser::create(Glib::RefPtr<Gtk::Builder>& builder,
+                                       GCDWindow* window)
+{
+    builder->add_from_resource("/org/gnome/gcdmaster/chooser.ui");
+
+    ProjectChooser* chooser;
+    builder->get_widget_derived("chooser_box", chooser);
+    if (!chooser)
+        throw std::runtime_error("No \"chooser_box\" object in chooser.ui");
+
+    printf("Chooser created.\n");
+    chooser->window_ = window;
+    return chooser;
+}
+
+void ProjectChooser::on_new_audio_cd(void)
+{
+    window_->get_application()->activate_action("new-audio-cd");
+    window_->hide();
+}
+
+void ProjectChooser::on_new_duplicate_cd(void)
+{
+    window_->get_application()->activate_action("new-duplicate-cd");
+    window_->hide();
+}
+
+void ProjectChooser::on_new_dump_cd(void)
+{
+    window_->get_application()->activate_action("new-dump-cd");
+    window_->hide();
+}
+
+void ProjectChooser::update(unsigned long level)
+{
 }

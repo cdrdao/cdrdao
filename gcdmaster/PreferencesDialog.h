@@ -22,34 +22,66 @@
 
 #include <gtkmm.h>
 
+#include "CdDevice.h"
+
 class PreferencesDialog : public Gtk::Dialog
 {
-  public:
-    PreferencesDialog(BaseObjectType *cobject, const Glib::RefPtr<Gtk::Builder> &refBuilder);
+ public:
+    PreferencesDialog(BaseObjectType* cobject,
+		      const Glib::RefPtr<Gtk::Builder>& builder);
     virtual ~PreferencesDialog();
 
-    void show();
+    static Glib::RefPtr<PreferencesDialog> create(Glib::RefPtr<Gtk::Builder>& builder);
 
-  protected:
-    void readFromGConf();
-    bool saveToGConf();
+    void show();
+    void update(unsigned long level);
+
+ protected:
+    void read_from_settings();
+    bool save_to_settings();
     void on_button_apply();
     void on_button_cancel();
     void on_button_ok();
-    void on_button_browse();
-    void on_button_browse_cancel();
-    void on_button_browse_open();
+    void on_button_reset();
+    void on_selection_changed();
+    void on_driver_changed();
+    void on_dev_type_changed();
+    void rescan_action();
 
-    Glib::RefPtr<Gtk::Builder> m_refBuilder;
+    // import/export, as in transferring the gui data to and from the
+    // CdDevice list.
+    void import_devices();
+    void export_devices();
+    void import_status();
+    void import_selected_row(Gtk::TreeIter);
+    void export_selected_row(Gtk::TreeIter);
+    void append_entry(CdDevice* dev);
 
-    Gtk::Button *_applyButton;
-    Gtk::Button *_cancelButton;
-    Gtk::Button *_okButton;
-    Gtk::Entry *_tempDirEntry;
-    Gtk::FileChooserDialog *_tempDirDialog;
-    Gtk::Button *_browseButton;
-    Gtk::Button *_browseCancel;
-    Gtk::Button *_browseOpen;
+    Gtk::FileChooserButton* tempDirEntry_;
+
+    struct DeviceData {
+        std::string dev;
+        int driverId;
+        CdDevice::DeviceType deviceType;
+        unsigned long options;
+    };
+
+    class ListColumns : public Gtk::TreeModel::ColumnRecord
+    {
+    public:
+        ListColumns() { add(dev); add(description);  add(status); add(data); };
+        Gtk::TreeModelColumn<std::string> dev;
+        Gtk::TreeModelColumn<std::string> description;
+        Gtk::TreeModelColumn<std::string> status;
+        Gtk::TreeModelColumn<DeviceData*> data;
+    };
+    Gtk::TreeView* deviceList_;
+    Glib::RefPtr<Gtk::ListStore> deviceListModel_;
+    ListColumns deviceListColumns_;
+    Gtk::TreeIter selectedRow_;
+    Gtk::Entry* driverOptionsEntry_;
+    Gtk::ComboBoxText* driverMenu_;
+    Gtk::ComboBoxText* devtypeMenu_;
 };
 
 #endif

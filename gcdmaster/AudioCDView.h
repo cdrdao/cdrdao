@@ -20,11 +20,9 @@
 #ifndef __AUDIO_CD_VIEW_H__
 #define __AUDIO_CD_VIEW_H__
 
-#include <gtk/gtk.h>
 #include <gtkmm.h>
 
 #include "AddFileDialog.h"
-#include "GenericView.h"
 #include <list>
 
 class SampleDisplay;
@@ -33,25 +31,23 @@ class TrackInfoDialog;
 class AddFileDialog;
 class AddSilenceDialog;
 class Track;
+class TocEditView;
 
 enum {
     TARGET_URI_LIST,
 };
 
-class AudioCDView : public GenericView
+class AudioCDView : public Gtk::VBox
 {
-  public:
-    AudioCDView(AudioCDProject *project);
+public:
+    AudioCDView(AudioCDProject *project,
+                Glib::RefPtr<Gio::SimpleActionGroup> ag);
     ~AudioCDView();
-    void add_menus(Glib::RefPtr<Gtk::UIManager> m_refUIManager);
     sigc::signal0<void> add_view;
 
     void update(unsigned long level = 0);
 
-    enum Mode {
-        ZOOM,
-        SELECT
-    };
+    enum Mode { ZOOM, SELECT };
     void setMode(Mode);
 
     void zoomIn();
@@ -61,36 +57,42 @@ class AudioCDView : public GenericView
 
     sigc::signal1<void, unsigned long> signal_tocModified;
 
-  protected:
-    static const char *sample2string(unsigned long sample);
-    static unsigned long string2sample(const char *s);
+    virtual TocEditView* tocEditView() const;
 
-  private:
+protected:
+    static const char* sample2string(unsigned long sample);
+    static unsigned long string2sample(const char* s);
+    TocEditView* tocEditView_;
+
+private:
     AudioCDProject *project_;
 
-    Glib::RefPtr<Gtk::ActionGroup> m_refActionGroup;
+    Glib::RefPtr<Gio::SimpleActionGroup> m_action_group;
 
-    TrackInfoDialog *trackInfoDialog_;
-    AddFileDialog addFileDialog_;
-    AddSilenceDialog *addSilenceDialog_;
+    TrackInfoDialog*  trackInfoDialog_;
+    AddFileDialog     addFileDialog_;
+    AddSilenceDialog* addSilenceDialog_;
 
     Mode mode_;
     SampleDisplay *sampleDisplay_;
 
-    Gtk::Entry *markerPos_;
-    Gtk::Label *cursorPos_;
-    Gtk::Entry *selectionStartPos_;
-    Gtk::Entry *selectionEndPos_;
+    Gtk::Entry*  markerPos_;
+    Gtk::Label*  cursorPos_;
+    Gtk::Entry*  selectionStartPos_;
+    Gtk::Entry*  selectionEndPos_;
+    Gtk::HScrollbar* scrollbar_;
 
+    void add_menus();
     void markerSetCallback(unsigned long);
     void cursorMovedCallback(unsigned long);
     void selectionSetCallback(unsigned long, unsigned long);
     void selectAll();
     void selectionClearedCallback();
     void trackMarkSelectedCallback(const Track *, int trackNr, int indexNr);
-    void trackMarkMovedCallback(const Track *, int trackNr, int indexNr, unsigned long sample);
+    void trackMarkMovedCallback(const Track *, int trackNr, int indexNr,
+                                unsigned long sample);
     void viewModifiedCallback(unsigned long, unsigned long);
-    int snapSampleToBlock(unsigned long sample, long *block);
+    int  snapSampleToBlock(unsigned long sample, long *block);
 
     void trackInfo();
     void cutTrackData();
@@ -108,13 +110,15 @@ class AudioCDView : public GenericView
     void appendFile();
     void insertFile();
 
-    int getMarker(unsigned long *sample);
+    int  getMarker(unsigned long *sample);
     void markerSet();
 
     void selectionSet();
 
-    void drag_data_received_cb(const Glib::RefPtr<Gdk::DragContext> &context, int x, int y,
-                               const Gtk::SelectionData &selection_data, guint info, guint time);
+    void drag_data_received_cb(const Glib::RefPtr<Gdk::DragContext>& context,
+                               int x, int y,
+                               const Gtk::SelectionData& selection_data,
+                               guint info, guint time);
 };
 
 #endif

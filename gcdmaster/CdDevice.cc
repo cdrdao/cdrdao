@@ -17,51 +17,70 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#include <assert.h>
-#include <ctype.h>
-#include <errno.h>
-#include <stddef.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <sys/time.h>
 #include <sys/types.h>
+#include <stddef.h>
+#include <stdio.h>
 #include <unistd.h>
+#include <stdlib.h>
+#include <errno.h>
+#include <ctype.h>
+#include <assert.h>
 
-#include <glibmm/i18n.h>
 #include <gtkmm.h>
+#include <glibmm/i18n.h>
 
-#include "CdDevice.h"
-#include "ConfigManager.h"
-#include "ProcessMonitor.h"
-#include "ProgressDialog.h"
 #include "TocEdit.h"
-#include "guiUpdate.h"
+#include "CdDevice.h"
+#include "ProcessMonitor.h"
 #include "xcdrdao.h"
+#include "guiUpdate.h"
+#include "ProgressDialog.h"
+#include "Settings.h"
+#include "ConfigManager.h"
 
-#include "CdrDriver.h"
-#include "ScsiIf.h"
-#include "Toc.h"
 #include "config.h"
-#include "log.h"
 #include "remote.h"
+#include "ScsiIf.h"
+#include "CdrDriver.h"
 #include "util.h"
+#include "log.h"
+#include "Toc.h"
 
-#define DRIVER_IDS 13
-#define DRIVER_ID_DEFAULT 2
+std::vector<CdDevice*> CdDevice::DEVICE_LIST_;
+std::vector<std::string> CdDevice::devtypeNames;
+std::vector<std::string> CdDevice::driverNames;
+std::vector<std::string> CdDevice::statusNames;
 
-CdDevice *CdDevice::DEVICE_LIST_ = NULL;
+bool CdDevice::init_ = false;
 
-const char *CdDevice::DRIVER_NAMES_[DRIVER_IDS] = {
-    "Undefined",    "cdd2600",      "generic-mmc",  "generic-mmc-raw", "plextor",
-    "plextor-scan", "ricoh-mp6200", "sony-cdu920",  "sony-cdu948",     "taiyo-yuden",
-    "teac-cdr55",   "toshiba",      "yamaha-cdr10x"};
+#define DEFAULT_DRIVER "generic-mmc"
 
-CdDevice::CdDevice(const char *dev, const char *vendor, const char *product)
+const char *CdDevice::driver_names_[] = {
+    "Undefined",
+    "cdd2600",
+    "generic-mmc",
+    "generic-mmc-raw",
+    "plextor",
+    "plextor-scan",
+    "ricoh-mp6200",
+    "sony-cdu920",
+    "sony-cdu948",
+    "taiyo-yuden",
+    "teac-cdr55",
+    "toshiba",
+    "yamaha-cdr10x",
+    NULL
+};
+  
+
+CdDevice::CdDevice(const char* dev, const char *vendor, const char *product)
 {
     dev_ = dev;
     vendor_ = vendor;
     product_ = product;
-
+    description_ = vendor_ + std::string(" ") + product_;
+  
     driverId_ = 0;
     driverOptions_ = 0;
 
@@ -99,10 +118,10 @@ CdDevice::~CdDevice()
     scsiIf_ = NULL;
 }
 
-Glib::ustring CdDevice::settingString() const
+char *CdDevice::settingString() const
 {
     char buf[100];
-    Glib::ustring s;
+    std::string s;
 
     s = "'" + dev_ + "','";
     s += vendor_;
@@ -118,25 +137,25 @@ Glib::ustring CdDevice::settingString() const
         s += "CD_RW";
         break;
     case CD_ROM:
-        s += "CD_ROM";
+        s+= "CD_ROM";
         break;
     }
 
     s += ",";
 
-    s += driverName(driverId_);
+    s += driverNames[driverId_];
 
     s += ",";
 
-    snprintf(buf, sizeof(buf), "0x%lx", driverOptions_);
+    sprintf(buf, "0x%lx", driverOptions_);
     s += buf;
 
-    return s;
+    return strdupCC(s.c_str());
 }
 
 void CdDevice::driverId(int id)
 {
-    if (id >= 0 && id < DRIVER_IDS)
+    if (id >= 0 && id < driverNames.size())
         driverId_ = id;
 }
 
@@ -155,11 +174,15 @@ int CdDevice::autoSelectDriver()
     unsigned long options = 0;
     const char *driverName;
 
-    driverName = CdrDriver::selectDriver(1, vendor_.c_str(), product_.c_str(), &options);
+    manuallyConfigured_ = false;
+
+    driverName = CdrDriver::selectDriver(1, vendor_.c_str(), product_.c_str(),
+                                         &options);
 
     if (driverName) {
         driverId_ = driverName2Id(driverName);
         driverOptions_ = options;
+
     } else {
         cd_page_2a *p2a;
 
@@ -167,7 +190,7 @@ int CdDevice::autoSelectDriver()
 
         if (sif && sif->init() == 0 && (p2a = sif->checkMmc())) {
 
-            driverId_ = driverName2Id("generic-mmc");
+            driverId_ = driverName2Id(DEFAULT_DRIVER);
             if (p2a->cd_r_read)
                 deviceType_ = CD_ROM;
             if (p2a->cd_r_write)
@@ -175,7 +198,7 @@ int CdDevice::autoSelectDriver()
             if (p2a->cd_rw_write)
                 deviceType_ = CD_RW;
         } else {
-            driverId_ = DRIVER_ID_DEFAULT;
+            driverId_ = driverName2Id(DEFAULT_DRIVER);
             driverOptions_ = 0;
         }
         if (sif)
@@ -227,7 +250,8 @@ int CdDevice::updateStatus()
                 newStatus = DEV_BUSY;
                 break;
             }
-        } else {
+        }
+        else {
             newStatus = DEV_FAULT;
         }
     }
@@ -236,17 +260,17 @@ int CdDevice::updateStatus()
         status_ = newStatus;
         return 1;
     }
-
+  
     return 0;
 }
 
 bool CdDevice::updateProgress(Glib::IOCondition cond, int fd)
 {
-    static unsigned char msgSync[4] = {0xff, 0x00, 0xff, 0x00};
+    static unsigned char msgSync[4] = { 0xff, 0x00, 0xff, 0x00 };
     fd_set fds;
     int state = 0;
-    unsigned char buf[10];
-    struct timeval timeout = {0, 0};
+    char buf[10];
+    struct timeval timeout = { 0, 0 };
 
     if (process_ == NULL)
         return false;
@@ -257,7 +281,8 @@ bool CdDevice::updateProgress(Glib::IOCondition cond, int fd)
     FD_ZERO(&fds);
     FD_SET(fd, &fds);
 
-    while (select(fd + 1, &fds, NULL, NULL, &timeout) > 0 && FD_ISSET(fd, &fds)) {
+    while (select(fd + 1, &fds, NULL, NULL, &timeout) > 0 &&
+           FD_ISSET(fd, &fds)) {
         FD_ZERO(&fds);
         FD_SET(fd, &fds);
 
@@ -265,15 +290,16 @@ bool CdDevice::updateProgress(Glib::IOCondition cond, int fd)
 
         while (state < 4) {
             if (read(fd, buf, 1) != 1) {
-                // message(-2, "Reading of msg sync failed.");
+                //message(-2, "Reading of msg sync failed.");
                 return false;
             }
 
             if (buf[0] == msgSync[state]) {
                 state++;
-            } else {
+            }
+            else {
                 state = 0;
-
+	
                 if (buf[0] == msgSync[state]) {
                     state++;
                 }
@@ -284,9 +310,14 @@ bool CdDevice::updateProgress(Glib::IOCondition cond, int fd)
 
         int msgsize = read(fd, (char *)&msg, sizeof(msg));
         if (msgsize >= PSGMSG_MINSIZE) {
-            if (msg.status >= PGSMSG_MIN && msg.status <= PGSMSG_MAX && msg.track >= 0 &&
-                msg.totalProgress >= 0 && msg.totalProgress <= 1000 && msg.bufferFillRate >= 0 &&
-                msg.bufferFillRate <= 100) {
+            printf("Read ProgressMsg %d %d %d %d %d %d %d\n",
+                   msg.status, msg.totalTracks, msg.track,
+                   msg.trackProgress, msg.totalProgress,
+                   msg.bufferFillRate, msg.writerFillRate);
+            if (msg.status >= PGSMSG_MIN && msg.status <= PGSMSG_MAX &&
+                msg.track >= 0 &&
+                msg.totalProgress >= 0 && msg.totalProgress <= 1000 &&
+                msg.bufferFillRate >= 0 && msg.bufferFillRate <= 100) {
                 progressStatus_ = msg.status;
                 progressTotalTracks_ = msg.totalTracks;
                 progressTrack_ = msg.track;
@@ -297,10 +328,11 @@ bool CdDevice::updateProgress(Glib::IOCondition cond, int fd)
                     progressWriterFill_ = msg.writerFillRate;
                 else
                     progressWriterFill_ = 0;
-
+	
                 progressStatusChanged_ = 1;
             }
-        } else {
+        }
+        else {
             log_message(-1, _("Reading of progress message failed."));
         }
     }
@@ -339,20 +371,41 @@ bool CdDevice::ejectCd(bool load)
         createScsiIf();
 
     if (scsiIf_) {
-        CdrDriver *driver = CdrDriver::createDriver(driverName(driverId_), driverOptions_, scsiIf_);
+        CdrDriver* driver = CdrDriver::createDriver(driverNames[driverId_].c_str(),
+                                                    driverOptions_,
+                                                    scsiIf_);
 
         int ret = driver->loadUnload((load ? 0 : 1));
         success = (ret == 0);
-        delete (driver);
+        delete(driver);
     }
 
     return success;
 }
 
+static char* allocate_cdrdao_path()
+{
+    char* exec_name = NULL;
+    const char* env_name = NULL;
+
+    if ((env_name = getenv("CDRDAO_PATH"))) {
+        exec_name = strdupCC(env_name);
+    } else {
+        Glib::ustring cdrdao_path = configManager->get_string("cdrdao-path");
+        if (!cdrdao_path.empty())
+            exec_name = strdupCC(cdrdao_path.c_str());
+        else
+            exec_name = strdupCC("cdrdao");
+    }
+
+    return exec_name;
+}
+
 // Starts a 'cdrdao' for recording given toc. Returns false if an
 // error occured and the process was not successfully launched.
-bool CdDevice::recordDao(Gtk::Window &parent, TocEdit *tocEdit, int simulate, int multiSession,
-                         int speed, int eject, int reload, int buffer, int overburn)
+bool CdDevice::recordDao(Gtk::Window& parent, TocEdit *tocEdit, int simulate,
+                         int multiSession, int speed, int eject, int reload,
+                         int buffer, int overburn)
 {
     std::string tocFileName;
     const char *args[30];
@@ -364,8 +417,8 @@ bool CdDevice::recordDao(Gtk::Window &parent, TocEdit *tocEdit, int simulate, in
     char bufferbuf[20];
     int remoteFdArgNum = 0;
 
-    if ((status_ != DEV_READY && status_ != DEV_FAULT && status_ != DEV_UNKNOWN) ||
-        process_ != NULL)
+    if ((status_ != DEV_READY && status_ != DEV_FAULT && status_ != DEV_UNKNOWN)
+        || process_ != NULL)
         return false;
 
     // Not ideal, but NO alternatives with C++14.
@@ -375,14 +428,12 @@ bool CdDevice::recordDao(Gtk::Window &parent, TocEdit *tocEdit, int simulate, in
     // Write out temporary toc file containing all the converted wav
     // files (don't want to rely on cdrdao doing the mp3->wav
     // translation, besides it's already been done).
-    if (tocEdit->toc()->write(tocFileName, true != 0)) {
+    if (!tocEdit->toc()->write(tocFileName, true)) {
         log_message(-2, _("Cannot write temporary toc-file."));
         return false;
     }
 
-    Glib::ustring execName = configManager->getCdrdaoPath();
-
-    args[n++] = execName.c_str();
+    args[n++] = allocate_cdrdao_path();
 
     if (simulate)
         args[n++] = "simulate";
@@ -400,7 +451,7 @@ bool CdDevice::recordDao(Gtk::Window &parent, TocEdit *tocEdit, int simulate, in
         args[n++] = "--multi";
 
     if (speed > 0) {
-        snprintf(speedbuf, sizeof(speedbuf), "%d", speed);
+        sprintf(speedbuf, "%d", speed);
         args[n++] = "--speed";
         args[n++] = speedbuf;
     }
@@ -415,16 +466,16 @@ bool CdDevice::recordDao(Gtk::Window &parent, TocEdit *tocEdit, int simulate, in
         args[n++] = "--overburn";
 
     args[n++] = "--device";
-    args[n++] = (char *)dev_.c_str();
+    args[n++] = (char*)dev_.c_str();
 
     if (driverId_ > 0) {
-        snprintf(drivername, sizeof(drivername), "%s:0x%lx", driverName(driverId_), driverOptions_);
+        sprintf(drivername, "%s:0x%lx", driverNames[driverId_], driverOptions_);
         args[n++] = "--driver";
         args[n++] = drivername;
     }
 
     if (buffer >= 10) {
-        snprintf(bufferbuf, sizeof(bufferbuf), "%i", buffer);
+        sprintf(bufferbuf, "%i", buffer);
         args[n++] = "--buffers";
         args[n++] = bufferbuf;
     }
@@ -432,9 +483,9 @@ bool CdDevice::recordDao(Gtk::Window &parent, TocEdit *tocEdit, int simulate, in
     args[n++] = tocFileName.c_str();
 
     args[n++] = NULL;
-
+  
     assert(n <= 20);
-
+  
     PROGRESS_POOL->start(parent, this, tocEdit->filename());
 
     // Remove the SCSI interface of this device to avoid problems with double
@@ -442,20 +493,23 @@ bool CdDevice::recordDao(Gtk::Window &parent, TocEdit *tocEdit, int simulate, in
     delete scsiIf_;
     scsiIf_ = NULL;
 
-    process_ = PROCESS_MONITOR->start(execName.c_str(), args, remoteFdArgNum);
+    process_ = PROCESS_MONITOR->start(args[0], args, remoteFdArgNum);
 
+    delete args[0];
     if (process_ != NULL) {
         status_ = DEV_RECORDING;
         action_ = A_RECORD;
 
         if (process_->commFd() >= 0) {
-            Glib::signal_io().connect(
-                bind(mem_fun(*this, &CdDevice::updateProgress), process_->commFd()),
-                process_->commFd(), Glib::IO_IN | Glib::IO_HUP);
+            Glib::signal_io().connect(bind(mem_fun(*this, &CdDevice::updateProgress),
+                                           process_->commFd()),
+                                      process_->commFd(),
+                                      Glib::IO_IN | Glib::IO_HUP);
         }
 
         return true;
-    } else {
+    }
+    else {
         unlink(tocFileName.c_str());
         return false;
     }
@@ -478,8 +532,9 @@ int CdDevice::progressStatusChanged()
     return 0;
 }
 
-void CdDevice::progress(int *status, int *totalTracks, int *track, int *trackProgress,
-                        int *totalProgress, int *bufferFill, int *writerFill) const
+void CdDevice::progress(int *status, int *totalTracks, int *track,
+			int *trackProgress, int *totalProgress,
+			int *bufferFill, int *writerFill) const
 {
     *status = progressStatus_;
     *totalTracks = progressTotalTracks_;
@@ -493,8 +548,8 @@ void CdDevice::progress(int *status, int *totalTracks, int *track, int *trackPro
 // Starts a 'cdrdao' for reading whole cd.
 // Return: 0: OK, process succesfully launched
 //         1: error occured
-int CdDevice::extractDao(Gtk::Window &parent, const char *tocFileName, int correction,
-                         int readSubChanMode)
+int CdDevice::extractDao(Gtk::Window& parent, const char *tocFileName,
+                         int correction, int readSubChanMode)
 {
     const char *args[30];
     int n = 0;
@@ -504,13 +559,11 @@ int CdDevice::extractDao(Gtk::Window &parent, const char *tocFileName, int corre
     char correctionbuf[20];
     int remoteFdArgNum = 0;
 
-    if ((status_ != DEV_READY && status_ != DEV_FAULT && status_ != DEV_UNKNOWN) ||
-        process_ != NULL)
+    if ((status_ != DEV_READY && status_ != DEV_FAULT && status_ != DEV_UNKNOWN)
+        || process_ != NULL)
         return 1;
 
-    Glib::ustring execName = configManager->getCdrdaoPath();
-
-    args[n++] = execName.c_str();
+    args[n++] = allocate_cdrdao_path();
 
     args[n++] = "read-cd";
 
@@ -536,15 +589,15 @@ int CdDevice::extractDao(Gtk::Window &parent, const char *tocFileName, int corre
     }
 
     args[n++] = "--device";
-    args[n++] = (char *)dev_.c_str();
+    args[n++] = (char*)dev_.c_str();
 
     if (driverId_ > 0) {
-        snprintf(drivername, sizeof(drivername), "%s:0x%lx", driverName(driverId_), driverOptions_);
+        sprintf(drivername, "%s:0x%lx", driverNames[driverId_], driverOptions_);
         args[n++] = "--driver";
         args[n++] = drivername;
     }
 
-    snprintf(correctionbuf, sizeof(correctionbuf), "%d", correction);
+    sprintf(correctionbuf, "%d", correction);
     args[n++] = "--paranoia-mode";
     args[n++] = correctionbuf;
 
@@ -554,9 +607,9 @@ int CdDevice::extractDao(Gtk::Window &parent, const char *tocFileName, int corre
     args[n++] = g_strdup_printf("%s.toc", tocFileName);
 
     args[n++] = NULL;
-
+  
     assert(n <= 20);
-
+  
     PROGRESS_POOL->start(parent, this, tocFileName, false, false);
 
     // Remove the SCSI interface of this device to avoid problems with double
@@ -564,22 +617,28 @@ int CdDevice::extractDao(Gtk::Window &parent, const char *tocFileName, int corre
     delete scsiIf_;
     scsiIf_ = NULL;
 
-    process_ = PROCESS_MONITOR->start(execName.c_str(), args, remoteFdArgNum);
+    process_ = PROCESS_MONITOR->start(args[0], args, remoteFdArgNum);
+
+    delete[] args[0];
 
     if (process_ != NULL) {
         status_ = DEV_READING;
         action_ = A_READ;
 
         if (process_->commFd() >= 0) {
-            Glib::signal_io().connect(
-                bind(mem_fun(*this, &CdDevice::updateProgress), process_->commFd()),
-                process_->commFd(), Glib::IO_IN | Glib::IO_PRI | Glib::IO_ERR | Glib::IO_HUP);
+            Glib::signal_io().connect(bind(mem_fun(*this, &CdDevice::updateProgress),
+                                           process_->commFd()),
+                                      process_->commFd(),
+                                      Glib::IO_IN | Glib::IO_PRI |
+                                      Glib::IO_ERR | Glib::IO_HUP);
         }
         return 0;
-    } else {
+    }
+    else {
         return 1;
     }
 }
+
 
 void CdDevice::abortDaoReading()
 {
@@ -591,9 +650,10 @@ void CdDevice::abortDaoReading()
 // Starts a 'cdrdao' for duplicating a CD.
 // Return: 0: OK, process succesfully launched
 //         1: error occured
-int CdDevice::duplicateDao(Gtk::Window &parent, int simulate, int multiSession, int speed,
-                           int eject, int reload, int buffer, int onthefly, int correction,
-                           int readSubChanMode, CdDevice *readdev)
+int CdDevice::duplicateDao(Gtk::Window& parent, int simulate, int multiSession,
+                           int speed, int eject, int reload, int buffer,
+                           int onthefly, int correction, int readSubChanMode, 
+			   CdDevice *readdev)
 {
     const char *args[30];
     int n = 0;
@@ -606,18 +666,17 @@ int CdDevice::duplicateDao(Gtk::Window &parent, int simulate, int multiSession, 
     char bufferbuf[20];
     int remoteFdArgNum = 0;
 
+
     int rdstat = readdev->status();
     if ((rdstat != DEV_READY && rdstat != DEV_UNKNOWN && rdstat != DEV_FAULT) ||
         readdev->process() != NULL)
         return 1;
 
-    if ((status_ != DEV_READY && status_ != DEV_FAULT && status_ != DEV_UNKNOWN) ||
-        process_ != NULL)
+    if ((status_ != DEV_READY && status_ != DEV_FAULT && status_ != DEV_UNKNOWN)
+        || process_ != NULL)
         return 1;
 
-    Glib::ustring execName = configManager->getCdrdaoPath();
-
-    args[n++] = execName.c_str();
+    args[n++] = allocate_cdrdao_path();
 
     args[n++] = "copy";
 
@@ -634,12 +693,12 @@ int CdDevice::duplicateDao(Gtk::Window &parent, int simulate, int multiSession, 
     if (multiSession)
         args[n++] = "--multi";
 
-    snprintf(correctionbuf, sizeof(correctionbuf), "%d", correction);
+    sprintf(correctionbuf, "%d", correction);
     args[n++] = "--paranoia-mode";
     args[n++] = correctionbuf;
 
     if (speed > 0) {
-        snprintf(speedbuf, sizeof(speedbuf), "%d", speed);
+        sprintf(speedbuf, "%d", speed);
         args[n++] = "--speed";
         args[n++] = speedbuf;
     }
@@ -666,36 +725,38 @@ int CdDevice::duplicateDao(Gtk::Window &parent, int simulate, int multiSession, 
     }
 
     args[n++] = "--device";
-    args[n++] = (char *)dev_.c_str();
+    args[n++] = (char*)dev_.c_str();
 
     if (driverId_ > 0) {
-        snprintf(drivername, sizeof(drivername), "%s:0x%lx", driverName(driverId_), driverOptions_);
+        sprintf(drivername, "%s:0x%lx", driverNames[driverId_], driverOptions_);
         args[n++] = "--driver";
         args[n++] = drivername;
     }
 
-    if (readdev != this) { // reader and write the same, skip source device
 
+    if (readdev != this) { // reader and write the same, skip source device
+		  
         args[n++] = "--source-device";
-        args[n++] = (char *)readdev->dev();
+        args[n++] = (char*)readdev->dev();
 
         if (readdev->driverId() > 0) {
-            snprintf(r_drivername, sizeof(r_drivername), "%s:0x%lx",
-                     driverName(readdev->driverId()), readdev->driverOptions());
+            sprintf(r_drivername, "%s:0x%lx", driverNames[readdev->driverId()],
+                    readdev->driverOptions());
             args[n++] = "--source-driver";
             args[n++] = r_drivername;
         }
     }
     if (buffer >= 10) {
-        snprintf(bufferbuf, sizeof(bufferbuf), "%i", buffer);
+        sprintf(bufferbuf, "%i", buffer);
         args[n++] = "--buffers";
         args[n++] = bufferbuf;
     }
 
+
     args[n++] = NULL;
-
+  
     assert(n <= 25);
-
+  
     PROGRESS_POOL->start(parent, this, _("CD to CD copy"));
 
     // Remove the SCSI interface of this device to avoid problems with double
@@ -703,7 +764,9 @@ int CdDevice::duplicateDao(Gtk::Window &parent, int simulate, int multiSession, 
     delete scsiIf_;
     scsiIf_ = NULL;
 
-    process_ = PROCESS_MONITOR->start(execName.c_str(), args, remoteFdArgNum);
+    process_ = PROCESS_MONITOR->start(args[0], args, remoteFdArgNum);
+
+    delete[] args[0];
 
     if (process_ != NULL) {
         slaveDevice_ = readdev;
@@ -713,13 +776,15 @@ int CdDevice::duplicateDao(Gtk::Window &parent, int simulate, int multiSession, 
         action_ = A_DUPLICATE;
 
         if (process_->commFd() >= 0) {
-            Glib::signal_io().connect(
-                bind(mem_fun(*this, &CdDevice::updateProgress), process_->commFd()),
-                process_->commFd(), Glib::IO_IN | Glib::IO_HUP);
+            Glib::signal_io().connect(bind(mem_fun(*this, &CdDevice::updateProgress),
+                                           process_->commFd()),
+                                      process_->commFd(),
+                                      Glib::IO_IN | Glib::IO_HUP);
         }
 
         return 0;
-    } else {
+    }
+    else {
         return 1;
     }
 }
@@ -734,7 +799,8 @@ void CdDevice::abortDaoDuplication()
 // Starts a 'cdrdao' for blanking a CD.
 // Return: 0: OK, process succesfully launched
 //         1: error occured
-int CdDevice::blank(Gtk::Window *parent, int fast, int speed, int eject, int reload)
+int CdDevice::blank(Gtk::Window* parent, int fast, int speed, int eject,
+                    int reload)
 {
     const char *args[20];
     int n = 0;
@@ -744,13 +810,11 @@ int CdDevice::blank(Gtk::Window *parent, int fast, int speed, int eject, int rel
     const char *s;
     int remoteFdArgNum = 0;
 
-    if ((status_ != DEV_READY && status_ != DEV_FAULT && status_ != DEV_UNKNOWN) ||
-        process_ != NULL)
+    if ((status_ != DEV_READY && status_ != DEV_FAULT && status_ != DEV_UNKNOWN)
+        || process_ != NULL)
         return 1;
 
-    Glib::ustring execName = configManager->getCdrdaoPath();
-
-    args[n++] = execName.c_str();
+    args[n++] = allocate_cdrdao_path();
 
     args[n++] = "blank";
 
@@ -769,7 +833,7 @@ int CdDevice::blank(Gtk::Window *parent, int fast, int speed, int eject, int rel
         args[n++] = "full";
 
     if (speed > 0) {
-        snprintf(speedbuf, sizeof(speedbuf), "%d", speed);
+        sprintf(speedbuf, "%d", speed);
         args[n++] = "--speed";
         args[n++] = speedbuf;
     }
@@ -781,18 +845,18 @@ int CdDevice::blank(Gtk::Window *parent, int fast, int speed, int eject, int rel
         args[n++] = "--reload";
 
     args[n++] = "--device";
-    args[n++] = (char *)dev_.c_str();
+    args[n++] = (char*)dev_.c_str();
 
     if (driverId_ > 0) {
-        snprintf(drivername, sizeof(drivername), "%s:0x%lx", driverName(driverId_), driverOptions_);
+        sprintf(drivername, "%s:0x%lx", driverNames[driverId_].c_str(), driverOptions_);
         args[n++] = "--driver";
         args[n++] = drivername;
     }
 
     args[n++] = NULL;
-
+  
     assert(n <= 20);
-
+  
     if (parent)
         PROGRESS_POOL->start(*parent, this, _("Blanking CDRW"), false, false);
     else
@@ -803,19 +867,23 @@ int CdDevice::blank(Gtk::Window *parent, int fast, int speed, int eject, int rel
     delete scsiIf_;
     scsiIf_ = NULL;
 
-    process_ = PROCESS_MONITOR->start(execName.c_str(), args, remoteFdArgNum);
+    process_ = PROCESS_MONITOR->start(args[0], args, remoteFdArgNum);
+
+    delete[] args[0];
 
     if (process_ != NULL) {
         status_ = DEV_BLANKING;
         action_ = A_BLANK;
 
         if (process_->commFd() >= 0) {
-            Glib::signal_io().connect(
-                bind(mem_fun(*this, &CdDevice::updateProgress), process_->commFd()),
-                process_->commFd(), Glib::IO_IN | Glib::IO_HUP);
+            Glib::signal_io().connect(bind(mem_fun(*this, &CdDevice::updateProgress),
+                                           process_->commFd()),
+                                      process_->commFd(),
+                                      Glib::IO_IN | Glib::IO_HUP);
         }
         return 0;
-    } else {
+    }
+    else {
         return 1;
     }
 }
@@ -846,151 +914,89 @@ void CdDevice::createScsiIf()
 
 int CdDevice::driverName2Id(const char *driverName)
 {
-    int i;
+    int i = 0;
 
-    for (i = 1; i < DRIVER_IDS; i++) {
-        if (strcmp(DRIVER_NAMES_[i], driverName) == 0)
+    for (auto str : driverNames) {
+        if (str == driverName)
             return i;
+        i++;
     }
-
     return 0;
 }
 
-int CdDevice::maxDriverId()
+CdDevice::DeviceType CdDevice::devtypeName2Id(const std::string dt)
 {
-    return DRIVER_IDS - 1;
-}
+    int i = 0;
 
-const char *CdDevice::driverName(int id)
-{
-    if (id >= 0 && id < DRIVER_IDS) {
-        return DRIVER_NAMES_[id];
-    } else {
-        return "Undefined";
+    for (auto str : devtypeNames) {
+        if (str == dt)
+            return static_cast<DeviceType>(i);
+        i++;
     }
-}
-
-const char *CdDevice::status2string(Status s)
-{
-    const char *ret = NULL;
-
-    switch (s) {
-    case DEV_READY:
-        ret = "Ready";
-        break;
-    case DEV_RECORDING:
-        ret = "Recording";
-        break;
-    case DEV_READING:
-        ret = "Reading";
-        break;
-    case DEV_WAITING:
-        ret = "Waiting";
-        break;
-    case DEV_BLANKING:
-        ret = "Blanking";
-        break;
-    case DEV_BUSY:
-        ret = "Busy";
-        break;
-    case DEV_NO_DISK:
-        ret = "No disk";
-        break;
-    case DEV_FAULT:
-        ret = "Not available";
-        break;
-    case DEV_UNKNOWN:
-        ret = "Unknown";
-        break;
-    }
-
-    return ret;
-}
-
-const char *CdDevice::deviceType2string(DeviceType t)
-{
-    const char *ret = NULL;
-
-    switch (t) {
-    case CD_R:
-        ret = "CD-R";
-        break;
-
-    case CD_RW:
-        ret = "CD-RW";
-        break;
-
-    case CD_ROM:
-        ret = "CD-ROM";
-        break;
-    }
-
-    return ret;
+    return CdDevice::CD_R;
 }
 
 /* reads configured devices from gnome settings
  */
 void CdDevice::importSettings()
 {
+    char *s;
     CdDevice *dev;
 
-    std::vector<Glib::ustring> settingsStrings = configManager->getConfiguredDevices();
-    std::vector<Glib::ustring>::iterator i;
+    CdDevice::init();
 
-    for (i = settingsStrings.begin(); i != settingsStrings.end(); ++i) {
-        if (!i->empty()) {
-            if ((dev = CdDevice::add(i->c_str())) != NULL)
-                dev->manuallyConfigured(true);
+    Glib::StringArrayHandle sa = configManager->get_string_array("configured-devices");
+
+    if (!sa.empty()) {
+        for (auto s : sa) {
+            if (!s.empty()) {
+                if ((dev = CdDevice::add(s.c_str())) != NULL) {
+                    dev->manuallyConfigured(true);
+                    printf("Added manual configuration \"%s\"\n", s.c_str());
+                }
+            }
         }
     }
 }
+
 
 /* saves manually configured devices as gnome settings
  */
 void CdDevice::exportSettings()
 {
-    CdDevice *drun;
+    std::vector<std::string> sa;
     int n;
 
-    std::vector<Glib::ustring> settingStrings;
-
-    for (drun = first(), n = 0; drun != NULL; drun = next(drun)) {
-
-        if (drun->manuallyConfigured()) {
-            settingStrings.push_back(drun->settingString());
-
+    for (auto i : DEVICE_LIST_) {
+        if (i->manuallyConfigured()) {
+            char* s = i->settingString();
+            sa.push_back(s);
+            printf("Exporting device \"%s\"\n", s);
+            delete[] s;
             n++;
         }
     }
 
-    try {
-        configManager->setConfiguredDevices(settingStrings);
-    } catch (const Glib::Error &e) {
-        std::cerr << e.what() << std::endl;
-    }
+    configManager->set("configured-devices", sa);
 }
 
-CdDevice *CdDevice::add(const char *dev, const char *vendor, const char *product)
+CdDevice *CdDevice::add(const char* dev, const char *vendor,
+                        const char *product)
 {
-    CdDevice *run, *pred, *ent;
+    CdDevice *ent;
 
-    for (pred = NULL, run = DEVICE_LIST_; run != NULL; pred = run, run = run->next_) {
-        if (strcmp(run->dev(), dev) == 0)
-            return run;
+    for (auto i : DEVICE_LIST_) {
+        if (strcmp(i->dev(), dev) == 0)
+            return i;
     }
 
     ent = new CdDevice(dev, vendor, product);
 
-    if (pred != NULL) {
-        ent->next_ = pred->next_;
-        pred->next_ = ent;
-    } else {
-        ent->next_ = DEVICE_LIST_;
-        DEVICE_LIST_ = ent;
-    }
+    DEVICE_LIST_.push_back(ent);
 
     return ent;
 }
+
 
 static char *nextToken(char *&p)
 {
@@ -1015,9 +1021,10 @@ static char *nextToken(char *&p)
         if (*p == 0) {
             // error, no matching ' found
             return NULL;
-        } else {
+        }
+        else {
             *p++ = 0;
-
+      
             // skip over ,
             while (*p != 0 && *p != ',')
                 p++;
@@ -1025,12 +1032,13 @@ static char *nextToken(char *&p)
             if (*p == ',')
                 p++;
         }
-    } else {
+    }
+    else {
         val = p;
 
         while (*p != 0 && *p != ',')
             p++;
-
+   
         if (*p == ',')
             *p++ = 0;
     }
@@ -1093,7 +1101,7 @@ static CdDevice *addImpl(char *s)
     cddev->driverId(driverId);
     cddev->deviceType(type);
     cddev->driverOptions(options);
-
+  
     return cddev;
 }
 
@@ -1108,18 +1116,18 @@ CdDevice *CdDevice::add(const char *setting)
     return dev;
 }
 
-CdDevice *CdDevice::find(const char *dev)
-{
-    CdDevice *run;
 
-    for (run = DEVICE_LIST_; run != NULL; run = run->next_) {
-        if (strcmp(run->dev(), dev) == 0)
-            return run;
+
+CdDevice *CdDevice::find(const char* dev)
+{
+    for (auto i : DEVICE_LIST_) {
+        if (strcmp(i->dev(), dev) == 0)
+            return i;
     }
 
     return NULL;
 }
-
+  
 void CdDevice::scan()
 {
     int i, len;
@@ -1149,73 +1157,50 @@ void CdDevice::scan()
         }
     }
 #endif
+    printf("CdDevice scan complete\n");
 }
 
-void CdDevice::remove(const char *dev)
+void CdDevice::remove(const char* dev)
 {
-    CdDevice *run, *pred;
+    int n = 0;
 
-    for (pred = NULL, run = DEVICE_LIST_; run != NULL; pred = run, run = run->next_) {
-        if (strcmp(run->dev(), dev) == 0) {
-            if (run->status() == DEV_RECORDING || run->status() == DEV_BLANKING ||
-                run->status() == DEV_READING || run->status() == DEV_WAITING)
+    for (auto i :  DEVICE_LIST_) {
+        if (strcmp(i->dev(), dev) == 0) {
+            if (i->status() == DEV_RECORDING || i->status() == DEV_BLANKING ||
+                i->status() == DEV_READING || i->status() == DEV_WAITING)
                 return;
-
-            if (pred != NULL)
-                pred->next_ = run->next_;
-            else
-                DEVICE_LIST_ = run->next_;
-
-            delete run;
+            DEVICE_LIST_.erase(DEVICE_LIST_.begin() + n);
+            delete i;
             return;
         }
+        n++;
     }
 }
 
 void CdDevice::clear()
 {
-    CdDevice *next;
-
-    while (DEVICE_LIST_ != NULL) {
-        next = DEVICE_LIST_->next_;
-        delete DEVICE_LIST_;
-        DEVICE_LIST_ = next;
-    }
+    for (auto i : DEVICE_LIST_)
+        delete i;
+    DEVICE_LIST_.clear();
 }
 
-CdDevice *CdDevice::first()
+CdDevice *CdDevice::at(int pos)
 {
-    return DEVICE_LIST_;
-}
-
-CdDevice *CdDevice::next(const CdDevice *run)
-{
-    if (run != NULL)
-        return run->next_;
-    else
-        return NULL;
+    return DEVICE_LIST_[pos];
 }
 
 int CdDevice::count()
 {
-    CdDevice *run;
-    int cnt = 0;
-
-    for (run = DEVICE_LIST_; run != NULL; run = run->next_)
-        cnt++;
-
-    return cnt;
+    return DEVICE_LIST_.size();
 }
 
 int CdDevice::updateDeviceStatus()
 {
     int newStatus = 0;
 
-    CdDevice *run;
-
     blockProcessMonitorSignals();
 
-    for (run = DEVICE_LIST_; run != NULL; run = run->next_) {
+    for (auto run :  DEVICE_LIST_) {
         if (run->updateStatus())
             newStatus = 1;
     }
@@ -1223,4 +1208,35 @@ int CdDevice::updateDeviceStatus()
     unblockProcessMonitorSignals();
 
     return newStatus;
+}
+
+void CdDevice::init()
+{
+    if (!init_) {
+        devtypeNames.clear();
+        devtypeNames.resize(CdDevice::CD_LAST);
+        devtypeNames[CD_R] = "CD-R";
+        devtypeNames[CD_RW] = "CD-RW";
+        devtypeNames[CD_ROM] = "CD-ROM";
+
+
+        driverNames.clear();
+        int i = 0;
+        while (driver_names_[i])
+            driverNames.push_back(driver_names_[i++]);
+
+        statusNames.clear();
+        statusNames.resize(CdDevice::DEV_LAST);
+        statusNames[DEV_READY] = "Ready";
+        statusNames[DEV_RECORDING] = "Recording";
+        statusNames[DEV_READING] = "Reading";
+        statusNames[DEV_WAITING] = "Waiting";
+        statusNames[DEV_BLANKING] = "Blanking";
+        statusNames[DEV_BUSY] = "Busy";
+        statusNames[DEV_NO_DISK] = "No disk";
+        statusNames[DEV_FAULT] = "Not available";
+        statusNames[DEV_UNKNOWN] = "Unknown";
+
+        init_ = true;
+    }
 }

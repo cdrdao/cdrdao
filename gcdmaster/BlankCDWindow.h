@@ -20,46 +20,45 @@
 #ifndef __BLANK_CD_DIALOG_H
 #define __BLANK_CD_DIALOG_H
 
-class Project;
+#include <gtkmm.h>
 
 class DeviceList;
 
-class BlankCDDialog : public Gtk::Window
+class BlankCDWindow : public Gtk::ApplicationWindow
 {
-  public:
-    BlankCDDialog();
+public:
+  BlankCDWindow();
 
-    void start(Gtk::Window &parent);
-    void update(unsigned long level);
+  void start();
+  void update(unsigned long level);
 
-  private:
-    DeviceList *Devices;
-    Gtk::Window *parent_;
+private:
+  DeviceList *Devices;
 
-    bool active_;
-    int speed_;
+  bool active_;
+  int speed_;
 
-    Gtk::RadioButton *fastBlank_rb;
-    Gtk::RadioButton *fullBlank_rb;
-    Gtk::MessageDialog *moreOptionsDialog_;
-    Gtk::CheckButton *ejectButton_;
-    Gtk::CheckButton *reloadButton_;
+  Gtk::RadioButton *fastBlank_rb;
+  Gtk::RadioButton *fullBlank_rb;
+  Gtk::MessageDialog *moreOptionsDialog_;
+  Gtk::CheckButton *ejectButton_;
+  Gtk::CheckButton *reloadButton_;
 
-    Gtk::SpinButton *speedSpinButton_;
-    Gtk::CheckButton *speedButton_;
+  Gtk::SpinButton *speedSpinButton_;
+  Gtk::CheckButton *speedButton_;
 
-    void stop();
-    void startAction();
-    void moreOptions();
-    void speedButtonChanged();
-    void speedChanged();
-    bool getEject();
-    int checkEjectWarning(Gtk::Window *);
-    bool getReload();
-    int checkReloadWarning(Gtk::Window *);
-    int getSpeed();
+  void stop();
+  void startAction();
+  void moreOptions();
+  void speedButtonChanged();
+  void speedChanged();
+  bool getEject();
+  int  checkEjectWarning(Gtk::Window *);
+  bool getReload();
+  int  checkReloadWarning(Gtk::Window *);
+  int  getSpeed();
 
-    bool on_delete_event(GdkEventAny *);
+  bool on_delete_event(GdkEventAny*);
 };
 
 #endif

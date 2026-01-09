@@ -22,13 +22,25 @@
 
 #include <gtkmm.h>
 
-class ProjectChooser : public Gtk::VBox
-{
-  public:
-    ProjectChooser();
+class GCDWindow;
 
-    sigc::signal0<void> newAudioCDProject;
-    sigc::signal0<void> newDuplicateCDProject;
-    sigc::signal0<void> newDumpCDProject;
+class ProjectChooser : public Project
+{
+ public:
+    ProjectChooser(BaseObjectType* cobject,
+                   const Glib::RefPtr<Gtk::Builder>& builder);
+    virtual ~ProjectChooser();
+
+    static ProjectChooser* create(Glib::RefPtr<Gtk::Builder>& builder,
+                                  GCDWindow* window);
+
+protected:
+    GCDWindow* window_;
+
+    void on_new_audio_cd();
+    void on_new_duplicate_cd();
+    void on_new_dump_cd();
+
+    void update(unsigned long level);
 };
 #endif
