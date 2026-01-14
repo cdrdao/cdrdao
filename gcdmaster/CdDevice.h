@@ -21,7 +21,7 @@
 #define __CD_DEVICE_H__
 
 #include <gdk/gdk.h>
-#include <sigc++/trackable.h>
+#include <sigc++/sigc++.h>
 #include <string>
 
 #include "Project.h"

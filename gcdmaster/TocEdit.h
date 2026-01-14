@@ -21,7 +21,7 @@
 #define __TOC_EDIT_H__
 
 #include <list>
-#include <sigc++/signal.h>
+#include <sigc++/sigc++.h>
 #include <string>
 
 #include "CdTextItem.h"
@@ -109,14 +109,14 @@ class TocEdit
     void setTocType(Toc::Type);
 
     // Signals
-    sigc::signal0<void> signalProgressPulse;
-    sigc::signal1<void, bool> signalSpinner;
-    sigc::signal1<void, double> signalProgressFraction;
-    sigc::signal1<void, const char *> signalStatusMessage;
-    sigc::signal0<void> signalFullView;
-    sigc::signal2<void, unsigned long, unsigned long> signalSampleSelection;
-    sigc::signal1<void, bool> signalCancelEnable;
-    sigc::signal1<void, const char *> signalError;
+    sigc::signal<void()> signalProgressPulse;
+    sigc::signal<void(bool)> signalSpinner;
+    sigc::signal<void(double)> signalProgressFraction;
+    sigc::signal<void(const char *)> signalStatusMessage;
+    sigc::signal<void()> signalFullView;
+    sigc::signal<void(unsigned long, unsigned long)> signalSampleSelection;
+    sigc::signal<void(bool)> signalCancelEnable;
+    sigc::signal<void(const char *)> signalError;
 
   private:
     Toc *toc_;

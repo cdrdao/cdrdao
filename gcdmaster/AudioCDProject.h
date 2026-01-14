@@ -67,7 +67,7 @@ class AudioCDProject : public Project
 
     // Controls for app bar
     void cancelEnable(bool);
-    sigc::signal0<void> signalCancelClicked;
+    sigc::signal<void()> signalCancelClicked;
 
   protected:
     Gtk::Button *buttonPlay_;

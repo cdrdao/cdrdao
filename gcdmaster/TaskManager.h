@@ -21,7 +21,7 @@
 #define __TASK_MANAGER_H__
 
 #include <queue>
-#include <sigc++/signal.h>
+#include <sigc++/sigc++.h>
 #include <string>
 #include <thread>
 
@@ -66,10 +66,10 @@ class TaskManager
     TaskManager(int num_threads = 4);
     ~TaskManager();
 
-    sigc::signal0<void> signalQueueStarted;
-    sigc::signal0<void> signalQueueEmptied;
-    sigc::signal1<void, Task *> signalJobStarted;
-    sigc::signal2<void, Task *, const std::string &> signalJobUpdate;
+    sigc::signal<void()> signalQueueStarted;
+    sigc::signal<void()> signalQueueEmptied;
+    sigc::signal<void(Task *)> signalJobStarted;
+    sigc::signal<void(Task *, const std::string &)> signalJobUpdate;
 
     void addJob(Task *task);
     bool isActive() { return active; }

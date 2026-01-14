@@ -56,13 +56,13 @@ class SampleDisplay : public Gtk::DrawingArea
 
     void updateToc(unsigned long, unsigned long);
 
-    sigc::signal1<void, unsigned long> markerSet;
-    sigc::signal1<void, unsigned long> cursorMoved;
-    sigc::signal2<void, unsigned long, unsigned long> selectionSet;
-    sigc::signal0<void> selectionCleared;
-    sigc::signal3<void, const Track *, int, int> trackMarkSelected;
-    sigc::signal4<void, const Track *, int, int, unsigned long> trackMarkMoved;
-    sigc::signal2<void, unsigned long, unsigned long> viewModified;
+    sigc::signal<void(unsigned long)> markerSet;
+    sigc::signal<void(unsigned long)> cursorMoved;
+    sigc::signal<void(unsigned long, unsigned long)> selectionSet;
+    sigc::signal<void()> selectionCleared;
+    sigc::signal<void(const Track *, int, int)> trackMarkSelected;
+    sigc::signal<void(const Track *, int, int, unsigned long)> trackMarkMoved;
+    sigc::signal<void(unsigned long, unsigned long)> viewModified;
 
   protected:
     bool handleConfigureEvent(GdkEventConfigure *);

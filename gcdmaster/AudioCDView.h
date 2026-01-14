@@ -44,7 +44,7 @@ class AudioCDView : public GenericView
     AudioCDView(AudioCDProject *project);
     ~AudioCDView();
     void add_menus(Glib::RefPtr<Gtk::UIManager> m_refUIManager);
-    sigc::signal0<void> add_view;
+    sigc::signal<void()> add_view;
 
     void update(unsigned long level = 0);
 
@@ -59,7 +59,7 @@ class AudioCDView : public GenericView
     void zoomOut();
     void fullView();
 
-    sigc::signal1<void, unsigned long> signal_tocModified;
+    sigc::signal<void(unsigned long)> signal_tocModified;
 
   protected:
     static const char *sample2string(unsigned long sample);
