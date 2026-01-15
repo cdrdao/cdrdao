@@ -20,7 +20,7 @@
 #ifndef __BLANK_CD_DIALOG_H
 #define __BLANK_CD_DIALOG_H
 
-class Project;
+#include <gtkmm.h>
 
 class DeviceList;
 
@@ -28,38 +28,51 @@ class BlankCDDialog : public Gtk::Window
 {
   public:
     BlankCDDialog();
+    // Added virtual destructor for proper cleanup in GTK4
+    virtual ~BlankCDDialog() = default;
 
     void start(Gtk::Window &parent);
     void update(unsigned long level);
 
   private:
+    // UI Components
     DeviceList *Devices;
-    Gtk::Window *parent_;
+    Gtk::Window *parent_ = nullptr;
+    Gtk::Box vbox_{Gtk::Orientation::VERTICAL, 10};
 
-    bool active_;
-    int speed_;
+    bool active_ = false;
+    int speed_ = 1;
 
-    Gtk::RadioButton *fastBlank_rb;
-    Gtk::RadioButton *fullBlank_rb;
-    Gtk::MessageDialog *moreOptionsDialog_;
-    Gtk::CheckButton *ejectButton_;
-    Gtk::CheckButton *reloadButton_;
+    // Radio buttons are now CheckButtons in gtkmm4
+    Gtk::CheckButton *fastBlank_rb;
+    Gtk::CheckButton *fullBlank_rb;
+    
+    Gtk::MessageDialog *moreOptionsDialog_ = nullptr;
+    Gtk::CheckButton *ejectButton_ = nullptr;
+    Gtk::CheckButton *reloadButton_ = nullptr;
 
-    Gtk::SpinButton *speedSpinButton_;
-    Gtk::CheckButton *speedButton_;
+    Gtk::SpinButton *speedSpinButton_ = nullptr;
+    Gtk::CheckButton *speedButton_ = nullptr;
 
+    // Internal Logic Methods
     void stop();
     void startAction();
     void moreOptions();
     void speedButtonChanged();
     void speedChanged();
+    
+    // New Asynchronous Warning Chain
+    void checkEjectWarningAsync();
+    void checkReloadWarningAsync();
+    void proceedWithBlanking();
+
+    // Helper getters
     bool getEject();
-    int checkEjectWarning(Gtk::Window *);
     bool getReload();
-    int checkReloadWarning(Gtk::Window *);
     int getSpeed();
 
-    bool on_delete_event(GdkEventAny *);
+    // GTK4 signal handler for window close requests
+    bool on_close_request() override;
 };
 
 #endif
