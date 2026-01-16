@@ -34,11 +34,9 @@
 
 DuplicateCDProject::DuplicateCDProject(Gtk::Window *parent) : Project(parent)
 {
-    Gtk::VBox *vbox = new Gtk::VBox;
+    auto vbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL, 10);
     vbox->set_border_width(10);
-    vbox->set_spacing(10);
-    Gtk::HBox *hbox = manage(new Gtk::HBox);
-    hbox->set_spacing(10);
+    auto hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL, 10);
     vbox->pack_start(*hbox);
     pack_start(*vbox);
     parent_ = parent;
@@ -51,10 +49,9 @@ DuplicateCDProject::DuplicateCDProject(Gtk::Window *parent) : Project(parent)
     hbox->pack_start(*CDSource);
     hbox->pack_start(*CDTarget);
 
-    hbox = manage(new Gtk::HBox);
-    hbox->set_spacing(10);
+    hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL, 10);
 
-    Gtk::VBox *frameBox = new Gtk::VBox;
+    auto frameBox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL);
     simulate_rb = new Gtk::RadioButton(_("Simulate"), 0);
     simulateBurn_rb = new Gtk::RadioButton(_("Simulate and Burn"), 0);
     burn_rb = new Gtk::RadioButton(_("Burn"), 0);
@@ -70,7 +67,7 @@ DuplicateCDProject::DuplicateCDProject(Gtk::Window *parent) : Project(parent)
 
     Gtk::Image *pixmap = manage(new Gtk::Image(Icons::GCDMASTER, Gtk::ICON_SIZE_DIALOG));
     Gtk::Label *startLabel = manage(new Gtk::Label(_("Start")));
-    Gtk::VBox *startBox = manage(new Gtk::VBox);
+    auto startBox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL);
     Gtk::Button *button = manage(new Gtk::Button());
     startBox->pack_start(*pixmap, false, false);
     startBox->pack_start(*startLabel, false, false);
@@ -80,7 +77,7 @@ DuplicateCDProject::DuplicateCDProject(Gtk::Window *parent) : Project(parent)
 
     hbox->pack_start(*button, true, false);
 
-    Gtk::HBox *hbox2 = new Gtk::HBox;
+    auto hbox2 = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
     hbox2->pack_start(*hbox, true, false);
     vbox->pack_start(*hbox2, Gtk::PACK_SHRINK);
 

@@ -36,8 +36,7 @@
 ProgressDialog::ProgressDialog(ProgressDialogPool *father)
 {
     Gtk::Label *label;
-    Gtk::HBox *hbox;
-    Gtk::VBox *contents = manage(new Gtk::VBox);
+    auto contents = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL);
     Gtk::Table *table;
     Gtk::Alignment *align;
 
@@ -54,27 +53,30 @@ ProgressDialog::ProgressDialog(ProgressDialogPool *father)
     bufferFillRate_ = manage(new Gtk::ProgressBar);
     writerFillRate_ = manage(new Gtk::ProgressBar);
     tocName_ = manage(new Gtk::Label);
-
-    hbox = manage(new Gtk::HBox);
-    label = manage(new Gtk::Label(_("Project: ")));
-    hbox->pack_start(*label, Gtk::PACK_SHRINK);
-    hbox->pack_start(*tocName_, Gtk::PACK_SHRINK);
-    contents->pack_start(*hbox, Gtk::PACK_SHRINK);
-
-    hbox = manage(new Gtk::HBox);
-    hbox->pack_start(*statusMsg_, Gtk::PACK_SHRINK);
-    contents->pack_start(*hbox, Gtk::PACK_SHRINK);
-
-    hbox = manage(new Gtk::HBox(true, true));
-    label = manage(new Gtk::Label(_("Elapsed Time: "), 1));
-    hbox->pack_start(*label, Gtk::PACK_SHRINK);
-    currentTime_ = manage(new Gtk::Label());
-    hbox->pack_start(*currentTime_, Gtk::PACK_SHRINK);
-    label = manage(new Gtk::Label(_("Remaining Time: "), 1));
-    hbox->pack_start(*label, Gtk::PACK_SHRINK);
-    remainingTime_ = manage(new Gtk::Label("", 0));
-    hbox->pack_start(*remainingTime_, Gtk::PACK_SHRINK);
-    contents->pack_start(*hbox, Gtk::PACK_SHRINK);
+    {
+	auto hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
+	label = manage(new Gtk::Label(_("Project: ")));
+	hbox->pack_start(*label, Gtk::PACK_SHRINK);
+	hbox->pack_start(*tocName_, Gtk::PACK_SHRINK);
+	contents->pack_start(*hbox, Gtk::PACK_SHRINK);
+    }
+    {
+	auto hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
+	hbox->pack_start(*statusMsg_, Gtk::PACK_SHRINK);
+	contents->pack_start(*hbox, Gtk::PACK_SHRINK);
+    }
+    {
+	auto hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
+	label = manage(new Gtk::Label(_("Elapsed Time: "), 1));
+	hbox->pack_start(*label, Gtk::PACK_SHRINK);
+	currentTime_ = manage(new Gtk::Label());
+	hbox->pack_start(*currentTime_, Gtk::PACK_SHRINK);
+	label = manage(new Gtk::Label(_("Remaining Time: "), 1));
+	hbox->pack_start(*label, Gtk::PACK_SHRINK);
+	remainingTime_ = manage(new Gtk::Label("", 0));
+	hbox->pack_start(*remainingTime_, Gtk::PACK_SHRINK);
+	contents->pack_start(*hbox, Gtk::PACK_SHRINK);
+    }
 
     table = manage(new Gtk::Table(4, 2, false));
     table->set_row_spacings(5);
@@ -85,37 +87,37 @@ ProgressDialog::ProgressDialog(ProgressDialogPool *father)
     align = manage(new Gtk::Alignment(1.0, 0.5, 0.0, 0.0));
     align->add(*trackLabel_);
     table->attach(*align, 0, 1, 0, 1, Gtk::FILL);
-
-    hbox = manage(new Gtk::HBox);
-    hbox->pack_start(*trackProgress_);
-    table->attach(*hbox, 1, 2, 0, 1);
-
+    {
+	auto hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
+	hbox->pack_start(*trackProgress_);
+	table->attach(*hbox, 1, 2, 0, 1);
+    }
     label = manage(new Gtk::Label(_("Total:")));
     align = manage(new Gtk::Alignment(1.0, 0.5, 0.0, 0.0));
     align->add(*label);
     table->attach(*align, 0, 1, 1, 2, Gtk::FILL);
-
-    hbox = manage(new Gtk::HBox);
-    hbox->pack_start(*totalProgress_);
-    table->attach(*hbox, 1, 2, 1, 2);
-
+    {
+	auto hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
+	hbox->pack_start(*totalProgress_);
+	table->attach(*hbox, 1, 2, 1, 2);
+    }
     bufferFillRateLabel_ = manage(new Gtk::Label(_("Input Buffer:")));
     align = manage(new Gtk::Alignment(1.0, 0.5, 0.0, 0.0));
     align->add(*bufferFillRateLabel_);
     table->attach(*align, 0, 1, 2, 3, Gtk::FILL);
-
-    hbox = manage(new Gtk::HBox);
-    hbox->pack_start(*bufferFillRate_);
-    table->attach(*hbox, 1, 2, 2, 3);
-
+    {
+	auto hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
+	hbox->pack_start(*bufferFillRate_);
+	table->attach(*hbox, 1, 2, 2, 3);
+    }
     writerFillRateLabel_ = manage(new Gtk::Label(_("Write Buffer:")));
     table->attach(*writerFillRateLabel_, 0, 1, 3, 4, Gtk::FILL);
     table->attach(*writerFillRate_, 1, 2, 3, 4);
-
-    hbox = manage(new Gtk::HBox);
-    hbox->pack_start(*contents, true, true, 10);
-    get_vbox()->pack_start(*hbox, false, false, 10);
-
+    {
+	auto hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
+	hbox->pack_start(*contents, true, true, 10);
+	get_vbox()->pack_start(*hbox, false, false, 10);
+    }
     Gtk::HButtonBox *bbox = manage(new Gtk::HButtonBox(Gtk::BUTTONBOX_SPREAD, 20));
 
     cancelButton_ = manage(new Gtk::Button(Gtk::StockID(Gtk::Stock::CANCEL)));

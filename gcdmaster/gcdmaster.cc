@@ -430,7 +430,7 @@ void GCDMaster::blankCDRW()
 
 void GCDMaster::createStatusbar()
 {
-    container_ = new Gtk::HBox();
+    container_ = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
     statusbar_ = new Gtk::Statusbar();
     progressbar_ = new Gtk::ProgressBar();
     progressButton_ = new Gtk::Button(_("Cancel"));

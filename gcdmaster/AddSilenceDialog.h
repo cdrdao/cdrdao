@@ -34,7 +34,6 @@ class AddSilenceDialog : public Gtk::Dialog
     };
 
     AddSilenceDialog();
-    ~AddSilenceDialog();
 
     void start(TocEditView *);
     void stop();

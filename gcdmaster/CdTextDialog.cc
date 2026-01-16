@@ -35,7 +35,7 @@
 CdTextDialog::CdTextDialog()
 {
     int i;
-    Gtk::VBox *contents = manage(new Gtk::VBox);
+    auto contents = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL);
     char buf[20];
 
     active_ = false;
@@ -64,7 +64,7 @@ CdTextDialog::CdTextDialog()
         page_[i].table->attach(*(new Gtk::Label(_("Title"))), 2, 0);
 
         {
-            Gtk::HBox *hbox = manage(new Gtk::HBox);
+            auto hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
             hbox->pack_end(*(new Gtk::Label(_("Album"))));
 
             page_[i].table->attach(*hbox, 0, 1);
@@ -74,15 +74,15 @@ CdTextDialog::CdTextDialog()
         }
 
         {
-            Gtk::HBox *hbox = manage(new Gtk::HBox);
+            auto hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
 
             hbox->pack_start(*(page_[i].performerButton));
             page_[i].table->attach(*hbox, 1, 2);
         }
 
         {
-            Gtk::HBox *hbox1 = manage(new Gtk::HBox);
-            Gtk::VBox *vbox1 = manage(new Gtk::VBox);
+            auto hbox1 = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
+            auto vbox1 = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL);
 
             hbox1->pack_start(*(page_[i].table), true, true, 5);
             vbox1->pack_start(*hbox1, false, false, 5);
@@ -101,8 +101,7 @@ CdTextDialog::CdTextDialog()
     contents->pack_start(*languages_);
 
     {
-        Gtk::HBox *hbox = manage(new Gtk::HBox);
-
+	auto hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
         hbox->pack_start(*contents, true, true, 10);
         get_vbox()->pack_start(*hbox, true, true, 10);
     }
@@ -185,7 +184,7 @@ void CdTextDialog::adjustTableEntries(int n)
                 page_[l].tracks[i].performer->set_sensitive(performerActive);
                 page_[l].tracks[i].title = manage(new Gtk::Entry);
                 page_[l].tracks[i].label = new Gtk::Label(buf);
-                page_[l].tracks[i].hbox = manage(new Gtk::HBox);
+                page_[l].tracks[i].hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
 
                 page_[l].tracks[i].hbox->pack_end(*(page_[l].tracks[i].label), Gtk::PACK_SHRINK);
 

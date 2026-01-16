@@ -38,7 +38,7 @@
 
 #include "util.h"
 
-RecordTocSource::RecordTocSource(TocEdit *tocEdit)
+RecordTocSource::RecordTocSource(TocEdit *tocEdit) : Gtk::Box(Gtk::Orientation::VERTICAL)
 {
     Gtk::Table *table;
     Gtk::Label *label;

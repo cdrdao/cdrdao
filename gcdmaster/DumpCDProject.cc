@@ -34,7 +34,7 @@
 DumpCDProject::DumpCDProject(Gtk::Window *parent) : Project(parent)
 {
     // Top vbox
-    Gtk::VBox *top_vbox = manage(new Gtk::VBox);
+    auto top_vbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL);
     top_vbox->set_border_width(10);
     top_vbox->set_spacing(10);
     parent_ = parent;
@@ -53,7 +53,7 @@ DumpCDProject::DumpCDProject(Gtk::Window *parent) : Project(parent)
 
     Gtk::Image *pixmap = manage(new Gtk::Image(Icons::DUMPCD, Gtk::ICON_SIZE_DIALOG));
     Gtk::Label *startLabel = manage(new Gtk::Label(_("Start")));
-    Gtk::VBox *startBox = manage(new Gtk::VBox);
+    auto startBox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL);
     Gtk::Button *button = manage(new Gtk::Button());
     startBox->pack_start(*pixmap, false, false);
     startBox->pack_start(*startLabel, false, false);

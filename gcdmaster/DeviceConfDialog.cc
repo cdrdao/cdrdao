@@ -44,8 +44,6 @@ DeviceConfDialog::DeviceConfDialog()
     int i;
     Gtk::Label *label;
     Gtk::Table *table;
-    Gtk::HBox *hbox;
-    Gtk::VBox *vbox;
     Gtk::Button *button;
 
     active_ = false;
@@ -80,16 +78,16 @@ DeviceConfDialog::DeviceConfDialog()
     vendorEntry_.set_max_length(8);
     productEntry_.set_max_length(16);
 
-    Gtk::VBox *contents = manage(new Gtk::VBox);
+    auto contents = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL);
     contents->set_spacing(5);
     contents->set_border_width(7);
 
     // ---------------------------- Device list
-    Gtk::VBox *listBox = manage(new Gtk::VBox);
+    autolistBox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL);
     listBox->set_spacing(5);
     listBox->set_border_width(5);
 
-    hbox = manage(new Gtk::HBox);
+    auot hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
 
     hbox->pack_start(list_, Gtk::PACK_EXPAND_WIDGET);
 
@@ -143,7 +141,7 @@ DeviceConfDialog::DeviceConfDialog()
     // -------------- Add device
 
     addDeviceFrame_.set_label(_(" Add Device "));
-    Gtk::VBox *addDeviceBox = manage(new Gtk::VBox);
+    auto addDeviceBox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL);
     addDeviceBox->set_spacing(5);
     addDeviceBox->set_border_width(5);
 

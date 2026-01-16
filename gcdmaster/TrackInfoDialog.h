@@ -84,7 +84,7 @@ class TrackInfoDialog : public Gtk::Dialog
     void closeAction();
     void applyAction();
 
-    Gtk::VBox *createCdTextPage(int);
+    Gtk::Box *createCdTextPage(int);
 
     void clear();
     void clearCdText();

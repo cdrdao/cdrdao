@@ -38,11 +38,9 @@ RecordTocDialog::RecordTocDialog(TocEdit *tocEdit)
 
     set_title(_("Record CD"));
 
-    Gtk::VBox *vbox = manage(new Gtk::VBox);
+    auto vbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL, 10);
     vbox->set_border_width(10);
-    vbox->set_spacing(10);
-    Gtk::HBox *hbox = manage(new Gtk::HBox);
-    hbox->set_spacing(10);
+    auto hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL, 10);
     vbox->pack_start(*hbox);
     add(*vbox);
 
@@ -56,10 +54,9 @@ RecordTocDialog::RecordTocDialog(TocEdit *tocEdit)
     hbox->pack_start(*TocSource, Gtk::PACK_SHRINK);
     hbox->pack_start(*CDTarget);
 
-    hbox = new Gtk::HBox;
-    hbox->set_spacing(10);
+    hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL, 10);
 
-    Gtk::VBox *frameBox = new Gtk::VBox;
+    auto frameBox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL);
     simulate_rb = new Gtk::RadioButton(_("Simulate"), 0);
     simulateBurn_rb = new Gtk::RadioButton(_("Simulate and Burn"), 0);
     burn_rb = new Gtk::RadioButton(_("Burn"), 0);
@@ -75,7 +72,7 @@ RecordTocDialog::RecordTocDialog(TocEdit *tocEdit)
 
     Gtk::Image *pixmap = manage(new Gtk::Image(Icons::GCDMASTER, Gtk::ICON_SIZE_DIALOG));
     Gtk::Label *startLabel = manage(new Gtk::Label(_("Start")));
-    Gtk::VBox *startBox = manage(new Gtk::VBox);
+    auto startBox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL);
     Gtk::Button *button = manage(new Gtk::Button());
     startBox->pack_start(*pixmap, false, false);
     startBox->pack_start(*startLabel, false, false);

@@ -68,7 +68,7 @@ AudioCDView::AudioCDView(AudioCDProject *project) : addFileDialog_(project)
     scrollBar->show();
 
     Gtk::Label *label;
-    Gtk::HBox *selectionInfoBox = new Gtk::HBox;
+    auto selectionInfoBox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
 
     // FIXME: Calculate entry width for the current font.
     gint entry_width = 90;

@@ -25,7 +25,7 @@
 class RecordTocDialog;
 class TocEdit;
 
-class Project : public Gtk::VBox
+class Project : public Gtk::Box
 {
   public:
     Project(Gtk::Window *parent);

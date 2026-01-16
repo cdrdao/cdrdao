@@ -23,7 +23,7 @@
 class CdDevice;
 class DeviceList;
 
-class RecordCDSource : public Gtk::VBox
+class RecordCDSource : public Gtk::Box
 {
   public:
     RecordCDSource(Gtk::Window *);

@@ -22,7 +22,7 @@
 
 #include <gtkmm.h>
 
-class ProjectChooser : public Gtk::VBox
+class ProjectChooser : public Gtk::Box
 {
   public:
     ProjectChooser();

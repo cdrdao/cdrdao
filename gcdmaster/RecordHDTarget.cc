@@ -34,7 +34,7 @@
 #include "TocEdit.h"
 #include "guiUpdate.h"
 
-RecordHDTarget::RecordHDTarget()
+RecordHDTarget::RecordHDTarget() : Gtk::Box(Gtk::Orientation::VERTICAL)
 {
     active_ = false;
 

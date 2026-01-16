@@ -66,7 +66,7 @@ void MessageBoxBase::init(const char *type, const char *title, int askDontShow, 
     Gtk::HButtonBox *bbox = manage(new Gtk::HButtonBox(Gtk::BUTTONBOX_SPREAD));
     bbox->show();
 
-    Gtk::VBox *contents = manage(new Gtk::VBox);
+    auto contents = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL);
     contents->show();
 
     for (i = 1; i <= nButtons; i++) {
@@ -77,7 +77,7 @@ void MessageBoxBase::init(const char *type, const char *title, int askDontShow, 
     }
 
     while ((s = va_arg(args, const char *)) != NULL) {
-        Gtk::HBox *lbox = manage(new Gtk::HBox);
+        auto lbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
         lbox->show();
         Gtk::Label *label = manage(new Gtk::Label(s));
         label->show();
@@ -90,7 +90,7 @@ void MessageBoxBase::init(const char *type, const char *title, int askDontShow, 
         dontShowAgain_->set_active(FALSE);
         dontShowAgain_->show();
 
-        Gtk::HBox *box = manage(new Gtk::HBox);
+        auto box = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
         Gtk::Label *label = manage(new Gtk::Label(""));
 
         label->show();
@@ -100,7 +100,7 @@ void MessageBoxBase::init(const char *type, const char *title, int askDontShow, 
         contents->pack_start(*box, Gtk::PACK_SHRINK);
     }
 
-    Gtk::HBox *hcontens = manage(new Gtk::HBox);
+    auto hcontens = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
     hcontens->show();
 
     hcontens->pack_start(*contents, TRUE, TRUE, 10);

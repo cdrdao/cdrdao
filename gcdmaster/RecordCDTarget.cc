@@ -36,7 +36,7 @@
 
 #include "util.h"
 
-RecordCDTarget::RecordCDTarget(Gtk::Window *parent)
+RecordCDTarget::RecordCDTarget(Gtk::Window *parent) : Gtk::Box(Gtk::Orientation::VERTICAL)
 {
     active_ = 0;
     speed_ = 1;
@@ -51,13 +51,13 @@ RecordCDTarget::RecordCDTarget(Gtk::Window *parent)
     // device settings
     Gtk::Frame *recordOptionsFrame = new Gtk::Frame(" Record Options ");
 
-    Gtk::VBox *vbox = new Gtk::VBox;
+    auto vbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL);
     recordOptionsFrame->add(*vbox);
     vbox->set_border_width(5);
     vbox->set_spacing(5);
     vbox->show();
 
-    Gtk::HBox *hbox = new Gtk::HBox;
+    auto hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
     hbox->show();
     Gtk::Label *label = new Gtk::Label("Speed: ", 0);
     label->show();
@@ -79,7 +79,7 @@ RecordCDTarget::RecordCDTarget(Gtk::Window *parent)
     hbox->pack_start(*speedButton_, true, true);
     vbox->pack_start(*hbox);
 
-    hbox = new Gtk::HBox;
+    hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
     //  hbox->show();
     label = new Gtk::Label("Copies: ", 0);
     label->show();
@@ -95,7 +95,7 @@ RecordCDTarget::RecordCDTarget(Gtk::Window *parent)
     Gtk::Image *moreOptionsPixmap =
         manage(new Gtk::Image(Gtk::StockID(Gtk::Stock::PROPERTIES), Gtk::ICON_SIZE_SMALL_TOOLBAR));
     Gtk::Label *moreOptionsLabel = manage(new Gtk::Label("More Options"));
-    Gtk::HBox *moreOptionsBox = manage(new Gtk::HBox);
+    auto moreOptionsBox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
     moreOptionsBox->set_border_width(2);
     Gtk::Button *moreOptionsButton = manage(new Gtk::Button());
     moreOptionsBox->pack_start(*moreOptionsPixmap, false, false, 3);
@@ -106,7 +106,7 @@ RecordCDTarget::RecordCDTarget(Gtk::Window *parent)
     moreOptionsLabel->show();
     moreOptionsBox->show();
     moreOptionsButton->show();
-    moreOptionsBox = manage(new Gtk::HBox);
+    moreOptionsBox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
     moreOptionsBox->show();
     vbox->pack_start(*moreOptionsBox, false, false);
     moreOptionsBox->pack_end(*moreOptionsButton, false, false);
@@ -147,7 +147,7 @@ void RecordCDTarget::moreOptions()
         Gtk::Box *box = moreOptionsDialog_->get_vbox();
         Gtk::Frame *frame = new Gtk::Frame(" More Target Options ");
         box->pack_start(*frame);
-        Gtk::VBox *vbox = new Gtk::VBox;
+        auto vbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL);
         vbox->set_border_width(10);
         vbox->set_spacing(5);
         frame->add(*vbox);
@@ -168,7 +168,7 @@ void RecordCDTarget::moreOptions()
         closeSessionButton_->set_active(true);
         vbox->pack_start(*closeSessionButton_);
 
-        Gtk::HBox *hbox = new Gtk::HBox;
+        auto hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
         Gtk::Label *label = new Gtk::Label("Buffer: ", 0);
         hbox->pack_start(*label, false, false);
 

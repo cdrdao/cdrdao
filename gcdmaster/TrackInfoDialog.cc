@@ -38,13 +38,13 @@ TrackInfoDialog::TrackInfoDialog()
 {
     int i;
     Gtk::Label *label, *label1;
-    Gtk::HBox *hbox;
-    Gtk::VBox *vbox, *vbox1;
+    Gtk::Box *hbox;
+    Gtk::Box *vbox, *vbox1;
     Gtk::Frame *frame;
     Gtk::Table *table;
     Gtk::Button *button;
-    Gtk::VBox *contents = manage(new Gtk::VBox);
-    Gtk::HBox *topBox = manage(new Gtk::HBox);
+    auto contents = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL);
+    auto topBox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
 
     tocEditView_ = NULL;
     active_ = 0;
@@ -91,7 +91,7 @@ TrackInfoDialog::TrackInfoDialog()
     topBox->set_spacing(5);
     contents->set_spacing(10);
 
-    hbox = manage(new Gtk::HBox);
+    hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
 
     label = new Gtk::Label(_("Track: "));
 
@@ -106,49 +106,49 @@ TrackInfoDialog::TrackInfoDialog()
     table = new Gtk::Table(5, 2, FALSE);
     table->set_row_spacings(5);
     table->set_col_spacings(5);
-    hbox = manage(new Gtk::HBox);
+    hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
     hbox->pack_start(*table, FALSE, FALSE, 5);
-    vbox = manage(new Gtk::VBox);
+    vbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL);
     vbox->pack_start(*hbox, TRUE, TRUE, 5);
     frame->add(*vbox);
 
     label = new Gtk::Label(_("Pre-Gap:"));
-    hbox = manage(new Gtk::HBox);
+    hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
     hbox->pack_end(*label, FALSE, FALSE);
     table->attach(*hbox, 0, 1, 0, 1);
-    hbox = manage(new Gtk::HBox);
+    hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
     hbox->pack_start(*pregapLen_, FALSE, FALSE);
     table->attach(*hbox, 1, 2, 0, 1);
 
     label = new Gtk::Label(_("Start:"));
-    hbox = manage(new Gtk::HBox);
+    hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
     hbox->pack_end(*label, FALSE, FALSE);
     table->attach(*hbox, 0, 1, 1, 2);
-    hbox = manage(new Gtk::HBox);
+    hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
     hbox->pack_start(*trackStart_, FALSE, FALSE);
     table->attach(*hbox, 1, 2, 1, 2);
 
     label = new Gtk::Label(_("End:"));
-    hbox = manage(new Gtk::HBox);
+    hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
     hbox->pack_end(*label, FALSE, FALSE);
     table->attach(*hbox, 0, 1, 2, 3);
-    hbox = manage(new Gtk::HBox);
+    hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
     hbox->pack_start(*trackEnd_, FALSE, FALSE);
     table->attach(*hbox, 1, 2, 2, 3);
 
     label = new Gtk::Label(_("Length:"));
-    hbox = manage(new Gtk::HBox);
+    hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
     hbox->pack_end(*label, FALSE, FALSE);
     table->attach(*hbox, 0, 1, 3, 4);
-    hbox = manage(new Gtk::HBox);
+    hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
     hbox->pack_start(*trackLen_, FALSE, FALSE);
     table->attach(*hbox, 1, 2, 3, 4);
 
     label = new Gtk::Label(_("Index Marks:"));
-    hbox = manage(new Gtk::HBox);
+    hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
     hbox->pack_end(*label, FALSE, FALSE);
     table->attach(*hbox, 0, 1, 4, 5);
-    hbox = manage(new Gtk::HBox);
+    hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
     hbox->pack_start(*indexMarks_, FALSE, FALSE);
     table->attach(*hbox, 1, 2, 4, 5);
 
@@ -157,7 +157,7 @@ TrackInfoDialog::TrackInfoDialog()
     // sub-channel data
     frame = new Gtk::Frame(_(" Sub-Channel "));
 
-    vbox = manage(new Gtk::VBox);
+    vbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL);
     vbox->set_spacing(0);
     vbox->pack_start(*copyFlag_);
     vbox->pack_start(*preEmphasisFlag_);
@@ -165,7 +165,7 @@ TrackInfoDialog::TrackInfoDialog()
     twoChannelAudio_->set_active(TRUE);
     vbox->pack_start(*fourChannelAudio_);
 
-    hbox = manage(new Gtk::HBox);
+    hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
     label = new Gtk::Label("ISRC: ");
     hbox->pack_start(*label, Gtk::PACK_SHRINK);
 
@@ -185,9 +185,9 @@ TrackInfoDialog::TrackInfoDialog()
 
     vbox->pack_start(*hbox);
 
-    vbox1 = manage(new Gtk::VBox);
+    vbox1 = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL);
     vbox1->pack_start(*vbox, TRUE, TRUE, 5);
-    hbox = manage(new Gtk::HBox);
+    hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
     hbox->pack_start(*vbox1, TRUE, TRUE, 5);
     frame->add(*hbox);
 
@@ -205,15 +205,15 @@ TrackInfoDialog::TrackInfoDialog()
         notebook->append_page(*vbox, *(cdTextPages_[i].label));
     }
 
-    vbox1 = manage(new Gtk::VBox);
+    vbox1 = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL);
     vbox1->pack_start(*notebook, TRUE, TRUE, 5);
-    hbox = manage(new Gtk::HBox);
+    hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
     hbox->pack_start(*vbox1, TRUE, TRUE, 5);
     frame->add(*hbox);
 
     contents->pack_start(*frame);
 
-    hbox = manage(new Gtk::HBox);
+    hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
     hbox->pack_start(*contents, TRUE, TRUE, 10);
     get_vbox()->pack_start(*hbox, TRUE, TRUE, 10);
 
@@ -258,12 +258,12 @@ void TrackInfoDialog::stop()
     }
 }
 
-Gtk::VBox *TrackInfoDialog::createCdTextPage(int n)
+Gtk::Box *TrackInfoDialog::createCdTextPage(int n)
 {
     char buf[20];
     Gtk::Table *table = new Gtk::Table(7, 2, FALSE);
-    Gtk::VBox *vbox = manage(new Gtk::VBox);
-    Gtk::HBox *hbox;
+    auto vbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL);
+    Gtk::Box *hbox;
     Gtk::Label *label;
 
     snprintf(buf, sizeof(buf), " %d ", n);
@@ -282,43 +282,43 @@ Gtk::VBox *TrackInfoDialog::createCdTextPage(int n)
     table->set_col_spacings(5);
 
     label = new Gtk::Label(_("Title:"));
-    hbox = manage(new Gtk::HBox);
+    hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
     hbox->pack_end(*label, Gtk::PACK_SHRINK);
     table->attach(*hbox, 0, 1, 0, 1, Gtk::FILL);
     table->attach(*(cdTextPages_[n].title), 1, 2, 0, 1);
 
     label = new Gtk::Label(_("Performer:"));
-    hbox = manage(new Gtk::HBox);
+    hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
     hbox->pack_end(*label, Gtk::PACK_SHRINK);
     table->attach(*hbox, 0, 1, 1, 2, Gtk::FILL);
     table->attach(*(cdTextPages_[n].performer), 1, 2, 1, 2);
 
     label = new Gtk::Label(_("Songwriter:"));
-    hbox = manage(new Gtk::HBox);
+    hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
     hbox->pack_end(*label, Gtk::PACK_SHRINK);
     table->attach(*hbox, 0, 1, 2, 3, Gtk::FILL);
     table->attach(*(cdTextPages_[n].songwriter), 1, 2, 2, 3);
 
     label = new Gtk::Label(_("Composer:"));
-    hbox = manage(new Gtk::HBox);
+    hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
     hbox->pack_end(*label, Gtk::PACK_SHRINK);
     table->attach(*hbox, 0, 1, 3, 4, Gtk::FILL);
     table->attach(*(cdTextPages_[n].composer), 1, 2, 3, 4);
 
     label = new Gtk::Label(_("Arranger:"));
-    hbox = manage(new Gtk::HBox);
+    hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
     hbox->pack_end(*label, Gtk::PACK_SHRINK);
     table->attach(*hbox, 0, 1, 4, 5, Gtk::FILL);
     table->attach(*(cdTextPages_[n].arranger), 1, 2, 4, 5);
 
     label = new Gtk::Label(_("Message:"));
-    hbox = manage(new Gtk::HBox);
+    hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
     hbox->pack_end(*label, Gtk::PACK_SHRINK);
     table->attach(*hbox, 0, 1, 5, 6, Gtk::FILL);
     table->attach(*(cdTextPages_[n].message), 1, 2, 5, 6);
 
     label = new Gtk::Label("ISRC:");
-    hbox = manage(new Gtk::HBox);
+    hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
     hbox->pack_end(*label, Gtk::PACK_SHRINK);
     table->attach(*hbox, 0, 1, 6, 7, Gtk::FILL);
     table->attach(*(cdTextPages_[n].isrc), 1, 2, 6, 7);

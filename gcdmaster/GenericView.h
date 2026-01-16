@@ -24,14 +24,15 @@
 
 class TocEditView;
 
-class GenericView : public Gtk::VBox
+class GenericView : public Gtk::Box
 {
   public:
-    GenericView();
-    ~GenericView();
+    GenericView() :
+	Gtk::Box(Gtk::Orientation::VERTICAL),
+	tocEditView_(nullptr) {}
+    virtual ~GenericView() = default;
 
-    virtual TocEditView *tocEditView() const;
-
+    virtual TocEditView *tocEditView() const { return tocEditView_; }
     virtual void update(unsigned long level) = 0;
 
   protected:

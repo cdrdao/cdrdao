@@ -24,7 +24,7 @@ class TocEdit;
 class CdDevice;
 class DeviceList;
 
-class RecordHDTarget : public Gtk::VBox
+class RecordHDTarget : public Gtk::Box
 {
   public:
     RecordHDTarget();

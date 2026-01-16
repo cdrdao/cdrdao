@@ -25,7 +25,7 @@
 
 class TocEdit;
 
-class RecordTocSource : public Gtk::VBox
+class RecordTocSource : public Gtk::Box
 {
   public:
     RecordTocSource(TocEdit *);

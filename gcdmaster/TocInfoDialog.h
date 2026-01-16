@@ -99,7 +99,7 @@ class TocInfoDialog : public Gtk::Dialog
 
     void createCdTextLanguageMenu(int);
     void createCdTextGenreMenu(int n);
-    Gtk::VBox *createCdTextPage(int);
+    Gtk::Box *createCdTextPage(int);
 
     void clear();
     void clearCdText();

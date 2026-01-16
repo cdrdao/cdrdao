@@ -27,7 +27,7 @@ class TocEdit;
 class CdDevice;
 class DeviceList;
 
-class RecordCDTarget : public Gtk::VBox
+class RecordCDTarget : public Gtk::Box
 {
   public:
     RecordCDTarget(Gtk::Window *);

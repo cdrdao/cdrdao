@@ -36,66 +36,63 @@
 
 AddSilenceDialog::AddSilenceDialog()
 {
-    Gtk::Button *button;
-    Gtk::VBox *vbox;
-    Gtk::HBox *hbox;
-
     tocEditView_ = NULL;
     active_ = false;
     mode_ = M_APPEND;
 
-    Gtk::Frame *frame = new Gtk::Frame(_(" Length of Silence "));
-
-    Gtk::Table *table = new Gtk::Table(4, 2, false);
+    auto frame = Gtk::make_managed<Gtk::Frame>(_(" Length of Silence "));
+    auto table = Gtk::make_managed<Gtk::Table>(4, 2, false);
     table->set_row_spacings(5);
     table->set_col_spacings(5);
-    hbox = new Gtk::HBox;
+    auto hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
     hbox->pack_start(*table, true, true, 5);
-    vbox = new Gtk::VBox;
+    auto vbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL);
     vbox->pack_start(*hbox, false, false, 5);
     frame->add(*vbox);
 
-    Gtk::Label *label = new Gtk::Label(_("Minutes:"));
-    table->attach(*label, 0, 1, 0, 1, Gtk::SHRINK);
-    table->attach(minutes_, 1, 2, 0, 1);
-
-    label = new Gtk::Label(_("Seconds:"));
-    table->attach(*label, 0, 1, 1, 2, Gtk::SHRINK);
-    table->attach(seconds_, 1, 2, 1, 2);
-
-    label = new Gtk::Label(_("Frames:"));
-    table->attach(*label, 0, 1, 2, 3, Gtk::SHRINK);
-    table->attach(frames_, 1, 2, 2, 3);
-
-    label = new Gtk::Label(_("Samples:"));
-    table->attach(*label, 0, 1, 3, 4, Gtk::SHRINK);
-    table->attach(samples_, 1, 2, 3, 4);
-
-    hbox = new Gtk::HBox;
+    {
+	auto label = Gtk::make_managed<Gtk::Label>(_("Minutes:"));
+	table->attach(*label, 0, 1, 0, 1, Gtk::SHRINK);
+	table->attach(minutes_, 1, 2, 0, 1);
+    }
+    {
+	auto label = Gtk::make_managed<Gtk::Label>(_("Seconds:"));
+	table->attach(*label, 0, 1, 1, 2, Gtk::SHRINK);
+	table->attach(seconds_, 1, 2, 1, 2);
+    }
+    {
+	auto label = Gtk::make_managed<Gtk::Label>(_("Frames:"));
+	table->attach(*label, 0, 1, 2, 3, Gtk::SHRINK);
+	table->attach(frames_, 1, 2, 2, 3);
+    }
+    {
+	auto label = Gtk::make_managed<Gtk::Label>(_("Samples:"));
+	table->attach(*label, 0, 1, 3, 4, Gtk::SHRINK);
+	table->attach(samples_, 1, 2, 3, 4);
+    }
+    hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
     hbox->pack_start(*frame, true, true, 10);
 
     get_vbox()->pack_start(*hbox, false, false, 10);
 
-    Gtk::HButtonBox *bbox = new Gtk::HButtonBox(Gtk::BUTTONBOX_SPREAD);
+    auto bbox = Gtk::make_managed<Gtk::HButtonBox>(Gtk::BUTTONBOX_SPREAD);
 
-    applyButton_ = new Gtk::Button(Gtk::StockID(Gtk::Stock::APPLY));
+    applyButton_ = Gtk::make_managed<Gtk::Button>(Gtk::StockID(Gtk::Stock::APPLY));
     bbox->pack_start(*applyButton_);
     applyButton_->signal_clicked().connect(mem_fun(*this, &AddSilenceDialog::applyAction));
 
-    button = new Gtk::Button(Gtk::StockID(Gtk::Stock::CLEAR));
-    bbox->pack_start(*button);
-    button->signal_clicked().connect(mem_fun(*this, &AddSilenceDialog::clearAction));
-
-    button = new Gtk::Button(Gtk::StockID(Gtk::Stock::CLOSE));
-    bbox->pack_start(*button);
-    button->signal_clicked().connect(mem_fun(*this, &AddSilenceDialog::closeAction));
-
+    {
+	auto button = Gtk::make_managed<Gtk::Button>(Gtk::StockID(Gtk::Stock::CLEAR));
+	bbox->pack_start(*button);
+	button->signal_clicked().connect(mem_fun(*this, &AddSilenceDialog::clearAction));
+    }
+    {
+	auto button = Gtk::make_managed<Gtk::Button>(Gtk::StockID(Gtk::Stock::CLOSE));
+	bbox->pack_start(*button);
+	button->signal_clicked().connect(mem_fun(*this, &AddSilenceDialog::closeAction));
+    }
     get_action_area()->pack_start(*bbox);
     show_all_children();
-}
-
-AddSilenceDialog::~AddSilenceDialog()
-{
 }
 
 void AddSilenceDialog::mode(Mode m)

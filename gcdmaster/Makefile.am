@@ -16,7 +16,6 @@ gcdmaster_SOURCES = \
 	DumpCDProject.cc 	\
 	DuplicateCDProject.cc 	\
 	gcdmaster.cc 		\
-	GenericView.cc 		\
 	guiUpdate.cc 		\
 	Icons.cc		\
 	MessageBox.cc 		\

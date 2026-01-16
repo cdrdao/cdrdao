@@ -31,7 +31,7 @@
 #define LABEL_PADDING 10
 #define BUTTONS_RELIEF Gtk::RELIEF_NORMAL
 
-ProjectChooser::ProjectChooser()
+ProjectChooser::ProjectChooser() : Gtk::Box(Gtk::Orientation::VERTICAL)
 {
     Glib::RefPtr<Gtk::Builder> builder;
     try {

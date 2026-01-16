@@ -47,14 +47,13 @@ DeviceList::DeviceList(CdDevice::DeviceType filterType)
     list_.append_column(_("Model"), listColumns_.model);
     list_.append_column(_("Status"), listColumns_.status);
 
-    Gtk::VBox *contents = new Gtk::VBox;
-    contents->set_spacing(10);
+    auto contents = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL, 10);
 
     // available device list
-    Gtk::HBox *listHBox = new Gtk::HBox;
-    Gtk::VBox *listVBox = new Gtk::VBox;
+    auto listHBox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
+    auto listVBox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL);
 
-    Gtk::HBox *hbox = new Gtk::HBox;
+    auto hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
     hbox->pack_start(list_, TRUE, TRUE);
 
     Glib::RefPtr<Gtk::Adjustment> adjust = Gtk::Adjustment::create(0.0, 0.0, 0.0);
