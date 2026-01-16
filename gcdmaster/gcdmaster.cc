@@ -76,7 +76,7 @@ GCDMaster::GCDMaster()
     filter_all->add_pattern("*");
     readFileSelector_->add_filter(filter_all);
 
-    Icons::registerStockIcons();
+    Icons::registerIcons();
     notebook_.set_show_border(false);
     notebook_.show();
 

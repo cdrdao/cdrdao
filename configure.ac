@@ -363,7 +363,6 @@ AC_CONFIG_FILES([
         dao/Makefile
         utils/Makefile
         gcdmaster/Makefile
-        gcdmaster/stock/Makefile
         paranoia/Makefile
         Makefile
         specs/cdrdao.fedora.spec

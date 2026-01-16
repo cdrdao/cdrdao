@@ -1,37 +1,18 @@
 #include "Icons.h"
-#include "stock/pixbufs.h"
 
-Gtk::StockID Icons::PLAY("gcdmaster-play");
-Gtk::StockID Icons::STOP("gcdmaster-stop");
-Gtk::StockID Icons::PAUSE("gcdmaster-pause");
-Gtk::StockID Icons::GCDMASTER("gcdmaster-gcdmaster");
-Gtk::StockID Icons::OPEN("gcdmaster-open");
-Gtk::StockID Icons::AUDIOCD("gcdmaster-audiocd");
-Gtk::StockID Icons::COPYCD("gcdmaster-copycd");
-Gtk::StockID Icons::DUMPCD("gcdmaster-dumpcd");
-Gtk::StockID Icons::RECORD("gcdmaster-record");
+Glib::ustring Icons::PLAY("gcdmaster-play");
+Glib::ustring Icons::STOP("gcdmaster-stop");
+Glib::ustring Icons::PAUSE("gcdmaster-pause");
+Glib::ustring Icons::GCDMASTER("gcdmaster-gcdmaster");
+Glib::ustring Icons::OPEN("gcdmaster-open");
+Glib::ustring Icons::AUDIOCD("gcdmaster-audiocd");
+Glib::ustring Icons::COPYCD("gcdmaster-copycd");
+Glib::ustring Icons::DUMPCD("gcdmaster-dumpcd");
+Glib::ustring Icons::RECORD("gcdmaster-record");
 
-struct Icons::IconEntry Icons::iconList[] = {
-    {Icons::PLAY, play_pixbuf},     {Icons::STOP, stop_pixbuf},
-    {Icons::PAUSE, pause_pixbuf},   {Icons::GCDMASTER, gcdmaster_pixbuf},
-    {Icons::OPEN, open_pixbuf},     {Icons::AUDIOCD, audiocd_pixbuf},
-    {Icons::COPYCD, copycd_pixbuf}, {Icons::DUMPCD, dumpcd_pixbuf},
-    {Icons::RECORD, record_pixbuf}};
-
-void Icons::registerStockIcons()
+void Icons::registerIcons()
 {
-    Glib::RefPtr<Gtk::IconFactory> factory = Gtk::IconFactory::create();
-    factory->add_default();
-
-    for (unsigned i = 0; i < G_N_ELEMENTS(iconList); i++) {
-        Glib::RefPtr<Gdk::Pixbuf> pixbuf = Gdk::Pixbuf::create_from_inline(-1, iconList[i].pixbuf);
-
-        Gtk::IconSource *source = new Gtk::IconSource;
-        source->set_pixbuf(pixbuf);
-
-        Glib::RefPtr<Gtk::IconSet> set = Gtk::IconSet::create();
-        set->add_source(*source);
-
-        factory->add(iconList[i].name, set);
-    }
+    auto display = Gdk::Display::get_default();
+    auto icon_theme = Gtk::IconTheme::get_for_display(display);
+    icon_theme->add_resource_path("/org/gnome/gcdmaster/icons");
 }

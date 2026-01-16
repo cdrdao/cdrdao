@@ -1,5 +1,3 @@
-SUBDIRS = stock
-
 bin_PROGRAMS = gcdmaster
 
 gcdmaster_SOURCES = \
@@ -88,6 +86,10 @@ EXTRA_gcdmaster_SOURCES =	\
 	SoundIF-none.cc 	\
 	SoundIF-solaris.cc
 
+nodist_gcdmaster_SOURCES = resources.cc
+
+BUILT_SOURCES = resources.cc resources.h
+
 gladedir = $(datadir)/gcdmaster/glade
 glade_DATA = 			\
 	glade/Preferences.glade	\
@@ -147,10 +149,25 @@ appregdir = $(datadir)/application-registry
 appreg_DATA = gcdmaster.applications
 
 icondir = $(datadir)/pixmaps
-icon_DATA = gcdmaster.png gcdmaster-doc.png
+icon_DATA = gcdmaster.pngff gcdmaster-doc.pngff
 
 gsettings_SCHEMAS = org.gnome.gcdmaster.gschema.xml
 @GSETTINGS_RULES@
+
+resources.cc: gresource.xml
+	glib-compile-resources \
+		--target=$@ \
+		--sourcedir=$(srcdir) \
+		--generate-source \
+		$(srcdir)/gresource.xml
+resources.h: gresource.xml
+	glib-compile-resources \
+		--target=$@ \
+		--sourcedir=$(srcdir) \
+		--generate-header \
+		$(srcdir)/gresource.xml
+
+CLEANFILES = resources.cc resources.h
 
 EXTRA_DIST = \
 	$(man1_MANS)	\
@@ -160,6 +177,7 @@ EXTRA_DIST = \
 	$(icon_DATA)	\
 	$(freedesktop_DATA)	\
 	$(appreg_DATA)	\
+	gresource.xml \
 	org.gnome.gcdmaster.gschema.xml \
+	$(RESOURCE_DEPS) \
 	BUGS TASKS
-

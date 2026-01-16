@@ -6,23 +6,17 @@
 class Icons
 {
   public:
-    static void registerStockIcons();
+    static void registerIcons();
 
-    static Gtk::StockID PLAY;
-    static Gtk::StockID STOP;
-    static Gtk::StockID PAUSE;
-    static Gtk::StockID GCDMASTER;
-    static Gtk::StockID OPEN;
-    static Gtk::StockID AUDIOCD;
-    static Gtk::StockID COPYCD;
-    static Gtk::StockID DUMPCD;
-    static Gtk::StockID RECORD;
-
-  private:
-    static struct IconEntry {
-        Gtk::StockID &name;
-        const guint8 *pixbuf;
-    } iconList[];
+    static Glib::ustring PLAY;
+    static Glib::ustring STOP;
+    static Glib::ustring PAUSE;
+    static Glib::ustring GCDMASTER;
+    static Glib::ustring OPEN;
+    static Glib::ustring AUDIOCD;
+    static Glib::ustring COPYCD;
+    static Glib::ustring DUMPCD;
+    static Glib::ustring RECORD;
 };
 
 #endif
