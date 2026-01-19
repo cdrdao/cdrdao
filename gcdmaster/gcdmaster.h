@@ -36,8 +36,9 @@ class GCDMaster : public Gtk::ApplicationWindow
     GCDMaster();
 
     bool closeProject();
+    void closeProjectAction();
     void closeChooser();
-    bool on_delete_event(GdkEventAny *e);
+    bool on_close_request() override;
     bool openNewProject(const std::string &);
     void openProject();
     void newChooserWindow();
@@ -59,30 +60,27 @@ class GCDMaster : public Gtk::ApplicationWindow
     static std::list<GCDMaster *> apps;
 
   private:
-    Project *project_;
-    ProjectChooser *chooser_;
-    gint project_number;
+    Project *project_ = nullptr;
+    ProjectChooser *chooser_ = nullptr;
+    gint project_number = 0;
 
     BlankCDDialog blankCDDialog_;
 
     Gtk::Box box_;
     Gtk::Notebook notebook_;
-    Gtk::HBox *container_;
-
-    Glib::RefPtr<Gtk::UIManager> m_refUIManager;
-    Glib::RefPtr<Gtk::ActionGroup> m_refActionGroup;
+    Gtk::Box *container_;
 
     Gtk::Statusbar *statusbar_;
     Gtk::ProgressBar *progressbar_;
     Gtk::Spinner *spinner_;
     Gtk::Button *progressButton_;
-    Gtk::AboutDialog *about_;
+    Gtk::AboutDialog about_;
 
     Gtk::FileChooserDialog *readFileSelector_;
     void createMenus();
     void createStatusbar();
     void aboutDialog();
-    void on_about_ok(int);
+    void on_file_dialog_response(int response, Gtk::FileChooserDialog* dialog);
 };
 
 #endif

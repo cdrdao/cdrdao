@@ -21,6 +21,7 @@
 #define __DUPLICATECDPROJECT_H__
 
 #include "Project.h"
+#include "MessageBox.h"
 
 class RecordCDSource;
 class RecordCDTarget;
@@ -39,17 +40,19 @@ class DuplicateCDProject : public Project
     RecordCDSource *CDSource;
     RecordCDTarget *CDTarget;
 
-    Gtk::RadioButton *simulate_rb;
-    Gtk::RadioButton *simulateBurn_rb;
-    Gtk::RadioButton *burn_rb;
+    Gtk::CheckButton *simulate_rb;
+    Gtk::CheckButton *simulateBurn_rb;
+    Gtk::CheckButton *burn_rb;
 
     void start();
-    void recordToc2CD()
-    {
-    }
-    void projectInfo()
-    {
-    }
+    void recordToc2CD() {}
+    void projectInfo() {}
+
     void update(unsigned long level);
+
+    Glib::RefPtr<MessageBox> onTheFlyError;
+    Glib::RefPtr<MessageBox> noReaderDevice;
+    Glib::RefPtr<MessageBox> noWriterDevice;
+    Glib::RefPtr<MessageBox> genericError;
 };
 #endif
