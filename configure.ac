@@ -24,7 +24,7 @@ AC_ARG_WITH(flac-support,[  --with-flac-support    enable FLAC format support (d
 dnl Checks for programs.
 AC_PROG_CC
 AC_PROG_CXX
-AX_CXX_COMPILE_STDCXX_14
+AX_CXX_COMPILE_STDCXX_17
 AC_PROG_CPP
 AC_PROG_INSTALL
 AC_PROG_RANLIB
@@ -254,7 +254,6 @@ dnl -lc_r is automatically done by the linker
   *darwin*)
             AC_DEFINE(_P1003_1B_VISIBLE,1,"")
             LIBS="$LIBS -framework CoreServices -framework IOKit"
-            CXXFLAGS="$CXXFLAGS -std=c++11"
             ;;
   *-openbsd*)
             CPPFLAGS="$CPPFLAGS -I/usr/local/include"
