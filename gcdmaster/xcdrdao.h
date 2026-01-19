@@ -21,6 +21,7 @@
 #define __XCDRDAO_H__
 
 #include <gtkmm.h>
+#include "ConfigManager.h"
 
 //
 // GLOBAL objects.
@@ -40,7 +41,8 @@ void unblockProcessMonitorSignals();
 class GCDMasterApplication : public Gtk::Application
 {
   public:
-    GCDMasterApplication() : Gtk::Application("Gonme.CDMaster", Gio::APPLICATION_HANDLES_OPEN)
+    GCDMasterApplication() : Gtk::Application("Gonme.CDMaster",
+					      Gio::Application::Flags::HANDLES_OPEN)
     {
     }
 

@@ -20,11 +20,8 @@
 #ifndef __CD_DEVICE_H__
 #define __CD_DEVICE_H__
 
-#include <gdk/gdk.h>
-#include <sigc++/sigc++.h>
+#include <gtkmm.h>
 #include <string>
-
-#include "Project.h"
 
 class TocEdit;
 class Process;

@@ -23,6 +23,7 @@
 #include <limits.h>
 #include <math.h>
 #include <stdio.h>
+#include <vector>
 
 #include <glibmm/i18n.h>
 #include <gtkmm.h>
@@ -34,16 +35,14 @@
 
 #include "util.h"
 
-#define MAX_DEVICE_TYPE_ID 2
-
-static CdDevice::DeviceType ID2DEVICE_TYPE[MAX_DEVICE_TYPE_ID + 1] = {
-    CdDevice::CD_ROM, CdDevice::CD_R, CdDevice::CD_RW};
+static std::vector<CdDevice::DeviceType> ID2DEVICE_TYPE =
+{ CdDevice::CD_ROM, CdDevice::CD_R, CdDevice::CD_RW };
 
 DeviceConfDialog::DeviceConfDialog()
 {
     int i;
     Gtk::Label *label;
-    Gtk::Table *table;
+    Gtk::Grid *grid;
     Gtk::Button *button;
 
     active_ = false;
@@ -57,141 +56,163 @@ DeviceConfDialog::DeviceConfDialog()
     list_.append_column(_("Vendor"), listColumns_.vendor);
     list_.append_column(_("Model"), listColumns_.model);
     list_.append_column(_("Status"), listColumns_.status);
+    list_.set_vexpand(true);
+    list_.set_hexpand(true);
 
     if (list_.get_selection()) {
         selectedRow_ = list_.get_selection()->get_selected();
         list_.get_selection()->signal_changed().connect(
-            mem_fun(*this, &DeviceConfDialog::selectionChanged));
+            sigc::mem_fun(*this, &DeviceConfDialog::selectionChanged));
     }
 
+    // Create string lists for dropdown menus
+    driverStringList_ = Gtk::StringList::create({});
     for (i = 0; i <= CdDevice::maxDriverId(); i++) {
-        driverMenu_.append(CdDevice::driverName(i));
+        driverStringList_->append(CdDevice::driverName(i));
     }
-    driverMenu_.signal_changed().connect(sigc::mem_fun(*this, &DeviceConfDialog::setDriverId));
+    driverMenu_.set_model(driverStringList_);
+    driverMenu_.property_selected().signal_changed().connect(
+        sigc::mem_fun(*this, &DeviceConfDialog::setDriverId));
 
-    for (i = 0; i <= MAX_DEVICE_TYPE_ID; i++) {
-        devtypeMenu_.append(CdDevice::deviceType2string(ID2DEVICE_TYPE[i]));
+    devtypeStringList_ = Gtk::StringList::create({});
+    for (auto i : ID2DEVICE_TYPE) {
+        devtypeStringList_->append(CdDevice::deviceType2string(i));
     }
-    devtypeMenu_.signal_changed().connect(sigc::mem_fun(*this, &DeviceConfDialog::setDeviceType));
+    devtypeMenu_.set_model(devtypeStringList_);
+    devtypeMenu_.property_selected().signal_changed().connect(
+        sigc::mem_fun(*this, &DeviceConfDialog::setDeviceType));
 
     devEntry_.set_max_length(32);
     vendorEntry_.set_max_length(8);
     productEntry_.set_max_length(16);
 
-    auto contents = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL);
-    contents->set_spacing(5);
-    contents->set_border_width(7);
+    auto contents = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL, 5);
+    contents->set_margin(7);
 
     // ---------------------------- Device list
-    autolistBox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL);
-    listBox->set_spacing(5);
-    listBox->set_border_width(5);
+    auto listBox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL, 5);
+    listBox->set_margin(5);
 
-    auot hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
+    auto scrolled = Gtk::make_managed<Gtk::ScrolledWindow>();
+    scrolled->set_policy(Gtk::PolicyType::AUTOMATIC, Gtk::PolicyType::AUTOMATIC);
+    scrolled->set_child(list_);
+    scrolled->set_vexpand(true);
+    scrolled->set_hexpand(true);
 
-    hbox->pack_start(list_, Gtk::PACK_EXPAND_WIDGET);
+    listBox->append(*scrolled);
 
-    Glib::RefPtr<Gtk::Adjustment> adjust = Gtk::Adjustment::create(0.0, 0.0, 0.0);
-    Gtk::VScrollbar *scrollBar = manage(new Gtk::VScrollbar(adjust));
-    hbox->pack_start(*scrollBar, Gtk::PACK_SHRINK);
+    auto bbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL, 5);
 
-    list_.set_vadjustment(adjust);
-
-    listBox->pack_start(*hbox, Gtk::PACK_EXPAND_WIDGET);
-
-    Gtk::ButtonBox *bbox = manage(new Gtk::HButtonBox(Gtk::BUTTONBOX_SPREAD));
-
-    button = manage(new Gtk::Button(_("Rescan")));
-    bbox->pack_start(*button);
+    button = Gtk::make_managed<Gtk::Button>(_("Rescan"));
+    bbox->append(*button);
     button->signal_clicked().connect(sigc::mem_fun(*this, &DeviceConfDialog::rescanAction));
 
-    button = manage(new Gtk::Button(Gtk::StockID(Gtk::Stock::DELETE)));
-    bbox->pack_start(*button);
+    button = Gtk::make_managed<Gtk::Button>();
+    button->set_icon_name("user-trash-symbolic");
+    bbox->append(*button);
     button->signal_clicked().connect(sigc::mem_fun(*this, &DeviceConfDialog::deleteDeviceAction));
 
-    listBox->pack_start(*bbox, Gtk::PACK_SHRINK);
+    listBox->append(*bbox);
 
     listFrame_.set_label(_(" Device List "));
-    listFrame_.add(*listBox);
-    contents->pack_start(listFrame_, Gtk::PACK_EXPAND_WIDGET);
+    listFrame_.set_vexpand(true);
+    listFrame_.set_child(*listBox);
+    contents->append(listFrame_);
 
     // ---------------------------- Device settings
 
     settingFrame_.set_label(_(" Device Settings "));
-    table = manage(new Gtk::Table(2, 4, FALSE));
-    table->set_row_spacings(5);
-    table->set_col_spacings(5);
-    table->set_border_width(10);
-    settingFrame_.add(*table);
+    grid = Gtk::make_managed<Gtk::Grid>();
+    grid->set_row_spacing(5);
+    grid->set_column_spacing(5);
+    grid->set_margin(10);
+    settingFrame_.set_child(*grid);
 
-    label = manage(new Gtk::Label(_("Device Type:")));
-    table->attach(*label, 0, 1, 0, 1);
-    table->attach(devtypeMenu_, 1, 2, 0, 1);
+    label = Gtk::make_managed<Gtk::Label>(_("Device Type:"));
+    label->set_halign(Gtk::Align::START);
+    grid->attach(*label, 0, 0, 1, 1);
+    devtypeMenu_.set_hexpand(true);
+    grid->attach(devtypeMenu_, 1, 0, 1, 1);
 
-    label = manage(new Gtk::Label(_("Driver:")));
-    table->attach(*label, 0, 1, 1, 2);
-    table->attach(driverMenu_, 1, 2, 1, 2);
+    label = Gtk::make_managed<Gtk::Label>(_("Driver:"));
+    label->set_halign(Gtk::Align::START);
+    grid->attach(*label, 0, 1, 1, 1);
+    driverMenu_.set_hexpand(true);
+    grid->attach(driverMenu_, 1, 1, 1, 1);
 
-    label = manage(new Gtk::Label(_("Driver Options:")));
-    table->attach(*label, 0, 1, 2, 3);
-    table->attach(driverOptionsEntry_, 1, 2, 2, 3);
+    label = Gtk::make_managed<Gtk::Label>(_("Driver Options:"));
+    label->set_halign(Gtk::Align::START);
+    grid->attach(*label, 0, 2, 1, 1);
+    driverOptionsEntry_.set_hexpand(true);
+    grid->attach(driverOptionsEntry_, 1, 2, 1, 1);
 
-    contents->pack_start(settingFrame_, Gtk::PACK_SHRINK);
+    contents->append(settingFrame_);
 
     // -------------- Add device
 
     addDeviceFrame_.set_label(_(" Add Device "));
-    auto addDeviceBox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL);
-    addDeviceBox->set_spacing(5);
-    addDeviceBox->set_border_width(5);
+    auto addDeviceBox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL, 5);
+    addDeviceBox->set_margin(5);
 
-    table = manage(new Gtk::Table(3, 2, FALSE));
-    table->set_row_spacings(5);
-    table->set_col_spacings(5);
-    addDeviceBox->pack_start(*table, Gtk::PACK_EXPAND_WIDGET);
+    grid = Gtk::make_managed<Gtk::Grid>();
+    grid->set_row_spacing(5);
+    grid->set_column_spacing(5);
+    grid->set_vexpand(true);
+    grid->set_hexpand(true);
+    addDeviceBox->append(*grid);
 
-    label = manage(new Gtk::Label(_("Device:")));
-    table->attach(*label, 0, 1, 0, 1);
-    table->attach(devEntry_, 1, 2, 0, 1);
+    label = Gtk::make_managed<Gtk::Label>(_("Device:"));
+    label->set_halign(Gtk::Align::START);
+    grid->attach(*label, 0, 0, 1, 1);
+    devEntry_.set_hexpand(true);
+    grid->attach(devEntry_, 1, 0, 1, 1);
 
-    label = manage(new Gtk::Label(_("Vendor:")));
-    table->attach(*label, 0, 1, 1, 2);
-    table->attach(vendorEntry_, 1, 2, 1, 2);
+    label = Gtk::make_managed<Gtk::Label>(_("Vendor:"));
+    label->set_halign(Gtk::Align::START);
+    grid->attach(*label, 0, 1, 1, 1);
+    vendorEntry_.set_hexpand(true);
+    grid->attach(vendorEntry_, 1, 1, 1, 1);
 
-    label = manage(new Gtk::Label(_("Product:")));
-    table->attach(*label, 0, 1, 2, 3);
-    table->attach(productEntry_, 1, 2, 2, 3);
+    label = Gtk::make_managed<Gtk::Label>(_("Product:"));
+    label->set_halign(Gtk::Align::START);
+    grid->attach(*label, 0, 2, 1, 1);
+    productEntry_.set_hexpand(true);
+    grid->attach(productEntry_, 1, 2, 1, 1);
 
-    bbox = manage(new Gtk::HButtonBox(Gtk::BUTTONBOX_SPREAD));
-    bbox->set_spacing(5);
-    Gtk::Button *addButton = manage(new Gtk::Button(Gtk::StockID(Gtk::Stock::ADD)));
-    bbox->pack_start(*addButton);
-    addButton->signal_clicked().connect(mem_fun(*this, &DeviceConfDialog::addDeviceAction));
-    addDeviceBox->pack_start(*bbox);
+    bbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL, 5);
+    bbox->set_halign(Gtk::Align::FILL);
+    auto addButton = Gtk::make_managed<Gtk::Button>();
+    addButton->set_icon_name("list-add-symbolic");
+    addButton->set_hexpand(true);
+    bbox->append(*addButton);
+    addButton->signal_clicked().connect(sigc::mem_fun(*this, &DeviceConfDialog::addDeviceAction));
+    addDeviceBox->append(*bbox);
 
-    addDeviceFrame_.add(*addDeviceBox);
-    contents->pack_start(addDeviceFrame_, Gtk::PACK_SHRINK);
+    addDeviceFrame_.set_child(*addDeviceBox);
+    contents->append(addDeviceFrame_);
 
     // 3 buttons at bottom of window.
 
-    bbox = manage(new Gtk::HButtonBox(Gtk::BUTTONBOX_SPREAD));
-    bbox->set_spacing(5);
-    hbox->set_border_width(10);
-    Gtk::Button *applyButton = manage(new Gtk::Button(Gtk::StockID(Gtk::Stock::APPLY)));
-    bbox->pack_start(*applyButton);
-    applyButton->signal_clicked().connect(mem_fun(*this, &DeviceConfDialog::applyAction));
+    bbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL, 5);
+    bbox->set_halign(Gtk::Align::FILL);
+    auto applyButton = Gtk::make_managed<Gtk::Button>();
+    applyButton->set_hexpand(true);
+    applyButton->set_icon_name("emblem-ok-symbolic");
+    bbox->append(*applyButton);
+    applyButton->signal_clicked().connect(sigc::mem_fun(*this, &DeviceConfDialog::applyAction));
 
-    Gtk::Button *resetButton = manage(new Gtk::Button(_("Reset")));
-    bbox->pack_start(*resetButton);
-    resetButton->signal_clicked().connect(mem_fun(*this, &DeviceConfDialog::resetAction));
+    auto resetButton = Gtk::make_managed<Gtk::Button>(_("Reset"));
+    bbox->append(*resetButton);
+    resetButton->signal_clicked().connect(sigc::mem_fun(*this, &DeviceConfDialog::resetAction));
 
-    Gtk::Button *cancelButton = manage(new Gtk::Button(Gtk::StockID(Gtk::Stock::CLOSE)));
-    bbox->pack_start(*cancelButton);
-    cancelButton->signal_clicked().connect(mem_fun(*this, &DeviceConfDialog::closeAction));
+    auto cancelButton = Gtk::make_managed<Gtk::Button>();
+    cancelButton->set_icon_name("window-close-symbolic");
+    bbox->append(*cancelButton);
+    cancelButton->signal_clicked().connect(sigc::mem_fun(*this, &DeviceConfDialog::closeAction));
 
-    contents->pack_start(*bbox, Gtk::PACK_SHRINK);
+    contents->append(*bbox);
 
-    add(*contents);
+    set_child(*contents);
 }
 
 DeviceConfDialog::~DeviceConfDialog()
@@ -207,12 +228,12 @@ void DeviceConfDialog::start()
 
     active_ = true;
     update(UPD_CD_DEVICES);
-    show_all();
+    set_visible(true);
 }
 
 void DeviceConfDialog::stop()
 {
-    hide();
+    set_visible(false);
     active_ = false;
 }
 
@@ -273,7 +294,7 @@ void DeviceConfDialog::addDeviceAction()
 
     if (cddev) {
         cddev->manuallyConfigured(true);
-        Gtk::TreeIter new_entry = appendTableEntry(cddev);
+        Gtk::TreeModel::iterator new_entry = appendTableEntry(cddev);
         list_.get_selection()->select(new_entry);
     }
 
@@ -312,10 +333,9 @@ void DeviceConfDialog::rescanAction()
     guiUpdate(UPD_CD_DEVICES);
 }
 
-Gtk::TreeIter DeviceConfDialog::appendTableEntry(CdDevice *dev)
+Gtk::TreeModel::iterator DeviceConfDialog::appendTableEntry(CdDevice *dev)
 {
     DeviceData *data;
-    const gchar *rowStr[6];
 
     data = new DeviceData;
     data->dev = dev->dev();
@@ -334,7 +354,7 @@ Gtk::TreeIter DeviceConfDialog::appendTableEntry(CdDevice *dev)
         break;
     }
 
-    Gtk::TreeIter newiter = listModel_->append();
+    Gtk::TreeModel::iterator newiter = listModel_->append();
     Gtk::TreeModel::Row row = *newiter;
     row[listColumns_.dev] = data->dev;
     row[listColumns_.vendor] = dev->vendor();
@@ -348,7 +368,6 @@ Gtk::TreeIter DeviceConfDialog::appendTableEntry(CdDevice *dev)
 void DeviceConfDialog::import()
 {
     CdDevice *drun;
-    DeviceData *data;
 
     list_.get_selection()->unselect_all();
     selectedRow_ = list_.get_selection()->get_selected();
@@ -361,11 +380,11 @@ void DeviceConfDialog::import()
 
     if (listModel_->children().size() > 0) {
         list_.columns_autosize();
-        list_.get_selection()->select(Gtk::TreeModel::Path((unsigned)1));
+        list_.get_selection()->select(Gtk::TreeModel::Path("0"));
     }
 }
 
-void DeviceConfDialog::importConfiguration(Gtk::TreeIter row)
+void DeviceConfDialog::importConfiguration(Gtk::TreeModel::iterator row)
 {
     char buf[50];
     DeviceData *data;
@@ -374,17 +393,17 @@ void DeviceConfDialog::importConfiguration(Gtk::TreeIter row)
 
         data = (*selectedRow_)[listColumns_.data];
         driverMenu_.set_sensitive(true);
-        driverMenu_.set_active(data->driverId);
+        driverMenu_.set_selected(data->driverId);
         devtypeMenu_.set_sensitive(true);
-        devtypeMenu_.set_active(data->deviceType);
+        devtypeMenu_.set_selected(data->deviceType);
         driverOptionsEntry_.set_sensitive(true);
         snprintf(buf, sizeof(buf), "0x%lx", data->options);
         driverOptionsEntry_.set_text(buf);
     } else {
 
-        driverMenu_.set_active(0);
+        driverMenu_.set_selected(0);
         driverMenu_.set_sensitive(false);
-        devtypeMenu_.set_active(0);
+        devtypeMenu_.set_selected(0);
         devtypeMenu_.set_sensitive(false);
         driverOptionsEntry_.set_text("");
         driverOptionsEntry_.set_sensitive(false);
@@ -408,7 +427,7 @@ void DeviceConfDialog::importStatus()
     list_.columns_autosize();
 }
 
-void DeviceConfDialog::exportConfiguration(Gtk::TreeIter row)
+void DeviceConfDialog::exportConfiguration(Gtk::TreeModel::iterator row)
 {
     DeviceData *data;
 
@@ -425,7 +444,6 @@ void DeviceConfDialog::exportData()
 {
     DeviceData *data;
     CdDevice *dev;
-    std::string s;
 
     Gtk::TreeNodeChildren ch = listModel_->children();
     for (unsigned i = 0; i < ch.size(); i++) {
@@ -453,27 +471,29 @@ void DeviceConfDialog::exportData()
 
 void DeviceConfDialog::setDriverId(void)
 {
-    int id = driverMenu_.get_active_row_number();
-    if (selectedRow_ && id >= 0 && id <= CdDevice::maxDriverId()) {
+    auto selected = driverMenu_.get_selected();
+    if (selectedRow_ && selected != GTK_INVALID_LIST_POSITION && 
+        selected <= static_cast<guint>(CdDevice::maxDriverId())) {
         DeviceData *data = (*selectedRow_)[listColumns_.data];
         if (data)
-            data->driverId = id;
+            data->driverId = selected;
     }
 }
 
 void DeviceConfDialog::setDeviceType(void)
 {
-    int id = devtypeMenu_.get_active_row_number();
-    if (selectedRow_ && id >= 0 && id <= MAX_DEVICE_TYPE_ID) {
+    auto selected = devtypeMenu_.get_selected();
+    if (selectedRow_ && selected != GTK_INVALID_LIST_POSITION && 
+        selected < ID2DEVICE_TYPE.size()) {
         DeviceData *data = (*selectedRow_)[listColumns_.data];
         if (data)
-            data->deviceType = id;
+            data->deviceType = selected;
     }
 }
 
 void DeviceConfDialog::selectionChanged()
 {
-    Gtk::TreeIter new_sel = list_.get_selection()->get_selected();
+    Gtk::TreeModel::iterator new_sel = list_.get_selection()->get_selected();
 
     if ((bool)selectedRow_ != (bool)new_sel || selectedRow_ != new_sel) {
 
@@ -519,3 +539,4 @@ const char *DeviceConfDialog::checkString(const std::string &str)
 
     return s;
 }
+

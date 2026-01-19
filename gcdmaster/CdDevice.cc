@@ -17,34 +17,20 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#include <assert.h>
-#include <ctype.h>
-#include <errno.h>
-#include <stddef.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <sys/time.h>
-#include <sys/types.h>
-#include <unistd.h>
-
-#include <glibmm/i18n.h>
-#include <gtkmm.h>
+#include <cassert>
 
 #include "CdDevice.h"
-#include "ConfigManager.h"
+#include "dao/ScsiIf.h"
+#include "dao/CdrDriver.h"
 #include "ProcessMonitor.h"
-#include "ProgressDialog.h"
-#include "TocEdit.h"
-#include "guiUpdate.h"
 #include "xcdrdao.h"
+#include "trackdb/log.h"
+#include "guiUpdate.h"
+#include "TocEdit.h"
+#include "ConfigManager.h"
+#include "ProgressDialog.h"
 
-#include "CdrDriver.h"
-#include "ScsiIf.h"
-#include "Toc.h"
-#include "config.h"
-#include "log.h"
-#include "remote.h"
-#include "util.h"
+#include <glibmm/i18n.h>
 
 #define DRIVER_IDS 13
 #define DRIVER_ID_DEFAULT 2
@@ -251,7 +237,7 @@ bool CdDevice::updateProgress(Glib::IOCondition cond, int fd)
     if (process_ == NULL)
         return false;
 
-    if (!(cond & Glib::IO_IN))
+    if ((cond & Glib::IOCondition::IO_IN) != Glib::IOCondition::IO_IN)
         return false;
 
     FD_ZERO(&fds);

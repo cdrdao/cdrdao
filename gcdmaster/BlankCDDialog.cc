@@ -26,6 +26,7 @@
 #include "Icons.h"
 #include "MessageBox.h"
 #include "guiUpdate.h"
+#include "xcdrdao.h"
 
 BlankCDDialog::BlankCDDialog()
 {
@@ -65,7 +66,7 @@ BlankCDDialog::BlankCDDialog()
     // More Options Button
     auto *moreOptionsButton = Gtk::make_managed<Gtk::Button>();
     auto *moreOptionsBox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL, 4);
-    auto *moreOptionsPixmap = Gtk::make_managed<Gtk::Image>("emblem-system"); // Replacement for Stock::PROPERTIES
+    auto *moreOptionsPixmap = Gtk::make_managed<Gtk::Image>("settings-symbolic");
     auto *moreOptionsLabel = Gtk::make_managed<Gtk::Label>(_("More Options"));
     
     moreOptionsBox->append(*moreOptionsPixmap);
@@ -97,6 +98,26 @@ BlankCDDialog::BlankCDDialog()
     hbox2->append(*startBtn);
     hbox2->append(*cancelBtn);
     vbox_.append(*hbox2);
+
+    // Create dialog boxes
+    ejectWarningDialog = Ask3Box::create(*this,
+					 _("Request"), 0,
+					 { ("Ejecting a CD may block the SCSI bus and"),
+					   _("cause buffer under runs when other devices"), 
+					   _("are still recording."),
+					   "", _("Keep the eject setting anyway?") });
+    ejectWarningDialog->dialogDone.connect(sigc::mem_fun(*this,
+							&BlankCDDialog::checkEjectWarningAsync));
+
+    reloadWarningDialog = Ask3Box::create(*this,
+					  _("Request"), 0,
+					  { _("Reloading a CD may block the SCSI bus and"),
+					    _("cause buffer under runs when other devices"), 
+					    _("are still recording."),
+					    "", _("Keep the reload setting anyway?")});
+    reloadWarningDialog->dialogDone.connect(sigc::mem_fun(*this,
+							  &BlankCDDialog::checkReloadWarningAsync));
+
 }
 
 void BlankCDDialog::moreOptions()
@@ -171,60 +192,39 @@ void BlankCDDialog::startAction()
     }
 
     // Start the warning check chain
-    checkEjectWarningAsync();
+    ejectWarningDialog->choose();
 }
 
-void BlankCDDialog::checkEjectWarningAsync()
+void BlankCDDialog::checkEjectWarningAsync(int result)
 {
-    // If ejecting is requested and warning is enabled
-    if (getEject() && configManager->getEjectWarning()) {
-        auto msg = Gtk::make_managed<Ask3Box>(this, _("Request"), 1, 2, 
-                        _("Ejecting a CD may block the SCSI bus and"),
-                        _("cause buffer under runs when other devices"), 
-                        _("are still recording."),
-                        "", _("Keep the eject setting anyway?"));
-
-        msg->signal_response().connect([this, msg](int response) {
-            if (response == 1) { // keep eject setting
-                if (msg->dontShowAgain()) {
-                    configManager->setEjectWarning(false);
-                }
-                checkReloadWarningAsync(); // Move to next check
-            } else if (response == 2) { // don't keep eject setting
-                ejectButton_->set_active(false);
-                checkReloadWarningAsync(); // Move to next check
-            }
-            // If response is cancel/close, we do nothing (stopping the chain)
-        });
-        msg->show();
-    } else {
-        checkReloadWarningAsync();
+    switch (result) {
+    case 0: // Keep eject setting
+	configManager->setEjectWarning(false);
+	reloadWarningDialog->choose(); // Move to next check
+	break;
+    case 1: // Don't keep eject setting
+	ejectButton_->set_active(false);
+	reloadWarningDialog->choose(); // Move to next check
+	break;
+    default:
+	// If response is cancel/close, we do nothing (stopping the chain)
+	break;
     }
 }
 
-void BlankCDDialog::checkReloadWarningAsync()
+void BlankCDDialog::checkReloadWarningAsync(int result)
 {
-    if (getReload() && configManager->getReloadWarning()) {
-        auto msg = Gtk::make_managed<Ask3Box>(this, _("Request"), 1, 2, 
-                        _("Reloading a CD may block the SCSI bus and"),
-                        _("cause buffer under runs when other devices"), 
-                        _("are still recording."),
-                        "", _("Keep the reload setting anyway?"));
-
-        msg->signal_response().connect([this, msg](int response) {
-            if (response == 1) { // keep reload setting
-                if (msg->dontShowAgain()) {
-                    configManager->setReloadWarning(false);
-                }
-                proceedWithBlanking(); // Final step
-            } else if (response == 2) { // don't keep reload setting
-                reloadButton_->set_active(false);
-                proceedWithBlanking(); // Final step
-            }
-        });
-        msg->show();
-    } else {
-        proceedWithBlanking();
+    switch (result) {
+    case 0: // keep reload setting
+	configManager->setReloadWarning(false);
+	proceedWithBlanking(); // Final step
+	break;
+    case 1: // don't keep reload setting
+	reloadButton_->set_active(false);
+	proceedWithBlanking(); // Final step
+	break;
+    default:
+	break;
     }
 }
 

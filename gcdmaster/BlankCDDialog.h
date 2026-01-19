@@ -21,6 +21,7 @@
 #define __BLANK_CD_DIALOG_H
 
 #include <gtkmm.h>
+#include "MessageBox.h"
 
 class DeviceList;
 
@@ -54,6 +55,9 @@ class BlankCDDialog : public Gtk::Window
     Gtk::SpinButton *speedSpinButton_ = nullptr;
     Gtk::CheckButton *speedButton_ = nullptr;
 
+    Glib::RefPtr<MessageBox> ejectWarningDialog;
+    Glib::RefPtr<MessageBox> reloadWarningDialog;
+
     // Internal Logic Methods
     void stop();
     void startAction();
@@ -62,8 +66,8 @@ class BlankCDDialog : public Gtk::Window
     void speedChanged();
     
     // New Asynchronous Warning Chain
-    void checkEjectWarningAsync();
-    void checkReloadWarningAsync();
+    void checkEjectWarningAsync(int result);
+    void checkReloadWarningAsync(int result);
     void proceedWithBlanking();
 
     // Helper getters

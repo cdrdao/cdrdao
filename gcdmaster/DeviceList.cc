@@ -28,7 +28,6 @@
 #include <gtkmm.h>
 
 #include "DeviceList.h"
-#include "MessageBox.h"
 #include "xcdrdao.h"
 
 #include "CdDevice.h"
@@ -46,25 +45,33 @@ DeviceList::DeviceList(CdDevice::DeviceType filterType)
     list_.append_column(_("Vendor"), listColumns_.vendor);
     list_.append_column(_("Model"), listColumns_.model);
     list_.append_column(_("Status"), listColumns_.status);
+    list_.set_expand(true);
+    list_.set_halign(Gtk::Align::FILL);
 
     auto contents = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL, 10);
 
     // available device list
     auto listHBox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
+    listHBox->set_expand(true);
+    listHBox->set_halign(Gtk::Align::FILL);
+    listHBox->set_margin(5);
     auto listVBox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL);
 
     auto hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
-    hbox->pack_start(list_, TRUE, TRUE);
+    hbox->set_expand(true);
+    hbox->set_halign(Gtk::Align::FILL);
+    hbox->set_margin(5);
+    hbox->append(list_);
 
     Glib::RefPtr<Gtk::Adjustment> adjust = Gtk::Adjustment::create(0.0, 0.0, 0.0);
 
-    Gtk::VScrollbar *scrollBar = new Gtk::VScrollbar(adjust);
-    hbox->pack_start(*scrollBar, FALSE, FALSE);
+    auto scrollBar = new Gtk::Scrollbar(adjust, Gtk::Orientation::VERTICAL);
+    hbox->append(*scrollBar);
 
     list_.set_vadjustment(adjust);
 
-    listHBox->pack_start(*hbox, TRUE, TRUE, 5);
-    listVBox->pack_start(*listHBox, TRUE, TRUE, 5);
+    listHBox->append(*hbox);
+    listVBox->append(*listHBox);
 
     switch (filterType_) {
     case CdDevice::CD_ROM:
@@ -78,23 +85,24 @@ DeviceList::DeviceList(CdDevice::DeviceType filterType)
         break;
     }
 
-    add(*listVBox);
+    set_child(*listVBox);
 }
 
 std::string DeviceList::selection()
 {
-    Gtk::TreeIter i = list_.get_selection()->get_selected();
+    auto selection = list_.get_selection();
+    Gtk::TreeIter i = selection->get_selected();
 
     if (i) {
-        return ((std::string)((*i)[listColumns_.dev])).c_str();
-    } else
-        return std::string();
+	return (*i)[listColumns_.dev];
+    }
+    return std::string();
 }
 
 void DeviceList::appendTableEntry(CdDevice *dev)
 {
-    Gtk::TreeIter newiter = listModel_->append();
-    Gtk::TreeModel::Row row = *newiter;
+    auto newiter = listModel_->append();
+    auto row = *newiter;
     row[listColumns_.dev] = dev->dev();
     row[listColumns_.vendor] = dev->vendor();
     row[listColumns_.model] = dev->product();
@@ -106,37 +114,31 @@ void DeviceList::appendTableEntry(CdDevice *dev)
 
 void DeviceList::import()
 {
-    CdDevice *drun;
-    unsigned int i;
-
     listModel_->clear();
 
-    for (drun = CdDevice::first(); drun != NULL; drun = CdDevice::next(drun)) {
+    for (CdDevice* drun = CdDevice::first(); drun != NULL;
+	 drun = CdDevice::next(drun)) {
+	bool match = false;
         switch (filterType_) {
         case CdDevice::CD_ROM:
-            if (drun->driverId() > 0 &&
-                (drun->deviceType() == CdDevice::CD_ROM || drun->deviceType() == CdDevice::CD_R ||
-                 drun->deviceType() == CdDevice::CD_RW)) {
-                appendTableEntry(drun);
-            }
+	    match = (drun->deviceType() == CdDevice::CD_ROM ||
+		     drun->deviceType() == CdDevice::CD_R ||
+		     drun->deviceType() == CdDevice::CD_RW);
             break;
         case CdDevice::CD_R:
-            if (drun->driverId() > 0 &&
-                (drun->deviceType() == CdDevice::CD_R || drun->deviceType() == CdDevice::CD_RW)) {
-                appendTableEntry(drun);
-            }
+            match = (drun->deviceType() == CdDevice::CD_R ||
+		     drun->deviceType() == CdDevice::CD_RW);
             break;
         case CdDevice::CD_RW:
-            if (drun->driverId() > 0 && (drun->deviceType() == CdDevice::CD_RW)) {
-                appendTableEntry(drun);
-            }
+	    match = (drun->deviceType() == CdDevice::CD_RW);
             break;
         }
+	if (match && drun->driverId() > 0)
+	    appendTableEntry(drun);
     }
-
-    if (listModel_->children().size() > 0) {
+    if (!listModel_->children().empty()) {
         list_.columns_autosize();
-        list_.get_selection()->select(Gtk::TreeModel::Path((unsigned)1));
+	selectOne();
     }
 }
 
@@ -165,37 +167,34 @@ void DeviceList::importStatus()
 
 void DeviceList::selectOne()
 {
-    if (list_.get_selection()->count_selected_rows() > 0)
+    auto selection = list_.get_selection();
+    if (selection->count_selected_rows() > 0)
         return;
 
-    for (unsigned i = 0; i < listModel_->children().size(); i++) {
-        list_.get_selection()->select(Gtk::TreePath(1, i));
-        if (list_.get_selection()->count_selected_rows() > 0)
-            break;
-    }
+    auto children = listModel_->children();
+    if (!children.empty())
+	selection->select(children.begin());
 }
 
-void DeviceList::selectOneBut(const char *targetData)
+void DeviceList::selectOneBut(const std::string& targetData)
 {
-    if (!targetData)
-        return selectOne();
-
-    if (list_.get_selection()->count_selected_rows() == 0) {
-
-        Gtk::TreeNodeChildren ch = listModel_->children();
-
-        for (unsigned i = 0; i < ch.size(); i++) {
-
-            std::string sourceData = (ch[i])[listColumns_.dev];
-
-            if (sourceData != targetData) {
-                list_.get_selection()->select(ch[i]);
-                break;
-            }
-        }
-
-        if (list_.get_selection()->count_selected_rows() == 0) {
-            selectOne();
-        }
+    if (targetData.empty()) {
+        selectOne();
+	return;
     }
+
+    auto selection = list_.get_selection();
+    if (selection->count_selected_rows() > 0)
+	return;
+
+    for (auto const& row : listModel_->children()) {
+	std::string sourceData = row[listColumns_.dev];
+	if (sourceData != targetData) {
+	    selection->select(row.get_iter());
+	    return;
+	}
+    }
+
+    // Fallback if no other device found.
+    selectOne();
 }

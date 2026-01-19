@@ -39,7 +39,7 @@ class DeviceConfDialog : public Gtk::Window
   private:
     bool active_;
 
-    Gtk::TreeIter selectedRow_;
+    Gtk::TreeModel::iterator selectedRow_;
 
     struct DeviceData {
         std::string dev;
@@ -76,8 +76,10 @@ class DeviceConfDialog : public Gtk::Window
     Gtk::Frame settingFrame_;
     Gtk::Frame addDeviceFrame_;
 
-    Gtk::ComboBoxText driverMenu_;
-    Gtk::ComboBoxText devtypeMenu_;
+    Gtk::DropDown driverMenu_;
+    Gtk::DropDown devtypeMenu_;
+    Glib::RefPtr<Gtk::StringList> driverStringList_;
+    Glib::RefPtr<Gtk::StringList> devtypeStringList_;
 
     Gtk::Entry devEntry_;
     Gtk::Entry vendorEntry_;
@@ -98,13 +100,13 @@ class DeviceConfDialog : public Gtk::Window
     void deleteDeviceAction();
     void rescanAction();
 
-    Gtk::TreeIter appendTableEntry(CdDevice *);
+    Gtk::TreeModel::iterator appendTableEntry(CdDevice *);
     void import();
-    void importConfiguration(Gtk::TreeIter);
+    void importConfiguration(Gtk::TreeModel::iterator);
     void importStatus();
 
     void exportData();
-    void exportConfiguration(Gtk::TreeIter);
+    void exportConfiguration(Gtk::TreeModel::iterator);
 };
 
 #endif

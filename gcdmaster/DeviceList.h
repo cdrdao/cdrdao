@@ -35,7 +35,7 @@ class DeviceList : public Gtk::Frame
 
     std::string selection();
     void selectOne();
-    void selectOneBut(const char *targetData);
+    void selectOneBut(const std::string& targetData);
     void appendTableEntry(CdDevice *);
     void import();
     void importStatus();

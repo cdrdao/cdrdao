@@ -63,7 +63,7 @@ AudioCDView::AudioCDView(AudioCDProject *project) : addFileDialog_(project)
     sampleDisplay_->override_font(Pango::FontDescription("Monospace 8"));
     sampleDisplay_->show();
 
-    Gtk::HScrollbar *scrollBar = new Gtk::HScrollbar(sampleDisplay_->getAdjustment());
+    auto scrollBar = new Gtk::Scrollbar(Gtk::Orientation::HORIZONTAL, sampleDisplay_->getAdjustment());
     pack_start(*scrollBar, FALSE, FALSE);
     scrollBar->show();
 
