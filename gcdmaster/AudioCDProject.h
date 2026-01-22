@@ -31,10 +31,10 @@ class TocInfoDialog;
 class CdTextDialog;
 class TocEdit;
 
-#include "Project.h"
 #include "Toc.h"
+#include "gcdmaster.h"
 
-class AudioCDProject : public Project
+class AudioCDProject : public GCDWindow
 {
   public:
     enum PlayStatus {
@@ -43,10 +43,11 @@ class AudioCDProject : public Project
         STOPPED
     };
 
-    AudioCDProject(int number, const char *name, TocEdit *tocEdit, Gtk::Window *parent);
-    ~AudioCDProject();
+    virtual ~AudioCDProject();
+    AudioCDProject(Glib::RefPtr<Gtk::Builder>& builder,
+		   int, const Glib::ustring& path);
 
-    void add_menus(Glib::RefPtr<Gtk::UIManager> m_refUIManager);
+    void add_menus(Glib::RefPtr<Gio::MenuModel> model);
     void configureAppBar(Gtk::Statusbar *s, Gtk::ProgressBar *p, Gtk::Button *b);
 
     bool closeProject();
@@ -70,6 +71,8 @@ class AudioCDProject : public Project
     sigc::signal<void()> signalCancelClicked;
 
   protected:
+    AudioCDProject(int number, const char *name, TocEdit *tocEdit);
+
     Gtk::Button *buttonPlay_;
     Gtk::Button *buttonStop_;
     Gtk::Button *buttonPause_;
@@ -108,13 +111,13 @@ class AudioCDProject : public Project
 
     bool playCallback();
 
-    Gtk::HBox hbox_;
+    Gtk::Box hbox_;
     AudioCDView *audioCDView_;
     TocInfoDialog *tocInfoDialog_;
     CdTextDialog *cdTextDialog_;
-    Glib::RefPtr<Gtk::ActionGroup> m_refActionGroup;
-    Glib::RefPtr<Gtk::ToggleAction> selectToggle_;
-    Glib::RefPtr<Gtk::ToggleAction> zoomToggle_;
+    Glib::RefPtr<Gio::SimpleActionGroup> m_refActionGroup;
+    Glib::RefPtr<Gtk::ToggleButton> selectToggle_;
+    Glib::RefPtr<Gtk::ToggleButton> zoomToggle_;
     void recordToc2CD();
     void projectInfo();
     void cdTextDialog();

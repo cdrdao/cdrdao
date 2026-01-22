@@ -366,7 +366,7 @@ bool CdDevice::recordDao(Gtk::Window &parent, TocEdit *tocEdit, int simulate, in
         return false;
     }
 
-    Glib::ustring execName = configManager->getCdrdaoPath();
+    Glib::ustring execName = CONFIG_MANAGER->getCdrdaoPath();
 
     args[n++] = execName.c_str();
 
@@ -494,7 +494,7 @@ int CdDevice::extractDao(Gtk::Window &parent, const char *tocFileName, int corre
         process_ != NULL)
         return 1;
 
-    Glib::ustring execName = configManager->getCdrdaoPath();
+    Glib::ustring execName = CONFIG_MANAGER->getCdrdaoPath();
 
     args[n++] = execName.c_str();
 
@@ -601,7 +601,7 @@ int CdDevice::duplicateDao(Gtk::Window &parent, int simulate, int multiSession, 
         process_ != NULL)
         return 1;
 
-    Glib::ustring execName = configManager->getCdrdaoPath();
+    Glib::ustring execName = CONFIG_MANAGER->getCdrdaoPath();
 
     args[n++] = execName.c_str();
 
@@ -734,7 +734,7 @@ int CdDevice::blank(Gtk::Window *parent, int fast, int speed, int eject, int rel
         process_ != NULL)
         return 1;
 
-    Glib::ustring execName = configManager->getCdrdaoPath();
+    Glib::ustring execName = CONFIG_MANAGER->getCdrdaoPath();
 
     args[n++] = execName.c_str();
 
@@ -920,7 +920,7 @@ void CdDevice::importSettings()
 {
     CdDevice *dev;
 
-    std::vector<Glib::ustring> settingsStrings = configManager->getConfiguredDevices();
+    std::vector<Glib::ustring> settingsStrings = CONFIG_MANAGER->getConfiguredDevices();
     std::vector<Glib::ustring>::iterator i;
 
     for (i = settingsStrings.begin(); i != settingsStrings.end(); ++i) {
@@ -950,7 +950,7 @@ void CdDevice::exportSettings()
     }
 
     try {
-        configManager->setConfiguredDevices(settingStrings);
+        CONFIG_MANAGER->setConfiguredDevices(settingStrings);
     } catch (const Glib::Error &e) {
         std::cerr << e.what() << std::endl;
     }

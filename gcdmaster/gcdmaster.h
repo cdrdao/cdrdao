@@ -27,38 +27,46 @@
 
 class ProjectChooser;
 class BlankCDDialog;
+class BlankCDDialog;
+class TocEdit;
+class PreferencesDialog;
 
-#include "BlankCDDialog.h"
+// This is the "top-level" application, acting as a singleton
 
-// This is the "top-level" application, acting as a singleton 
+class GCDWindow : public Gtk::ApplicationWindow
+{
+public:
+    GCDWindow();
+
+    void update(unsigned long level);
+};
 
 class GCDMaster : public Gtk::Application
 {
   public:
     GCDMaster();
 
-    void openNewProject(const Glib::ustring& path);
-    void newAudioCDProject(const char* name = NULL,
-                           TocEdit* tocEdit = NULL);
+    void openNewProject(const Glib::ustring path);
+    void newEmptyProject();
     void update(unsigned long level);
 
   private:
-    BlankCDDialog blankCDDialog_;
     Glib::RefPtr<Gtk::Builder> builder_;
 
     void on_startup() override;
-    vond on_activate() override;
+    void on_activate() override;
     void on_action_quit();
     void on_action_preferences();
     void on_action_about();
     void on_action_blank_cdrw();
     void on_action_open();
-    void on_open(const type_vec_file& files, const Glib::ustring& hint) override;
+    void on_action_open_finish(const Glib::RefPtr<Gio::AsyncResult>&);
+    void on_open(const type_vec_files& files, const Glib::ustring& hint) override;
 
     // Windows
     Glib::RefPtr<PreferencesDialog> preferences_;
     Glib::RefPtr<Gtk::AboutDialog> about_;
-    Glib::RefPtr<BlankCDWindow>    blankCDWindow_;
+    Glib::RefPtr<BlankCDDialog> blankCDDialog_;
     Glib::RefPtr<Gtk::FileDialog> openFileChooser_;
     Glib::RefPtr<Gtk::FileFilter> openFilter_;
     Glib::RefPtr<Gtk::FileFilter> allFilter_;

@@ -76,7 +76,7 @@ void PreferencesDialog::show()
 
 void PreferencesDialog::readFromGConf()
 {
-    _tempDirEntry->set_text(configManager->getTempDir());
+    _tempDirEntry->set_text(CONFIG_MANAGER->getTempDir());
 }
 
 bool PreferencesDialog::saveToGConf()
@@ -93,7 +93,7 @@ bool PreferencesDialog::saveToGConf()
     }
 
     try {
-        configManager->setTempDir(text);
+        CONFIG_MANAGER->setTempDir(text);
     } catch (const Glib::Error &error) {
         std::cerr << error.what() << std::endl;
     }

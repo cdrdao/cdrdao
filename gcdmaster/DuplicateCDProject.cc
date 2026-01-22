@@ -134,9 +134,9 @@ void DuplicateCDProject::start()
             // If the user selects the same device for reading and writing
             // we can't do on the fly copying. More complex situations with
             // multiple target devices are not handled
-            if (configManager->getDuplicateOnTheFlyWarning()) {
+            if (CONFIG_MANAGER->getDuplicateOnTheFlyWarning()) {
 		onTheFlyError->choose();
-		configManager->setDuplicateOnTheFlyWarning(false);
+		CONFIG_MANAGER->setDuplicateOnTheFlyWarning(false);
 		return;
             }
         }

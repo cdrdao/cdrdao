@@ -21,16 +21,22 @@
 #define __PREFERENCES_DIALOG_H
 
 #include <gtkmm.h>
+#include "gcdmaster.h"
 
-class PreferencesDialog : public Gtk::Dialog
+class PreferencesDialog : public GCDWindow
 {
   public:
-    PreferencesDialog(BaseObjectType *cobject, const Glib::RefPtr<Gtk::Builder> &refBuilder);
     virtual ~PreferencesDialog();
 
+    static Glib::RefPtr<PreferencesDialog> create(Glib::RefPtr<Gtk::Builder>& builder);
+
     void show();
+    void update(unsigned long level);
 
   protected:
+    PreferencesDialog(BaseObjectType *cobject,
+		      const Glib::RefPtr<Gtk::Builder> &refBuilder);
+
     void readFromGConf();
     bool saveToGConf();
     void on_button_apply();

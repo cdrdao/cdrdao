@@ -257,7 +257,7 @@ int RecordCDTarget::checkEjectWarning(Gtk::Window *parent)
     // If ejecting the CD after recording is requested issue a warning message
     // because buffer under runs may occur for other devices that are recording.
     if (getEject()) {
-        if (configManager->getEjectWarning()) {
+        if (CONFIG_MANAGER->getEjectWarning()) {
             Ask3Box msg(parent, "Request", 1, 2, "Ejecting a CD may block the SCSI bus and",
                         "cause buffer under runs when other devices", "are still recording.", "",
                         "Keep the eject setting anyway?", NULL);
@@ -265,7 +265,7 @@ int RecordCDTarget::checkEjectWarning(Gtk::Window *parent)
             switch (msg.run()) {
             case 1: // keep eject setting
                 if (msg.dontShowAgain()) {
-                    configManager->setEjectWarning(false);
+                    CONFIG_MANAGER->setEjectWarning(false);
                 }
                 return 1;
                 break;
@@ -295,7 +295,7 @@ int RecordCDTarget::checkReloadWarning(Gtk::Window *parent)
 {
     // The same is true for reloading the disk.
     if (getReload()) {
-        if (configManager->getReloadWarning()) {
+        if (CONFIG_MANAGER->getReloadWarning()) {
             Ask3Box msg(parent, "Request", 1, 2, "Reloading a CD may block the SCSI bus and",
                         "cause buffer under runs when other devices", "are still recording.", "",
                         "Keep the reload setting anyway?", NULL);
@@ -303,7 +303,7 @@ int RecordCDTarget::checkReloadWarning(Gtk::Window *parent)
             switch (msg.run()) {
             case 1: // keep reload setting
                 if (msg.dontShowAgain()) {
-                    configManager->setReloadWarning(false);
+                    CONFIG_MANAGER->setReloadWarning(false);
                 }
                 return 1;
                 break;

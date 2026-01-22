@@ -22,23 +22,23 @@
 
 #include <gtkmm.h>
 #include "MessageBox.h"
+#include "gcdmaster.h"
 
 class DeviceList;
 
-class BlankCDDialog : public Gtk::Window
+class BlankCDDialog : public GCDWindow
 {
   public:
     BlankCDDialog();
     // Added virtual destructor for proper cleanup in GTK4
     virtual ~BlankCDDialog() = default;
 
-    void start(Gtk::Window &parent);
+    void start();
     void update(unsigned long level);
 
   private:
     // UI Components
     DeviceList *Devices;
-    Gtk::Window *parent_ = nullptr;
     Gtk::Box vbox_{Gtk::Orientation::VERTICAL, 10};
 
     bool active_ = false;

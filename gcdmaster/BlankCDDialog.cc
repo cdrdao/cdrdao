@@ -158,12 +158,10 @@ void BlankCDDialog::moreOptions()
     moreOptionsDialog_->set_visible(true);
 }
 
-void BlankCDDialog::start(Gtk::Window &parent)
+void BlankCDDialog::start()
 {
-    set_transient_for(parent);
     set_visible(true);
     active_ = true;
-    parent_ = &parent;
     update(UPD_CD_DEVICES);
 }
 
@@ -199,7 +197,7 @@ void BlankCDDialog::checkEjectWarningAsync(int result)
 {
     switch (result) {
     case 0: // Keep eject setting
-	configManager->setEjectWarning(false);
+	CONFIG_MANAGER->setEjectWarning(false);
 	reloadWarningDialog->choose(); // Move to next check
 	break;
     case 1: // Don't keep eject setting
@@ -216,7 +214,7 @@ void BlankCDDialog::checkReloadWarningAsync(int result)
 {
     switch (result) {
     case 0: // keep reload setting
-	configManager->setReloadWarning(false);
+	CONFIG_MANAGER->setReloadWarning(false);
 	proceedWithBlanking(); // Final step
 	break;
     case 1: // don't keep reload setting
@@ -239,7 +237,7 @@ void BlankCDDialog::proceedWithBlanking()
     CdDevice *writeDevice = CdDevice::find(targetData.c_str());
 
     if (writeDevice) {
-        if (writeDevice->blank(parent_, fast, burnSpeed, eject, reload) != 0) {
+        if (writeDevice->blank(this, fast, burnSpeed, eject, reload) != 0) {
             auto *d = Gtk::make_managed<Gtk::MessageDialog>(*this, _("Cannot start blanking"), 
                                                            false, Gtk::MessageType::ERROR, Gtk::ButtonsType::OK, true);
             d->signal_response().connect([d](int) { d->hide(); });

@@ -41,8 +41,11 @@
 #include "util.h"
 #include "xcdrdao.h"
 
-AudioCDProject::AudioCDProject(int number, const char *name, TocEdit *tocEdit, Gtk::Window *parent)
-    : Project(parent)
+AudioCDProject::AudioCDProject(int number, const Glib::ustring& path)
+{
+}
+
+AudioCDProject::AudioCDProject(int number, const char *name, TocEdit *tocEdit)
 {
     tocInfoDialog_ = NULL;
     cdTextDialog_ = NULL;
@@ -52,7 +55,6 @@ AudioCDProject::AudioCDProject(int number, const char *name, TocEdit *tocEdit, G
     buttonPause_ = NULL;
     audioCDView_ = NULL;
 
-    parent_ = parent;
     pack_start(hbox_);
 
     projectNumber_ = number;
@@ -247,7 +249,7 @@ void AudioCDProject::status(const char *msg)
 
 void AudioCDProject::errorDialog(const char *msg)
 {
-    Gtk::MessageDialog md(*(getParentWindow()), msg, false, Gtk::MESSAGE_ERROR);
+    Gtk::MessageDialog md(this, msg, false, Gtk::MESSAGE_ERROR);
     md.run();
 }
 
@@ -258,12 +260,11 @@ void AudioCDProject::progress(double val)
 
 void AudioCDProject::spin(bool val)
 {
-    auto window = parent_->get_window();
     if (val) {
-        auto busy = Gdk::Cursor::create(window->get_display(), Gdk::WATCH);
-        window->set_cursor(busy);
+        auto busy = Gdk::Cursor::create(get_display(), Gdk::WATCH);
+        set_cursor(busy);
     } else {
-        window->set_cursor();
+        set_cursor();
     }
 }
 
@@ -288,15 +289,11 @@ bool AudioCDProject::closeProject()
 {
     if (tocEdit_->tocDirty()) {
 
-        // Project window might be iconified and user might have forgotten
-        // about it (Quit can be called on another project window).
-        getParentWindow()->present();
-
         Glib::ustring message = "Project ";
         message += tocEdit_->filename();
         message += " not saved. Are you sure you want to close it ?";
 
-        Gtk::MessageDialog d(*getParentWindow(), message, false, Gtk::MESSAGE_QUESTION,
+        Gtk::MessageDialog d(*this, message, false, Gtk::MESSAGE_QUESTION,
                              Gtk::BUTTONS_YES_NO, true);
 
         int ret = d.run();
@@ -334,13 +331,13 @@ void AudioCDProject::recordToc2CD()
     if (recordTocDialog_ == NULL)
         recordTocDialog_ = new RecordTocDialog(tocEdit_);
 
-    recordTocDialog_->start(parent_);
+    recordTocDialog_->start(this);
 }
 
 void AudioCDProject::projectInfo()
 {
     if (!tocInfoDialog_)
-        tocInfoDialog_ = new TocInfoDialog(parent_);
+        tocInfoDialog_ = new TocInfoDialog(this);
 
     tocInfoDialog_->start(tocEdit_);
 }
