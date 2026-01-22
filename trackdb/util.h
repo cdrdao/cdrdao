@@ -69,6 +69,7 @@ enum class FileExtension {
 };
 
 FileExtension fileExtension(const char *fname);
+FileExtension fileExtension(const std::string& path);
 
 enum class Encoding {
     UNSET,

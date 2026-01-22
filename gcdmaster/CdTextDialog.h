@@ -34,8 +34,6 @@ class CdTextDialog : public Gtk::Dialog
     CdTextDialog();
     ~CdTextDialog();
 
-    bool on_delete_event(GdkEventAny *);
-
     void update(unsigned long, TocEdit *);
 
     void start(TocEdit *);
@@ -54,7 +52,7 @@ class CdTextDialog : public Gtk::Dialog
         Gtk::Entry *performer;
         Gtk::Entry *title;
         Gtk::Label *label;
-        Gtk::HBox *hbox;
+        Gtk::Box *hbox;
     };
 
     struct Language {

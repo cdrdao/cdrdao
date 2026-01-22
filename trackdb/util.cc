@@ -31,6 +31,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <filesystem>
 
 #include "Sample.h"
 #include "log.h"
@@ -289,6 +290,17 @@ FileExtension fileExtension(const char *fname)
     }
 
     return FileExtension::UNKNOWN;
+}
+
+FileExtension fileExtension(const std::string& path)
+{
+    std::filesystem::path file_path(path);
+    auto ext = file_path.extension();
+
+    if (ext.length() <= 1)
+	return FileExtension::UNKNOWN;
+
+    return fileExtension(ext.c_str()[1]);
 }
 
 string to_utf8(const u8 *input, size_t input_size, Util::Encoding enc)

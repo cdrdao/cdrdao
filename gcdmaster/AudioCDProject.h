@@ -30,6 +30,7 @@ class AudioCDView;
 class TocInfoDialog;
 class CdTextDialog;
 class TocEdit;
+class RecordTocDialog;
 
 #include "Toc.h"
 #include "gcdmaster.h"
@@ -71,8 +72,6 @@ class AudioCDProject : public GCDWindow
     sigc::signal<void()> signalCancelClicked;
 
   protected:
-    AudioCDProject(int number, const char *name, TocEdit *tocEdit);
-
     Gtk::Button *buttonPlay_;
     Gtk::Button *buttonStop_;
     Gtk::Button *buttonPause_;
@@ -94,13 +93,20 @@ class AudioCDProject : public GCDWindow
     virtual void fullView();
     virtual void sampleSelect(unsigned long, unsigned long);
 
+    virtual void updateWindowTitle();
+
     void playStart();
     void playStart(unsigned long start, unsigned long end);
     void playPause();
     void playStop();
 
+    Glib::RefPtr<TocEdit> tocEdit_;
+
   private:
     TocReader tocReader;
+    Glib::RefPtr<Gtk::Builder> builder_;
+    int projectNumber_;
+    bool new_ = true;
 
     SoundIF *soundInterface_;
     unsigned long playLength_; // remaining play length
@@ -111,10 +117,12 @@ class AudioCDProject : public GCDWindow
 
     bool playCallback();
 
+
     Gtk::Box hbox_;
     AudioCDView *audioCDView_;
-    TocInfoDialog *tocInfoDialog_;
-    CdTextDialog *cdTextDialog_;
+    Glib::RefPtr<RecordTocDialog> recordTocDialog_;
+    Glib::RefPtr<TocInfoDialog> tocInfoDialog_;
+    Glib::RefPtr<CdTextDialog> cdTextDialog_;
     Glib::RefPtr<Gio::SimpleActionGroup> m_refActionGroup;
     Glib::RefPtr<Gtk::ToggleButton> selectToggle_;
     Glib::RefPtr<Gtk::ToggleButton> zoomToggle_;

@@ -43,7 +43,7 @@ class AudioCDView : public GenericView
   public:
     AudioCDView(AudioCDProject *project);
     ~AudioCDView();
-    void add_menus(Glib::RefPtr<Gtk::UIManager> m_refUIManager);
+    void add_menus();
     sigc::signal<void()> add_view;
 
     void update(unsigned long level = 0);
@@ -68,7 +68,7 @@ class AudioCDView : public GenericView
   private:
     AudioCDProject *project_;
 
-    Glib::RefPtr<Gtk::ActionGroup> m_refActionGroup;
+    Glib::RefPtr<Gio::SimpleActionGroup> m_refActionGroup;
 
     TrackInfoDialog *trackInfoDialog_;
     AddFileDialog addFileDialog_;
@@ -113,8 +113,8 @@ class AudioCDView : public GenericView
 
     void selectionSet();
 
-    void drag_data_received_cb(const Glib::RefPtr<Gdk::DragContext> &context, int x, int y,
-                               const Gtk::SelectionData &selection_data, guint info, guint time);
+    void drag_data_received_cb(const Glib::ValueBase& value,
+			       double x, double y);
 };
 
 #endif

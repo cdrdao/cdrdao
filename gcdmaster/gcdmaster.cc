@@ -33,6 +33,11 @@
 #include "guiUpdate.h"
 #include "util.h"
 
+GCDWindow::GCDWindow()
+{
+    set_icon_name("gcdmaster");
+}
+
 GCDMaster::GCDMaster()
     : Gtk::Application("org.gnome.gcdmaster", Gio::Application::Flags::HANDLES_OPEN)
 {

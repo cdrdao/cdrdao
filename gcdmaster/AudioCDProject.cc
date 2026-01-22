@@ -24,6 +24,8 @@
 #include <cstring>
 #include <glibmm/i18n.h>
 #include <gtkmm.h>
+#include <filesystem>
+#include <iostream>
 
 #include "AudioCDProject.h"
 #include "AudioCDView.h"
@@ -41,12 +43,34 @@
 #include "util.h"
 #include "xcdrdao.h"
 
-AudioCDProject::AudioCDProject(int number, const Glib::ustring& path)
+AudioCDProject::AudioCDProject(Glib::RefPtr<Gtk::Builder>& builder,
+			       int number, const Glib::ustring& path)
+    : projectNumber_(number), builder_(builder)
 {
-}
+    if (path.empty()) {
+        tocEdit_ = Glib::make_refptr_for_instance<TocEdit>(new TocEdit(NULL, NULL));
+    } else {
+	auto ext = Util::fileExtension(path);
+ 
+	switch (ext) {
+	case Util::FileExtension::TOC:
+	case Util::FileExtension::CUE:
+	    tocEdit_ = Glib::make_refptr_for_instance<TocEdit>(new TocEdit(NULL, NULL));
+	    if (tocEdit_->readToc(path.c_str()) != 0)
+		throw std::runtime_error("Could not parse TOC file");
+	    break;
+	default:
+	    throw std::runtime_error("Unrecognized format");
+	}
 
-AudioCDProject::AudioCDProject(int number, const char *name, TocEdit *tocEdit)
-{
+	if (ext == Util::FileExtension::TOC) {
+	    new_ = false;
+	    std::ostringstream oss;
+	    oss << "unnamed-" << projectNumber_ << ".toc";
+	    tocEdit_->filename(oss.str().c_str());
+	}
+    }
+
     tocInfoDialog_ = NULL;
     cdTextDialog_ = NULL;
     soundInterface_ = NULL;
@@ -55,18 +79,11 @@ AudioCDProject::AudioCDProject(int number, const char *name, TocEdit *tocEdit)
     buttonPause_ = NULL;
     audioCDView_ = NULL;
 
-    pack_start(hbox_);
-
-    projectNumber_ = number;
+    set_child(hbox_);
 
     playStatus_ = STOPPED;
     playBurst_ = 588 * 10;
     playBuffer_ = new Sample[playBurst_];
-
-    if (tocEdit == NULL)
-        tocEdit_ = new TocEdit(NULL, NULL);
-    else
-        tocEdit_ = tocEdit;
 
     // Connect TocEdit signals to us.
     tocEdit_->signalStatusMessage.connect(sigc::mem_fun(*this, &AudioCDProject::status));
@@ -80,23 +97,15 @@ AudioCDProject::AudioCDProject(int number, const char *name, TocEdit *tocEdit)
     if (tocEdit_->isQueueActive())
         cancelEnable(true);
 
-    if (!name || strlen(name) == 0) {
-        char buf[20];
-        snprintf(buf, sizeof(buf), "unnamed-%i.toc", projectNumber_);
-        tocEdit_->filename(buf);
-        new_ = true;
-    } else {
-        new_ = false; // The project file already exists
-    }
-
     audioCDView_ = new AudioCDView(this);
-    hbox_.pack_start(*audioCDView_, TRUE, TRUE);
+    audioCDView_->set_expand(true);
+    hbox_.append(*audioCDView_);
     audioCDView_->tocEditView()->sampleViewFull();
 
     updateWindowTitle();
 
     guiUpdate(UPD_ALL);
-    show_all();
+    present();
 }
 
 AudioCDProject::~AudioCDProject()
@@ -105,7 +114,17 @@ AudioCDProject::~AudioCDProject()
 	delete playBuffer_;
 }
 
-void AudioCDProject::add_menus(Glib::RefPtr<Gtk::UIManager> m_refUIManager)
+void AudioCDProject::updateWindowTitle()
+{
+    std::string s(tocEdit_->filename());
+    s += " - ";
+    if (tocEdit_->tocDirty())
+        s += " (*)";
+
+    set_title(s);
+}
+
+void AudioCDProject::add_menus()
 {
     m_refActionGroup = Gtk::ActionGroup::create("AudioCDProject");
 
@@ -311,25 +330,14 @@ bool AudioCDProject::closeProject()
         playStop();
     }
 
-    if (audioCDView_) {
-        delete audioCDView_;
-        audioCDView_ = NULL;
-    }
-
-    if (tocInfoDialog_)
-        delete tocInfoDialog_;
-    if (cdTextDialog_)
-        delete cdTextDialog_;
-    if (recordTocDialog_)
-        delete recordTocDialog_;
-
     return true;
 }
 
 void AudioCDProject::recordToc2CD()
 {
-    if (recordTocDialog_ == NULL)
-        recordTocDialog_ = new RecordTocDialog(tocEdit_);
+    if (!recordTocDialog_)
+        recordTocDialog_ = Glib::make_refptr_for_instance<RecordTocDialog>(
+	    new RecordTocDialog(tocEdit_));
 
     recordTocDialog_->start(this);
 }
@@ -337,7 +345,8 @@ void AudioCDProject::recordToc2CD()
 void AudioCDProject::projectInfo()
 {
     if (!tocInfoDialog_)
-        tocInfoDialog_ = new TocInfoDialog(this);
+        tocInfoDialog_ = Glib::make_refptr_for_instance<TocInfoDialog>(
+	    new TocInfoDialog(this));
 
     tocInfoDialog_->start(tocEdit_);
 }
@@ -345,7 +354,8 @@ void AudioCDProject::projectInfo()
 void AudioCDProject::cdTextDialog()
 {
     if (cdTextDialog_ == 0)
-        cdTextDialog_ = new CdTextDialog();
+        cdTextDialog_ = Glib::make_refptr_for_instance<CdTextDialog>(
+	    new CdTextDialog());
 
     cdTextDialog_->start(tocEdit_);
 }

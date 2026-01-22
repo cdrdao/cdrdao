@@ -34,8 +34,6 @@ class TocInfoDialog : public Gtk::Dialog
     TocInfoDialog(Gtk::Window *parent);
     ~TocInfoDialog();
 
-    bool on_delete_event(GdkEventAny *);
-
     void update(unsigned long, TocEdit *);
 
     void start(TocEdit *);

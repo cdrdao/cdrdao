@@ -134,12 +134,6 @@ void RecordTocDialog::update(unsigned long level)
         CDTarget->getDeviceList()->selectOne();
 }
 
-bool RecordTocDialog::on_delete_event(GdkEventAny *)
-{
-    stop();
-    return 1;
-}
-
 void RecordTocDialog::startAction()
 {
     if (tocEdit_ == NULL)

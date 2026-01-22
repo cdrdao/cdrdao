@@ -40,14 +40,12 @@ class RecordTocDialog : public Gtk::Window
     TocEdit *tocEdit_;
     bool active_;
 
-    Gtk::RadioButton *simulate_rb;
-    Gtk::RadioButton *simulateBurn_rb;
-    Gtk::RadioButton *burn_rb;
+    Gtk::Button *simulate_rb;
+    Gtk::Button *simulateBurn_rb;
+    Gtk::Button *burn_rb;
 
     void stop();
     void startAction();
-
-    bool on_delete_event(GdkEventAny *);
 };
 
 #endif
