@@ -48,10 +48,12 @@ class AudioCDProject : public GCDWindow
     AudioCDProject(Glib::RefPtr<Gtk::Builder>& builder,
 		   int, const Glib::ustring& path);
 
-    void add_menus(Glib::RefPtr<Gio::MenuModel> model);
     void configureAppBar(Gtk::Statusbar *s, Gtk::ProgressBar *p, Gtk::Button *b);
 
     bool closeProject();
+    void saveProject();
+    void saveAsProject();
+    void recordToc2CD();
 
     unsigned long playPosition();
 
@@ -126,7 +128,6 @@ class AudioCDProject : public GCDWindow
     Glib::RefPtr<Gio::SimpleActionGroup> m_refActionGroup;
     Glib::RefPtr<Gtk::ToggleButton> selectToggle_;
     Glib::RefPtr<Gtk::ToggleButton> zoomToggle_;
-    void recordToc2CD();
     void projectInfo();
     void cdTextDialog();
     void update(unsigned long level);

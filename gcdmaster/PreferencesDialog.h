@@ -28,7 +28,8 @@ class PreferencesDialog : public GCDWindow
   public:
     virtual ~PreferencesDialog();
 
-    static Glib::RefPtr<PreferencesDialog> create(Glib::RefPtr<Gtk::Builder>& builder);
+    static PreferencesDialog* create(Glib::RefPtr<Gtk::Builder>& builder,
+				     Gtk::Window& parent);
 
     void show();
     void update(unsigned long level);

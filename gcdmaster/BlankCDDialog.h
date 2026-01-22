@@ -29,14 +29,18 @@ class DeviceList;
 class BlankCDDialog : public GCDWindow
 {
   public:
-    BlankCDDialog();
     // Added virtual destructor for proper cleanup in GTK4
     virtual ~BlankCDDialog() = default;
+
+    static BlankCDDialog* create(Glib::RefPtr<Gtk::Builder> builder,
+				 Gtk::Window& parent);
 
     void start();
     void update(unsigned long level);
 
   private:
+    BlankCDDialog();
+
     // UI Components
     DeviceList *Devices;
     Gtk::Box vbox_{Gtk::Orientation::VERTICAL, 10};

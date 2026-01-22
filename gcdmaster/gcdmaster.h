@@ -64,9 +64,7 @@ class GCDMaster : public Gtk::Application
     void on_open(const type_vec_files& files, const Glib::ustring& hint) override;
 
     // Windows
-    Glib::RefPtr<PreferencesDialog> preferences_;
     Glib::RefPtr<Gtk::AboutDialog> about_;
-    Glib::RefPtr<BlankCDDialog> blankCDDialog_;
     Glib::RefPtr<Gtk::FileDialog> openFileChooser_;
     Glib::RefPtr<Gtk::FileFilter> openFilter_;
     Glib::RefPtr<Gtk::FileFilter> allFilter_;

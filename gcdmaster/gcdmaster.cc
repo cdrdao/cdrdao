@@ -88,19 +88,10 @@ void GCDMaster::on_startup()
         return;
     }
 
-    // Create BlankCDRW window
-    blankCDDialog_ = Glib::make_refptr_for_instance<BlankCDDialog>(new BlankCDDialog());
-    add_window(*blankCDDialog_);
-    blankCDDialog_->start();
-
-    // Create Preferences window
-    preferences_ = PreferencesDialog::create(builder_);
-
     // Add actions
     add_action("preferences",
                sigc::mem_fun(*this, &GCDMaster::on_action_preferences));
     add_action("quit", sigc::mem_fun(*this, &GCDMaster::on_action_quit));
-    set_accel_for_action("app.quit", "<Ctrl>Q");
     add_action("new",
                sigc::mem_fun(*this, &GCDMaster::newEmptyProject));
     add_action("about",
@@ -110,6 +101,7 @@ void GCDMaster::on_startup()
     add_action("open",
                sigc::mem_fun(*this, &GCDMaster::on_action_open));
 
+    set_accel_for_action("app.quit", "<Primary>Q");
     set_accel_for_action("app.new", "<Primary>n");
     set_accel_for_action("app.open", "<Primary>o");
 
@@ -183,17 +175,22 @@ void GCDMaster::on_action_open_finish(const Glib::RefPtr<Gio::AsyncResult>& resu
 
 void GCDMaster::on_action_quit()
 {
-    auto windows = get_windows();
-    for (auto window : windows)
-        window->hide();
-
+    for (auto window : get_windows())
+	remove_window(*window);
     quit();
 }
 
 void GCDMaster::on_action_preferences()
 {
-    preferences_->set_transient_for(*get_active_window());
-    preferences_->present();
+    try {
+	auto preferences = PreferencesDialog::create(builder_,
+						     *get_active_window());
+	preferences->present();
+	preferences->signal_hide().connect([preferences](){ delete preferences; });
+    } catch (const std::exception& ex)
+    {
+	std::cerr << "Preferences: " << ex.what() << "\n";
+    }
 }
 
 // Called only when gcdmaster is called without open arguments.
@@ -205,12 +202,20 @@ void GCDMaster::on_activate()
 
 void GCDMaster::on_action_about()
 {
-    preferences_->set_transient_for(*get_active_window());
+    about_->set_transient_for(*get_active_window());
     about_->present();
 }
 
 void GCDMaster::on_action_blank_cdrw()
 {
-    preferences_->set_transient_for(*get_active_window());
-    blankCDDialog_->present();
+    try {
+	auto blanker = BlankCDDialog::create(builder_,
+					     *get_active_window());
+	blanker->start();
+	blanker->present();
+	blanker->signal_hide().connect([blanker](){ delete blanker; });
+    } catch (const std::exception& ex)
+    {
+        std::cerr << "Blank CD/RW: " << ex.what() << "\n";
+    }
 }
