@@ -27,60 +27,44 @@
 
 class ProjectChooser;
 class BlankCDDialog;
-#include "BlankCDDialog.h"
-#include "Project.h"
 
-class GCDMaster : public Gtk::ApplicationWindow
+#include "BlankCDDialog.h"
+
+// This is the "top-level" application, acting as a singleton 
+
+class GCDMaster : public Gtk::Application
 {
   public:
     GCDMaster();
 
-    bool closeProject();
-    void closeProjectAction();
-    void closeChooser();
-    bool on_close_request() override;
-    bool openNewProject(const std::string &);
-    void openProject();
-    void newChooserWindow();
-    void newAudioCDProject2();
-    void newAudioCDProject(const char *name, TocEdit *tocEdit, const char *tracks = NULL);
-    void newDuplicateCDProject();
-    void newDumpCDProject();
-
+    void openNewProject(const Glib::ustring& path);
+    void newAudioCDProject(const char* name = NULL,
+                           TocEdit* tocEdit = NULL);
     void update(unsigned long level);
 
-    void configureDevices();
-    void configurePreferences();
-    void blankCDRW();
-
-    void registerStockIcons();
-
-    static void appClose();
-
-    static std::list<GCDMaster *> apps;
-
   private:
-    Project *project_ = nullptr;
-    ProjectChooser *chooser_ = nullptr;
-    gint project_number = 0;
-
     BlankCDDialog blankCDDialog_;
+    Glib::RefPtr<Gtk::Builder> builder_;
 
-    Gtk::Box box_;
-    Gtk::Notebook notebook_;
-    Gtk::Box *container_;
+    void on_startup() override;
+    vond on_activate() override;
+    void on_action_quit();
+    void on_action_preferences();
+    void on_action_about();
+    void on_action_blank_cdrw();
+    void on_action_open();
+    void on_open(const type_vec_file& files, const Glib::ustring& hint) override;
 
-    Gtk::Statusbar *statusbar_;
-    Gtk::ProgressBar *progressbar_;
-    Gtk::Spinner *spinner_;
-    Gtk::Button *progressButton_;
-    Gtk::AboutDialog about_;
+    // Windows
+    Glib::RefPtr<PreferencesDialog> preferences_;
+    Glib::RefPtr<Gtk::AboutDialog> about_;
+    Glib::RefPtr<BlankCDWindow>    blankCDWindow_;
+    Glib::RefPtr<Gtk::FileDialog> openFileChooser_;
+    Glib::RefPtr<Gtk::FileFilter> openFilter_;
+    Glib::RefPtr<Gtk::FileFilter> allFilter_;
 
-    Gtk::FileChooserDialog *readFileSelector_;
-    void createMenus();
-    void createStatusbar();
-    void aboutDialog();
-    void on_file_dialog_response(int response, Gtk::FileChooserDialog* dialog);
+    int argc;
+    char* argv[];
 };
 
 #endif

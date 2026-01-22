@@ -22,402 +22,188 @@
 
 #include "config.h"
 
+#include "xcdrdao.h"
 #include "AudioCDProject.h"
 #include "BlankCDDialog.h"
 #include "DeviceConfDialog.h"
-#include "DumpCDProject.h"
-#include "DuplicateCDProject.h"
 #include "Icons.h"
 #include "PreferencesDialog.h"
-#include "ProjectChooser.h"
 #include "TocEdit.h"
 #include "gcdmaster.h"
 #include "guiUpdate.h"
 #include "util.h"
-#include "xcdrdao.h"
-
-// Static class members
-std::list<GCDMaster *> GCDMaster::apps;
 
 GCDMaster::GCDMaster()
+    : Gtk::Application("org.gnome.gcdmaster", Gio::Application::HANDLES_OPEN)
 {
-    set_title(APP_NAME);
-    set_resizable();
-
-    readFileSelector_ =
-        new Gtk::FileChooserDialog(_("Please select a project"), Gtk::FileChooser::Action::OPEN);
-    readFileSelector_->set_transient_for(*this);
-    readFileSelector_->add_button(_("_Cancel"), Gtk::ResponseType::CANCEL);
-    readFileSelector_->add_button(_("_Open"), Gtk::ResponseType::OK);
-
-    auto filter_tocs = Gtk::FileFilter::create();
-#ifdef HAVE_MP3_SUPPORT
-    filter_tocs->set_name("Content Files (*.toc, *.cue, *.m3u)");
-#else
-    filter_tocs->set_name("Content Files (*.toc, *.cue)");
-#endif
-    filter_tocs->add_pattern("*.toc");
-    filter_tocs->add_pattern("*.cue");
-#ifdef HAVE_MP3_SUPPORT
-    filter_tocs->add_pattern("*.m3u");
-#endif
-    readFileSelector_->add_filter(filter_tocs);
-
-    auto filter_all = Gtk::FileFilter::create();
-    filter_all->set_name("Any files");
-    filter_all->add_pattern("*");
-    readFileSelector_->add_filter(filter_all);
-
-    Icons::registerIcons();
-    notebook_.set_show_border(false);
-    notebook_.show();
-
-    set_child(box_);
-    box_.set_orientation(Gtk::Orientation::VERTICAL);
-
-    createMenus();
-    createStatusbar();
-
-    box_.append(notebook_);
-    box_.append(*container_);
-
-    if (!apps.empty())
-        set_application(app);
-
-    apps.push_back(this);
+    builder_ = Gtk::Builder::create();
 }
 
-void GCDMaster::createMenus()
+void GCDMaster::on_open(const type_vec_file& files, const Glib::ustring& hint)
 {
-    // Create menu using Gio::Menu instead of deprecated UIManager
-    auto menu = Gio::Menu::create();
-    
-    // File menu
-    auto file_menu = Gio::Menu::create();
-    auto file_new_menu = Gio::Menu::create();
-    file_new_menu->append(_("_Audio CD"), "win.new-audio-cd");
-    file_new_menu->append(_("_Duplicate CD"), "win.new-duplicate-cd");
-    file_new_menu->append(_("_Copy CD to disk"), "win.new-dump-cd");
-    
-    file_menu->append_submenu(_("N_ew"), file_new_menu);
-    file_menu->append(_("_Open"), "win.open");
-    file_menu->append(_("_Close"), "win.close");
-    file_menu->append(_("_Quit"), "app.quit");
-    menu->append_submenu(_("_File"), file_menu);
-    
-    // Edit menu
-    auto edit_menu = Gio::Menu::create();
-    menu->append_submenu(_("_Edit"), edit_menu);
-    
-    // Actions menu
-    auto actions_menu = Gio::Menu::create();
-    actions_menu->append(_("Blank CD-RW"), "win.blank-cd");
-    menu->append_submenu(_("_Actions"), actions_menu);
-    
-    // Settings menu
-    auto settings_menu = Gio::Menu::create();
-    settings_menu->append(_("Configure Devices..."), "win.configure-devices");
-    settings_menu->append(_("_Preferences..."), "win.preferences");
-    menu->append_submenu(_("_Settings"), settings_menu);
-    
-    // Help menu
-    auto help_menu = Gio::Menu::create();
-    help_menu->append(_("About"), "win.about");
-    menu->append_submenu(_("_Help"), help_menu);
-    
-    // Create actions
-    add_action("new-audio-cd", sigc::mem_fun(*this, &GCDMaster::newAudioCDProject2));
-    add_action("new-duplicate-cd", sigc::mem_fun(*this, &GCDMaster::newDuplicateCDProject));
-    add_action("new-dump-cd", sigc::mem_fun(*this, &GCDMaster::newDumpCDProject));
-    add_action("open", sigc::mem_fun(*this, &GCDMaster::openProject));
-    add_action("close", sigc::mem_fun(*this, &GCDMaster::closeProjectAction));
-    add_action("blank-cd", sigc::mem_fun(*this, &GCDMaster::blankCDRW));
-    add_action("configure-devices", sigc::mem_fun(*this, &GCDMaster::configureDevices));
-    add_action("preferences", sigc::mem_fun(*this, &GCDMaster::configurePreferences));
-    add_action("about", sigc::mem_fun(*this, &GCDMaster::aboutDialog));
-
-    // Create About dialog
-    std::vector<Glib::ustring> authors;
-    authors.push_back("Manuel Clos <llanero@jazzfree.com>");
-    authors.push_back("Denis Leroy <denis@poolshark.org>");
-    authors.push_back("Andreas Mueller <mueller@daneb.ping.de>");
-    authors.push_back("Stefan Roellin <stefan.roellin@gmx.ch>");
-    about_.set_program_name("gcdmaster");
-    about_.set_version(VERSION);
-    about_.set_copyright("(C) The Cdrdao Team");
-    about_.set_authors(authors);
-
-        // Create menubar
-    auto menubar = Gtk::make_managed<Gtk::PopoverMenuBar>(menu);
-    box_.prepend(*Gtk::make_managed<Gtk::MenuButton>());
-    
-    // Create toolbar
-    auto toolbar = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL, 2);
-    
-    auto new_button = Gtk::make_managed<Gtk::Button>(_("New"));
-    new_button->signal_clicked().connect(sigc::mem_fun(*this, &GCDMaster::newChooserWindow));
-    toolbar->append(*new_button);
-    
-    auto open_button = Gtk::make_managed<Gtk::Button>(_("Open"));
-    open_button->signal_clicked().connect(sigc::mem_fun(*this, &GCDMaster::openProject));
-    toolbar->append(*open_button);
-    
-    box_.prepend(*toolbar);
-    box_.prepend(*menubar);
+    for (auto file : files)
+        openNewProject(i->get_path());
 }
 
-bool GCDMaster::openNewProject(const std::string &str)
+void GCDMaster::openNewProject(const Glib::ustring path = "")
 {
-    TocEdit *tocEdit;
-    const char *s = str.c_str();
-
-    if (s == NULL || *s == 0 || s[strlen(s) - 1] == '/')
-        return false;
-
-    auto type = Util::fileExtension(s);
-    switch (type) {
-
-    case Util::FileExtension::M3U:
-        newAudioCDProject("", NULL, s);
-        break;
-
-    case Util::FileExtension::TOC:
-        tocEdit = new TocEdit(NULL, NULL);
-        if (tocEdit->readToc(stripCwd(s)) == 0)
-            newAudioCDProject(stripCwd(s), tocEdit);
-        else
-            return false;
-        break;
-
-    case Util::FileExtension::CUE:
-        tocEdit = new TocEdit(NULL, NULL);
-        if (tocEdit->readToc(stripCwd(s)) == 0)
-            newAudioCDProject("", tocEdit);
-        else
-            return false;
-        break;
-
-    default:
-        printf("Could not open \"%s\": format not supported.\n", s);
-        return false;
-        break;
-    }
-
-    return true;
-}
-
-void GCDMaster::openProject()
-{
-    readFileSelector_->present();
-    readFileSelector_->signal_response().connect(
-        sigc::bind(sigc::mem_fun(*this, &GCDMaster::on_file_dialog_response),
-                   readFileSelector_));
-}
-
-void GCDMaster::on_file_dialog_response(int response, Gtk::FileChooserDialog* dialog)
-{
-    dialog->hide();
-    
-    if (response == Gtk::ResponseType::OK) {
-        auto file = dialog->get_file();
-        if (file) {
-            std::string s = file->get_path();
-            openNewProject(s);
-        }
-    }
-}
-
-bool GCDMaster::closeProject()
-{
-    if (chooser_)
-        closeChooser();
-
-    if (project_) {
-        if (project_->closeProject()) {
-            delete project_;
-            project_ = NULL;
-        } else {
-            return false; // User clicked on cancel
-        }
-    }
-
-    if (readFileSelector_)
-        delete readFileSelector_;
-
-    GCDMaster::apps.remove(this);
-    delete this;
-
-    return true;
-}
-
-void GCDMaster::closeProjectAction()
-{
-    closeProject();
-}
-
-void GCDMaster::closeChooser()
-{
-    delete chooser_;
-    chooser_ = NULL;
-}
-
-bool GCDMaster::on_close_request()
-{
-    closeProject();
-    return true;
-}
-
-// Application Close. Called when the user selects 'Quit' from the
-// menu. Try to close all project windows and quit.
-
-void GCDMaster::appClose()
-{
-    // Can't just iterate, as closeProject will remove its object from
-    // the list.
-    while (!GCDMaster::apps.empty()) {
-        if (!(GCDMaster::apps.front())->closeProject())
-            return;
-    }
-
-    return;
-}
-
-void GCDMaster::newChooserWindow()
-{
-    if (project_ || chooser_) {
-
-        GCDMaster *gcdmaster = new GCDMaster;
-        gcdmaster->newChooserWindow();
-        gcdmaster->show();
-    } else {
-
-        chooser_ = new ProjectChooser();
-        chooser_->newAudioCDProject.connect(sigc::mem_fun(*this, &GCDMaster::newAudioCDProject2));
-        chooser_->newDuplicateCDProject.connect(
-            sigc::mem_fun(*this, &GCDMaster::newDuplicateCDProject));
-        chooser_->newDumpCDProject.connect(sigc::mem_fun(*this, &GCDMaster::newDumpCDProject));
-        chooser_->show();
-        notebook_.set_show_tabs(false);
-        notebook_.append_page(*chooser_);
-        container_->hide();
-    }
-}
-
-void GCDMaster::newAudioCDProject(const char *name, TocEdit *tocEdit, const char *tracks)
-{
-    if (!project_) {
-
-        AudioCDProject *p = new AudioCDProject(project_number++, name, tocEdit, this);
-        p->configureAppBar(statusbar_, progressbar_, progressButton_);
-
-        project_ = p;
-        project_->show();
-        if (chooser_)
-            closeChooser();
-        notebook_.remove_page();
-        notebook_.set_show_tabs(false);
-        notebook_.append_page(*project_);
-        if (tracks)
-            p->appendTrack(tracks);
-        container_->show();
-    } else {
-
-        GCDMaster *gcdmaster = new GCDMaster;
-        gcdmaster->newAudioCDProject(name, tocEdit, tracks);
-        gcdmaster->show();
-    }
-}
-
-void GCDMaster::newAudioCDProject2()
-{
-    newAudioCDProject("", NULL);
-}
-
-void GCDMaster::newDuplicateCDProject()
-{
-    if (!project_) {
-
-        project_ = new DuplicateCDProject(this);
-        project_->show();
-        if (chooser_)
-            closeChooser();
-        notebook_.remove_page();
-        notebook_.set_show_tabs(false);
-        notebook_.append_page(*project_);
-        container_->show();
-        set_title(_("Duplicate CD"));
-    } else {
-
-        GCDMaster *gcdmaster = new GCDMaster;
-        gcdmaster->newDuplicateCDProject();
-        gcdmaster->show();
-    }
-}
-
-void GCDMaster::newDumpCDProject()
-{
-    if (!project_) {
-
-        project_ = new DumpCDProject(this);
-        project_->show();
-        if (chooser_)
-            closeChooser();
-        notebook_.remove_page();
-        notebook_.set_show_tabs(false);
-        notebook_.append_page(*project_);
-        container_->show();
-        set_title(_("Dump CD to disk"));
-    } else {
-
-        GCDMaster *gcdmaster = new GCDMaster;
-        gcdmaster->newDumpCDProject();
-        gcdmaster->show();
+   try {
+        auto new_win = new AudioCDProject(path);
+        add_window(*window);
+        window->present();
+    } catch (std::exception& e) {
+        std::cerr << "Failed\n";
     }
 }
 
 void GCDMaster::update(unsigned long level)
 {
-    if (project_)
-        project_->update(level);
+    for (auto window : get_windows()) {
+        auto w = dynamic_cast<AudioCDProject*>(window);
+        if (w)
+            w->update(level);
+    }
+    if (blankCDWindow_)
+        blankCDWindow->update(level);
 
-    blankCDDialog_.update(level);
+    if (preferences_)
+        preferences_->update(level);
 }
 
-void GCDMaster::configureDevices()
+void GCDMaster::on_startup()
 {
-    deviceConfDialog->start();
+    // Call the base class implementation
+    Gtk::Application::on_startup();
+
+    // Configure Menu
+    try {
+        builder_->add_from_resource("/org/gnome/gcdmaster/app_menu.ui");
+    } catch (const Glib::Error& ex) {
+        std::cerr << "on_startup() menu: " << ex.what() << std::endl;
+        return;
+    }
+
+    // Add actions
+    add_action("preferences",
+               sigc::mem_fun(*this, &GCDMaster::on_action_preferences));
+    add_action("quit", sigc::mem_fun(*this, &GCDMaster::on_action_quit));
+    set_accel_for_action("app.quit", "<Ctrl>Q");
+    add_action("new",
+               sigc::mem_fun(this, &GCDMaster::newChooserWindow));
+    add_action("new-audio-cd",
+               sigc::mem_fun(this, &GCDMaster::newEmptyAudioCDProject));
+    add_action("new-duplicate-cd",
+               sigc::mem_fun(this, &GCDMaster::newDuplicateCDProject));
+    add_action("new-dump-cd",
+               sigc::mem_fun(this, &GCDMaster::newDumpCDProject));
+    add_action("about",
+               sigc::mem_fun(this, &GCDMaster::on_action_about));
+    add_action("blank-cdrw",
+               sigc::mem_fun(this, &GCDMaster::on_action_blank_cdrw));
+    add_action("open",
+               sigc::mem_fun(this, &GCDMaster::on_action_open));
+
+    set_accel_for_action("app.new", "<Primary>n");
+    set_accel_for_action("app.open", "<Primary>o");
+
+    // Configure file chooser
+    all_filter_ = Gtk::FileFilter::create();
+    all_filter_->set_name("Any files");
+    all_filter_->add_pattern("*");
+    open_filter_ = Gtk::FileFilter::create();
+#ifdef HAVE_MP3_SUPPORT
+    open_filter_->set_name("Content Files (*.toc, *.cue, *.m3u)");
+#else
+    open_filter_->set_name("Content Files (*.toc, *.cue)");
+#endif
+    open_filter_->add_pattern("*.toc");
+    open_filter_->add_pattern("*.cue");
+#ifdef HAVE_MP3_SUPPORT
+    open_filter_->add_pattern("*.m3u");
+#endif
+    openFileChooser_ = Gtk::FileDialog::create();
+    openFileChooser_->add_filter(open_filter_);
+    openFileChooser_->add_filter(all_filter_);
+
+    auto object = builder_->get_object("app-menu");
+    auto app_menu = Glib::RefPtr<Gio::MenuModel>::cast_dynamic(object);
+    if (app_menu) {
+        set_app_menu(app_menu);
+    }  else {
+        std::cerr << "on_startup() no app menu" << std::endl;
+        return;
+    }
+
+    about_ = Glib::RefPtr<Gtk::AboutDialog>(new Gtk::AboutDialog());
+    std::vector<Glib::ustring> authors;
+    authors.push_back("Andreas Mueller <mueller@daneb.ping.de>");
+    authors.push_back("Manuel Clos <llanero@jazzfree.com>");
+    authors.push_back("Denis Leroy <denis@poolshark.org> (maintainer)");
+    about_->set_authors(authors);
+    about_->set_program_name("gcdmaster");
+    about_->set_version(VERSION);
+
+    about_->set_website("hhttps://github.com/cdrdao/cdrdao/wiki");
+    about_->set_comments("A Gnome Audio CD Mastering Tool");
+    about_->set_copyright("Copyright \xc2\xa9 2000-2025 The Cdrdao Team");
+    about_->set_logo(Gdk::Pixbuf::create_from_resource("/org/gnome/gcdmaster/gcdmaster.png"));
+    about_->set_wrap_license(true);
+    about_->set_license_type(Gtsk::LICENSE_GPL_2_0);
 }
 
-void GCDMaster::configurePreferences()
+void GCDMaster::on_action_open()
 {
-    preferencesDialog->show();
+    auto windows = get_windows();
+    openFileChooser_.set_transient_for(*windows[0]);
+    openFileChooser_.present();
+    int result = openFileChooser_.run();
+    openFileChooser_.hide();
+
+    if (result == Gtk::RESPONSE_OK) {
+        auto s = openFileChooser_.get_filename();
+        openNewProject(s.c_str());
+    }
 }
 
-void GCDMaster::blankCDRW()
+void GCDMaster::on_action_quit()
 {
-    blankCDDialog_.start(*this);
+    auto windows = get_windows();
+    for (auto window : windows)
+        window->hide();
+
+    quit();
 }
 
-void GCDMaster::createStatusbar()
+void GCDMaster::on_action_preferences()
 {
-    container_ = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
-    statusbar_ = new Gtk::Statusbar();
-    statusbar_->set_hexpand();
-    progressbar_ = new Gtk::ProgressBar();
-    progressButton_ = new Gtk::Button(_("Cancel"));
-    progressButton_->set_sensitive(false);
+    if (!preferencesDialog_) {
+        preferencesDialog_ = PreferencesDialog::create(builder_);
 
-    progressbar_->set_size_request(150, -1);
-
-    container_->append(*statusbar_);
-    container_->append(*progressbar_);
-    container_->append(*progressButton_);
-    container_->set_spacing(2);
-    container_->set_margin(2);
+    }
+    auto windows = get_windows();
+    preferencesDialog_->set_transient_for(*windows[0]);
+    preferencesDialog_->run();
+    preferencesDialog_->hide();
 }
 
-void GCDMaster::aboutDialog()
+// Called only when gcdmaster is called without open arguments.
+//
+void GCDMaster::on_activate()
 {
-    about_.set_visible(true);
-    about_.present();
+    openNewProject();
+}
+
+void GCDMaster::on_action_about()
+{
+    about_->present();
+}
+
+void GCDMaster::on_action_blank_cdrw()
+{
+    if (!blankCDWindow_) {
+        blankCDWindow_ = new BlankCDWindow();
+        add_window(*blankCDWindow_);
+        blankCDWindow_->start();
+    }
+    blankCDWindow_->present();
 }

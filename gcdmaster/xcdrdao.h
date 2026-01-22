@@ -21,6 +21,7 @@
 #define __XCDRDAO_H__
 
 #include <gtkmm.h>
+
 #include "ConfigManager.h"
 
 //
@@ -29,31 +30,12 @@
 // Warning: those may be shared by multiple open project windows.
 //
 
-extern class DeviceConfDialog *deviceConfDialog;
-extern class ProcessMonitor *PROCESS_MONITOR;
+extern class ProcessMonitor     *PROCESS_MONITOR;
 extern class ProgressDialogPool *PROGRESS_POOL;
-extern class PreferencesDialog *preferencesDialog;
-extern class ConfigManager *configManager;
+extern class ConfigManager      *CONFIG_MANAGER;
+extern class GCDMaster          *GCDMASTER;
 
 void blockProcessMonitorSignals();
 void unblockProcessMonitorSignals();
-
-class GCDMasterApplication : public Gtk::Application
-{
-  public:
-    GCDMasterApplication() : Gtk::Application("Gonme.CDMaster",
-					      Gio::Application::Flags::HANDLES_OPEN)
-    {
-    }
-
-  protected:
-    void on_activate() override;
-    void on_open(const Gio::Application::type_vec_files &files, const Glib::ustring &hint) override;
-
-  private:
-    void on_hide_window(Gtk::Window *window);
-};
-
-extern Glib::RefPtr<GCDMasterApplication> app;
 
 #endif
