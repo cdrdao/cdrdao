@@ -44,10 +44,10 @@ class AudioCDProject : public GCDWindow
         STOPPED
     };
 
-    virtual ~AudioCDProject();
-    AudioCDProject(Glib::RefPtr<Gtk::Builder>& builder,
-		   int, const Glib::ustring& path);
+    static AudioCDProject* create(Glib::RefPtr<Gtk::Builder> builder,
+				  const Glib::ustring& path);
 
+    virtual ~AudioCDProject();
     void configureAppBar(Gtk::Statusbar *s, Gtk::ProgressBar *p, Gtk::Button *b);
 
     bool closeProject();
@@ -74,6 +74,11 @@ class AudioCDProject : public GCDWindow
     sigc::signal<void()> signalCancelClicked;
 
   protected:
+    // Only meant to be called by the builder get_widget_derived().
+    AudioCDProject(BaseObjectType* cobject, const Glib::RefPtr<Gtk::Builder>& builder);
+
+    void setup(int number, const Glib::ustring& path);
+
     Gtk::Button *buttonPlay_;
     Gtk::Button *buttonStop_;
     Gtk::Button *buttonPause_;

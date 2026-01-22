@@ -43,10 +43,31 @@
 #include "util.h"
 #include "xcdrdao.h"
 
-AudioCDProject::AudioCDProject(Glib::RefPtr<Gtk::Builder>& builder,
-			       int number, const Glib::ustring& path)
-    : projectNumber_(number), builder_(builder)
+AudioCDProject* AudioCDProject::create(Glib::RefPtr<Gtk::Builder> builder,
+				       const Glib::ustring& path)
 {
+    static int nextNumber = 0;
+    builder->add_from_resource("/org/gnome/gcdmaster/audiocd.ui");
+    builder->add_from_resource("/org/gnome/gcdmaster/gears_audio_menu.ui");
+    builder->add_from_resource("/org/gnome/gcdmaster/window.ui");
+
+    auto window = Gtk::Builder::get_widget_derived<AudioCDProject>(builder, "app_window");
+    if (!window)
+	throw std::runtime_error("app_window resource error");
+
+    window->setup(nextNumber++, path);
+    return window;
+}
+
+AudioCDProjct::AudioCDProject(BaseObjectType* cobject,
+			      const Glib::RefPtr<Gtk::Builder>& builder) :
+    Gtk::ApplicationWindow(cobject)
+{
+}
+
+void AudioCDProject::setup(int number, const Glib::ustring& path)
+{
+    projectNumber_ = number;
     if (path.empty()) {
         tocEdit_ = Glib::make_refptr_for_instance<TocEdit>(new TocEdit(NULL, NULL));
     } else {
@@ -70,6 +91,24 @@ AudioCDProject::AudioCDProject(Glib::RefPtr<Gtk::Builder>& builder,
 	    tocEdit_->filename(oss.str().c_str());
 	}
     }
+
+    audioCDView_ = new AudioCDView(this);
+    audioCDView_->set_expand(true);
+    hbox_.append(*audioCDView_);
+    audioCDView_->tocEditView()->sampleViewFull();
+    updateWindowTitle();
+    guiUpdate(UPD_ALL);
+    present();
+}
+
+AudioCDProject::AudioCDProject(Glib::RefPtr<Gtk::Builder>& builder,
+			       int number, const Glib::ustring& path)
+    : builder_(builder)
+{
+
+    // Load toolbar.
+    auto tbar = builder->get_object<Gtk::Toolbar>("audio-toolbar");
+    vbox_.append(tbar);
 
     // Add actions
     add_action("save", sigc::mem_fun(*this, &AudioCDProject::saveProject));
@@ -118,16 +157,6 @@ AudioCDProject::AudioCDProject(Glib::RefPtr<Gtk::Builder>& builder,
 
     if (tocEdit_->isQueueActive())
         cancelEnable(true);
-
-    audioCDView_ = new AudioCDView(this);
-    audioCDView_->set_expand(true);
-    hbox_.append(*audioCDView_);
-    audioCDView_->tocEditView()->sampleViewFull();
-
-    updateWindowTitle();
-
-    guiUpdate(UPD_ALL);
-    present();
 }
 
 AudioCDProject::~AudioCDProject()
