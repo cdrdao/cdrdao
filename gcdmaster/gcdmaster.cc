@@ -107,10 +107,20 @@ void GCDMaster::on_startup()
     add_action("close",
                sigc::mem_fun(*this, &GCDMaster::on_action_close));
 
+    // You'd think the whole point of using <Primary> would be that it
+    // matches to the right main modifier for each OS, i.e. Command on MacOS. But
+    // noooooooooooo, that would be too simple.
+#ifdef OS_DARWIN
+    set_accel_for_action("app.quit", "<Meta>q");
+    set_accel_for_action("app.new", "<Meta>n");
+    set_accel_for_action("app.open", "<Meta>o");
+    set_accel_for_action("app.close", "<Meta>w");
+#else
     set_accel_for_action("app.quit", "<Primary>q");
     set_accel_for_action("app.new", "<Primary>n");
     set_accel_for_action("app.open", "<Primary>o");
     set_accel_for_action("app.close", "<Primary>w");
+#endif
 
     // Configure file chooser
     allFilter_ = Gtk::FileFilter::create();
@@ -130,7 +140,7 @@ void GCDMaster::on_startup()
     auto filter_list = Gio::ListStore<Gtk::FileFilter>::create();
     filter_list->append(openFilter_);
     filter_list->append(allFilter_);
-    
+
     openFileChooser_ = Gtk::FileDialog::create();
     openFileChooser_->set_filters(filter_list);
 

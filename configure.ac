@@ -222,6 +222,7 @@ case "$host" in
   *-darwin*)
       scsilib_libs="-framework IOKit -framework CoreFoundation"
       scsilib_objs="ScsiIf-osx.o"
+      CPPFLAGS="$CPPFLAGS -DOS_DARWIN"
       ;;
 
   *-pc-cygwin* | *mingw*)
