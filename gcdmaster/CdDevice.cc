@@ -41,7 +41,14 @@ std::vector<std::string> CdDevice::DRIVER_NAMES = {
 	"Undefined",    "cdd2600",      "generic-mmc",  "generic-mmc-raw", "plextor",
 	"plextor-scan", "ricoh-mp6200", "sony-cdu920",  "sony-cdu948",     "taiyo-yuden",
 	"teac-cdr55",   "toshiba",      "yamaha-cdr10x"
-    };
+};
+
+std::vector<std::string> CdDevice::DEV_TYPE_NAMES = { "CD_R", "CD_RW", "CD_ROM" };
+
+std::vector<std::string> CdDevice::STATUS_NAMES = {
+    "Ready", "Recording", "Reading", "Waiting", "Blanking",
+    "Busy", "No disk", "Not available", "Unknown" };
+
 
 
 CdDevice::CdDevice(const std::string& dev, const std::string& vendor, const std::string& product)
@@ -49,6 +56,7 @@ CdDevice::CdDevice(const std::string& dev, const std::string& vendor, const std:
     dev_ = dev;
     vendor_ = vendor;
     product_ = product;
+    description_ = vendor_ + std::string(" ") + product_;
 
     driverId_ = 0;
     driverOptions_ = 0;
@@ -848,6 +856,18 @@ int CdDevice::driverName2Id(const std::string& driverName)
             return i;
 
     return 0;
+}
+
+CdDevice::DeviceType CdDevice::devtypeName2Id(const std::string dt)
+{
+    int i = 0;
+
+    for (auto str : deviceNames()) {
+        if (str == dt)
+            return static_cast<DeviceType>(i);
+        i++;
+    }
+    return CdDevice::CD_R;
 }
 
 int CdDevice::maxDriverId()

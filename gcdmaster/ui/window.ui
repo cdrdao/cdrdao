@@ -203,7 +203,6 @@
             <property name="receives-default">True</property>
             <property name="tooltip-text">Blank CD-RW</property>
             <property name="action-name">app.blank-cdrw</property>
-            <property name="icon-name">foozle</property>
             <child type="end">
               <object class="GtkImage">
                 <property name="can-focus">False</property>

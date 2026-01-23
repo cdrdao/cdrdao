@@ -10,6 +10,7 @@ gcdmaster_SOURCES = \
 	main.cc			\
 	guiUpdate.cc 		\
 	MessageBox.cc 		\
+	PreferencesDialog.cc	\
 	ProcessMonitor.cc	\
 	TaskManager.cc		\
 	Settings.cc 		\

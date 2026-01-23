@@ -196,15 +196,23 @@ void GCDMaster::on_action_quit()
 
 void GCDMaster::on_action_preferences()
 {
-    // try {
-    //     auto preferences = PreferencesDialog::create(builder_,
-    //     					     *get_active_window());
-    //     preferences->present();
-    //     preferences->signal_hide().connect([preferences](){ delete preferences; });
-    // } catch (const std::exception& ex)
-    // {
-    //     std::cerr << "Preferences: " << ex.what() << "\n";
-    // }
+    if (preferences_) {
+        preferences_->present();
+        return;
+    }
+    try {
+        preferences_ = PreferencesDialog::create(builder_,
+                                                 *get_active_window());
+        add_window(*preferences_);
+        preferences_->present();
+        preferences_->signal_hide().connect([this](){
+            this->remove_window(*preferences_);
+            delete(preferences_);
+            this->preferences_ = nullptr; });
+    } catch (const std::exception& ex)
+    {
+        std::cerr << "Preferences: " << ex.what() << "\n";
+    }
 }
 
 // Called only when gcdmaster is called without open arguments.

@@ -75,6 +75,7 @@ class GCDMaster : public Gtk::Application
     Glib::RefPtr<Gtk::FileFilter> openFilter_;
     Glib::RefPtr<Gtk::FileFilter> allFilter_;
     BlankCDDialog* blanker_ = nullptr;
+    PreferencesDialog* preferences_ = nullptr;
 
     int argc;
     char** argv;

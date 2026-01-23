@@ -21,42 +21,71 @@
 #define __PREFERENCES_DIALOG_H
 
 #include <gtkmm.h>
+#include "CdDevice.h"
 #include "gcdmaster.h"
 
 class PreferencesDialog : public GCDWindow
 {
-  public:
+public:
+    PreferencesDialog(BaseObjectType* cobject, const Glib::RefPtr<Gtk::Builder>& builder);
     virtual ~PreferencesDialog();
 
-    static PreferencesDialog* create(Glib::RefPtr<Gtk::Builder>& builder,
-				     Gtk::Window& parent);
+    static PreferencesDialog* create(const Glib::RefPtr<Gtk::Builder>& builder,
+                                     Gtk::Window& parent);
 
-    void show();
+    void show_dialog(); // Renamed to avoid confusion with widget::show
     void update(unsigned long level);
 
-  protected:
-    PreferencesDialog(BaseObjectType *cobject,
-		      const Glib::RefPtr<Gtk::Builder> &refBuilder);
-
-    void readFromGConf();
-    bool saveToGConf();
+protected:
+    void read_from_settings();
+    bool save_to_settings();
+    
+    // UI Event Handlers
     void on_button_apply();
     void on_button_cancel();
     void on_button_ok();
-    void on_button_browse();
-    void on_button_browse_cancel();
-    void on_button_browse_open();
+    void on_button_reset();
+    void on_selection_changed();
+    void on_driver_changed();
+    void on_dev_type_changed();
+    void on_temp_dir_button_clicked();
+    void rescan_action();
 
-    Glib::RefPtr<Gtk::Builder> m_refBuilder;
+    void import_devices();
+    void export_devices();
+    void import_status();
+    void import_selected_row(const Gtk::TreeModel::iterator& iter);
+    void export_selected_row(const Gtk::TreeModel::iterator& iter);
+    void append_entry(CdDevice* dev);
 
-    Gtk::Button *_applyButton;
-    Gtk::Button *_cancelButton;
-    Gtk::Button *_okButton;
-    Gtk::Entry *_tempDirEntry;
-    Gtk::FileChooserDialog *_tempDirDialog;
-    Gtk::Button *_browseButton;
-    Gtk::Button *_browseCancel;
-    Gtk::Button *_browseOpen;
+    // Widgets
+    Gtk::Button* tempDirButton_ = nullptr;
+    Gtk::TreeView* deviceList_ = nullptr;
+    Gtk::Entry* driverOptionsEntry_ = nullptr;
+    Gtk::ComboBoxText* driverMenu_ = nullptr;
+    Gtk::ComboBoxText* devtypeMenu_ = nullptr;
+    std::string selectedTempPath_;
+
+    struct DeviceData {
+        std::string dev;
+        int driverId;
+        CdDevice::DeviceType deviceType;
+        unsigned long options;
+    };
+
+    class ListColumns : public Gtk::TreeModel::ColumnRecord
+    {
+    public:
+        ListColumns() { add(dev); add(description); add(status); add(data); }
+        Gtk::TreeModelColumn<std::string> dev;
+        Gtk::TreeModelColumn<std::string> description;
+        Gtk::TreeModelColumn<std::string> status;
+        Gtk::TreeModelColumn<DeviceData*> data;
+    };
+
+    Glib::RefPtr<Gtk::ListStore> deviceListModel_;
+    ListColumns deviceListColumns_;
+    Gtk::TreeModel::iterator selectedRow_;
 };
 
 #endif

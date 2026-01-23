@@ -64,6 +64,7 @@ class CdDevice : public sigc::trackable
     const std::string& dev() const { return dev_; }
     const std::string& vendor() const { return vendor_; }
     const std::string& product() const { return product_; }
+    const std::string& description() const { return description_; }
 
     Status status() const { return status_; }
     Process *process() const { return process_; }
@@ -117,6 +118,7 @@ class CdDevice : public sigc::trackable
     static int maxDriverId();
     static const std::string& driverName(int id);
     static int driverName2Id(const std::string&);
+    static DeviceType devtypeName2Id(const std::string);
 
     static const std::string status2string(Status);
     static const std::string deviceType2string(DeviceType);
@@ -146,12 +148,16 @@ class CdDevice : public sigc::trackable
 
     static int count();
 
-    static std::vector<CdDevice*>& deviceList() { return DEVICE_LIST; }
+    static std::vector<CdDevice*>&   deviceList()  { return DEVICE_LIST; }
+    static std::vector<std::string>& driverNames() { return DRIVER_NAMES; }
+    static std::vector<std::string>  deviceNames() { return DEV_TYPE_NAMES; }
+    static std::vector<std::string>  statusNames() { return STATUS_NAMES; }
 
   private:
     std::string dev_; // SCSI device
     std::string vendor_;
     std::string product_;
+    std::string description_;
 
     DeviceType deviceType_;
 
@@ -186,6 +192,8 @@ class CdDevice : public sigc::trackable
 
     static std::vector<std::string> DRIVER_NAMES;
     static std::vector<CdDevice*> DEVICE_LIST;
+    static std::vector<std::string> DEV_TYPE_NAMES;
+    static std::vector<std::string> STATUS_NAMES;
 };
 
 #endif
