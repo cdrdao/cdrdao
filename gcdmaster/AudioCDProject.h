@@ -51,7 +51,7 @@ class AudioCDProject : public GCDWindow
     // Only meant to be called by the builder get_widget_derived().
     AudioCDProject(BaseObjectType* cobject, const Glib::RefPtr<Gtk::Builder>& builder);
 
-    void closeProject();
+    bool on_close_request() override;
     void saveProject();
     void saveAsProject();
     void recordToc2CD();

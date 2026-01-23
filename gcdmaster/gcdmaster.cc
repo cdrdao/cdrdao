@@ -32,6 +32,7 @@
 #include "gcdmaster.h"
 #include "guiUpdate.h"
 #include "util.h"
+#include "log.h" 
 
 GCDWindow::GCDWindow()
 {
@@ -103,10 +104,13 @@ void GCDMaster::on_startup()
                sigc::mem_fun(*this, &GCDMaster::on_action_blank_cdrw));
     add_action("open",
                sigc::mem_fun(*this, &GCDMaster::on_action_open));
+    add_action("close",
+               sigc::mem_fun(*this, &GCDMaster::on_action_close));
 
-    set_accel_for_action("app.quit", "<Primary>Q");
+    set_accel_for_action("app.quit", "<Primary>q");
     set_accel_for_action("app.new", "<Primary>n");
     set_accel_for_action("app.open", "<Primary>o");
+    set_accel_for_action("app.close", "<Primary>w");
 
     // Configure file chooser
     allFilter_ = Gtk::FileFilter::create();
@@ -132,19 +136,24 @@ void GCDMaster::on_startup()
 
     about_ = Glib::RefPtr<Gtk::AboutDialog>(new Gtk::AboutDialog());
     std::vector<Glib::ustring> authors;
-    authors.push_back("Andreas Mueller <mueller@daneb.ping.de>");
+    authors.push_back("Denis Leroy <denis@poolshark.org>");
     authors.push_back("Manuel Clos <llanero@jazzfree.com>");
-    authors.push_back("Denis Leroy <denis@poolshark.org> (maintainer)");
     about_->set_authors(authors);
     about_->set_program_name("gcdmaster");
     about_->set_version(VERSION);
 
     about_->set_website("hhttps://github.com/cdrdao/cdrdao/wiki");
     about_->set_comments("A Gnome Audio CD Mastering Tool");
-    about_->set_copyright("Copyright \xc2\xa9 2000-2025 The Cdrdao Team");
+    about_->set_copyright("Copyright \xc2\xa9 2000-2026 The Cdrdao Team");
     about_->set_logo_icon_name("gcdmaster");
     about_->set_wrap_license(true);
     about_->set_license_type(Gtk::License::GPL_2_0);
+}
+
+void GCDMaster::on_action_close()
+{
+    log_message(0, "GCDMaster: on action close");
+    get_active_window()->close();
 }
 
 void GCDMaster::on_action_open()
@@ -203,14 +212,22 @@ void GCDMaster::on_action_about()
 
 void GCDMaster::on_action_blank_cdrw()
 {
-    // try {
-    //     auto blanker = BlankCDDialog::create(builder_,
-    //     				     *get_active_window());
-    //     blanker->start();
-    //     blanker->present();
-    //     blanker->signal_hide().connect([blanker](){ delete blanker; });
-    // } catch (const std::exception& ex)
-    // {
-    //     std::cerr << "Blank CD/RW: " << ex.what() << "\n";
-    // }
+    if (blanker_) {
+	blanker_->present();
+	return;
+    }
+
+    try {
+        blanker_ = BlankCDDialog::create(builder_, *get_active_window());
+	add_window(*blanker_);
+        blanker_->start();
+        blanker_->present();
+        blanker_->signal_hide().connect([this](){
+	    this->remove_window(*blanker_);
+	    delete(blanker_);
+	    this->blanker_ = nullptr; });
+    } catch (const std::exception& ex)
+    {
+        std::cerr << "Blank CD/RW: " << ex.what() << "\n";
+    }
 }

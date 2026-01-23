@@ -2,17 +2,20 @@ bin_PROGRAMS = gcdmaster
 
 gcdmaster_SOURCES = \
 	AudioCDProject.cc 	\
+	BlankCDDialog.cc	\
+	CdDevice.cc		\
 	ConfigManager.cc	\
+	DeviceList.cc		\
 	gcdmaster.cc 		\
 	main.cc			\
 	guiUpdate.cc 		\
 	MessageBox.cc 		\
-	CdDevice.cc		\
 	ProcessMonitor.cc	\
 	TaskManager.cc		\
 	Settings.cc 		\
 	SampleManager.cc	\
 	TrackDataScrap.cc	\
+	ProgressDialog.cc	\
 	TocEdit.cc 		\
 	TocEditView.cc 		\
 	SoundIF.h		\

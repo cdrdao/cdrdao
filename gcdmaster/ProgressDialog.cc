@@ -33,135 +33,114 @@
 
 #include "remote.h"
 
+#include "ProgressDialog.h"
+#include <glibmm/i18n.h>
+#include <cstdio>
+#include "CdDevice.h"
+
 ProgressDialog::ProgressDialog(ProgressDialogPool *father)
+    : poolFather_(father)
 {
-    Gtk::Label *label;
-    auto contents = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL);
-    Gtk::Table *table;
-    Gtk::Alignment *align;
+    set_title(_("Progress"));
+    set_default_size(400, -1);
+    set_resizable(false);
 
-    poolFather_ = father;
-    active_ = 0;
-    device_ = NULL;
-    poolNext_ = NULL;
+    auto main_vbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL, 10);
+    main_vbox->set_margin(10);
+    set_child(*main_vbox);
 
-    contents->set_spacing(5);
+    // Project Info
+    auto project_hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL, 5);
+    auto label = Gtk::make_managed<Gtk::Label>(_("Project: "));
+    tocName_ = Gtk::make_managed<Gtk::Label>();
+    project_hbox->append(*label);
+    project_hbox->append(*tocName_);
+    main_vbox->append(*project_hbox);
 
-    statusMsg_ = manage(new Gtk::Label());
-    trackProgress_ = manage(new Gtk::ProgressBar);
-    totalProgress_ = manage(new Gtk::ProgressBar);
-    bufferFillRate_ = manage(new Gtk::ProgressBar);
-    writerFillRate_ = manage(new Gtk::ProgressBar);
-    tocName_ = manage(new Gtk::Label);
-    {
-	auto hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
-	label = manage(new Gtk::Label(_("Project: ")));
-	hbox->pack_start(*label, Gtk::PACK_SHRINK);
-	hbox->pack_start(*tocName_, Gtk::PACK_SHRINK);
-	contents->pack_start(*hbox, Gtk::PACK_SHRINK);
-    }
-    {
-	auto hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
-	hbox->pack_start(*statusMsg_, Gtk::PACK_SHRINK);
-	contents->pack_start(*hbox, Gtk::PACK_SHRINK);
-    }
-    {
-	auto hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
-	label = manage(new Gtk::Label(_("Elapsed Time: "), 1));
-	hbox->pack_start(*label, Gtk::PACK_SHRINK);
-	currentTime_ = manage(new Gtk::Label());
-	hbox->pack_start(*currentTime_, Gtk::PACK_SHRINK);
-	label = manage(new Gtk::Label(_("Remaining Time: "), 1));
-	hbox->pack_start(*label, Gtk::PACK_SHRINK);
-	remainingTime_ = manage(new Gtk::Label("", 0));
-	hbox->pack_start(*remainingTime_, Gtk::PACK_SHRINK);
-	contents->pack_start(*hbox, Gtk::PACK_SHRINK);
-    }
+    statusMsg_ = Gtk::make_managed<Gtk::Label>();
+    statusMsg_->set_halign(Gtk::Align::START);
+    main_vbox->append(*statusMsg_);
 
-    table = manage(new Gtk::Table(4, 2, false));
-    table->set_row_spacings(5);
-    table->set_col_spacings(5);
-    contents->pack_start(*table, Gtk::PACK_SHRINK);
+    // Time Info
+    auto time_hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL, 10);
+    time_hbox->append(*Gtk::make_managed<Gtk::Label>(_("Elapsed Time: ")));
+    currentTime_ = Gtk::make_managed<Gtk::Label>("0:00:00");
+    time_hbox->append(*currentTime_);
+    
+    auto remaining_label = Gtk::make_managed<Gtk::Label>(_("Remaining Time: "));
+    remaining_label->set_margin_start(10);
+    time_hbox->append(*remaining_label);
+    remainingTime_ = Gtk::make_managed<Gtk::Label>("");
+    time_hbox->append(*remainingTime_);
+    main_vbox->append(*time_hbox);
 
-    trackLabel_ = manage(new Gtk::Label(_("Track:")));
-    align = manage(new Gtk::Alignment(1.0, 0.5, 0.0, 0.0));
-    align->add(*trackLabel_);
-    table->attach(*align, 0, 1, 0, 1, Gtk::FILL);
-    {
-	auto hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
-	hbox->pack_start(*trackProgress_);
-	table->attach(*hbox, 1, 2, 0, 1);
-    }
-    label = manage(new Gtk::Label(_("Total:")));
-    align = manage(new Gtk::Alignment(1.0, 0.5, 0.0, 0.0));
-    align->add(*label);
-    table->attach(*align, 0, 1, 1, 2, Gtk::FILL);
-    {
-	auto hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
-	hbox->pack_start(*totalProgress_);
-	table->attach(*hbox, 1, 2, 1, 2);
-    }
-    bufferFillRateLabel_ = manage(new Gtk::Label(_("Input Buffer:")));
-    align = manage(new Gtk::Alignment(1.0, 0.5, 0.0, 0.0));
-    align->add(*bufferFillRateLabel_);
-    table->attach(*align, 0, 1, 2, 3, Gtk::FILL);
-    {
-	auto hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
-	hbox->pack_start(*bufferFillRate_);
-	table->attach(*hbox, 1, 2, 2, 3);
-    }
-    writerFillRateLabel_ = manage(new Gtk::Label(_("Write Buffer:")));
-    table->attach(*writerFillRateLabel_, 0, 1, 3, 4, Gtk::FILL);
-    table->attach(*writerFillRate_, 1, 2, 3, 4);
-    {
-	auto hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
-	hbox->pack_start(*contents, true, true, 10);
-	get_vbox()->pack_start(*hbox, false, false, 10);
-    }
-    Gtk::HButtonBox *bbox = manage(new Gtk::HButtonBox(Gtk::BUTTONBOX_SPREAD, 20));
+    // Progress Grid (Replacing Table)
+    auto grid = Gtk::make_managed<Gtk::Grid>();
+    grid->set_row_spacing(5);
+    grid->set_column_spacing(10);
+    main_vbox->append(*grid);
 
-    cancelButton_ = manage(new Gtk::Button(Gtk::StockID(Gtk::Stock::CANCEL)));
-    bbox->pack_start(*cancelButton_);
+    trackLabel_ = Gtk::make_managed<Gtk::Label>(_("Track:"));
+    trackLabel_->set_halign(Gtk::Align::END);
+    trackProgress_ = Gtk::make_managed<Gtk::ProgressBar>();
+    trackProgress_->set_hexpand(true);
+    grid->attach(*trackLabel_, 0, 0);
+    grid->attach(*trackProgress_, 1, 0);
 
-    closeButton_ = manage(new Gtk::Button(Gtk::StockID(Gtk::Stock::CLOSE)));
-    bbox->pack_start(*closeButton_);
+    auto totalLabel = Gtk::make_managed<Gtk::Label>(_("Total:"));
+    totalLabel->set_halign(Gtk::Align::END);
+    totalProgress_ = Gtk::make_managed<Gtk::ProgressBar>();
+    totalProgress_->set_hexpand(true);
+    grid->attach(*totalLabel, 0, 1);
+    grid->attach(*totalProgress_, 1, 1);
 
-    ejectButton_ = manage(new Gtk::Button("Eject"));
-    bbox->pack_start(*ejectButton_);
+    bufferFillRateLabel_ = Gtk::make_managed<Gtk::Label>(_("Input Buffer:"));
+    bufferFillRateLabel_->set_halign(Gtk::Align::END);
+    bufferFillRate_ = Gtk::make_managed<Gtk::ProgressBar>();
+    grid->attach(*bufferFillRateLabel_, 0, 2);
+    grid->attach(*bufferFillRate_, 1, 2);
 
-    actCloseButtonLabel_ = 2;
+    writerFillRateLabel_ = Gtk::make_managed<Gtk::Label>(_("Write Buffer:"));
+    writerFillRateLabel_->set_halign(Gtk::Align::END);
+    writerFillRate_ = Gtk::make_managed<Gtk::ProgressBar>();
+    grid->attach(*writerFillRateLabel_, 0, 3);
+    grid->attach(*writerFillRate_, 1, 3);
+
+    // Buttons
+    auto bbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL, 10);
+    bbox->set_halign(Gtk::Align::CENTER);
+    bbox->set_margin_top(10);
+
+    cancelButton_ = Gtk::make_managed<Gtk::Button>(_("Cancel"));
+    closeButton_ = Gtk::make_managed<Gtk::Button>(_("Close"));
+    ejectButton_ = Gtk::make_managed<Gtk::Button>(_("Eject"));
+
+    bbox->append(*cancelButton_);
+    bbox->append(*closeButton_);
+    bbox->append(*ejectButton_);
+    main_vbox->append(*bbox);
 
     cancelButton_->signal_clicked().connect(sigc::mem_fun(*this, &ProgressDialog::closeAction));
     closeButton_->signal_clicked().connect(sigc::mem_fun(*this, &ProgressDialog::closeAction));
     ejectButton_->signal_clicked().connect(sigc::mem_fun(*this, &ProgressDialog::ejectAction));
 
-    get_action_area()->pack_start(*bbox, TRUE, TRUE, 10);
-    set_size_request(400, -1);
-    show_all_children();
-}
-
-ProgressDialog::~ProgressDialog()
-{
+    setCloseButtonLabel(1);
 }
 
 void ProgressDialog::start(CdDevice *device, const char *tocFileName)
 {
-    std::string s;
-
-    if (device == NULL)
-        return;
-
+    if (!device) return;
     if (active_) {
-        raise();
+        present(); 
         return;
     }
 
     active_ = true;
     device_ = device;
-
     clear();
 
-    Glib::signal_timeout().connect(mem_fun(*this, &ProgressDialog::time), 1000);
+    timeout_connection_ = Glib::signal_timeout().connect(
+        sigc::mem_fun(*this, &ProgressDialog::on_timeout), 1000);
 
     statusMsg_->set_text(_("Initializing..."));
     tocName_->set_text(tocFileName);
@@ -170,13 +149,64 @@ void ProgressDialog::start(CdDevice *device, const char *tocFileName)
     cancelButton_->set_sensitive(true);
     ejectButton_->set_sensitive(false);
 
-    s = device->vendor();
-    s += " ";
-    s += device->product();
-
-    set_title(s);
+    set_title(Glib::ustring(device->vendor()) + " " + Glib::ustring(device->product()));
     set_modal(true);
-    show();
+    present();
+}
+
+bool ProgressDialog::on_timeout()
+{
+    char buf[50];
+    struct timeval timenow;
+    gettimeofday(&timenow, NULL);
+
+    long elapsed = timenow.tv_sec - time_start_.tv_sec;
+    long hours = elapsed / 3600;
+    long mins = (elapsed % 3600) / 60;
+    long secs = elapsed % 60;
+
+    snprintf(buf, sizeof(buf), "%ld:%02ld:%02ld", hours, mins, secs);
+    currentTime_->set_text(buf);
+
+    if (actTotalProgress_ > 10) {
+        if (!leadTimeFilled_) {
+            leadTime_ = elapsed;
+            leadTimeFilled_ = true;
+        }
+
+        double total_est = (double)elapsed / (actTotalProgress_ / 1000.0);
+        long time_remain = (long)(total_est + 0.5) - elapsed;
+        if (time_remain < 0) time_remain = 0;
+
+        hours = time_remain / 3600;
+        mins = (time_remain % 3600) / 60;
+        secs = time_remain % 60;
+
+        snprintf(buf, sizeof(buf), "%ld:%02ld:%02ld", hours, mins, secs);
+        remainingTime_->set_text(buf);
+    }
+
+    return !finished_; 
+}
+
+bool ProgressDialog::on_close_request()
+{
+    if (finished_) {
+        poolFather_->stop(this);
+    }
+    return true; // Prevents the window from being destroyed immediately
+}
+
+void ProgressDialog::setCloseButtonLabel(int l)
+{
+    if (l == 1) {
+        closeButton_->hide();
+        cancelButton_->show();
+    } else {
+        cancelButton_->hide();
+        closeButton_->show();
+    }
+    actCloseButtonLabel_ = l;
 }
 
 void ProgressDialog::stop()
@@ -184,16 +214,13 @@ void ProgressDialog::stop()
     if (active_) {
         hide();
         active_ = false;
-        device_ = NULL;
+        device_ = nullptr;
+        timeout_connection_.disconnect();
     }
 }
 
-bool ProgressDialog::on_delete_event(GdkEventAny *)
+ProgressDialog::~ProgressDialog()
 {
-    if (finished_) {
-        poolFather_->stop(this);
-    }
-    return true;
 }
 
 void ProgressDialog::ejectAction()
@@ -213,43 +240,55 @@ void ProgressDialog::closeAction()
 
     switch (device_->action()) {
     case CdDevice::A_RECORD: {
-        Ask2Box msg(this, _("Abort Recording"), 0, 2, _("Abort recording process?"), NULL);
+        auto msg = Ask2Box::create(*this, _("Abort Recording"), 1, {_("Abort recording process?")});
 
-        if (msg.run() == 1 && device_ != NULL) {
-            cancelButton_->set_sensitive(false);
-            ejectButton_->set_sensitive(true);
-            device_->abortDaoRecording();
-        }
+	msg->dialogDone.connect([this](int result) {
+	    if (result == 0 && this->device_ != NULL) {
+		this->cancelButton_->set_sensitive(false);
+		this->ejectButton_->set_sensitive(true);
+		this->device_->abortDaoRecording();
+	    }
+        });
+	msg->choose();
     } break;
 
     case CdDevice::A_READ: {
-        Ask2Box msg(this, _("Abort Reading"), 0, 2, _("Abort reading process?"), NULL);
+        auto msg = Ask2Box::create(*this, _("Abort Reading"), 1, {_("Abort reading process?")});
 
-        if (msg.run() == 1 && device_ != NULL) {
-            cancelButton_->set_sensitive(false);
-            ejectButton_->set_sensitive(true);
-            device_->abortDaoReading();
-        }
+	msg->dialogDone.connect([this](int result) {
+	    if (result == 0 && this->device_ != NULL) {
+		this->cancelButton_->set_sensitive(false);
+		this->ejectButton_->set_sensitive(true);
+		this->device_->abortDaoReading();
+	    }
+	});
+	msg->choose();
     } break;
 
     case CdDevice::A_DUPLICATE: {
-        Ask2Box msg(this, _("Abort Process"), 0, 2, _("Abort duplicating process?"), NULL);
+        auto msg = Ask2Box::create(*this, _("Abort Process"), 1, {_("Abort duplicating process?")});
 
-        if (msg.run() == 1 && device_ != NULL) {
-            cancelButton_->set_sensitive(false);
-            ejectButton_->set_sensitive(true);
-            device_->abortDaoDuplication();
-        }
+	msg->dialogDone.connect([this](int result) {
+	    if (result == 0 && this->device_ != NULL) {
+		this->cancelButton_->set_sensitive(false);
+		this->ejectButton_->set_sensitive(true);
+		this->device_->abortDaoDuplication();
+	    }
+	});
+	msg->choose();
     } break;
 
     case CdDevice::A_BLANK: {
-        Ask2Box msg(this, _("Abort Process"), 0, 2, _("Abort blanking process?"), NULL);
+        auto msg = Ask2Box::create(*this, _("Abort Process"), 1, {_("Abort blanking process?")});
 
-        if (msg.run() == 1 && device_ != NULL) {
-            cancelButton_->set_sensitive(false);
-            ejectButton_->set_sensitive(true);
-            device_->abortBlank();
+	msg->dialogDone.connect([this](int result) {
+	    if (result == 0 && this->device_ != NULL) {
+		this->cancelButton_->set_sensitive(false);
+		this->ejectButton_->set_sensitive(true);
+		this->device_->abortBlank();
         }
+	});
+	msg->choose();
     } break;
     default:
         break;
@@ -266,7 +305,7 @@ void ProgressDialog::clear()
     actBufferFill_ = 0;
     actWriterFill_ = 0;
 
-    gettimeofday(&time_, NULL);
+    gettimeofday(&time_start_, NULL);
     currentTime_->set_text("0:00:00");
     remainingTime_->set_text("");
     leadTimeFilled_ = false;
@@ -359,7 +398,7 @@ void ProgressDialog::update(unsigned long level)
 
         if (totalProgress != actTotalProgress_) {
             if (actTotalProgress_ == 0)
-                gettimeofday(&time_, 0);
+                gettimeofday(&time_start_, 0);
             actTotalProgress_ = totalProgress;
             if (totalProgress <= 1000)
                 totalProgress_->set_fraction(totalProgress / 1000.0);
@@ -482,74 +521,6 @@ void ProgressDialog::update(unsigned long level)
         statusMsg_->set_text(_("Unknown device action!"));
         break;
     }
-}
-
-// Sets label of close button.
-// l: 1: 'abort'        --> CANCEL gnome stock button (i18n)
-//    2: 'dismiss'  --> CLOSE  gnome stock button (i18n)
-void ProgressDialog::setCloseButtonLabel(int l)
-{
-    if (actCloseButtonLabel_ == l)
-        return;
-
-    switch (l) {
-    case 1:
-        closeButton_->hide();
-        cancelButton_->show();
-        break;
-    case 2:
-        cancelButton_->hide();
-        closeButton_->show();
-        break;
-    }
-
-    actCloseButtonLabel_ = l;
-}
-
-bool ProgressDialog::time()
-{
-    char buf[50];
-    struct timeval timenow;
-    long time, time_remain, hours, mins, secs;
-
-    gettimeofday(&timenow, NULL);
-
-    time = timenow.tv_sec - time_.tv_sec;
-
-    hours = time / 3600;
-    mins = (time - (hours * 3600)) / 60;
-    secs = time - ((hours * 3600) + (mins * 60));
-
-    snprintf(buf, sizeof(buf), "%ld:%02ld:%02ld", hours, mins, secs);
-    currentTime_->set_text(buf);
-
-    if (actTotalProgress_ > 10) {
-        // Hack!
-        //  Denis: no shit
-        gfloat aux1, aux2, aux3;
-
-        if (!leadTimeFilled_) {
-            leadTime_ = time;
-            leadTimeFilled_ = true;
-        }
-
-        time_remain = (int)(((double)time / ((double)actTotalProgress_ / 1000.0)) + 0.5);
-        time_remain -= time;
-        if (time_remain < 0)
-            time_remain = 0;
-
-        hours = time_remain / 3600;
-        mins = (time_remain - (hours * 3600)) / 60;
-        secs = time_remain - ((hours * 3600) + (mins * 60));
-
-        snprintf(buf, sizeof(buf), "%ld:%02ld:%02ld", hours, mins, secs);
-        remainingTime_->set_text(buf);
-    }
-
-    if (finished_)
-        return false;
-    else
-        return true;
 }
 
 void ProgressDialog::needBufferProgress(bool visible)

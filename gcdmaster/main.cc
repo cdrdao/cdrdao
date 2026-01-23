@@ -85,7 +85,7 @@ int main(int argc, char* argv[])
     // Setup process monitor
 //    PROCESS_MONITOR = new ProcessMonitor;
 //    installSignalHandler(SIGCHLD, signalHandler);
-//    PROGRESS_POOL = new ProgressDialogPool;
+    PROGRESS_POOL = new ProgressDialogPool();
 
     // Setup periodic GUI updates.
     Glib::signal_timeout().connect(sigc::ptr_fun(&guiUpdatePeriodic), 2000);
@@ -93,8 +93,8 @@ int main(int argc, char* argv[])
     installSignalHandler(SIGPIPE, SIG_IGN);
 
     // Setup devices configuration.
-    //CdDevice::importSettings();
-    //CdDevice::scan();
+    CdDevice::importSettings();
+    CdDevice::scan();
 
     // This forces a CdDevice::updateDeviceStatus() so when gcdmaster is
     // first show we already have the device status.
@@ -103,7 +103,7 @@ int main(int argc, char* argv[])
     GCDMASTER->run(argc, argv);
 
     // Save settings.
-    // CdDevice::exportSettings();
+    CdDevice::exportSettings();
 
     return 0;
 }

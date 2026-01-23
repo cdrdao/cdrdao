@@ -22,6 +22,7 @@
 
 #include <gtkmm.h>
 #include <string>
+#include <vector>
 
 class TocEdit;
 class Process;
@@ -144,8 +145,8 @@ class CdDevice : public sigc::trackable
                   int *bufferFill, int *writerFill) const;
 
     static int maxDriverId();
-    static const char *driverName(int id);
-    static int driverName2Id(const char *);
+    static const std::string& driverName(int id);
+    static int driverName2Id(const std::string&);
 
     static const char *status2string(Status);
     static const char *deviceType2string(DeviceType);
@@ -157,18 +158,15 @@ class CdDevice : public sigc::trackable
 
     static CdDevice *add(const char *setting);
 
-    static CdDevice *find(const char *dev);
+    static CdDevice *find(const std::string dev);
 
-    static void scan();
+    static bool scan();
 
     static void remove(const char *dev);
 
     static void clear();
 
-    static CdDevice *first();
-    static CdDevice *next(const CdDevice *);
-
-    static int updateDeviceStatus();
+    static int update();
 
     /* not used anymore since Gtk::Main::input signal will call
      * CdDevice::updateProgress directly.
@@ -177,6 +175,8 @@ class CdDevice : public sigc::trackable
     */
 
     static int count();
+
+    static std::vector<CdDevice*>& deviceList() { return DEVICE_LIST; }
 
   private:
     std::string dev_; // SCSI device
@@ -214,8 +214,8 @@ class CdDevice : public sigc::trackable
 
     void createScsiIf();
 
-    static const char *DRIVER_NAMES_[];
-    static CdDevice *DEVICE_LIST_;
+    static std::vector<std::string> DRIVER_NAMES;
+    static std::vector<CdDevice*> DEVICE_LIST;
 };
 
 #endif

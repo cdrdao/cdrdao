@@ -32,15 +32,16 @@
 
 #include <glibmm/i18n.h>
 
-#define DRIVER_IDS 13
 #define DRIVER_ID_DEFAULT 2
 
-CdDevice *CdDevice::DEVICE_LIST_ = NULL;
+std::vector<CdDevice*> CdDevice::DEVICE_LIST = {};
 
-const char *CdDevice::DRIVER_NAMES_[DRIVER_IDS] = {
-    "Undefined",    "cdd2600",      "generic-mmc",  "generic-mmc-raw", "plextor",
-    "plextor-scan", "ricoh-mp6200", "sony-cdu920",  "sony-cdu948",     "taiyo-yuden",
-    "teac-cdr55",   "toshiba",      "yamaha-cdr10x"};
+std::vector<std::string> CdDevice::DRIVER_NAMES = {
+	"Undefined",    "cdd2600",      "generic-mmc",  "generic-mmc-raw", "plextor",
+	"plextor-scan", "ricoh-mp6200", "sony-cdu920",  "sony-cdu948",     "taiyo-yuden",
+	"teac-cdr55",   "toshiba",      "yamaha-cdr10x"
+    };
+
 
 CdDevice::CdDevice(const char *dev, const char *vendor, const char *product)
 {
@@ -122,7 +123,7 @@ Glib::ustring CdDevice::settingString() const
 
 void CdDevice::driverId(int id)
 {
-    if (id >= 0 && id < DRIVER_IDS)
+    if (id >= 0 && id < DRIVER_NAMES.size())
         driverId_ = id;
 }
 
@@ -198,6 +199,7 @@ int CdDevice::updateStatus()
             createScsiIf();
 
         if (scsiIf_ != NULL) {
+	    log_message(0, "RUNNING TESTUNITREADY");
             switch (scsiIf_->testUnitReady()) {
             case 0:
                 newStatus = DEV_READY;
@@ -213,6 +215,7 @@ int CdDevice::updateStatus()
                 newStatus = DEV_BUSY;
                 break;
             }
+	    log_message(0, "TESTUNITREADY, status was %d,  is now %d", status_, newStatus);
         } else {
             newStatus = DEV_FAULT;
         }
@@ -325,7 +328,8 @@ bool CdDevice::ejectCd(bool load)
         createScsiIf();
 
     if (scsiIf_) {
-        CdrDriver *driver = CdrDriver::createDriver(driverName(driverId_), driverOptions_, scsiIf_);
+        CdrDriver *driver = CdrDriver::createDriver(driverName(driverId_).c_str(),
+						    driverOptions_, scsiIf_);
 
         int ret = driver->loadUnload((load ? 0 : 1));
         success = (ret == 0);
@@ -834,29 +838,26 @@ void CdDevice::createScsiIf()
     }
 }
 
-int CdDevice::driverName2Id(const char *driverName)
+int CdDevice::driverName2Id(const std::string& driverName)
 {
-    int i;
-
-    for (i = 1; i < DRIVER_IDS; i++) {
-        if (strcmp(DRIVER_NAMES_[i], driverName) == 0)
+    for (int i = 1; i < DRIVER_NAMES.size(); i++)
+        if (DRIVER_NAMES[i] == driverName)
             return i;
-    }
 
     return 0;
 }
 
 int CdDevice::maxDriverId()
 {
-    return DRIVER_IDS - 1;
+    return DRIVER_NAMES.size() - 1;
 }
 
-const char *CdDevice::driverName(int id)
+const std::string& CdDevice::driverName(int id)
 {
-    if (id >= 0 && id < DRIVER_IDS) {
-        return DRIVER_NAMES_[id];
-    } else {
-        return "Undefined";
+    try {
+        return DRIVER_NAMES[id];
+    } catch (...) {
+        return DRIVER_NAMES[0];
     }
 }
 
@@ -939,19 +940,12 @@ void CdDevice::importSettings()
  */
 void CdDevice::exportSettings()
 {
-    CdDevice *drun;
     int n;
-
     std::vector<Glib::ustring> settingStrings;
 
-    for (drun = first(), n = 0; drun != NULL; drun = next(drun)) {
-
-        if (drun->manuallyConfigured()) {
-            settingStrings.push_back(drun->settingString());
-
-            n++;
-        }
-    }
+    for (auto dev : DEVICE_LIST)
+        if (dev->manuallyConfigured())
+            settingStrings.push_back(dev->settingString());
 
     try {
         CONFIG_MANAGER->setConfiguredDevices(settingStrings);
@@ -962,23 +956,13 @@ void CdDevice::exportSettings()
 
 CdDevice *CdDevice::add(const char *dev, const char *vendor, const char *product)
 {
-    CdDevice *run, *pred, *ent;
-
-    for (pred = NULL, run = DEVICE_LIST_; run != NULL; pred = run, run = run->next_) {
-        if (strcmp(run->dev(), dev) == 0)
-            return run;
+    for (auto device : DEVICE_LIST) {
+	if (device->dev() == dev)
+	    return device;
     }
 
-    ent = new CdDevice(dev, vendor, product);
-
-    if (pred != NULL) {
-        ent->next_ = pred->next_;
-        pred->next_ = ent;
-    } else {
-        ent->next_ = DEVICE_LIST_;
-        DEVICE_LIST_ = ent;
-    }
-
+    auto ent = new CdDevice(dev, vendor, product);
+    DEVICE_LIST.push_back(ent);
     return ent;
 }
 
@@ -1098,119 +1082,76 @@ CdDevice *CdDevice::add(const char *setting)
     return dev;
 }
 
-CdDevice *CdDevice::find(const char *dev)
+CdDevice *CdDevice::find(const std::string devname)
 {
-    CdDevice *run;
+    for (auto dev : DEVICE_LIST)
+	if (dev->dev() == devname)
+	    return dev;
 
-    for (run = DEVICE_LIST_; run != NULL; run = run->next_) {
-        if (strcmp(run->dev(), dev) == 0)
-            return run;
-    }
-
-    return NULL;
+    return nullptr;
 }
-
-void CdDevice::scan()
+bool CdDevice::scan()
 {
+    bool changed = false;
     int i, len;
     ScsiIf::ScanData *sdata = ScsiIf::scan(&len);
 
-    if (sdata) {
-        for (i = 0; i < len; i++)
-            CdDevice::add(sdata[i].dev.c_str(), sdata[i].vendor, sdata[i].product);
-        delete[] sdata;
+    if (len != DEVICE_LIST.size()) {
+	changed = true;
+    } else {
+	for (int i = 0; i < len; i++)
+	    if (DEVICE_LIST[i]->dev() != sdata[i].dev) {
+		changed = true;
+		break;
+	    }
     }
 
-#ifdef SCSI_ATAPI
-    sdata = ScsiIf::scan(&len, "ATA");
-    if (sdata) {
-        for (i = 0; i < len; i++)
-            CdDevice::add(sdata[i].dev.c_str(), sdata[i].vendor, sdata[i].product);
-        delete[] sdata;
-    } else {
-        // Only scan for ATAPI devices if we got nothing on the ATA
-        // interface, otherwise every device would show up twice on the
-        // list.
-        sdata = ScsiIf::scan(&len, "ATAPI");
-        if (sdata) {
-            for (i = 0; i < len; i++)
-                CdDevice::add(sdata[i].dev.c_str(), sdata[i].vendor, sdata[i].product);
-            delete[] sdata;
-        }
+    if (changed) {    
+	CdDevice::clear();
+
+	if (sdata) {
+	    for (i = 0; i < len; i++)
+		CdDevice::add(sdata[i].dev.c_str(), sdata[i].vendor, sdata[i].product);
+	    delete[] sdata;
+	}
     }
-#endif
+
+    return changed;
 }
 
-void CdDevice::remove(const char *dev)
+void CdDevice::remove(const char *devname)
 {
-    CdDevice *run, *pred;
-
-    for (pred = NULL, run = DEVICE_LIST_; run != NULL; pred = run, run = run->next_) {
-        if (strcmp(run->dev(), dev) == 0) {
-            if (run->status() == DEV_RECORDING || run->status() == DEV_BLANKING ||
-                run->status() == DEV_READING || run->status() == DEV_WAITING)
+    for (auto it = DEVICE_LIST.begin(); it != DEVICE_LIST.end(); ) {
+        if ((*it)->dev() == devname) {
+            if ((*it)->status() == DEV_RECORDING || (*it)->status() == DEV_BLANKING ||
+                (*it)->status() == DEV_READING || (*it)->status() == DEV_WAITING)
                 return;
-
-            if (pred != NULL)
-                pred->next_ = run->next_;
-            else
-                DEVICE_LIST_ = run->next_;
-
-            delete run;
+	    DEVICE_LIST.erase(it);
             return;
-        }
+	}
     }
 }
 
 void CdDevice::clear()
 {
-    CdDevice *next;
-
-    while (DEVICE_LIST_ != NULL) {
-        next = DEVICE_LIST_->next_;
-        delete DEVICE_LIST_;
-        DEVICE_LIST_ = next;
-    }
+    for (auto dev : DEVICE_LIST)
+	delete dev;
+    DEVICE_LIST.clear();
 }
 
-CdDevice *CdDevice::first()
+int CdDevice::update()
 {
-    return DEVICE_LIST_;
-}
-
-CdDevice *CdDevice::next(const CdDevice *run)
-{
-    if (run != NULL)
-        return run->next_;
-    else
-        return NULL;
-}
-
-int CdDevice::count()
-{
-    CdDevice *run;
-    int cnt = 0;
-
-    for (run = DEVICE_LIST_; run != NULL; run = run->next_)
-        cnt++;
-
-    return cnt;
-}
-
-int CdDevice::updateDeviceStatus()
-{
-    int newStatus = 0;
-
-    CdDevice *run;
+    int status = 0;
 
     blockProcessMonitorSignals();
 
-    for (run = DEVICE_LIST_; run != NULL; run = run->next_) {
-        if (run->updateStatus())
-            newStatus = 1;
-    }
+    if (CdDevice::scan())
+	status |= UPD_CD_DEVICES;
+
+    for (auto dev : DEVICE_LIST)
+        if (dev->updateStatus())
+	    status |= UPD_CD_DEVICE_STATUS;
 
     unblockProcessMonitorSignals();
-
-    return newStatus;
+    return status;
 }

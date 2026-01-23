@@ -33,7 +33,7 @@
 #include "CdDevice.h"
 #include "TocEdit.h"
 #include "guiUpdate.h"
-
+#include "log.h"
 #include "util.h"
 
 DeviceList::DeviceList(CdDevice::DeviceType filterType)
@@ -116,8 +116,7 @@ void DeviceList::import()
 {
     listModel_->clear();
 
-    for (CdDevice* drun = CdDevice::first(); drun != NULL;
-	 drun = CdDevice::next(drun)) {
+    for (auto drun : CdDevice::deviceList()) {
 	bool match = false;
         switch (filterType_) {
         case CdDevice::CD_ROM:
@@ -146,13 +145,14 @@ void DeviceList::importStatus()
 {
     std::string data;
     CdDevice *cddev;
+    log_message(0, "DeviceList::importStatus()");
 
     Gtk::TreeNodeChildren ch = listModel_->children();
     for (unsigned i = 0; i < ch.size(); i++) {
         Gtk::TreeRow row = ch[i];
         data = row[listColumns_.dev];
 
-        if ((cddev = CdDevice::find(data.c_str()))) {
+        if ((cddev = CdDevice::find(data))) {
             if (cddev->status() == CdDevice::DEV_READY)
                 list_.get_column(i)->set_clickable(true);
             else

@@ -22,10 +22,11 @@
 #include "CdDevice.h"
 #include "DeviceConfDialog.h"
 #include "ProcessMonitor.h"
+#include "ProgressDialog.h"
 #include "TocEdit.h"
 #include "gcdmaster.h"
 #include "xcdrdao.h"
-
+#include "log.h"
 #include "util.h"
 
 void guiUpdate(unsigned long level)
@@ -33,14 +34,15 @@ void guiUpdate(unsigned long level)
     if (GCDMASTER)
         GCDMASTER->update(level);
 
-//    if (PROGRESS_POOL != NULL)
-//        PROGRESS_POOL->update(level);
+    if (PROGRESS_POOL != NULL)
+        PROGRESS_POOL->update(level);
 }
 
 bool guiUpdatePeriodic()
 {
-    // if (CdDevice::updateDeviceStatus())
-    //     guiUpdate(UPD_CD_DEVICE_STATUS);
+    auto val = CdDevice::update();
+    if (val)
+	guiUpdate(val);
 
     return true;
 }

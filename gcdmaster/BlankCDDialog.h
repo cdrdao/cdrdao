@@ -29,8 +29,7 @@ class DeviceList;
 class BlankCDDialog : public GCDWindow
 {
   public:
-    // Added virtual destructor for proper cleanup in GTK4
-    virtual ~BlankCDDialog() = default;
+    virtual ~BlankCDDialog() {}
 
     static BlankCDDialog* create(Glib::RefPtr<Gtk::Builder> builder,
 				 Gtk::Window& parent);
@@ -65,7 +64,7 @@ class BlankCDDialog : public GCDWindow
     // Internal Logic Methods
     void stop();
     void startAction();
-    void moreOptions();
+    void moreOptions(Gtk::Box* box, Gtk::Button* button);
     void speedButtonChanged();
     void speedChanged();
     
@@ -79,7 +78,6 @@ class BlankCDDialog : public GCDWindow
     bool getReload();
     int getSpeed();
 
-    // GTK4 signal handler for window close requests
     bool on_close_request() override;
 };
 

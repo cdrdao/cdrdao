@@ -231,8 +231,9 @@ void AudioCDProject::cancelEnable(bool enable)
         stopButton_->set_sensitive(enable);
 }
 
-void AudioCDProject::closeProject()
+bool AudioCDProject::on_close_request()
 {
+    log_message(0, "AudioCDProject: close request");
     if (tocEdit_->tocDirty()) {
 
         Glib::ustring message = "Project ";
@@ -253,8 +254,11 @@ void AudioCDProject::closeProject()
             if (playStatus_ == PLAYING || playStatus_ == PAUSED) {
                 playStop();
             }
+	    this->set_visible(false);
         });
+	return true;
     }
+    return false;
 }
 
 void AudioCDProject::saveProject()
