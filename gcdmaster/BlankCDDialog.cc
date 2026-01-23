@@ -48,6 +48,9 @@ BlankCDDialog::BlankCDDialog()
     moreOptionsDialog_ = nullptr;
     speed_ = 1;
 
+    auto *headerbar = Gtk::make_managed<Gtk::HeaderBar>();
+    set_titlebar(*headerbar);
+
     // Device List
     Devices = Gtk::make_managed<DeviceList>(CdDevice::CD_RW);
     Devices->set_expand(true);
@@ -87,14 +90,15 @@ BlankCDDialog::BlankCDDialog()
     frameBox->append(*moreOptionsButton);
     vbox_.append(*blankOptionsFrame);
 
-    // Action Buttons (Start/Cancel)
+    // Action Buttons (Start)
     auto *hbox2 = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL, 20);
     hbox2->set_margin(10);
     hbox2->set_halign(Gtk::Align::CENTER);
-    hbox2->set_homogeneous(true);
 
     auto *startBtn = Gtk::make_managed<Gtk::Button>();
     auto *startBox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL, 5);
+    startBox->set_margin_start(10);
+    startBox->set_margin_end(10);
     auto *startPixmap = Gtk::make_managed<Gtk::Image>();
     startPixmap->set_from_resource("/org/gnome/gcdmaster/gcdmaster");
     startPixmap->set_pixel_size(48);
@@ -103,11 +107,7 @@ BlankCDDialog::BlankCDDialog()
     startBtn->set_child(*startBox);
     startBtn->signal_clicked().connect(sigc::mem_fun(*this, &BlankCDDialog::startAction));
 
-    auto *cancelBtn = Gtk::make_managed<Gtk::Button>(_("Cancel"));
-    cancelBtn->signal_clicked().connect(sigc::mem_fun(*this, &BlankCDDialog::stop));
-
     hbox2->append(*startBtn);
-    hbox2->append(*cancelBtn);
     vbox_.append(*hbox2);
 
     // Create dialog boxes

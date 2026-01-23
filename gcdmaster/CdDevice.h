@@ -56,51 +56,30 @@ class CdDevice : public sigc::trackable
         A_NONE
     };
 
-    CdDevice(const char *dev, const char *vendor, const char *product);
+    CdDevice(const std::string& dev, const std::string& vendor, const std::string& product);
     ~CdDevice();
 
     Glib::ustring settingString() const;
 
-    const char *dev() const
-    {
-        return dev_.c_str();
-    }
-    const char *vendor() const
-    {
-        return vendor_.c_str();
-    }
-    const char *product() const
-    {
-        return product_.c_str();
-    }
+    const std::string& dev() const { return dev_; }
+    const std::string& vendor() const { return vendor_; }
+    const std::string& product() const { return product_; }
 
-    Status status() const
-    {
-        return status_;
-    }
-    Process *process() const
-    {
-        return process_;
-    }
+    Status status() const { return status_; }
+    Process *process() const { return process_; }
 
     int exitStatus() const;
 
     void status(Status);
     int updateStatus();
 
-    Action action() const
-    {
-        return action_;
-    }
+    Action action() const { return action_; }
 
     bool updateProgress(Glib::IOCondition, int fd);
 
     int autoSelectDriver();
 
-    int driverId() const
-    {
-        return driverId_;
-    }
+    int driverId() const { return driverId_; }
     void driverId(int);
 
     DeviceType deviceType() const;
@@ -109,26 +88,17 @@ class CdDevice : public sigc::trackable
     unsigned long driverOptions() const;
     void driverOptions(unsigned long);
 
-    bool manuallyConfigured() const
-    {
-        return manuallyConfigured_;
-    }
-    void manuallyConfigured(bool b)
-    {
-        manuallyConfigured_ = b;
-    }
+    bool manuallyConfigured() const { return manuallyConfigured_; }
+    void manuallyConfigured(bool b) { manuallyConfigured_ = b; }
 
     bool ejectCd(bool load = false);
-    bool loadCd()
-    {
-        return ejectCd(true);
-    }
+    bool loadCd() { return ejectCd(true); }
 
     bool recordDao(Gtk::Window &parent, TocEdit *, int simulate, int multiSession, int speed,
                    int eject, int reload, int buffer, int overburn);
     void abortDaoRecording();
 
-    int extractDao(Gtk::Window &parent, const char *tocFileName, int correction,
+    int extractDao(Gtk::Window &parent, const std::string& tocFileName, int correction,
                    int readSubChanMode);
     void abortDaoReading();
 
@@ -148,21 +118,21 @@ class CdDevice : public sigc::trackable
     static const std::string& driverName(int id);
     static int driverName2Id(const std::string&);
 
-    static const char *status2string(Status);
-    static const char *deviceType2string(DeviceType);
+    static const std::string status2string(Status);
+    static const std::string deviceType2string(DeviceType);
 
     static void importSettings();
     static void exportSettings();
 
-    static CdDevice *add(const char *scsidev, const char *vendor, const char *product);
+    static CdDevice *add(const std::string& scsidev, const std::string& vendor, const std::string& product);
 
-    static CdDevice *add(const char *setting);
+    static CdDevice *add(const std::string& setting);
 
     static CdDevice *find(const std::string dev);
 
     static bool scan();
 
-    static void remove(const char *dev);
+    static void remove(const std::string& dev);
 
     static void clear();
 

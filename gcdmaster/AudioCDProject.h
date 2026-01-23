@@ -65,10 +65,7 @@ class AudioCDProject : public GCDWindow
     bool appendFiles(std::list<std::string> &);
     bool insertFiles(std::list<std::string> &);
 
-    PlayStatus playStatus()
-    {
-        return playStatus_;
-    }
+    PlayStatus playStatus() { return playStatus_;  }
 
     void statusMessage(const char *fmt, ...);
 
@@ -126,7 +123,6 @@ class AudioCDProject : public GCDWindow
 
     Glib::RefPtr<Gio::SimpleAction> play_action_, pause_action_, stop_action_;
 
-
     AudioCDView *audioCDView_;
     Glib::RefPtr<RecordTocDialog> recordTocDialog_;
     Glib::RefPtr<TocInfoDialog> tocInfoDialog_;
@@ -136,7 +132,7 @@ class AudioCDProject : public GCDWindow
     Glib::RefPtr<Gtk::ToggleButton> zoomToggle_;
     void projectInfo();
     void cdTextDialog();
-    virtual void update(unsigned long level);
+    virtual void update(unsigned long level) override;
 
     Glib::RefPtr<Gtk::Label> statusbar_;
     Glib::RefPtr<Gtk::ProgressBar> progressbar_;

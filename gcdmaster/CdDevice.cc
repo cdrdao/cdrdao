@@ -18,6 +18,7 @@
  */
 
 #include <cassert>
+#include <cstdlib>
 
 #include "CdDevice.h"
 #include "dao/ScsiIf.h"
@@ -43,7 +44,7 @@ std::vector<std::string> CdDevice::DRIVER_NAMES = {
     };
 
 
-CdDevice::CdDevice(const char *dev, const char *vendor, const char *product)
+CdDevice::CdDevice(const std::string& dev, const std::string& vendor, const std::string& product)
 {
     dev_ = dev;
     vendor_ = vendor;
@@ -408,7 +409,7 @@ bool CdDevice::recordDao(Gtk::Window &parent, TocEdit *tocEdit, int simulate, in
     args[n++] = (char *)dev_.c_str();
 
     if (driverId_ > 0) {
-        snprintf(drivername, sizeof(drivername), "%s:0x%lx", driverName(driverId_), driverOptions_);
+        snprintf(drivername, sizeof(drivername), "%s:0x%lx", driverName(driverId_).c_str(), driverOptions_);
         args[n++] = "--driver";
         args[n++] = drivername;
     }
@@ -483,7 +484,7 @@ void CdDevice::progress(int *status, int *totalTracks, int *track, int *trackPro
 // Starts a 'cdrdao' for reading whole cd.
 // Return: 0: OK, process succesfully launched
 //         1: error occured
-int CdDevice::extractDao(Gtk::Window &parent, const char *tocFileName, int correction,
+int CdDevice::extractDao(Gtk::Window &parent, const std::string& tocFileName, int correction,
                          int readSubChanMode)
 {
     const char *args[30];
@@ -529,7 +530,7 @@ int CdDevice::extractDao(Gtk::Window &parent, const char *tocFileName, int corre
     args[n++] = (char *)dev_.c_str();
 
     if (driverId_ > 0) {
-        snprintf(drivername, sizeof(drivername), "%s:0x%lx", driverName(driverId_), driverOptions_);
+        snprintf(drivername, sizeof(drivername), "%s:0x%lx", driverName(driverId_).c_str(), driverOptions_);
         args[n++] = "--driver";
         args[n++] = drivername;
     }
@@ -539,15 +540,15 @@ int CdDevice::extractDao(Gtk::Window &parent, const char *tocFileName, int corre
     args[n++] = correctionbuf;
 
     args[n++] = "--datafile";
-    args[n++] = g_strdup_printf("%s.bin", tocFileName);
+    args[n++] = g_strdup_printf("%s.bin", tocFileName.c_str());
 
-    args[n++] = g_strdup_printf("%s.toc", tocFileName);
+    args[n++] = g_strdup_printf("%s.toc", tocFileName.c_str());
 
     args[n++] = NULL;
 
     assert(n <= 20);
 
-    PROGRESS_POOL->start(parent, this, tocFileName, false, false);
+    PROGRESS_POOL->start(parent, this, tocFileName.c_str(), false, false);
 
     // Remove the SCSI interface of this device to avoid problems with double
     // usage of device nodes.
@@ -663,7 +664,7 @@ int CdDevice::duplicateDao(Gtk::Window &parent, int simulate, int multiSession, 
     args[n++] = (char *)dev_.c_str();
 
     if (driverId_ > 0) {
-        snprintf(drivername, sizeof(drivername), "%s:0x%lx", driverName(driverId_), driverOptions_);
+        snprintf(drivername, sizeof(drivername), "%s:0x%lx", driverName(driverId_).c_str(), driverOptions_);
         args[n++] = "--driver";
         args[n++] = drivername;
     }
@@ -671,11 +672,11 @@ int CdDevice::duplicateDao(Gtk::Window &parent, int simulate, int multiSession, 
     if (readdev != this) { // reader and write the same, skip source device
 
         args[n++] = "--source-device";
-        args[n++] = (char *)readdev->dev();
+        args[n++] = readdev->dev().c_str();
 
         if (readdev->driverId() > 0) {
             snprintf(r_drivername, sizeof(r_drivername), "%s:0x%lx",
-                     driverName(readdev->driverId()), readdev->driverOptions());
+                     driverName(readdev->driverId()).c_str(), readdev->driverOptions());
             args[n++] = "--source-driver";
             args[n++] = r_drivername;
         }
@@ -778,7 +779,9 @@ int CdDevice::blank(Gtk::Window *parent, int fast, int speed, int eject, int rel
     args[n++] = (char *)dev_.c_str();
 
     if (driverId_ > 0) {
-        snprintf(drivername, sizeof(drivername), "%s:0x%lx", driverName(driverId_), driverOptions_);
+        snprintf(drivername, sizeof(drivername), "%s:0x%lx",
+                 driverName(driverId_).c_str(),
+                 driverOptions_);
         args[n++] = "--driver";
         args[n++] = drivername;
     }
@@ -861,7 +864,7 @@ const std::string& CdDevice::driverName(int id)
     }
 }
 
-const char *CdDevice::status2string(Status s)
+const std::string CdDevice::status2string(Status s)
 {
     const char *ret = NULL;
 
@@ -898,7 +901,7 @@ const char *CdDevice::status2string(Status s)
     return ret;
 }
 
-const char *CdDevice::deviceType2string(DeviceType t)
+const std::string CdDevice::deviceType2string(DeviceType t)
 {
     const char *ret = NULL;
 
@@ -954,7 +957,7 @@ void CdDevice::exportSettings()
     }
 }
 
-CdDevice *CdDevice::add(const char *dev, const char *vendor, const char *product)
+CdDevice *CdDevice::add(const std::string& dev, const std::string& vendor, const std::string& product)
 {
     for (auto device : DEVICE_LIST) {
 	if (device->dev() == dev)
@@ -1012,8 +1015,10 @@ static char *nextToken(char *&p)
     return val;
 }
 
-static CdDevice *addImpl(char *s)
+static CdDevice *addImpl(const std::string& setting)
 {
+    char* s = (char*)alloca(setting.size() + 1);
+    std::strcpy(s, setting.c_str());
     char *p;
     int driverId;
     std::string dev;
@@ -1062,7 +1067,7 @@ static CdDevice *addImpl(char *s)
         return NULL;
     options = strtoul(val, NULL, 0);
 
-    cddev = CdDevice::add(dev.c_str(), vendor.c_str(), model.c_str());
+    cddev = CdDevice::add(dev, vendor, model);
 
     cddev->driverId(driverId);
     cddev->deviceType(type);
@@ -1071,14 +1076,9 @@ static CdDevice *addImpl(char *s)
     return cddev;
 }
 
-CdDevice *CdDevice::add(const char *setting)
+CdDevice *CdDevice::add(const std::string& setting)
 {
-    char *s = strdupCC(setting);
-
-    CdDevice *dev = addImpl(s);
-
-    delete[] s;
-
+    CdDevice *dev = addImpl(setting);
     return dev;
 }
 
@@ -1119,7 +1119,7 @@ bool CdDevice::scan()
     return changed;
 }
 
-void CdDevice::remove(const char *devname)
+void CdDevice::remove(const std::string& devname)
 {
     for (auto it = DEVICE_LIST.begin(); it != DEVICE_LIST.end(); ) {
         if ((*it)->dev() == devname) {
