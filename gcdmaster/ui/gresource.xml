@@ -14,8 +14,6 @@
     </gresource>
     <gresource prefix="/org/gnome/gcdmaster">
         <file preprocess="xml-stripblanks">app_menu.ui</file>
-        <file preprocess="xml-stripblanks">audiocd.ui</file>
-        <file preprocess="xml-stripblanks">chooser.ui</file>
         <file preprocess="xml-stripblanks">gears_audio_menu.ui</file>
         <file preprocess="xml-stripblanks">preferences.ui</file>
         <file preprocess="xml-stripblanks">window.ui</file>
