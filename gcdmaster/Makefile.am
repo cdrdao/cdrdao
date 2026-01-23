@@ -7,6 +7,8 @@ gcdmaster_SOURCES = \
 	main.cc			\
 	guiUpdate.cc 		\
 	MessageBox.cc 		\
+	CdDevice.cc		\
+	ProcessMonitor.cc	\
 	TaskManager.cc		\
 	Settings.cc 		\
 	SampleManager.cc	\
