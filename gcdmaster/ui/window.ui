@@ -2,113 +2,99 @@
 <!-- Generated with glade 3.40.0 -->
 <interface>
   <requires lib="gtk+" version="4.10"/>
-  <object class="GtkImage" id="blank_img">
-    <property name="visible">True</property>
-    <property name="can-focus">False</property>
-    <property name="resource">/org/gnome/gcdmaster/blank.png</property>
-  </object>
   <object class="GtkApplicationWindow" id="app_window">
     <property name="can-focus">False</property>
     <property name="default-width">350</property>
     <property name="default-height">250</property>
     <child>
       <object class="GtkBox">
-        <property name="visible">True</property>
         <property name="can-focus">False</property>
         <property name="orientation">vertical</property>
         <child>
           <object class="GtkBox" id="notebook">
-            <property name="visible">True</property>
             <property name="can-focus">True</property>
             <property name="orientation">vertical</property>
             <child>
               <object class="GtkBox" id="audio-toolbar">
-                <property name="visible">True</property>
+                <property name="orientation">horizontal</property>
                 <property name="can-focus">False</property>
                 <child>
                   <object class="GtkButton">
-                    <property name="visible">True</property>
                     <property name="can-focus">False</property>
                     <property name="receives-default">False</property>
                     <property name="tooltip-text" translatable="yes">Save current project</property>
                     <property name="action-name">box.save</property>
-                    <property name="icon-name">document-save</property>
+                    <property name="icon-name">document-save-symbolic</property>
                     <property name="use-underline">True</property>
                   </object>
                 </child>
                 <child>
                   <object class="GtkButton">
-                    <property name="visible">True</property>
                     <property name="can-focus">False</property>
                     <property name="receives-default">False</property>
                     <property name="tooltip-text" translatable="yes">Record project onto media</property>
                     <property name="action-name">box.record</property>
-                    <property name="icon-name">media-record</property>
+                    <property name="icon-name">media-record-symbolic</property>
                     <property name="use-underline">True</property>
                   </object>
                 </child>
                 <child>
                   <object class="GtkSeparator">
                     <property name="orientation">vertical</property>
-                    <property name="visible">True</property>
                     <property name="can-focus">False</property>
                   </object>
                 </child>
                 <child>
                   <object class="GtkButton">
-                    <property name="visible">True</property>
                     <property name="can-focus">False</property>
                     <property name="receives-default">False</property>
                     <property name="tooltip-text" translatable="yes">Play audio from current position</property>
                     <property name="action-name">box.play</property>
-                    <property name="icon-name">media-playback-start</property>
+                    <property name="icon-name">media-playback-start-symbolic</property>
                     <property name="use-underline">True</property>
                   </object>
                 </child>
                 <child>
                   <object class="GtkButton">
-                    <property name="visible">True</property>
                     <property name="can-focus">False</property>
                     <property name="receives-default">False</property>
                     <property name="tooltip-text" translatable="yes">Stop audio playback</property>
                     <property name="action-name">box.stop</property>
+                    <property name="icon-name">media-playback-stop-symbolic</property>
                     <property name="use-underline">True</property>
                   </object>
                 </child>
                 <child>
                   <object class="GtkButton">
-                    <property name="visible">True</property>
                     <property name="can-focus">False</property>
                     <property name="receives-default">False</property>
                     <property name="tooltip-text" translatable="yes">Pause audio playback</property>
                     <property name="action-name">box.pause</property>
+                    <property name="icon-name">media-playback-pause-symbolic</property>
                     <property name="use-underline">True</property>
                   </object>
                 </child>
                 <child>
                   <object class="GtkSeparator">
                     <property name="orientation">vertical</property>
-                    <property name="visible">True</property>
                     <property name="can-focus">False</property>
                   </object>
                 </child>
                 <child>
                   <object class="GtkToggleButton" id="rbt1">
-                    <property name="visible">True</property>
                     <property name="can-focus">False</property>
                     <property name="action-name">box.zoom-mode</property>
                     <property name="use-underline">True</property>
-                    <property name="icon-name">gtk-zoom-fit</property>
+                    <property name="icon-name">org.gnome.Settings-accessibility-zoom-symbolic</property>
                     <property name="active">True</property>
                   </object>
                 </child>
                 <child>
                   <object class="GtkToggleButton">
-                    <property name="visible">True</property>
                     <property name="can-focus">False</property>
                     <property name="action-name">box.select-mode</property>
                     <property name="use-underline">True</property>
-                    <property name="icon-name">gtk-jump-to</property>
+                    <property name="icon-name">edit-select-all-symbolic</property>
                     <property name="active">True</property>
                     <property name="group">rbt1</property>
                   </object>
@@ -116,34 +102,33 @@
                 <child>
                   <object class="GtkSeparator">
                     <property name="orientation">vertical</property>
-                    <property name="visible">True</property>
                     <property name="can-focus">False</property>
                   </object>
                 </child>
                 <child>
                   <object class="GtkButton">
-                    <property name="visible">True</property>
                     <property name="can-focus">False</property>
                     <property name="receives-default">False</property>
                     <property name="action-name">box.zoom-in</property>
+                    <property name="icon-name">zoom-in-symbolic</property>
                     <property name="use-underline">True</property>
                   </object>
                 </child>
                 <child>
                   <object class="GtkButton">
-                    <property name="visible">True</property>
                     <property name="can-focus">False</property>
                     <property name="receives-default">False</property>
                     <property name="action-name">box.zoom-out</property>
+                    <property name="icon-name">zoom-out-symbolic</property>
                     <property name="use-underline">True</property>
                   </object>
                 </child>
                 <child>
                   <object class="GtkButton">
-                    <property name="visible">True</property>
                     <property name="can-focus">False</property>
                     <property name="receives-default">False</property>
                     <property name="action-name">box.zoom-fit</property>
+                    <property name="icon-name">zoom-original-symbolic</property>
                     <property name="use-underline">True</property>
                   </object>
                 </child>
@@ -156,7 +141,6 @@
         </child>
         <child>
           <object class="GtkProgressBar" id="progress-bar">
-            <property name="visible">True</property>
             <property name="can-focus">False</property>
             <property name="margin-top">2</property>
             <property name="margin-bottom">2</property>
@@ -164,12 +148,10 @@
         </child>
         <child>
           <object class="GtkBox" id="status-bar">
-            <property name="visible">True</property>
             <property name="can-focus">False</property>
             <property name="spacing">2</property>
             <child>
               <object class="GtkLabel" id="status-bar-label">
-                <property name="visible">True</property>
                 <property name="can-focus">False</property>
                 <property name="halign">start</property>
                 <property name="margin-start">4</property>
@@ -181,7 +163,6 @@
             </child>
             <child>
               <object class="GtkButton" id="gtk-stop">
-                <property name="visible">True</property>
                 <property name="can-focus">True</property>
                 <property name="receives-default">True</property>
                 <property name="margin-start">1</property>
@@ -198,6 +179,19 @@
       <object class="GtkHeaderBar" id="header">
         <property name="show-title-buttons">True</property>
         <property name="decoration-layout">menu:close</property>
+        <child type="start">
+          <object class="GtkMenuButton" id="app-menu-button">
+            <property name="can-focus">False</property>
+            <property name="receives-default">False</property>
+            <property name="direction">none</property>
+            <child type="end">
+              <object class="GtkImage">
+                <property name="can-focus">False</property>
+                <property name="resource">/org/gnome/gcdmaster/gcdmaster</property>
+              </object>
+            </child>
+          </object>
+        </child>
         <child type="title">
           <object class="GtkLabel">
             <property name="label" translatable="yes">Gnome CD Master</property>
@@ -205,17 +199,21 @@
         </child>
         <child type="end">
           <object class="GtkButton" id="blank_button">
-            <property name="visible">True</property>
-            <property name="can-focus">True</property>
+            <property name="can-focus">False</property>
             <property name="receives-default">True</property>
             <property name="tooltip-text">Blank CD-RW</property>
             <property name="action-name">app.blank-cdrw</property>
-            <property name="icon-name">gcdmaster-blank</property>
+            <property name="icon-name">foozle</property>
+            <child type="end">
+              <object class="GtkImage">
+                <property name="can-focus">False</property>
+                <property name="resource">/org/gnome/gcdmaster/gcdmaster-blank</property>
+              </object>
+            </child>
           </object>
         </child>
         <child type="end">
           <object class="GtkMenuButton" id="gears">
-            <property name="visible">True</property>
             <property name="can-focus">False</property>
             <property name="receives-default">False</property>
             <property name="direction">none</property>

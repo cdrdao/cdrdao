@@ -47,8 +47,9 @@ AudioCDProject* AudioCDProject::create(Glib::RefPtr<Gtk::Builder> builder,
 				       const Glib::ustring& path)
 {
     static int nextNumber = 0;
-    builder->add_from_resource("/org/gnome/gcdmaster/ui/window.ui");
-    builder->add_from_resource("/org/gnome/gcdmaster/ui/gears_audio_menu.ui");
+    builder->add_from_resource("/org/gnome/gcdmaster/window.ui");
+    builder->add_from_resource("/org/gnome/gcdmaster/gears_audio_menu.ui");
+    builder->add_from_resource("/org/gnome/gcdmaster/app_menu.ui");
 
     auto window = Gtk::Builder::get_widget_derived<AudioCDProject>(builder, "app_window");
     if (!window)
@@ -62,11 +63,6 @@ AudioCDProject::AudioCDProject(BaseObjectType* cobject,
  			      const Glib::RefPtr<Gtk::Builder>& builder) :
     GCDWindow(cobject), builder_(builder)
 {
-    // Load toolbar.
-    auto tbar = builder->get_object<Gtk::Box>("audio-toolbar");
-    auto vbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL);
-    vbox->append(*tbar);
-
     // Add actions
     add_action("save", sigc::mem_fun(*this, &AudioCDProject::saveProject));
     add_action("save-as", sigc::mem_fun(*this, &AudioCDProject::saveAsProject));
@@ -86,6 +82,11 @@ AudioCDProject::AudioCDProject(BaseObjectType* cobject,
     add_action("zoom-out", sigc::mem_fun(*this, &AudioCDProject::on_zoom_out_clicked));
     add_action("zoom-fit", sigc::mem_fun(*this, &AudioCDProject::on_zoom_fit_clicked));
 
+    // App menu
+    auto app_menu_button = builder->get_object<Gtk::MenuButton>("app-menu-button");
+    auto app_menu = builder->get_object<Gio::MenuModel>("app-menu");
+    app_menu_button->set_menu_model(app_menu);
+
     // Window menu
     auto gears = builder->get_object<Gtk::MenuButton>("gears");
     auto wmenu = builder->get_object<Gio::MenuModel>("audiocd-menu");
@@ -100,8 +101,6 @@ AudioCDProject::AudioCDProject(BaseObjectType* cobject,
     buttonStop_ = NULL;
     buttonPause_ = NULL;
     audioCDView_ = NULL;
-
-    set_child(*vbox);
 
     playStatus_ = STOPPED;
     playBurst_ = 588 * 10;

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gresources>
+    <gresource prefix="/org/gnome/gcdmaster">
+        <file alias="gcdmaster-audiocd">audiocd.png</file>
+        <file alias="gcdmaster-blank">blank.png</file>
+        <file alias="gcdmaster-copy">copycd.png</file>
+        <file alias="gcdmaster-dump">dumpcd.png</file>
+        <file alias="gcdmaster">gcdmaster.png</file>
+        <file alias="gcdmaster-open">open.png</file>
+        <file alias="gcdmaster-pause">pause.png</file>
+        <file alias="gcdmaster-play">play.png</file>
+        <file alias="gcdmaster-record">record.png</file>
+        <file alias="gcdmaster-stop">stop.png</file>
+    </gresource>
+    <gresource prefix="/org/gnome/gcdmaster">
+        <file preprocess="xml-stripblanks">app_menu.ui</file>
+        <file preprocess="xml-stripblanks">audiocd.ui</file>
+        <file preprocess="xml-stripblanks">chooser.ui</file>
+        <file preprocess="xml-stripblanks">gears_audio_menu.ui</file>
+        <file preprocess="xml-stripblanks">preferences.ui</file>
+        <file preprocess="xml-stripblanks">window.ui</file>
+    </gresource>
+</gresources>

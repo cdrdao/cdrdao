@@ -91,14 +91,6 @@ void GCDMaster::on_startup()
     // Call the base class implementation
     Gtk::Application::on_startup();
 
-    // Configure Menu
-    try {
-        builder_->add_from_resource("/org/gnome/gcdmaster/ui/app_menu.ui");
-    } catch (const Glib::Error& ex) {
-        std::cerr << "on_startup() menu: " << ex.what() << std::endl;
-        return;
-    }
-
     // Add actions
     add_action("preferences",
                sigc::mem_fun(*this, &GCDMaster::on_action_preferences));
@@ -137,14 +129,6 @@ void GCDMaster::on_startup()
     
     openFileChooser_ = Gtk::FileDialog::create();
     openFileChooser_->set_filters(filter_list);
-
-    auto app_menu = builder_->get_object<Gio::Menu>("app-menu");
-    if (app_menu) {
-        set_menubar(app_menu);
-    }  else {
-        std::cerr << "on_startup() no app menu" << std::endl;
-        return;
-    }
 
     about_ = Glib::RefPtr<Gtk::AboutDialog>(new Gtk::AboutDialog());
     std::vector<Glib::ustring> authors;

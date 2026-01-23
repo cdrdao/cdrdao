@@ -115,18 +115,18 @@ icon_DATA = gcdmaster.png gcdmaster-doc.png
 gsettings_SCHEMAS = org.gnome.gcdmaster.gschema.xml
 @GSETTINGS_RULES@
 
-resources.cc: gresource.xml
+resources.cc: ui/gresource.xml
 	glib-compile-resources \
 		--target=$@ \
-		--sourcedir=$(srcdir) \
+		--sourcedir=ui \
 		--generate-source \
-		$(srcdir)/gresource.xml
-resources.h: gresource.xml
+		$<
+resources.h: ui/gresource.xml
 	glib-compile-resources \
 		--target=$@ \
-		--sourcedir=$(srcdir) \
+		--sourcedir=ui \
 		--generate-header \
-		$(srcdir)/gresource.xml
+		$<
 
 CLEANFILES = resources.cc resources.h
 
