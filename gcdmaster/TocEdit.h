@@ -21,8 +21,8 @@
 #define __TOC_EDIT_H__
 
 #include <list>
-#include <sigc++/sigc++.h>
 #include <string>
+#include <gtkmm.h>
 
 #include "CdTextItem.h"
 #include "FormatConverter.h"
@@ -35,7 +35,7 @@ class TrackDataScrap;
 class SampleManager;
 class TocEditView;
 
-class TocEdit
+class TocEdit : public Glib::Object
 {
   public:
     TocEdit(Toc *, const char *);

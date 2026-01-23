@@ -610,8 +610,7 @@ void TocEdit::runCompletion(QueueJob *job)
 
     int result;
     while ((result = sampleManager_->readSamples()) == 0) {
-        while (Gtk::Main::events_pending()) {
-            Gtk::Main::iteration();
+        while (Glib::MainContext::get_default()->iteration(false)) {
         }
     }
 

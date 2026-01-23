@@ -37,20 +37,23 @@ class GCDWindow : public Gtk::ApplicationWindow
 {
 public:
     GCDWindow();
+    GCDWindow(BaseObjectType* cobject);
 
-    void update(unsigned long level);
+    virtual void update(unsigned long level) = 0;
 };
 
 class GCDMaster : public Gtk::Application
 {
   public:
-    GCDMaster();
+    static Glib::RefPtr<GCDMaster> create();
 
     void openNewProject(const Glib::ustring path);
     void newEmptyProject();
     void update(unsigned long level);
 
   private:
+    GCDMaster();
+
     Glib::RefPtr<Gtk::Builder> builder_;
 
     void on_startup() override;
@@ -70,7 +73,7 @@ class GCDMaster : public Gtk::Application
     Glib::RefPtr<Gtk::FileFilter> allFilter_;
 
     int argc;
-    char* argv[];
+    char** argv;
 };
 
 #endif

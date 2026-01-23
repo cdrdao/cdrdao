@@ -32,10 +32,9 @@
 #include "config.h"
 #include "guiUpdate.h"
 
-RecordTocDialog::RecordTocDialog(TocEdit *tocEdit)
+RecordTocDialog::RecordTocDialog(Glib::RefPtr<TocEdit> tocEdit)
+    : tocEdit_(tocEdit)
 {
-    tocEdit_ = tocEdit;
-
     set_title(_("Record CD"));
 
     auto vbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL, 10);

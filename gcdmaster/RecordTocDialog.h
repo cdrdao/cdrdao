@@ -20,6 +20,8 @@
 #ifndef __RECORD_TOC_DIALOG_H
 #define __RECORD_TOC_DIALOG_H
 
+#include <gtkmm.h>
+
 class TocEdit;
 class RecordTocSource;
 class RecordCDTarget;
@@ -27,7 +29,7 @@ class RecordCDTarget;
 class RecordTocDialog : public Gtk::Window
 {
   public:
-    RecordTocDialog(TocEdit *);
+    RecordTocDialog(Glib::RefPtr<TocEdit>);
     ~RecordTocDialog();
 
     void start(Gtk::Window *);
@@ -37,7 +39,7 @@ class RecordTocDialog : public Gtk::Window
     RecordTocSource *TocSource;
     RecordCDTarget *CDTarget;
 
-    TocEdit *tocEdit_;
+    Glib::RefPtr<TocEdit> tocEdit_;
     bool active_;
 
     Gtk::Button *simulate_rb;

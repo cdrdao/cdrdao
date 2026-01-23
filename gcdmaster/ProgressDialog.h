@@ -35,8 +35,6 @@ class ProgressDialog : public Gtk::Dialog
     ProgressDialog(ProgressDialogPool *father);
     ~ProgressDialog();
 
-    bool on_delete_event(GdkEventAny *);
-
   private:
     friend class ProgressDialogPool;
 

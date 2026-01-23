@@ -132,20 +132,6 @@ TocEdit *Project::tocEdit()
     return tocEdit_;
 }
 
-void Project::statusMessage(const char *fmt, ...)
-{
-    va_list args;
-    va_start(args, fmt);
-
-    char *s = g_strdup_vprintf(fmt, args);
-
-    statusbar_->push(s);
-
-    free(s);
-
-    va_end(args);
-}
-
 void Project::tocBlockedMsg(const char *op)
 {
     MessageBox msg(parent_, op, 0,

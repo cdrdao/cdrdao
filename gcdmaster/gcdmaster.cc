@@ -38,6 +38,17 @@ GCDWindow::GCDWindow()
     set_icon_name("gcdmaster");
 }
 
+GCDWindow::GCDWindow(BaseObjectType* cobject)
+    : Gtk::ApplicationWindow(cobject)
+{
+    set_icon_name("gcdmaster");
+}
+
+Glib::RefPtr<GCDMaster> GCDMaster::create()
+{
+    return Glib::make_refptr_for_instance<GCDMaster>(new GCDMaster());
+}
+
 GCDMaster::GCDMaster()
     : Gtk::Application("org.gnome.gcdmaster", Gio::Application::Flags::HANDLES_OPEN)
 {
@@ -53,11 +64,11 @@ void GCDMaster::on_open(const type_vec_files& files, const Glib::ustring& hint)
 void GCDMaster::openNewProject(const Glib::ustring path = "")
 {
    try {
-       auto new_win = Gtk::make_managed<AudioCDProject>(builder_, 0, path);
+       auto new_win = AudioCDProject::create(builder_, path);
         add_window(*new_win);
         new_win->present();
     } catch (std::exception& e) {
-        std::cerr << "Failed\n";
+       std::cerr << "Failed: " << e.what() << "\n";
     }
 }
 
@@ -82,7 +93,7 @@ void GCDMaster::on_startup()
 
     // Configure Menu
     try {
-        builder_->add_from_resource("/org/gnome/gcdmaster/app_menu.ui");
+        builder_->add_from_resource("/org/gnome/gcdmaster/ui/app_menu.ui");
     } catch (const Glib::Error& ex) {
         std::cerr << "on_startup() menu: " << ex.what() << std::endl;
         return;
@@ -182,15 +193,15 @@ void GCDMaster::on_action_quit()
 
 void GCDMaster::on_action_preferences()
 {
-    try {
-	auto preferences = PreferencesDialog::create(builder_,
-						     *get_active_window());
-	preferences->present();
-	preferences->signal_hide().connect([preferences](){ delete preferences; });
-    } catch (const std::exception& ex)
-    {
-	std::cerr << "Preferences: " << ex.what() << "\n";
-    }
+    // try {
+    //     auto preferences = PreferencesDialog::create(builder_,
+    //     					     *get_active_window());
+    //     preferences->present();
+    //     preferences->signal_hide().connect([preferences](){ delete preferences; });
+    // } catch (const std::exception& ex)
+    // {
+    //     std::cerr << "Preferences: " << ex.what() << "\n";
+    // }
 }
 
 // Called only when gcdmaster is called without open arguments.
@@ -208,14 +219,14 @@ void GCDMaster::on_action_about()
 
 void GCDMaster::on_action_blank_cdrw()
 {
-    try {
-	auto blanker = BlankCDDialog::create(builder_,
-					     *get_active_window());
-	blanker->start();
-	blanker->present();
-	blanker->signal_hide().connect([blanker](){ delete blanker; });
-    } catch (const std::exception& ex)
-    {
-        std::cerr << "Blank CD/RW: " << ex.what() << "\n";
-    }
+    // try {
+    //     auto blanker = BlankCDDialog::create(builder_,
+    //     				     *get_active_window());
+    //     blanker->start();
+    //     blanker->present();
+    //     blanker->signal_hide().connect([blanker](){ delete blanker; });
+    // } catch (const std::exception& ex)
+    // {
+    //     std::cerr << "Blank CD/RW: " << ex.what() << "\n";
+    // }
 }

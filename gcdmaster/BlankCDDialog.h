@@ -36,7 +36,7 @@ class BlankCDDialog : public GCDWindow
 				 Gtk::Window& parent);
 
     void start();
-    void update(unsigned long level);
+    virtual void update(unsigned long level) override;
 
   private:
     BlankCDDialog();

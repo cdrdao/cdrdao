@@ -23,6 +23,7 @@
 #include <gtkmm.h>
 
 #include "ConfigManager.h"
+#include "gcdmaster.h"
 
 //
 // GLOBAL objects.
@@ -33,7 +34,7 @@
 extern class ProcessMonitor     *PROCESS_MONITOR;
 extern class ProgressDialogPool *PROGRESS_POOL;
 extern class ConfigManager      *CONFIG_MANAGER;
-extern class GCDMaster          *GCDMASTER;
+extern Glib::RefPtr<GCDMaster> GCDMASTER;
 
 void blockProcessMonitorSignals();
 void unblockProcessMonitorSignals();

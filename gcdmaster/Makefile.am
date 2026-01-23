@@ -1,52 +1,19 @@
 bin_PROGRAMS = gcdmaster
 
 gcdmaster_SOURCES = \
-	AddFileDialog.cc 	\
-	AddSilenceDialog.cc 	\
 	AudioCDProject.cc 	\
-	AudioCDView.cc 		\
-	BlankCDDialog.cc 	\
-	CdDevice.cc 		\
-	CdTextDialog.cc 	\
 	ConfigManager.cc	\
-	DeviceConfDialog.cc 	\
-	DeviceList.cc 		\
-	DumpCDProject.cc 	\
-	DuplicateCDProject.cc 	\
 	gcdmaster.cc 		\
+	main.cc			\
 	guiUpdate.cc 		\
-	Icons.cc		\
 	MessageBox.cc 		\
-	PreferencesDialog.cc	\
-	ProcessMonitor.cc 	\
-	ProgressDialog.cc 	\
-	Project.cc 		\
-	ProjectChooser.cc 	\
-	RecordCDSource.cc 	\
-	RecordCDTarget.cc 	\
-	RecordHDTarget.cc 	\
-	RecordTocDialog.cc 	\
-	RecordTocSource.cc 	\
-	SampleDisplay.cc 	\
-	SampleManager.cc 	\
-	Settings.cc 		\
 	TaskManager.cc		\
-	TextEdit.cc 		\
+	Settings.cc 		\
+	SampleManager.cc	\
+	TrackDataScrap.cc	\
 	TocEdit.cc 		\
 	TocEditView.cc 		\
-	TocInfoDialog.cc 	\
-	TrackDataScrap.cc 	\
-	TrackInfoDialog.cc 	\
-	TrackManager.cc 	\
-	xcdrdao.cc		\
-	AddFileDialog.h		\
-	DumpCDProject.h		\
-	ProjectChooser.h	\
 	SoundIF.h		\
-	AddSilenceDialog.h	\
-	DuplicateCDProject.h	\
-	Project.h		\
-	TextEdit.h		\
 	gcdmaster.h		\
 	RecordCDSource.h	\
 	TocEdit.h		\
@@ -90,11 +57,6 @@ nodist_gcdmaster_SOURCES = resources.cc
 
 BUILT_SOURCES = resources.cc resources.h
 
-gladedir = $(datadir)/gcdmaster/glade
-glade_DATA = 			\
-	glade/Preferences.glade	\
-	glade/ProjectChooser.glade
-
 gcdmaster_LDADD =					\
 	@sound_if_obj@					\
 	$(top_builddir)/dao/libdao.a			\
@@ -131,8 +93,7 @@ gcdmaster_DEPENDENCIES = \
 AM_CPPFLAGS =					\
 	-I$(srcdir)/../trackdb			\
 	-I$(srcdir)/../paranoia			\
-	-I$(srcdir)/../dao			\
-	-DCDRDAO_GLADEDIR=\""$(gladedir)"\"
+	-I$(srcdir)/../dao
 
 man1_MANS = gcdmaster.man
 
@@ -149,7 +110,7 @@ appregdir = $(datadir)/application-registry
 appreg_DATA = gcdmaster.applications
 
 icondir = $(datadir)/pixmaps
-icon_DATA = gcdmaster.pngff gcdmaster-doc.pngff
+icon_DATA = gcdmaster.png gcdmaster-doc.png
 
 gsettings_SCHEMAS = org.gnome.gcdmaster.gschema.xml
 @GSETTINGS_RULES@
@@ -171,7 +132,6 @@ CLEANFILES = resources.cc resources.h
 
 EXTRA_DIST = \
 	$(man1_MANS)	\
-	$(glade_DATA)	\
 	$(mimeinfo_DATA)\
 	$(desktop_DATA)	\
 	$(icon_DATA)	\

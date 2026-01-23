@@ -47,9 +47,8 @@ AudioCDProject* AudioCDProject::create(Glib::RefPtr<Gtk::Builder> builder,
 				       const Glib::ustring& path)
 {
     static int nextNumber = 0;
-    builder->add_from_resource("/org/gnome/gcdmaster/audiocd.ui");
-    builder->add_from_resource("/org/gnome/gcdmaster/gears_audio_menu.ui");
-    builder->add_from_resource("/org/gnome/gcdmaster/window.ui");
+    builder->add_from_resource("/org/gnome/gcdmaster/ui/window.ui");
+    builder->add_from_resource("/org/gnome/gcdmaster/ui/gears_audio_menu.ui");
 
     auto window = Gtk::Builder::get_widget_derived<AudioCDProject>(builder, "app_window");
     if (!window)
@@ -59,10 +58,64 @@ AudioCDProject* AudioCDProject::create(Glib::RefPtr<Gtk::Builder> builder,
     return window;
 }
 
-AudioCDProjct::AudioCDProject(BaseObjectType* cobject,
-			      const Glib::RefPtr<Gtk::Builder>& builder) :
-    Gtk::ApplicationWindow(cobject)
+AudioCDProject::AudioCDProject(BaseObjectType* cobject,
+ 			      const Glib::RefPtr<Gtk::Builder>& builder) :
+    GCDWindow(cobject), builder_(builder)
 {
+    // Load toolbar.
+    auto tbar = builder->get_object<Gtk::Box>("audio-toolbar");
+    auto vbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL);
+    vbox->append(*tbar);
+
+    // Add actions
+    add_action("save", sigc::mem_fun(*this, &AudioCDProject::saveProject));
+    add_action("save-as", sigc::mem_fun(*this, &AudioCDProject::saveAsProject));
+    add_action("project-info", sigc::mem_fun(*this, &AudioCDProject::projectInfo));
+    add_action("cdtext", sigc::mem_fun(*this, &AudioCDProject::cdTextDialog));
+    add_action("record", sigc::mem_fun(*this, &AudioCDProject::recordToc2CD));
+    play_action_ =
+        add_action("play", sigc::mem_fun(*this, &AudioCDProject::on_play_clicked));
+    stop_action_ =
+        add_action("stop", sigc::mem_fun(*this, &AudioCDProject::on_stop_clicked));
+    pause_action_ =
+        add_action("pause", sigc::mem_fun(*this, &AudioCDProject::on_pause_clicked));
+
+    add_action("select-mode", sigc::mem_fun(*this, &AudioCDProject::on_select_clicked));
+    add_action("zoom-mode", sigc::mem_fun(*this, &AudioCDProject::on_zoom_clicked));
+    add_action("zoom-in", sigc::mem_fun(*this, &AudioCDProject::on_zoom_in_clicked));
+    add_action("zoom-out", sigc::mem_fun(*this, &AudioCDProject::on_zoom_out_clicked));
+    add_action("zoom-fit", sigc::mem_fun(*this, &AudioCDProject::on_zoom_fit_clicked));
+
+    // Window menu
+    auto gears = builder->get_object<Gtk::MenuButton>("gears");
+    auto wmenu = builder->get_object<Gio::MenuModel>("audiocd-menu");
+    if (!wmenu)
+        throw std::runtime_error("Menu resource not found");
+    gears->set_menu_model(wmenu);
+
+    tocInfoDialog_ = NULL;
+    cdTextDialog_ = NULL;
+    soundInterface_ = NULL;
+    buttonPlay_ = NULL;
+    buttonStop_ = NULL;
+    buttonPause_ = NULL;
+    audioCDView_ = NULL;
+
+    set_child(*vbox);
+
+    playStatus_ = STOPPED;
+    playBurst_ = 588 * 10;
+    playBuffer_ = new Sample[playBurst_];
+
+    // Setup widgets on status bar.
+    progressbar_ = builder_->get_object<Gtk::ProgressBar>("progress-bar");
+    progressbar_->set_pulse_step(0.01);
+    
+    statusbar_ = builder_->get_object<Gtk::Label>("status-bar-label");
+
+    stopButton_ = builder_->get_object<Gtk::Button>("gtk-stop");
+    stopButton_->signal_clicked().connect(
+        sigc::mem_fun(*this, &AudioCDProject::on_cancel_clicked));
 }
 
 void AudioCDProject::setup(int number, const Glib::ustring& path)
@@ -92,71 +145,33 @@ void AudioCDProject::setup(int number, const Glib::ustring& path)
 	}
     }
 
-    audioCDView_ = new AudioCDView(this);
-    audioCDView_->set_expand(true);
-    hbox_.append(*audioCDView_);
-    audioCDView_->tocEditView()->sampleViewFull();
+    if (tocEdit_) {
+        // Connect TocEdit signals to us.
+        tocEdit_->signalStatusMessage.connect(sigc::mem_fun(*this, &AudioCDProject::status));
+        tocEdit_->signalProgressFraction.connect(sigc::mem_fun(*this, &AudioCDProject::progress));
+        tocEdit_->signalSpinner.connect(sigc::mem_fun(*this, &AudioCDProject::spin));
+        tocEdit_->signalFullView.connect(sigc::mem_fun(*this, &AudioCDProject::fullView));
+        tocEdit_->signalSampleSelection.connect(sigc::mem_fun(*this, &AudioCDProject::sampleSelect));
+        tocEdit_->signalCancelEnable.connect(sigc::mem_fun(*this, &AudioCDProject::cancelEnable));
+        tocEdit_->signalError.connect(sigc::mem_fun(*this, &AudioCDProject::errorDialog));
+
+        tocEdit_->signalProgressPulse.connect(
+            sigc::mem_fun(*progressbar_, &Gtk::ProgressBar::pulse));
+        signalCancelClicked.connect(sigc::mem_fun(*tocEdit_,
+                                                  &TocEdit::queueAbort));
+
+        if (tocEdit_->isQueueActive())
+            cancelEnable(true);
+    }
+
+    // audioCDView_ = new AudioCDView(this);
+    // audioCDView_->set_expand(true);
+    // auto vbox = dynamic_cast<Gtk::Box*>(get_first_child());
+    // vbox->append(*audioCDView_);
+    // audioCDView_->tocEditView()->sampleViewFull();
     updateWindowTitle();
     guiUpdate(UPD_ALL);
     present();
-}
-
-AudioCDProject::AudioCDProject(Glib::RefPtr<Gtk::Builder>& builder,
-			       int number, const Glib::ustring& path)
-    : builder_(builder)
-{
-
-    // Load toolbar.
-    auto tbar = builder->get_object<Gtk::Toolbar>("audio-toolbar");
-    vbox_.append(tbar);
-
-    // Add actions
-    add_action("save", sigc::mem_fun(*this, &AudioCDProject::saveProject));
-    add_action("save-as", sigc::mem_fun(*this, &AudioCDProject::saveAsProject));
-    add_action("project-info", sigc::mem_fun(*this, &AudioCDProject::projectInfo));
-    add_action("cdtext", sigc::mem_fun(*this, &AudioCDProject::cdTextDialog));
-    add_action("record", sigc::mem_fun(*this, &AudioCDProject::recordToc2CD));
-    add_action("play", sigc::mem_fun(*this, &AudioCDProject::on_play_clicked));
-    add_action("stop", sigc::mem_fun(*this, &AudioCDProject::on_stop_clicked));
-    add_action("pause", sigc::mem_fun(*this, &AudioCDProject::on_pause_clicked));
-
-    add_action("select-mode", sigc::mem_fun(*this, &AudioCDProject::on_select_clicked));
-    add_action("zoom-mode", sigc::mem_fun(*this, &AudioCDProject::on_zoom_clicked));
-    add_action("zoom-in", sigc::mem_fun(*this, &AudioCDProject::on_zoom_in_clicked));
-    add_action("zoom-out", sigc::mem_fun(*this, &AudioCDProject::on_zoom_out_clicked));
-    add_action("zoom-fit", sigc::mem_fun(*this, &AudioCDProject::on_zoom_fit_clicked));
-
-    // Window menu
-    auto wmenu = builder->get_object<Gio::MenuModel>("audiocd-menu");
-    if (!wmenu)
-        throw std::runtime_error("Menu resource not found");
-    set_menu(wmenu);
-
-    tocInfoDialog_ = NULL;
-    cdTextDialog_ = NULL;
-    soundInterface_ = NULL;
-    buttonPlay_ = NULL;
-    buttonStop_ = NULL;
-    buttonPause_ = NULL;
-    audioCDView_ = NULL;
-
-    set_child(hbox_);
-
-    playStatus_ = STOPPED;
-    playBurst_ = 588 * 10;
-    playBuffer_ = new Sample[playBurst_];
-
-    // Connect TocEdit signals to us.
-    tocEdit_->signalStatusMessage.connect(sigc::mem_fun(*this, &AudioCDProject::status));
-    tocEdit_->signalProgressFraction.connect(sigc::mem_fun(*this, &AudioCDProject::progress));
-    tocEdit_->signalSpinner.connect(sigc::mem_fun(*this, &AudioCDProject::spin));
-    tocEdit_->signalFullView.connect(sigc::mem_fun(*this, &AudioCDProject::fullView));
-    tocEdit_->signalSampleSelection.connect(sigc::mem_fun(*this, &AudioCDProject::sampleSelect));
-    tocEdit_->signalCancelEnable.connect(sigc::mem_fun(*this, &AudioCDProject::cancelEnable));
-    tocEdit_->signalError.connect(sigc::mem_fun(*this, &AudioCDProject::errorDialog));
-
-    if (tocEdit_->isQueueActive())
-        cancelEnable(true);
 }
 
 AudioCDProject::~AudioCDProject()
@@ -175,25 +190,6 @@ void AudioCDProject::updateWindowTitle()
     set_title(s);
 }
 
-void AudioCDProject::configureAppBar(Gtk::Statusbar *s, Gtk::ProgressBar *p, Gtk::Button *b)
-{
-    statusbar_ = s;
-    progressbar_ = p;
-    progressButton_ = b;
-
-    if (tocEdit_) {
-        tocEdit_->signalProgressPulse.connect(
-            sigc::mem_fun(*progressbar_, &Gtk::ProgressBar::pulse));
-        signalCancelClicked.connect(sigc::mem_fun(*tocEdit_, &TocEdit::queueAbort));
-        if (tocEdit_->isQueueActive())
-            progressButton_->set_sensitive(true);
-    }
-
-    progressButton_->signal_clicked().connect(
-        sigc::mem_fun(*this, &AudioCDProject::on_cancel_clicked));
-    progressbar_->set_pulse_step(0.01);
-}
-
 void AudioCDProject::status(const char *msg)
 {
     statusMessage(msg);
@@ -201,8 +197,7 @@ void AudioCDProject::status(const char *msg)
 
 void AudioCDProject::errorDialog(const char *msg)
 {
-    Gtk::MessageDialog md(this, msg, false, Gtk::MESSAGE_ERROR);
-    md.run();
+    ErrorBox::message(*this, msg);
 }
 
 void AudioCDProject::progress(double val)
@@ -213,7 +208,7 @@ void AudioCDProject::progress(double val)
 void AudioCDProject::spin(bool val)
 {
     if (val) {
-        auto busy = Gdk::Cursor::create(get_display(), Gdk::WATCH);
+        auto busy = Gdk::Cursor::create("wait");
         set_cursor(busy);
     } else {
         set_cursor();
@@ -222,48 +217,45 @@ void AudioCDProject::spin(bool val)
 
 void AudioCDProject::fullView()
 {
-    if (audioCDView_)
-        audioCDView_->fullView();
+//    if (audioCDView_)
+//        audioCDView_->fullView();
 }
 
 void AudioCDProject::sampleSelect(unsigned long start, unsigned long len)
 {
-    audioCDView_->tocEditView()->sampleSelect(start, len);
+//    audioCDView_->tocEditView()->sampleSelect(start, len);
 }
 
 void AudioCDProject::cancelEnable(bool enable)
 {
-    if (progressButton_)
-        progressButton_->set_sensitive(enable);
+    if (stopButton_)
+        stopButton_->set_sensitive(enable);
 }
 
-bool AudioCDProject::closeProject()
+void AudioCDProject::closeProject()
 {
     if (tocEdit_->tocDirty()) {
 
         Glib::ustring message = "Project ";
         message += tocEdit_->filename();
-        message += " not saved. Are you sure you want to close it ?";
+        message += " not saved.";
 
-        Gtk::MessageDialog d(*this, message, false, Gtk::MESSAGE_QUESTION,
-                             Gtk::BUTTONS_YES_NO, true);
+        auto box = Ask2Box::create(*this, message, 1,
+                                   { _("Are you sure you want to close it ?") });
 
-        int ret = d.run();
-        d.hide();
+        box->dialogDone.connect([this](int result) {
+            if (result != 0)
+                return;
 
-        if (ret == Gtk::RESPONSE_NO || ret == Gtk::RESPONSE_DELETE_EVENT)
-            return false;
+            if (tocEdit_ && tocEdit_->isQueueActive()) {
+                tocEdit_->queueAbort();
+            }
+            
+            if (playStatus_ == PLAYING || playStatus_ == PAUSED) {
+                playStop();
+            }
+        });
     }
-
-    if (tocEdit_ && tocEdit_->isQueueActive()) {
-        tocEdit_->queueAbort();
-    }
-
-    if (playStatus_ == PLAYING || playStatus_ == PAUSED) {
-        playStop();
-    }
-
-    return true;
 }
 
 void AudioCDProject::saveProject()
@@ -281,9 +273,7 @@ void AudioCDProject::saveProject()
         s += tocEdit_->filename();
         s += "\":";
 
-	std::cerr << "TODO: " << s << "\n";
-//        MessageBox msg(parent_, _("Save Project"), 0, s.c_str(), strerror(errno), NULL);
-//        msg.run();
+        errorDialog(s.c_str());
     }
 }
 
@@ -293,29 +283,29 @@ void AudioCDProject::saveAsProject()
 
 void AudioCDProject::recordToc2CD()
 {
-    if (!recordTocDialog_)
-        recordTocDialog_ = Glib::make_refptr_for_instance<RecordTocDialog>(
-	    new RecordTocDialog(tocEdit_));
+    // if (!recordTocDialog_)
+    //     recordTocDialog_ = Glib::make_refptr_for_instance<RecordTocDialog>(
+    //         new RecordTocDialog(tocEdit_));
 
-    recordTocDialog_->start(this);
+    // recordTocDialog_->start(this);
 }
 
 void AudioCDProject::projectInfo()
 {
-    if (!tocInfoDialog_)
-        tocInfoDialog_ = Glib::make_refptr_for_instance<TocInfoDialog>(
-	    new TocInfoDialog(this));
+    // if (!tocInfoDialog_)
+    //     tocInfoDialog_ = Glib::make_refptr_for_instance<TocInfoDialog>(
+    //         new TocInfoDialog(this));
 
-    tocInfoDialog_->start(tocEdit_);
+    // tocInfoDialog_->start(tocEdit_.get());
 }
 
 void AudioCDProject::cdTextDialog()
 {
-    if (cdTextDialog_ == 0)
-        cdTextDialog_ = Glib::make_refptr_for_instance<CdTextDialog>(
-	    new CdTextDialog());
+    // if (cdTextDialog_ == 0)
+    //     cdTextDialog_ = Glib::make_refptr_for_instance<CdTextDialog>(
+    //         new CdTextDialog());
 
-    cdTextDialog_->start(tocEdit_);
+    // cdTextDialog_->start(tocEdit_.get());
 }
 
 void AudioCDProject::update(unsigned long level)
@@ -328,15 +318,15 @@ void AudioCDProject::update(unsigned long level)
     if (level & (UPD_TOC_DIRTY | UPD_TOC_DATA))
         updateWindowTitle();
 
-    audioCDView_->update(level);
+//    audioCDView_->update(level);
 
-    if (tocInfoDialog_)
-        tocInfoDialog_->update(level, tocEdit_);
+    // if (tocInfoDialog_)
+    //     tocInfoDialog_->update(level, tocEdit_.get());
 
-    if (cdTextDialog_ != 0)
-        cdTextDialog_->update(level, tocEdit_);
-    if (recordTocDialog_ != 0)
-        recordTocDialog_->update(level);
+    // if (cdTextDialog_ != 0)
+    //     cdTextDialog_->update(level, tocEdit_.get());
+    // if (recordTocDialog_ != 0)
+    //     recordTocDialog_->update(level);
 
     if (level & UPD_PLAY_STATUS) {
         bool sensitivity[3][3] = {
@@ -346,21 +336,17 @@ void AudioCDProject::update(unsigned long level)
             {true, false, false} // Stopped
         };
 
-        Glib::RefPtr<Gtk::Action> action;
-        action = m_refActionGroup->get_action("Play");
-        action->set_sensitive(sensitivity[playStatus_][0]);
-        action = m_refActionGroup->get_action("Pause");
-        action->set_sensitive(sensitivity[playStatus_][1]);
-        action = m_refActionGroup->get_action("Stop");
-        action->set_sensitive(sensitivity[playStatus_][2]);
+        play_action_ ->set_enabled(sensitivity[playStatus_][0]);
+        pause_action_->set_enabled(sensitivity[playStatus_][1]);
+        stop_action_ ->set_enabled(sensitivity[playStatus_][2]);
     }
 
-    if (level & UPD_EDITABLE_STATE) {
+     if (level & UPD_EDITABLE_STATE) {
         bool editable = tocEdit_->editable();
-        Glib::RefPtr<Gtk::Action> action;
-        action = m_refActionGroup->get_action("Play");
-        action->set_sensitive(editable);
+        play_action_->set_enabled(editable);
     }
+
+    stopButton_->set_sensitive(tocEdit_->isQueueActive());
 }
 
 void AudioCDProject::playStart()
@@ -376,12 +362,12 @@ void AudioCDProject::playStart()
         return;
     }
 
-    if (audioCDView_ && audioCDView_->tocEditView()) {
-        if (!audioCDView_->tocEditView()->sampleSelection(&start, &end))
-            audioCDView_->tocEditView()->sampleView(&start, &end);
-
-        playStart(start, end);
-    }
+//     if (audioCDView_ && audioCDView_->tocEditView()) {
+//        if (!audioCDView_->tocEditView()->sampleSelection(&start, &end))
+//            audioCDView_->tocEditView()->sampleView(&start, &end);
+//
+//        playStart(start, end);
+//    }
 }
 
 void AudioCDProject::playStart(unsigned long start, unsigned long end)
@@ -541,32 +527,32 @@ void AudioCDProject::on_pause_clicked()
 
 void AudioCDProject::on_zoom_in_clicked()
 {
-    if (audioCDView_)
-        audioCDView_->zoomx2();
+//    if (audioCDView_)
+//        audioCDView_->zoomx2();
 }
 
 void AudioCDProject::on_zoom_out_clicked()
 {
-    if (audioCDView_)
-        audioCDView_->zoomOut();
+//    if (audioCDView_)
+//        audioCDView_->zoomOut();
 }
 
 void AudioCDProject::on_zoom_fit_clicked()
 {
-    if (audioCDView_)
-        audioCDView_->fullView();
+//    if (audioCDView_)
+//        audioCDView_->fullView();
 }
 
 void AudioCDProject::on_zoom_clicked()
 {
-    if (audioCDView_)
-        audioCDView_->setMode(AudioCDView::ZOOM);
+//    if (audioCDView_)
+//        audioCDView_->setMode(AudioCDView::ZOOM);
 }
 
 void AudioCDProject::on_select_clicked()
 {
-    if (audioCDView_)
-        audioCDView_->setMode(AudioCDView::SELECT);
+//    if (audioCDView_)
+//        audioCDView_->setMode(AudioCDView::SELECT);
 }
 
 void AudioCDProject::on_cancel_clicked()
@@ -585,7 +571,7 @@ bool AudioCDProject::appendTrack(const char *file)
         if (parseM3u(file, list)) {
             std::list<std::string>::iterator i = list.begin();
             for (; i != list.end(); i++) {
-                tocEdit()->queueAppendTrack((*i).c_str());
+                tocEdit_->queueAppendTrack((*i).c_str());
             }
         } else {
             std::string msg = "Could not read M3U file \"";
@@ -598,7 +584,7 @@ bool AudioCDProject::appendTrack(const char *file)
     }
 
     default:
-        tocEdit()->queueAppendTrack(file);
+        tocEdit_->queueAppendTrack(file);
     }
 
     return true;
@@ -608,7 +594,7 @@ bool AudioCDProject::appendTracks(std::list<std::string> &files)
 {
     std::list<std::string>::iterator i = files.begin();
     for (; i != files.end(); i++) {
-        tocEdit()->queueAppendTrack((*i).c_str());
+        tocEdit_->queueAppendTrack((*i).c_str());
     }
     return true;
 }
@@ -617,26 +603,41 @@ bool AudioCDProject::appendFiles(std::list<std::string> &files)
 {
     std::list<std::string>::iterator i = files.begin();
     for (; i != files.end(); i++) {
-        tocEdit()->queueAppendFile((*i).c_str());
+        tocEdit_->queueAppendFile((*i).c_str());
     }
     return true;
 }
 
 bool AudioCDProject::insertFiles(std::list<std::string> &files)
 {
-    unsigned long pos;
+    // unsigned long pos;
 
-    TocEditView *view = audioCDView_->tocEditView();
-    if (!view)
-        return false;
-    if (!view->sampleMarker(&pos))
-        pos = 0;
+    // TocEditView *view = audioCDView_->tocEditView();
+    // if (!view)
+    //     return false;
+    // if (!view->sampleMarker(&pos))
+    //     pos = 0;
 
-    std::list<std::string>::iterator i = files.end();
-    do {
-        i--;
-        tocEdit()->queueInsertFile((*i).c_str(), pos);
-    } while (i != files.begin());
+    // std::list<std::string>::iterator i = files.end();
+    // do {
+    //     i--;
+    //     tocEdit_->queueInsertFile((*i).c_str(), pos);
+    // } while (i != files.begin());
 
     return true;
 }
+
+void AudioCDProject::statusMessage(const char *fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+
+    char *s = g_strdup_vprintf(fmt, args);
+
+    statusbar_->set_text(s);
+
+    free(s);
+
+    va_end(args);
+}
+

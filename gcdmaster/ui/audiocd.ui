@@ -2,112 +2,83 @@
 <!-- Generated with glade 3.22.1 -->
 <interface>
   <requires lib="gtk+" version="3.8"/>
-  <object class="GtkToolbar" id="audio-toolbar">
+  <object class="GtkBox" id="audio-toolbar">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
+    <property name="orientation">horizontal</property>
     <child>
-      <object class="GtkToolButton">
+      <object class="GtkButton">
         <property name="visible">True</property>
         <property name="can_focus">False</property>
         <property name="tooltip_text" translatable="yes">Save current project</property>
         <property name="action_name">box.save</property>
         <property name="use_underline">True</property>
-        <property name="stock_id">gtk-save</property>
+        <property name="icon-name">gtk-save</property>
       </object>
-      <packing>
-        <property name="expand">False</property>
-        <property name="homogeneous">True</property>
-      </packing>
     </child>
     <child>
-      <object class="GtkToolButton">
+      <object class="GtkButton">
         <property name="visible">True</property>
         <property name="can_focus">False</property>
         <property name="tooltip_text" translatable="yes">Record project onto media</property>
         <property name="action_name">box.record</property>
         <property name="use_underline">True</property>
-        <property name="stock_id">gtk-media-record</property>
+        <property name="icon-name">gtk-media-record</property>
       </object>
-      <packing>
-        <property name="expand">False</property>
-        <property name="homogeneous">True</property>
-      </packing>
     </child>
     <child>
-      <object class="GtkSeparatorToolItem">
+      <object class="GtkSeparator">
+        <property name="orientation">vertical</property>
         <property name="visible">True</property>
         <property name="can_focus">False</property>
       </object>
-      <packing>
-        <property name="expand">False</property>
-        <property name="homogeneous">False</property>
-      </packing>
     </child>
     <child>
-      <object class="GtkToolButton">
+      <object class="GtkButton">
         <property name="visible">True</property>
         <property name="can_focus">False</property>
         <property name="tooltip_text" translatable="yes">Play audio from current position</property>
         <property name="action_name">box.play</property>
         <property name="use_underline">True</property>
-        <property name="stock_id">gtk-media-play</property>
+        <property name="icon-name">gtk-media-play</property>
       </object>
-      <packing>
-        <property name="expand">False</property>
-        <property name="homogeneous">True</property>
-      </packing>
     </child>
     <child>
-      <object class="GtkToolButton">
+      <object class="GtkButton">
         <property name="visible">True</property>
         <property name="can_focus">False</property>
         <property name="tooltip_text" translatable="yes">Stop audio playback</property>
         <property name="action_name">box.stop</property>
         <property name="use_underline">True</property>
-        <property name="stock_id">gtk-media-stop</property>
+        <property name="icon-name">gtk-media-stop</property>
       </object>
-      <packing>
-        <property name="expand">False</property>
-        <property name="homogeneous">True</property>
-      </packing>
     </child>
     <child>
-      <object class="GtkToolButton">
+      <object class="GtkButton">
         <property name="visible">True</property>
         <property name="can_focus">False</property>
         <property name="tooltip_text" translatable="yes">Pause audio playback</property>
         <property name="action_name">box.pause</property>
         <property name="use_underline">True</property>
-        <property name="stock_id">gtk-media-pause</property>
+        <property name="icon-name">gtk-media-pause</property>
       </object>
-      <packing>
-        <property name="expand">False</property>
-        <property name="homogeneous">True</property>
-      </packing>
     </child>
     <child>
-      <object class="GtkSeparatorToolItem">
+      <object class="GtkSeparator">
+        <property name="orientation">vertical</property>
         <property name="visible">True</property>
         <property name="can_focus">False</property>
       </object>
-      <packing>
-        <property name="expand">False</property>
-        <property name="homogeneous">False</property>
-      </packing>
     </child>
     <child>
-      <object class="GtkRadioToolButton" id="rbt1">
+      <object class="GtkToogleButton" id="rbt1">
         <property name="visible">True</property>
         <property name="can_focus">False</property>
         <property name="action_name">box.zoom-mode</property>
         <property name="use_underline">True</property>
-        <property name="stock_id">gtk-zoom-fit</property>
+        <property name="icon-name">gtk-zoom-fit</property>
         <property name="active">True</property>
       </object>
-      <packing>
-        <property name="expand">False</property>
-        <property name="homogeneous">True</property>
-      </packing>
     </child>
     <child>
       <object class="GtkRadioToolButton">
@@ -115,63 +86,44 @@
         <property name="can_focus">False</property>
         <property name="action_name">box.select-mode</property>
         <property name="use_underline">True</property>
-        <property name="stock_id">gtk-jump-to</property>
+        <property name="icon-name">gtk-jump-to</property>
         <property name="active">True</property>
         <property name="group">rbt1</property>
       </object>
-      <packing>
-        <property name="expand">False</property>
-        <property name="homogeneous">True</property>
-      </packing>
     </child>
     <child>
-      <object class="GtkSeparatorToolItem">
+      <object class="GtkSeparator">
+        <property name="orientation">vertical</property>
         <property name="visible">True</property>
         <property name="can_focus">False</property>
       </object>
-      <packing>
-        <property name="expand">False</property>
-        <property name="homogeneous">False</property>
-      </packing>
     </child>
     <child>
-      <object class="GtkToolButton">
+      <object class="GtkButton">
         <property name="visible">True</property>
         <property name="can_focus">False</property>
         <property name="action_name">box.zoom-in</property>
         <property name="use_underline">True</property>
-        <property name="stock_id">gtk-zoom-in</property>
+        <property name="icon-name">gtk-zoom-in</property>
       </object>
-      <packing>
-        <property name="expand">False</property>
-        <property name="homogeneous">True</property>
-      </packing>
     </child>
     <child>
-      <object class="GtkToolButton">
+      <object class="GtkButton">
         <property name="visible">True</property>
         <property name="can_focus">False</property>
         <property name="action_name">box.zoom-out</property>
         <property name="use_underline">True</property>
-        <property name="stock_id">gtk-zoom-out</property>
+        <property name="icon-name">gtk-zoom-out</property>
       </object>
-      <packing>
-        <property name="expand">False</property>
-        <property name="homogeneous">True</property>
-      </packing>
     </child>
     <child>
-      <object class="GtkToolButton">
+      <object class="GtkButton">
         <property name="visible">True</property>
         <property name="can_focus">False</property>
         <property name="action_name">box.zoom-fit</property>
         <property name="use_underline">True</property>
-        <property name="stock_id">gtk-zoom-fit</property>
+        <property name="icon-name">gtk-zoom-fit</property>
       </object>
-      <packing>
-        <property name="expand">False</property>
-        <property name="homogeneous">True</property>
-      </packing>
     </child>
   </object>
 </interface>

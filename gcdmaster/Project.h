@@ -31,7 +31,6 @@ class Project : public Gtk::Box
     Project(Gtk::Window *parent);
 
     void readToc(char *name);
-    void statusMessage(const char *fmt, ...);
     void tocBlockedMsg(const char *);
     virtual bool closeProject() = 0;
     virtual void saveProject();

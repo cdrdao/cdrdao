@@ -1,22 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <gresources>
-  <gresource prefix="/org/gnome/gcdmaster/icons/48x48/actions">
-    <file alias="gcdmaster-audiocd">icons/audiocd.png</file>
-    <file alias="gcdmaster-copy">icons/copycd.png</file>
-    <file alias="gcdmaster-dump">icons/dumpcd.png</file>
-    <file alias="gcdmaster">icons/gcdmaster.png</file>
-    <file alias="gcdmaster-open">icons/open.png</file>
-    <file alias="gcdmaster-pause">icons/pause.png</file>
-    <file alias="gcdmaster-play">icons/play.png</file>
-    <file alias="gcdmaster-record">icons/record.png</file>
-    <file alias="gcdmaster-stop">icons/stop.png</file>
-  </gresource>
-  <gresource prefix="/org/gnome/gcdmaster">
-    <file preprocess="xml-stripblanks">ui/app_menu.ui</file>
-    <file preprocess="xml-stripblanks">ui/audiocd.ui</file>
-    <file preprocess="xml-stripblanks">ui/chooser.ui</file>
-    <file preprocess="xml-stripblanks">ui/gears_audio_menu.ui</file>
-    <file preprocess="xml-stripblanks">ui/preferences.ui</file>
-    <file preprocess="xml-stripblanks">ui/window.ui</file>
-  </gresource>
+    <gresource prefix="/org/gnome/gcdmaster/icons/48x48/actions">
+        <file alias="gcdmaster-audiocd">icons/audiocd.png</file>
+        <file alias="gcdmaster-blank">icons/blank.png</file>
+        <file alias="gcdmaster-copy">icons/copycd.png</file>
+        <file alias="gcdmaster-dump">icons/dumpcd.png</file>
+        <file alias="gcdmaster">icons/gcdmaster.png</file>
+        <file alias="gcdmaster-open">icons/open.png</file>
+        <file alias="gcdmaster-pause">icons/pause.png</file>
+        <file alias="gcdmaster-play">icons/play.png</file>
+        <file alias="gcdmaster-record">icons/record.png</file>
+        <file alias="gcdmaster-stop">icons/stop.png</file>
+    </gresource>
+    <gresource prefix="/org/gnome/gcdmaster">
+        <file preprocess="xml-stripblanks">ui/app_menu.ui</file>
+        <file preprocess="xml-stripblanks">ui/audiocd.ui</file>
+        <file preprocess="xml-stripblanks">ui/chooser.ui</file>
+        <file preprocess="xml-stripblanks">ui/gears_audio_menu.ui</file>
+        <file preprocess="xml-stripblanks">ui/preferences.ui</file>
+        <file preprocess="xml-stripblanks">ui/window.ui</file>
+    </gresource>
 </gresources>
