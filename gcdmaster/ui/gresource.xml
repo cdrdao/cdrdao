@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <gresources>
     <gresource prefix="/org/gnome/gcdmaster">
+        <file alias="icons/48x48/actions/gcdmaster.png">gcdmaster.png</file>
+    </gresource>
+    <gresource prefix="/org/gnome/gcdmaster">
         <file alias="gcdmaster-audiocd">audiocd.png</file>
         <file alias="gcdmaster-blank">blank.png</file>
         <file alias="gcdmaster-copy">copycd.png</file>

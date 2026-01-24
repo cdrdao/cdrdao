@@ -24,7 +24,7 @@
 #include "CdDevice.h"
 #include "gcdmaster.h"
 
-class PreferencesDialog : public GCDWindow
+class PreferencesDialog : public Gtk::Window
 {
 public:
     PreferencesDialog(BaseObjectType* cobject, const Glib::RefPtr<Gtk::Builder>& builder);

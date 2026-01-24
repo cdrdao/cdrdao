@@ -1,282 +1,234 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Generated with glade 3.22.1 -->
+<!-- Ported to GTK 4 -->
 <interface>
-  <requires lib="gtk+" version="4.10"/>
+  <requires lib="gtk" version="4.0"/>
   <object class="GtkAdjustment" id="adjustment1">
     <property name="upper">100</property>
-    <property name="step_increment">1</property>
-    <property name="page_increment">10</property>
+    <property name="step-increment">1</property>
+    <property name="page-increment">10</property>
   </object>
   <object class="GtkWindow" id="preferences-window">
-    <property name="can_focus">False</property>
     <property name="title" translatable="yes">Preferences</property>
-    <child>
-      <placeholder/>
-    </child>
+    <property name="default-width">600</property>
+    <property name="default-height">500</property>
     <child>
       <object class="GtkBox">
-        <property name="can_focus">False</property>
         <property name="orientation">vertical</property>
         <property name="spacing">2</property>
-        <child type="end">
-          <object class="GtkBox">
-            <property name="orientation">horizontal</property>
-            <property name="can_focus">False</property>
+        <child>
+          <object class="GtkNotebook">
+            <property name="vexpand">true</property>
             <child>
-              <object class="GtkButton" id="apply-button">
-                <property name="label">gtk-apply</property>
-                <property name="name">ApplyButton</property>
-                <property name="visible">True</property>
-                <property name="can_focus">True</property>
-                <property name="receives_default">True</property>
-                <property name="icon-name">apply</property>
+              <object class="GtkNotebookPage">
+                <property name="tab">
+                  <object class="GtkLabel">
+                    <property name="label" translatable="yes">Preferences</property>
+                    <property name="justify">center</property>
+                  </object>
+                </property>
+                <property name="child">
+                  <object class="GtkBox">
+                    <property name="margin-start">5</property>
+                    <property name="margin-end">5</property>
+                    <property name="margin-top">10</property>
+                    <property name="margin-bottom">10</property>
+                    <property name="orientation">vertical</property>
+                    <property name="spacing">10</property>
+                    <child>
+                      <object class="GtkLabel">
+                        <property name="halign">start</property>
+                        <property name="label" translatable="yes">Temporary files directory:</property>
+                        <property name="use-markup">true</property>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkButton" id="temp-directory-button">
+                        <property name="margin-start">10</property>
+                        <property name="margin-end">10</property>
+                        <property name="label">Select Folder...</property>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkLabel">
+                        <property name="halign">start</property>
+                        <property name="valign">start</property>
+                        <property name="label" translatable="yes">&lt;small&gt;&lt;i&gt;Make sure selected directory has sufficient available disk space&lt;/i&gt;&lt;/small&gt;</property>
+                        <property name="use-markup">true</property>
+                        <property name="wrap">true</property>
+                      </object>
+                    </child>
+                  </object>
+                </property>
               </object>
             </child>
             <child>
-              <object class="GtkButton" id="reset-button">
-                <property name="label" translatable="yes">Reset</property>
-                <property name="visible">True</property>
-                <property name="can_focus">True</property>
-                <property name="receives_default">True</property>
-              </object>
-            </child>
-            <child>
-              <object class="GtkButton" id="cancel-button">
-                <property name="label">gtk-cancel</property>
-                <property name="name">CancelButton</property>
-                <property name="visible">True</property>
-                <property name="can_focus">True</property>
-                <property name="receives_default">True</property>
-                <property name="icon-name">cancel</property>
-              </object>
-            </child>
-            <child>
-              <object class="GtkButton" id="ok-button">
-                <property name="label">gtk-ok</property>
-                <property name="name">OkButton</property>
-                <property name="visible">True</property>
-                <property name="can_focus">True</property>
-                <property name="receives_default">True</property>
-                <property name="icon-name">ok</property>
+              <object class="GtkNotebookPage">
+                <property name="tab">
+                  <object class="GtkLabel">
+                    <property name="label" translatable="yes">Device Settings</property>
+                    <property name="justify">center</property>
+                  </object>
+                </property>
+                <property name="child">
+                  <object class="GtkBox">
+                    <property name="margin-start">7</property>
+                    <property name="margin-end">7</property>
+                    <property name="margin-top">7</property>
+                    <property name="margin-bottom">7</property>
+                    <property name="orientation">vertical</property>
+                    <property name="spacing">5</property>
+                    <child>
+                      <object class="GtkFrame">
+                        <property name="label"> Device List </property>
+                        <property name="vexpand">true</property>
+                        <child>
+                          <object class="GtkBox">
+                            <property name="margin-start">5</property>
+                            <property name="margin-end">5</property>
+                            <property name="margin-top">5</property>
+                            <property name="margin-bottom">5</property>
+                            <property name="orientation">vertical</property>
+                            <property name="spacing">5</property>
+                            <child>
+                              <object class="GtkBox">
+                                <property name="vexpand">true</property>
+                                <child>
+                                  <object class="GtkScrolledWindow">
+                                    <property name="hexpand">true</property>
+                                    <property name="vexpand">true</property>
+                                    <property name="vadjustment">adjustment1</property>
+                                    <child>
+                                      <object class="GtkTreeView" id="device-tree">
+                                      </object>
+                                    </child>
+                                  </object>
+                                </child>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="GtkBox">
+                                <property name="halign">center</property>
+                                <property name="spacing">5</property>
+                                <child>
+                                  <object class="GtkButton" id="rescan-button">
+                                    <property name="label" translatable="yes">Rescan</property>
+                                  </object>
+                                </child>
+                              </object>
+                            </child>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkFrame">
+                        <property name="label"> Device Settings </property>
+                        <child>
+                          <object class="GtkGrid">
+                            <property name="margin-start">22</property>
+                            <property name="margin-end">20</property>
+                            <property name="margin-top">10</property>
+                            <property name="margin-bottom">10</property>
+                            <property name="row-spacing">5</property>
+                            <property name="column-spacing">5</property>
+                            <property name="row-homogeneous">true</property>
+                            <child>
+                              <object class="GtkLabel">
+                                <property name="halign">center</property>
+                                <property name="label" translatable="yes">Device Type:</property>
+                                <layout>
+                                  <property name="column">0</property>
+                                  <property name="row">0</property>
+                                </layout>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="GtkLabel">
+                                <property name="halign">center</property>
+                                <property name="label" translatable="yes">Driver:</property>
+                                <layout>
+                                  <property name="column">0</property>
+                                  <property name="row">1</property>
+                                </layout>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="GtkLabel">
+                                <property name="halign">center</property>
+                                <property name="label" translatable="yes">Driver Options:</property>
+                                <layout>
+                                  <property name="column">0</property>
+                                  <property name="row">2</property>
+                                </layout>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="GtkComboBoxText" id="device-type-list">
+                                <property name="hexpand">true</property>
+                                <layout>
+                                  <property name="column">1</property>
+                                  <property name="row">0</property>
+                                </layout>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="GtkComboBoxText" id="driver-list">
+                                <property name="hexpand">true</property>
+                                <layout>
+                                  <property name="column">1</property>
+                                  <property name="row">1</property>
+                                </layout>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="GtkEntry" id="driver-options">
+                                <property name="hexpand">true</property>
+                                <layout>
+                                  <property name="column">1</property>
+                                  <property name="row">2</property>
+                                </layout>
+                              </object>
+                            </child>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                  </object>
+                </property>
               </object>
             </child>
           </object>
         </child>
         <child>
-          <object class="GtkNotebook">
-            <property name="visible">True</property>
-            <property name="can_focus">True</property>
+          <object class="GtkBox">
+            <property name="halign">end</property>
+            <property name="spacing">5</property>
+            <property name="margin-start">5</property>
+            <property name="margin-end">5</property>
+            <property name="margin-top">5</property>
+            <property name="margin-bottom">5</property>
             <child>
-              <object class="GtkBox">
-                <property name="visible">True</property>
-                <property name="can_focus">False</property>
-                <property name="margin-start">5</property>
-                <property name="margin-end">5</property>
-                <property name="margin-top">10</property>
-                <property name="margin-bottom">10</property>
-                <property name="orientation">vertical</property>
-                <property name="spacing">10</property>
-                <child>
-                  <object class="GtkLabel">
-                    <property name="visible">True</property>
-                    <property name="can_focus">False</property>
-                    <property name="halign">start</property>
-                    <property name="label" translatable="yes">Temporary files directory:</property>
-                    <property name="use_markup">True</property>
-                  </object>
-                </child>
-                <child>
-                  <object class="GtkButton" id="temp-directory-button">
-                    <property name="visible">True</property>
-                    <property name="can_focus">False</property>
-                    <property name="margin-start">10</property>
-                    <property name="margin-end">10</property>
-                  </object>
-                </child>
-                <child>
-                  <object class="GtkLabel">
-                    <property name="visible">True</property>
-                    <property name="can_focus">False</property>
-                    <property name="halign">start</property>
-                    <property name="valign">start</property>
-                    <property name="label" translatable="yes">&lt;small&gt;&lt;i&gt;Make sure selected directory has sufficient available disk space&lt;/i&gt;&lt;/small&gt;</property>
-                    <property name="use_markup">True</property>
-                    <property name="wrap">True</property>
-                  </object>
-                </child>
-              </object>
-            </child>
-            <child type="tab">
-              <object class="GtkLabel">
-                <property name="visible">True</property>
-                <property name="can_focus">False</property>
-                <property name="label" translatable="yes">Preferences</property>
-                <property name="justify">center</property>
+              <object class="GtkButton" id="apply-button">
+                <property name="label">Apply</property>
+                <property name="name">ApplyButton</property>
               </object>
             </child>
             <child>
-              <object class="GtkBox">
-                <property name="visible">True</property>
-                <property name="can_focus">False</property>
-                <property name="margin-start">7</property>
-                <property name="margin-end">7</property>
-                <property name="margin-top">7</property>
-                <property name="margin-bottom">7</property>
-                <property name="orientation">vertical</property>
-                <property name="spacing">5</property>
-                <child>
-                  <object class="GtkFrame">
-                    <property name="visible">True</property>
-                    <property name="can_focus">False</property>
-                    <property name="label_xalign">0.05000000074505806</property>
-                    <child>
-                      <object class="GtkBox">
-                        <property name="visible">True</property>
-                        <property name="can_focus">False</property>
-                        <property name="margin-start">5</property>
-                        <property name="margin-end">5</property>
-                        <property name="margin-top">5</property>
-                        <property name="margin-bottom">5</property>
-                        <property name="orientation">vertical</property>
-                        <property name="spacing">5</property>
-                        <child>
-                          <object class="GtkBox">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <child>
-                              <object class="GtkTreeView" id="device-tree">
-                                <property name="visible">True</property>
-                                <property name="can_focus">True</property>
-                                <property name="vadjustment">adjustment1</property>
-                                <child internal-child="selection">
-                                  <object class="GtkTreeSelection"/>
-                                </child>
-                              </object>
-                            </child>
-                            <child>
-                              <object class="GtkScrollbar">
-                                <property name="visible">True</property>
-                                <property name="can_focus">False</property>
-                                <property name="orientation">vertical</property>
-                                <property name="adjustment">adjustment1</property>
-                              </object>
-                            </child>
-                          </object>
-                        </child>
-                        <child>
-                          <object class="GtkBox">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <property name="valign">center</property>
-                            <property name="homogeneous">True</property>
-                            <child>
-                              <object class="GtkButton" id="rescan-button">
-                                <property name="label" translatable="yes">Rescan</property>
-                                <property name="visible">True</property>
-                                <property name="can_focus">True</property>
-                                <property name="receives_default">True</property>
-                              </object>
-                            </child>
-                          </object>
-                        </child>
-                      </object>
-                    </child>
-                    <child type="label">
-                      <object class="GtkLabel">
-                        <property name="visible">True</property>
-                        <property name="can_focus">False</property>
-                        <property name="label" translatable="yes"> Device List </property>
-                      </object>
-                    </child>
-                  </object>
-                </child>
-                <child>
-                  <object class="GtkFrame">
-                    <property name="visible">True</property>
-                    <property name="can_focus">False</property>
-                    <property name="label_xalign">0.05000000074505806</property>
-                    <child>
-                      <object class="GtkGrid">
-                        <property name="visible">True</property>
-                        <property name="can_focus">False</property>
-                        <property name="margin-start">10</property>
-                        <property name="margin-end">20</property>
-                        <property name="margin-top">10</property>
-                        <property name="margin-bottom">10</property>
-                        <property name="row_spacing">5</property>
-                        <property name="column_spacing">5</property>
-                        <property name="row_homogeneous">True</property>
-                        <child>
-                          <object class="GtkLabel">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <property name="halign">center</property>
-                            <property name="label" translatable="yes">Device Type:</property>
-                          </object>
-                        </child>
-                        <child>
-                          <object class="GtkLabel">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <property name="halign">center</property>
-                            <property name="label" translatable="yes">Driver:</property>
-                          </object>
-                        </child>
-                        <child>
-                          <object class="GtkLabel">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <property name="halign">center</property>
-                            <property name="label" translatable="yes">Driver Options:</property>
-                          </object>
-                        </child>
-                        <child>
-                          <object class="GtkComboBoxText" id="device-type-list">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <property name="hexpand">True</property>
-                          </object>
-                        </child>
-                        <child>
-                          <object class="GtkComboBoxText" id="driver-list">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <property name="hexpand">True</property>
-                          </object>
-                        </child>
-                        <child>
-                          <object class="GtkEntry" id="driver-options">
-                            <property name="visible">True</property>
-                            <property name="can_focus">True</property>
-                            <property name="hexpand">True</property>
-                          </object>
-                        </child>
-                      </object>
-                    </child>
-                    <child type="label">
-                      <object class="GtkLabel">
-                        <property name="visible">True</property>
-                        <property name="can_focus">False</property>
-                        <property name="label" translatable="yes"> Device Settings </property>
-                      </object>
-                    </child>
-                  </object>
-                </child>
-              </object>
-            </child>
-            <child type="tab">
-              <object class="GtkLabel">
-                <property name="visible">True</property>
-                <property name="can_focus">False</property>
-                <property name="label" translatable="yes">Device Settings</property>
-                <property name="justify">center</property>
+              <object class="GtkButton" id="reset-button">
+                <property name="label" translatable="yes">Reset</property>
               </object>
             </child>
             <child>
-              <placeholder/>
+              <object class="GtkButton" id="cancel-button">
+                <property name="label">Cancel</property>
+                <property name="name">CancelButton</property>
+              </object>
             </child>
-            <child type="tab">
-              <placeholder/>
+            <child>
+              <object class="GtkButton" id="ok-button">
+                <property name="label">OK</property>
+                <property name="name">OkButton</property>
+              </object>
             </child>
           </object>
         </child>

@@ -44,8 +44,10 @@ PreferencesDialog* PreferencesDialog::create(const Glib::RefPtr<Gtk::Builder>& b
 
 PreferencesDialog::PreferencesDialog(BaseObjectType* cobject,
                                      const Glib::RefPtr<Gtk::Builder>& builder) :
-    GCDWindow(cobject)
+    Gtk::Window(cobject)
 {
+    set_modal(true);
+
     // In GTK4, buttons are often handled via signal_clicked or signal_response
     auto applyButton = builder->get_widget<Gtk::Button>("apply-button");
     auto okButton = builder->get_widget<Gtk::Button>("ok-button");
