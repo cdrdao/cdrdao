@@ -35,303 +35,170 @@
 #include "guiUpdate.h"
 
 TrackInfoDialog::TrackInfoDialog()
+    : mainVBox_(Gtk::Orientation::VERTICAL, 10),
+      contentBox_(Gtk::Orientation::VERTICAL, 10),
+      copyFlag_(_("Copy")),
+      preEmphasisFlag_(_("Pre Emphasis")),
+      twoChannelAudio_(_("Two Channel Audio")),
+      fourChannelAudio_(_("Four Channel Audio")),
+      applyButton_(_("Apply")),
+      closeButton_(_("Close"))
 {
-    int i;
-    Gtk::Label *label, *label1;
-    Gtk::Box *hbox;
-    Gtk::Box *vbox, *vbox1;
-    Gtk::Frame *frame;
-    Gtk::Table *table;
-    Gtk::Button *button;
-    auto contents = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL);
-    auto topBox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
-
-    tocEditView_ = NULL;
-    active_ = 0;
-    trackNr_ = 0;
-
-    trackNr_ = new Gtk::Label("99");
-    pregapLen_ = new Gtk::Label("100:00:00");
-    trackStart_ = new Gtk::Label("100:00:00");
-    trackEnd_ = new Gtk::Label("100:00:00");
-    trackLen_ = new Gtk::Label("100:00:00");
-    indexMarks_ = new Gtk::Label("99");
-
-    copyFlag_ = new Gtk::CheckButton(_("Copy"));
-    preEmphasisFlag_ = new Gtk::CheckButton(_("Pre Emphasis"));
-
-    twoChannelAudio_ = new Gtk::RadioButton(_("Two Channel Audio"));
-    fourChannelAudio_ = new Gtk::RadioButton(_("Four Channel Audio"));
-    Gtk::RadioButton::Group rbgroup = twoChannelAudio_->get_group();
-    fourChannelAudio_->set_group(rbgroup);
-
-    isrcCodeCountry_ = manage(new TextEdit("XX"));
-    isrcCodeCountry_->set_max_length(2);
-    isrcCodeCountry_->lowerCase(0);
-    isrcCodeCountry_->space(0);
-    isrcCodeCountry_->digits(0);
-
-    isrcCodeOwner_ = manage(new TextEdit("XXX"));
-    isrcCodeOwner_->set_max_length(3);
-    isrcCodeOwner_->lowerCase(0);
-    isrcCodeOwner_->space(0);
-
-    isrcCodeYear_ = manage(new TextEdit("00"));
-    isrcCodeYear_->set_max_length(2);
-    isrcCodeYear_->lowerCase(0);
-    isrcCodeYear_->upperCase(0);
-    isrcCodeYear_->space(0);
-
-    isrcCodeSerial_ = manage(new TextEdit("00000"));
-    isrcCodeSerial_->set_max_length(5);
-    isrcCodeSerial_->lowerCase(0);
-    isrcCodeSerial_->upperCase(0);
-    isrcCodeSerial_->space(0);
-
-    topBox->set_spacing(5);
-    contents->set_spacing(10);
-
-    hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
-
-    label = new Gtk::Label(_("Track: "));
-
-    hbox->pack_start(*label, FALSE, FALSE);
-    hbox->pack_start(*trackNr_, FALSE, FALSE);
-
-    contents->pack_start(*hbox, FALSE, FALSE);
-
-    // time data
-    frame = new Gtk::Frame(_(" Summary "));
-
-    table = new Gtk::Table(5, 2, FALSE);
-    table->set_row_spacings(5);
-    table->set_col_spacings(5);
-    hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
-    hbox->pack_start(*table, FALSE, FALSE, 5);
-    vbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL);
-    vbox->pack_start(*hbox, TRUE, TRUE, 5);
-    frame->add(*vbox);
-
-    label = new Gtk::Label(_("Pre-Gap:"));
-    hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
-    hbox->pack_end(*label, FALSE, FALSE);
-    table->attach(*hbox, 0, 1, 0, 1);
-    hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
-    hbox->pack_start(*pregapLen_, FALSE, FALSE);
-    table->attach(*hbox, 1, 2, 0, 1);
-
-    label = new Gtk::Label(_("Start:"));
-    hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
-    hbox->pack_end(*label, FALSE, FALSE);
-    table->attach(*hbox, 0, 1, 1, 2);
-    hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
-    hbox->pack_start(*trackStart_, FALSE, FALSE);
-    table->attach(*hbox, 1, 2, 1, 2);
-
-    label = new Gtk::Label(_("End:"));
-    hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
-    hbox->pack_end(*label, FALSE, FALSE);
-    table->attach(*hbox, 0, 1, 2, 3);
-    hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
-    hbox->pack_start(*trackEnd_, FALSE, FALSE);
-    table->attach(*hbox, 1, 2, 2, 3);
-
-    label = new Gtk::Label(_("Length:"));
-    hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
-    hbox->pack_end(*label, FALSE, FALSE);
-    table->attach(*hbox, 0, 1, 3, 4);
-    hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
-    hbox->pack_start(*trackLen_, FALSE, FALSE);
-    table->attach(*hbox, 1, 2, 3, 4);
-
-    label = new Gtk::Label(_("Index Marks:"));
-    hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
-    hbox->pack_end(*label, FALSE, FALSE);
-    table->attach(*hbox, 0, 1, 4, 5);
-    hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
-    hbox->pack_start(*indexMarks_, FALSE, FALSE);
-    table->attach(*hbox, 1, 2, 4, 5);
-
-    topBox->pack_start(*frame, FALSE, FALSE);
-
-    // sub-channel data
-    frame = new Gtk::Frame(_(" Sub-Channel "));
-
-    vbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL);
-    vbox->set_spacing(0);
-    vbox->pack_start(*copyFlag_);
-    vbox->pack_start(*preEmphasisFlag_);
-    vbox->pack_start(*twoChannelAudio_);
-    twoChannelAudio_->set_active(TRUE);
-    vbox->pack_start(*fourChannelAudio_);
-
-    hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
-    label = new Gtk::Label("ISRC: ");
-    hbox->pack_start(*label, Gtk::PACK_SHRINK);
-
-    hbox->pack_start(*isrcCodeCountry_, Gtk::PACK_SHRINK);
-    label1 = new Gtk::Label("-");
-    hbox->pack_start(*label1, Gtk::PACK_SHRINK);
-
-    hbox->pack_start(*isrcCodeOwner_, Gtk::PACK_SHRINK);
-    label1 = new Gtk::Label("-");
-    hbox->pack_start(*label1, Gtk::PACK_SHRINK);
-
-    hbox->pack_start(*isrcCodeYear_, Gtk::PACK_SHRINK);
-    label1 = new Gtk::Label("-");
-    hbox->pack_start(*label1, Gtk::PACK_SHRINK);
-
-    hbox->pack_start(*isrcCodeSerial_, Gtk::PACK_SHRINK);
-
-    vbox->pack_start(*hbox);
-
-    vbox1 = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL);
-    vbox1->pack_start(*vbox, TRUE, TRUE, 5);
-    hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
-    hbox->pack_start(*vbox1, TRUE, TRUE, 5);
-    frame->add(*hbox);
-
-    topBox->pack_start(*frame, Gtk::PACK_SHRINK);
-
-    contents->pack_start(*topBox, Gtk::PACK_SHRINK);
-
-    // CD-TEXT data
-    frame = new Gtk::Frame(" CD-TEXT ");
-
-    Gtk::Notebook *notebook = new Gtk::Notebook;
-
-    for (i = 0; i < 8; i++) {
-        vbox = createCdTextPage(i);
-        notebook->append_page(*vbox, *(cdTextPages_[i].label));
-    }
-
-    vbox1 = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL);
-    vbox1->pack_start(*notebook, TRUE, TRUE, 5);
-    hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
-    hbox->pack_start(*vbox1, TRUE, TRUE, 5);
-    frame->add(*hbox);
-
-    contents->pack_start(*frame);
-
-    hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
-    hbox->pack_start(*contents, TRUE, TRUE, 10);
-    get_vbox()->pack_start(*hbox, TRUE, TRUE, 10);
-
-    Gtk::HButtonBox *bbox = new Gtk::HButtonBox(Gtk::BUTTONBOX_SPREAD);
-
-    applyButton_ = new Gtk::Button(Gtk::StockID(Gtk::Stock::APPLY));
-    bbox->pack_start(*applyButton_);
-    applyButton_->signal_clicked().connect(mem_fun(*this, &TrackInfoDialog::applyAction));
-
-    button = new Gtk::Button(Gtk::StockID(Gtk::Stock::CLOSE));
-    bbox->pack_start(*button);
-    button->signal_clicked().connect(mem_fun(*this, &TrackInfoDialog::closeAction));
-
-    get_action_area()->pack_start(*bbox);
-
-    show_all_children();
     set_title(_("Track Info"));
+    set_default_size(400, -1);
+    set_hide_on_close(true);
+
+    tocEditView_ = nullptr;
+    active_ = false;
+    selectedTrack_ = 0;
+
+    isrcCodeCountry_ = Gtk::make_managed<TextEdit>("XX");
+    isrcCodeCountry_->set_max_length(2);
+    
+    isrcCodeOwner_ = Gtk::make_managed<TextEdit>("XXX");
+    isrcCodeOwner_->set_max_length(3);
+
+    isrcCodeYear_ = Gtk::make_managed<TextEdit>("00");
+    isrcCodeYear_->set_max_length(2);
+
+    isrcCodeSerial_ = Gtk::make_managed<TextEdit>("00000");
+    isrcCodeSerial_->set_max_length(5);
+
+    // Top Header: Track Number
+    auto trackHeaderBox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL, 5);
+    auto trackLabel = Gtk::make_managed<Gtk::Label>(_("Track: "));
+    trackHeaderBox->append(*trackLabel);
+    trackHeaderBox->append(trackNr_);
+    contentBox_.append(*trackHeaderBox);
+
+    // Summary and Sub-channel horizontal container
+    auto topRowBox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL, 10);
+
+    // 1. Summary Frame
+    auto summaryFrame = Gtk::make_managed<Gtk::Frame>(_(" Summary "));
+    auto summaryGrid = Gtk::make_managed<Gtk::Grid>();
+    summaryGrid->set_row_spacing(5);
+    summaryGrid->set_column_spacing(10);
+    summaryGrid->set_margin(10);
+
+    auto add_row = [&](const std::string& labelText, Gtk::Widget& widget, int row) {
+        auto l = Gtk::make_managed<Gtk::Label>(labelText);
+        l->set_halign(Gtk::Align::END);
+        summaryGrid->attach(*l, 0, row);
+        widget.set_halign(Gtk::Align::START);
+        summaryGrid->attach(widget, 1, row);
+    };
+
+    add_row(_("Pre-Gap:"), pregapLen_, 0);
+    add_row(_("Start:"), trackStart_, 1);
+    add_row(_("End:"), trackEnd_, 2);
+    add_row(_("Length:"), trackLen_, 3);
+    add_row(_("Index Marks:"), indexMarks_, 4);
+    summaryFrame->set_child(*summaryGrid);
+    topRowBox->append(*summaryFrame);
+
+    // 2. Sub-Channel Frame
+    auto subChannelFrame = Gtk::make_managed<Gtk::Frame>(_(" Sub-Channel "));
+    auto subVBox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL, 2);
+    subVBox->set_margin(10);
+    subVBox->append(copyFlag_);
+    subVBox->append(preEmphasisFlag_);
+    
+    // Grouping Radios in GTK4
+    fourChannelAudio_.set_group(twoChannelAudio_);
+    subVBox->append(twoChannelAudio_);
+    subVBox->append(fourChannelAudio_);
+
+    auto isrcBox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL, 2);
+    isrcBox->append(*Gtk::make_managed<Gtk::Label>("ISRC: "));
+    isrcBox->append(*isrcCodeCountry_);
+    isrcBox->append(*Gtk::make_managed<Gtk::Label>("-"));
+    isrcBox->append(*isrcCodeOwner_);
+    isrcBox->append(*Gtk::make_managed<Gtk::Label>("-"));
+    isrcBox->append(*isrcCodeYear_);
+    isrcBox->append(*Gtk::make_managed<Gtk::Label>("-"));
+    isrcBox->append(*isrcCodeSerial_);
+    subVBox->append(*isrcBox);
+
+    subChannelFrame->set_child(*subVBox);
+    topRowBox->append(*subChannelFrame);
+    contentBox_.append(*topRowBox);
+
+    // 3. CD-TEXT Notebook
+    auto cdTextFrame = Gtk::make_managed<Gtk::Frame>(_(" CD-TEXT "));
+    auto notebook = Gtk::make_managed<Gtk::Notebook>();
+    for (int i = 0; i < 8; i++) {
+        setupCdTextPage(i);
+        notebook->append_page(cdTextPages_[i].pageBox, cdTextPages_[i].label);
+    }
+    cdTextFrame->set_child(*notebook);
+    contentBox_.append(*cdTextFrame);
+
+    // Action Buttons
+    auto actionBox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL, 10);
+    actionBox->set_halign(Gtk::Align::END);
+    actionBox->set_margin(10);
+    
+    applyButton_.set_has_frame(true);
+    applyButton_.signal_clicked().connect(sigc::mem_fun(*this, &TrackInfoDialog::applyAction));
+    
+    closeButton_.signal_clicked().connect(sigc::mem_fun(*this, &TrackInfoDialog::closeAction));
+
+    actionBox->append(applyButton_);
+    actionBox->append(closeButton_);
+
+    // Final Assembly
+    contentBox_.set_margin(10);
+    mainVBox_.append(contentBox_);
+    mainVBox_.append(*actionBox);
+    set_child(mainVBox_);
 }
 
-TrackInfoDialog::~TrackInfoDialog()
+void TrackInfoDialog::setupCdTextPage(int n)
 {
+    cdTextPages_[n].label.set_text(std::to_string(n));
+    
+    auto grid = Gtk::make_managed<Gtk::Grid>();
+    grid->set_row_spacing(5);
+    grid->set_column_spacing(10);
+    grid->set_margin(10);
+
+    auto add_entry = [&](const std::string& labelText, Gtk::Entry& entry, int row) {
+        auto l = Gtk::make_managed<Gtk::Label>(labelText);
+        l->set_halign(Gtk::Align::END);
+        grid->attach(*l, 0, row);
+        grid->attach(entry, 1, row);
+        entry.set_expand(true);
+    };
+
+    add_entry(_("Title:"), cdTextPages_[n].title, 0);
+    add_entry(_("Performer:"), cdTextPages_[n].performer, 1);
+    add_entry(_("Songwriter:"), cdTextPages_[n].songwriter, 2);
+    add_entry(_("Composer:"), cdTextPages_[n].composer, 3);
+    add_entry(_("Arranger:"), cdTextPages_[n].arranger, 4);
+    add_entry(_("Message:"), cdTextPages_[n].message, 5);
+    add_entry(_("ISRC:"), cdTextPages_[n].isrc, 6);
+
+    cdTextPages_[n].pageBox.append(*grid);
 }
 
 void TrackInfoDialog::start(TocEditView *view)
 {
     if (active_) {
-        raise();
+        present();
         return;
     }
-
-    active_ = 1;
-
-    update(UPD_ALL, view);
-    show();
+    active_ = true;
+    update(0xFFFFFFFF, view); // UPD_ALL
+    present();
 }
 
 void TrackInfoDialog::stop()
 {
     if (active_) {
         hide();
-        active_ = 0;
+        active_ = false;
     }
-}
-
-Gtk::Box *TrackInfoDialog::createCdTextPage(int n)
-{
-    char buf[20];
-    Gtk::Table *table = new Gtk::Table(7, 2, FALSE);
-    auto vbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL);
-    Gtk::Box *hbox;
-    Gtk::Label *label;
-
-    snprintf(buf, sizeof(buf), " %d ", n);
-    cdTextPages_[n].label = new Gtk::Label(buf);
-
-    cdTextPages_[n].title = manage(new Gtk::Entry);
-    cdTextPages_[n].performer = manage(new Gtk::Entry);
-    cdTextPages_[n].songwriter = manage(new Gtk::Entry);
-    cdTextPages_[n].composer = manage(new Gtk::Entry);
-    cdTextPages_[n].arranger = manage(new Gtk::Entry);
-    cdTextPages_[n].message = manage(new Gtk::Entry);
-    cdTextPages_[n].isrc = manage(new Gtk::Entry);
-
-    table->set_border_width(5);
-    table->set_row_spacings(5);
-    table->set_col_spacings(5);
-
-    label = new Gtk::Label(_("Title:"));
-    hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
-    hbox->pack_end(*label, Gtk::PACK_SHRINK);
-    table->attach(*hbox, 0, 1, 0, 1, Gtk::FILL);
-    table->attach(*(cdTextPages_[n].title), 1, 2, 0, 1);
-
-    label = new Gtk::Label(_("Performer:"));
-    hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
-    hbox->pack_end(*label, Gtk::PACK_SHRINK);
-    table->attach(*hbox, 0, 1, 1, 2, Gtk::FILL);
-    table->attach(*(cdTextPages_[n].performer), 1, 2, 1, 2);
-
-    label = new Gtk::Label(_("Songwriter:"));
-    hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
-    hbox->pack_end(*label, Gtk::PACK_SHRINK);
-    table->attach(*hbox, 0, 1, 2, 3, Gtk::FILL);
-    table->attach(*(cdTextPages_[n].songwriter), 1, 2, 2, 3);
-
-    label = new Gtk::Label(_("Composer:"));
-    hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
-    hbox->pack_end(*label, Gtk::PACK_SHRINK);
-    table->attach(*hbox, 0, 1, 3, 4, Gtk::FILL);
-    table->attach(*(cdTextPages_[n].composer), 1, 2, 3, 4);
-
-    label = new Gtk::Label(_("Arranger:"));
-    hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
-    hbox->pack_end(*label, Gtk::PACK_SHRINK);
-    table->attach(*hbox, 0, 1, 4, 5, Gtk::FILL);
-    table->attach(*(cdTextPages_[n].arranger), 1, 2, 4, 5);
-
-    label = new Gtk::Label(_("Message:"));
-    hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
-    hbox->pack_end(*label, Gtk::PACK_SHRINK);
-    table->attach(*hbox, 0, 1, 5, 6, Gtk::FILL);
-    table->attach(*(cdTextPages_[n].message), 1, 2, 5, 6);
-
-    label = new Gtk::Label("ISRC:");
-    hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
-    hbox->pack_end(*label, Gtk::PACK_SHRINK);
-    table->attach(*hbox, 0, 1, 6, 7, Gtk::FILL);
-    table->attach(*(cdTextPages_[n].isrc), 1, 2, 6, 7);
-
-    vbox->pack_start(*table);
-
-    return vbox;
-}
-
-bool TrackInfoDialog::on_delete_event(GdkEventAny *)
-{
-    stop();
-    return 1;
 }
 
 void TrackInfoDialog::closeAction()
@@ -341,12 +208,12 @@ void TrackInfoDialog::closeAction()
 
 void TrackInfoDialog::clear()
 {
-    trackNr_->set_text("");
-    pregapLen_->set_text("");
-    trackStart_->set_text("");
-    trackEnd_->set_text("");
-    trackLen_->set_text("");
-    indexMarks_->set_text("");
+    trackNr_.set_text("");
+    pregapLen_.set_text("");
+    trackStart_.set_text("");
+    trackEnd_.set_text("");
+    trackLen_.set_text("");
+    indexMarks_.set_text("");
 
     isrcCodeCountry_->set_text("");
     isrcCodeCountry_->set_editable(false);
@@ -357,10 +224,10 @@ void TrackInfoDialog::clear()
     isrcCodeSerial_->set_text("");
     isrcCodeSerial_->set_editable(false);
 
-    copyFlag_->set_sensitive(false);
-    preEmphasisFlag_->set_sensitive(false);
-    twoChannelAudio_->set_sensitive(false);
-    fourChannelAudio_->set_sensitive(false);
+    copyFlag_.set_sensitive(false);
+    preEmphasisFlag_.set_sensitive(false);
+    twoChannelAudio_.set_sensitive(false);
+    fourChannelAudio_.set_sensitive(false);
 
     clearCdText();
 }
@@ -376,7 +243,7 @@ void TrackInfoDialog::update(unsigned long level, TocEditView *view)
 
     if (view == NULL || !view->trackSelection(&selectedTrack_)) {
         selectedTrack_ = 0;
-        applyButton_->set_sensitive(FALSE);
+        applyButton_.set_sensitive(FALSE);
         clear();
         return;
     }
@@ -391,9 +258,9 @@ void TrackInfoDialog::update(unsigned long level, TocEditView *view)
     if (level & (UPD_TRACK_DATA | UPD_TRACK_MARK_SEL)) {
         toc = view->tocEdit()->toc();
         importData(toc, selectedTrack_);
-        applyButton_->set_sensitive(view->tocEdit()->editable() ? TRUE : FALSE);
+        applyButton_.set_sensitive(view->tocEdit()->editable() ? TRUE : FALSE);
     } else if (level & UPD_EDITABLE_STATE) {
-        applyButton_->set_sensitive(view->tocEdit()->editable() ? TRUE : FALSE);
+        applyButton_.set_sensitive(view->tocEdit()->editable() ? TRUE : FALSE);
     }
 }
 
@@ -402,26 +269,26 @@ void TrackInfoDialog::clearCdText()
     int l;
 
     for (l = 0; l < 8; l++) {
-        cdTextPages_[l].title->set_text("");
-        cdTextPages_[l].title->set_editable(false);
+        cdTextPages_[l].title.set_text("");
+        cdTextPages_[l].title.set_editable(false);
 
-        cdTextPages_[l].performer->set_text("");
-        cdTextPages_[l].performer->set_editable(false);
+        cdTextPages_[l].performer.set_text("");
+        cdTextPages_[l].performer.set_editable(false);
 
-        cdTextPages_[l].songwriter->set_text("");
-        cdTextPages_[l].songwriter->set_editable(false);
+        cdTextPages_[l].songwriter.set_text("");
+        cdTextPages_[l].songwriter.set_editable(false);
 
-        cdTextPages_[l].composer->set_text("");
-        cdTextPages_[l].composer->set_editable(false);
+        cdTextPages_[l].composer.set_text("");
+        cdTextPages_[l].composer.set_editable(false);
 
-        cdTextPages_[l].arranger->set_text("");
-        cdTextPages_[l].arranger->set_editable(false);
+        cdTextPages_[l].arranger.set_text("");
+        cdTextPages_[l].arranger.set_editable(false);
 
-        cdTextPages_[l].message->set_text("");
-        cdTextPages_[l].message->set_editable(false);
+        cdTextPages_[l].message.set_text("");
+        cdTextPages_[l].message.set_editable(false);
 
-        cdTextPages_[l].isrc->set_text("");
-        cdTextPages_[l].isrc->set_editable(false);
+        cdTextPages_[l].isrc.set_text("");
+        cdTextPages_[l].isrc.set_editable(false);
     }
 }
 
@@ -477,46 +344,46 @@ void TrackInfoDialog::importCdText(const Toc *toc, int trackNr)
 
     for (l = 0; l < 8; l++) {
         if ((item = toc->getCdTextItem(trackNr, l, CdTextItem::PackType::TITLE)) != NULL)
-            cdTextPages_[l].title->set_text((const char *)item->data());
+            cdTextPages_[l].title.set_text((const char *)item->data());
         else
-            cdTextPages_[l].title->set_text("");
-        cdTextPages_[l].title->set_editable(true);
+            cdTextPages_[l].title.set_text("");
+        cdTextPages_[l].title.set_editable(true);
 
         if ((item = toc->getCdTextItem(trackNr, l, CdTextItem::PackType::PERFORMER)) != NULL)
-            cdTextPages_[l].performer->set_text((const char *)item->data());
+            cdTextPages_[l].performer.set_text((const char *)item->data());
         else
-            cdTextPages_[l].performer->set_text("");
-        cdTextPages_[l].performer->set_editable(true);
+            cdTextPages_[l].performer.set_text("");
+        cdTextPages_[l].performer.set_editable(true);
 
         if ((item = toc->getCdTextItem(trackNr, l, CdTextItem::PackType::SONGWRITER)) != NULL)
-            cdTextPages_[l].songwriter->set_text((const char *)item->data());
+            cdTextPages_[l].songwriter.set_text((const char *)item->data());
         else
-            cdTextPages_[l].songwriter->set_text("");
-        cdTextPages_[l].songwriter->set_editable(true);
+            cdTextPages_[l].songwriter.set_text("");
+        cdTextPages_[l].songwriter.set_editable(true);
 
         if ((item = toc->getCdTextItem(trackNr, l, CdTextItem::PackType::COMPOSER)) != NULL)
-            cdTextPages_[l].composer->set_text((const char *)item->data());
+            cdTextPages_[l].composer.set_text((const char *)item->data());
         else
-            cdTextPages_[l].composer->set_text("");
-        cdTextPages_[l].composer->set_editable(true);
+            cdTextPages_[l].composer.set_text("");
+        cdTextPages_[l].composer.set_editable(true);
 
         if ((item = toc->getCdTextItem(trackNr, l, CdTextItem::PackType::ARRANGER)) != NULL)
-            cdTextPages_[l].arranger->set_text((const char *)item->data());
+            cdTextPages_[l].arranger.set_text((const char *)item->data());
         else
-            cdTextPages_[l].arranger->set_text("");
-        cdTextPages_[l].arranger->set_editable(true);
+            cdTextPages_[l].arranger.set_text("");
+        cdTextPages_[l].arranger.set_editable(true);
 
         if ((item = toc->getCdTextItem(trackNr, l, CdTextItem::PackType::MESSAGE)) != NULL)
-            cdTextPages_[l].message->set_text((const char *)item->data());
+            cdTextPages_[l].message.set_text((const char *)item->data());
         else
-            cdTextPages_[l].message->set_text("");
-        cdTextPages_[l].message->set_editable(true);
+            cdTextPages_[l].message.set_text("");
+        cdTextPages_[l].message.set_editable(true);
 
         if ((item = toc->getCdTextItem(trackNr, l, CdTextItem::PackType::UPCEAN_ISRC)) != NULL)
-            cdTextPages_[l].isrc->set_text((const char *)item->data());
+            cdTextPages_[l].isrc.set_text((const char *)item->data());
         else
-            cdTextPages_[l].isrc->set_text("");
-        cdTextPages_[l].isrc->set_editable(true);
+            cdTextPages_[l].isrc.set_text("");
+        cdTextPages_[l].isrc.set_editable(true);
     }
 }
 
@@ -534,37 +401,37 @@ void TrackInfoDialog::importData(const Toc *toc, int trackNr)
     }
 
     snprintf(buf, sizeof(buf), "%d", trackNr);
-    trackNr_->set_text(buf);
+    trackNr_.set_text(buf);
 
     snprintf(buf, sizeof(buf), "%3d:%02d:%02d", track->start().min(), track->start().sec(),
              track->start().frac());
-    pregapLen_->set_text(buf);
+    pregapLen_.set_text(buf);
 
     snprintf(buf, sizeof(buf), "%3d:%02d:%02d", start.min(), start.sec(), start.frac());
-    trackStart_->set_text(buf);
+    trackStart_.set_text(buf);
 
     snprintf(buf, sizeof(buf), "%3d:%02d:%02d", end.min(), end.sec(), end.frac());
-    trackEnd_->set_text(buf);
+    trackEnd_.set_text(buf);
 
     Msf len(track->length() - track->start());
     snprintf(buf, sizeof(buf), "%3d:%02d:%02d", len.min(), len.sec(), len.frac());
-    trackLen_->set_text(buf);
+    trackLen_.set_text(buf);
 
     snprintf(buf, sizeof(buf), "%3d", track->nofIndices());
-    indexMarks_->set_text(buf);
+    indexMarks_.set_text(buf);
 
-    copyFlag_->set_sensitive(true);
-    preEmphasisFlag_->set_sensitive(true);
-    twoChannelAudio_->set_sensitive(true);
-    fourChannelAudio_->set_sensitive(true);
+    copyFlag_.set_sensitive(true);
+    preEmphasisFlag_.set_sensitive(true);
+    twoChannelAudio_.set_sensitive(true);
+    fourChannelAudio_.set_sensitive(true);
 
-    copyFlag_->set_active(track->copyPermitted());
-    preEmphasisFlag_->set_active(track->preEmphasis());
+    copyFlag_.set_active(track->copyPermitted());
+    preEmphasisFlag_.set_active(track->preEmphasis());
 
     if (track->audioType() == 0)
-        twoChannelAudio_->set_active(true);
+        twoChannelAudio_.set_sensitive(true);
     else
-        fourChannelAudio_->set_active(true);
+        fourChannelAudio_.set_sensitive(true);
 
     if (track->isrcValid()) {
         snprintf(buf, sizeof(buf), "%c%c", track->isrcCountry(0), track->isrcCountry(1));
@@ -607,16 +474,16 @@ void TrackInfoDialog::exportData(TocEdit *tocEdit, int trackNr)
     if (t == NULL)
         return;
 
-    flag = copyFlag_->get_active() ? 1 : 0;
+    flag = copyFlag_.get_sensitive() ? 1 : 0;
     if (t->copyPermitted() != flag)
         tocEdit->setTrackCopyFlag(trackNr, flag);
 
     if (t->type() == TrackData::AUDIO) {
-        flag = preEmphasisFlag_->get_active() ? 1 : 0;
+        flag = preEmphasisFlag_.get_sensitive() ? 1 : 0;
         if (t->preEmphasis() != flag)
             tocEdit->setTrackPreEmphasisFlag(trackNr, flag);
 
-        flag = twoChannelAudio_->get_active() ? 0 : 1;
+        flag = twoChannelAudio_.get_sensitive() ? 0 : 1;
         if (t->audioType() != flag)
             tocEdit->setTrackAudioType(trackNr, flag);
 
@@ -657,7 +524,7 @@ void TrackInfoDialog::exportCdText(TocEdit *tocEdit, int trackNr)
 
     for (l = 0; l < 8; l++) {
         // Title
-        if ((s = checkString(cdTextPages_[l].title->get_text())) != NULL) {
+        if ((s = checkString(cdTextPages_[l].title.get_text())) != NULL) {
             newItem = new CdTextItem(CdTextItem::PackType::TITLE, l);
             newItem->setText(s);
         } else
@@ -675,7 +542,7 @@ void TrackInfoDialog::exportCdText(TocEdit *tocEdit, int trackNr)
         delete newItem;
 
         // Performer
-        if ((s = checkString(cdTextPages_[l].performer->get_text())) != NULL) {
+        if ((s = checkString(cdTextPages_[l].performer.get_text())) != NULL) {
             newItem = new CdTextItem(CdTextItem::PackType::PERFORMER, l);
             newItem->setText(s);
         } else
@@ -693,7 +560,7 @@ void TrackInfoDialog::exportCdText(TocEdit *tocEdit, int trackNr)
         delete newItem;
 
         // Songwriter
-        if ((s = checkString(cdTextPages_[l].songwriter->get_text())) != NULL) {
+        if ((s = checkString(cdTextPages_[l].songwriter.get_text())) != NULL) {
             newItem = new CdTextItem(CdTextItem::PackType::SONGWRITER, l);
             newItem->setText(s);
         } else
@@ -711,7 +578,7 @@ void TrackInfoDialog::exportCdText(TocEdit *tocEdit, int trackNr)
         delete newItem;
 
         // Composer
-        if ((s = checkString(cdTextPages_[l].composer->get_text())) != NULL) {
+        if ((s = checkString(cdTextPages_[l].composer.get_text())) != NULL) {
             newItem = new CdTextItem(CdTextItem::PackType::COMPOSER, l);
             newItem->setText(s);
         } else
@@ -729,7 +596,7 @@ void TrackInfoDialog::exportCdText(TocEdit *tocEdit, int trackNr)
         delete newItem;
 
         // Arranger
-        if ((s = checkString(cdTextPages_[l].arranger->get_text())) != NULL) {
+        if ((s = checkString(cdTextPages_[l].arranger.get_text())) != NULL) {
             newItem = new CdTextItem(CdTextItem::PackType::ARRANGER, l);
             newItem->setText(s);
         } else
@@ -747,7 +614,7 @@ void TrackInfoDialog::exportCdText(TocEdit *tocEdit, int trackNr)
         delete newItem;
 
         // Message
-        if ((s = checkString(cdTextPages_[l].message->get_text())) != NULL) {
+        if ((s = checkString(cdTextPages_[l].message.get_text())) != NULL) {
             newItem = new CdTextItem(CdTextItem::PackType::MESSAGE, l);
             newItem->setText(s);
         } else
@@ -765,7 +632,7 @@ void TrackInfoDialog::exportCdText(TocEdit *tocEdit, int trackNr)
         delete newItem;
 
         // Isrc
-        if ((s = checkString(cdTextPages_[l].isrc->get_text())) != NULL) {
+        if ((s = checkString(cdTextPages_[l].isrc.get_text())) != NULL) {
             newItem = new CdTextItem(CdTextItem::PackType::UPCEAN_ISRC, l);
             newItem->setText(s);
         } else

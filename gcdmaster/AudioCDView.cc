@@ -43,10 +43,12 @@ AudioCDView::AudioCDView(AudioCDProject *project) : addFileDialog_(project)
     project_ = project;
     tocEditView_ = new TocEditView(project->tocEdit());
 
+    addSilenceDialog_ = AddSilenceDialog::create();
+    addSilenceDialog_->signal_tocModified.connect(sigc::mem_fun(*this, &AudioCDView::update));
+
     // These are not created until first needed, for faster startup
     // and less memory usage.
     trackInfoDialog_ = 0;
-    addSilenceDialog_ = 0;
 
     std::vector<Gtk::TargetEntry> drop_types;
     drop_types.push_back(Gtk::TargetEntry("text/uri-list", Gtk::TargetFlags(0), TARGET_URI_LIST));
@@ -139,9 +141,6 @@ AudioCDView::~AudioCDView()
 {
     if (trackInfoDialog_)
         delete trackInfoDialog_;
-
-    if (addSilenceDialog_)
-        delete addSilenceDialog_;
 }
 
 void AudioCDView::add_menus(Glib::RefPtr<Gtk::UIManager> m_refUIManager)
@@ -316,9 +315,7 @@ void AudioCDView::update(unsigned long level)
         trackInfoDialog_->update(level, tocEditView_);
 
     addFileDialog_.update(level);
-
-    if (addSilenceDialog_ != 0)
-        addSilenceDialog_->update(level, tocEditView_);
+    addSilenceDialog_->update(level, tocEditView_);
 }
 
 void AudioCDView::zoomIn()
@@ -792,24 +789,14 @@ void AudioCDView::insertFile()
 
 void AudioCDView::appendSilence()
 {
-    if (addSilenceDialog_ == 0) {
-        addSilenceDialog_ = new AddSilenceDialog();
-        addSilenceDialog_->set_transient_for(*project_->getParentWindow());
-        addSilenceDialog_->signal_tocModified.connect(sigc::mem_fun(*this, &AudioCDView::update));
-        addSilenceDialog_->signal_fullView.connect(sigc::mem_fun(*this, &AudioCDView::fullView));
-    }
-
     addSilenceDialog_->mode(AddSilenceDialog::M_APPEND);
-    addSilenceDialog_->start(tocEditView_);
+    addSilenceDialog_->start(this, tocEditView_);
 }
 
 void AudioCDView::insertSilence()
 {
-    if (addSilenceDialog_ == 0)
-        addSilenceDialog_ = new AddSilenceDialog();
-
     addSilenceDialog_->mode(AddSilenceDialog::M_INSERT);
-    addSilenceDialog_->start(tocEditView_);
+    addSilenceDialog_->start(this, tocEditView_);
 }
 
 const char *AudioCDView::sample2string(unsigned long sample)

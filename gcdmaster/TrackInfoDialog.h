@@ -29,13 +29,10 @@ class TocEdit;
 class TocEditView;
 class TextEdit;
 
-class TrackInfoDialog : public Gtk::Dialog
+class TrackInfoDialog : public Gtk::Window
 {
   public:
     TrackInfoDialog();
-    ~TrackInfoDialog();
-
-    bool on_delete_event(GdkEventAny *);
 
     void update(unsigned long, TocEditView *);
 
@@ -43,25 +40,25 @@ class TrackInfoDialog : public Gtk::Dialog
     void stop();
 
   private:
-    TocEditView *tocEditView_;
-    int active_;
+    TocEditView *tocEditView_ = nullptr;
+    bool active_ = false;
+    int selectedTrack_ = 0;
 
-    int selectedTrack_;
+    Gtk::Button applyButton_;
+    Gtk::Button closeButton_;
 
-    Gtk::Button *applyButton_;
+    Gtk::Label trackNr_;
+    Gtk::Label pregapLen_;
+    Gtk::Label trackStart_;
+    Gtk::Label trackEnd_;
+    Gtk::Label trackLen_;
+    Gtk::Label indexMarks_;
 
-    Gtk::Label *trackNr_;
-    Gtk::Label *pregapLen_;
-    Gtk::Label *trackStart_;
-    Gtk::Label *trackEnd_;
-    Gtk::Label *trackLen_;
-    Gtk::Label *indexMarks_;
+    Gtk::CheckButton copyFlag_;
+    Gtk::CheckButton preEmphasisFlag_;
 
-    Gtk::CheckButton *copyFlag_;
-    Gtk::CheckButton *preEmphasisFlag_;
-
-    Gtk::RadioButton *twoChannelAudio_;
-    Gtk::RadioButton *fourChannelAudio_;
+    Gtk::ToggleButton twoChannelAudio_;
+    Gtk::ToggleButton fourChannelAudio_;
 
     TextEdit *isrcCodeCountry_;
     TextEdit *isrcCodeOwner_;
@@ -69,14 +66,15 @@ class TrackInfoDialog : public Gtk::Dialog
     TextEdit *isrcCodeSerial_;
 
     struct CdTextPage {
-        Gtk::Label *label;
-        Gtk::Entry *title;
-        Gtk::Entry *performer;
-        Gtk::Entry *songwriter;
-        Gtk::Entry *composer;
-        Gtk::Entry *arranger;
-        Gtk::Entry *message;
-        Gtk::Entry *isrc;
+        Gtk::Label label;
+        Gtk::Entry title;
+        Gtk::Entry performer;
+        Gtk::Entry songwriter;
+        Gtk::Entry composer;
+        Gtk::Entry arranger;
+        Gtk::Entry message;
+        Gtk::Entry isrc;
+        Gtk::Box pageBox{Gtk::Orientation::VERTICAL};
     };
 
     CdTextPage cdTextPages_[8];
@@ -84,7 +82,7 @@ class TrackInfoDialog : public Gtk::Dialog
     void closeAction();
     void applyAction();
 
-    Gtk::Box *createCdTextPage(int);
+    void setupCdTextPage(int);
 
     void clear();
     void clearCdText();
@@ -94,6 +92,9 @@ class TrackInfoDialog : public Gtk::Dialog
     void importData(const Toc *, int);
     void exportCdText(TocEdit *, int);
     void exportData(TocEdit *, int);
+
+    Gtk::Box mainVBox_  {Gtk::Orientation::VERTICAL};
+    Gtk::Box contentBox_{Gtk::Orientation::VERTICAL};
 };
 
 #endif

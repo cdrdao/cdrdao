@@ -72,7 +72,7 @@ class AudioCDView : public GenericView
 
     TrackInfoDialog *trackInfoDialog_;
     AddFileDialog addFileDialog_;
-    AddSilenceDialog *addSilenceDialog_;
+    Glib::RefPtr<AddSilenceDialog> addSilenceDialog_;
 
     Mode mode_;
     SampleDisplay *sampleDisplay_;
