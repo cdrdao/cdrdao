@@ -40,6 +40,7 @@ class CdDevice : public sigc::trackable
         DEV_NO_DISK,
         DEV_BLANKING,
         DEV_FAULT,
+        DEV_LOCKED,
         DEV_UNKNOWN
     };
     enum DeviceType {

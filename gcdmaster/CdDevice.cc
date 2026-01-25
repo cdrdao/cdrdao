@@ -19,6 +19,7 @@
 
 #include <cassert>
 #include <cstdlib>
+#include <filesystem>
 
 #include "CdDevice.h"
 #include "dao/ScsiIf.h"
@@ -47,7 +48,7 @@ std::vector<std::string> CdDevice::DEV_TYPE_NAMES = { "CD_R", "CD_RW", "CD_ROM" 
 
 std::vector<std::string> CdDevice::STATUS_NAMES = {
     "Ready", "Recording", "Reading", "Waiting", "Blanking",
-    "Busy", "No disk", "Not available", "Unknown" };
+    "Busy", "No disk", "Not available", "In Use", "Unknown" };
 
 
 
@@ -208,7 +209,6 @@ int CdDevice::updateStatus()
             createScsiIf();
 
         if (scsiIf_ != NULL) {
-	    log_message(0, "RUNNING TESTUNITREADY");
             switch (scsiIf_->testUnitReady()) {
             case 0:
                 newStatus = DEV_READY;
@@ -223,6 +223,12 @@ int CdDevice::updateStatus()
                 // Most likely a timeout error.
                 newStatus = DEV_BUSY;
                 break;
+            case 4:
+                // Used by another process.
+                newStatus = DEV_LOCKED;
+                break;
+            default:
+                assert(-1);
             }
 	    log_message(0, "TESTUNITREADY, status was %d,  is now %d", status_, newStatus);
         } else {
@@ -363,13 +369,22 @@ bool CdDevice::recordDao(Gtk::Window &parent, TocEdit *tocEdit, int simulate, in
     char bufferbuf[20];
     int remoteFdArgNum = 0;
 
-    if ((status_ != DEV_READY && status_ != DEV_FAULT && status_ != DEV_UNKNOWN) ||
+    if ((status_ != DEV_READY && status_ != DEV_FAULT &&
+         status_ != DEV_UNKNOWN && status_ != DEV_LOCKED) ||
         process_ != NULL)
         return false;
 
-    // Not ideal, but NO alternatives with C++14.
-    tocFileName = std::tmpnam(nullptr);
-    tocFileName += ".gcdm.toc";
+    try {
+        auto tempPath = std::filesystem::temp_directory_path();
+        std::string fileName = "cdrdao_" + std::to_string(getpid()) + "_" + 
+            std::to_string(std::time(nullptr)) + ".gcdm.toc";
+        tempPath /= fileName;
+        tocFileName = tempPath.string();
+        log_message(1, "Creating temporary TOC file \"%s\"", tocFileName.c_str());
+    } catch (...) {
+        log_message(-2, _("Failed to determine temporary directory."));
+        return false;
+    }
 
     // Write out temporary toc file containing all the converted wav
     // files (don't want to rely on cdrdao doing the mp3->wav
@@ -503,7 +518,8 @@ int CdDevice::extractDao(Gtk::Window &parent, const std::string& tocFileName, in
     char correctionbuf[20];
     int remoteFdArgNum = 0;
 
-    if ((status_ != DEV_READY && status_ != DEV_FAULT && status_ != DEV_UNKNOWN) ||
+    if ((status_ != DEV_READY && status_ != DEV_FAULT &&
+         status_ != DEV_UNKNOWN && status_ != DEV_LOCKED) ||
         process_ != NULL)
         return 1;
 
@@ -913,6 +929,9 @@ const std::string CdDevice::status2string(Status s)
     case DEV_FAULT:
         ret = "Not available";
         break;
+    case DEV_LOCKED:
+        ret = "Already In Use";
+        break;
     case DEV_UNKNOWN:
         ret = "Unknown";
         break;
@@ -1116,6 +1135,8 @@ bool CdDevice::scan()
     int i, len;
     ScsiIf::ScanData *sdata = ScsiIf::scan(&len);
 
+    log_message(0, "SCAN: %d devices found", len);
+
     if (len != DEVICE_LIST.size()) {
 	changed = true;
     } else {
@@ -1161,12 +1182,18 @@ void CdDevice::clear()
 
 int CdDevice::update()
 {
+    static int skipcnt = 0;
     int status = 0;
 
     blockProcessMonitorSignals();
 
-    if (CdDevice::scan())
-	status |= UPD_CD_DEVICES;
+    if (skipcnt > 2) {
+        if (CdDevice::scan())
+            status |= UPD_CD_DEVICES;
+        skipcnt = 0;
+    } else {
+        skipcnt++;
+    }
 
     for (auto dev : DEVICE_LIST)
         if (dev->updateStatus())
