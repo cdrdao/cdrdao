@@ -33,12 +33,11 @@ class AddSilenceDialog : public Gtk::Window
         M_INSERT
     };
 
-    static Glib::RefPtr<AddSilenceDialog> create();
+    static Glib::RefPtr<AddSilenceDialog> create(Gtk::Window* parent);
 
-    void start(Gtk::Widget* root, TocEditView *);
+    void start(Mode, TocEditView *);
     void stop();
 
-    void mode(Mode);
     void update(unsigned long level, TocEditView *);
     sigc::signal<void(unsigned long)> signal_tocModified;
     sigc::signal<void()> signal_fullView;
@@ -47,10 +46,11 @@ protected:
     bool on_close_request() override;
 
   private:
-    AddSilenceDialog();
+    AddSilenceDialog(Gtk::Window* parent);
     TocEditView *tocEditView_ = nullptr;
     bool active_ = false;
     Mode mode_ = M_APPEND;
+    Gtk::Window* parent_;
 
     Gtk::Button *applyButton_;
 
@@ -59,6 +59,7 @@ protected:
     Gtk::Entry frames_;
     Gtk::Entry samples_;
 
+    void mode(Mode);
     void clearAction();
     void closeAction();
     void applyAction();

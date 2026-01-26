@@ -14,16 +14,74 @@
     </section>
     <section>
       <item>
-        <attribute name="label" translatable="yes">Track Info</attribute>
-        <attribute name="action">win.track-info</attribute>
-      </item>
-      <item>
         <attribute name="label" translatable="yes">Project Info</attribute>
         <attribute name="action">win.project-info</attribute>
       </item>
       <item>
         <attribute name="label" translatable="yes">CD-TEXT</attribute>
         <attribute name="action">win.cdtext</attribute>
+      </item>
+    </section>
+    <section>
+      <item>
+        <attribute name="label" translatable="yes">Track Info...</attribute>
+        <attribute name="action">win.track-info</attribute>
+      </item>
+    </section>
+    <section>
+      <item>
+        <attribute name="label" translatable="yes">Cut</attribute>
+        <attribute name="action">win.cut</attribute>
+      </item>
+      <item>
+        <attribute name="label" translatable="yes">Paste</attribute>
+        <attribute name="action">win.paste</attribute>
+      </item>
+      <item>
+        <attribute name="label" translatable="yes">Select All</attribute>
+        <attribute name="action">win.select-all</attribute>
+      </item>
+    </section>
+    <section>
+      <item>
+        <attribute name="label" translatable="yes">Add track Mark</attribute>
+        <attribute name="action">win.add-track-mark</attribute>
+      </item>
+      <item>
+        <attribute name="label" translatable="yes">Add Index Mark</attribute>
+        <attribute name="action">win.add-index-mark</attribute>
+      </item>
+      <item>
+        <attribute name="label" translatable="yes">Add Pre-Gap</attribute>
+        <attribute name="action">win.add-pre-gap</attribute>
+      </item>
+      <item>
+        <attribute name="label" translatable="yes">Remove Track Mark</attribute>
+        <attribute name="action">win.remove-track-mark</attribute>
+      </item>
+    </section>
+    <section>
+      <item>
+        <attribute name="label" translatable="yes">Append Track</attribute>
+        <attribute name="action">win.append-track</attribute>
+      </item>
+      <item>
+        <attribute name="label" translatable="yes">Append File</attribute>
+        <attribute name="action">win.append-file</attribute>
+      </item>
+      <item>
+        <attribute name="label" translatable="yes">Insert File</attribute>
+        <attribute name="action">win.insert-file</attribute>
+      </item>
+    </section>
+    <section>
+      <item>
+        <attribute name="label" translatable="yes">Append Silence</attribute>
+        <attribute name="action">win.append-silence</attribute>
+      </item>
+      <item>
+        <attribute name="label" translatable="yes">Insert Silence</attribute>
+        <attribute name="action">win.insert-silence</attribute>
       </item>
     </section>
   </menu>

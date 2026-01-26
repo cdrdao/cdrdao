@@ -38,13 +38,17 @@
 #include "Project.h"
 #include "TrackInfoDialog.h"
 
-AudioCDView::AudioCDView(AudioCDProject *project) : addFileDialog_(project)
+AudioCDView::AudioCDView(AudioCDProject *project)
 {
     project_ = project;
     tocEditView_ = new TocEditView(project->tocEdit());
 
-    addSilenceDialog_ = AddSilenceDialog::create();
+    addSilenceDialog_ = AddSilenceDialog::create(project_);
     addSilenceDialog_->signal_tocModified.connect(sigc::mem_fun(*this, &AudioCDView::update));
+
+    addFileDialog_ = AddFileDialog::create(project_);
+
+    setup_actions();
 
     // These are not created until first needed, for faster startup
     // and less memory usage.
@@ -143,101 +147,21 @@ AudioCDView::~AudioCDView()
         delete trackInfoDialog_;
 }
 
-void AudioCDView::add_menus(Glib::RefPtr<Gtk::UIManager> m_refUIManager)
+void AudioCDView::setup_actions()
 {
-    m_refActionGroup = Gtk::ActionGroup::create("AudioCDView");
-
-    m_refActionGroup->add(Gtk::Action::create("TrackInfo", Gtk::Stock::PROPERTIES,
-                                              _("Track Info..."), _("Edit track data")),
-                          sigc::mem_fun(*this, &AudioCDView::trackInfo));
-
-    m_refActionGroup->add(
-        Gtk::Action::create("Cut", Gtk::Stock::CUT, _("Cut"), _("Cut out selected samples")),
-        Gtk::AccelKey("<control>x"), sigc::mem_fun(*this, &AudioCDView::cutTrackData));
-
-    m_refActionGroup->add(Gtk::Action::create("Paste", Gtk::Stock::PASTE, _("Paste"),
-                                              _("Paste previously cut samples")),
-                          Gtk::AccelKey("<control>v"),
-                          sigc::mem_fun(*this, &AudioCDView::pasteTrackData));
-
-    m_refActionGroup->add(
-        Gtk::Action::create("SelectAll", _("Select All"), _("Select entire sample")),
-        Gtk::AccelKey("<control>a"), sigc::mem_fun(*this, &AudioCDView::selectAll));
-
-    m_refActionGroup->add(Gtk::Action::create("AddTrackMark", _("Add Track Mark"),
-                                              _("Add track marker at current marker position")),
-                          Gtk::AccelKey("<control>m"),
-                          sigc::mem_fun(*this, &AudioCDView::addTrackMark));
-
-    m_refActionGroup->add(Gtk::Action::create("AddIndexMark", _("Add Index Mark"),
-                                              _("Add index marker at current marker position")),
-                          sigc::mem_fun(*this, &AudioCDView::addIndexMark));
-
-    m_refActionGroup->add(Gtk::Action::create("AddPreGap", _("Add Pre-Gap"),
-                                              _("Add pre-gap at current marker position")),
-                          sigc::mem_fun(*this, &AudioCDView::addPregap));
-
-    m_refActionGroup->add(Gtk::Action::create("RemoveTrackMark", _("Remove Track Mark"),
-                                              _("Remove selected track/index marker or pre-gap")),
-                          Gtk::AccelKey("<control>D"),
-                          sigc::mem_fun(*this, &AudioCDView::removeTrackMark));
-
-    m_refActionGroup->add(Gtk::Action::create("AppendTrack", _("Append Track"),
-                                              _("Append track with data from audio file")),
-                          Gtk::AccelKey("<control>T"),
-                          sigc::mem_fun(*this, &AudioCDView::appendTrack));
-
-    m_refActionGroup->add(Gtk::Action::create("AppendFile", _("Append File"),
-                                              _("Append data from audio file to last track")),
-                          Gtk::AccelKey("<control>F"),
-                          sigc::mem_fun(*this, &AudioCDView::appendFile));
-
-    m_refActionGroup->add(
-        Gtk::Action::create("InsertFile", _("Insert File"),
-                            _("Insert data from audio file at current marker position")),
-        Gtk::AccelKey("<control>I"), sigc::mem_fun(*this, &AudioCDView::insertFile));
-
-    m_refActionGroup->add(Gtk::Action::create("AppendSilence", _("Append Silence"),
-                                              _("Append silence to last track")),
-                          sigc::mem_fun(*this, &AudioCDView::appendSilence));
-
-    m_refActionGroup->add(Gtk::Action::create("InsertSilence", _("Insert Silence"),
-                                              _("Insert silence at current marker position")),
-                          sigc::mem_fun(*this, &AudioCDView::insertSilence));
-
-    m_refUIManager->insert_action_group(m_refActionGroup);
-
-    // Merge menuitems
-    try {
-        Glib::ustring ui_info = "<ui>"
-                                "  <menubar name='MenuBar'>"
-                                "    <menu action='EditMenu'>"
-                                "      <menuitem action='TrackInfo'/>"
-                                "    <separator/>"
-                                "      <menuitem action='Cut'/>"
-                                "      <menuitem action='Paste'/>"
-                                "    <separator/>"
-                                "      <menuitem action='SelectAll'/>"
-                                "    <separator/>"
-                                "      <menuitem action='AddTrackMark'/>"
-                                "      <menuitem action='AddIndexMark'/>"
-                                "      <menuitem action='AddPreGap'/>"
-                                "      <menuitem action='RemoveTrackMark'/>"
-                                "    <separator/>"
-                                "      <menuitem action='AppendTrack'/>"
-                                "      <menuitem action='AppendFile'/>"
-                                "      <menuitem action='InsertFile'/>"
-                                "    <separator/>"
-                                "      <menuitem action='AppendSilence'/>"
-                                "      <menuitem action='InsertSilence'/>"
-                                "    </menu>"
-                                "  </menubar>"
-                                "</ui>";
-
-        m_refUIManager->add_ui_from_string(ui_info);
-    } catch (const Glib::Error &ex) {
-        std::cerr << "merging menus failed: " << ex.what();
-    }
+    project_->add_action("track-info", sigc::mem_fun(*this, &AudioCDView::trackInfo));
+    project_->add_action("cut", sigc::mem_fun(*this, &AudioCDView::cutTrackData));
+    project_->add_action("paste", sigc::mem_fun(*this, &AudioCDView::pasteTrackData));
+    project_->add_action("select-all", sigc::mem_fun(*this, &AudioCDView::selectAll));
+    project_->add_action("add-track-mark", sigc::mem_fun(*this, &AudioCDView::addTrackMark));
+    project_->add_action("add-index-mark", sigc::mem_fun(*this, &AudioCDView::addIndexMark));
+    project_->add_action("add-pre-gap", sigc::mem_fun(*this, &AudioCDView::addPregap));
+    project_->add_action("remove-track-mark", sigc::mem_fun(*this, &AudioCDView::removeTrackMark));
+    project_->add_action("append-track", sigc::mem_fun(*this, &AudioCDView::appendTrack));
+    project_->add_action("append-file", sigc::mem_fun(*this, &AudioCDView::appendFile));
+    project_->add_action("insert-file", sigc::mem_fun(*this, &AudioCDView::insertFile));
+    project_->add_action("append-silence", sigc::mem_fun(*this, &AudioCDView::appendSilence));
+    project_->add_action("insert-silence", sigc::mem_fun(*this, &AudioCDView::insertSilence));
 }
 
 void AudioCDView::update(unsigned long level)
@@ -314,7 +238,7 @@ void AudioCDView::update(unsigned long level)
     if (trackInfoDialog_ != 0)
         trackInfoDialog_->update(level, tocEditView_);
 
-    addFileDialog_.update(level);
+    addFileDialog_->update(level);
     addSilenceDialog_->update(level, tocEditView_);
 }
 
@@ -771,32 +695,27 @@ void AudioCDView::trackMarkMovedCallback(const Track *, int trackNr, int indexNr
 
 void AudioCDView::appendTrack()
 {
-    addFileDialog_.mode(AddFileDialog::M_APPEND_TRACK);
-    addFileDialog_.start();
+    addFileDialog_->start(AddFileDialog::M_APPEND_TRACK);
 }
 
 void AudioCDView::appendFile()
 {
-    addFileDialog_.mode(AddFileDialog::M_APPEND_FILE);
-    addFileDialog_.start();
+    addFileDialog_->start(AddFileDialog::M_APPEND_FILE);
 }
 
 void AudioCDView::insertFile()
 {
-    addFileDialog_.mode(AddFileDialog::M_INSERT_FILE);
-    addFileDialog_.start();
+    addFileDialog_->start(AddFileDialog::M_INSERT_FILE);
 }
 
 void AudioCDView::appendSilence()
 {
-    addSilenceDialog_->mode(AddSilenceDialog::M_APPEND);
-    addSilenceDialog_->start(this, tocEditView_);
+    addSilenceDialog_->start(AddSilenceDialog::M_APPEND, tocEditView_);
 }
 
 void AudioCDView::insertSilence()
 {
-    addSilenceDialog_->mode(AddSilenceDialog::M_INSERT);
-    addSilenceDialog_->start(this, tocEditView_);
+    addSilenceDialog_->start(AddSilenceDialog::M_INSERT, tocEditView_);
 }
 
 const char *AudioCDView::sample2string(unsigned long sample)

@@ -35,11 +35,15 @@
 #include "util.h"
 #include "xcdrdao.h"
 
+Glib::RefPtr<AddFileDialog> AddFileDialog::create(AudioCDProject* project)
+{
+    return Glib::make_refptr_for_instance<AddFileDialog>(new AddFileDialog(project));
+}
+
 AddFileDialog::AddFileDialog(AudioCDProject *project) :
     project_(project)
 {
-    file_dialog_ = Gtk::FileDialog::create();
-    file_dialog_->set_modal(true);
+    set_modal(true);
     mode(M_APPEND_TRACK);
 
     // Set up filters
@@ -65,7 +69,7 @@ AddFileDialog::AddFileDialog(AudioCDProject *project) :
     filter_all->add_pattern("*");
     filters_->append(filter_all);
 
-    file_dialog_->set_filters(filters_);
+    set_filters(filters_);
 }
 
 void AddFileDialog::mode(Mode m)
@@ -74,28 +78,29 @@ void AddFileDialog::mode(Mode m)
 
     switch (mode_) {
     case M_APPEND_TRACK:
-        file_dialog_->set_title(_("Append Track"));
+        set_title(_("Append Track"));
         break;
     case M_APPEND_FILE:
-        file_dialog_->set_title(_("Append File"));
+        set_title(_("Append File"));
         break;
     case M_INSERT_FILE:
-        file_dialog_->set_title(_("Insert File"));
+        set_title(_("Insert File"));
         break;
     }
 }
 
-void AddFileDialog::start()
+void AddFileDialog::start(Mode m)
 {
-    file_dialog_->open_multiple(*project_->getParentWindow(),
-				sigc::mem_fun(*this,
-					      &AddFileDialog::on_file_dialog_finish));
+    mode(m);
+    open_multiple(*project_,
+                  sigc::mem_fun(*this,
+                                &AddFileDialog::on_file_dialog_finish));
 }
 
 void AddFileDialog::on_file_dialog_finish(const Glib::RefPtr<Gio::AsyncResult>& result)
 {
     try {
-        auto files_list = file_dialog_->open_multiple_finish(result);
+        auto files_list = open_multiple_finish(result);
 	applyAction(files_list);
     }
     catch (const Gtk::DialogError& e) {

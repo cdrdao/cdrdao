@@ -1,6 +1,8 @@
 bin_PROGRAMS = gcdmaster
 
 gcdmaster_SOURCES = \
+	AddSilenceDialog.h	\
+	AddSilenceDialog.cc	\
 	AudioCDProject.cc 	\
 	BlankCDDialog.cc	\
 	CdDevice.cc		\
@@ -14,8 +16,8 @@ gcdmaster_SOURCES = \
 	ProcessMonitor.cc	\
 	TaskManager.cc		\
 	Settings.cc 		\
-	SampleManager.cc	\
 	TrackDataScrap.cc	\
+	TrackInfoDialog.cc	\
 	ProgressDialog.cc	\
 	TocEdit.cc 		\
 	TocEditView.cc 		\
@@ -41,11 +43,13 @@ gcdmaster_SOURCES = \
 	CdTextDialog.h		\
 	MessageBox.h		\
 	SampleDisplay.h		\
+	SampleDisplay.cc	\
+	SampleManager.h		\
+	SampleManager.cc	\
 	TrackManager.h		\
 	TaskManager.h		\
 	DeviceConfDialog.h	\
 	ProcessMonitor.h	\
-	SampleManager.h		\
 	xcdrdao.h		\
 	DeviceList.h		\
 	ProgressDialog.h	\

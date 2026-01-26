@@ -196,7 +196,7 @@ SampleDisplay::SampleDisplay() :
     trackManager_ = new TrackManager(TRACK_MARKER_XPM_WIDTH);
 }
 
-void SampleDisplay::setTocEdit(TocEdit *t)
+void SampleDisplay::setTocEdit(Glib::RefPtr<TocEdit> t)
 {
   tocEdit_ = t;
 

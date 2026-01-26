@@ -20,15 +20,17 @@
 #ifndef __TOC_EDIT_VIEW_H__
 #define __TOC_EDIT_VIEW_H__
 
+#include <gtkmm.h>
+
 class TocEdit;
 
 class TocEditView
 {
   public:
-    TocEditView(TocEdit *);
+    TocEditView(Glib::RefPtr<TocEdit>);
     ~TocEditView();
 
-    TocEdit *tocEdit() const;
+    Glib::RefPtr<TocEdit> tocEdit() const;
 
     void sampleMarker(unsigned long);
     bool sampleMarker(unsigned long *) const;
@@ -45,28 +47,28 @@ class TocEditView
     bool sampleView(unsigned long smin, unsigned long smax);
 
     void trackSelection(int);
-    int trackSelection(int *) const;
+    bool trackSelection(int *) const;
 
     void indexSelection(int);
-    int indexSelection(int *) const;
+    bool indexSelection(int *) const;
 
   private:
-    TocEdit *tocEdit_;
+    Glib::RefPtr<TocEdit> tocEdit_;
 
-    bool sampleMarkerValid_;
+    bool sampleMarkerValid_ = false;
     unsigned long sampleMarker_;
 
-    bool sampleSelectionValid_;
+    bool sampleSelectionValid_ = false;
     unsigned long sampleSelectionMin_;
     unsigned long sampleSelectionMax_;
 
-    unsigned long sampleViewMin_;
-    unsigned long sampleViewMax_;
+    unsigned long sampleViewMin_ = 0;
+    unsigned long sampleViewMax_ = 0;
 
-    int trackSelectionValid_;
+    bool trackSelectionValid_ = false;
     int trackSelection_;
 
-    int indexSelectionValid_;
+    bool indexSelectionValid_ = false;
     int indexSelection_;
 };
 

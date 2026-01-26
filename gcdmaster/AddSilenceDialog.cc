@@ -34,12 +34,13 @@
 
 #include "Sample.h"
 
-Glib::RefPtr<AddSilenceDialog> AddSilenceDialog::create()
+Glib::RefPtr<AddSilenceDialog> AddSilenceDialog::create(Gtk::Window* parent)
 {
-    return Glib::make_refptr_for_instance(new AddSilenceDialog());
+    return Glib::make_refptr_for_instance(new AddSilenceDialog(parent));
 }
 
-AddSilenceDialog::AddSilenceDialog()
+AddSilenceDialog::AddSilenceDialog(Gtk::Window* parent) :
+    parent_(parent)
 {
     set_modal(true);
     set_hide_on_close(true);
@@ -104,13 +105,13 @@ void AddSilenceDialog::mode(Mode m)
     }
 }
 
-void AddSilenceDialog::start(Gtk::Widget* root, TocEditView *view)
+void AddSilenceDialog::start(Mode m,TocEditView *view)
 {
+    mode(m);
     active_ = true;
     if (view) {
-        auto parent = dynamic_cast<Gtk::Window*>(root->get_root());
-        if (parent)
-            set_transient_for(*parent);
+        if (parent_)
+            set_transient_for(*parent_);
     }
     update(UPD_ALL, view);
     present();

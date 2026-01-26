@@ -67,6 +67,8 @@ class AudioCDProject : public GCDWindow
 
     PlayStatus playStatus() { return playStatus_;  }
 
+    Glib::RefPtr<TocEdit> tocEdit() { return tocEdit_; }
+
     void statusMessage(const char *fmt, ...);
 
     // Controls for app bar

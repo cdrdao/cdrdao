@@ -43,7 +43,7 @@ class AudioCDView : public GenericView
   public:
     AudioCDView(AudioCDProject *project);
     ~AudioCDView();
-    void add_menus();
+
     sigc::signal<void()> add_view;
 
     void update(unsigned long level = 0);
@@ -71,7 +71,7 @@ class AudioCDView : public GenericView
     Glib::RefPtr<Gio::SimpleActionGroup> m_refActionGroup;
 
     TrackInfoDialog *trackInfoDialog_;
-    AddFileDialog addFileDialog_;
+    Glib::RefPtr<AddFileDialog> addFileDialog_;
     Glib::RefPtr<AddSilenceDialog> addSilenceDialog_;
 
     Mode mode_;
@@ -82,6 +82,7 @@ class AudioCDView : public GenericView
     Gtk::Entry *selectionStartPos_;
     Gtk::Entry *selectionEndPos_;
 
+    void setup_actions();
     void markerSetCallback(unsigned long);
     void cursorMovedCallback(unsigned long);
     void selectionSetCallback(unsigned long, unsigned long);

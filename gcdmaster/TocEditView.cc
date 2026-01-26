@@ -24,23 +24,12 @@
 #include "TocEdit.h"
 #include "guiUpdate.h"
 
-TocEditView::TocEditView(TocEdit *t)
+TocEditView::TocEditView(Glib::RefPtr<TocEdit> t)
+    : tocEdit_(t)
 {
-    tocEdit_ = t;
-
-    sampleMarkerValid_ = false;
-    sampleSelectionValid_ = false;
-    sampleViewMin_ = sampleViewMax_ = 0;
-    trackSelectionValid_ = 0;
-    indexSelectionValid_ = 0;
 }
 
-TocEditView::~TocEditView()
-{
-    tocEdit_ = 0;
-}
-
-TocEdit *TocEditView::tocEdit() const
+Glib::RefPtr<TocEdit> TocEditView::tocEdit() const
 {
     return tocEdit_;
 }
@@ -171,13 +160,13 @@ void TocEditView::trackSelection(int tnum)
 {
     if (tnum > 0) {
         trackSelection_ = tnum;
-        trackSelectionValid_ = 1;
+        trackSelectionValid_ = true;
     } else {
-        trackSelectionValid_ = 0;
+        trackSelectionValid_ = false;
     }
 }
 
-int TocEditView::trackSelection(int *tnum) const
+bool TocEditView::trackSelection(int *tnum) const
 {
     if (trackSelectionValid_)
         *tnum = trackSelection_;
@@ -189,13 +178,13 @@ void TocEditView::indexSelection(int inum)
 {
     if (inum >= 0) {
         indexSelection_ = inum;
-        indexSelectionValid_ = 1;
+        indexSelectionValid_ = true;
     } else {
-        indexSelectionValid_ = 0;
+        indexSelectionValid_ = true;
     }
 }
 
-int TocEditView::indexSelection(int *inum) const
+bool TocEditView::indexSelection(int *inum) const
 {
     if (indexSelectionValid_)
         *inum = indexSelection_;
