@@ -34,7 +34,7 @@
 #include "Track.h"
 #include "guiUpdate.h"
 
-TrackInfoDialog::TrackInfoDialog()
+TrackInfoDialog::TrackInfoDialog(Gtk::Window* parent)
     : mainVBox_(Gtk::Orientation::VERTICAL, 10),
       contentBox_(Gtk::Orientation::VERTICAL, 10),
       copyFlag_(_("Copy")),
@@ -42,11 +42,14 @@ TrackInfoDialog::TrackInfoDialog()
       twoChannelAudio_(_("Two Channel Audio")),
       fourChannelAudio_(_("Four Channel Audio")),
       applyButton_(_("Apply")),
-      closeButton_(_("Close"))
+      closeButton_(_("Close")),
+      parent_(parent)
 {
     set_title(_("Track Info"));
     set_default_size(400, -1);
     set_hide_on_close(true);
+    set_modal();
+    set_transient_for(*parent_);
 
     tocEditView_ = nullptr;
     active_ = false;
@@ -463,7 +466,7 @@ void TrackInfoDialog::importData(const Toc *toc, int trackNr)
     importCdText(toc, trackNr);
 }
 
-void TrackInfoDialog::exportData(TocEdit *tocEdit, int trackNr)
+void TrackInfoDialog::exportData(Glib::RefPtr<TocEdit> tocEdit, int trackNr)
 {
     char buf[13];
     const char *s;
@@ -513,7 +516,7 @@ void TrackInfoDialog::exportData(TocEdit *tocEdit, int trackNr)
     exportCdText(tocEdit, trackNr);
 }
 
-void TrackInfoDialog::exportCdText(TocEdit *tocEdit, int trackNr)
+void TrackInfoDialog::exportCdText(Glib::RefPtr<TocEdit> tocEdit, int trackNr)
 {
     int l;
     const char *s;

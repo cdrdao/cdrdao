@@ -39,6 +39,7 @@
 #include "TrackInfoDialog.h"
 
 AudioCDView::AudioCDView(AudioCDProject *project)
+    : Gtk::Box(Gtk::Orientation::VERTICAL)
 {
     project_ = project;
     tocEditView_ = new TocEditView(project->tocEdit());
@@ -50,81 +51,62 @@ AudioCDView::AudioCDView(AudioCDProject *project)
 
     setup_actions();
 
-    // These are not created until first needed, for faster startup
-    // and less memory usage.
-    trackInfoDialog_ = 0;
+    trackInfoDialog_ = TrackInfoDialog::create(project_);
 
-    std::vector<Gtk::TargetEntry> drop_types;
-    drop_types.push_back(Gtk::TargetEntry("text/uri-list", Gtk::TargetFlags(0), TARGET_URI_LIST));
+    // Drag and Drop setup
+    auto drop_target = Gtk::DropTarget::create(GDK_TYPE_FILE_LIST, Gdk::DragAction::COPY);
+    drop_target->signal_drop().connect(sigc::mem_fun(*this, &AudioCDView::on_drop), false);
+    add_controller(drop_target);
 
-    drag_dest_set(drop_types);
-    signal_drag_data_received().connect(sigc::mem_fun(*this, &AudioCDView::drag_data_received_cb));
 
-    sampleDisplay_ = new SampleDisplay;
+    sampleDisplay_ = Gtk::make_managed<SampleDisplay>();
     sampleDisplay_->setTocEdit(project->tocEdit());
-
     sampleDisplay_->set_size_request(200, 200);
+    sampleDisplay_->set_expand(true);
+    append(*sampleDisplay_);
 
-    pack_start(*sampleDisplay_, TRUE, TRUE);
-    sampleDisplay_->override_font(Pango::FontDescription("Monospace 8"));
-    sampleDisplay_->show();
+    scrollBar_ = Gtk::make_managed<Gtk::Scrollbar>(
+        sampleDisplay_->get_adjustment(), Gtk::Orientation::HORIZONTAL);
+    append(*scrollBar_);
 
-    auto scrollBar = new Gtk::Scrollbar(Gtk::Orientation::HORIZONTAL, sampleDisplay_->getAdjustment());
-    pack_start(*scrollBar, FALSE, FALSE);
-    scrollBar->show();
-
-    Gtk::Label *label;
     auto selectionInfoBox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
-
-    // FIXME: Calculate entry width for the current font.
     gint entry_width = 90;
 
-    markerPos_ = new Gtk::Entry;
-    markerPos_->set_editable(true);
+    markerPos_ = Gtk::make_managed<Gtk::Entry>();
     markerPos_->set_size_request(entry_width, -1);
     markerPos_->signal_activate().connect(sigc::mem_fun(*this, &AudioCDView::markerSet));
 
-    cursorPos_ = new Gtk::Label;
+    cursorPos_ = Gtk::make_managed<Gtk::Label>();
     cursorPos_->set_size_request(entry_width, -1);
 
-    selectionStartPos_ = new Gtk::Entry;
-    selectionStartPos_->set_editable(true);
+    selectionStartPos_ = Gtk::make_managed<Gtk::Entry>();
     selectionStartPos_->set_size_request(entry_width, -1);
     selectionStartPos_->signal_activate().connect(sigc::mem_fun(*this, &AudioCDView::selectionSet));
 
-    selectionEndPos_ = new Gtk::Entry;
-    selectionEndPos_->set_editable(true);
+    selectionEndPos_ = Gtk::make_managed<Gtk::Entry>();
     selectionEndPos_->set_size_request(entry_width, -1);
     selectionEndPos_->signal_activate().connect(sigc::mem_fun(*this, &AudioCDView::selectionSet));
 
-    label = new Gtk::Label(_("Cursor: "));
-    selectionInfoBox->pack_start(*label, FALSE, FALSE);
-    selectionInfoBox->pack_start(*cursorPos_);
-    label->show();
-    cursorPos_->show();
+    auto label = Gtk::make_managed<Gtk::Label>(_("Cursor: "));
+    selectionInfoBox->append(*label);
+    selectionInfoBox->append(*cursorPos_);
 
-    label = new Gtk::Label(_("Marker: "));
-    selectionInfoBox->pack_start(*label, FALSE, FALSE);
-    selectionInfoBox->pack_start(*markerPos_);
-    label->show();
-    markerPos_->show();
+    label = Gtk::make_managed<Gtk::Label>(_("Marker: "));
+    selectionInfoBox->append(*label);
+    selectionInfoBox->append(*markerPos_);
 
-    label = new Gtk::Label(_("Selection: "));
-    selectionInfoBox->pack_start(*label, FALSE, FALSE);
-    selectionInfoBox->pack_start(*selectionStartPos_);
-    label->show();
-    selectionStartPos_->show();
+    label = Gtk::make_managed<Gtk::Label>(_("Selection: "));
+    selectionInfoBox->append(*label);
+    selectionInfoBox->append(*selectionStartPos_);
 
-    label = new Gtk::Label(" - ");
-    selectionInfoBox->pack_start(*label, FALSE, FALSE);
-    selectionInfoBox->pack_start(*selectionEndPos_);
-    label->show();
-    selectionEndPos_->show();
+    label = Gtk::make_managed<Gtk::Label>(" - ");
+    selectionInfoBox->append(*label);
+    selectionInfoBox->append(*selectionEndPos_);
 
-    selectionInfoBox->set_border_width(2);
-    pack_start(*selectionInfoBox, FALSE, FALSE);
-    selectionInfoBox->show();
+    selectionInfoBox->set_margin_bottom(2);
+    append(*selectionInfoBox);
 
+    
     setMode(SELECT);
 
     sampleDisplay_->markerSet.connect(sigc::mem_fun(*this, &AudioCDView::markerSetCallback));
@@ -139,12 +121,6 @@ AudioCDView::AudioCDView(AudioCDProject *project)
     sampleDisplay_->viewModified.connect(sigc::mem_fun(*this, &AudioCDView::viewModifiedCallback));
 
     tocEditView_->sampleViewFull();
-}
-
-AudioCDView::~AudioCDView()
-{
-    if (trackInfoDialog_)
-        delete trackInfoDialog_;
 }
 
 void AudioCDView::setup_actions()
@@ -235,10 +211,7 @@ void AudioCDView::update(unsigned long level)
         }
     }
 
-    if (trackInfoDialog_ != 0)
-        trackInfoDialog_->update(level, tocEditView_);
-
-    addFileDialog_->update(level);
+    trackInfoDialog_->update(level, tocEditView_);
     addSilenceDialog_->update(level, tocEditView_);
 }
 
@@ -390,76 +363,62 @@ void AudioCDView::selectionSet()
     update(UPD_SAMPLE_SEL);
 }
 
-void AudioCDView::drag_data_received_cb(const Glib::RefPtr<Gdk::DragContext> &context, int x, int y,
-                                        const Gtk::SelectionData &selection_data, guint info,
-                                        guint time)
+
+bool AudioCDView::on_drop(const Glib::ValueBase& value, double, double)
 {
-    switch (info) {
+    if (project_->playStatus() != AudioCDProject::STOPPED)
+        return false;
 
-    case TARGET_URI_LIST:
+    if (G_VALUE_HOLDS(value.gobj(), GDK_TYPE_FILE_LIST)) {
+        auto files = Glib::Value<Glib::RefPtr<Gdk::FileList>>::get(value);
+        auto gs_files = files->get_files();
 
-        if (project_->playStatus() != AudioCDProject::STOPPED)
-            return;
+        for (const auto& file : gs_files) {
+            std::string fn = file->get_path();
+            if (fn.empty()) continue;
 
-        std::string list = selection_data.get_data_as_string();
-        int idx = 0, n;
-
-        while ((n = list.find("\r\n", idx)) >= 0) {
-            std::string sub = list.substr(idx, n - idx);
-            idx = n + 2;
-
-            std::string fn;
-            try {
-                fn = Glib::filename_from_uri(sub);
-            } catch (std::exception &e) {
-                fn.clear();
-            }
-
-            if (fn.empty())
-                continue;
-
-            // Process m3u file.
             auto type = Util::fileExtension(fn.c_str());
-
             if (type == Util::FileExtension::WAV || type == Util::FileExtension::M3U
 #ifdef HAVE_MP3_SUPPORT
                 || type == Util::FileExtension::MP3
 #endif
-#ifdef HAVE_FLAC_SUPPORT
-                || type == Util::FileExtension::FLAC
-#endif
 #ifdef HAVE_OGG_SUPPORT
                 || type == Util::FileExtension::OGG
 #endif
-            ) {
+#ifdef HAVE_FLAC_SUPPORT
+                || type == Util::FileExtension::FLAC
+#endif
+                ) {
                 project_->appendTrack(fn.c_str());
             }
         }
-        break;
+        return true;
     }
+    return false;
 }
+
 void AudioCDView::trackInfo()
 {
     int track;
 
     if (tocEditView_->trackSelection(&track)) {
-
-        if (trackInfoDialog_ == 0)
-            trackInfoDialog_ = new TrackInfoDialog();
-
         trackInfoDialog_->start(tocEditView_);
     } else {
-
-        Gtk::MessageDialog md(*project_->getParentWindow(), _("Please select a track first"),
-                              Gtk::MESSAGE_INFO);
-        md.run();
+        MessageBox::message(*project_,_("Please select a track first"))
     }
+}
+
+void AudioCDView::tocBlockedMsg()
+{
+    MessageBox::message(*project_,
+                        "Cannot perform operation",
+                        { "Project is in read-only state." });
 }
 
 void AudioCDView::cutTrackData()
 {
     if (!project_->tocEdit()->editable()) {
-        project_->tocBlockedMsg("Cut");
+        project_->tocBlockedMsg();
         return;
     }
 
@@ -482,7 +441,7 @@ void AudioCDView::cutTrackData()
 void AudioCDView::pasteTrackData()
 {
     if (!project_->tocEdit()->editable()) {
-        project_->tocBlockedMsg("Paste");
+        project_->tocBlockedMsg();
         return;
     }
 
@@ -502,7 +461,7 @@ void AudioCDView::addTrackMark()
     unsigned long sample;
 
     if (!project_->tocEdit()->editable()) {
-        project_->tocBlockedMsg(_("Add Track Mark"));
+        project_->tocBlockedMsg();
         return;
     }
 
@@ -544,7 +503,7 @@ void AudioCDView::addIndexMark()
     unsigned long sample;
 
     if (!project_->tocEdit()->editable()) {
-        project_->tocBlockedMsg(_("Add Index Mark"));
+        project_->tocBlockedMsg();
         return;
     }
 
@@ -580,7 +539,7 @@ void AudioCDView::addPregap()
     unsigned long sample;
 
     if (!project_->tocEdit()->editable()) {
-        project_->tocBlockedMsg(_("Add Pre-Gap"));
+        project_->tocBlockedMsg();
         return;
     }
 
@@ -621,7 +580,7 @@ void AudioCDView::removeTrackMark()
     int indexNr;
 
     if (!project_->tocEdit()->editable()) {
-        project_->tocBlockedMsg(_("Remove Track Mark"));
+        project_->tocBlockedMsg();
         return;
     }
 
@@ -666,7 +625,7 @@ void AudioCDView::trackMarkMovedCallback(const Track *, int trackNr, int indexNr
                                          unsigned long sample)
 {
     if (!project_->tocEdit()->editable()) {
-        project_->tocBlockedMsg(_("Move Track Marker"));
+        project_->tocBlockedMsg();
         return;
     }
 

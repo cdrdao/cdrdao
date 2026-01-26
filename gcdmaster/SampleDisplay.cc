@@ -311,7 +311,7 @@ bool SampleDisplay::getSelection(unsigned long *start, unsigned long *end)
   return false;
 }
 
-int SampleDisplay::get_marker(unsigned long *sample)
+int SampleDisplay::getMarker(unsigned long *sample)
 {
     if (markerSet_) {
         *sample = markerSample_;
@@ -471,7 +471,11 @@ void SampleDisplay::on_resize(int w, int h)
     height_ = h;
     printf("Windows resized to [%d,%d]\n", width_, height_);
 
+    
     auto context = get_pango_context();
+    Pango::FontDescription sdfont;
+    sdfont.set_family("Monospace");
+    context->set_font_description(sdfont);
     auto metrics = context->get_metrics(context->get_font_description());
 
     timeLineHeight_ = ((metrics.get_ascent() + metrics.get_descent())
@@ -729,7 +733,7 @@ void SampleDisplay::draw_marker(const Cairo::RefPtr<Cairo::Context>& cr)
     }
 }
 
-void SampleDisplay::set_marker(unsigned long sample)
+void SampleDisplay::setMarker(unsigned long sample)
 {
     if (markerSet_)
         queue_draw();
@@ -739,7 +743,7 @@ void SampleDisplay::set_marker(unsigned long sample)
     queue_draw();
 }
 
-void SampleDisplay::clear_marker()
+void SampleDisplay::clearMarker()
 {
     if (markerSet_)
         queue_draw();

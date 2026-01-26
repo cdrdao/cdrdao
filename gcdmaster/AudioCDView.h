@@ -23,10 +23,6 @@
 #include <gtk/gtk.h>
 #include <gtkmm.h>
 
-#include "AddFileDialog.h"
-#include "GenericView.h"
-#include <list>
-
 class SampleDisplay;
 class Project;
 class TrackInfoDialog;
@@ -38,20 +34,17 @@ enum {
     TARGET_URI_LIST,
 };
 
-class AudioCDView : public GenericView
+class AudioCDView : public Gtk::Box
 {
   public:
     AudioCDView(AudioCDProject *project);
-    ~AudioCDView();
 
     sigc::signal<void()> add_view;
 
+    virtual TocEditView *tocEditView() const { return tocEditView_; }
     void update(unsigned long level = 0);
 
-    enum Mode {
-        ZOOM,
-        SELECT
-    };
+    enum Mode { ZOOM, SELECT };
     void setMode(Mode);
 
     void zoomIn();
@@ -67,10 +60,11 @@ class AudioCDView : public GenericView
 
   private:
     AudioCDProject *project_;
+    TocEditView* tocEditView_;
 
     Glib::RefPtr<Gio::SimpleActionGroup> m_refActionGroup;
 
-    TrackInfoDialog *trackInfoDialog_;
+    Glib::RefPtr<TrackInfoDialog> trackInfoDialog_;
     Glib::RefPtr<AddFileDialog> addFileDialog_;
     Glib::RefPtr<AddSilenceDialog> addSilenceDialog_;
 
@@ -81,6 +75,7 @@ class AudioCDView : public GenericView
     Gtk::Label *cursorPos_;
     Gtk::Entry *selectionStartPos_;
     Gtk::Entry *selectionEndPos_;
+    Gtk::Scrollbar *scrollBar_;
 
     void setup_actions();
     void markerSetCallback(unsigned long);
@@ -91,31 +86,26 @@ class AudioCDView : public GenericView
     void trackMarkSelectedCallback(const Track *, int trackNr, int indexNr);
     void trackMarkMovedCallback(const Track *, int trackNr, int indexNr, unsigned long sample);
     void viewModifiedCallback(unsigned long, unsigned long);
-    int snapSampleToBlock(unsigned long sample, long *block);
+    int  snapSampleToBlock(unsigned long sample, long *block);
 
     void trackInfo();
     void cutTrackData();
     void pasteTrackData();
-
     void addTrackMark();
     void addIndexMark();
     void addPregap();
     void removeTrackMark();
-
     void appendSilence();
     void insertSilence();
-
     void appendTrack();
     void appendFile();
     void insertFile();
-
-    int getMarker(unsigned long *sample);
+    int  getMarker(unsigned long *sample);
     void markerSet();
 
     void selectionSet();
 
-    void drag_data_received_cb(const Glib::ValueBase& value,
-			       double x, double y);
+    bool on_drop(const Glib::ValueBase& value, double x, double y);
 };
 
 #endif

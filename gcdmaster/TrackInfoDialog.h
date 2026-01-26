@@ -32,7 +32,7 @@ class TextEdit;
 class TrackInfoDialog : public Gtk::Window
 {
   public:
-    TrackInfoDialog();
+    static Glib::RefPtr<TrackInfoDialog> create(Gtk::Window* parent);
 
     void update(unsigned long, TocEditView *);
 
@@ -40,9 +40,12 @@ class TrackInfoDialog : public Gtk::Window
     void stop();
 
   private:
+    TrackInfoDialog(Gtk::Window* parent);
+    
     TocEditView *tocEditView_ = nullptr;
     bool active_ = false;
     int selectedTrack_ = 0;
+    Gtk::Window* parent_;
 
     Gtk::Button applyButton_;
     Gtk::Button closeButton_;
@@ -90,8 +93,8 @@ class TrackInfoDialog : public Gtk::Window
     const char *checkString(const std::string &);
     void importCdText(const Toc *, int);
     void importData(const Toc *, int);
-    void exportCdText(TocEdit *, int);
-    void exportData(TocEdit *, int);
+    void exportCdText(Glib::RefPtr<TocEdit>, int);
+    void exportData(Glib::RefPtr<TocEdit>, int);
 
     Gtk::Box mainVBox_  {Gtk::Orientation::VERTICAL};
     Gtk::Box contentBox_{Gtk::Orientation::VERTICAL};

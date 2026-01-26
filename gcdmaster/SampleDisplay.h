@@ -36,9 +36,9 @@ public:
     void setTocEdit(Glib::RefPtr<TocEdit>);
     bool getSelection(unsigned long* start, unsigned long* end);
     void setSelectedTrackMarker(int trackNr, int indexNr);
-    void set_marker(unsigned long sample);
-    void clear_marker();
-    int  get_marker(unsigned long *);
+    void setMarker(unsigned long sample);
+    void clearMarker();
+    int  getMarker(unsigned long *);
     void setView(unsigned long start, unsigned long end);
     void getView(unsigned long *start, unsigned long *end);
     void setRegion(unsigned long start, unsigned long end);
