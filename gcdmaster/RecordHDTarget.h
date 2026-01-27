@@ -24,6 +24,8 @@ class TocEdit;
 class CdDevice;
 class DeviceList;
 
+#include <gtkmm.h>
+
 class RecordHDTarget : public Gtk::Box
 {
   public:

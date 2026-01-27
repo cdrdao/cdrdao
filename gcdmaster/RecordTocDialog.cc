@@ -25,7 +25,6 @@
 #include "MessageBox.h"
 #include "RecordCDSource.h"
 #include "RecordCDTarget.h"
-#include "RecordHDTarget.h"
 #include "RecordTocDialog.h"
 #include "RecordTocSource.h"
 #include "TocEdit.h"
@@ -38,68 +37,68 @@ RecordTocDialog::RecordTocDialog(Glib::RefPtr<TocEdit> tocEdit)
     set_title(_("Record CD"));
 
     auto vbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL, 10);
-    vbox->set_border_width(10);
-    auto hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL, 10);
-    vbox->pack_start(*hbox);
-    add(*vbox);
+    vbox->set_margin(10);
+    set_child(*vbox);
 
-    active_ = 0;
+    auto hbox_top = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL, 10);
+    vbox->append(*hbox_top);
 
-    TocSource = new RecordTocSource(tocEdit_);
-    TocSource->start();
-    CDTarget = new RecordCDTarget(this);
-    CDTarget->start();
+    active_ = false;
 
-    hbox->pack_start(*TocSource, Gtk::PACK_SHRINK);
-    hbox->pack_start(*CDTarget);
+    TocSource = Gtk::make_managed<RecordTocSource>(tocEdit_);
+    CDTarget = Gtk::make_managed<RecordCDTarget>(this);
 
-    hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL, 10);
+    hbox_top->append(*TocSource);
+    hbox_top->append(*CDTarget);
+    CDTarget->set_expand(true);
+
+    auto hbox_bottom = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL, 10);
 
     auto frameBox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL);
-    simulate_rb = new Gtk::RadioButton(_("Simulate"), 0);
-    simulateBurn_rb = new Gtk::RadioButton(_("Simulate and Burn"), 0);
-    burn_rb = new Gtk::RadioButton(_("Burn"), 0);
+    
+    // Initialize CheckButtons
+    simulate_cb = Gtk::make_managed<Gtk::CheckButton>(_("Simulate"));
+    simulateBurn_cb = Gtk::make_managed<Gtk::CheckButton>(_("Simulate and Burn"));
+    burn_cb = Gtk::make_managed<Gtk::CheckButton>(_("Burn"));
 
-    frameBox->pack_start(*simulate_rb);
-    frameBox->pack_start(*simulateBurn_rb);
-    Gtk::RadioButton::Group rbgroup = simulate_rb->get_group();
-    simulateBurn_rb->set_group(rbgroup);
-    frameBox->pack_start(*burn_rb);
-    burn_rb->set_group(rbgroup);
+    // Set the group: assigning them to the same group makes them mutually exclusive
+    simulateBurn_cb->set_group(*simulate_cb);
+    burn_cb->set_group(*simulate_cb);
 
-    hbox->pack_start(*frameBox, true, false);
+    // Default selection
+    burn_cb->set_active(true);
 
-    Gtk::Image *pixmap = manage(new Gtk::Image(Icons::GCDMASTER, Gtk::ICON_SIZE_DIALOG));
-    Gtk::Label *startLabel = manage(new Gtk::Label(_("Start")));
+    frameBox->append(*simulate_cb);
+    frameBox->append(*simulateBurn_cb);
+    frameBox->append(*burn_cb);
+    frameBox->set_expand(true);
+
+    hbox_bottom->append(*frameBox);
+
+    // Start Button
+    auto startButton = Gtk::make_managed<Gtk::Button>();
     auto startBox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL);
-    Gtk::Button *button = manage(new Gtk::Button());
-    startBox->pack_start(*pixmap, false, false);
-    startBox->pack_start(*startLabel, false, false);
+    auto pixmap = Gtk::make_managed<Gtk::Image>("media-optical"); 
+    auto startLabel = Gtk::make_managed<Gtk::Label>(_("Start"));
+    
+    startBox->append(*pixmap);
+    startBox->append(*startLabel);
+    startButton->set_child(*startBox);
+    startButton->signal_clicked().connect(sigc::mem_fun(*this, &RecordTocDialog::startAction));
+    hbox_bottom->append(*startButton);
 
-    button->add(*startBox);
-    button->signal_clicked().connect(mem_fun(*this, &RecordTocDialog::startAction));
-    hbox->pack_start(*button);
+    // Cancel Button
+    auto cancel_but = Gtk::make_managed<Gtk::Button>(_("_Cancel"), true);
+    cancel_but->signal_clicked().connect(sigc::mem_fun(*this, &Gtk::Widget::hide));
+    hbox_bottom->append(*cancel_but);
 
-    Gtk::Button *cancel_but = manage(new Gtk::Button(Gtk::StockID(Gtk::Stock::CANCEL)));
-    cancel_but->signal_clicked().connect(mem_fun(*this, &Gtk::Widget::hide));
-    hbox->pack_start(*cancel_but);
-
-    vbox->pack_start(*hbox, Gtk::PACK_SHRINK);
-    show_all_children();
-}
-
-RecordTocDialog::~RecordTocDialog()
-{
-    delete TocSource;
-    delete CDTarget;
+    vbox->append(*hbox_bottom);
 }
 
 void RecordTocDialog::start(Gtk::Window *parent)
 {
     if (!active_) {
         active_ = true;
-        TocSource->start();
-        CDTarget->start();
         update(UPD_ALL);
         set_transient_for(*parent);
     }
@@ -110,9 +109,6 @@ void RecordTocDialog::stop()
 {
     hide();
     active_ = false;
-
-    TocSource->stop();
-    CDTarget->stop();
 }
 
 void RecordTocDialog::update(unsigned long level)
@@ -141,73 +137,66 @@ void RecordTocDialog::startAction()
     DeviceList *targetList = CDTarget->getDeviceList();
 
     if (targetList->selection().empty()) {
-        Gtk::MessageDialog md(*this, _("Please select at least one recorder device"),
-                              Gtk::MESSAGE_INFO);
-        md.run();
+        MessageBox::message(*this,_("Please select at least one recorder device"));
         return;
     }
 
     Toc *toc = tocEdit_->toc();
 
     if (toc->nofTracks() == 0 || toc->length().lba() < 300) {
-        Gtk::MessageDialog md(*this,
-                              _("Current toc contains no tracks or length "
-                                "of at least one track is < 4 seconds"),
-                              Gtk::MESSAGE_ERROR);
-        md.run();
+        MessageBox::message(*this,
+                           _("Current toc contains no tracks or length "
+                             "of at least one track is < 4 seconds"));
         return;
     }
 
-    switch (toc->checkCdTextData()) {
-    case 0: // OK
-        break;
-    case 1: // warning
-    {
-        Ask2Box msg(this, _("CD-TEXT Inconsistency"), 0, 2,
-                    _("Inconsistencies were detected in the defined CD-TEXT "
-                      "data"),
-                    _("which may produce undefined results. See the console"),
-                    _("output for more details."), "", _("Do you want to proceed anyway?"), NULL);
+    auto check_result = toc->checkCdTextData();
 
-        if (msg.run() != 1)
-            return;
-    } break;
-    default: // error
-    {
-        MessageBox msg(this, _("CD-TEXT Error"), 0,
-                       _("The defined CD-TEXT data is erroneous or "
-                         "incomplete."),
-                       _("See the console output for more details."), NULL);
-        msg.run();
+    if (check_result == 0) {
+        startActionConfirmed(0);
         return;
-    } break;
     }
 
-    int simulate;
-    if (simulate_rb->get_active())
+    if (check_result == 1) {
+        // Warning
+        auto ask = Ask2Box::create(*this, 
+                                   _("CD-TEXT Inconsistency"),
+                                   0,
+                                   { _("Inconsistencies were detected in the defined "
+                                       "CD-TEXT data"),
+                                     _("which may produce undefined results. See the console"),
+                                     _("output for more details."), "",
+                                     _("Do you want to proceed anyway?") });
+        ask->dialogDone.connect(sigc::mem_fun(*this,
+                                              &RecordTocDialog::startActionConfirmed));
+        return;
+    }
+    
+    // Error case
+    MessageBox::message(*this, _("CD-TEXT Error"),
+                        { _("The defined CD-TEXT data is erroneous or "
+                            "incomplete."),
+                          _("See the console output for more details.") });
+}
+
+void RecordTocDialog::startActionConfirmed(int clicked_button)
+{
+    int simulate = 0;
+    if (simulate_cb->get_active())
         simulate = 1;
-    else if (simulateBurn_rb->get_active())
+    else if (simulateBurn_cb->get_active())
         simulate = 2;
-    else
-        simulate = 0;
 
     int multiSession = CDTarget->getMultisession();
     int burnSpeed = CDTarget->getSpeed();
     int overburn = CDTarget->getOverburn();
-
-    int eject = CDTarget->checkEjectWarning(this);
-    if (eject == -1)
-        return;
-    int reload = CDTarget->checkReloadWarning(this);
-    if (reload == -1)
-        return;
-
     int buffer = CDTarget->getBuffer();
+    int eject = CDTarget->getEject();
+    int reload = CDTarget->getReload();
 
     DeviceList *target = CDTarget->getDeviceList();
     if (target->selection().empty()) {
-        Gtk::MessageDialog d(*this, _("Please select a writer device"), Gtk::MESSAGE_INFO);
-        d.run();
+        MessageBox::message(*this, _("Please select a writer device"));
         return;
     }
 
@@ -215,11 +204,10 @@ void RecordTocDialog::startAction()
     CdDevice *writeDevice = CdDevice::find(targetData.c_str());
 
     if (writeDevice) {
-        if (!writeDevice->recordDao(*this, tocEdit_, simulate, multiSession, burnSpeed, eject,
+        if (!writeDevice->recordDao(*this, tocEdit_.get(),
+                                    simulate, multiSession, burnSpeed, eject,
                                     reload, buffer, overburn)) {
-            Gtk::MessageDialog d(*this, _("Cannot start disk-at-once recording"),
-                                 Gtk::MESSAGE_ERROR);
-            d.run();
+            ErrorBox::message(*this, _("Cannot start disk-at-once recording"));
         } else {
             guiUpdate(UPD_CD_DEVICE_STATUS);
         }

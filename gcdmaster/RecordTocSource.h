@@ -28,17 +28,14 @@ class TocEdit;
 class RecordTocSource : public Gtk::Box
 {
   public:
-    RecordTocSource(TocEdit *);
-
-    void start();
-    void stop();
+    RecordTocSource(Glib::RefPtr<TocEdit>);
 
     void update(unsigned long level);
-    void update(unsigned long level, TocEdit *);
-
+    void set(Glib::RefPtr<TocEdit>);
+    
   private:
-    TocEdit *tocEdit_;
-    bool active_;
+    Glib::RefPtr<TocEdit> tocEdit_;
+    bool active_ = false;
 
     Gtk::Label projectLabel_;
     Gtk::Label tocTypeLabel_;

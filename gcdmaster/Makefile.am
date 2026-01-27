@@ -1,11 +1,17 @@
 bin_PROGRAMS = gcdmaster
 
 gcdmaster_SOURCES = \
+	AddFileDialog.h		\
+	AddFileDialog.cc	\
 	AddSilenceDialog.h	\
 	AddSilenceDialog.cc	\
 	AudioCDProject.cc 	\
+	AudioCDView.h		\
+	AudioCDView.cc		\
 	BlankCDDialog.cc	\
 	CdDevice.cc		\
+	CdTextDialog.h		\
+	CdTextDialog.cc		\
 	ConfigManager.cc	\
 	DeviceList.cc		\
 	gcdmaster.cc 		\
@@ -14,10 +20,26 @@ gcdmaster_SOURCES = \
 	MessageBox.cc 		\
 	PreferencesDialog.cc	\
 	ProcessMonitor.cc	\
-	TaskManager.cc		\
+	RecordTocDialog.h	\
+	RecordTocDialog.cc	\
+	SampleDisplay.h		\
+	SampleDisplay.cc	\
+	SampleManager.h		\
+	SampleManager.cc	\
+	Settings.h		\
 	Settings.cc 		\
+	TaskManager.h		\
+	TaskManager.cc		\
+	TextEdit.h		\
+	TextEdit.cc		\
+	TocInfoDialog.h		\
+	TocInfoDialog.cc	\
+	TrackDataScrap.h	\
 	TrackDataScrap.cc	\
+	TrackInfoDialog.h	\
 	TrackInfoDialog.cc	\
+	TrackManager.h		\
+	TrackManager.cc		\
 	ProgressDialog.cc	\
 	TocEdit.cc 		\
 	TocEditView.cc 		\
@@ -28,33 +50,21 @@ gcdmaster_SOURCES = \
 	AudioCDProject.h	\
 	RecordCDTarget.h	\
 	TocEditView.h		\
-	AudioCDView.h		\
 	GenericView.h		\
 	RecordHDTarget.h	\
-	TocInfoDialog.h		\
 	BlankCDDialog.h		\
 	guiUpdate.h		\
-	RecordTocDialog.h	\
-	TrackDataScrap.h	\
 	CdDevice.h		\
 	Icons.h			\
 	RecordTocSource.h	\
-	TrackInfoDialog.h	\
-	CdTextDialog.h		\
 	MessageBox.h		\
-	SampleDisplay.h		\
-	SampleDisplay.cc	\
-	SampleManager.h		\
-	SampleManager.cc	\
-	TrackManager.h		\
-	TaskManager.h		\
 	DeviceConfDialog.h	\
 	ProcessMonitor.h	\
 	xcdrdao.h		\
 	DeviceList.h		\
 	ProgressDialog.h	\
 	ConfigManager.h		\
-	PreferencesDialog.h	\
+	PreferencesDialog.h
 	Settings.h
 
 EXTRA_gcdmaster_SOURCES =	\

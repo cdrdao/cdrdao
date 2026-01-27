@@ -28,26 +28,29 @@ class RecordCDTarget;
 
 class RecordTocDialog : public Gtk::Window
 {
-  public:
-    RecordTocDialog(Glib::RefPtr<TocEdit>);
-    ~RecordTocDialog();
+public:
+    RecordTocDialog(Glib::RefPtr<TocEdit> tocEdit);
+    ~RecordTocDialog() override;
 
-    void start(Gtk::Window *);
+    void start(Gtk::Window* parent);
     void update(unsigned long level);
 
-  private:
+private:
     RecordTocSource *TocSource;
     RecordCDTarget *CDTarget;
 
     Glib::RefPtr<TocEdit> tocEdit_;
     bool active_;
 
-    Gtk::Button *simulate_rb;
-    Gtk::Button *simulateBurn_rb;
-    Gtk::Button *burn_rb;
+    // Updated from RadioButton to CheckButton
+    Gtk::CheckButton *simulate_cb;
+    Gtk::CheckButton *simulateBurn_cb;
+    Gtk::CheckButton *burn_cb;
 
     void stop();
     void startAction();
+    void startActionConfirmed(int clicked_result);
 };
 
 #endif
+

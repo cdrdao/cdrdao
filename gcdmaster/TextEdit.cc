@@ -96,8 +96,8 @@ void TextEdit::insert_text_impl(const gchar *c, gint p2, gint *p3)
 
 void TextEdit::setSize(const char *sample)
 {
-    Glib::RefPtr<Pango::Context> context = get_layout()->get_context();
-    Pango::FontDescription fdesc = context->get_font_description();
+    auto context = get_pango_context();
+    auto fdesc = context->get_font_description();
 
     int cw = context->get_metrics(fdesc).get_approximate_char_width() / 1000;
     int ch = context->get_metrics(fdesc).get_ascent() / 1000;

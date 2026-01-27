@@ -163,11 +163,11 @@ void AudioCDProject::setup(int number, const Glib::ustring& path)
             cancelEnable(true);
     }
 
-    // audioCDView_ = new AudioCDView(this);
-    // audioCDView_->set_expand(true);
-    // auto vbox = dynamic_cast<Gtk::Box*>(get_first_child());
-    // vbox->append(*audioCDView_);
-    // audioCDView_->tocEditView()->sampleViewFull();
+    audioCDView_ = Gtk::make_managed<AudioCDView>(this);
+    audioCDView_->set_expand(true);
+    auto vbox = dynamic_cast<Gtk::Box*>(get_first_child());
+    vbox->append(*audioCDView_);
+    audioCDView_->tocEditView()->sampleViewFull();
     updateWindowTitle();
     guiUpdate(UPD_ALL);
     present();
@@ -321,15 +321,15 @@ void AudioCDProject::update(unsigned long level)
     if (level & (UPD_TOC_DIRTY | UPD_TOC_DATA))
         updateWindowTitle();
 
-//    audioCDView_->update(level);
+    audioCDView_->update(level);
 
-    // if (tocInfoDialog_)
-    //     tocInfoDialog_->update(level, tocEdit_.get());
+    if (tocInfoDialog_)
+        tocInfoDialog_->update(level, tocEdit_.get());
 
-    // if (cdTextDialog_ != 0)
-    //     cdTextDialog_->update(level, tocEdit_.get());
-    // if (recordTocDialog_ != 0)
-    //     recordTocDialog_->update(level);
+    if (cdTextDialog_ != 0)
+        cdTextDialog_->update(level, tocEdit_.get());
+    if (recordTocDialog_ != 0)
+        recordTocDialog_->update(level);
 
     if (level & UPD_PLAY_STATUS) {
         bool sensitivity[3][3] = {
@@ -365,12 +365,12 @@ void AudioCDProject::playStart()
         return;
     }
 
-//     if (audioCDView_ && audioCDView_->tocEditView()) {
-//        if (!audioCDView_->tocEditView()->sampleSelection(&start, &end))
-//            audioCDView_->tocEditView()->sampleView(&start, &end);
-//
-//        playStart(start, end);
-//    }
+    if (audioCDView_->tocEditView()) {
+        if (!audioCDView_->tocEditView()->sampleSelection(&start, &end))
+            audioCDView_->tocEditView()->sampleView(&start, &end);
+        
+        playStart(start, end);
+    }
 }
 
 void AudioCDProject::playStart(unsigned long start, unsigned long end)
@@ -530,32 +530,27 @@ void AudioCDProject::on_pause_clicked()
 
 void AudioCDProject::on_zoom_in_clicked()
 {
-//    if (audioCDView_)
-//        audioCDView_->zoomx2();
+    audioCDView_->zoomx2();
 }
 
 void AudioCDProject::on_zoom_out_clicked()
 {
-//    if (audioCDView_)
-//        audioCDView_->zoomOut();
+    audioCDView_->zoomOut();
 }
 
 void AudioCDProject::on_zoom_fit_clicked()
 {
-//    if (audioCDView_)
-//        audioCDView_->fullView();
+    audioCDView_->fullView();
 }
 
 void AudioCDProject::on_zoom_clicked()
 {
-//    if (audioCDView_)
-//        audioCDView_->setMode(AudioCDView::ZOOM);
+    audioCDView_->setMode(AudioCDView::ZOOM);
 }
 
 void AudioCDProject::on_select_clicked()
 {
-//    if (audioCDView_)
-//        audioCDView_->setMode(AudioCDView::SELECT);
+    audioCDView_->setMode(AudioCDView::SELECT);
 }
 
 void AudioCDProject::on_cancel_clicked()
@@ -613,19 +608,19 @@ bool AudioCDProject::appendFiles(std::list<std::string> &files)
 
 bool AudioCDProject::insertFiles(std::list<std::string> &files)
 {
-    // unsigned long pos;
+    unsigned long pos;
 
-    // TocEditView *view = audioCDView_->tocEditView();
-    // if (!view)
-    //     return false;
-    // if (!view->sampleMarker(&pos))
-    //     pos = 0;
+    TocEditView *view = audioCDView_->tocEditView();
+    if (!view)
+        return false;
+    if (!view->sampleMarker(&pos))
+        pos = 0;
 
-    // std::list<std::string>::iterator i = files.end();
-    // do {
-    //     i--;
-    //     tocEdit_->queueInsertFile((*i).c_str(), pos);
-    // } while (i != files.begin());
+    std::list<std::string>::iterator i = files.end();
+    do {
+        i--;
+        tocEdit_->queueInsertFile((*i).c_str(), pos);
+    } while (i != files.begin());
 
     return true;
 }

@@ -469,8 +469,6 @@ void SampleDisplay::on_resize(int w, int h)
         return;
     width_ = w; 
     height_ = h;
-    printf("Windows resized to [%d,%d]\n", width_, height_);
-
     
     auto context = get_pango_context();
     Pango::FontDescription sdfont;

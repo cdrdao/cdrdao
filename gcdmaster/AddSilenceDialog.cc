@@ -118,6 +118,12 @@ void AddSilenceDialog::start(Mode m,TocEditView *view)
     tocEditView_ = view;
 }
 
+void AddSilenceDialog::stop()
+{
+    active_ = false;
+    hide();
+}
+
 void AddSilenceDialog::update(unsigned long level, TocEditView *view)
 {
     if (!active_)
@@ -170,7 +176,7 @@ void AddSilenceDialog::applyAction()
     if (tocEditView_ == NULL)
         return;
 
-    TocEdit* tocEdit = tocEditView_->tocEdit();
+    auto tocEdit = tocEditView_->tocEdit();
 
     if (!tocEdit->editable())
         return;

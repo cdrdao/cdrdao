@@ -23,6 +23,8 @@
 #include <stdio.h>
 
 #include <gtkmm.h>
+#include <glibmm/i18n.h>
+
 
 #include "MessageBox.h"
 #include "RecordCDTarget.h"
@@ -36,180 +38,153 @@
 
 #include "util.h"
 
-RecordCDTarget::RecordCDTarget(Gtk::Window *parent) : Gtk::Box(Gtk::Orientation::VERTICAL)
+RecordCDTarget::RecordCDTarget(Gtk::Window *parent)
+    : Gtk::Box(Gtk::Orientation::VERTICAL)
 {
-    active_ = 0;
-    speed_ = 1;
     parent_ = parent;
-    moreOptionsDialog_ = 0;
+    moreOptions_ = nullptr;
     set_spacing(10);
 
-    DEVICES = new DeviceList(CdDevice::CD_R);
-
-    pack_start(*DEVICES);
+    devices_ = Gtk::make_managed<DeviceList>(CdDevice::CD_R);
+    append(*devices_);
 
     // device settings
-    Gtk::Frame *recordOptionsFrame = new Gtk::Frame(" Record Options ");
+    auto recordOptionsFrame = Gtk::make_managed<Gtk::Frame>(" Record Options ");
 
     auto vbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL);
-    recordOptionsFrame->add(*vbox);
-    vbox->set_border_width(5);
+    vbox->set_margin(5);
     vbox->set_spacing(5);
-    vbox->show();
+    recordOptionsFrame->set_child(*vbox);
 
-    auto hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
-    hbox->show();
-    Gtk::Label *label = new Gtk::Label("Speed: ", 0);
-    label->show();
-    hbox->pack_start(*label, false, false);
+auto hboxSpeed = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
+    auto labelSpeed = Gtk::make_managed<Gtk::Label>("Speed: ");
+    hboxSpeed->append(*labelSpeed);
 
-    Glib::RefPtr<Gtk::Adjustment> adjustment = Gtk::Adjustment::create(1, 1, 48);
-    speedSpinButton_ = new Gtk::SpinButton(adjustment);
+    auto adjustmentSpeed = Gtk::Adjustment::create(1, 1, 48);
+    speedSpinButton_ = Gtk::make_managed<Gtk::SpinButton>(adjustmentSpeed);
     speedSpinButton_->set_digits(0);
-    speedSpinButton_->show();
     speedSpinButton_->set_sensitive(false);
-    adjustment->signal_value_changed().connect(sigc::mem_fun(*this, &RecordCDTarget::speedChanged));
-    hbox->pack_start(*speedSpinButton_, false, false, 10);
+    adjustmentSpeed->signal_value_changed().connect(sigc::mem_fun(*this, &RecordCDTarget::speedChanged));
+    
+    speedSpinButton_->set_margin_start(10);
+    hboxSpeed->append(*speedSpinButton_);
 
-    speedButton_ = new Gtk::CheckButton("Use max.", 0);
+    speedButton_ = Gtk::make_managed<Gtk::CheckButton>("Use max.");
     speedButton_->set_active(true);
-    speedButton_->show();
-    speedButton_->signal_toggled().connect(
-        sigc::mem_fun(*this, &RecordCDTarget::speedButtonChanged));
-    hbox->pack_start(*speedButton_, true, true);
-    vbox->pack_start(*hbox);
+    speedButton_->signal_toggled().connect(sigc::mem_fun(*this, &RecordCDTarget::speedButtonChanged));
+    hboxSpeed->append(*speedButton_);
+    vbox->append(*hboxSpeed);
 
-    hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
-    //  hbox->show();
-    label = new Gtk::Label("Copies: ", 0);
-    label->show();
-    hbox->pack_start(*label, false, false);
+    // Copies row
+    auto hboxCopies = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
+    auto labelCopies = Gtk::make_managed<Gtk::Label>("Copies: ");
+    hboxCopies->append(*labelCopies);
 
-    adjustment = Gtk::Adjustment::create(1, 1, 999);
-    copiesSpinButton_ = new Gtk::SpinButton(adjustment);
+    auto adjustmentCopies = Gtk::Adjustment::create(1, 1, 999);
+    copiesSpinButton_ = Gtk::make_managed<Gtk::SpinButton>(adjustmentCopies);
     copiesSpinButton_->set_digits(0);
-    copiesSpinButton_->show();
-    hbox->pack_start(*copiesSpinButton_, false, false, 10);
-    vbox->pack_start(*hbox);
+    copiesSpinButton_->set_margin_start(10);
+    hboxCopies->append(*copiesSpinButton_);
+    vbox->append(*hboxCopies);
 
-    Gtk::Image *moreOptionsPixmap =
-        manage(new Gtk::Image(Gtk::StockID(Gtk::Stock::PROPERTIES), Gtk::ICON_SIZE_SMALL_TOOLBAR));
-    Gtk::Label *moreOptionsLabel = manage(new Gtk::Label("More Options"));
+    // More Options Button
+    auto moreOptionsButton = Gtk::make_managed<Gtk::Button>();
     auto moreOptionsBox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
-    moreOptionsBox->set_border_width(2);
-    Gtk::Button *moreOptionsButton = manage(new Gtk::Button());
-    moreOptionsBox->pack_start(*moreOptionsPixmap, false, false, 3);
-    moreOptionsBox->pack_start(*moreOptionsLabel, false, false, 4);
-    moreOptionsButton->add(*moreOptionsBox);
-    moreOptionsButton->signal_clicked().connect(mem_fun(*this, &RecordCDTarget::moreOptions));
-    moreOptionsPixmap->show();
-    moreOptionsLabel->show();
-    moreOptionsBox->show();
-    moreOptionsButton->show();
-    moreOptionsBox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
-    moreOptionsBox->show();
-    vbox->pack_start(*moreOptionsBox, false, false);
-    moreOptionsBox->pack_end(*moreOptionsButton, false, false);
+    
+    auto moreOptionsIcon = Gtk::make_managed<Gtk::Image>("emblem-system-symbolic");
+    auto moreOptionsLabel = Gtk::make_managed<Gtk::Label>("More Options");
+    
+    moreOptionsBox->set_spacing(4);
+    moreOptionsBox->append(*moreOptionsIcon);
+    moreOptionsBox->append(*moreOptionsLabel);
+    moreOptionsButton->set_child(*moreOptionsBox);
+    moreOptionsButton->signal_clicked().connect(sigc::mem_fun(*this, &RecordCDTarget::moreOptions));
 
-    pack_start(*recordOptionsFrame, Gtk::PACK_SHRINK);
-    recordOptionsFrame->show();
-}
+    auto buttonContainer = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
+    buttonContainer->set_halign(Gtk::Align::END);
+    buttonContainer->append(*moreOptionsButton);
+    vbox->append(*buttonContainer);
 
-RecordCDTarget::~RecordCDTarget()
-{
-    if (moreOptionsDialog_)
-        delete moreOptionsDialog_;
-}
-
-void RecordCDTarget::start()
-{
-    active_ = 1;
-
-    update(UPD_ALL);
-
-    show();
-}
-
-void RecordCDTarget::stop()
-{
-    if (active_) {
-        hide();
-        active_ = 0;
-    }
+    append(*recordOptionsFrame);
 }
 
 void RecordCDTarget::moreOptions()
 {
-    if (!moreOptionsDialog_) {
-        moreOptionsDialog_ = new Gtk::MessageDialog(
-            *parent_, "Target options", false, Gtk::MESSAGE_QUESTION, Gtk::BUTTONS_CLOSE, true);
+    if (!moreOptions_) {
+        moreOptions_ = Gtk::make_managed<Gtk::Window>();
+        moreOptions_->set_modal(true);
+        moreOptions_->set_transient_for(*parent_);
 
-        Gtk::Box *box = moreOptionsDialog_->get_vbox();
-        Gtk::Frame *frame = new Gtk::Frame(" More Target Options ");
-        box->pack_start(*frame);
+        auto *top_vbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL);
+        top_vbox->set_margin(10);
+        moreOptions_->set_child(*top_vbox);
+
+        auto *frame = Gtk::make_managed<Gtk::Frame>(" More Target Options ");
+        frame->set_margin(5);
+        top_vbox->append(*frame);
+        
         auto vbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL);
-        vbox->set_border_width(10);
+        vbox->set_margin(10);
         vbox->set_spacing(5);
-        frame->add(*vbox);
+        frame->set_child(*vbox);
 
-        overburnButton_ = new Gtk::CheckButton("Allow over-burning", 0);
-        overburnButton_->set_active(false);
-        vbox->pack_start(*overburnButton_);
-
-        ejectButton_ = new Gtk::CheckButton("Eject the CD after writing", 0);
-        ejectButton_->set_active(false);
-        vbox->pack_start(*ejectButton_);
-
-        reloadButton_ = new Gtk::CheckButton("Reload the CD after writing, if necessary", 0);
-        reloadButton_->set_active(false);
-        vbox->pack_start(*reloadButton_);
-
-        closeSessionButton_ = new Gtk::CheckButton("Close disk - no further writing possible!", 0);
+        overburnButton_ = Gtk::make_managed<Gtk::CheckButton>(_("Allow over-burning"));
+        vbox->append(*overburnButton_);
+        ejectButton_ = Gtk::make_managed<Gtk::CheckButton>(_("Eject the CD after writing"));
+        vbox->append(*ejectButton_);
+        reloadButton_ =
+            Gtk::make_managed<Gtk::CheckButton>(_("Reload the CD after writing, if necessary"));
+        vbox->append(*reloadButton_);
+        closeSessionButton_ =
+            Gtk::make_managed<Gtk::CheckButton>(_("Close disk - no further writing possible!"));
         closeSessionButton_->set_active(true);
-        vbox->pack_start(*closeSessionButton_);
+        vbox->append(*closeSessionButton_);
 
-        auto hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
-        Gtk::Label *label = new Gtk::Label("Buffer: ", 0);
-        hbox->pack_start(*label, false, false);
+        auto hboxBuffer = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
+        auto labelBuf = Gtk::make_managed<Gtk::Label>(_("Buffer: "));
+        hboxBuffer->append(*labelBuf);
 
-        Glib::RefPtr<Gtk::Adjustment> adjustment = Gtk::Adjustment::create(10, 10, 1000);
-        bufferSpinButton_ = new Gtk::SpinButton(adjustment);
-        hbox->pack_start(*bufferSpinButton_, false, false, 10);
+        auto adjBuffer = Gtk::Adjustment::create(10, 10, 1000);
+        bufferSpinButton_ = Gtk::make_managed<Gtk::SpinButton>(adjBuffer);
+        hboxBuffer->append(*bufferSpinButton_);
+        bufferSpinButton_->set_margin_start(10);
 
-        label = new Gtk::Label("audio seconds ");
-        hbox->pack_start(*label, false, false);
-        bufferRAMLabel_ = new Gtk::Label("= 1.72 Mb buffer.", 0);
-        hbox->pack_start(*bufferRAMLabel_, true, true);
-        adjustment->signal_value_changed().connect(
+        auto labelSec = Gtk::make_managed<Gtk::Label>(_(" audio seconds "));
+        hboxBuffer->append(*labelSec);
+        
+        bufferRAMLabel_ = Gtk::make_managed<Gtk::Label>(_("= 1.72 Mb buffer."));
+        hboxBuffer->append(*bufferRAMLabel_);
+        adjBuffer->signal_value_changed().connect(
             sigc::mem_fun(*this, &RecordCDTarget::updateBufferRAMLabel));
 
-        vbox->pack_start(*hbox);
+        vbox->append(*hboxBuffer);
+
+        auto bbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
+        bbox->set_margin(10);
+        bbox->set_halign(Gtk::Align::CENTER);
+        auto closeButton = Gtk::make_managed<Gtk::Button>("close");
+        bbox->append(*closeButton);
+        closeButton->signal_clicked().connect([this]() {
+            this->moreOptions_->hide();
+        });
+        vbox->append(*bbox);
+            
     }
 
-    moreOptionsDialog_->show_all();
-    moreOptionsDialog_->run();
-    moreOptionsDialog_->hide();
+    moreOptions_->present();
 }
 
 void RecordCDTarget::update(unsigned long level)
 {
-    if (!active_)
-        return;
-
     if (level & UPD_CD_DEVICES)
-        DEVICES->import();
+        devices_->import();
     else if (level & UPD_CD_DEVICE_STATUS)
-        DEVICES->importStatus();
-}
-
-void RecordCDTarget::cancelAction()
-{
-    stop();
+        devices_->importStatus();
 }
 
 int RecordCDTarget::getMultisession()
 {
-    if (moreOptionsDialog_)
+    if (moreOptions_)
         return closeSessionButton_->get_active() ? 0 : 1;
     else
         return 0;
@@ -230,7 +205,7 @@ int RecordCDTarget::getSpeed()
 
 int RecordCDTarget::getBuffer()
 {
-    if (moreOptionsDialog_)
+    if (moreOptions_)
         return bufferSpinButton_->get_value_as_int();
     else
         return 10;
@@ -238,7 +213,7 @@ int RecordCDTarget::getBuffer()
 
 bool RecordCDTarget::getEject()
 {
-    if (moreOptionsDialog_)
+    if (moreOptions_)
         return ejectButton_->get_active() ? 1 : 0;
     else
         return 0;
@@ -246,114 +221,41 @@ bool RecordCDTarget::getEject()
 
 bool RecordCDTarget::getOverburn()
 {
-    if (moreOptionsDialog_)
+    if (moreOptions_)
         return overburnButton_->get_active() ? 1 : 0;
     else
         return 0;
 }
 
-int RecordCDTarget::checkEjectWarning(Gtk::Window *parent)
-{
-    // If ejecting the CD after recording is requested issue a warning message
-    // because buffer under runs may occur for other devices that are recording.
-    if (getEject()) {
-        if (CONFIG_MANAGER->getEjectWarning()) {
-            Ask3Box msg(parent, "Request", 1, 2, "Ejecting a CD may block the SCSI bus and",
-                        "cause buffer under runs when other devices", "are still recording.", "",
-                        "Keep the eject setting anyway?", NULL);
-
-            switch (msg.run()) {
-            case 1: // keep eject setting
-                if (msg.dontShowAgain()) {
-                    CONFIG_MANAGER->setEjectWarning(false);
-                }
-                return 1;
-                break;
-            case 2: // don't keep eject setting
-                ejectButton_->set_active(false);
-                return 0;
-                break;
-            default: // cancel
-                return -1;
-                break;
-            }
-        }
-        return 1;
-    }
-    return 0;
-}
-
 bool RecordCDTarget::getReload()
 {
-    if (moreOptionsDialog_)
+    if (moreOptions_)
         return reloadButton_->get_active() ? 1 : 0;
     else
         return 0;
 }
 
-int RecordCDTarget::checkReloadWarning(Gtk::Window *parent)
-{
-    // The same is true for reloading the disk.
-    if (getReload()) {
-        if (CONFIG_MANAGER->getReloadWarning()) {
-            Ask3Box msg(parent, "Request", 1, 2, "Reloading a CD may block the SCSI bus and",
-                        "cause buffer under runs when other devices", "are still recording.", "",
-                        "Keep the reload setting anyway?", NULL);
-
-            switch (msg.run()) {
-            case 1: // keep reload setting
-                if (msg.dontShowAgain()) {
-                    CONFIG_MANAGER->setReloadWarning(false);
-                }
-                return 1;
-                break;
-            case 2: // don't keep reload setting
-                reloadButton_->set_active(false);
-                return 0;
-                break;
-            default: // cancel
-                return -1;
-                break;
-            }
-        }
-        return 1;
-    }
-    return 0;
-}
-
 void RecordCDTarget::updateBufferRAMLabel()
 {
-    char label[20];
+    char label[32];
 
-    snprintf(label, sizeof(label), "= %0.2f Mb buffer.", bufferSpinButton_->get_value() * 0.171875);
+    snprintf(label, sizeof(label), "= %0.2f Mb buffer.",
+             bufferSpinButton_->get_value() * 0.171875);
     bufferRAMLabel_->set_text(label);
 }
 
 void RecordCDTarget::speedButtonChanged()
 {
-    if (speedButton_->get_active()) {
-        speedSpinButton_->set_sensitive(false);
-    } else {
-        speedSpinButton_->set_sensitive(true);
-    }
+    speedSpinButton_->set_sensitive(!speedButton_->get_active());
 }
 
 void RecordCDTarget::speedChanged()
 {
-    // TODO: get max burn speed from selected burner(s)
-    int new_speed;
+    int new_speed = speedSpinButton_->get_value_as_int();
 
-    new_speed = speedSpinButton_->get_value_as_int();
-
-    if ((new_speed % 2) == 1) {
-        if (new_speed > 2) {
-            if (new_speed > speed_)
-                new_speed = new_speed + 1;
-            else
-                new_speed = new_speed - 1;
-        }
+    if ((new_speed % 2) == 1 && new_speed > 2) {
+        new_speed = (new_speed > speed_) ? new_speed + 1 : new_speed - 1;
         speedSpinButton_->set_value(new_speed);
     }
-
     speed_ = new_speed;
 }

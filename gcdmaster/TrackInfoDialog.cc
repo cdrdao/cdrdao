@@ -34,6 +34,12 @@
 #include "Track.h"
 #include "guiUpdate.h"
 
+Glib::RefPtr<TrackInfoDialog> TrackInfoDialog::create(Gtk::Window* parent)
+{
+    return Glib::make_refptr_for_instance<TrackInfoDialog>(new TrackInfoDialog(parent));
+}
+
+
 TrackInfoDialog::TrackInfoDialog(Gtk::Window* parent)
     : mainVBox_(Gtk::Orientation::VERTICAL, 10),
       contentBox_(Gtk::Orientation::VERTICAL, 10),

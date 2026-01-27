@@ -54,7 +54,7 @@ AudioCDView::AudioCDView(AudioCDProject *project)
     trackInfoDialog_ = TrackInfoDialog::create(project_);
 
     // Drag and Drop setup
-    auto drop_target = Gtk::DropTarget::create(GDK_TYPE_FILE_LIST, Gdk::DragAction::COPY);
+    auto drop_target = Gtk::DropTarget::create(G_TYPE_STRING, Gdk::DragAction::COPY);
     drop_target->signal_drop().connect(sigc::mem_fun(*this, &AudioCDView::on_drop), false);
     add_controller(drop_target);
 
@@ -369,12 +369,25 @@ bool AudioCDView::on_drop(const Glib::ValueBase& value, double, double)
     if (project_->playStatus() != AudioCDProject::STOPPED)
         return false;
 
-    if (G_VALUE_HOLDS(value.gobj(), GDK_TYPE_FILE_LIST)) {
-        auto files = Glib::Value<Glib::RefPtr<Gdk::FileList>>::get(value);
-        auto gs_files = files->get_files();
+    if (G_VALUE_HOLDS(value.gobj(), G_TYPE_STRING)) {
+        Glib::Value<Glib::ustring> uri_list;
 
-        for (const auto& file : gs_files) {
-            std::string fn = file->get_path();
+        auto list = uri_list.get();
+
+        size_t idx = 0;
+        int n;
+        while ((n = list.find("\r\n", idx)) != std::string::npos) {
+            std::string sub = list.substr(idx, n - idx);
+            idx = n + 22;
+            if (sub.empty()) continue;
+
+            std::string fn;
+            try {
+                fn = Glib::filename_from_uri(sub);
+            } catch (...) {
+                continue;
+            }
+
             if (fn.empty()) continue;
 
             auto type = Util::fileExtension(fn.c_str());
@@ -404,7 +417,7 @@ void AudioCDView::trackInfo()
     if (tocEditView_->trackSelection(&track)) {
         trackInfoDialog_->start(tocEditView_);
     } else {
-        MessageBox::message(*project_,_("Please select a track first"))
+        MessageBox::message(*project_,_("Please select a track first"));
     }
 }
 
@@ -418,7 +431,7 @@ void AudioCDView::tocBlockedMsg()
 void AudioCDView::cutTrackData()
 {
     if (!project_->tocEdit()->editable()) {
-        project_->tocBlockedMsg();
+        tocBlockedMsg();
         return;
     }
 
@@ -441,7 +454,7 @@ void AudioCDView::cutTrackData()
 void AudioCDView::pasteTrackData()
 {
     if (!project_->tocEdit()->editable()) {
-        project_->tocBlockedMsg();
+        tocBlockedMsg();
         return;
     }
 
@@ -461,7 +474,7 @@ void AudioCDView::addTrackMark()
     unsigned long sample;
 
     if (!project_->tocEdit()->editable()) {
-        project_->tocBlockedMsg();
+        tocBlockedMsg();
         return;
     }
 
@@ -503,7 +516,7 @@ void AudioCDView::addIndexMark()
     unsigned long sample;
 
     if (!project_->tocEdit()->editable()) {
-        project_->tocBlockedMsg();
+        tocBlockedMsg();
         return;
     }
 
@@ -539,7 +552,7 @@ void AudioCDView::addPregap()
     unsigned long sample;
 
     if (!project_->tocEdit()->editable()) {
-        project_->tocBlockedMsg();
+        tocBlockedMsg();
         return;
     }
 
@@ -580,7 +593,7 @@ void AudioCDView::removeTrackMark()
     int indexNr;
 
     if (!project_->tocEdit()->editable()) {
-        project_->tocBlockedMsg();
+        tocBlockedMsg();
         return;
     }
 
@@ -625,7 +638,7 @@ void AudioCDView::trackMarkMovedCallback(const Track *, int trackNr, int indexNr
                                          unsigned long sample)
 {
     if (!project_->tocEdit()->editable()) {
-        project_->tocBlockedMsg();
+        tocBlockedMsg();
         return;
     }
 

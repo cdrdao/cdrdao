@@ -29,6 +29,7 @@ class TrackInfoDialog;
 class AddFileDialog;
 class AddSilenceDialog;
 class Track;
+class TocEditView;
 
 enum {
     TARGET_URI_LIST,
@@ -62,8 +63,6 @@ class AudioCDView : public Gtk::Box
     AudioCDProject *project_;
     TocEditView* tocEditView_;
 
-    Glib::RefPtr<Gio::SimpleActionGroup> m_refActionGroup;
-
     Glib::RefPtr<TrackInfoDialog> trackInfoDialog_;
     Glib::RefPtr<AddFileDialog> addFileDialog_;
     Glib::RefPtr<AddSilenceDialog> addSilenceDialog_;
@@ -78,6 +77,7 @@ class AudioCDView : public Gtk::Box
     Gtk::Scrollbar *scrollBar_;
 
     void setup_actions();
+    void tocBlockedMsg();
     void markerSetCallback(unsigned long);
     void cursorMovedCallback(unsigned long);
     void selectionSetCallback(unsigned long, unsigned long);

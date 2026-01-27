@@ -230,7 +230,8 @@ int CdDevice::updateStatus()
             default:
                 assert(-1);
             }
-	    log_message(0, "TESTUNITREADY, status was %d,  is now %d", status_, newStatus);
+            if (status_ != newStatus)
+                log_message(1, "TEST UNIT READY, status was %d,  is now %d", status_, newStatus);
         } else {
             newStatus = DEV_FAULT;
         }
@@ -1135,8 +1136,6 @@ bool CdDevice::scan()
     int i, len;
     ScsiIf::ScanData *sdata = ScsiIf::scan(&len);
 
-    log_message(0, "SCAN: %d devices found", len);
-
     if (len != DEVICE_LIST.size()) {
 	changed = true;
     } else {
@@ -1187,13 +1186,13 @@ int CdDevice::update()
 
     blockProcessMonitorSignals();
 
-    if (skipcnt > 2) {
-        if (CdDevice::scan())
-            status |= UPD_CD_DEVICES;
-        skipcnt = 0;
-    } else {
-        skipcnt++;
-    }
+    // if (skipcnt > 2) {
+    //     if (CdDevice::scan())
+    //         status |= UPD_CD_DEVICES;
+    //     skipcnt = 0;
+    // } else {
+    //     skipcnt++;
+    // }
 
     for (auto dev : DEVICE_LIST)
         if (dev->updateStatus())
