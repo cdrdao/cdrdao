@@ -20,9 +20,7 @@
 #ifndef __TOC_INFO_DIALOG_H__
 #define __TOC_INFO_DIALOG_H__
 
-#include <gtk/gtk.h>
 #include <gtkmm.h>
-
 #include "Toc.h"
 
 class TocEdit;
@@ -30,54 +28,35 @@ class TextEdit;
 
 class TocInfoDialog : public Gtk::Dialog
 {
-  public:
-    TocInfoDialog(Gtk::Window *parent);
-    ~TocInfoDialog();
+public:
+    TocInfoDialog(Gtk::Window& parent); // GTK4 prefers references for parents
+    virtual ~TocInfoDialog();
 
     void update(unsigned long, TocEdit *);
-
     void start(TocEdit *);
     void stop();
 
-  private:
+protected:
+    // GTK4 signal for window close
+    bool on_close_request() override;
+
+private:
     TocEdit *tocEdit_;
     bool active_;
 
     Gtk::Button *applyButton_;
     Gtk::Label *tocLength_;
     Gtk::Label *nofTracks_;
-
     TextEdit *catalog_;
-
-    // Tree model columns:
-    class ModelColumns : public Gtk::TreeModel::ColumnRecord
-    {
-      public:
-        ModelColumns()
-        {
-            add(m_col_id);
-            add(m_col_name);
-        }
-
-        Gtk::TreeModelColumn<int> m_col_id;
-        Gtk::TreeModelColumn<Glib::ustring> m_col_name;
-    };
 
     Gtk::ComboBoxText tocType_;
     Toc::Type selectedTocType_;
 
-    struct BlockValue {
-        int block;
-        int value;
-    };
-
     struct CdTextPage {
         Gtk::ComboBoxText *language;
         int selectedLanguage;
-
         Gtk::ComboBoxText *genre;
         int selectedGenre;
-
         Gtk::Label *label;
         Gtk::Entry *title;
         Gtk::Entry *performer;
@@ -97,7 +76,7 @@ class TocInfoDialog : public Gtk::Dialog
 
     void createCdTextLanguageMenu(int);
     void createCdTextGenreMenu(int n);
-    Gtk::Box *createCdTextPage(int);
+    Gtk::Box* createCdTextPage(int);
 
     void clear();
     void clearCdText();

@@ -94,13 +94,11 @@ AudioCDProject::AudioCDProject(BaseObjectType* cobject,
         throw std::runtime_error("Menu resource not found");
     gears->set_menu_model(wmenu);
 
-    tocInfoDialog_ = NULL;
-    cdTextDialog_ = NULL;
-    soundInterface_ = NULL;
-    buttonPlay_ = NULL;
-    buttonStop_ = NULL;
-    buttonPause_ = NULL;
-    audioCDView_ = NULL;
+    soundInterface_ = nullptr;
+    buttonPlay_ = nullptr;
+    buttonStop_ = nullptr;
+    buttonPause_ = nullptr;
+    audioCDView_ = nullptr;
 
     playStatus_ = STOPPED;
     playBurst_ = 588 * 10;
@@ -121,14 +119,14 @@ void AudioCDProject::setup(int number, const Glib::ustring& path)
 {
     projectNumber_ = number;
     if (path.empty()) {
-        tocEdit_ = Glib::make_refptr_for_instance<TocEdit>(new TocEdit(NULL, NULL));
+        tocEdit_ = Glib::make_refptr_for_instance<TocEdit>(new TocEdit(nullptr, nullptr));
     } else {
 	auto ext = Util::fileExtension(path);
  
 	switch (ext) {
 	case Util::FileExtension::TOC:
 	case Util::FileExtension::CUE:
-	    tocEdit_ = Glib::make_refptr_for_instance<TocEdit>(new TocEdit(NULL, NULL));
+	    tocEdit_ = Glib::make_refptr_for_instance<TocEdit>(new TocEdit(nullptr, nullptr));
 	    if (tocEdit_->readToc(path.c_str()) != 0)
 		throw std::runtime_error("Could not parse TOC file");
 	    break;
@@ -304,11 +302,12 @@ void AudioCDProject::projectInfo()
 
 void AudioCDProject::cdTextDialog()
 {
-    // if (cdTextDialog_ == 0)
-    //     cdTextDialog_ = Glib::make_refptr_for_instance<CdTextDialog>(
-    //         new CdTextDialog());
+    if (!cdTextDialog_)
+        cdTextDialog_ = Glib::make_refptr_for_instance<CdTextDialog>(
+            new CdTextDialog(this));
 
-    // cdTextDialog_->start(tocEdit_.get());
+    cdTextDialog_->set(tocEdit_);
+    cdTextDialog_->start();
 }
 
 void AudioCDProject::update(unsigned long level)
@@ -326,8 +325,9 @@ void AudioCDProject::update(unsigned long level)
     if (tocInfoDialog_)
         tocInfoDialog_->update(level, tocEdit_.get());
 
-    if (cdTextDialog_ != 0)
-        cdTextDialog_->update(level, tocEdit_.get());
+    if (cdTextDialog_)
+        cdTextDialog_->update(level);
+
     if (recordTocDialog_ != 0)
         recordTocDialog_->update(level);
 
@@ -385,7 +385,7 @@ void AudioCDProject::playStart(unsigned long start, unsigned long end)
         return;
     }
 
-    if (soundInterface_ == NULL) {
+    if (!soundInterface_) {
         soundInterface_ = new SoundIF;
         if (soundInterface_->init() != 0) {
             delete soundInterface_;

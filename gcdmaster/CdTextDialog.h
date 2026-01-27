@@ -28,23 +28,28 @@
 
 class TocEdit;
 
-class CdTextDialog : public Gtk::Dialog
+class CdTextDialog : public Gtk::Window
 {
   public:
-    CdTextDialog();
+    CdTextDialog(Gtk::Window* parent);
     ~CdTextDialog();
 
-    void update(unsigned long, TocEdit *);
+    void update(unsigned long);
 
-    void start(TocEdit *);
+    void set(Glib::RefPtr<TocEdit>);
+    void start();
     void stop();
 
+protected:
+    bool on_close_request() override;
+
   private:
-    bool active_;
+    bool active_ = false;
 
-    TocEdit *tocEdit_;
-    int trackEntries_;
+    Glib::RefPtr<TocEdit> tocEdit_;
+    int trackEntries_ = 0;
 
+    Gtk::Box main_vbox_{Gtk::Orientation::VERTICAL};
     Gtk::Button *applyButton_;
     Gtk::Notebook *languages_;
 
@@ -60,9 +65,7 @@ class CdTextDialog : public Gtk::Dialog
         Gtk::Entry *performer;
         Gtk::Entry *title;
         Gtk::Label *tabLabel;
-
         Gtk::CheckButton *performerButton;
-
         TableEntry *tracks;
     };
 
@@ -76,7 +79,8 @@ class CdTextDialog : public Gtk::Dialog
 
     void importData();
     void exportData();
-    void setCdTextItem(CdTextItem::PackType, int trackNr, int l, const char *);
+    void setCdTextItem(CdTextItem::PackType, int trackNr, int l,
+                       const Glib::ustring&);
 
     const char *checkString(const std::string &);
 };
