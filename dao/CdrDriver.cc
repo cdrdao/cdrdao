@@ -3031,6 +3031,15 @@ vector<CdTextItem *> processPacks(CdTextPack *packs, int nofPacks)
                         buf[pos++] = p.data[i];
 
                     if (i < 12) {
+                        // If this pack has double-width characters, ends with a single zero, and
+                        // the next pack starts with zero, skip the first zero and treat the next
+                        // pack's starting zero as the terminator for this string.
+                        if (i == 11 && (p.blockCharacter & 0x80) && nofPacks > 0 &&
+                            packs->data[0] == 0) {
+                            i = 12;
+                            continue;
+                        }
+
                         // string is finished
                         buf[pos] = 0;
                         {
