@@ -186,22 +186,19 @@ void CdTextEncoder::buildPacks()
     int blockNr;
 
     for (blockNr = 0; blockNr <= 7; blockNr++) {
-        if (toc_->cdTextLanguage(blockNr) >= 0) {
-            // only build the packs if the language code is defined
-            packId_ = 0;
+        packId_ = 0;
 
-            buildPacks(blockNr, CdTextItem::PackType::TITLE);
-            buildPacks(blockNr, CdTextItem::PackType::PERFORMER);
-            buildPacks(blockNr, CdTextItem::PackType::SONGWRITER);
-            buildPacks(blockNr, CdTextItem::PackType::COMPOSER);
-            buildPacks(blockNr, CdTextItem::PackType::ARRANGER);
-            buildPacks(blockNr, CdTextItem::PackType::MESSAGE);
-            buildPacks(blockNr, CdTextItem::PackType::DISK_ID);
-            buildPacks(blockNr, CdTextItem::PackType::GENRE);
-            buildPacks(blockNr, CdTextItem::PackType::TOC_INFO1);
-            buildPacks(blockNr, CdTextItem::PackType::TOC_INFO2);
-            buildPacks(blockNr, CdTextItem::PackType::UPCEAN_ISRC);
-        }
+        buildPacks(blockNr, CdTextItem::PackType::TITLE);
+        buildPacks(blockNr, CdTextItem::PackType::PERFORMER);
+        buildPacks(blockNr, CdTextItem::PackType::SONGWRITER);
+        buildPacks(blockNr, CdTextItem::PackType::COMPOSER);
+        buildPacks(blockNr, CdTextItem::PackType::ARRANGER);
+        buildPacks(blockNr, CdTextItem::PackType::MESSAGE);
+        buildPacks(blockNr, CdTextItem::PackType::DISK_ID);
+        buildPacks(blockNr, CdTextItem::PackType::GENRE);
+        buildPacks(blockNr, CdTextItem::PackType::TOC_INFO1);
+        buildPacks(blockNr, CdTextItem::PackType::TOC_INFO2);
+        buildPacks(blockNr, CdTextItem::PackType::UPCEAN_ISRC);
     }
 
     buildSizeInfoPacks();
@@ -350,7 +347,12 @@ void CdTextEncoder::buildSizeInfoPacks()
         for (i = 0; i < 8; i++) {
             if (sizeInfo_[b].lastSequenceNumber[i] > 0) {
                 // set language code if we have at least one pack for this language
-                sizeInfo_[b].languageCode[i] = toc_->cdTextLanguage(i);
+                int languageCode = toc_->cdTextLanguage(i);
+                // if language is unset, use 0 (not -1) as the language code
+                if (languageCode < 0) {
+                    languageCode = 0;
+                }
+                sizeInfo_[b].languageCode[i] = languageCode;
                 // adjust the last sequence number for the packs we will create
                 sizeInfo_[b].lastSequenceNumber[i] += 3;
             }
