@@ -753,13 +753,11 @@ cdTextItem [ int blockNr ] > [ CdTextItem* item, int lineNr ]
 
     packType > [ type, $lineNr ]
     (  stringEmpty > [ s, is_utf8 ]
-       << if (!s.empty()) {
-            $item = new CdTextItem(type, blockNr);
-            if (is_utf8)
-                $item->setText(s.c_str());
-            else
-                $item->setRawText(s);
-          }
+       << $item = new CdTextItem(type, blockNr);
+          if (is_utf8)
+            $item->setText(s.c_str());
+          else
+            $item->setRawText(s);
        >>
      | binaryData > [ data, len ]
        << $item = new CdTextItem(type, blockNr);

@@ -1451,13 +1451,11 @@ TocParserGram::cdTextItem(int blockNr)
       { struct _rv5 _trv; _trv = stringEmpty();
 
       s = _trv.ret; is_utf8   = _trv.is_utf8; }
-      if (!s.empty()) {
-        _retv.item = new CdTextItem(type, blockNr);
-        if (is_utf8)
-        _retv.item->setText(s.c_str());
-        else
-        _retv.item->setRawText(s);
-      }
+      _retv.item = new CdTextItem(type, blockNr);
+      if (is_utf8)
+      _retv.item->setText(s.c_str());
+      else
+      _retv.item->setRawText(s);
     }
     else {
       if ( (LA(1)==76) ) {
