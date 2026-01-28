@@ -986,15 +986,15 @@ int Toc::checkCdTextData() const
             if (l - 1 != last) {
                 if (last == -1)
                     log_message(
-                        -2, "CD-TEXT: Language number %d: Language numbers must start at 0.", l);
+                        -1, "CD-TEXT: Language number %d: Language numbers must start at 0.", l);
                 else
                     log_message(
-                        -2,
+                        -1,
                         "CD-TEXT: Language number %d: Language numbers are not continuously used.",
                         l);
 
-                if (err < 2)
-                    err = 2;
+                if (err < 1)
+                    err = 1;
             }
 
             last = l;
@@ -1044,10 +1044,10 @@ int Toc::checkCdTextData() const
         }
 
         if (titleCnt > 0 && titleCnt != nofTracks_ + 1) {
-            log_message(-2, "CD-TEXT: Language %d: %s field not defined for all tracks or disk.", l,
+            log_message(-1, "CD-TEXT: Language %d: %s field not defined for all tracks or disk.", l,
                         CdTextItem::packType2String(1, CdTextItem::PackType::TITLE));
-            if (err < 2)
-                err = 2;
+            if (err < 1)
+                err = 1;
         } else if (titleCnt == 0) {
             log_message(-1, "CD-TEXT: Language %d: %s field is not defined.", l,
                         CdTextItem::packType2String(1, CdTextItem::PackType::TITLE));
@@ -1056,10 +1056,10 @@ int Toc::checkCdTextData() const
         }
 
         if (performerCnt > 0 && performerCnt != nofTracks_ + 1) {
-            log_message(-2, "CD-TEXT: Language %d: %s field not defined for all tracks or disk.", l,
+            log_message(-1, "CD-TEXT: Language %d: %s field not defined for all tracks or disk.", l,
                         CdTextItem::packType2String(1, CdTextItem::PackType::PERFORMER));
-            if (err < 2)
-                err = 2;
+            if (err < 1)
+                err = 1;
         } else if (performerCnt == 0) {
             log_message(-1, "CD-TEXT: Language %d: %s field is not defined.", l,
                         CdTextItem::packType2String(1, CdTextItem::PackType::PERFORMER));
@@ -1068,39 +1068,39 @@ int Toc::checkCdTextData() const
         }
 
         if (songwriterCnt > 0 && songwriterCnt != nofTracks_ + 1) {
-            log_message(-2, "CD-TEXT: Language %d: %s field not defined for all tracks or disk.", l,
+            log_message(-1, "CD-TEXT: Language %d: %s field not defined for all tracks or disk.", l,
                         CdTextItem::packType2String(1, CdTextItem::PackType::SONGWRITER));
-            if (err < 2)
-                err = 2;
+            if (err < 1)
+                err = 1;
         }
 
         if (composerCnt > 0 && composerCnt != nofTracks_ + 1) {
-            log_message(-2, "CD-TEXT: Language %d: %s field not defined for all tracks or disk.", l,
+            log_message(-1, "CD-TEXT: Language %d: %s field not defined for all tracks or disk.", l,
                         CdTextItem::packType2String(1, CdTextItem::PackType::COMPOSER));
-            if (err < 2)
-                err = 2;
+            if (err < 1)
+                err = 1;
         }
 
         if (arrangerCnt > 0 && arrangerCnt != nofTracks_ + 1) {
-            log_message(-2, "CD-TEXT: Language %d: %s field not defined for all tracks or disk.", l,
+            log_message(-1, "CD-TEXT: Language %d: %s field not defined for all tracks or disk.", l,
                         CdTextItem::packType2String(1, CdTextItem::PackType::ARRANGER));
-            if (err < 2)
-                err = 2;
+            if (err < 1)
+                err = 1;
         }
 
         if (messageCnt > 0 && messageCnt != nofTracks_ + 1) {
-            log_message(-2, "CD-TEXT: Language %d: %s field not defined for all tracks or disk.", l,
+            log_message(-1, "CD-TEXT: Language %d: %s field not defined for all tracks or disk.", l,
                         CdTextItem::packType2String(1, CdTextItem::PackType::MESSAGE));
-            if (err < 2)
-                err = 2;
+            if (err < 1)
+                err = 1;
         }
 
         if ((isrcCnt > 0 && isrcCnt != nofTracks_) ||
             (isrcCnt == 0 && cdtext_.getPack(l, CdTextItem::PackType::UPCEAN_ISRC) != NULL)) {
-            log_message(-2, "CD-TEXT: Language %d: %s field not defined for all tracks.", l,
+            log_message(-1, "CD-TEXT: Language %d: %s field not defined for all tracks.", l,
                         CdTextItem::packType2String(1, CdTextItem::PackType::UPCEAN_ISRC));
-            if (err < 2)
-                err = 2;
+            if (err < 1)
+                err = 1;
         }
     }
 

@@ -154,9 +154,17 @@ void CdTextContainer::encoding(int blockNr, Util::Encoding enc)
 void CdTextContainer::enforceEncoding(CdTextContainer *global)
 {
     if (global == this) {
-        for (auto &e : encodings)
-            if (e == Util::Encoding::UNSET)
-                e = Util::Encoding::LATIN;
+        // if an encoding is unset, set it based on the size_info
+        for (int i = 0; i < encodings.size(); i++) {
+            if (encodings[i] == Util::Encoding::UNSET) {
+                const CdTextItem *size_info = getPack(i, CdTextItem::PackType::SIZE_INFO);
+                if (size_info != NULL && size_info->dataLen() > 0) {
+                    encodings[i] = Util::characterCodeToEncoding(size_info->data()[0]);
+                } else {
+                    encodings[i] = Util::Encoding::LATIN;
+                }
+            }
+        }
     } else {
         encodings = global->encodings;
     }
