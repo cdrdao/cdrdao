@@ -62,7 +62,7 @@ PreferencesDialog::PreferencesDialog(BaseObjectType* cobject,
     driverMenu_ = builder->get_widget<Gtk::ComboBoxText>("driver-list");
     devtypeMenu_ = builder->get_widget<Gtk::ComboBoxText>("device-type-list");
 
-    if (!applyButton || !okButton || !cancelButton || !tempDirButton_ || !deviceList_ || !driverOptionsEntry_) {
+    if (!applyButton || !okButton || !cancelButton || !tempDirButton_ || !driverOptionsEntry_) {
         throw std::runtime_error("Unable to create all GUI widgets from builder file");
     }
 
@@ -76,17 +76,17 @@ PreferencesDialog::PreferencesDialog(BaseObjectType* cobject,
     }
 
     auto deviceBox = builder->get_widget<Gtk::Box>("device-box");
-    deviceList_ = Gtk::make_managed<DeviceList>(CdDevice::CD_R);
-    deviceBox->prepend(*deviceList_);
+    deviceSelector_ = Gtk::make_managed<DeviceSelector>();
+    deviceBox->prepend(*deviceSelector_);
 
     // Setup Device List treeview
     // deviceListModel_ = Gtk::ListStore::create(deviceListColumns_);
-    // deviceList_->set_model(deviceListModel_);
-    // deviceList_->append_column(_("Device"), deviceListColumns_.description);
-    // deviceList_->append_column(_("Status"), deviceListColumns_.status);
-    // deviceList_->get_column(0)->set_expand(true);
+    // deviceSelector_->set_model(deviceListModel_);
+    // deviceSelector_->append_column(_("Device"), deviceListColumns_.description);
+    // deviceSelector_->append_column(_("Status"), deviceListColumns_.status);
+    // deviceSelector_->get_column(0)->set_expand(true);
 
-    // deviceList_->get_selection()->signal_changed().connect(
+    // deviceSelector_->get_selection()->signal_changed().connect(
     //     sigc::mem_fun(*this, &PreferencesDialog::on_selection_changed));
 
     // Populate Driver Combo box
@@ -183,7 +183,7 @@ void PreferencesDialog::on_button_reset()
 
 void PreferencesDialog::on_selection_changed()
 {
-    // auto new_sel = deviceList_->selection();
+    // auto new_sel = deviceSelector_->selection();
 
     // if (selectedDevice_ != new_sel) {
     //     if (selectedDevice_)
@@ -231,7 +231,8 @@ void PreferencesDialog::append_entry(CdDevice* dev)
 
 void PreferencesDialog::import_devices()
 {
-    // deviceList_->get_selection()->unselect_all();
+    deviceSelector_->import();
+    // deviceSelector_->get_selection()->unselect_all();
     // selectedDevice_ = Gtk::TreeModel::iterator(); 
     // deviceListModel_->clear();
 
@@ -240,7 +241,7 @@ void PreferencesDialog::import_devices()
     // }
 
     // if (!deviceListModel_->children().empty()) {
-    //     deviceList_->get_selection()->select(deviceListModel_->children().begin());
+    //     deviceSelector_->get_selection()->select(deviceListModel_->children().begin());
     // }
 }
 
@@ -265,6 +266,7 @@ void PreferencesDialog::export_devices()
 
 void PreferencesDialog::import_status()
 {
+    deviceSelector_->importStatus();
     // for (auto row : deviceListModel_->children()) {
     //     DeviceData* data = row[deviceListColumns_.data];
     //     CdDevice* dev;

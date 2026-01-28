@@ -50,6 +50,9 @@ AudioCDProject* AudioCDProject::create(Glib::RefPtr<Gtk::Builder> builder,
     builder->add_from_resource("/org/gnome/gcdmaster/gears_audio_menu.ui");
     builder->add_from_resource("/org/gnome/gcdmaster/app_menu.ui");
 
+    auto cssProvider = Gtk::CssProvider::create();
+    cssProvider->load_from_resource("/org/gnome/gcdmaster/gcdmaster.css");
+    
     auto window = Gtk::Builder::get_widget_derived<AudioCDProject>(builder, "app_window");
     if (!window)
 	throw std::runtime_error("app_window resource error");

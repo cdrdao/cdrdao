@@ -22,7 +22,7 @@
 
 #include <gtkmm.h>
 #include "CdDevice.h"
-#include "DeviceList.h"
+#include "DeviceSelector.h"
 #include "gcdmaster.h"
 
 class PreferencesDialog : public Gtk::Window
@@ -65,7 +65,7 @@ protected:
     Gtk::ComboBoxText* driverMenu_ = nullptr;
     Gtk::ComboBoxText* devtypeMenu_ = nullptr;
     std::string selectedTempPath_;
-    DeviceList* deviceList_;
+    DeviceSelector* deviceSelector_;
 
     struct DeviceData {
         std::string dev;
@@ -73,19 +73,6 @@ protected:
         CdDevice::DeviceType deviceType;
         unsigned long options;
     };
-
-    class ListColumns : public Gtk::TreeModel::ColumnRecord
-    {
-    public:
-        ListColumns() { add(dev); add(description); add(status); add(data); }
-        Gtk::TreeModelColumn<std::string> dev;
-        Gtk::TreeModelColumn<std::string> description;
-        Gtk::TreeModelColumn<std::string> status;
-        Gtk::TreeModelColumn<DeviceData*> data;
-    };
-
-    Glib::RefPtr<Gtk::ListStore> deviceListModel_;
-    ListColumns deviceListColumns_;
     std::string selectedDevice_;
 };
 

@@ -16,6 +16,8 @@ gcdmaster_SOURCES = \
 	ConfigManager.cc	\
 	DeviceList.h		\
 	DeviceList.cc		\
+	DeviceSelector.h	\
+	DeviceSelector.cc	\
 	gcdmaster.cc 		\
 	main.cc			\
 	guiUpdate.cc 		\
