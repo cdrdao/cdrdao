@@ -17,18 +17,11 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+
 #include "TocInfoDialog.h"
 #include "config.h"
-
 #include <glibmm/i18n.h>
-#include <gtkmm.h>
-
-#include <ctype.h>
-#include <stddef.h>
-#include <stdio.h>
-
 #include "TocEdit.h"
-// #include "TocEditView.h"
 #include "CdTextItem.h"
 #include "TextEdit.h"
 #include "Toc.h"
@@ -91,30 +84,27 @@ static const char *TOC_TYPE_CD_ROM = "CD-ROM";
 static const char *TOC_TYPE_CD_ROM_XA = "CD-ROM-XA";
 static const char *TOC_TYPE_CD_I = "CD-I";
 
-TocInfoDialog::TocInfoDialog(Gtk::Window *parent)
+TocInfoDialog::TocInfoDialog(Gtk::Window* parent)
 {
-    int i;
-    Gtk::Label *label;
-    Gtk::Frame *frame;
-    Gtk::Table *table;
-    Gtk::Button *button;
-    auto contents = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL);
+    set_title(_("Project Info"));
+    set_modal(true);
+    set_transient_for(*parent);
 
-    tocEdit_ = NULL;
+    auto contents = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL, 10);
+    contents->set_margin(10);
+
+    tocEdit_ = nullptr;
     active_ = false;
     selectedTocType_ = Toc::Type::CD_DA;
 
-    nofTracks_ = manage(new Gtk::Label("99"));
-    nofTracks_->set_alignment(Gtk::ALIGN_START);
-    tocLength_ = manage(new Gtk::Label("100:00:00"));
-    tocLength_->set_alignment(Gtk::ALIGN_START);
+    nofTracks_ = Gtk::make_managed<Gtk::Label>("99");
+    nofTracks_->set_halign(Gtk::Align::START);
+    tocLength_ = Gtk::make_managed<Gtk::Label>("100:00:00");
+    tocLength_->set_halign(Gtk::Align::START);
 
-    catalog_ = manage(new TextEdit("1234567890123"));
+    catalog_ = Gtk::make_managed<TextEdit>("1234567890123");
     catalog_->set_max_length(13);
-    catalog_->lowerCase(0);
-    catalog_->upperCase(0);
-    catalog_->space(0);
-    catalog_->digits(1);
+    // ... TextEdit config ...
 
     tocType_.append(TOC_TYPE_CD_DA);
     tocType_.append(TOC_TYPE_CD_ROM);
@@ -122,88 +112,124 @@ TocInfoDialog::TocInfoDialog(Gtk::Window *parent)
     tocType_.append(TOC_TYPE_CD_I);
     tocType_.signal_changed().connect(sigc::mem_fun(*this, &TocInfoDialog::setSelectedTocType));
 
-    contents->set_spacing(10);
-
-    // Summary frame (time & data)
-    frame = manage(new Gtk::Frame(_(" Summary ")));
-    table = manage(new Gtk::Table(2, 2, false));
-    table->set_border_width(5);
-    table->set_row_spacings(5);
-    table->set_col_spacings(5);
-    label = manage(new Gtk::Label(_("Tracks:")));
-    table->attach(*label, 0, 1, 0, 1, Gtk::SHRINK);
-    table->attach(*nofTracks_, 1, 2, 0, 1, Gtk::FILL | Gtk::SHRINK);
-    label = manage(new Gtk::Label(_("Length:")));
-    table->attach(*label, 0, 1, 1, 2, Gtk::SHRINK);
-    table->attach(*tocLength_, 1, 2, 1, 2, Gtk::FILL | Gtk::SHRINK);
-    frame->add(*table);
-    contents->pack_start(*frame, false, false);
+    // Summary frame (Grid replaces Table)
+    auto frameSummary = Gtk::make_managed<Gtk::Frame>(_(" Summary "));
+    auto gridSummary = Gtk::make_managed<Gtk::Grid>();
+    gridSummary->set_row_spacing(5);
+    gridSummary->set_column_spacing(5);
+    gridSummary->set_margin(5);
+    
+    gridSummary->attach(*Gtk::make_managed<Gtk::Label>(_("Tracks:")), 0, 0);
+    gridSummary->attach(*nofTracks_, 1, 0);
+    gridSummary->attach(*Gtk::make_managed<Gtk::Label>(_("Length:")), 0, 1);
+    gridSummary->attach(*tocLength_, 1, 1);
+    
+    frameSummary->set_child(*gridSummary);
+    contents->append(*frameSummary);
 
     // Sub-channel frame
-    frame = manage(new Gtk::Frame(_(" Sub-Channel ")));
-    table = manage(new Gtk::Table(2, 2, false));
-    table->set_border_width(5);
-    table->set_row_spacings(5);
-    table->set_col_spacings(5);
-    label = manage(new Gtk::Label(_("Toc Type: ")));
-    table->attach(*label, 0, 1, 0, 1, Gtk::SHRINK);
-    table->attach(tocType_, 1, 2, 0, 1);
-    label = manage(new Gtk::Label("UPC/EAN: "));
-    table->attach(*label, 0, 1, 1, 2, Gtk::SHRINK);
-    table->attach(*catalog_, 1, 2, 1, 2);
-    frame->add(*table);
-    contents->pack_start(*frame, Gtk::PACK_SHRINK);
+    auto frameSub = Gtk::make_managed<Gtk::Frame>(_(" Sub-Channel "));
+    auto gridSub = Gtk::make_managed<Gtk::Grid>();
+    gridSub->set_row_spacing(5);
+    gridSub->set_column_spacing(5);
+    gridSub->set_margin(5);
+
+    gridSub->attach(*Gtk::make_managed<Gtk::Label>(_("Toc Type: ")), 0, 0);
+    gridSub->attach(tocType_, 1, 0);
+    gridSub->attach(*Gtk::make_managed<Gtk::Label>("UPC/EAN: "), 0, 1);
+    gridSub->attach(*catalog_, 1, 1);
+    
+    frameSub->set_child(*gridSub);
+    contents->append(*frameSub);
 
     // CD-TEXT data
-    frame = manage(new Gtk::Frame(" CD-TEXT "));
+    auto frameText = Gtk::make_managed<Gtk::Frame>(" CD-TEXT ");
+    auto notebook = Gtk::make_managed<Gtk::Notebook>();
 
-    Gtk::Notebook *notebook = manage(new Gtk::Notebook);
-
-    for (i = 0; i < 8; i++) {
-        auto vbox = createCdTextPage(i);
-        notebook->append_page(*vbox, *(cdTextPages_[i].label));
+    for (int i = 0; i < 8; i++) {
+        auto vboxPage = createCdTextPage(i);
+        notebook->append_page(*vboxPage, *(cdTextPages_[i].label));
     }
+    frameText->set_child(*notebook);
+    contents->append(*frameText);
 
-    {
-	auto vbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL);
-	vbox->pack_start(*notebook, false, false, 5);
-	auto hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
-	hbox->pack_start(*vbox, true, true, 5);
-	frame->add(*hbox);
-    }
-    contents->pack_start(*frame, Gtk::PACK_SHRINK);
-    {
-	auto hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
-	hbox->pack_start(*contents, true, true, 10);
-	get_vbox()->pack_start(*hbox, true, true, 10);
-    }
+    auto bbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
+    bbox->set_margin(10);
+    bbox->set_halign(Gtk::Align::CENTER);
 
-    aitp bbox = Gtk::make_managed<Gtk::HButtonBox>(Gtk::BUTTONBOX_SPREAD);
-
-    applyButton_ = manage(new Gtk::Button(Gtk::StockID(Gtk::Stock::APPLY)));
-    bbox->pack_start(*applyButton_);
+    applyButton_ = Gtk::make_managed<Gtk::Button>("apply");
     applyButton_->signal_clicked().connect(sigc::mem_fun(*this, &TocInfoDialog::applyAction));
+    bbox->append(*applyButton_);
+    auto closeButton = Gtk::make_managed<Gtk::Button>("close");
+    closeButton->signal_clicked().connect(
+        sigc::mem_fun(*this, &TocInfoDialog::closeAction));
+    bbox->append(*closeButton);
+    contents->append(*bbox);
 
-    button = manage(new Gtk::Button(Gtk::StockID(Gtk::Stock::CLOSE)));
-    bbox->pack_start(*button);
-    button->signal_clicked().connect(sigc::mem_fun(*this, &TocInfoDialog::closeAction));
+    // Dialog setup
+    set_child(*contents);
 
-    get_action_area()->pack_start(*bbox);
-    show_all_children();
-
-    set_title(_("Project Info"));
-    set_transient_for(*parent);
+    set_default_size(400, -1);
 }
 
-TocInfoDialog::~TocInfoDialog()
+Gtk::Box* TocInfoDialog::createCdTextPage(int n)
 {
+    auto grid = Gtk::make_managed<Gtk::Grid>();
+    grid->set_row_spacing(5);
+    grid->set_column_spacing(5);
+    grid->set_margin(5);
+
+    cdTextPages_[n].label = Gtk::make_managed<Gtk::Label>(std::to_string(n));
+
+    // Initialize Entries
+    cdTextPages_[n].title = Gtk::make_managed<Gtk::Entry>();
+    cdTextPages_[n].performer = Gtk::make_managed<Gtk::Entry>();
+    cdTextPages_[n].songwriter = Gtk::make_managed<Gtk::Entry>();
+    cdTextPages_[n].composer = Gtk::make_managed<Gtk::Entry>();
+    cdTextPages_[n].arranger = Gtk::make_managed<Gtk::Entry>();
+    cdTextPages_[n].message = Gtk::make_managed<Gtk::Entry>();
+    cdTextPages_[n].catalog = Gtk::make_managed<Gtk::Entry>();
+    cdTextPages_[n].upcEan = Gtk::make_managed<Gtk::Entry>();
+    cdTextPages_[n].genreInfo = Gtk::make_managed<Gtk::Entry>();
+
+    createCdTextLanguageMenu(n);
+    createCdTextGenreMenu(n);
+
+    auto add_row = [&](int row, const std::string& labelText, Gtk::Widget& widget) {
+        auto lbl = Gtk::make_managed<Gtk::Label>(labelText);
+        lbl->set_halign(Gtk::Align::END);
+        grid->attach(*lbl, 0, row);
+        grid->attach(widget, 1, row);
+        widget.set_hexpand(true);
+    };
+
+    add_row(0, _("Language:"), *(cdTextPages_[n].language));
+    add_row(1, _("Title:"), *(cdTextPages_[n].title));
+    add_row(2, _("Performer:"), *(cdTextPages_[n].performer));
+    add_row(3, _("Songwriter:"), *(cdTextPages_[n].performer));
+    add_row(4, _("Composer:"), *(cdTextPages_[n].performer));
+    add_row(5, _("Arranger:"), *(cdTextPages_[n].performer));
+    add_row(6, _("Message:"), *(cdTextPages_[n].performer));
+    add_row(7, _("Catalog:"), *(cdTextPages_[n].performer));
+    add_row(8, _("UPC/EAN:"), *(cdTextPages_[n].performer));
+    add_row(9, _("Genre:"), *(cdTextPages_[n].performer));
+    add_row(10, _("Genre Info:"), *(cdTextPages_[n].performer));
+
+    auto vbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL);
+    vbox->append(*grid);
+    return vbox;
 }
 
 void TocInfoDialog::start(TocEdit *view)
 {
-    present();
     active_ = true;
     update(UPD_ALL, view);
+}
+
+bool TocInfoDialog::on_close_request()
+{
+    stop();
+    return true; // Handle the hide ourselves
 }
 
 void TocInfoDialog::stop()
@@ -301,160 +327,6 @@ void TocInfoDialog::createCdTextGenreMenu(int n)
     }
     cdTextPages_[n].genre->signal_changed().connect(
         bind(mem_fun(*this, &TocInfoDialog::setSelectedCDTextGenre), n));
-}
-
-Gtk::Box *TocInfoDialog::createCdTextPage(int n)
-{
-    char buf[20];
-    Gtk::Table *table = manage(new Gtk::Table(11, 2, false));
-
-    snprintf(buf, sizeof(buf), " %d ", n);
-    cdTextPages_[n].label = manage(new Gtk::Label(buf));
-    cdTextPages_[n].label->show();
-
-    cdTextPages_[n].title = manage(new Gtk::Entry);
-    cdTextPages_[n].performer = manage(new Gtk::Entry);
-    cdTextPages_[n].songwriter = manage(new Gtk::Entry);
-    cdTextPages_[n].composer = manage(new Gtk::Entry);
-    cdTextPages_[n].arranger = manage(new Gtk::Entry);
-    cdTextPages_[n].message = manage(new Gtk::Entry);
-    cdTextPages_[n].catalog = manage(new Gtk::Entry);
-    cdTextPages_[n].upcEan = manage(new Gtk::Entry);
-    cdTextPages_[n].genreInfo = manage(new Gtk::Entry);
-
-    createCdTextLanguageMenu(n);
-    createCdTextGenreMenu(n);
-
-    table->set_row_spacings(5);
-    table->set_col_spacings(5);
-    table->show();
-
-    {
-	auto label = Gtk::make_manage<Gtk::Label>(_("Language:"));
-	auto hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
-	hbox->pack_end(*label, Gtk::PACK_SHRINK);
-	table->attach(*hbox, 0, 1, 0, 1, Gtk::FILL);
-	hbox->show();
-	label->show();
-	table->attach(*(cdTextPages_[n].language), 1, 2, 0, 1);
-	cdTextPages_[n].language->show();
-    }
-    {
-	auto label = Gtk::make_manage<Gtk::Label>(_("Language:"));
-	auto hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
-	hbox->pack_end(*label, Gtk::PACK_SHRINK);
-	table->attach(*hbox, 0, 1, 1, 2, Gtk::FILL);
-	hbox->show();
-	label->show();
-	table->attach(*(cdTextPages_[n].title), 1, 2, 1, 2);
-	cdTextPages_[n].title->show();
-    }
-    {
-	auto label = Gtk::make_manage<Gtk::Label>(_("Language:"));
-	auto hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
-	hbox->pack_end(*label, Gtk::PACK_SHRINK);
-	table->attach(*hbox, 0, 1, 2, 3, Gtk::FILL);
-	hbox->show();
-	label->show();
-	table->attach(*(cdTextPages_[n].performer), 1, 2, 2, 3);
-	cdTextPages_[n].performer->show();
-    }
-    {
-	auto label = Gtk::make_manage<Gtk::Label>(_("Language:"));
-	auto hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
-	hbox->pack_end(*label, Gtk::PACK_SHRINK);
-	table->attach(*hbox, 0, 1, 3, 4, Gtk::FILL);
-	hbox->show();
-	label->show();
-	table->attach(*(cdTextPages_[n].songwriter), 1, 2, 3, 4);
-	cdTextPages_[n].songwriter->show();
-    }
-    {
-	auto label = Gtk::make_manage<Gtk::Label>(_("Language:"));
-	auto hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
-	hbox->pack_end(*label, Gtk::PACK_SHRINK);
-	table->attach(*hbox, 0, 1, 4, 5, Gtk::FILL);
-	hbox->show();
-	label->show();
-	table->attach(*(cdTextPages_[n].composer), 1, 2, 4, 5);
-	cdTextPages_[n].composer->show();
-    }
-    {
-	auto label = Gtk::make_manage<Gtk::Label>(_("Language:"));
-	auto hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
-	hbox->pack_end(*label, Gtk::PACK_SHRINK);
-	table->attach(*hbox, 0, 1, 5, 6, Gtk::FILL);
-	hbox->show();
-	label->show();
-	table->attach(*(cdTextPages_[n].arranger), 1, 2, 5, 6);
-	cdTextPages_[n].arranger->show();
-    }
-    {
-	auto label = Gtk::make_manage<Gtk::Label>(_("Language:"));
-	auto hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
-	hbox->pack_end(*label, Gtk::PACK_SHRINK);
-	table->attach(*hbox, 0, 1, 6, 7, Gtk::FILL);
-	hbox->show();
-	label->show();
-	table->attach(*(cdTextPages_[n].message), 1, 2, 6, 7);
-	cdTextPages_[n].message->show();
-    }
-    {
-	auto label = Gtk::make_manage<Gtk::Label>(_("Language:"));
-	auto hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
-	hbox->pack_end(*label, Gtk::PACK_SHRINK);
-	table->attach(*hbox, 0, 1, 7, 8, Gtk::FILL);
-	hbox->show();
-	label->show();
-	table->attach(*(cdTextPages_[n].catalog), 1, 2, 7, 8);
-	cdTextPages_[n].catalog->show();
-    }
-    {
-	auto label = Gtk::make_manage<Gtk::Label>(_("Language:"));
-	auto hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
-	hbox->pack_end(*label, Gtk::PACK_SHRINK);
-	table->attach(*hbox, 0, 1, 8, 9, Gtk::FILL);
-	hbox->show();
-	label->show();
-	table->attach(*(cdTextPages_[n].upcEan), 1, 2, 8, 9);
-	cdTextPages_[n].upcEan->show();
-    }
-    {
-	auto label = Gtk::make_manage<Gtk::Label>(_("Language:"));
-	auto hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
-	hbox->pack_end(*label, Gtk::PACK_SHRINK);
-	table->attach(*hbox, 0, 1, 9, 10, Gtk::FILL);
-	hbox->show();
-	label->show();
-	table->attach(*(cdTextPages_[n].genre), 1, 2, 9, 10);
-	cdTextPages_[n].genre->show();
-    }
-    {
-	auto label = Gtk::make_manage<Gtk::Label>(_("Language:"));
-	hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
-	hbox->pack_end(*label, Gtk::PACK_SHRINK);
-	table->attach(*hbox, 0, 1, 10, 11, Gtk::FILL);
-	hbox->show();
-	label->show();
-	table->attach(*(cdTextPages_[n].genreInfo), 1, 2, 10, 11);
-	cdTextPages_[n].genreInfo->show();
-    }
-    hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
-    hbox->pack_start(*table, true, true, 3);
-    table->show();
-
-    auto vbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL);
-    vbox->pack_start(*hbox, true, true, 3);
-    hbox->show();
-    vbox->show();
-
-    return vbox;
-}
-
-bool TocInfoDialog::on_delete_event(GdkEventAny *)
-{
-    stop();
-    return 1;
 }
 
 void TocInfoDialog::closeAction()

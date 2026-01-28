@@ -50,105 +50,65 @@ static RecordCDSource::CorrectionTable CORRECTION_TABLE[MAX_CORRECTION_ID + 1] =
 static RecordCDSource::SubChanReadModeTable SUBCHAN_READ_MODE_TABLE[MAX_SUBCHAN_READ_MODE_ID + 1] =
     {{0, N_("none")}, {1, N_("R-W packed")}, {2, N_("R-W raw")}};
 
-RecordCDSource::RecordCDSource(Gtk::Window *parent) : Gtk::Box(Gtk::Orientation::VERTICAL)
+RecordCDSource::RecordCDSource(Gtk::Window *parent)
+    : Gtk::Box(Gtk::Orientation::VERTICAL)
 {
     parent_ = parent;
-    active_ = 0;
-    //  onTheFly_ = 0;
-    correction_ = 0;
-    speed_ = 1;
-    subChanReadMode_ = 0;
-    moreOptionsDialog_ = 0;
-
     set_spacing(10);
 
-    DEVICES = new DeviceList(CdDevice::CD_ROM);
-    pack_start(*DEVICES);
+    devices_ = new DeviceList(CdDevice::CD_ROM);
+    append(*devices_);
 
     // device settings
-    Gtk::Frame *extractOptionsFrame = new Gtk::Frame(_(" Read Options "));
+    audo extractOptionsFrame = Gtk::make_managed<Gtk::Frame>(_(" Read Options "));
     auto vbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL);
-    vbox->set_border_width(5);
+    vbox->set_margin(5);
     vbox->set_spacing(5);
-    vbox->show();
-    extractOptionsFrame->add(*vbox);
+    extractOptionsFrame->set_child(*vbox);
 
-    onTheFlyButton_ = new Gtk::CheckButton(_("Copy to disk before burning"), 0);
+    onTheFlyButton_ = Gtk::make_managed<Gtk::CheckButton>(_("Copy to disk before burning"));
     onTheFlyButton_->set_active(true);
-    onTheFlyButton_->show();
-    vbox->pack_start(*onTheFlyButton_);
+    vbox->append(*onTheFlyButton_);
 
     auto hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
-    Gtk::Label *label = new Gtk::Label(_("Speed: "), 0);
-    label->show();
-    hbox->pack_start(*label, false, false);
-    hbox->show();
+    auto *label = Gtk::make_managed<Gtk::Label>(_("Speed: "));
+    hbox->append(*label);
 
     Glib::RefPtr<Gtk::Adjustment> adjustment = Gtk::Adjustment::create(1, 1, 50);
     speedSpinButton_ = new Gtk::SpinButton(adjustment);
     speedSpinButton_->set_digits(0);
-    speedSpinButton_->show();
     speedSpinButton_->set_sensitive(false);
     adjustment->signal_value_changed().connect(sigc::mem_fun(*this, &RecordCDSource::speedChanged));
-    hbox->pack_start(*speedSpinButton_, false, false, 10);
+    speedSpinButton_->set_margin_start(10);
+    hbox->append(*speedSpinButton_);
 
-    speedButton_ = new Gtk::CheckButton(_("Use max."), 0);
+    speedButton_ = Gtk::make_managed<Gtk::CheckButton>(_("Use max."));
     speedButton_->set_active(true);
-    speedButton_->show();
     speedButton_->signal_toggled().connect(
         sigc::mem_fun(*this, &RecordCDSource::speedButtonChanged));
-    hbox->pack_start(*speedButton_, true, true);
-    vbox->pack_start(*hbox);
+    hbox->append(*speedButton_);
+    vbox->append(*hbox);
 
-    Gtk::Image *moreOptionsPixmap =
-        manage(new Gtk::Image(Gtk::StockID(Gtk::Stock::PROPERTIES), Gtk::ICON_SIZE_SMALL_TOOLBAR));
-    Gtk::Label *moreOptionsLabel = manage(new Gtk::Label(_("More Options")));
+    // More Options Button
+    auto moreOptionsButton = Gtk::make_managed<Gtk::Button>();
     auto moreOptionsBox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
-    moreOptionsBox->set_border_width(2);
-    Gtk::Button *moreOptionsButton = manage(new Gtk::Button());
-    moreOptionsBox->pack_start(*moreOptionsPixmap, false, false, 3);
-    moreOptionsBox->pack_start(*moreOptionsLabel, false, false, 4);
-    moreOptionsButton->add(*moreOptionsBox);
-    moreOptionsButton->signal_clicked().connect(mem_fun(*this, &RecordCDSource::moreOptions));
-    moreOptionsPixmap->show();
-    moreOptionsLabel->show();
-    moreOptionsBox->show();
-    moreOptionsButton->show();
-    moreOptionsBox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
-    moreOptionsBox->show();
-    vbox->pack_start(*moreOptionsBox);
-    moreOptionsBox->pack_end(*moreOptionsButton, false, false);
+    
+    auto moreOptionsIcon = Gtk::make_managed<Gtk::Image>("emblem-system-symbolic");
+    auto moreOptionsLabel = Gtk::make_managed<Gtk::Label>("More Options");
+    
+    moreOptionsBox->set_spacing(4);
+    moreOptionsBox->append(*moreOptionsIcon);
+    moreOptionsBox->append(*moreOptionsLabel);
+    moreOptionsButton->set_child(*moreOptionsBox);
+    moreOptionsButton->signal_clicked().connect(sigc::mem_fun(*this, &RecordCDSource::moreOptions));
 
-    pack_start(*extractOptionsFrame, Gtk::PACK_SHRINK);
-    extractOptionsFrame->show();
-}
+    auto buttonContainer = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
+    buttonContainer->set_halign(Gtk::Align::END);
+    buttonContainer->append(*moreOptionsButton);
+    vbox->append(*buttonContainer);
 
-RecordCDSource::~RecordCDSource()
-{
-    if (moreOptionsDialog_)
-        delete moreOptionsDialog_;
-}
-
-void RecordCDSource::start()
-{
-    if (active_) {
-        get_parent_window()->raise();
-        return;
-    }
-
-    active_ = 1;
-
+    append(*extractOptionsFrame);
     update(UPD_CD_DEVICES);
-
-    show();
-}
-
-void RecordCDSource::stop()
-{
-    if (active_) {
-        hide();
-        active_ = 0;
-    }
 }
 
 void RecordCDSource::update(unsigned long level)
@@ -157,42 +117,38 @@ void RecordCDSource::update(unsigned long level)
         return;
 
     if (level & UPD_CD_DEVICES)
-        DEVICES->import();
+        devices_->import();
     else if (level & UPD_CD_DEVICE_STATUS)
-        DEVICES->importStatus();
+        devices_->importStatus();
 }
 
 void RecordCDSource::moreOptions()
 {
-    if (!moreOptionsDialog_) {
-        Gtk::Table *table;
-        Gtk::Label *label;
+    if (!moreOptions_) {
+        moreOptions_ = Gtk::make_managed<Gtk::Window>();
+        moreOptions_->set_modal(true);
+        moreOptions_->set_transient_for(*parent_);
+        set_title(_("Source options"));
 
-        table = new Gtk::Table(2, 4, false);
-        table->set_row_spacings(2);
-        table->set_col_spacings(10);
-        table->set_border_width(5);
+        auto *top_vbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL);
+        top_vbox->set_margin(10);
+        moreOptions_->set_child(*top_vbox);
 
-        moreOptionsDialog_ = new Gtk::MessageDialog(
-            *parent_, _("Source options"), false, Gtk::MESSAGE_QUESTION, Gtk::BUTTONS_CLOSE, true);
+        auto grid = Gtk::make_managed<Gtk::Grid>();
+        grid->set_row_spacing(2);
+        grid->set_column_spacing(10);
+        grid->set_margin(5);
 
-        Gtk::Box *box = moreOptionsDialog_->get_vbox();
-        Gtk::Frame *frame = new Gtk::Frame(_(" More Source Options "));
-        box->pack_start(*frame);
-        auto vbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL);
-        vbox->set_border_width(10);
-        vbox->set_spacing(5);
-        frame->add(*vbox);
-
-        vbox->pack_start(*table);
-
-        continueOnErrorButton_ = new Gtk::CheckButton(_("Continue if errors found"), 0);
+        frame = Gtk::make_managed<Gtk::Frame>(_(" More Source Options "));
+        frame->set_child(*grid);
+        top_vbox->append(*frame);
+        
+        continueOnErrorButton_ = Gtk::make_managed<Gtk::CheckButton>(_("Continue if errors found"));
         continueOnErrorButton_->set_active(false);
-        table->attach(*continueOnErrorButton_, 0, 1, 0, 1);
-
-        ignoreIncorrectTOCButton_ = new Gtk::CheckButton(_("Ignore incorrect TOC"), 0);
+        grid->attach(continueOnErrorButton_, 0, 0);
+        ignoreIncorrectTOCButton_ = Gtk::make_managed<Gtk::CheckButton>(_("Ignore incorrect TOC"));
         ignoreIncorrectTOCButton_->set_active(false);
-        table->attach(*ignoreIncorrectTOCButton_, 0, 1, 1, 2);
+        grid->attach(*ignoreIncorrectTOCButton_, 0, 1);
 
         for (int i = 0; i <= MAX_CORRECTION_ID; i++) {
             correctionMenu_.append(CORRECTION_TABLE[i].name);

@@ -9,29 +9,46 @@ gcdmaster_SOURCES = \
 	AudioCDView.h		\
 	AudioCDView.cc		\
 	BlankCDDialog.cc	\
+	CdDevice.h		\
 	CdDevice.cc		\
 	CdTextDialog.h		\
 	CdTextDialog.cc		\
 	ConfigManager.cc	\
+	DeviceList.h		\
 	DeviceList.cc		\
 	gcdmaster.cc 		\
 	main.cc			\
 	guiUpdate.cc 		\
+	MessageBox.h		\
 	MessageBox.cc 		\
 	PreferencesDialog.cc	\
 	ProcessMonitor.cc	\
+	ProgressDialog.cc	\
+	RecordCDSource.h	\
+	RecordCDSource.cc	\
+	RecordCDTarget.h	\
+	RecordCDTarget.cc	\
+	RecordHDTarget.h	\
+	RecordHDTarget.cc	\
 	RecordTocDialog.h	\
 	RecordTocDialog.cc	\
+	RecordTocSource.h	\
+	RecordTocSource.cc	\
 	SampleDisplay.h		\
 	SampleDisplay.cc	\
 	SampleManager.h		\
 	SampleManager.cc	\
 	Settings.h		\
 	Settings.cc 		\
+	SoundIF.h		\
 	TaskManager.h		\
 	TaskManager.cc		\
 	TextEdit.h		\
 	TextEdit.cc		\
+	TocEdit.h		\
+	TocEdit.cc 		\
+	TocEditView.h		\
+	TocEditView.cc 		\
 	TocInfoDialog.h		\
 	TocInfoDialog.cc	\
 	TrackDataScrap.h	\
@@ -40,28 +57,14 @@ gcdmaster_SOURCES = \
 	TrackInfoDialog.cc	\
 	TrackManager.h		\
 	TrackManager.cc		\
-	ProgressDialog.cc	\
-	TocEdit.cc 		\
-	TocEditView.cc 		\
-	SoundIF.h		\
 	gcdmaster.h		\
-	RecordCDSource.h	\
-	TocEdit.h		\
 	AudioCDProject.h	\
-	RecordCDTarget.h	\
-	TocEditView.h		\
 	GenericView.h		\
-	RecordHDTarget.h	\
 	BlankCDDialog.h		\
 	guiUpdate.h		\
-	CdDevice.h		\
-	Icons.h			\
-	RecordTocSource.h	\
-	MessageBox.h		\
 	DeviceConfDialog.h	\
 	ProcessMonitor.h	\
 	xcdrdao.h		\
-	DeviceList.h		\
 	ProgressDialog.h	\
 	ConfigManager.h		\
 	PreferencesDialog.h

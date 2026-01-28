@@ -21,7 +21,6 @@
 #include <gtkmm.h>
 
 #include "DeviceList.h"
-#include "Icons.h"
 #include "MessageBox.h"
 #include "RecordCDSource.h"
 #include "RecordCDTarget.h"

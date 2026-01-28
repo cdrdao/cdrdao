@@ -26,7 +26,6 @@
 #include "AudioCDProject.h"
 #include "BlankCDDialog.h"
 #include "DeviceConfDialog.h"
-#include "Icons.h"
 #include "PreferencesDialog.h"
 #include "TocEdit.h"
 #include "gcdmaster.h"

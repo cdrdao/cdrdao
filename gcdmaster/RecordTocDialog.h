@@ -30,7 +30,6 @@ class RecordTocDialog : public Gtk::Window
 {
 public:
     RecordTocDialog(Glib::RefPtr<TocEdit> tocEdit);
-    ~RecordTocDialog() override;
 
     void start(Gtk::Window* parent);
     void update(unsigned long level);

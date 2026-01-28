@@ -30,7 +30,6 @@
 #include "AudioCDProject.h"
 #include "AudioCDView.h"
 #include "CdTextDialog.h"
-#include "Icons.h"
 #include "MessageBox.h"
 #include "RecordTocDialog.h"
 #include "SoundIF.h"

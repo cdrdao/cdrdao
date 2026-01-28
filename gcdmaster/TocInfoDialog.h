@@ -26,11 +26,10 @@
 class TocEdit;
 class TextEdit;
 
-class TocInfoDialog : public Gtk::Dialog
+class TocInfoDialog : public Gtk::Window
 {
 public:
-    TocInfoDialog(Gtk::Window& parent); // GTK4 prefers references for parents
-    virtual ~TocInfoDialog();
+    TocInfoDialog(Gtk::Window* parent);
 
     void update(unsigned long, TocEdit *);
     void start(TocEdit *);

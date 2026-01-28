@@ -27,10 +27,6 @@ class RecordCDSource : public Gtk::Box
 {
   public:
     RecordCDSource(Gtk::Window *);
-    ~RecordCDSource();
-
-    void start();
-    void stop();
 
     void update(unsigned long level);
 
@@ -38,10 +34,7 @@ class RecordCDSource : public Gtk::Box
     void setOnTheFly(bool);
     int getCorrection();
     int getSubChanReadMode();
-    DeviceList *getDeviceList()
-    {
-        return DEVICES;
-    }
+    DeviceList *getDeviceList() { return devices_; }
     void onTheFlyOption(bool);
 
     struct CorrectionTable {
@@ -55,23 +48,23 @@ class RecordCDSource : public Gtk::Box
     };
 
   private:
-    DeviceList *DEVICES;
+    DeviceList *devices_;
 
-    int active_;
-    int correction_;
-    int speed_;
-    int subChanReadMode_;
+    int active_ = false;
+    int correction_ = 0;
+    int speed_ = 1;
+    int subChanReadMode_ = 0;
 
     //  bool onTheFly_;
 
     Gtk::Window *parent_;
-    Gtk::MessageDialog *moreOptionsDialog_;
+    Gtk::Window *moreOptions_ = nullptr;
 
     Gtk::SpinButton *speedSpinButton_;
     Gtk::CheckButton *speedButton_;
 
-    Gtk::ComboBoxText correctionMenu_;
-    Gtk::ComboBoxText subChanReadModeMenu_;
+    Gtk::DropDown*    correctionMenu_;
+    Gtk::DropDown*    subChanReadModeMenu_;
     Gtk::CheckButton *onTheFlyButton_;
     Gtk::CheckButton *continueOnErrorButton_;
     Gtk::CheckButton *ignoreIncorrectTOCButton_;
