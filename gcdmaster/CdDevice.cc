@@ -1058,7 +1058,7 @@ static char *nextToken(char *&p)
 static CdDevice *addImpl(const std::string& setting)
 {
     char* s = (char*)alloca(setting.size() + 1);
-    std::strcpy(s, setting.c_str());
+    strcpy(s, setting.c_str());
     char *p;
     int driverId;
     std::string dev;

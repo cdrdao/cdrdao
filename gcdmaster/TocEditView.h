@@ -45,6 +45,7 @@ class TocEditView
     void sampleViewInclude(unsigned long, unsigned long);
     void sampleView(unsigned long *, unsigned long *) const;
     bool sampleView(unsigned long smin, unsigned long smax);
+    bool isSampleViewFull();
 
     void trackSelection(int);
     bool trackSelection(int *) const;

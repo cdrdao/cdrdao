@@ -40,124 +40,86 @@
 #define TRACK_MARKER_XPM_WIDTH 9
 #define TRACK_MARKER_XPM_HEIGHT 12
 static const gchar *TRACK_MARKER_XPM_DATA[] = {
-  "9 12 3 1",
-  "       c None",
-  "X      c #000000000000",
-  ".      c #FFFFFFFFFFFF",
-  "         ",
-  " XXXXXXX ",
-  " XXXXXXX ",
-  " XXXXXXX ",
-  " XXXXXXX ",
-  " XXXXXXX ",
-  " XXXXXXX ",
-  "  XXXXX  ",
-  "   XXX   ",
-  "    X    ",
-  "    X    ",
-  "    X    "};
+    "9 12 3 1",
+    "       c None",
+    "X      c #000000000000",
+    ".      c #FFFFFFFFFFFF",
+    "         ",
+    " XXXXXXX ",
+    " XXXXXXX ",
+    " XXXXXXX ",
+    " XXXXXXX ",
+    " XXXXXXX ",
+    " XXXXXXX ",
+    "  XXXXX  ",
+    "   XXX   ",
+    "    X    ",
+    "    X    ",
+    "    X    "};
 
 /* XPM data for index marker */
 static const gchar *INDEX_MARKER_XPM_DATA[] = {
-  "9 12 3 1",
-  "       c None",
-  "X      c #000000000000",
-  ".      c #FFFFFFFFFFFF",
-  "         ",
-  " XXXXXXX ",
-  " X.....X ",
-  " X.....X ",
-  " X.....X ",
-  " X.....X ",
-  " X.....X ",
-  "  X...X  ",
-  "   X.X   ",
-  "    X    ",
-  "    X    ",
-  "    X    "};
+    "9 12 3 1",
+    "       c None",
+    "X      c #000000000000",
+    ".      c #FFFFFFFFFFFF",
+    "         ",
+    " XXXXXXX ",
+    " X.....X ",
+    " X.....X ",
+    " X.....X ",
+    " X.....X ",
+    " X.....X ",
+    "  X...X  ",
+    "   X.X   ",
+    "    X    ",
+    "    X    ",
+    "    X    "};
 
 /* XPM data for extend track marker */
 static const gchar *TRACK_EXTEND_XPM_DATA[] = {
-  "9 12 3 1",
-  "       c None",
-  "X      c #000000000000",
-  ".      c #FFFFFFFFFFFF",
-  "......XX.",
-  ".....XXX.",
-  "....XXXX.",
-  "...XXXXX.",
-  "..XXXXXX.",
-  ".XXXXXXX.",
-  "..XXXXXX.",
-  "...XXXXX.",
-  "....XXXX.",
-  ".....XXX.",
-  "......XX.",
-  "........."};
+    "9 12 3 1",
+    "       c None",
+    "X      c #000000000000",
+    ".      c #FFFFFFFFFFFF",
+    "......XX.",
+    ".....XXX.",
+    "....XXXX.",
+    "...XXXXX.",
+    "..XXXXXX.",
+    ".XXXXXXX.",
+    "..XXXXXX.",
+    "...XXXXX.",
+    "....XXXX.",
+    ".....XXX.",
+    "......XX.",
+    "........."};
 
 /* XPM data for extend track marker */
 static const gchar *INDEX_EXTEND_XPM_DATA[] = {
-  "9 12 3 1",
-  "       c None",
-  "X      c #000000000000",
-  ".      c #FFFFFFFFFFFF",
-  "......XX.",
-  ".....X.X.",
-  "....X..X.",
-  "...X...X.",
-  "..X....X.",
-  ".X.....X.",
-  "..X....X.",
-  "...X...X.",
-  "....X..X.",
-  ".....X.X.",
-  "......XX.",
-  "........."};
+    "9 12 3 1",
+    "       c None",
+    "X      c #000000000000",
+    ".      c #FFFFFFFFFFFF",
+    "......XX.",
+    ".....X.X.",
+    "....X..X.",
+    "...X...X.",
+    "..X....X.",
+    ".X.....X.",
+    "..X....X.",
+    "...X...X.",
+    "....X..X.",
+    ".....X.X.",
+    "......XX.",
+    "........."};
 
 
-SampleDisplay::SampleDisplay() :
-    trackMarkerPixmap_(NULL),
-    indexMarkerPixmap_(NULL),
-    trackMarkerSelectedPixmap_(NULL),
-    indexMarkerSelectedPixmap_(NULL),
-    trackExtendPixmap_(NULL),
-    indexExtendPixmap_(NULL),
-    sampleColor_("darkslateblue"),
-    middleLineColor_("red3"),
-    cursorColor_("gold2"),
-    markerColor_("red"),
-    selectionBackgroundColor_("#ffc0e0"),
-    white_("white"),
-    black_("black")
+SampleDisplay::SampleDisplay()
 {
     adjustment_ = Gtk::Adjustment::create(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
     adjustment_->signal_value_changed().connect(
         sigc::mem_fun(*this, &SampleDisplay::scrollTo));
-
-    trackManager_ = NULL;
-
-    width_ = height_ = chanHeight_ = lcenter_ = rcenter_ = 0;
-    timeLineHeight_ = timeLineY_ = 0;
-    timeTickWidth_ = 0;
-    timeTickSep_ = 20;
-    sampleStartX_ = sampleEndX_ = sampleWidthX_ = 0;
-    minSample_ = maxSample_ = resolution_ = 0;
-    tocEdit_ = NULL;
-
-    chanSep_ = 10;
-
-    cursorControlExtern_ = false;
-    cursorDrawn_ = false;
-    cursorX_ = 0;
-
-    markerSet_ = false;
-    selectionSet_ = false;
-    regionSet_ = false;
-    dragMode_ = DRAG_NONE;
-
-    pickedTrackMarker_ = NULL;
-    selectedTrack_ = 0;
-    selectedIndex_ = 0;
 
     // Setup drawing function
     set_draw_func(sigc::mem_fun(*this, &SampleDisplay::on_draw));
@@ -185,11 +147,11 @@ SampleDisplay::SampleDisplay() :
     indexMarkerPixmap_ =
         Gdk::Pixbuf::create_from_xpm_data(INDEX_MARKER_XPM_DATA);
     trackMarkerSelectedPixmap_ =
-            Gdk::Pixbuf::create_from_xpm_data(TRACK_MARKER_XPM_DATA);
+	Gdk::Pixbuf::create_from_xpm_data(TRACK_MARKER_XPM_DATA);
     indexMarkerSelectedPixmap_ =
         Gdk::Pixbuf::create_from_xpm_data(INDEX_MARKER_XPM_DATA);
     trackExtendPixmap_ =
-            Gdk::Pixbuf::create_from_xpm_data(TRACK_EXTEND_XPM_DATA);
+	Gdk::Pixbuf::create_from_xpm_data(TRACK_EXTEND_XPM_DATA);
     indexExtendPixmap_ =
         Gdk::Pixbuf::create_from_xpm_data(INDEX_EXTEND_XPM_DATA);
 
@@ -198,55 +160,55 @@ SampleDisplay::SampleDisplay() :
 
 void SampleDisplay::setTocEdit(Glib::RefPtr<TocEdit> t)
 {
-  tocEdit_ = t;
+    tocEdit_ = t;
 
-  Toc *toc = tocEdit_->toc();
+    Toc *toc = tocEdit_->toc();
 
-  markerSet_ = false;
-  selectionSet_ = false;
-  regionSet_ = false;
+    markerSet_ = false;
+    selectionSet_ = false;
+    regionSet_ = false;
 
-  minSample_ = 0;
+    minSample_ = 0;
 
-  if (toc->length().samples() > 0) {
-    maxSample_ = toc->length().samples() - 1;
-  }
-  else {
-    maxSample_ = 0;
-  }
+    if (toc->length().samples() > 0) {
+	maxSample_ = toc->length().samples() - 1;
+    }
+    else {
+	maxSample_ = 0;
+    }
 }
 
 void SampleDisplay::updateToc(unsigned long smin, unsigned long smax)
 {
-  if (tocEdit_ == NULL)
-    return;
+    if (tocEdit_ == NULL)
+	return;
 
-  Toc *toc = tocEdit_->toc();
+    Toc *toc = tocEdit_->toc();
 
-  if (smin <= smax) {
-    minSample_ = smin;
-    maxSample_ = smax;
-  }
-
-  if (toc->length().samples() == 0) {
-    minSample_ = maxSample_ = 0;
-  }
-  else {
-    if (maxSample_ >= toc->length().samples()) {
-      // adjust 'maxSample_' to reduced length
-      unsigned long len = maxSample_ - minSample_;
-
-      maxSample_ = toc->length().samples() - 1;
-      if (maxSample_ > len) {
-	minSample_ = maxSample_ - len;
-      }
-      else {
-	minSample_ = 0;
-      }
+    if (smin <= smax) {
+	minSample_ = smin;
+	maxSample_ = smax;
     }
-  }
 
-  setView(minSample_, maxSample_);
+    if (toc->length().samples() == 0) {
+	minSample_ = maxSample_ = 0;
+    }
+    else {
+	if (maxSample_ >= toc->length().samples()) {
+	    // adjust 'maxSample_' to reduced length
+	    unsigned long len = maxSample_ - minSample_;
+
+	    maxSample_ = toc->length().samples() - 1;
+	    if (maxSample_ > len) {
+		minSample_ = maxSample_ - len;
+	    }
+	    else {
+		minSample_ = 0;
+	    }
+	}
+    }
+
+    setView(minSample_, maxSample_);
 }
 
 void SampleDisplay::setView(unsigned long start, unsigned long end)
@@ -296,19 +258,19 @@ void SampleDisplay::setView(unsigned long start, unsigned long end)
 
 void SampleDisplay::getView(unsigned long *start, unsigned long *end)
 {
-  *start = minSample_;
-  *end = maxSample_;
+    *start = minSample_;
+    *end = maxSample_;
 }
 
 bool SampleDisplay::getSelection(unsigned long *start, unsigned long *end)
 {
-  if (selectionSet_) {
-    *start = selectionStartSample_;
-    *end = selectionEndSample_;
-    return true;
-  }
+    if (selectionSet_) {
+	*start = selectionStartSample_;
+	*end = selectionEndSample_;
+	return true;
+    }
 
-  return false;
+    return false;
 }
 
 int SampleDisplay::getMarker(unsigned long *sample)
@@ -323,8 +285,8 @@ int SampleDisplay::getMarker(unsigned long *sample)
 
 void SampleDisplay::setSelectedTrackMarker(int trackNr, int indexNr)
 {
-  selectedTrack_ = trackNr;
-  selectedIndex_ = indexNr;
+    selectedTrack_ = trackNr;
+    selectedIndex_ = indexNr;
 }
 
 void SampleDisplay::setRegion(unsigned long start, unsigned long end)
@@ -356,13 +318,13 @@ void SampleDisplay::clearRegion()
 
 int SampleDisplay::getRegion(unsigned long *start, unsigned long *end)
 {
-  if (regionSet_) {
-    *start = regionStartSample_;
-    *end = regionEndSample_;
-    return 1;
-  }
+    if (regionSet_) {
+	*start = regionStartSample_;
+	*end = regionEndSample_;
+	return 1;
+    }
 
-  return 0;
+    return 0;
 }
 
 void SampleDisplay::setCursor(int ctrl, unsigned long sample)
@@ -410,57 +372,57 @@ void SampleDisplay::scrollTo()
 
 unsigned long SampleDisplay::pixel2sample(gint x)
 {
-  if (tocEdit_ == NULL)
-    return 0;
+    if (tocEdit_ == NULL)
+	return 0;
 
-  Toc *toc = tocEdit_->toc();
-  unsigned long sample;
+    Toc *toc = tocEdit_->toc();
+    unsigned long sample;
 
-  if (toc->length().lba() == 0)
-    return 0;
+    if (toc->length().lba() == 0)
+	return 0;
 
-  assert(x >= sampleStartX_ && x <= sampleEndX_);
+    assert(x >= sampleStartX_ && x <= sampleEndX_);
 
-  x -= sampleStartX_;
+    x -= sampleStartX_;
 
-  double res = maxSample_ - minSample_;
-  res /= sampleWidthX_ - 1;
+    double res = maxSample_ - minSample_;
+    res /= sampleWidthX_ - 1;
 
-  sample = (unsigned long)(minSample_ + res * x + 0.5);
+    sample = (unsigned long)(minSample_ + res * x + 0.5);
 
-  unsigned long round = 75 * 588; // 1 second
-  unsigned long rest;
+    unsigned long round = 75 * 588; // 1 second
+    unsigned long rest;
 
-  if (res >=  2 * round) {
-    if ((rest = sample % round) != 0)
-      sample += round - rest;
-  }
-  else {
-    round = 588; // 1 block
-    if (res >= 2 * round) {
-      if ((rest = sample % round) != 0)
-	sample += round - rest;
+    if (res >=  2 * round) {
+	if ((rest = sample % round) != 0)
+	    sample += round - rest;
     }
-  }
+    else {
+	round = 588; // 1 block
+	if (res >= 2 * round) {
+	    if ((rest = sample % round) != 0)
+		sample += round - rest;
+	}
+    }
 
-  if (sample > maxSample_)
-    sample = maxSample_;
+    if (sample > maxSample_)
+	sample = maxSample_;
 
-  return sample;
+    return sample;
 }
 
 gint SampleDisplay::sample2pixel(unsigned long sample)
 {
-  if (sample < minSample_ || sample > maxSample_)
-    return -1;
+    if (sample < minSample_ || sample > maxSample_)
+	return -1;
 
-  unsigned long len = maxSample_ - minSample_;
-  double val = sample - minSample_;
+    unsigned long len = maxSample_ - minSample_;
+    double val = sample - minSample_;
 
-  val *= sampleWidthX_ - 1;
-  val /= len;
+    val *= sampleWidthX_ - 1;
+    val /= len;
 
-  return (gint)(sampleStartX_ + val + 0.5);
+    return (gint)(sampleStartX_ + val + 0.5);
 }
 
 void SampleDisplay::on_resize(int w, int h)
@@ -494,7 +456,7 @@ void SampleDisplay::on_resize(int w, int h)
 
     chanHeight_ = (height_ - timeLineHeight_ - trackLineHeight_ - 2) / 2;
 
-    lcenter_ = chanHeight_ / 2 + trackLineHeight_;
+    lcenter_ = (chanHeight_ / 2 + trackLineHeight_) + 2;
     rcenter_ = lcenter_ + timeLineHeight_ + chanHeight_;
 
     trackLineY_ = trackLineHeight_ - 1;
@@ -539,32 +501,32 @@ void SampleDisplay::on_draw(const Cairo::RefPtr<Cairo::Context>& cr, int w, int 
 
 void SampleDisplay::on_pressed(int n_press, double x, double y)
 {
-  gint ix = (gint)x;
-  gint iy = (gint)y;
+    gint ix = (gint)x;
+    gint iy = (gint)y;
 
-  dragMode_ = DRAG_NONE;
+    dragMode_ = DRAG_NONE;
 
-  // e.g. if audio is playing
-  if (cursorControlExtern_)
-    return;
+    // e.g. if audio is playing
+    if (cursorControlExtern_)
+	return;
 
-  if (ix >= sampleStartX_ && ix <= sampleEndX_) {
-    if (iy > trackLineY_) {
-      dragMode_ = DRAG_SAMPLE_MARKER;
-      dragStart_ = dragEnd_ = ix;
+    if (ix >= sampleStartX_ && ix <= sampleEndX_) {
+	if (iy > trackLineY_) {
+	    dragMode_ = DRAG_SAMPLE_MARKER;
+	    dragStart_ = dragEnd_ = ix;
+	}
+	else {
+	    if ((pickedTrackMarker_ = trackManager_->pick(ix - sampleStartX_ + 4,
+							  &dragStopMin_,
+							  &dragStopMax_)) != NULL) {
+		dragMode_ = DRAG_TRACK_MARKER;
+		dragStart_ = dragEnd_ = ix;
+		dragLastX_ = -1;
+		dragStopMin_ += sampleStartX_;
+		dragStopMax_ += sampleStartX_;
+	    }
+	}
     }
-    else {
-      if ((pickedTrackMarker_ = trackManager_->pick(ix - sampleStartX_ + 4,
-						    &dragStopMin_,
-						    &dragStopMax_)) != NULL) {
-	dragMode_ = DRAG_TRACK_MARKER;
-	dragStart_ = dragEnd_ = ix;
-	dragLastX_ = -1;
-	dragStopMin_ += sampleStartX_;
-	dragStopMax_ += sampleStartX_;
-      }
-    }
-  }
 }
 
 void SampleDisplay::on_released(int n_press, double x, double y)
@@ -612,13 +574,13 @@ void SampleDisplay::on_released(int n_press, double x, double y)
                 selectedIndex_ = pickedTrackMarker_->indexNr;
                 drawTrackLine();
                 trackMarkSelected.emit(pickedTrackMarker_->track, selectedTrack_,
-                                  selectedIndex_);
+				       selectedIndex_);
             }
             else {
                 selectedTrack_ = pickedTrackMarker_->trackNr;
                 selectedIndex_ = pickedTrackMarker_->indexNr;
                 trackMarkMoved.emit(pickedTrackMarker_->track, selectedTrack_,
-                               selectedIndex_, pixel2sample(ix));
+				    selectedIndex_, pixel2sample(ix));
             }
             pickedTrackMarker_ = NULL;
         }
@@ -1175,31 +1137,31 @@ void SampleDisplay::drawTrackMarker(int mode, gint x, int trackNr,
 
 void SampleDisplay::drawTrackLine()
 {
-  const TrackManager::Entry *run;
-  const TrackManager::Entry *selected = NULL;
+    const TrackManager::Entry *run;
+    const TrackManager::Entry *selected = NULL;
 
-  for (run = trackManager_->first(); run != NULL;
-       run = trackManager_->next()) {
-    if (run->selected != 0 && run->extend == 0) {
-      selected = run;
+    for (run = trackManager_->first(); run != NULL;
+	 run = trackManager_->next()) {
+	if (run->selected != 0 && run->extend == 0) {
+	    selected = run;
+	}
+	else if (run->indexNr != 1 || run->extend != 0) {
+	    drawTrackMarker(0, sampleStartX_ + run->xpos, run->trackNr, run->indexNr,
+			    0, run->extend);
+	}
     }
-    else if (run->indexNr != 1 || run->extend != 0) {
-      drawTrackMarker(0, sampleStartX_ + run->xpos, run->trackNr, run->indexNr,
-		      0, run->extend);
-    }
-  }
 
-  for (run = trackManager_->first(); run != NULL;
-       run = trackManager_->next()) {
-    if (run->indexNr == 1 && run->selected == 0 && run->extend == 0) {
-      drawTrackMarker(0, sampleStartX_ + run->xpos, run->trackNr, run->indexNr,
-		      0, run->extend);
+    for (run = trackManager_->first(); run != NULL;
+	 run = trackManager_->next()) {
+	if (run->indexNr == 1 && run->selected == 0 && run->extend == 0) {
+	    drawTrackMarker(0, sampleStartX_ + run->xpos, run->trackNr, run->indexNr,
+			    0, run->extend);
+	}
     }
-  }
 
-  if (selected != NULL)
-    drawTrackMarker(0, sampleStartX_ + selected->xpos, selected->trackNr,
-		    selected->indexNr, 1, 0);
+    if (selected != NULL)
+	drawTrackMarker(0, sampleStartX_ + selected->xpos, selected->trackNr,
+			selected->indexNr, 1, 0);
 }
 
 void SampleDisplay::updateTrackMarks()

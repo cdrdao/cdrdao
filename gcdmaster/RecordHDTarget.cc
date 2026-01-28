@@ -36,59 +36,44 @@
 
 RecordHDTarget::RecordHDTarget() : Gtk::Box(Gtk::Orientation::VERTICAL)
 {
-    active_ = false;
-
     set_spacing(10);
 
     // device settings
-    Gtk::Frame *recordOptionsFrame = manage(new Gtk::Frame(_(" Record Options ")));
+    auto *recordOptionsFrame = Gtk::make_managed<Gtk::Frame>(_(" Record Options "));
+    auto *grid = Gtk::make_managed<Gtk::Grid>();
+    grid->set_row_spacing(2);
+    grid->set_column_spacing(10);
+    grid->set_margin(5);
 
-    Gtk::Table *table = manage(new Gtk::Table(2, 2, false));
-    table->set_row_spacings(2);
-    table->set_col_spacings(10);
-    table->set_border_width(5);
+    recordOptionsFrame->set_child(*grid);
+    append(*recordOptionsFrame);
 
-    recordOptionsFrame->add(*table);
-    recordOptionsFrame->show_all();
-    pack_start(*recordOptionsFrame, Gtk::PACK_SHRINK);
-
-    Gtk::Label *label = manage(new Gtk::Label(_("Directory: ")));
-    table->attach(*label, 0, 1, 0, 1, Gtk::FILL);
-
-    dirEntry_ = manage(new Gtk::FileChooserButton(Gtk::FILE_CHOOSER_ACTION_SELECT_FOLDER));
-    table->attach(*dirEntry_, 1, 2, 0, 1);
-
-    label = manage(new Gtk::Label(_("Name: ")));
-    table->attach(*label, 0, 1, 1, 2, Gtk::FILL);
-
-    fileNameEntry_ = manage(new Gtk::Entry);
-    table->attach(*fileNameEntry_, 1, 2, 1, 2);
-}
-
-void RecordHDTarget::start()
-{
-    active_ = true;
-    update(UPD_ALL);
-    show();
-}
-
-void RecordHDTarget::stop()
-{
-    if (active_) {
-        hide();
-        active_ = false;
+    {
+	auto *label = Gtk::make_managed<Gtk::Label>(_("Directory: "));
+	grid->attach(*label, 0, 0);
+	auto *dirButton = Gtk::make_managed<Gtk::Button>("temp-directory-button");
+	dirButton->signal_clicked().connect(
+	    sigc::mem_fun(*this, &RecordHDTarget::on_dir_button_clicked));
+	grid->attach(*dirButton, 0, 1);
+    }
+    {
+	auto *label = Gtk::make_managed<Gtk::Label>(_("Name: "));
+	grid->attach(*label, 1, 0);
+	fileNameEntry_ = Gtk::make_managed<Gtk::Entry>();
+	grid->attach(*fileNameEntry_, 1, 1);
     }
 }
 
-void RecordHDTarget::update(unsigned long level)
+void RecordHDTarget::on_dir_button_clicked()
 {
-    if (!active_)
-        return;
-}
+    auto dialog = Gtk::FileDialog::create();
+    dialog->set_modal(true);
+    dialog->set_title(_("Select Destination Folder"));
 
-void RecordHDTarget::cancelAction()
-{
-    stop();
+    dialog->select_folder([this, dialog](const Glib::RefPtr<Gio::AsyncResult>& result) {
+	auto file = dialog->open_finish(result);
+	this->dirEntry_ = file->get_path();
+    });
 }
 
 std::string RecordHDTarget::getFilename()
@@ -98,5 +83,5 @@ std::string RecordHDTarget::getFilename()
 
 std::string RecordHDTarget::getPath()
 {
-    return dirEntry_->get_filename();
+    return dirEntry_;
 }

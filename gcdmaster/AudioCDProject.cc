@@ -119,6 +119,7 @@ void AudioCDProject::setup(int number, const Glib::ustring& path)
     projectNumber_ = number;
     if (path.empty()) {
         tocEdit_ = Glib::make_refptr_for_instance<TocEdit>(new TocEdit(nullptr, nullptr));
+	set_size_request(600, 200);
     } else {
 	auto ext = Util::fileExtension(path);
  
@@ -163,7 +164,8 @@ void AudioCDProject::setup(int number, const Glib::ustring& path)
     audioCDView_ = Gtk::make_managed<AudioCDView>(this);
     audioCDView_->set_expand(true);
     auto vbox = dynamic_cast<Gtk::Box*>(get_first_child());
-    vbox->append(*audioCDView_);
+    auto notebook = builder_->get_object<Gtk::Box>("notebook");
+    vbox->insert_child_after(*audioCDView_, *notebook);
     audioCDView_->tocEditView()->sampleViewFull();
     updateWindowTitle();
     guiUpdate(UPD_ALL);
@@ -213,13 +215,13 @@ void AudioCDProject::spin(bool val)
 
 void AudioCDProject::fullView()
 {
-//    if (audioCDView_)
-//        audioCDView_->fullView();
+    if (audioCDView_)
+        audioCDView_->fullView();
 }
 
 void AudioCDProject::sampleSelect(unsigned long start, unsigned long len)
 {
-//    audioCDView_->tocEditView()->sampleSelect(start, len);
+    audioCDView_->tocEditView()->sampleSelect(start, len);
 }
 
 void AudioCDProject::cancelEnable(bool enable)
@@ -283,20 +285,20 @@ void AudioCDProject::saveAsProject()
 
 void AudioCDProject::recordToc2CD()
 {
-    // if (!recordTocDialog_)
-    //     recordTocDialog_ = Glib::make_refptr_for_instance<RecordTocDialog>(
-    //         new RecordTocDialog(tocEdit_));
+    if (!recordTocDialog_)
+        recordTocDialog_ = Glib::make_refptr_for_instance<RecordTocDialog>(
+            new RecordTocDialog(tocEdit_));
 
-    // recordTocDialog_->start(this);
+    recordTocDialog_->start(this);
 }
 
 void AudioCDProject::projectInfo()
 {
-    // if (!tocInfoDialog_)
-    //     tocInfoDialog_ = Glib::make_refptr_for_instance<TocInfoDialog>(
-    //         new TocInfoDialog(this));
+    if (!tocInfoDialog_)
+        tocInfoDialog_ = Glib::make_refptr_for_instance<TocInfoDialog>(
+            new TocInfoDialog(this));
 
-    // tocInfoDialog_->start(tocEdit_.get());
+    tocInfoDialog_->start(tocEdit_.get());
 }
 
 void AudioCDProject::cdTextDialog()
@@ -311,6 +313,7 @@ void AudioCDProject::cdTextDialog()
 
 void AudioCDProject::update(unsigned long level)
 {
+    log_message(0, "AudioCDProject::update (%x)", level);
     // FIXME: Here we should update the menus and the icons
     //        this is, enabled/disabled.
 

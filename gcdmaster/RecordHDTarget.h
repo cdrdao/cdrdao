@@ -31,9 +31,6 @@ class RecordHDTarget : public Gtk::Box
   public:
     RecordHDTarget();
 
-    void start();
-    void stop();
-
     void update(unsigned long level);
     void cancelAction();
 
@@ -41,9 +38,9 @@ class RecordHDTarget : public Gtk::Box
     std::string getPath();
 
   private:
-    bool active_;
+    void on_dir_button_clicked();
 
-    Gtk::FileChooserButton *dirEntry_;
+    std::string dirEntry_;
     Gtk::Entry *fileNameEntry_;
 };
 

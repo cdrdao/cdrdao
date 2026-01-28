@@ -70,8 +70,8 @@ void unblockProcessMonitorSignals()
 
 static RETSIGTYPE signalHandler(int sig)
 {
-//    if (sig == SIGCHLD)
-//        PROCESS_MONITOR->handleSigChld();
+    if (sig == SIGCHLD)
+        PROCESS_MONITOR->handleSigChld();
 }
 
 
@@ -83,22 +83,17 @@ int main(int argc, char* argv[])
     CONFIG_MANAGER = new ConfigManager();
 
     // Setup process monitor
-//    PROCESS_MONITOR = new ProcessMonitor;
-//    installSignalHandler(SIGCHLD, signalHandler);
+    PROCESS_MONITOR = new ProcessMonitor;
+    installSignalHandler(SIGCHLD, signalHandler);
     PROGRESS_POOL = new ProgressDialogPool();
 
     // Setup periodic GUI updates.
-    Glib::signal_timeout().connect(sigc::ptr_fun(&guiUpdatePeriodic), 2000);
 
     installSignalHandler(SIGPIPE, SIG_IGN);
 
     // Setup devices configuration.
     CdDevice::importSettings();
     CdDevice::scan();
-
-    // This forces a CdDevice::updateDeviceStatus() so when gcdmaster is
-    // first show we already have the device status.
-    guiUpdatePeriodic();
 
     GCDMASTER->run(argc, argv);
 

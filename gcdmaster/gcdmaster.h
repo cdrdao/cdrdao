@@ -77,6 +77,8 @@ class GCDMaster : public Gtk::Application
     BlankCDDialog* blanker_ = nullptr;
     PreferencesDialog* preferences_ = nullptr;
 
+    sigc::connection updateSignal_;
+
     int argc;
     char** argv;
 };

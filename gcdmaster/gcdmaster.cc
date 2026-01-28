@@ -157,6 +157,10 @@ void GCDMaster::on_startup()
     about_->set_logo_icon_name("gcdmaster");
     about_->set_wrap_license(true);
     about_->set_license_type(Gtk::License::GPL_2_0);
+
+    // Configure update periodic signal.
+    updateSignal_ = Glib::signal_timeout().connect(sigc::ptr_fun(&guiUpdatePeriodic), 2000);
+    guiUpdate(UPD_ALL);
 }
 
 void GCDMaster::on_action_close()
@@ -188,8 +192,13 @@ void GCDMaster::on_action_open_finish(const Glib::RefPtr<Gio::AsyncResult>& resu
 
 void GCDMaster::on_action_quit()
 {
-    for (auto window : get_windows())
+    updateSignal_.disconnect();
+    log_message(0, "GCDMaster::on_action_quit, closing %d window(s)", get_windows().size());
+    for (auto window : get_windows()) {
+	log_message(0, "Closing window %s", window->get_title().c_str());
 	remove_window(*window);
+    }
+    log_message(0, "All windows closed.");
     quit();
 }
 

@@ -92,53 +92,53 @@ private:
     Glib::RefPtr<Gdk::Pixbuf> trackExtendPixmap_;
     Glib::RefPtr<Gdk::Pixbuf> indexExtendPixmap_;
 
-    Gdk::RGBA sampleColor_;
-    Gdk::RGBA middleLineColor_;
-    Gdk::RGBA cursorColor_;
-    Gdk::RGBA markerColor_;
-    Gdk::RGBA selectionBackgroundColor_;
-    Gdk::RGBA white_;
-    Gdk::RGBA black_;
+    Gdk::RGBA sampleColor_{"darkslateblue"};
+    Gdk::RGBA middleLineColor_{"red3"};
+    Gdk::RGBA cursorColor_{"gold2"};
+    Gdk::RGBA markerColor_{"red"};
+    Gdk::RGBA selectionBackgroundColor_{"#ffc0e0"};
+    Gdk::RGBA white_{"white"};
+    Gdk::RGBA black_{"black"};
 
     bool draw_me_;
     bool draw_samples_;
 
-    gint width_;
-    gint height_;
-    gint timeLineHeight_;
-    gint timeLineY_;
-    gint timeTickWidth_;
-    gint timeTickSep_;
-    gint sampleStartX_;
-    gint sampleEndX_;
-    gint sampleWidthX_;
+    gint width_ = 0;
+    gint height_ = 0;
+    gint timeLineHeight_ = 0;
+    gint timeLineY_ = 0;
+    gint timeTickWidth_ = 0;
+    gint timeTickSep_ = 20;
+    gint sampleStartX_ = 0;
+    gint sampleEndX_ = 0;
+    gint sampleWidthX_ = 0;
 
     gint trackLineHeight_;
     gint trackLineY_;
     gint trackMarkerWidth_;
-    const TrackManager::Entry *pickedTrackMarker_;
+    const TrackManager::Entry *pickedTrackMarker_ = nullptr;
 
-    gint chanSep_;
-    gint chanHeight_;
-    gint lcenter_;
-    gint rcenter_;
+    gint chanSep_ = 10;
+    gint chanHeight_ = 0;
+    gint lcenter_ = 0;
+    gint rcenter_ = 0;
 
-    TrackManager *trackManager_;
+    TrackManager *trackManager_ = nullptr;
 
     Glib::RefPtr<TocEdit> tocEdit_;
-    unsigned long minSample_;
-    unsigned long maxSample_;
-    unsigned long resolution_;
+    unsigned long minSample_ = 0;
+    unsigned long maxSample_ = 0;
+    unsigned long resolution_ = 0;
 
-    bool cursorDrawn_;
-    gint cursorX_;
-    bool cursorControlExtern_;
+    bool cursorDrawn_ = false;
+    gint cursorX_ = 0;
+    bool cursorControlExtern_ = false;
 
-    bool markerSet_;
+    bool markerSet_ = false;
     gint markerX_;
     unsigned long markerSample_;
 
-    bool selectionSet_;
+    bool selectionSet_ = false;
     unsigned long selectionStartSample_;
     unsigned long selectionEndSample_;
     gint selectionStart_;
@@ -146,14 +146,14 @@ private:
     gint selection_drag_x_;
     gint selection_drag_w_;
 
-    bool regionSet_;
+    bool regionSet_ = false;
     unsigned long regionStartSample_;
     unsigned long regionEndSample_;
 
-    int selectedTrack_;
-    int selectedIndex_;
+    int selectedTrack_ = 0;
+    int selectedIndex_ = 0;
 
-    DragMode dragMode_;
+    DragMode dragMode_ = DRAG_NONE;
     gint dragStart_, dragEnd_;
     gint dragStopMin_, dragStopMax_;
     gint dragLastX_;

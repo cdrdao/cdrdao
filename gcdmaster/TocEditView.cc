@@ -126,6 +126,12 @@ void TocEditView::sampleViewFull()
         sampleViewMax_ -= 1;
 }
 
+bool TocEditView::isSampleViewFull()
+{
+    return (sampleViewMin_ == 0 &&
+            sampleViewMax_ == -1 || sampleViewMax_ == tocEdit_->lengthSample() - 1);
+}
+
 void TocEditView::sampleViewUpdate()
 {
     if (sampleViewMax_ >= tocEdit_->lengthSample()) {

@@ -37,11 +37,14 @@
 #include "AudioCDView.h"
 #include "Project.h"
 #include "TrackInfoDialog.h"
+#include "log.h"
 
 AudioCDView::AudioCDView(AudioCDProject *project)
     : Gtk::Box(Gtk::Orientation::VERTICAL)
 {
     project_ = project;
+    set_margin_top(4);
+    set_margin_bottom(4);
     tocEditView_ = new TocEditView(project->tocEdit());
 
     addSilenceDialog_ = AddSilenceDialog::create(project_);
@@ -58,11 +61,11 @@ AudioCDView::AudioCDView(AudioCDProject *project)
     drop_target->signal_drop().connect(sigc::mem_fun(*this, &AudioCDView::on_drop), false);
     add_controller(drop_target);
 
-
     sampleDisplay_ = Gtk::make_managed<SampleDisplay>();
     sampleDisplay_->setTocEdit(project->tocEdit());
-    sampleDisplay_->set_size_request(200, 200);
+    sampleDisplay_->set_size_request(600, 200);
     sampleDisplay_->set_expand(true);
+    sampleDisplay_->set_margin_bottom(5);
     append(*sampleDisplay_);
 
     scrollBar_ = Gtk::make_managed<Gtk::Scrollbar>(
@@ -70,6 +73,10 @@ AudioCDView::AudioCDView(AudioCDProject *project)
     append(*scrollBar_);
 
     auto selectionInfoBox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
+    selectionInfoBox->set_margin_start(10);
+    selectionInfoBox->set_margin_end(10);
+    selectionInfoBox->set_margin_top(4);
+    selectionInfoBox->set_spacing(10);
     gint entry_width = 90;
 
     markerPos_ = Gtk::make_managed<Gtk::Entry>();
@@ -142,6 +149,7 @@ void AudioCDView::setup_actions()
 
 void AudioCDView::update(unsigned long level)
 {
+    log_message(0, "AudioCDView::update (%x)", level);
     if (level & (UPD_TOC_DIRTY | UPD_TOC_DATA)) {
         cursorPos_->set_text("");
     }
@@ -213,6 +221,11 @@ void AudioCDView::update(unsigned long level)
 
     trackInfoDialog_->update(level, tocEditView_);
     addSilenceDialog_->update(level, tocEditView_);
+
+    if (!tocEditView_ || tocEditView_->isSampleViewFull())
+	scrollBar_->hide();
+    else
+	scrollBar_->show();
 }
 
 void AudioCDView::zoomIn()
