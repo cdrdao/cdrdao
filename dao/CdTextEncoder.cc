@@ -67,6 +67,8 @@ class CdTextPackEntry
         unsigned char packData[18];
     };
 
+    unsigned char lastTrack;
+
     CdTextPackEntry *next_;
 };
 
@@ -74,6 +76,7 @@ CdTextPackEntry::CdTextPackEntry(CdTextItem::PackType packType, unsigned char tr
                                  unsigned char packId)
 {
     memset(&pack, 0, sizeof(pack));
+    lastTrack = trackNr;
     next_ = NULL;
 
     pack.packType = (u8)packType;
@@ -296,9 +299,11 @@ void CdTextEncoder::encodeCdTextItem(int trackNr, int blockNr, const CdTextItem 
 
         while (dataLen > 0) {
             if (first && lastPack_ != NULL && lastPack_->pack.packType == (u8)item->packType() &&
-                lastPack_->blockNr() == blockNr && lastPackPos_ < 12) {
+                lastPack_->blockNr() == blockNr && lastPackPos_ < 12 &&
+                (lastPackPos_ + dataLen >= 12 || (dataLen > 1 && lastPack_->lastTrack == trackNr - 1))) {
                 // we can use space from previous block
                 pack = lastPack_;
+                pack->lastTrack = trackNr;
             } else {
                 pack = new CdTextPackEntry(item->packType(), trackNr, packId_++);
                 pack->blockNr(blockNr);
