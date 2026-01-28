@@ -4104,7 +4104,7 @@ long CdrDriver::audioRead(TrackData::SubChannelMode sm, int byteOrder, Sample *b
                             // http://sourceforge.net/tracker/?func=detail&aid=604751&group_id=2171&atid=102171
                             // atime starts at 02:00, so subtract it
                             audioReadTrackInfo_[t].pregap =
-                                (startLba + len + 1) - (atime.lba() - 150);
+                                audioReadTrackInfo_[t].start - (atime.lba() - 150);
                             log_message(2, "Found pre-gap: %s",
                                         Msf(audioReadTrackInfo_[t].pregap).str());
                         }
