@@ -70,6 +70,7 @@ void GCDMaster::openNewProject(const Glib::ustring path = "")
     } catch (std::exception& e) {
        std::cerr << "Failed: " << e.what() << "\n";
     }
+    guiUpdate(UPD_ALL);
 }
 
 void GCDMaster::newEmptyProject()
@@ -160,7 +161,6 @@ void GCDMaster::on_startup()
 
     // Configure update periodic signal.
     updateSignal_ = Glib::signal_timeout().connect(sigc::ptr_fun(&guiUpdatePeriodic), 2000);
-    guiUpdate(UPD_ALL);
 }
 
 void GCDMaster::on_action_close()

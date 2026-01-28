@@ -29,7 +29,12 @@ static const char *KEY_CONFIGURED_DEVICES = "configured-devices";
 
 ConfigManager::ConfigManager()
 {
-    settings_ = Gio::Settings::create(NAME_SCHEMA);
+    try {
+	settings_ = Gio::Settings::create(NAME_SCHEMA);
+    } catch (...) {
+	setenv("GSETTINGS_SCHEMA_DIR", ".", false);
+	settings_ = Gio::Settings::create(NAME_SCHEMA);
+    }
 }
 
 ConfigManager::~ConfigManager()

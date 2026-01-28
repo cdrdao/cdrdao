@@ -213,7 +213,7 @@ void SampleDisplay::updateToc(unsigned long smin, unsigned long smax)
 
 void SampleDisplay::setView(unsigned long start, unsigned long end)
 {
-    printf("::setView %lu %lu\n", start, end);
+    log_message(0, "::setView %lu %lu\n", start, end);
     if (tocEdit_ == NULL)
         return;
 
@@ -245,7 +245,6 @@ void SampleDisplay::setView(unsigned long start, unsigned long end)
     minSample_ = start;
     maxSample_ = end;
 
-    updateSamples();
     queue_draw();
 
     if (toc == NULL) {
@@ -427,16 +426,18 @@ gint SampleDisplay::sample2pixel(unsigned long sample)
 
 void SampleDisplay::on_resize(int w, int h)
 {
-    if (w == width_ && h == height_)
+    if (w == width_ && h == height_) {
         return;
+    }
     width_ = w; 
     height_ = h;
-    
+
     auto context = get_pango_context();
-    Pango::FontDescription sdfont;
-    sdfont.set_family("Monospace");
-    context->set_font_description(sdfont);
-    auto metrics = context->get_metrics(context->get_font_description());
+    auto fontdesc = context->get_font_description();
+    fontdesc.set_family("Monospace");
+    context->set_font_description(fontdesc);
+    auto metrics = context->get_metrics(fontdesc,
+					context->get_language());
 
     timeLineHeight_ = ((metrics.get_ascent() + metrics.get_descent())
                        / Pango::SCALE);
@@ -445,6 +446,12 @@ void SampleDisplay::on_resize(int w, int h)
 
     trackMarkerWidth_ = ((metrics.get_approximate_digit_width() /
                           Pango::SCALE) * 5) + TRACK_MARKER_XPM_WIDTH + 2;
+
+    log_message(0, "Font metrics: %u %u %u %u",
+		metrics.get_height(),
+		metrics.get_descent(),
+		metrics.get_ascent(),
+		metrics.get_approximate_digit_width());
 
     // Don't even try to do anything smart if we haven't received a
     // reasonable window size yet. This will keep surface_ to NULL. This
@@ -456,7 +463,7 @@ void SampleDisplay::on_resize(int w, int h)
 
     chanHeight_ = (height_ - timeLineHeight_ - trackLineHeight_ - 2) / 2;
 
-    lcenter_ = (chanHeight_ / 2 + trackLineHeight_) + 2;
+    lcenter_ = chanHeight_ / 2 + trackLineHeight_;
     rcenter_ = lcenter_ + timeLineHeight_ + chanHeight_;
 
     trackLineY_ = trackLineHeight_ - 1;
@@ -480,10 +487,7 @@ void SampleDisplay::on_resize(int w, int h)
 
 void SampleDisplay::on_draw(const Cairo::RefPtr<Cairo::Context>& cr, int w, int h)
 {
-    // Handle resize if needed
-    if (w != width_ || h != height_) {
-        on_resize(w, h);
-    }
+    updateSamples();
 
     if (draw_samples_) {
         draw_surface(cr);
