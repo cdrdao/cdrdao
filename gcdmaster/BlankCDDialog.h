@@ -26,7 +26,7 @@
 
 class DeviceList;
 
-class BlankCDDialog : public GCDWindow
+class BlankCDDialog : public Gtk::Window
 {
   public:
     virtual ~BlankCDDialog() {}
@@ -35,7 +35,7 @@ class BlankCDDialog : public GCDWindow
 				 Gtk::Window& parent);
 
     void start();
-    virtual void update(unsigned long level) override;
+    virtual void update(unsigned long level);
 
   private:
     BlankCDDialog();
@@ -51,7 +51,6 @@ class BlankCDDialog : public GCDWindow
     Gtk::CheckButton *fastBlank_rb;
     Gtk::CheckButton *fullBlank_rb;
     
-    Gtk::MessageDialog *moreOptionsDialog_ = nullptr;
     Gtk::CheckButton *ejectButton_ = nullptr;
     Gtk::CheckButton *reloadButton_ = nullptr;
 
@@ -64,7 +63,6 @@ class BlankCDDialog : public GCDWindow
     // Internal Logic Methods
     void stop();
     void startAction();
-    void moreOptions(Gtk::Box* box, Gtk::Button* button);
     void speedButtonChanged();
     void speedChanged();
     

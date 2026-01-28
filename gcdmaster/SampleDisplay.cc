@@ -447,12 +447,6 @@ void SampleDisplay::on_resize(int w, int h)
     trackMarkerWidth_ = ((metrics.get_approximate_digit_width() /
                           Pango::SCALE) * 5) + TRACK_MARKER_XPM_WIDTH + 2;
 
-    log_message(0, "Font metrics: %u %u %u %u",
-		metrics.get_height(),
-		metrics.get_descent(),
-		metrics.get_ascent(),
-		metrics.get_approximate_digit_width());
-
     // Don't even try to do anything smart if we haven't received a
     // reasonable window size yet. This will keep surface_ to NULL. This
     // is important because during startup we don't control how the

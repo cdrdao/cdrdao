@@ -245,11 +245,9 @@ void GCDMaster::on_action_blank_cdrw()
 
     try {
         blanker_ = BlankCDDialog::create(builder_, *get_active_window());
-	add_window(*blanker_);
         blanker_->start();
         blanker_->present();
         blanker_->signal_hide().connect([this](){
-	    this->remove_window(*blanker_);
 	    delete(blanker_);
 	    this->blanker_ = nullptr; });
     } catch (const std::exception& ex)
