@@ -68,7 +68,7 @@ DeviceConfDialog::DeviceConfDialog()
     // Create string lists for dropdown menus
     driverStringList_ = Gtk::StringList::create({});
     for (i = 0; i <= CdDevice::maxDriverId(); i++) {
-        driverStringList_->append(CdDevice::driverName(i));
+        driverStringList_->append(CdDevice::driverNames(i));
     }
     driverMenu_.set_model(driverStringList_);
     driverMenu_.property_selected().signal_changed().connect(

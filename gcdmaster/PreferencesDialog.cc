@@ -77,30 +77,21 @@ PreferencesDialog::PreferencesDialog(BaseObjectType* cobject,
 
     auto deviceBox = builder->get_widget<Gtk::Box>("device-box");
     deviceSelector_ = Gtk::make_managed<DeviceSelector>();
+    deviceSelector_->signalChanged.connect(
+        sigc::mem_fun(*this, &PreferencesDialog::on_selection_changed));
     deviceBox->prepend(*deviceSelector_);
 
-    // Setup Device List treeview
-    // deviceListModel_ = Gtk::ListStore::create(deviceListColumns_);
-    // deviceSelector_->set_model(deviceListModel_);
-    // deviceSelector_->append_column(_("Device"), deviceListColumns_.description);
-    // deviceSelector_->append_column(_("Status"), deviceListColumns_.status);
-    // deviceSelector_->get_column(0)->set_expand(true);
-
-    // deviceSelector_->get_selection()->signal_changed().connect(
-    //     sigc::mem_fun(*this, &PreferencesDialog::on_selection_changed));
 
     // Populate Driver Combo box
     if (driverMenu_) {
         for (const auto& str : CdDevice::driverNames())
             driverMenu_->append(str);
-        driverMenu_->signal_changed().connect(sigc::mem_fun(*this, &PreferencesDialog::on_driver_changed));
     }
 
     // Populate Device type combo box
     if (devtypeMenu_) {
         for (const auto& str : CdDevice::deviceNames())
             devtypeMenu_->append(str);
-        devtypeMenu_->signal_changed().connect(sigc::mem_fun(*this, &PreferencesDialog::on_dev_type_changed));
     }
 
     read_from_settings();
@@ -153,11 +144,11 @@ void PreferencesDialog::update(unsigned long level)
 
 void PreferencesDialog::on_button_apply()
 {
-    // if (selectedDevice_)
-    //     export_selected_row(selectedDevice_);
-    // export_devices();
-    // save_to_settings();
-    // guiUpdate(UPD_CD_DEVICES);
+    if (selectedDevice_)
+        export_selected_row(selectedDevice_);
+    export_devices();
+    save_to_settings();
+    guiUpdate(UPD_CD_DEVICES);
 }
 
 void PreferencesDialog::on_button_cancel()
@@ -183,127 +174,77 @@ void PreferencesDialog::on_button_reset()
 
 void PreferencesDialog::on_selection_changed()
 {
-    // auto new_sel = deviceSelector_->selection();
+    auto new_sel = deviceSelector_->selection();
 
-    // if (selectedDevice_ != new_sel) {
-    //     if (selectedDevice_)
-    //         export_selected_row(selectedDevice_);
-    //     selectedDevice_ = new_sel;
-    //     import_selected_row(selectedDevice_);
-    // }
-}
-
-void PreferencesDialog::on_driver_changed()
-{
-    // if (selectedDevice_ && driverMenu_) {
-    //     DeviceData* data = (*selectedDevice_)[deviceListColumns_.data];
-    //     if (data) {
-    //         data->driverId = CdDevice::driverName2Id(driverMenu_->get_active_text().c_str());
-    //     }
-    // }
-}
-
-void PreferencesDialog::on_dev_type_changed()
-{
-    // if (selectedDevice_ && devtypeMenu_) {
-    //     DeviceData* data = (*selectedDevice_)[deviceListColumns_.data];
-    //     if (data) {
-    //         data->deviceType = CdDevice::devtypeName2Id(devtypeMenu_->get_active_text());
-    //     }
-    // }
+    if (selectedDevice_ != new_sel) {
+        if (selectedDevice_)
+            export_selected_row(selectedDevice_);
+        selectedDevice_ = new_sel;
+        import_selected_row(selectedDevice_);
+    }
 }
 
 void PreferencesDialog::append_entry(CdDevice* dev)
 {
-    // auto data = new DeviceData;
-    // data->dev = dev->dev();
-    // data->driverId = dev->driverId();
-    // data->options = dev->driverOptions();
-    // data->deviceType = dev->deviceType();
-
-    // auto iter = deviceListModel_->append();
-    // auto row = *iter;
-    // row[deviceListColumns_.dev] = dev->dev();
-    // row[deviceListColumns_.description] = dev->description();
-    // row[deviceListColumns_.status] = CdDevice::statusNames()[dev->status()];
-    // row[deviceListColumns_.data] = data;
+    std::stringstream tohex;
+    tohex << std::hex << dev->driverOptions();
+    
+    DeviceData data{dev->driverName(), dev->deviceTypeName(), tohex.str()};
+    dataMap_[dev] = data;
 }
 
 void PreferencesDialog::import_devices()
 {
     deviceSelector_->import();
-    // deviceSelector_->get_selection()->unselect_all();
-    // selectedDevice_ = Gtk::TreeModel::iterator(); 
-    // deviceListModel_->clear();
-
-    // for (auto dev : CdDevice::deviceList()) {
-    //     append_entry(dev);
-    // }
-
-    // if (!deviceListModel_->children().empty()) {
-    //     deviceSelector_->get_selection()->select(deviceListModel_->children().begin());
-    // }
+    for (auto dev : CdDevice::deviceList())
+        append_entry(dev);
 }
 
 void PreferencesDialog::export_devices()
 {
-    // for (auto row : deviceListModel_->children()) {
-    //     DeviceData* data = row[deviceListColumns_.data];
-    //     CdDevice* dev;
-    //     if (data && (dev = CdDevice::find(data->dev.c_str()))) {
-    //         if (dev->driverId() != data->driverId || 
-    //             dev->deviceType() != data->deviceType || 
-    //             dev->driverOptions() != data->options) {
-                
-    //             dev->driverId(data->driverId);
-    //             dev->deviceType(data->deviceType);
-    //             dev->driverOptions(data->options);
-    //             dev->manuallyConfigured(true);
-    //         }
-    //     }
-    // }
+    for (auto *dev : CdDevice::deviceList()) {
+        if (dataMap_.find(dev) != dataMap_.end()) {
+            auto data = dataMap_[dev];
+            dev->driverId(CdDevice::driverName2Id(data.driverId));
+            dev->deviceType(CdDevice::devtypeName2Id(data.deviceType));
+            dev->driverOptions(std::stoul(data.options, nullptr, 0));
+            dev->manuallyConfigured(true);
+        }
+    }
 }
 
 void PreferencesDialog::import_status()
 {
     deviceSelector_->importStatus();
-    // for (auto row : deviceListModel_->children()) {
-    //     DeviceData* data = row[deviceListColumns_.data];
-    //     CdDevice* dev;
-    //     if (data && (dev = CdDevice::find(data->dev.c_str()))) {
-    //         row[deviceListColumns_.status] = CdDevice::statusNames()[dev->status()];
-    //     }
-    // }
 }
 
-void PreferencesDialog::export_selected_row(const Gtk::TreeModel::iterator& iter)
+void PreferencesDialog::export_selected_row(CdDevice* device)
 {
-    // if (iter && driverOptionsEntry_) {
-    //     DeviceData* data = (*iter)[deviceListColumns_.data];
-    //     if (data) {
-    //         data->options = std::strtoul(driverOptionsEntry_->get_buffer()->get_text().c_str(), nullptr, 0);
-    //     }
-    // }
+    if (!device)
+        return;
+    auto data = dataMap_[device];
+    data.driverId = driverMenu_->get_active_text();
+    data.deviceType = devtypeMenu_->get_active_text();
+    data.options = driverOptionsEntry_->get_buffer()->get_text();
+    dataMap_[device] = data;
 }
 
-void PreferencesDialog::import_selected_row(const Gtk::TreeModel::iterator& iter)
+void PreferencesDialog::import_selected_row(CdDevice* device)
 {
-    // if (iter) {
-    //     DeviceData* data = (*iter)[deviceListColumns_.data];
-    //     driverMenu_->set_sensitive(true);
-    //     driverMenu_->set_active_text(CdDevice::driverNames()[data->driverId]);
-    //     devtypeMenu_->set_sensitive(true);
-    //     devtypeMenu_->set_active_text(CdDevice::deviceNames()[data->deviceType]);
-    //     driverOptionsEntry_->set_sensitive(true);
-        
-    //     char buf[48];
-    //     snprintf(buf, sizeof(buf), "0x%lx", data->options);
-    //     driverOptionsEntry_->get_buffer()->set_text(buf);
-    // } else {
-    //     driverMenu_->set_sensitive(false);
-    //     devtypeMenu_->set_sensitive(false);
-    //     driverOptionsEntry_->set_sensitive(false);
-    // }
+    if (device) {
+        auto data = dataMap_[device];
+    
+        driverMenu_->set_sensitive(true);
+        driverMenu_->set_active_text(data.driverId);
+        devtypeMenu_->set_sensitive(true);
+        devtypeMenu_->set_active_text(data.deviceType);
+        driverOptionsEntry_->set_sensitive(true);
+        driverOptionsEntry_->get_buffer()->set_text(data.options);
+    } else {
+        driverMenu_->set_sensitive(false);
+        devtypeMenu_->set_sensitive(false);
+        driverOptionsEntry_->set_sensitive(false);
+    }
 }
 
 void PreferencesDialog::rescan_action()

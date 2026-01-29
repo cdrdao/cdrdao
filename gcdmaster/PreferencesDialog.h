@@ -21,6 +21,8 @@
 #define __PREFERENCES_DIALOG_H
 
 #include <gtkmm.h>
+#include <unordered_map>
+
 #include "CdDevice.h"
 #include "DeviceSelector.h"
 #include "gcdmaster.h"
@@ -47,16 +49,14 @@ protected:
     void on_button_ok();
     void on_button_reset();
     void on_selection_changed();
-    void on_driver_changed();
-    void on_dev_type_changed();
     void on_temp_dir_button_clicked();
     void rescan_action();
 
     void import_devices();
     void export_devices();
     void import_status();
-    void import_selected_row(const Gtk::TreeModel::iterator& iter);
-    void export_selected_row(const Gtk::TreeModel::iterator& iter);
+    void import_selected_row(CdDevice* device);
+    void export_selected_row(CdDevice* device);
     void append_entry(CdDevice* dev);
 
     // Widgets
@@ -68,12 +68,12 @@ protected:
     DeviceSelector* deviceSelector_;
 
     struct DeviceData {
-        std::string dev;
-        int driverId;
-        CdDevice::DeviceType deviceType;
-        unsigned long options;
+        std::string driverId;
+        std::string deviceType;
+        std::string options;
     };
-    std::string selectedDevice_;
+    std::unordered_map<CdDevice*, struct DeviceData> dataMap_;
+    CdDevice* selectedDevice_;
 };
 
 #endif

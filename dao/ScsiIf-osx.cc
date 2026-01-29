@@ -28,6 +28,21 @@
 #include <IOKit/scsi/SCSICommandOperationCodes.h>
 #include <IOKit/scsi/SCSITaskLib.h>
 
+class DeviceManager
+{
+public:
+    DeviceManager();
+
+    bool grabDevice(SCSITaskDeviceInterface **scsi) {
+        auto err = (*scsi)->ObtainExclusiveAccess(scsi);
+        return (err == noErr);
+    }
+
+private:
+};
+
+DeviceManager *DM = nullptr;
+
 class ScsiIfImpl
 {
   public:
@@ -521,18 +536,18 @@ ScsiIf::ScanData *ScsiIf::scan(int *len, char *dev)
             log_message(-2, "scan: no scsi");
             goto clean;
         }
-        // err = (*scsi)->ObtainExclusiveAccess(scsi);
-        // if (err != noErr) {
-        //     log_message(-2, "Device already in use, please use diskutil to unmount the disc first (%d)", err);
-        //     goto clean;
-        // }
-        // exclusive=1;
-        // ret = inq(scsi, &response, &status, NULL, scanData[*len].vendor, scanData[*len].product,
-        //           scanData[*len].revision);
-        // if (ret != 0) {
-        //     log_message(-2, "scan: inq failed: %d", ret);
-        //     goto clean;
-        // }
+        err = (*scsi)->ObtainExclusiveAccess(scsi);
+        if (err != noErr) {
+            log_message(-2, "Device already in use, please use diskutil to unmount the disc first (%d)", err);
+            goto clean;
+        }
+        exclusive=1;
+        ret = inq(scsi, &response, &status, NULL, scanData[*len].vendor, scanData[*len].product,
+                  scanData[*len].revision);
+        if (ret != 0) {
+            log_message(-2, "scan: inq failed: %d", ret);
+            goto clean;
+        }
         (*len)++;
     clean:
         if (exclusive)

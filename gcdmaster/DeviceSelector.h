@@ -40,7 +40,11 @@ class DeviceSelector : public Gtk::Frame
     void import();
     void importStatus();
 
+    sigc::signal<void()> signalChanged;
+
   private:
+    void on_selection_changed(guint, guint);
+
     std::optional<CdDevice::DeviceType> filterType_;
 
     class ListColumns : public Glib::Object

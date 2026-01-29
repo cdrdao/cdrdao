@@ -31,6 +31,7 @@
 #include "TocEdit.h"
 #include "ConfigManager.h"
 #include "ProgressDialog.h"
+#include "log.h"
 
 #include <glibmm/i18n.h>
 
@@ -121,7 +122,7 @@ Glib::ustring CdDevice::settingString() const
 
     s += ",";
 
-    s += driverName(driverId_);
+    s += driverName();
 
     s += ",";
 
@@ -344,7 +345,7 @@ bool CdDevice::ejectCd(bool load)
         createScsiIf();
 
     if (scsiIf_) {
-        CdrDriver *driver = CdrDriver::createDriver(driverName(driverId_).c_str(),
+        CdrDriver *driver = CdrDriver::createDriver(driverName().c_str(),
 						    driverOptions_, scsiIf_);
 
         int ret = driver->loadUnload((load ? 0 : 1));
@@ -433,7 +434,7 @@ bool CdDevice::recordDao(Gtk::Window &parent, TocEdit *tocEdit, int simulate, in
     args[n++] = (char *)dev_.c_str();
 
     if (driverId_ > 0) {
-        snprintf(drivername, sizeof(drivername), "%s:0x%lx", driverName(driverId_).c_str(), driverOptions_);
+        snprintf(drivername, sizeof(drivername), "%s:0x%lx", driverName().c_str(), driverOptions_);
         args[n++] = "--driver";
         args[n++] = drivername;
     }
@@ -555,7 +556,7 @@ int CdDevice::extractDao(Gtk::Window &parent, const std::string& tocFileName, in
     args[n++] = (char *)dev_.c_str();
 
     if (driverId_ > 0) {
-        snprintf(drivername, sizeof(drivername), "%s:0x%lx", driverName(driverId_).c_str(), driverOptions_);
+        snprintf(drivername, sizeof(drivername), "%s:0x%lx", driverName().c_str(), driverOptions_);
         args[n++] = "--driver";
         args[n++] = drivername;
     }
@@ -689,7 +690,7 @@ int CdDevice::duplicateDao(Gtk::Window &parent, int simulate, int multiSession, 
     args[n++] = (char *)dev_.c_str();
 
     if (driverId_ > 0) {
-        snprintf(drivername, sizeof(drivername), "%s:0x%lx", driverName(driverId_).c_str(), driverOptions_);
+        snprintf(drivername, sizeof(drivername), "%s:0x%lx", driverName().c_str(), driverOptions_);
         args[n++] = "--driver";
         args[n++] = drivername;
     }
@@ -701,7 +702,7 @@ int CdDevice::duplicateDao(Gtk::Window &parent, int simulate, int multiSession, 
 
         if (readdev->driverId() > 0) {
             snprintf(r_drivername, sizeof(r_drivername), "%s:0x%lx",
-                     driverName(readdev->driverId()).c_str(), readdev->driverOptions());
+                     readdev->driverName().c_str(), readdev->driverOptions());
             args[n++] = "--source-driver";
             args[n++] = r_drivername;
         }
@@ -805,7 +806,7 @@ int CdDevice::blank(Gtk::Window *parent, int fast, int speed, int eject, int rel
 
     if (driverId_ > 0) {
         snprintf(drivername, sizeof(drivername), "%s:0x%lx",
-                 driverName(driverId_).c_str(),
+                 driverName().c_str(),
                  driverOptions_);
         args[n++] = "--driver";
         args[n++] = drivername;
@@ -875,7 +876,7 @@ int CdDevice::driverName2Id(const std::string& driverName)
     return 0;
 }
 
-CdDevice::DeviceType CdDevice::devtypeName2Id(const std::string dt)
+CdDevice::DeviceType CdDevice::devtypeName2Id(const std::string& dt)
 {
     int i = 0;
 
@@ -890,15 +891,6 @@ CdDevice::DeviceType CdDevice::devtypeName2Id(const std::string dt)
 int CdDevice::maxDriverId()
 {
     return DRIVER_NAMES.size() - 1;
-}
-
-const std::string& CdDevice::driverName(int id)
-{
-    try {
-        return DRIVER_NAMES[id];
-    } catch (...) {
-        return DRIVER_NAMES[0];
-    }
 }
 
 const std::string CdDevice::status2string(Status s)
@@ -962,8 +954,9 @@ const std::string CdDevice::deviceType2string(DeviceType t)
     return ret;
 }
 
-/* reads configured devices from gnome settings
- */
+// Reads configured devices from gnome settings. Only called once on
+// application startup.
+//
 void CdDevice::importSettings()
 {
     CdDevice *dev;
@@ -1132,9 +1125,12 @@ CdDevice *CdDevice::find(const std::string devname)
 }
 bool CdDevice::scan()
 {
+    log_message(0, "CdDevice::scan() :");
     bool changed = false;
     int i, len;
     ScsiIf::ScanData *sdata = ScsiIf::scan(&len);
+
+    log_message(0, "  scan() returned %d devices", len);
 
     if (len != DEVICE_LIST.size()) {
 	changed = true;
@@ -1147,6 +1143,7 @@ bool CdDevice::scan()
     }
 
     if (changed) {    
+        log_message(0, "  scan() status change");
 	CdDevice::clear();
 
 	if (sdata) {

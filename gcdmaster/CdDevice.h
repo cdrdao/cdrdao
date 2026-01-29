@@ -82,10 +82,14 @@ class CdDevice : public sigc::trackable
     int autoSelectDriver();
 
     int driverId() const { return driverId_; }
+    std::string driverName() const { return CdDevice::driverNames()[driverId_]; }
     void driverId(int);
+    void driverId(const std::string& n) { driverId(CdDevice::driverName2Id(n)); }
 
     DeviceType deviceType() const;
+    std::string deviceTypeName() const { return CdDevice::deviceType2string(deviceType()); }
     void deviceType(DeviceType);
+    void deviceType(const std::string& t) { deviceType(CdDevice::devtypeName2Id(t)); }
 
     unsigned long driverOptions() const;
     void driverOptions(unsigned long);
@@ -117,9 +121,9 @@ class CdDevice : public sigc::trackable
                   int *bufferFill, int *writerFill) const;
 
     static int maxDriverId();
-    static const std::string& driverName(int id);
     static int driverName2Id(const std::string&);
-    static DeviceType devtypeName2Id(const std::string);
+
+    static DeviceType devtypeName2Id(const std::string&);
 
     static const std::string status2string(Status);
     static const std::string deviceType2string(DeviceType);

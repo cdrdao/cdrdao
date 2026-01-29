@@ -44,6 +44,8 @@ DeviceSelector::DeviceSelector(std::optional<CdDevice::DeviceType> filterType)
     selectionModel_ = Gtk::SingleSelection::create(listModel_);
     selectionModel_->set_autoselect(true);
     selectionModel_->set_can_unselect(false);
+    selectionModel_->signal_selection_changed().connect(
+        sigc::mem_fun(*this, &DeviceSelector::on_selection_changed));
     colView_.set_model(selectionModel_);
 
     // Setting up ColumnView is total complete overengineered madness.
@@ -118,6 +120,11 @@ DeviceSelector::DeviceSelector(std::optional<CdDevice::DeviceType> filterType)
 
 }
 
+void DeviceSelector::on_selection_changed(guint, guint)
+{
+    this->signalChanged.emit();
+}
+
 CdDevice* DeviceSelector::selection()
 {
     auto robj = selectionModel_->get_selected_item();
@@ -163,6 +170,7 @@ void DeviceSelector::import()
 	if (match && drun->driverId() > 0)
 	    appendTableEntry(drun);
     }
+    this->signalChanged.emit();
 }
 
 void DeviceSelector::importStatus()
@@ -171,6 +179,7 @@ void DeviceSelector::importStatus()
 
 void DeviceSelector::selectOne()
 {
-    if (!listModel_->get_n_items() > 0)
+    if (listModel_->get_n_items() > 0)
 	selectionModel_->set_selected(0);
+    this->signalChanged.emit();
 }

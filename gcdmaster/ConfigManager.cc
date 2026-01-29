@@ -29,12 +29,11 @@ static const char *KEY_CONFIGURED_DEVICES = "configured-devices";
 
 ConfigManager::ConfigManager()
 {
-    try {
-	settings_ = Gio::Settings::create(NAME_SCHEMA);
-    } catch (...) {
-	setenv("GSETTINGS_SCHEMA_DIR", ".", false);
-	settings_ = Gio::Settings::create(NAME_SCHEMA);
-    }
+    // You would think this throws an exception if running locally
+    // (for debugging) without an installed schema. But no, it
+    // *crashes*. The schema system in Gnome is just pointless.
+    // TODO: switch to simpler GKeyFile.
+    settings_ = Gio::Settings::create(NAME_SCHEMA);
 }
 
 ConfigManager::~ConfigManager()
