@@ -195,9 +195,9 @@ void PreferencesDialog::append_entry(CdDevice* dev)
 
 void PreferencesDialog::import_devices()
 {
-    deviceSelector_->import();
     for (auto dev : CdDevice::deviceList())
         append_entry(dev);
+    deviceSelector_->import();
 }
 
 void PreferencesDialog::export_devices()

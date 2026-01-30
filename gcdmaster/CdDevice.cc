@@ -45,7 +45,7 @@ std::vector<std::string> CdDevice::DRIVER_NAMES = {
 	"teac-cdr55",   "toshiba",      "yamaha-cdr10x"
 };
 
-std::vector<std::string> CdDevice::DEV_TYPE_NAMES = { "CD_R", "CD_RW", "CD_ROM" };
+std::vector<std::string> CdDevice::DEV_TYPE_NAMES = { "CD-R", "CD-RW", "CD-ROM" };
 
 std::vector<std::string> CdDevice::STATUS_NAMES = {
     "Ready", "Recording", "Reading", "Waiting", "Blanking",
