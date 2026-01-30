@@ -58,13 +58,17 @@ PreferencesDialog::PreferencesDialog(BaseObjectType* cobject,
     tempDirButton_->signal_clicked().connect(
         sigc::mem_fun(*this, &PreferencesDialog::on_temp_dir_button_clicked));
 
+    cdrdaoExecButton_ = builder->get_widget<Gtk::Button>("cdrdao-exec-button");
+    cdrdaoExecButton_->signal_clicked().connect(
+        sigc::mem_fun(*this, &PreferencesDialog::on_cdrdao_exec_button_clicked));
+
     driverOptionsEntry_ = builder->get_widget<Gtk::Entry>("driver-options");
     driverOptionsEntry_->signal_activate().connect(
 	sigc::mem_fun(*this, &PreferencesDialog::on_options_activate));
     driverMenu_ = builder->get_widget<Gtk::ComboBoxText>("driver-list");
     devtypeMenu_ = builder->get_widget<Gtk::ComboBoxText>("device-type-list");
 
-    if (!applyButton || !okButton || !cancelButton || !tempDirButton_ || !driverOptionsEntry_) {
+    if (!(applyButton && okButton && cancelButton && resetButton && driverMenu_ && devtypeMenu_)) {
         throw std::runtime_error("Unable to create all GUI widgets from builder file");
     }
 
@@ -111,27 +115,37 @@ void PreferencesDialog::show_dialog()
 void PreferencesDialog::read_from_settings()
 {
     selectedTempPath_ = CONFIG_MANAGER->getTempDir();
-    if (tempDirButton_)
-        tempDirButton_->set_label(selectedTempPath_.empty() ? _("Select Folder...") : selectedTempPath_);
+    tempDirButton_->set_label(selectedTempPath_.empty()
+			      ? _("Select Folder...")
+			      : selectedTempPath_);
+
+    selectedCdrdaoExec_ = CONFIG_MANAGER->getCdrdaoPath();
+    cdrdaoExecButton_->set_label(selectedCdrdaoExec_.empty()
+				 ? _("Select Executable...")
+				 : selectedCdrdaoExec_);
 }
 
-bool PreferencesDialog::save_to_settings()
+void PreferencesDialog::save_to_settings()
 {
-    if (selectedTempPath_.empty())
-        return false;
-    
-    if (!tempFileManager.setTempDirectory(selectedTempPath_.c_str())) {
-        ErrorBox::message(*this, _("The directory you entered cannot be used..."));
-        read_from_settings();
-        return false;
+    if (!selectedTempPath_.empty()) {
+	if (!tempFileManager.setTempDirectory(selectedTempPath_.c_str())) {
+	    ErrorBox::message(*this, _("The directory you entered cannot be used..."));
+	    read_from_settings();
+	} else {
+	    try {
+		CONFIG_MANAGER->setTempDir(selectedTempPath_);
+	    } catch (const Glib::Error& error) {
+		std::cerr << error.what() << std::endl;
+	    }
+	}
     }
-
-    try {
-        CONFIG_MANAGER->setTempDir(selectedTempPath_);
-    } catch (const Glib::Error& error) {
-        std::cerr << error.what() << std::endl;
+    if (!selectedCdrdaoExec_.empty()) {
+	try {
+	    CONFIG_MANAGER->setCdrdaoPath(selectedCdrdaoExec_);
+	} catch (const Glib::Error& error) {
+	    std::cerr << error.what() << std::endl;
+	}
     }
-    return true;
 }
 
 void PreferencesDialog::update(unsigned long level)
@@ -281,32 +295,43 @@ void PreferencesDialog::on_options_activate()
 
 void PreferencesDialog::on_temp_dir_button_clicked()
 {
-    // Create the dialog
-    auto dialog = new Gtk::FileChooserDialog(*this, _("Select Temporary Directory"),
-                                             Gtk::FileChooser::Action::SELECT_FOLDER,
-                                             true /* use_header_bar */);
-    
-    dialog->add_button(_("_Cancel"), Gtk::ResponseType::CANCEL);
-    dialog->add_button(_("_Open"), Gtk::ResponseType::ACCEPT);
+    auto dialog = Gtk::FileDialog::create();
     dialog->set_modal(true);
+    dialog->set_title(_("Select Temporary Directory"));
 
-    // Set existing path if available
     if (!selectedTempPath_.empty()) {
-        dialog->set_file(Gio::File::create_for_path(selectedTempPath_));
+        dialog->set_initial_folder(Gio::File::create_for_path(selectedTempPath_));
     }
 
-    // Handle the response
-    dialog->signal_response().connect([this, dialog](int response_id) {
-        if (response_id == (int)Gtk::ResponseType::ACCEPT) {
-            auto file = dialog->get_file();
-            if (file) {
-                selectedTempPath_ = file->get_path();
-                // Update button label to show current selection
-                tempDirButton_->set_label(selectedTempPath_);
+    dialog->select_folder([this, dialog](const Glib::RefPtr<Gio::AsyncResult>& result) {
+	try {
+	    auto folder = dialog->select_folder_finish(result);
+	    if (folder) {
+		selectedTempPath_ = folder->get_path();
+		tempDirButton_->set_label(selectedTempPath_);
             }
-        }
-        delete dialog; // Clean up
+	} catch (...) {
+	}
     });
+}
 
-    dialog->show();
+void PreferencesDialog::on_cdrdao_exec_button_clicked()
+{
+    auto dialog = Gtk::FileDialog::create();
+    dialog->set_modal(true);
+    dialog->set_title(_("Select cdrdao Executable"));
+
+    if (!selectedCdrdaoExec_.empty())
+	dialog->set_initial_file(Gio::File::create_for_path(selectedCdrdaoExec_));
+
+    dialog->open([this, dialog](const Glib::RefPtr<Gio::AsyncResult>& result) {
+	try {
+	    auto file = dialog->open_finish(result);
+	    if (file) {
+		this->selectedCdrdaoExec_ = file->get_path();
+		cdrdaoExecButton_->set_label(file->get_path());
+	    }
+	} catch (...) {
+	}
+    });
 }

@@ -24,7 +24,6 @@
 #include <gtkmm.h>
 
 class SampleDisplay;
-class Project;
 class TrackInfoDialog;
 class AddFileDialog;
 class AddSilenceDialog;

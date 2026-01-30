@@ -41,7 +41,7 @@ public:
 
 protected:
     void read_from_settings();
-    bool save_to_settings();
+    void save_to_settings();
     
     // UI Event Handlers
     void on_button_apply();
@@ -50,6 +50,7 @@ protected:
     void on_button_reset();
     void on_selection_changed();
     void on_temp_dir_button_clicked();
+    void on_cdrdao_exec_button_clicked();
     void on_options_activate();
     void rescan_action();
 
@@ -62,10 +63,14 @@ protected:
 
     // Widgets
     Gtk::Button* tempDirButton_ = nullptr;
+    Gtk::Button* cdrdaoExecButton_ = nullptr;
     Gtk::Entry* driverOptionsEntry_ = nullptr;
     Gtk::ComboBoxText* driverMenu_ = nullptr;
     Gtk::ComboBoxText* devtypeMenu_ = nullptr;
+
     std::string selectedTempPath_;
+    std::string selectedCdrdaoExec_;
+    
     DeviceSelector* deviceSelector_;
 
     struct DeviceData {

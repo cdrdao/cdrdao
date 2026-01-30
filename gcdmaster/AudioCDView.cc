@@ -35,7 +35,6 @@
 #include "AddSilenceDialog.h"
 #include "AudioCDProject.h"
 #include "AudioCDView.h"
-#include "Project.h"
 #include "TrackInfoDialog.h"
 #include "log.h"
 

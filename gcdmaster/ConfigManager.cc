@@ -48,6 +48,12 @@ Glib::ustring ConfigManager::getCdrdaoPath() const
     return settings_->get_string(KEY_CDRDAO_PATH);
 }
 
+void ConfigManager::setCdrdaoPath(const Glib::ustring &dir) const
+{
+    settings_->set_string(KEY_CDRDAO_PATH, dir);
+    settings_->apply();
+}
+
 void ConfigManager::setTempDir(const Glib::ustring &dir) const
 {
     settings_->set_string(KEY_TEMP_DIR, dir);

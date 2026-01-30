@@ -22,62 +22,6 @@
               <object class="GtkNotebookPage">
                 <property name="tab">
                   <object class="GtkLabel">
-                    <property name="label" translatable="yes">Preferences</property>
-                    <property name="justify">center</property>
-                  </object>
-                </property>
-                <property name="child">
-                  <object class="GtkBox">
-                    <property name="margin-start">5</property>
-                    <property name="margin-end">5</property>
-                    <property name="margin-top">10</property>
-                    <property name="margin-bottom">10</property>
-                    <property name="orientation">vertical</property>
-                    <property name="spacing">10</property>
-                    <child>
-                      <object class="GtkFrame">
-                        <property name="halign">start</property>
-                        <property name="label" translatable="yes">Temporary files directory:</property>
-                        <child>
-                          <object class="GtkButton" id="temp-directory-button">
-                            <property name="margin-start">10</property>
-                            <property name="margin-end">10</property>
-                            <property name="label">Select Folder...</property>
-                          </object>
-                        </child>
-                        <child>
-                          <object class="GtkLabel">
-                            <property name="halign">start</property>
-                            <property name="valign">start</property>
-                            <property name="label" translatable="yes">&lt;small&gt;&lt;i&gt;Make sure selected directory has sufficient available disk space&lt;/i&gt;&lt;/small&gt;</property>
-                            <property name="use-markup">true</property>
-                            <property name="wrap">true</property>
-                          </object>
-                        </child>
-                      </object>
-                    </child>
-                    <child>
-                      <object class="GtkLabel">
-                        <property name="halign">start</property>
-                        <property name="label" translatable="yes">Cdrdao executable:</property>
-                        <property name="use-markup">true</property>
-                      </object>
-                    </child>
-                    <child>
-                      <object class="GtkButton" id="cdrdao-exec-button">
-                        <property name="margin-start">10</property>
-                        <property name="margin-end">10</property>
-                        <property name="label">Select Executable...</property>
-                      </object>
-                    </child>
-                  </object>
-                </property>
-              </object>
-            </child>
-            <child>
-              <object class="GtkNotebookPage">
-                <property name="tab">
-                  <object class="GtkLabel">
                     <property name="label" translatable="yes">Device Settings</property>
                     <property name="justify">center</property>
                   </object>
@@ -168,6 +112,94 @@
                                   <property name="column">1</property>
                                   <property name="row">2</property>
                                 </layout>
+                              </object>
+                            </child>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                  </object>
+                </property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkNotebookPage">
+                <property name="tab">
+                  <object class="GtkLabel">
+                    <property name="label" translatable="yes">Preferences</property>
+                    <property name="justify">center</property>
+                  </object>
+                </property>
+                <property name="child">
+                  <object class="GtkBox">
+                    <property name="margin-start">5</property>
+                    <property name="margin-end">5</property>
+                    <property name="margin-top">10</property>
+                    <property name="margin-bottom">10</property>
+                    <property name="orientation">vertical</property>
+                    <property name="spacing">10</property>
+                    <child>
+                      <object class="GtkFrame">
+                        <property name="label" translatable="yes">Temporary files directory:</property>
+                        <child>
+                          <object class="GtkBox">
+                            <property name="orientation">vertical</property>
+                            <property name="margin-top">10</property>
+                            <property name="margin-bottom">10</property>
+                            <property name="margin-start">20</property>
+                            <property name="margin-end">20</property>
+                            <property name="spacing">10</property>
+                            <child>
+                              <object class="GtkBox">
+                                <property name="orientation">horizontal</property>
+                                <property name="halign">start</property>
+                                <property name="margin-start">20</property>
+                                <child>
+                                  <object class="GtkButton" id="temp-directory-button">
+                                    <property name="hexpand">false</property>
+                                    <property name="margin-start">10</property>
+                                    <property name="margin-end">10</property>
+                                    <property name="label">Select Folder...</property>
+                                  </object>
+                                </child>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="GtkLabel">
+                                <property name="halign">start</property>
+                                <property name="valign">start</property>
+                                <property name="label" translatable="yes">&lt;small&gt;&lt;i&gt;Make sure selected directory has sufficient available disk space&lt;/i&gt;&lt;/small&gt;</property>
+                                <property name="use-markup">true</property>
+                                <property name="wrap">true</property>
+                              </object>
+                            </child>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkFrame">
+                        <property name="label" translatable="yes">Cdrdao executable:</property>
+                        <child>
+                          <object class="GtkBox">
+                            <property name="orientation">vertical</property>
+                            <property name="margin-top">10</property>
+                            <property name="margin-bottom">10</property>
+                            <property name="margin-start">20</property>
+                            <property name="margin-end">20</property>
+                            <property name="spacing">10</property>
+                            <child>
+                              <object class="GtkBox">
+                                <property name="orientation">horizontal</property>
+                                <property name="halign">start</property>
+                                <property name="margin-start">20</property>
+                                <child>
+                                  <object class="GtkButton" id="cdrdao-exec-button">
+                                    <property name="margin-start">10</property>
+                                    <property name="margin-end">10</property>
+                                    <property name="label" translatable="yes">Select Executable...</property>
+                                  </object>
+                                </child>
                               </object>
                             </child>
                           </object>
