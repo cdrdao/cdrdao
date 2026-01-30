@@ -155,12 +155,13 @@ TocInfoDialog::TocInfoDialog(Gtk::Window* parent)
 
     auto bbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
     bbox->set_margin(10);
-    bbox->set_halign(Gtk::Align::CENTER);
+    bbox->set_spacing(5);
+    bbox->set_halign(Gtk::Align::END);
 
-    applyButton_ = Gtk::make_managed<Gtk::Button>("apply");
+    applyButton_ = Gtk::make_managed<Gtk::Button>("Apply");
     applyButton_->signal_clicked().connect(sigc::mem_fun(*this, &TocInfoDialog::applyAction));
     bbox->append(*applyButton_);
-    auto closeButton = Gtk::make_managed<Gtk::Button>("close");
+    auto closeButton = Gtk::make_managed<Gtk::Button>("Close");
     closeButton->signal_clicked().connect(
         sigc::mem_fun(*this, &TocInfoDialog::closeAction));
     bbox->append(*closeButton);
@@ -206,14 +207,14 @@ Gtk::Box* TocInfoDialog::createCdTextPage(int n)
     add_row(0, _("Language:"), *(cdTextPages_[n].language));
     add_row(1, _("Title:"), *(cdTextPages_[n].title));
     add_row(2, _("Performer:"), *(cdTextPages_[n].performer));
-    add_row(3, _("Songwriter:"), *(cdTextPages_[n].performer));
-    add_row(4, _("Composer:"), *(cdTextPages_[n].performer));
-    add_row(5, _("Arranger:"), *(cdTextPages_[n].performer));
-    add_row(6, _("Message:"), *(cdTextPages_[n].performer));
-    add_row(7, _("Catalog:"), *(cdTextPages_[n].performer));
-    add_row(8, _("UPC/EAN:"), *(cdTextPages_[n].performer));
-    add_row(9, _("Genre:"), *(cdTextPages_[n].performer));
-    add_row(10, _("Genre Info:"), *(cdTextPages_[n].performer));
+    add_row(3, _("Songwriter:"), *(cdTextPages_[n].songwriter));
+    add_row(4, _("Composer:"), *(cdTextPages_[n].composer));
+    add_row(5, _("Arranger:"), *(cdTextPages_[n].arranger));
+    add_row(6, _("Message:"), *(cdTextPages_[n].message));
+    add_row(7, _("Catalog:"), *(cdTextPages_[n].catalog));
+    add_row(8, _("UPC/EAN:"), *(cdTextPages_[n].upcEan));
+    add_row(9, _("Genre:"), *(cdTextPages_[n].genre));
+    add_row(10, _("Genre Info:"), *(cdTextPages_[n].genreInfo));
 
     auto vbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL);
     vbox->append(*grid);

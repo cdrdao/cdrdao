@@ -96,6 +96,8 @@ AudioCDProject::AudioCDProject(BaseObjectType* cobject,
         throw std::runtime_error("Menu resource not found");
     gears->set_menu_model(wmenu);
 
+    headerBarTitle_ = builder->get_object<Gtk::Label>("header-bar-title");
+
     soundInterface_ = nullptr;
     buttonPlay_ = nullptr;
     buttonStop_ = nullptr;
@@ -183,12 +185,15 @@ AudioCDProject::~AudioCDProject()
 
 void AudioCDProject::updateWindowTitle()
 {
-    std::string s(tocEdit_->filename());
-    s += " - ";
+    std::string s;
     if (tocEdit_->tocDirty())
-        s += " (*)";
+        s += "* ";
+    s += tocEdit_->filename();
 
     set_title(s);
+    s += " - Gnome CD Master";
+    if (headerBarTitle_)
+	headerBarTitle_->set_label(s);
 }
 
 void AudioCDProject::status(const char *msg)
@@ -293,6 +298,7 @@ void AudioCDProject::recordToc2CD()
             new RecordTocDialog(tocEdit_));
 
     recordTocDialog_->start(this);
+    recordTocDialog_->present();
 }
 
 void AudioCDProject::projectInfo()
@@ -302,6 +308,7 @@ void AudioCDProject::projectInfo()
             new TocInfoDialog(this));
 
     tocInfoDialog_->start(tocEdit_.get());
+    tocInfoDialog_->present();
 }
 
 void AudioCDProject::cdTextDialog()

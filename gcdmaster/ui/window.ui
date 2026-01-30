@@ -195,7 +195,7 @@
           </object>
         </child>
         <child type="title">
-          <object class="GtkLabel">
+          <object class="GtkLabel" id="header-bar-title">
             <property name="label" translatable="yes">Gnome CD Master</property>
           </object>
         </child>

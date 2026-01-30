@@ -136,6 +136,7 @@ class AudioCDProject : public GCDWindow
     void cdTextDialog();
     virtual void update(unsigned long level) override;
 
+    Glib::RefPtr<Gtk::Label> headerBarTitle_;
     Glib::RefPtr<Gtk::Label> statusbar_;
     Glib::RefPtr<Gtk::ProgressBar> progressbar_;
     Glib::RefPtr<Gtk::Button> stopButton_;

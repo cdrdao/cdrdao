@@ -300,7 +300,7 @@ FileExtension fileExtension(const std::string& path)
     if (strlen(ext.c_str()) <= 1)
 	return FileExtension::UNKNOWN;
 
-    return fileExtension(&ext.c_str()[1]);
+    return fileExtension(ext.c_str());
 }
 
 string to_utf8(const u8 *input, size_t input_size, Util::Encoding enc)

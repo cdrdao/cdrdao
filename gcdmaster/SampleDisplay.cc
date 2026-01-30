@@ -567,8 +567,14 @@ void SampleDisplay::on_released(int n_press, double x, double y)
         else if (dragMode_ == DRAG_TRACK_MARKER) {
             if (dragStart_ - ix >= -5 && dragStart_ - ix <= 5) {
                 trackManager_->select(pickedTrackMarker_);
-                selectedTrack_ = pickedTrackMarker_->trackNr;
-                selectedIndex_ = pickedTrackMarker_->indexNr;
+
+                if (selectedTrack_ == pickedTrackMarker_->trackNr &&
+		    selectedIndex_ == pickedTrackMarker_->indexNr) {
+		    selectedTrack_ = selectedIndex_ = 0;
+		} else {
+		    selectedTrack_ = pickedTrackMarker_->trackNr;
+		    selectedIndex_ = pickedTrackMarker_->indexNr;
+		}
                 drawTrackLine();
                 trackMarkSelected.emit(pickedTrackMarker_->track, selectedTrack_,
 				       selectedIndex_);
