@@ -112,7 +112,7 @@ class AudioCDProject : public GCDWindow
     TocReader tocReader;
     Glib::RefPtr<Gtk::Builder> builder_;
     int projectNumber_;
-    bool new_ = true;
+    bool new_ = false;
 
     SoundIF *soundInterface_;
     unsigned long playLength_; // remaining play length

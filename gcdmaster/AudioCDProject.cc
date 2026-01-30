@@ -123,27 +123,24 @@ void AudioCDProject::setup(int number, const Glib::ustring& path)
 {
     projectNumber_ = number;
     if (path.empty()) {
-        tocEdit_ = Glib::make_refptr_for_instance<TocEdit>(new TocEdit(nullptr, nullptr));
+        tocEdit_ = Glib::make_refptr_for_instance<TocEdit>(new TocEdit(nullptr, ""));
 	set_size_request(600, 200);
+        std::ostringstream oss;
+        oss << "unnamed-" << projectNumber_ << ".toc";
+        tocEdit_->filename(oss.str().c_str());
+        new_ = true;
     } else {
 	auto ext = Util::fileExtension(path);
  
 	switch (ext) {
 	case Util::FileExtension::TOC:
 	case Util::FileExtension::CUE:
-	    tocEdit_ = Glib::make_refptr_for_instance<TocEdit>(new TocEdit(nullptr, nullptr));
+	    tocEdit_ = Glib::make_refptr_for_instance<TocEdit>(new TocEdit(nullptr, ""));
 	    if (tocEdit_->readToc(path.c_str()) != 0)
 		throw std::runtime_error("Could not parse TOC file");
 	    break;
 	default:
 	    throw std::runtime_error("Unrecognized format");
-	}
-
-	if (ext == Util::FileExtension::TOC) {
-	    new_ = false;
-	    std::ostringstream oss;
-	    oss << "unnamed-" << projectNumber_ << ".toc";
-	    tocEdit_->filename(oss.str().c_str());
 	}
     }
 
@@ -168,6 +165,9 @@ void AudioCDProject::setup(int number, const Glib::ustring& path)
 
     audioCDView_ = Gtk::make_managed<AudioCDView>(this);
     audioCDView_->set_expand(true);
+    audioCDView_->signal_tocModified.connect(
+        sigc::mem_fun(*this, &AudioCDProject::update));
+
     auto vbox = dynamic_cast<Gtk::Box*>(get_first_child());
     auto audio_toolbar = builder_->get_object<Gtk::Box>("audio-toolbar");
     vbox->insert_child_after(*audioCDView_, *audio_toolbar);
@@ -188,7 +188,7 @@ void AudioCDProject::updateWindowTitle()
     std::string s;
     if (tocEdit_->tocDirty())
         s += "* ";
-    s += tocEdit_->filename();
+    s += tocEdit_->filename().filename();
 
     set_title(s);
     s += " - Gnome CD Master";
@@ -244,7 +244,7 @@ bool AudioCDProject::on_close_request()
     if (tocEdit_->tocDirty()) {
 
         Glib::ustring message = "Project ";
-        message += tocEdit_->filename();
+        message += tocEdit_->filename().string();
         message += " not saved.";
 
         auto box = Ask2Box::create(*this, message, 1,
@@ -276,7 +276,7 @@ void AudioCDProject::saveProject()
     }
 
     if (tocEdit_->saveToc() == 0) {
-        statusMessage(_("Project saved to \"%s\"."), tocEdit_->filename());
+        statusMessage(_("Project saved to \"%s\"."), tocEdit_->filename().c_str());
         guiUpdate(UPD_TOC_DIRTY);
     } else {
         std::string s(_("Cannot save toc to \""));

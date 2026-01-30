@@ -39,17 +39,16 @@
 #include "SampleManager.h"
 #include "guiUpdate.h"
 
-TocEdit::TocEdit(Toc *t, const char *filename)
+TocEdit::TocEdit(Toc *t, const std::string& filename)
 {
     toc_ = NULL;
     sampleManager_ = NULL;
-    filename_ = NULL;
     trackDataScrap_ = NULL;
 
     updateLevel_ = 0;
     editBlocked_ = false;
 
-    if (filename == NULL)
+    if (filename.empty())
         toc(t, "unnamed.toc");
     else
         toc(t, filename);
@@ -67,14 +66,11 @@ TocEdit::~TocEdit()
     if (sampleManager_)
         delete sampleManager_;
 
-    if (filename_)
-        delete[] filename_;
-
     if (trackDataScrap_)
         delete trackDataScrap_;
 }
 
-void TocEdit::toc(Toc *t, const char *filename)
+void TocEdit::toc(Toc *t, const std::string& filename)
 {
     if (toc_)
         delete toc_;
@@ -84,10 +80,7 @@ void TocEdit::toc(Toc *t, const char *filename)
     else
         toc_ = t;
 
-    if (filename != NULL) {
-        delete[] filename_;
-        filename_ = strdupCC(filename);
-    }
+    filename_ = filename;
 
     tocDirty_ = false;
     editBlocked_ = false;
@@ -127,12 +120,10 @@ SampleManager *TocEdit::sampleManager()
 
 void TocEdit::tocDirty(bool f)
 {
-    bool old = tocDirty_;
+    if (tocDirty_ != f)
+        updateLevel_ |= UPD_TOC_DIRTY;
 
     tocDirty_ = f;
-
-    if (old != tocDirty_)
-        updateLevel_ |= UPD_TOC_DIRTY;
 }
 
 void TocEdit::blockEdit()
@@ -166,20 +157,12 @@ unsigned long TocEdit::lengthSample() const
     return toc_->length().samples();
 }
 
-void TocEdit::filename(const char *fname)
+void TocEdit::filename(const std::string& fname)
 {
-    if (fname != NULL && *fname != 0) {
-        char *s = strdupCC(fname);
-        delete[] filename_;
-        filename_ = s;
-
+    if (!fname.empty()) {
+        filename_ = fname;
         updateLevel_ |= UPD_TOC_DATA;
     }
-}
-
-const char *TocEdit::filename() const
-{
-    return filename_;
 }
 
 int TocEdit::readToc(const char *fname)
@@ -212,7 +195,7 @@ int TocEdit::saveToc()
     int ret = toc_->write(filename_);
 
     if (ret == 0)
-        tocDirty(0);
+        tocDirty(false);
 
     return ret;
 }
@@ -226,7 +209,7 @@ int TocEdit::saveAsToc(const char *fname)
 
         if (ret == 0) {
             filename(fname);
-            tocDirty(0);
+            tocDirty(false);
             updateLevel_ |= UPD_TOC_DATA;
         }
 
@@ -244,7 +227,7 @@ int TocEdit::moveTrackMarker(int trackNr, int indexNr, long lba)
     int ret = toc_->moveTrackMarker(trackNr, indexNr, lba);
 
     if (ret == 0) {
-        tocDirty(1);
+        tocDirty(true);
         updateLevel_ |= UPD_TRACK_DATA;
     }
 
@@ -259,9 +242,8 @@ int TocEdit::addTrackMarker(long lba)
     int ret = toc_->addTrackMarker(lba);
 
     if (ret == 0) {
-        tocDirty(1);
-        // llanero: different views
-        //     updateLevel_ |= UPD_TOC_DATA | UPD_TRACK_DATA;
+        tocDirty(true);
+        updateLevel_ |= UPD_TOC_DATA | UPD_TRACK_DATA;
     }
 
     return ret;
@@ -275,9 +257,8 @@ int TocEdit::addIndexMarker(long lba)
     int ret = toc_->addIndexMarker(lba);
 
     if (ret == 0) {
-        tocDirty(1);
-        // llanero: different views
-        //     updateLevel_ |= UPD_TRACK_DATA;
+        tocDirty(true);
+        updateLevel_ |= UPD_TRACK_DATA;
     }
 
     return ret;
@@ -291,9 +272,8 @@ int TocEdit::addPregap(long lba)
     int ret = toc_->addPregap(lba);
 
     if (ret == 0) {
-        tocDirty(1);
-        // llanero: different views
-        //     updateLevel_ |= UPD_TRACK_DATA;
+        tocDirty(true);
+        updateLevel_ |= UPD_TRACK_DATA;
     }
 
     return ret;
@@ -307,9 +287,8 @@ int TocEdit::removeTrackMarker(int trackNr, int indexNr)
     int ret = toc_->removeTrackMarker(trackNr, indexNr);
 
     if (ret == 0) {
-        tocDirty(1);
-        // llanero: different views
-        //     updateLevel_ |= UPD_TOC_DATA | UPD_TRACK_DATA;
+        tocDirty(true);
+        updateLevel_ |= UPD_TOC_DATA | UPD_TRACK_DATA;
     }
 
     return ret;
@@ -360,7 +339,7 @@ bool TocEdit::curAppendTrack(QueueJob *job)
     long start, end;
     list.append(data);
     toc_->appendTrack(&list, &start, &end);
-    tocDirty(1);
+    tocDirty(true);
     sampleManager_->scanToc(Msf(start).samples(), Msf(end).samples() - 1);
     return true;
 }
@@ -379,7 +358,7 @@ bool TocEdit::curAppendFile(QueueJob *job)
         delete data;
         return false;
     }
-    tocDirty(1);
+    tocDirty(true);
     sampleManager_->scanToc(Msf(start).samples(), Msf(end).samples() - 1);
     return true;
 }
@@ -401,7 +380,7 @@ bool TocEdit::curInsertFile(QueueJob *job)
     job->len = list.length();
     sampleManager_->insertSamples(job->pos, job->len, NULL);
     sampleManager_->scanToc(job->pos, job->pos + job->len);
-    tocDirty(1);
+    tocDirty(true);
     return true;
 }
 
@@ -672,7 +651,7 @@ int TocEdit::appendSilence(unsigned long length)
 
             sampleManager_->scanToc(Msf(start).samples(), Msf(end).samples() - 1, true);
 
-            tocDirty(1);
+            tocDirty(true);
             updateLevel_ |= UPD_TOC_DATA | UPD_TRACK_DATA;
         }
     }
@@ -698,7 +677,7 @@ int TocEdit::insertSilence(unsigned long length, unsigned long pos)
             sampleManager_->insertSamples(pos, length, NULL);
             sampleManager_->scanToc(pos, pos + length, true);
 
-            tocDirty(1);
+            tocDirty(true);
             updateLevel_ |= UPD_TOC_DATA | UPD_TRACK_DATA | UPD_SAMPLE_SEL;
             return 0;
         }
@@ -716,7 +695,7 @@ void TocEdit::setTrackCopyFlag(int trackNr, int flag)
 
     if (t != NULL) {
         t->copyPermitted(flag);
-        tocDirty(1);
+        tocDirty(true);
         updateLevel_ |= UPD_TRACK_DATA;
     }
 }
@@ -730,7 +709,7 @@ void TocEdit::setTrackPreEmphasisFlag(int trackNr, int flag)
 
     if (t != NULL) {
         t->preEmphasis(flag);
-        tocDirty(1);
+        tocDirty(true);
         updateLevel_ |= UPD_TRACK_DATA;
     }
 }
@@ -744,7 +723,7 @@ void TocEdit::setTrackAudioType(int trackNr, int flag)
 
     if (t != NULL) {
         t->audioType(flag);
-        tocDirty(1);
+        tocDirty(true);
         updateLevel_ |= UPD_TRACK_DATA;
     }
 }
@@ -758,7 +737,7 @@ void TocEdit::setTrackIsrcCode(int trackNr, const char *s)
 
     if (t != NULL) {
         if (t->isrc(s) == 0) {
-            tocDirty(1);
+            tocDirty(true);
             updateLevel_ |= UPD_TRACK_DATA;
         }
     }
@@ -778,7 +757,7 @@ void TocEdit::setCdTextItem(int trackNr, CdTextItem::PackType type, int blockNr,
         toc_->removeCdTextItem(trackNr, type, blockNr);
     }
 
-    tocDirty(1);
+    tocDirty(true);
 
     updateLevel_ |= (trackNr == 0) ? UPD_TOC_DATA : UPD_TRACK_DATA;
 }
@@ -800,7 +779,7 @@ void TocEdit::setCdTextGenreItem(int blockNr, int code1, int code2, const char *
         toc_->addCdTextItem(0, item);
     }
 
-    tocDirty(1);
+    tocDirty(true);
 
     updateLevel_ |= UPD_TOC_DATA;
 }
@@ -811,7 +790,7 @@ void TocEdit::setCdTextLanguage(int blockNr, int langCode)
         return;
 
     toc_->cdTextLanguage(blockNr, langCode);
-    tocDirty(1);
+    tocDirty(true);
 
     updateLevel_ |= UPD_TOC_DATA;
 }
@@ -822,7 +801,7 @@ void TocEdit::setCatalogNumber(const char *s)
         return;
 
     if (toc_->catalog(s) == 0) {
-        tocDirty(1);
+        tocDirty(true);
         updateLevel_ |= UPD_TOC_DATA;
     }
 }
@@ -833,7 +812,7 @@ void TocEdit::setTocType(Toc::Type type)
         return;
 
     toc_->tocType(type);
-    tocDirty(1);
+    tocDirty(true);
     updateLevel_ |= UPD_TOC_DATA;
 }
 
@@ -868,7 +847,7 @@ int TocEdit::removeTrackData(TocEditView *view)
             view->sampleSelectionClear();
             view->sampleMarker(selMin);
 
-            tocDirty(1);
+            tocDirty(true);
         }
         break;
 
@@ -907,9 +886,8 @@ int TocEdit::insertTrackData(TocEditView *view)
 
             view->sampleSelect(marker, marker + len - 1);
 
-            tocDirty(1);
-            // llanero: different views
-            //       updateLevel_ |= UPD_TOC_DATA | UPD_TRACK_DATA | UPD_SAMPLE_SEL;
+            tocDirty(true);
+            updateLevel_ |= UPD_TOC_DATA | UPD_TRACK_DATA | UPD_SAMPLE_SEL;
         }
     } else {
         long start, end;
@@ -925,7 +903,7 @@ int TocEdit::insertTrackData(TocEditView *view)
 
             view->sampleSelect(Msf(start).samples(), Msf(end).samples() - 1);
 
-            tocDirty(1);
+            tocDirty(true);
             updateLevel_ |= UPD_TOC_DATA | UPD_TRACK_DATA | UPD_SAMPLE_SEL;
         }
     }

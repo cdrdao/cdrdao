@@ -613,7 +613,7 @@ void AudioCDView::removeTrackMark()
         switch (project_->tocEdit()->removeTrackMarker(trackNr, indexNr)) {
         case 0:
             project_->statusMessage(_("Removed track/index marker."));
-            signal_tocModified(UPD_TOC_DATA | UPD_TRACK_DATA | UPD_SAMPLE_MARKER);
+            signal_tocModified.emit(UPD_TOC_DATA | UPD_TRACK_DATA | UPD_SAMPLE_MARKER);
             break;
         case 1:
             project_->statusMessage(_("Cannot remove first track."));

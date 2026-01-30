@@ -98,7 +98,7 @@ void RecordTocSource::update(unsigned long level)
         if (level & UPD_TOC_DATA) {
             const Toc *toc = tocEdit_->toc();
 
-            projectLabel_.set_text(tocEdit_->filename());
+            projectLabel_.set_text(tocEdit_->filename().string());
             tocTypeLabel_.set_text(toc->tocType2String(toc->tocType()));
             nofTracksLabel_.set_text(std::to_string(toc->nofTracks()));
 

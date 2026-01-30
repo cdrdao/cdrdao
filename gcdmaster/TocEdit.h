@@ -23,6 +23,7 @@
 #include <list>
 #include <string>
 #include <gtkmm.h>
+#include <filesystem>
 
 #include "CdTextItem.h"
 #include "FormatConverter.h"
@@ -38,10 +39,10 @@ class TocEditView;
 class TocEdit : public Glib::Object
 {
   public:
-    TocEdit(Toc *, const char *);
+    TocEdit(Toc *, const std::string&);
     ~TocEdit();
 
-    void toc(Toc *, const char *);
+    void toc(Toc *, const std::string&);
     Toc *toc() const;
 
     SampleManager *sampleManager();
@@ -49,10 +50,7 @@ class TocEdit : public Glib::Object
     unsigned long lengthSample() const;
 
     void tocDirty(bool);
-    bool tocDirty() const
-    {
-        return tocDirty_;
-    }
+    bool tocDirty() const { return tocDirty_; }
 
     void blockEdit();
     void unblockEdit();
@@ -64,8 +62,8 @@ class TocEdit : public Glib::Object
     // returns and resets update level
     unsigned long updateLevel();
 
-    void filename(const char *);
-    const char *filename() const;
+    void filename(const std::string& f);
+    const std::filesystem::path& filename() const { return filename_; }
 
     int readToc(const char *);
     int saveToc();
@@ -123,7 +121,7 @@ class TocEdit : public Glib::Object
     SampleManager *sampleManager_;
     TaskManager tm_;
 
-    char *filename_;
+    std::filesystem::path filename_;
 
     TrackDataScrap *trackDataScrap_;
 

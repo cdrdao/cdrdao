@@ -417,7 +417,7 @@ bool CdDevice::recordDao(Gtk::Window &parent, TocEdit *tocEdit, int simulate, in
 
     assert(n <= 20);
 
-    PROGRESS_POOL->start(parent, this, tocEdit->filename());
+    PROGRESS_POOL->start(parent, this, tocEdit->filename().c_str());
 
     // Remove the SCSI interface of this device to avoid problems with double
     // usage of device nodes.
