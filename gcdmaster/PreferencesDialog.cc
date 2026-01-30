@@ -59,6 +59,8 @@ PreferencesDialog::PreferencesDialog(BaseObjectType* cobject,
         sigc::mem_fun(*this, &PreferencesDialog::on_temp_dir_button_clicked));
 
     driverOptionsEntry_ = builder->get_widget<Gtk::Entry>("driver-options");
+    driverOptionsEntry_->signal_activate().connect(
+	sigc::mem_fun(*this, &PreferencesDialog::on_options_activate));
     driverMenu_ = builder->get_widget<Gtk::ComboBoxText>("driver-list");
     devtypeMenu_ = builder->get_widget<Gtk::ComboBoxText>("device-type-list");
 
@@ -134,6 +136,7 @@ bool PreferencesDialog::save_to_settings()
 
 void PreferencesDialog::update(unsigned long level)
 {
+    log_message(1, "[update %x] PreferencesDialog", level);
     if (!is_visible()) return;
 
     if (level & UPD_CD_DEVICES)
@@ -187,7 +190,7 @@ void PreferencesDialog::on_selection_changed()
 void PreferencesDialog::append_entry(CdDevice* dev)
 {
     std::stringstream tohex;
-    tohex << std::hex << dev->driverOptions();
+    tohex << "0x" << std::hex << dev->driverOptions();
     
     DeviceData data{dev->driverName(), dev->deviceTypeName(), tohex.str()};
     dataMap_[dev] = data;
@@ -207,7 +210,12 @@ void PreferencesDialog::export_devices()
             auto data = dataMap_[dev];
             dev->driverId(CdDevice::driverName2Id(data.driverId));
             dev->deviceType(CdDevice::devtypeName2Id(data.deviceType));
-            dev->driverOptions(std::stoul(data.options, nullptr, 0));
+	    try {
+		dev->driverOptions(data.options.empty() ? 0 : std::stoul(data.options, nullptr, 0));
+	    } catch (...) {
+		ErrorBox::message(*this, _("Could not parse hex options value. Setting to 0."));
+		dev->driverOptions(0);
+	    }
             dev->manuallyConfigured(true);
         }
     }
@@ -251,6 +259,24 @@ void PreferencesDialog::rescan_action()
 {
     CdDevice::scan();
     guiUpdate(UPD_CD_DEVICES);
+}
+
+void PreferencesDialog::on_options_activate()
+{
+    auto val = driverOptionsEntry_->get_buffer()->get_text();
+    auto hexvalue = 0;
+
+    if (!val.empty()) {
+	try {
+	    hexvalue = std::stoul(val, nullptr, 16);
+	} catch (...) {
+	    log_message(0, "nope");
+	    ErrorBox::message(*this, _("Please enter a hexadecimal value"));
+	}
+    }
+    std::stringstream tohex;
+    tohex << "0x" << std::hex << hexvalue;
+    driverOptionsEntry_->get_buffer()->set_text(tohex.str());
 }
 
 void PreferencesDialog::on_temp_dir_button_clicked()

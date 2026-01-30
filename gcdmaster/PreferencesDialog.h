@@ -50,6 +50,7 @@ protected:
     void on_button_reset();
     void on_selection_changed();
     void on_temp_dir_button_clicked();
+    void on_options_activate();
     void rescan_action();
 
     void import_devices();

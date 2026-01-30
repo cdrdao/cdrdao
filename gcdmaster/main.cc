@@ -27,20 +27,14 @@
 #include "config.h"
 
 #include "xcdrdao.h"
-//#include "TocEdit.h"
-//#include "TrackInfoDialog.h"
-//#include "AddSilenceDialog.h"
-//#include "AddFileDialog.h"
-//#include "DeviceConfDialog.h"
 #include "ProgressDialog.h"
 #include "guiUpdate.h"
 #include "CdDevice.h"
 #include "ProcessMonitor.h"
 #include "ConfigManager.h"
-
 #include "gcdmaster.h"
-
 #include "port.h"
+#include "log.h"
 
 ProcessMonitor*     PROCESS_MONITOR = NULL;
 ProgressDialogPool* PROGRESS_POOL = NULL;
@@ -77,6 +71,9 @@ static RETSIGTYPE signalHandler(int sig)
 
 int main(int argc, char* argv[])
 {
+    auto ll = getenv("LOG_LEVEL");
+    log_set_verbose(ll ? atoi(ll) : 0);
+
     GCDMASTER = GCDMaster::create();
    
     // create configuration manager

@@ -288,10 +288,10 @@ void BlankCDDialog::speedButtonChanged()
 
 void BlankCDDialog::update(unsigned long level)
 {
+    log_message(1, "[update %x] BlankCDWindow\n", level);
+
     if (!active_)
 	return;
-
-    log_message(0, "BlankCDWindow update (%d)\n", level);
 
     set_title("Blank CD Rewritable");
 

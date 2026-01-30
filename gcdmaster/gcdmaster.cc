@@ -80,11 +80,14 @@ void GCDMaster::newEmptyProject()
 
 void GCDMaster::update(unsigned long level)
 {
+    log_message(1, "[update %x] GCDMaster", level);
     for (auto window : get_windows()) {
         auto w = dynamic_cast<GCDWindow*>(window);
         if (w)
             w->update(level);
     }
+    if (preferences_)
+	preferences_->update(level);
 }
 
 void GCDMaster::on_startup()

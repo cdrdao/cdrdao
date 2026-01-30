@@ -24,6 +24,7 @@
 
 #include "ConfigManager.h"
 #include "gcdmaster.h"
+#include "log.h"
 
 //
 // GLOBAL objects.

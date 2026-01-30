@@ -316,7 +316,7 @@ void AudioCDProject::cdTextDialog()
 
 void AudioCDProject::update(unsigned long level)
 {
-    log_message(0, "AudioCDProject::update (%x)", level);
+    log_message(1, "[update %x] AudioCDProject", level);
     // FIXME: Here we should update the menus and the icons
     //        this is, enabled/disabled.
 
