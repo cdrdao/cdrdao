@@ -11,132 +11,126 @@
         <property name="can-focus">False</property>
         <property name="orientation">vertical</property>
         <child>
-          <object class="GtkBox" id="notebook">
+          <object class="GtkBox" id="audio-toolbar">
+            <property name="orientation">horizontal</property>
             <property name="can-focus">True</property>
-            <property name="orientation">vertical</property>
             <child>
-              <object class="GtkBox" id="audio-toolbar">
-                <property name="orientation">horizontal</property>
+              <object class="GtkButton">
                 <property name="can-focus">False</property>
-                <child>
-                  <object class="GtkButton">
-                    <property name="can-focus">False</property>
-                    <property name="receives-default">False</property>
-                    <property name="tooltip-text" translatable="yes">Save current project</property>
-                    <property name="action-name">box.save</property>
-                    <property name="icon-name">document-save-symbolic</property>
-                    <property name="use-underline">True</property>
-                  </object>
-                </child>
-                <child>
-                  <object class="GtkButton">
-                    <property name="can-focus">False</property>
-                    <property name="receives-default">False</property>
-                    <property name="tooltip-text" translatable="yes">Record project onto media</property>
-                    <property name="action-name">box.record</property>
-                    <property name="icon-name">media-record-symbolic</property>
-                    <property name="use-underline">True</property>
-                  </object>
-                </child>
-                <child>
-                  <object class="GtkSeparator">
-                    <property name="orientation">vertical</property>
-                    <property name="can-focus">False</property>
-                  </object>
-                </child>
-                <child>
-                  <object class="GtkButton">
-                    <property name="can-focus">False</property>
-                    <property name="receives-default">False</property>
-                    <property name="tooltip-text" translatable="yes">Play audio from current position</property>
-                    <property name="action-name">box.play</property>
-                    <property name="icon-name">media-playback-start-symbolic</property>
-                    <property name="use-underline">True</property>
-                  </object>
-                </child>
-                <child>
-                  <object class="GtkButton">
-                    <property name="can-focus">False</property>
-                    <property name="receives-default">False</property>
-                    <property name="tooltip-text" translatable="yes">Stop audio playback</property>
-                    <property name="action-name">box.stop</property>
-                    <property name="icon-name">media-playback-stop-symbolic</property>
-                    <property name="use-underline">True</property>
-                  </object>
-                </child>
-                <child>
-                  <object class="GtkButton">
-                    <property name="can-focus">False</property>
-                    <property name="receives-default">False</property>
-                    <property name="tooltip-text" translatable="yes">Pause audio playback</property>
-                    <property name="action-name">box.pause</property>
-                    <property name="icon-name">media-playback-pause-symbolic</property>
-                    <property name="use-underline">True</property>
-                  </object>
-                </child>
-                <child>
-                  <object class="GtkSeparator">
-                    <property name="orientation">vertical</property>
-                    <property name="can-focus">False</property>
-                  </object>
-                </child>
-                <child>
-                  <object class="GtkToggleButton" id="rbt1">
-                    <property name="can-focus">False</property>
-                    <property name="action-name">box.zoom-mode</property>
-                    <property name="use-underline">True</property>
-                    <property name="icon-name">org.gnome.Settings-accessibility-zoom-symbolic</property>
-                    <property name="active">True</property>
-                  </object>
-                </child>
-                <child>
-                  <object class="GtkToggleButton">
-                    <property name="can-focus">False</property>
-                    <property name="action-name">box.select-mode</property>
-                    <property name="use-underline">True</property>
-                    <property name="icon-name">edit-select-all-symbolic</property>
-                    <property name="active">True</property>
-                    <property name="group">rbt1</property>
-                  </object>
-                </child>
-                <child>
-                  <object class="GtkSeparator">
-                    <property name="orientation">vertical</property>
-                    <property name="can-focus">False</property>
-                  </object>
-                </child>
-                <child>
-                  <object class="GtkButton">
-                    <property name="can-focus">False</property>
-                    <property name="receives-default">False</property>
-                    <property name="action-name">box.zoom-in</property>
-                    <property name="icon-name">zoom-in-symbolic</property>
-                    <property name="use-underline">True</property>
-                  </object>
-                </child>
-                <child>
-                  <object class="GtkButton">
-                    <property name="can-focus">False</property>
-                    <property name="receives-default">False</property>
-                    <property name="action-name">box.zoom-out</property>
-                    <property name="icon-name">zoom-out-symbolic</property>
-                    <property name="use-underline">True</property>
-                  </object>
-                </child>
-                <child>
-                  <object class="GtkButton">
-                    <property name="can-focus">False</property>
-                    <property name="receives-default">False</property>
-                    <property name="action-name">box.zoom-fit</property>
-                    <property name="icon-name">zoom-original-symbolic</property>
-                    <property name="use-underline">True</property>
-                  </object>
-                </child>
-                <style>
-                  <class name="toolbar"/>
-                </style>
+                <property name="receives-default">False</property>
+                <property name="tooltip-text" translatable="yes">Save current project</property>
+                <property name="action-name">win.save</property>
+                <property name="icon-name">document-save-symbolic</property>
+                <property name="use-underline">True</property>
               </object>
             </child>
+            <child>
+              <object class="GtkButton">
+                <property name="can-focus">True</property>
+                <property name="sensitive">True</property>
+                <property name="tooltip-text" translatable="yes">Record project onto media</property>
+                <property name="action-name">win.record</property>
+                <property name="icon-name">media-record-symbolic</property>
+                <property name="use-underline">True</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkSeparator">
+                <property name="orientation">vertical</property>
+                <property name="can-focus">False</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkButton">
+                <property name="can-focus">False</property>
+                <property name="receives-default">False</property>
+                <property name="tooltip-text" translatable="yes">Play audio from current position</property>
+                <property name="action-name">win.play</property>
+                <property name="icon-name">media-playback-start-symbolic</property>
+                <property name="use-underline">True</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkButton">
+                <property name="can-focus">False</property>
+                <property name="receives-default">False</property>
+                <property name="tooltip-text" translatable="yes">Stop audio playback</property>
+                <property name="action-name">win.stop</property>
+                <property name="icon-name">media-playback-stop-symbolic</property>
+                <property name="use-underline">True</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkButton">
+                <property name="can-focus">False</property>
+                <property name="receives-default">False</property>
+                <property name="tooltip-text" translatable="yes">Pause audio playback</property>
+                <property name="action-name">win.pause</property>
+                <property name="icon-name">media-playback-pause-symbolic</property>
+                <property name="use-underline">True</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkSeparator">
+                <property name="orientation">vertical</property>
+                <property name="can-focus">False</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkToggleButton" id="rbt1">
+                <property name="can-focus">False</property>
+                <property name="action-name">win.zoom-mode</property>
+                <property name="use-underline">True</property>
+                <property name="icon-name">org.gnome.Settings-accessibility-zoom-symbolic</property>
+                <property name="active">True</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkToggleButton">
+                <property name="can-focus">False</property>
+                <property name="action-name">win.select-mode</property>
+                <property name="use-underline">True</property>
+                <property name="icon-name">edit-select-all-symbolic</property>
+                <property name="active">True</property>
+                <property name="group">rbt1</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkSeparator">
+                <property name="orientation">vertical</property>
+                <property name="can-focus">False</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkButton">
+                <property name="can-focus">False</property>
+                <property name="receives-default">False</property>
+                <property name="action-name">win.zoom-in</property>
+                <property name="icon-name">zoom-in-symbolic</property>
+                <property name="use-underline">True</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkButton">
+                <property name="can-focus">False</property>
+                <property name="receives-default">False</property>
+                <property name="action-name">win.zoom-out</property>
+                <property name="icon-name">zoom-out-symbolic</property>
+                <property name="use-underline">True</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkButton">
+                <property name="can-focus">False</property>
+                <property name="receives-default">False</property>
+                <property name="action-name">win.zoom-fit</property>
+                <property name="icon-name">zoom-original-symbolic</property>
+                <property name="use-underline">True</property>
+              </object>
+            </child>
+            <style>
+              <class name="toolbar"/>
+            </style>
           </object>
         </child>
         <child>

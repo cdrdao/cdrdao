@@ -70,7 +70,7 @@ AudioCDProject::AudioCDProject(BaseObjectType* cobject,
     add_action("save-as", sigc::mem_fun(*this, &AudioCDProject::saveAsProject));
     add_action("project-info", sigc::mem_fun(*this, &AudioCDProject::projectInfo));
     add_action("cdtext", sigc::mem_fun(*this, &AudioCDProject::cdTextDialog));
-    add_action("record", sigc::mem_fun(*this, &AudioCDProject::recordToc2CD));
+    add_action("box.record", sigc::mem_fun(*this, &AudioCDProject::recordToc2CD));
     play_action_ =
         add_action("play", sigc::mem_fun(*this, &AudioCDProject::on_play_clicked));
     stop_action_ =
@@ -169,8 +169,8 @@ void AudioCDProject::setup(int number, const Glib::ustring& path)
     audioCDView_ = Gtk::make_managed<AudioCDView>(this);
     audioCDView_->set_expand(true);
     auto vbox = dynamic_cast<Gtk::Box*>(get_first_child());
-    auto notebook = builder_->get_object<Gtk::Box>("notebook");
-    vbox->insert_child_after(*audioCDView_, *notebook);
+    auto audio_toolbar = builder_->get_object<Gtk::Box>("audio-toolbar");
+    vbox->insert_child_after(*audioCDView_, *audio_toolbar);
     audioCDView_->tocEditView()->sampleViewFull();
     updateWindowTitle();
     guiUpdate(UPD_ALL);
