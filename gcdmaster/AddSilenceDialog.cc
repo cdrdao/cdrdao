@@ -75,14 +75,14 @@ AddSilenceDialog::AddSilenceDialog(Gtk::Window* parent) :
     bbox->set_halign(Gtk::Align::END);
     bbox->set_margin_top(10);
 
-    applyButton_ = Gtk::make_managed<Gtk::Button>(_("_Apply"));
+    applyButton_ = Gtk::make_managed<Gtk::Button>(_("Apply"));
     applyButton_->add_css_class("suggested-action");
     applyButton_->signal_clicked().connect(sigc::mem_fun(*this, &AddSilenceDialog::applyAction));
 
-    auto clearBtn = Gtk::make_managed<Gtk::Button>(_("_Clear"));
+    auto clearBtn = Gtk::make_managed<Gtk::Button>(_("Clear"));
     clearBtn->signal_clicked().connect(sigc::mem_fun(*this, &AddSilenceDialog::clearAction));
 
-    auto closeBtn = Gtk::make_managed<Gtk::Button>(_("_Close"));
+    auto closeBtn = Gtk::make_managed<Gtk::Button>(_("Close"));
     closeBtn->signal_clicked().connect(sigc::mem_fun(*this, &AddSilenceDialog::closeAction));
 
     bbox->append(*closeBtn);

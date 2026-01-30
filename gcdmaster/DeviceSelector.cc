@@ -144,7 +144,6 @@ void DeviceSelector::appendTableEntry(CdDevice *device)
 
 void DeviceSelector::import()
 {
-    log_message(0, "DeviceSelector::import");
     listModel_->remove_all();
 
     for (auto drun : CdDevice::deviceList()) {
