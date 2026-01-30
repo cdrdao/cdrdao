@@ -64,7 +64,6 @@ gcdmaster_SOURCES = \
 	GenericView.h		\
 	BlankCDDialog.h		\
 	guiUpdate.h		\
-	DeviceConfDialog.h	\
 	ProcessMonitor.h	\
 	xcdrdao.h		\
 	ProgressDialog.h	\

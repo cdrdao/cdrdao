@@ -132,7 +132,7 @@ void DeviceList::import()
 	    match = (drun->deviceType() == CdDevice::CD_RW);
             break;
         }
-	if (match && drun->driverId() > 0)
+	if (match && !drun->driver().empty())
 	    appendTableEntry(drun);
     }
     if (!listModel_->children().empty()) {

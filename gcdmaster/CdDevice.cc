@@ -35,7 +35,7 @@
 
 #include <glibmm/i18n.h>
 
-#define DRIVER_ID_DEFAULT 2
+#define DRIVER_DEFAULT "generic-mmc"
 
 std::vector<CdDevice*> CdDevice::DEVICE_LIST = {};
 
@@ -59,34 +59,6 @@ CdDevice::CdDevice(const std::string& dev, const std::string& vendor, const std:
     vendor_ = vendor;
     product_ = product;
     description_ = vendor_ + std::string(" ") + product_;
-
-    driverId_ = 0;
-    driverOptions_ = 0;
-
-    deviceType_ = CD_R;
-
-    manuallyConfigured_ = false;
-
-    status_ = DEV_UNKNOWN;
-
-    exitStatus_ = 0;
-
-    progressStatusChanged_ = 0;
-    progressStatus_ = 0;
-    progressTotalTracks_ = 0;
-    progressTrack_ = 0;
-    progressTotal_ = 0;
-    progressTrackRelative_ = 0;
-    progressBufferFill_ = 0;
-    progressWriterFill_ = 0;
-
-    process_ = NULL;
-
-    scsiIf_ = NULL;
-    scsiIfInitFailed_ = 0;
-
-    next_ = NULL;
-    slaveDevice_ = NULL;
 
     autoSelectDriver();
 }
@@ -122,7 +94,7 @@ Glib::ustring CdDevice::settingString() const
 
     s += ",";
 
-    s += driverName();
+    s += driver_;
 
     s += ",";
 
@@ -130,12 +102,6 @@ Glib::ustring CdDevice::settingString() const
     s += buf;
 
     return s;
-}
-
-void CdDevice::driverId(int id)
-{
-    if (id >= 0 && id < DRIVER_NAMES.size())
-        driverId_ = id;
 }
 
 void CdDevice::status(Status s)
@@ -153,10 +119,10 @@ int CdDevice::autoSelectDriver()
     unsigned long options = 0;
     const char *driverName;
 
-    driverName = CdrDriver::selectDriver(1, vendor_.c_str(), product_.c_str(), &options);
+    auto detected = CdrDriver::selectDriver(1, vendor_.c_str(), product_.c_str(), &options);
 
-    if (driverName) {
-        driverId_ = driverName2Id(driverName);
+    if (detected) {
+        driver_ = detected;
         driverOptions_ = options;
     } else {
         cd_page_2a *p2a;
@@ -165,7 +131,7 @@ int CdDevice::autoSelectDriver()
 
         if (sif && sif->init() == 0 && (p2a = sif->checkMmc())) {
 
-            driverId_ = driverName2Id("generic-mmc");
+            driver_ = DRIVER_DEFAULT;
             if (p2a->cd_r_read)
                 deviceType_ = CD_ROM;
             if (p2a->cd_r_write)
@@ -173,7 +139,7 @@ int CdDevice::autoSelectDriver()
             if (p2a->cd_rw_write)
                 deviceType_ = CD_RW;
         } else {
-            driverId_ = DRIVER_ID_DEFAULT;
+            driver_ = DRIVER_DEFAULT;
             driverOptions_ = 0;
         }
         if (sif)
@@ -345,7 +311,7 @@ bool CdDevice::ejectCd(bool load)
         createScsiIf();
 
     if (scsiIf_) {
-        CdrDriver *driver = CdrDriver::createDriver(driverName().c_str(),
+        CdrDriver *driver = CdrDriver::createDriver(driver_.c_str(),
 						    driverOptions_, scsiIf_);
 
         int ret = driver->loadUnload((load ? 0 : 1));
@@ -433,8 +399,8 @@ bool CdDevice::recordDao(Gtk::Window &parent, TocEdit *tocEdit, int simulate, in
     args[n++] = "--device";
     args[n++] = (char *)dev_.c_str();
 
-    if (driverId_ > 0) {
-        snprintf(drivername, sizeof(drivername), "%s:0x%lx", driverName().c_str(), driverOptions_);
+    if (!driver_.empty()) {
+        snprintf(drivername, sizeof(drivername), "%s:0x%lx", driver_.c_str(), driverOptions_);
         args[n++] = "--driver";
         args[n++] = drivername;
     }
@@ -555,8 +521,8 @@ int CdDevice::extractDao(Gtk::Window &parent, const std::string& tocFileName, in
     args[n++] = "--device";
     args[n++] = (char *)dev_.c_str();
 
-    if (driverId_ > 0) {
-        snprintf(drivername, sizeof(drivername), "%s:0x%lx", driverName().c_str(), driverOptions_);
+    if (!driver_.empty()) {
+        snprintf(drivername, sizeof(drivername), "%s:0x%lx", driver_.c_str(), driverOptions_);
         args[n++] = "--driver";
         args[n++] = drivername;
     }
@@ -689,8 +655,8 @@ int CdDevice::duplicateDao(Gtk::Window &parent, int simulate, int multiSession, 
     args[n++] = "--device";
     args[n++] = (char *)dev_.c_str();
 
-    if (driverId_ > 0) {
-        snprintf(drivername, sizeof(drivername), "%s:0x%lx", driverName().c_str(), driverOptions_);
+    if (!driver_.empty()) {
+        snprintf(drivername, sizeof(drivername), "%s:0x%lx", driver_.c_str(), driverOptions_);
         args[n++] = "--driver";
         args[n++] = drivername;
     }
@@ -700,9 +666,9 @@ int CdDevice::duplicateDao(Gtk::Window &parent, int simulate, int multiSession, 
         args[n++] = "--source-device";
         args[n++] = readdev->dev().c_str();
 
-        if (readdev->driverId() > 0) {
+        if (!readdev->driver().empty()) {
             snprintf(r_drivername, sizeof(r_drivername), "%s:0x%lx",
-                     readdev->driverName().c_str(), readdev->driverOptions());
+                     readdev->driver().c_str(), readdev->driverOptions());
             args[n++] = "--source-driver";
             args[n++] = r_drivername;
         }
@@ -804,9 +770,9 @@ int CdDevice::blank(Gtk::Window *parent, int fast, int speed, int eject, int rel
     args[n++] = "--device";
     args[n++] = (char *)dev_.c_str();
 
-    if (driverId_ > 0) {
+    if (!driver_.empty()) {
         snprintf(drivername, sizeof(drivername), "%s:0x%lx",
-                 driverName().c_str(),
+                 driver_.c_str(),
                  driverOptions_);
         args[n++] = "--driver";
         args[n++] = drivername;
@@ -863,17 +829,8 @@ void CdDevice::createScsiIf()
     if (scsiIf_->init() != 0) {
         delete scsiIf_;
         scsiIf_ = NULL;
-        scsiIfInitFailed_ = 1;
+        scsiIfInitFailed_ = true;
     }
-}
-
-int CdDevice::driverName2Id(const std::string& driverName)
-{
-    for (int i = 1; i < DRIVER_NAMES.size(); i++)
-        if (DRIVER_NAMES[i] == driverName)
-            return i;
-
-    return 0;
 }
 
 CdDevice::DeviceType CdDevice::devtypeName2Id(const std::string& dt)
@@ -886,11 +843,6 @@ CdDevice::DeviceType CdDevice::devtypeName2Id(const std::string& dt)
         i++;
     }
     return CdDevice::CD_R;
-}
-
-int CdDevice::maxDriverId()
-{
-    return DRIVER_NAMES.size() - 1;
 }
 
 const std::string CdDevice::status2string(Status s)
@@ -1053,7 +1005,7 @@ static CdDevice *addImpl(const std::string& setting)
     char* s = (char*)alloca(setting.size() + 1);
     strcpy(s, setting.c_str());
     char *p;
-    int driverId;
+    std::string driver;
     std::string dev;
     std::string vendor;
     std::string model;
@@ -1094,7 +1046,7 @@ static CdDevice *addImpl(const std::string& setting)
 
     if ((val = nextToken(p)) == NULL)
         return NULL;
-    driverId = CdDevice::driverName2Id(val);
+    driver = val;
 
     if ((val = nextToken(p)) == NULL)
         return NULL;
@@ -1102,7 +1054,7 @@ static CdDevice *addImpl(const std::string& setting)
 
     cddev = CdDevice::add(dev, vendor, model);
 
-    cddev->driverId(driverId);
+    cddev->driver(driver);
     cddev->deviceType(type);
     cddev->driverOptions(options);
 

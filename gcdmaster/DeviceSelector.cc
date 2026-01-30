@@ -167,7 +167,7 @@ void DeviceSelector::import()
 		break;
 	    }
 	}
-	if (match && drun->driverId() > 0)
+	if (match && !drun->driver().empty())
 	    appendTableEntry(drun);
     }
     this->signalChanged.emit();

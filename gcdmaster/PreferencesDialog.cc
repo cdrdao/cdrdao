@@ -206,12 +206,13 @@ void PreferencesDialog::append_entry(CdDevice* dev)
     std::stringstream tohex;
     tohex << "0x" << std::hex << dev->driverOptions();
     
-    DeviceData data{dev->driverName(), dev->deviceTypeName(), tohex.str()};
+    DeviceData data{dev->driver(), dev->deviceTypeName(), tohex.str()};
     dataMap_[dev] = data;
 }
 
 void PreferencesDialog::import_devices()
 {
+    dataMap_.clear();
     for (auto dev : CdDevice::deviceList())
         append_entry(dev);
     deviceSelector_->import();
@@ -222,7 +223,7 @@ void PreferencesDialog::export_devices()
     for (auto *dev : CdDevice::deviceList()) {
         if (dataMap_.find(dev) != dataMap_.end()) {
             auto data = dataMap_[dev];
-            dev->driverId(CdDevice::driverName2Id(data.driverId));
+            dev->driver(data.driver);
             dev->deviceType(CdDevice::devtypeName2Id(data.deviceType));
 	    try {
 		dev->driverOptions(data.options.empty() ? 0 : std::stoul(data.options, nullptr, 0));
@@ -245,7 +246,7 @@ void PreferencesDialog::export_selected_row(CdDevice* device)
     if (!device)
         return;
     auto data = dataMap_[device];
-    data.driverId = driverMenu_->get_active_text();
+    data.driver = driverMenu_->get_active_text();
     data.deviceType = devtypeMenu_->get_active_text();
     data.options = driverOptionsEntry_->get_buffer()->get_text();
     dataMap_[device] = data;
@@ -257,7 +258,7 @@ void PreferencesDialog::import_selected_row(CdDevice* device)
         auto data = dataMap_[device];
     
         driverMenu_->set_sensitive(true);
-        driverMenu_->set_active_text(data.driverId);
+        driverMenu_->set_active_text(data.driver);
         devtypeMenu_->set_sensitive(true);
         devtypeMenu_->set_active_text(data.deviceType);
         driverOptionsEntry_->set_sensitive(true);

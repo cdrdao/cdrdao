@@ -81,10 +81,8 @@ class CdDevice : public sigc::trackable
 
     int autoSelectDriver();
 
-    int driverId() const { return driverId_; }
-    std::string driverName() const { return CdDevice::driverNames()[driverId_]; }
-    void driverId(int);
-    void driverId(const std::string& n) { driverId(CdDevice::driverName2Id(n)); }
+    const std::string& driver() const { return driver_; }
+    void driver(const std::string& d) { driver_ = d; }
 
     DeviceType deviceType() const;
     std::string deviceTypeName() const { return CdDevice::deviceType2string(deviceType()); }
@@ -119,9 +117,6 @@ class CdDevice : public sigc::trackable
     int progressStatusChanged();
     void progress(int *status, int *totalTracks, int *track, int *trackProgress, int *totalProgress,
                   int *bufferFill, int *writerFill) const;
-
-    static int maxDriverId();
-    static int driverName2Id(const std::string&);
 
     static DeviceType devtypeName2Id(const std::string&);
 
@@ -164,34 +159,33 @@ class CdDevice : public sigc::trackable
     std::string product_;
     std::string description_;
 
-    DeviceType deviceType_;
+    DeviceType deviceType_ = CD_R;
 
-    int driverId_;
-    unsigned long driverOptions_;
+    std::string driver_;
+    unsigned long driverOptions_ = 0;
+    bool manuallyConfigured_ = false;
 
-    bool manuallyConfigured_;
-
-    ScsiIf *scsiIf_;
-    int scsiIfInitFailed_;
-    Status status_;
+    ScsiIf *scsiIf_ = nullptr;
+    bool scsiIfInitFailed_ = false;
+    Status status_ = DEV_UNKNOWN;
 
     enum Action action_;
 
-    int exitStatus_;
+    int exitStatus_ = 0;
 
-    int progressStatusChanged_;
-    int progressStatus_;
-    int progressTotalTracks_;
-    int progressTrack_;
-    int progressTotal_;
-    int progressTrackRelative_;
-    int progressBufferFill_;
-    int progressWriterFill_;
+    int progressStatusChanged_ = 0;
+    int progressStatus_ = 0;
+    int progressTotalTracks_ = 0;
+    int progressTrack_ = 0;
+    int progressTotal_ = 0;
+    int progressTrackRelative_ = 0;
+    int progressBufferFill_ = 0;
+    int progressWriterFill_ = 0;
 
-    Process *process_;
+    Process *process_ = nullptr;
 
-    CdDevice *next_;
-    CdDevice *slaveDevice_; // slave device (used when copying etc.)
+    // slave device (used when copying etc.)
+    CdDevice *slaveDevice_ = nullptr;
 
     void createScsiIf();
 

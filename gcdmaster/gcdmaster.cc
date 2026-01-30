@@ -25,7 +25,6 @@
 #include "xcdrdao.h"
 #include "AudioCDProject.h"
 #include "BlankCDDialog.h"
-#include "DeviceConfDialog.h"
 #include "PreferencesDialog.h"
 #include "TocEdit.h"
 #include "gcdmaster.h"

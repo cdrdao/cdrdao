@@ -20,7 +20,6 @@
 #include "guiUpdate.h"
 
 #include "CdDevice.h"
-#include "DeviceConfDialog.h"
 #include "ProcessMonitor.h"
 #include "ProgressDialog.h"
 #include "TocEdit.h"

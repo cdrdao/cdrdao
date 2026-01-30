@@ -74,7 +74,7 @@ protected:
     DeviceSelector* deviceSelector_;
 
     struct DeviceData {
-        std::string driverId;
+        std::string driver;
         std::string deviceType;
         std::string options;
     };
