@@ -113,7 +113,7 @@ AudioCDView::AudioCDView(AudioCDProject *project)
     append(*selectionInfoBox);
 
     
-    setMode(SELECT);
+    mode(SELECT);
 
     sampleDisplay_->markerSet.connect(sigc::mem_fun(*this, &AudioCDView::markerSetCallback));
     sampleDisplay_->selectionSet.connect(sigc::mem_fun(*this, &AudioCDView::selectionSetCallback));
@@ -349,11 +349,6 @@ void AudioCDView::viewModifiedCallback(unsigned long start, unsigned long end)
     if (tocEditView_->sampleView(start, end)) {
         update(UPD_SAMPLES);
     }
-}
-
-void AudioCDView::setMode(Mode m)
-{
-    mode_ = m;
 }
 
 // Called when the user enters a value in the marker entry

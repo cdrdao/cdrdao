@@ -45,7 +45,8 @@ class AudioCDView : public Gtk::Box
     void update(unsigned long level = 0);
 
     enum Mode { ZOOM, SELECT };
-    void setMode(Mode);
+    void mode(Mode m) { mode_ = m; }
+    Mode mode() { return mode_; }
 
     void zoomIn();
     void zoomx2();

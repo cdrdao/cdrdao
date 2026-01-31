@@ -78,11 +78,40 @@ AudioCDProject::AudioCDProject(BaseObjectType* cobject,
     pause_action_ =
         add_action("pause", sigc::mem_fun(*this, &AudioCDProject::on_pause_clicked));
 
-    add_action("select-mode", sigc::mem_fun(*this, &AudioCDProject::on_select_clicked));
-    add_action("zoom-mode", sigc::mem_fun(*this, &AudioCDProject::on_zoom_clicked));
     add_action("zoom-in", sigc::mem_fun(*this, &AudioCDProject::on_zoom_in_clicked));
     add_action("zoom-out", sigc::mem_fun(*this, &AudioCDProject::on_zoom_out_clicked));
     add_action("zoom-fit", sigc::mem_fun(*this, &AudioCDProject::on_zoom_fit_clicked));
+
+    // Radio Buttons nonsense. Just doesn't work from UI, requires
+    // some ridiculously complicated hoop jumping.  Action needs to be
+    // added BEFORE the UI is loaded, which is impossible since we're
+    // using get_widget_derived().
+    auto action = Gio::SimpleAction::create_radio_string("drag-mode", "select");
+    action->signal_change_state().connect([action, this](const Glib::VariantBase& state) {
+        auto str_state = Glib::VariantBase::cast_dynamic<Glib::Variant<Glib::ustring>>(state);
+        if (str_state.get() == "select")
+            this->audioCDView_->mode(AudioCDView::SELECT);
+        else
+            this->audioCDView_->mode(AudioCDView::ZOOM);
+        action->set_state(state);
+    });
+    add_action(action);
+
+    auto audio_toolbar = builder_->get_object<Gtk::Box>("audio-toolbar");
+    auto sep_mode = builder->get_object<Gtk::Separator>("sep-mode");
+    auto rbt1 = Gtk::make_managed<Gtk::ToggleButton>();
+    rbt1->set_active(true);
+    rbt1->set_icon_name("zoom-fit-best-symbolic");
+    rbt1->set_action_name("win.drag-mode");
+    rbt1->set_action_target_value(Glib::Variant<Glib::ustring>::create("zoom"));
+    audio_toolbar->insert_child_after(*rbt1, *sep_mode);
+    auto rbt2 = Gtk::make_managed<Gtk::ToggleButton>("Z");
+    rbt2->set_active(false);
+    rbt2->set_group(*rbt1);
+    rbt2->set_icon_name("edit-select-all-symbolic");
+    rbt2->set_action_name("win.drag-mode");
+    rbt2->set_action_target_value(Glib::Variant<Glib::ustring>::create("select"));
+    audio_toolbar->insert_child_after(*rbt2, *rbt1);
 
     // App menu
     auto app_menu_button = builder->get_object<Gtk::MenuButton>("app-menu-button");
@@ -97,6 +126,8 @@ AudioCDProject::AudioCDProject(BaseObjectType* cobject,
     gears->set_menu_model(wmenu);
 
     headerBarTitle_ = builder->get_object<Gtk::Label>("header-bar-title");
+    selectToggle_ = builder->get_object<Gtk::ToggleButton>("select-mode");
+    zoomToggle_ = builder->get_object<Gtk::ToggleButton>("zoom-mode");
 
     soundInterface_ = nullptr;
     buttonPlay_ = nullptr;
@@ -553,16 +584,6 @@ void AudioCDProject::on_zoom_out_clicked()
 void AudioCDProject::on_zoom_fit_clicked()
 {
     audioCDView_->fullView();
-}
-
-void AudioCDProject::on_zoom_clicked()
-{
-    audioCDView_->setMode(AudioCDView::ZOOM);
-}
-
-void AudioCDProject::on_select_clicked()
-{
-    audioCDView_->setMode(AudioCDView::SELECT);
 }
 
 void AudioCDProject::on_cancel_clicked()

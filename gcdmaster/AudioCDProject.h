@@ -85,8 +85,6 @@ class AudioCDProject : public GCDWindow
     virtual void on_play_clicked();
     virtual void on_stop_clicked();
     virtual void on_pause_clicked();
-    virtual void on_select_clicked();
-    virtual void on_zoom_clicked();
     virtual void on_zoom_in_clicked();
     virtual void on_zoom_out_clicked();
     virtual void on_zoom_fit_clicked();

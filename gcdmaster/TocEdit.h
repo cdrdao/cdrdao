@@ -54,10 +54,8 @@ class TocEdit : public Glib::Object
 
     void blockEdit();
     void unblockEdit();
-    bool editable() const
-    {
-        return (editBlocked_ == 0);
-    }
+    bool editable() const { return (editBlocked_ == 0); }
+    bool empty() const { return empty_; }
 
     // returns and resets update level
     unsigned long updateLevel();
@@ -125,7 +123,8 @@ class TocEdit : public Glib::Object
 
     TrackDataScrap *trackDataScrap_;
 
-    bool tocDirty_;
+    bool tocDirty_ = false;
+    bool empty_ = true;
     int editBlocked_;
 
     unsigned long updateLevel_;

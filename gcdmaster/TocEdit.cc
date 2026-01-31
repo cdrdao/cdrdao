@@ -48,10 +48,11 @@ TocEdit::TocEdit(Toc *t, const std::string& filename)
     updateLevel_ = 0;
     editBlocked_ = false;
 
-    if (filename.empty())
+    if (filename.empty()) {
         toc(t, "unnamed.toc");
-    else
+    } else {
         toc(t, filename);
+    }
 
     tm_.signalQueueStarted.connect(sigc::mem_fun(*this, &TocEdit::taskQueueStarted));
     tm_.signalQueueEmptied.connect(sigc::mem_fun(*this, &TocEdit::taskQueueDone));
@@ -82,8 +83,8 @@ void TocEdit::toc(Toc *t, const std::string& filename)
 
     filename_ = filename;
 
-    tocDirty_ = false;
     editBlocked_ = false;
+    empty_ = false;
 
     if (sampleManager_)
         delete sampleManager_;
@@ -123,6 +124,7 @@ void TocEdit::tocDirty(bool f)
     if (tocDirty_ != f)
         updateLevel_ |= UPD_TOC_DIRTY;
 
+    empty_ = false;
     tocDirty_ = f;
 }
 
@@ -184,6 +186,7 @@ int TocEdit::readToc(const char *fname)
         t->recomputeLength();
 
         toc(t, fname);
+        empty_ = false;
         return 0;
     }
 

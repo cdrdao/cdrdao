@@ -71,28 +71,9 @@
               </object>
             </child>
             <child>
-              <object class="GtkSeparator">
+              <object class="GtkSeparator" id="sep-mode">
                 <property name="orientation">vertical</property>
                 <property name="can-focus">False</property>
-              </object>
-            </child>
-            <child>
-              <object class="GtkToggleButton" id="rbt1">
-                <property name="can-focus">False</property>
-                <property name="action-name">win.zoom-mode</property>
-                <property name="use-underline">True</property>
-                <property name="icon-name">org.gnome.Settings-accessibility-zoom-symbolic</property>
-                <property name="active">True</property>
-              </object>
-            </child>
-            <child>
-              <object class="GtkToggleButton">
-                <property name="can-focus">False</property>
-                <property name="action-name">win.select-mode</property>
-                <property name="use-underline">True</property>
-                <property name="icon-name">edit-select-all-symbolic</property>
-                <property name="active">True</property>
-                <property name="group">rbt1</property>
               </object>
             </child>
             <child>
