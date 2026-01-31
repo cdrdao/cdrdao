@@ -22,7 +22,6 @@
 #include <math.h>
 #include <stdio.h>
 
-#include <glibmm/i18n.h>
 #include <gtkmm.h>
 
 #include "MessageBox.h"
@@ -35,7 +34,6 @@
 #include "guiUpdate.h"
 
 #include "DeviceList.h"
-
 #include "util.h"
 
 RecordTocSource::RecordTocSource(Glib::RefPtr<TocEdit> tocEdit)
@@ -50,26 +48,14 @@ RecordTocSource::RecordTocSource(Glib::RefPtr<TocEdit> tocEdit)
     grid->set_column_spacing(5);
     grid->set_margin(10);
 
-    {
-        auto label = Gtk::make_managed<Gtk::Label>(_("Project name: "));
-        grid->attach(*label, 0, 1, 0, 1);
-        grid->attach(projectLabel_, 1, 2, 0, 1);
-    }
-    {
-        auto label = Gtk::make_managed<Gtk::Label>(_("Toc Type: "));
-        grid->attach(*label, 0, 1, 1, 2);
-        grid->attach(tocTypeLabel_, 1, 2, 1, 2);
-    }
-    {
-        auto label = Gtk::make_managed<Gtk::Label>(_("Tracks: "));
-        grid->attach(*label, 0, 1, 2, 3);
-        grid->attach(nofTracksLabel_, 1, 2, 2, 3);
-    }
-    {
-        auto label = Gtk::make_managed<Gtk::Label>(_("Length: "));
-        grid->attach(*label, 0, 1, 3, 4);
-        grid->attach(tocLengthLabel_, 1, 2, 3, 4);
-    }
+    grid->attach(label1, 0, 0);
+    grid->attach(projectLabel_, 1, 0);
+    grid->attach(label2, 0, 1);
+    grid->attach(tocTypeLabel_, 1, 1);
+    grid->attach(label3, 0, 2);
+    grid->attach(nofTracksLabel_, 1, 2);
+    grid->attach(label4, 0, 3);
+    grid->attach(tocLengthLabel_, 1, 3);
 
     infoFrame->set_child(*grid);
     append(*infoFrame);
@@ -86,8 +72,7 @@ void RecordTocSource::set(Glib::RefPtr<TocEdit> tocEdit)
 
 void RecordTocSource::update(unsigned long level)
 {
-    if (!active_)
-        return;
+    log_message(1, "[update %x] RecordTocSource", level);
 
     if (tocEdit_ == NULL) {
         projectLabel_.set_text("");
@@ -98,7 +83,7 @@ void RecordTocSource::update(unsigned long level)
         if (level & UPD_TOC_DATA) {
             const Toc *toc = tocEdit_->toc();
 
-            projectLabel_.set_text(tocEdit_->filename().string());
+            projectLabel_.set_text(tocEdit_->filename().filename().string());
             tocTypeLabel_.set_text(toc->tocType2String(toc->tocType()));
             nofTracksLabel_.set_text(std::to_string(toc->nofTracks()));
 

@@ -113,6 +113,7 @@ void RecordCDTarget::moreOptions()
     if (!moreOptions_) {
         moreOptions_ = Gtk::make_managed<Gtk::Window>();
         moreOptions_->set_modal(true);
+        moreOptions_->set_hide_on_close(true);
         moreOptions_->set_transient_for(*parent_);
 
         auto *top_vbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL);
@@ -162,7 +163,7 @@ void RecordCDTarget::moreOptions()
         auto bbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
         bbox->set_margin(10);
         bbox->set_halign(Gtk::Align::CENTER);
-        auto closeButton = Gtk::make_managed<Gtk::Button>("close");
+        auto closeButton = Gtk::make_managed<Gtk::Button>("Close");
         bbox->append(*closeButton);
         closeButton->signal_clicked().connect([this]() {
             this->moreOptions_->hide();

@@ -70,7 +70,7 @@ AudioCDProject::AudioCDProject(BaseObjectType* cobject,
     add_action("save-as", sigc::mem_fun(*this, &AudioCDProject::saveAsProject));
     add_action("project-info", sigc::mem_fun(*this, &AudioCDProject::projectInfo));
     add_action("cdtext", sigc::mem_fun(*this, &AudioCDProject::cdTextDialog));
-    add_action("box.record", sigc::mem_fun(*this, &AudioCDProject::recordToc2CD));
+    add_action("record", sigc::mem_fun(*this, &AudioCDProject::recordToc2CD));
     play_action_ =
         add_action("play", sigc::mem_fun(*this, &AudioCDProject::on_play_clicked));
     stop_action_ =
@@ -340,7 +340,7 @@ void AudioCDProject::update(unsigned long level)
     if (cdTextDialog_)
         cdTextDialog_->update(level);
 
-    if (recordTocDialog_ != 0)
+    if (recordTocDialog_)
         recordTocDialog_->update(level);
 
     if (level & UPD_PLAY_STATUS) {

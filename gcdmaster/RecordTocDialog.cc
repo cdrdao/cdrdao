@@ -29,6 +29,7 @@
 #include "TocEdit.h"
 #include "config.h"
 #include "guiUpdate.h"
+#include "log.h"
 
 RecordTocDialog::RecordTocDialog(Glib::RefPtr<TocEdit> tocEdit)
     : tocEdit_(tocEdit)
@@ -46,13 +47,12 @@ RecordTocDialog::RecordTocDialog(Glib::RefPtr<TocEdit> tocEdit)
 
     TocSource = Gtk::make_managed<RecordTocSource>(tocEdit_);
     CDTarget = Gtk::make_managed<RecordCDTarget>(this);
-
+    
     hbox_top->append(*TocSource);
     hbox_top->append(*CDTarget);
     CDTarget->set_expand(true);
 
     auto hbox_bottom = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL, 10);
-
     auto frameBox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL);
     
     // Initialize CheckButtons
@@ -74,22 +74,31 @@ RecordTocDialog::RecordTocDialog(Glib::RefPtr<TocEdit> tocEdit)
 
     hbox_bottom->append(*frameBox);
 
+    auto bbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
+    bbox->set_homogeneous(true);
+    bbox->set_spacing(5);
+    bbox->set_hexpand(true);
+    bbox->set_halign(Gtk::Align::CENTER);
+    hbox_bottom->append(*bbox);
+
     // Start Button
     auto startButton = Gtk::make_managed<Gtk::Button>();
     auto startBox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL);
-    auto pixmap = Gtk::make_managed<Gtk::Image>("media-optical"); 
+    auto pixmap = Gtk::make_managed<Gtk::Image>();
+    pixmap->set_from_resource("/org/gnome/gcdmaster/gcdmaster");
+    pixmap->set_pixel_size(48);
     auto startLabel = Gtk::make_managed<Gtk::Label>(_("Start"));
     
     startBox->append(*pixmap);
     startBox->append(*startLabel);
     startButton->set_child(*startBox);
     startButton->signal_clicked().connect(sigc::mem_fun(*this, &RecordTocDialog::startAction));
-    hbox_bottom->append(*startButton);
+    bbox->append(*startButton);
 
     // Cancel Button
     auto cancel_but = Gtk::make_managed<Gtk::Button>(_("_Cancel"), true);
     cancel_but->signal_clicked().connect(sigc::mem_fun(*this, &Gtk::Widget::hide));
-    hbox_bottom->append(*cancel_but);
+    bbox->append(*cancel_but);
 
     vbox->append(*hbox_bottom);
 }
@@ -112,6 +121,7 @@ void RecordTocDialog::stop()
 
 void RecordTocDialog::update(unsigned long level)
 {
+    log_message(1, "[update %x] RecordTocDialog", level);
     if (!active_)
         return;
 

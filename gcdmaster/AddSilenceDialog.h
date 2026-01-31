@@ -42,9 +42,6 @@ class AddSilenceDialog : public Gtk::Window
     sigc::signal<void(unsigned long)> signal_tocModified;
     sigc::signal<void()> signal_fullView;
 
-protected:
-    bool on_close_request() override;
-
   private:
     AddSilenceDialog(Gtk::Window* parent);
     TocEditView *tocEditView_ = nullptr;
@@ -60,8 +57,6 @@ protected:
     Gtk::Entry samples_;
 
     void mode(Mode);
-    void clearAction();
-    void closeAction();
     void applyAction();
 };
 

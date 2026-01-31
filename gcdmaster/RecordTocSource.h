@@ -22,6 +22,7 @@
 
 #include <gtk/gtk.h>
 #include <gtkmm.h>
+#include <glibmm/i18n.h>
 
 class TocEdit;
 
@@ -37,10 +38,14 @@ class RecordTocSource : public Gtk::Box
     Glib::RefPtr<TocEdit> tocEdit_;
     bool active_ = false;
 
-    Gtk::Label projectLabel_;
-    Gtk::Label tocTypeLabel_;
-    Gtk::Label nofTracksLabel_;
-    Gtk::Label tocLengthLabel_;
+    Gtk::Label label1{_("Project name: "), Gtk::Align::END};
+    Gtk::Label projectLabel_{"", Gtk::Align::START};
+    Gtk::Label label2{_("Toc Type: "), Gtk::Align::END};
+    Gtk::Label tocTypeLabel_{"", Gtk::Align::START};
+    Gtk::Label label3{_("Tracks: "), Gtk::Align::END};
+    Gtk::Label nofTracksLabel_{"", Gtk::Align::START};
+    Gtk::Label label4{_("Length: "), Gtk::Align::END};
+    Gtk::Label tocLengthLabel_{"", Gtk::Align::START};
 };
 
 #endif

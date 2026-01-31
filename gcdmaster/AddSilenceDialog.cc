@@ -42,7 +42,6 @@ Glib::RefPtr<AddSilenceDialog> AddSilenceDialog::create(Gtk::Window* parent)
 AddSilenceDialog::AddSilenceDialog(Gtk::Window* parent) :
     parent_(parent)
 {
-    set_modal(true);
     set_hide_on_close(true);
 
     auto main_vbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL, 10);
@@ -79,14 +78,6 @@ AddSilenceDialog::AddSilenceDialog(Gtk::Window* parent) :
     applyButton_->add_css_class("suggested-action");
     applyButton_->signal_clicked().connect(sigc::mem_fun(*this, &AddSilenceDialog::applyAction));
 
-    auto clearBtn = Gtk::make_managed<Gtk::Button>(_("Clear"));
-    clearBtn->signal_clicked().connect(sigc::mem_fun(*this, &AddSilenceDialog::clearAction));
-
-    auto closeBtn = Gtk::make_managed<Gtk::Button>(_("Close"));
-    closeBtn->signal_clicked().connect(sigc::mem_fun(*this, &AddSilenceDialog::closeAction));
-
-    bbox->append(*closeBtn);
-    bbox->append(*clearBtn);
     bbox->append(*applyButton_);
     main_vbox->append(*bbox);
 }
@@ -98,9 +89,11 @@ void AddSilenceDialog::mode(Mode m)
     switch (mode_) {
     case M_APPEND:
         set_title(_("Append Silence"));
+        applyButton_->set_label(_("Append"));
         break;
     case M_INSERT:
         set_title(_("Insert Silence"));
+        applyButton_->set_label(_("Insert"));
         break;
     }
 }
@@ -147,25 +140,6 @@ void AddSilenceDialog::update(unsigned long level, TocEditView *view)
     }
 
     tocEditView_ = view;
-}
-
-bool AddSilenceDialog::on_close_request()
-{
-    stop();
-    return true;
-}
-
-void AddSilenceDialog::closeAction()
-{
-    stop();
-}
-
-void AddSilenceDialog::clearAction()
-{
-    minutes_.set_text("");
-    seconds_.set_text("");
-    frames_.set_text("");
-    samples_.set_text("");
 }
 
 void AddSilenceDialog::applyAction()
