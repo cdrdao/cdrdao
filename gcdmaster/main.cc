@@ -35,6 +35,7 @@
 #include "gcdmaster.h"
 #include "port.h"
 #include "log.h"
+#include "TempFileManager.h"
 
 ProcessMonitor*     PROCESS_MONITOR = NULL;
 ProgressDialogPool* PROGRESS_POOL = NULL;
@@ -91,6 +92,11 @@ int main(int argc, char* argv[])
     // Setup devices configuration.
     CdDevice::importSettings();
     CdDevice::scan();
+    {
+        auto tmpdir = CONFIG_MANAGER->getTempDir();
+        if (!tmpdir.empty())
+            tempFileManager.setTempDirectory(tmpdir.c_str());
+    }
 
     GCDMASTER->run(argc, argv);
 

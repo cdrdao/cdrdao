@@ -25,21 +25,27 @@ class Sample;
 class SoundIF
 {
   public:
-    SoundIF();
-    ~SoundIF();
+    // Initializes sound interface.  Returnn null ptr ifsounde device
+    // not found or cannot setup sound device.
+    static SoundIF* create();
 
-    int init();
+    // Acquires sound device for playing.
+    // return 0: OK
+    //        1: error occured
+    virtual int start() = 0;
 
-    int start();
+    // Playes given sample buffer (44.1khz, 2 channels)
+     // return: 0: OK
+    //         1: error occured
+    virtual int play(Sample *, long) = 0;
 
-    int play(Sample *, long);
+    // Returns how long time it's going to take before the next sample
+    // to be written gets played by the hardware. The delay is
+    // returned in bytes
+    virtual unsigned long getDelay() = 0;
 
-    unsigned long getDelay();
-
-    void end();
-
-  private:
-    class SoundIFImpl *impl_;
+    // Finishs playing, sound device is released.
+    virtual void end() = 0;
 };
 
 #endif

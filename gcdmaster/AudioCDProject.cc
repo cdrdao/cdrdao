@@ -148,6 +148,13 @@ AudioCDProject::AudioCDProject(BaseObjectType* cobject,
     stopButton_ = builder_->get_object<Gtk::Button>("gtk-stop");
     stopButton_->signal_clicked().connect(
         sigc::mem_fun(*this, &AudioCDProject::on_cancel_clicked));
+
+    soundInterface_ = SoundIF::create();
+    if (!soundInterface_) {
+        play_action_ ->set_enabled(false);
+        pause_action_->set_enabled(false);
+        stop_action_ ->set_enabled(false);
+    }
 }
 
 void AudioCDProject::setup(int number, const Glib::ustring& path)
@@ -374,22 +381,21 @@ void AudioCDProject::update(unsigned long level)
     if (recordTocDialog_)
         recordTocDialog_->update(level);
 
-    if (level & UPD_PLAY_STATUS) {
-        bool sensitivity[3][3] = {
-            // PLAY  PAUSE STOP
-            {false, true, true}, // Playing
-            {true, true, true},  // Paused
-            {true, false, false} // Stopped
-        };
-
-        play_action_ ->set_enabled(sensitivity[playStatus_][0]);
-        pause_action_->set_enabled(sensitivity[playStatus_][1]);
-        stop_action_ ->set_enabled(sensitivity[playStatus_][2]);
-    }
-
-     if (level & UPD_EDITABLE_STATE) {
-        bool editable = tocEdit_->editable();
-        play_action_->set_enabled(editable);
+    if (soundInterface_) {
+        if (level & UPD_PLAY_STATUS) {
+            bool sensitivity[3][3] = {
+                // PLAY  PAUSE STOP
+                {false, true, true}, // Playing
+                {true, true, true},  // Paused
+                {true, false, false} // Stopped
+            };
+            play_action_ ->set_enabled(sensitivity[playStatus_][0]);
+            pause_action_->set_enabled(sensitivity[playStatus_][1]);
+            stop_action_ ->set_enabled(sensitivity[playStatus_][2]);
+        }
+        if (level & UPD_EDITABLE_STATE) {
+            play_action_->set_enabled(tocEdit_->editable());
+        }
     }
 
     stopButton_->set_sensitive(tocEdit_->isQueueActive());
@@ -420,23 +426,12 @@ void AudioCDProject::playStart(unsigned long start, unsigned long end)
 {
     unsigned long level = 0;
 
-    if (playStatus_ == PLAYING)
+    if (!soundInterface_ || playStatus_ == PLAYING)
         return;
 
     if (tocEdit_->lengthSample() == 0) {
         guiUpdate(UPD_PLAY_STATUS);
         return;
-    }
-
-    if (!soundInterface_) {
-        soundInterface_ = new SoundIF;
-        if (soundInterface_->init() != 0) {
-            delete soundInterface_;
-            soundInterface_ = NULL;
-            guiUpdate(UPD_PLAY_STATUS);
-            statusMessage(_("WARNING: Cannot open \"/dev/dsp\""));
-            return;
-        }
     }
 
     if (soundInterface_->start() != 0) {

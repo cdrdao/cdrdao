@@ -264,7 +264,7 @@ esac
 
 dnl Sound device selection for xcdrdao
 case "$host" in
-  *-linux* | *-freebsd* | *-solaris*)
+  *-linux* | *bsd* | *darwin* )
 	     sound_if_obj=SoundIF-ao.o
 	     ;;
 

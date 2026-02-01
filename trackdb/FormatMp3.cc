@@ -227,8 +227,9 @@ FormatSupport::Status FormatMp3::madOutput()
 #endif
         }
 
-        if (write_wav_output(buffer_, pcm->length * 4) == FS_SUCCESS)
+        if (write_wav_output(buffer_, pcm->length * 4) != FS_SUCCESS) {
 	    throw std::runtime_error("Unable to convert file, no available disk space.");
+        }
 
     } else {
         while (nsamples--) {
@@ -249,8 +250,9 @@ FormatSupport::Status FormatMp3::madOutput()
 #endif
         }
 
-        if (write_wav_output(buffer_, pcm->length * 4) == FS_SUCCESS)
+        if (write_wav_output(buffer_, pcm->length * 4) != FS_SUCCESS) {
 	    throw std::runtime_error("Unable to convert file, no available disk space.");
+        }
     }
 
     return FS_SUCCESS;
