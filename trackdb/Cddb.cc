@@ -67,19 +67,6 @@ static RETSIGTYPE alarmHandler(int sig)
 Cddb::Cddb(Toc *t)
 {
     toc_ = t;
-
-    serverList_ = NULL;
-    selectedServer_ = NULL;
-
-    fd_ = -1;
-    connected_ = 0;
-    queryResults_ = NULL;
-    cddbEntry_ = NULL;
-    httpCmd_ = NULL;
-    httpData_ = NULL;
-    httpMode_ = 0;
-
-    timeout_ = 20;
 }
 
 Cddb::~Cddb()
@@ -90,12 +77,6 @@ Cddb::~Cddb()
 
     clearQueryResults();
     clearCddbEntry();
-
-    delete[] httpCmd_;
-    httpCmd_ = NULL;
-
-    delete[] httpData_;
-    httpData_ = NULL;
 
     while (serverList_ != NULL) {
         snext = serverList_->next;
@@ -211,13 +192,10 @@ void Cddb::clearCddbEntry()
     }
 }
 
-/* Appends a CDDB server name to the server list. Format of server strings:
- * <server>
- *   connect to <server>, default cddbp port, use cddbp protocol
+/* NOTE: gnudb is deprecating the HTTP method.
  *
- * <server>:<port>
- *   connect to <server>, port <port>, use cddbp protocol
  *
+ * Appends a CDDB server name to the server list. Format of server strings:
  * <server>:<cgi-bin-path>
  *   connect to <server>, default http port, use http protocol,
  *   url: <cgi-bin-path>
@@ -444,18 +422,13 @@ void Cddb::closeConnection()
 /* Create some strings that are used for all communications via the http
  * protocol.
  */
-void Cddb::setupHttpData(const char *userName, const char *hostName, const char *clientName,
-                         const char *version)
+void Cddb::setupHttpData(const std::string& userName, const std::string& hostName,
+                         const std::string& clientName, const std::string& version)
 {
-    delete[] httpCmd_;
-
-    httpCmd_ = strdupvCC("&hello=", userName, "+", hostName, "+", clientName, "+", version,
-                         "&proto=6", NULL);
-
-    delete[] httpData_;
-
+    httpCmd_ = "&hello=";
+    httpCmd_ += userName + "+" + hostName + "+" + clientName + "+" + version + "&proto=6";
     httpData_ =
-        strdupvCC("User-Agent: ", clientName, "/", version, "\r\n", "Accept: text/plain\r\n", NULL);
+        "User-Agent: " + clientName + "/" + version + "\r\n" + "Accept: text/plain\r\n";
 }
 
 /* Tries to connect to a server of the internal server list and performs the
@@ -478,63 +451,10 @@ int Cddb::connectDb(const char *userName, const char *hostName, const char *clie
     if (openConnection() != 0)
         return 1;
 
-    if (selectedServer_->httpCgiBin != NULL) {
-        httpMode_ = 1;
-        setupHttpData(userName, hostName, clientName, version);
-        return 0;
-    }
-
-    response = getServerResponse(code);
-
-    if (response == NULL) {
-        log_message(-2, "CDDB: EOF while waiting for server greeting.");
-        closeConnection();
-        return 2;
-    }
-
-    if (code[0] != 2) {
-        log_message(-2, "CDDB: Connection to server denied: %s", response);
-        return 2;
-    }
-
-    log_message(4, "CDDB: Server greeting: %s", response);
-
-    connected_ = 1;
-
-    cmdArgs[0] = "cddb";
-    cmdArgs[1] = "hello";
-    cmdArgs[2] = userName;
-    cmdArgs[3] = hostName;
-    cmdArgs[4] = clientName;
-    cmdArgs[5] = version;
-
-    if (sendCommand({"cddb", "hello", userName, hostName, clientName, version}) != 0) {
-        log_message(-2, "CDDB: Failed to send handshake command.");
-        return 2;
-    }
-
-    response = getServerResponse(code);
-
-    if (response == NULL) {
-        log_message(-2, "CDDB: EOF while waiting for server handshake response.");
-        return 2;
-    }
-
-    if (code[0] != 2) {
-        log_message(-2, "CDDB: Server handshake failed: %s", response);
-        return 2;
-    }
-
-    log_message(4, "CDDB: Handshake response: %s", response);
-
-    if (sendCommand({"proto", "6"}) != 0) {
-        log_message(-2, "CDDB: Failed to send proto command.");
-        return 2;
-    }
-    response = getServerResponse(code);
-
-    log_message(4, "CDDB: Handshake response: %s", response);
-
+    if (!selectedServer_->httpCgiBin)
+        return 1;
+    
+    setupHttpData(userName, hostName, clientName, version);
     return 0;
 }
 
@@ -614,10 +534,8 @@ int Cddb::queryDb(QueryResults **results)
     // clear previous results
     clearQueryResults();
 
-    if (httpMode_) {
-        if (openConnection() != 0)
-            return 1;
-    }
+    if (openConnection() != 0)
+        return 1;
 
     ntracks = toc_->nofTracks();
 
@@ -633,7 +551,7 @@ int Cddb::queryDb(QueryResults **results)
     for (t = itr.first(start, end); t != NULL; t = itr.next(start, end))
         args.push_back(std::to_string(start.lba() + 150));
 
-    {
+   {
         long diskLength = toc_->length().min() * 60 + toc_->length().sec() + 2;
         args.push_back(std::to_string(diskLength));
     }
@@ -659,7 +577,7 @@ int Cddb::queryDb(QueryResults **results)
     } else {
         if (code[2] == 0) {
             // found exact match
-            strcpy(respBuf, resp + 3);
+            strcpy(respBuf, readLine());
             if (parseQueryResult(respBuf, qcategory, qdiskId, qtitle)) {
                 appendQueryResult(qcategory, qdiskId, qtitle, 1);
             } else {
@@ -695,8 +613,7 @@ int Cddb::queryDb(QueryResults **results)
 
 fail:
 
-    if (httpMode_)
-        closeConnection();
+    closeConnection();
 
     *results = queryResults_;
     return err;
@@ -715,10 +632,8 @@ int Cddb::readDb(const char *category, const char *diskId, CddbEntry **entry)
 
     clearCddbEntry();
 
-    if (httpMode_) {
-        if (openConnection() != 0)
-            return 1;
-    }
+    if (openConnection() != 0)
+        return 1;
 
     if (sendCommand({"cddb", "read", category, diskId}) != 0) {
         log_message(-2, "CDDB: Failed to send READ command.");
@@ -748,8 +663,7 @@ int Cddb::readDb(const char *category, const char *diskId, CddbEntry **entry)
 
     *entry = cddbEntry_;
 
-    if (httpMode_)
-        closeConnection();
+    closeConnection();
 
     if (localRecordFd >= 0)
         close(localRecordFd);
@@ -758,8 +672,7 @@ int Cddb::readDb(const char *category, const char *diskId, CddbEntry **entry)
 
 fail:
 
-    if (httpMode_)
-        closeConnection();
+    closeConnection();
 
     if (localRecordFd >= 0)
         close(localRecordFd);
@@ -998,8 +911,7 @@ const char *Cddb::getServerResponse(int code[3])
 {
     const char *line;
 
-    while ((line = readLine()) != NULL && !getCode(line, code))
-        ;
+    while ((line = readLine()) != NULL && !getCode(line, code));
 
     return line;
 }
@@ -1015,31 +927,27 @@ int Cddb::sendCommand(const vector<string> &args)
 
     for (const auto &s : args) {
         if (!cmd.empty())
-            cmd += (httpMode_ ? "+" : " ");
+            cmd += "+";
         cmd += s;
     }
 
-    if (httpMode_) {
-
-        std::ostringstream ss;
-        if (selectedServer_->httpProxyServer != NULL) {
-            ss << "GET http://" << selectedServer_->server;
-            ss << selectedServer_->port << selectedServer_->httpCgiBin;
-            ss << "?cmd=" << cmd << " HTTP/1.0\r\n";
-            ss << "Host: " << selectedServer_->server << "\r\n";
-            ss << httpData_ << "\r\n";
-        } else {
-            ss << "GET " << selectedServer_->httpCgiBin << "?cmd=" << cmd << " HTTP/1.0\r\n"
-               << "Host: " << selectedServer_->server << "\r\n"
-               << httpData_ << "\r\n";
-        }
-
-        cmd = ss.str();
-        log_message(4, "CDDB: Sending command '%s'...", cmd.c_str());
+    std::ostringstream ss;
+    if (selectedServer_->httpProxyServer != NULL) {
+        ss << "GET http://" << selectedServer_->server;
+        ss << selectedServer_->port << selectedServer_->httpCgiBin;
+        ss << "?cmd=" << cmd << httpCmd_ << " HTTP/1.0\r\n";
+        ss << "Host: " << selectedServer_->server << "\r\n";
+        ss << httpData_ << "\r\n";
     } else {
-        log_message(4, "CDDB: Sending command '%s'...", cmd.c_str());
-        cmd += "\n";
+        ss << "GET " << selectedServer_->httpCgiBin << "?cmd=" << cmd
+           << httpCmd_
+           << " HTTP/1.0\r\n"
+           << "Host: " << selectedServer_->server << "\r\n"
+           << httpData_ << "\r\n";
     }
+
+    cmd = ss.str();
+    log_message(0, "CDDB: Sending command '%s'...", cmd.c_str());
 
     auto ret = ::write(fd_, cmd.c_str(), cmd.size());
 
@@ -1137,6 +1045,7 @@ static int parseQueryResult(char *line, char *category, char *diskId, char *titl
 {
     const char *sep = " \t";
     char *p;
+    log_message(0, "PARSE QUERY %s", line);
 
     if ((p = strtok(line, sep)) != NULL) {
         strcpy(category, p);

@@ -85,28 +85,27 @@ class Cddb
     };
 
     Toc *toc_;
-    ServerList *serverList_; // list of CDDB servers
-    ServerList *selectedServer_;
+    ServerList *serverList_ = nullptr;
+    ServerList *selectedServer_ = nullptr;
 
     std::string localCddbDirectory_;
 
-    int fd_;        // file descriptor for connection to CDDB server
-    int connected_; // 1 if connection to CDDB server was established, else 0
-    int timeout_;   // timeout in seconds
+    int fd_ = -1;
+    int connected_ = false;
+    int timeout_ = 20;
 
-    int httpMode_;
-    char *httpCmd_;
-    char *httpData_;
-
-    QueryResults *queryResults_;
-    CddbEntry *cddbEntry_;
+    std::string httpCmd_;
+    std::string httpData_;
+    
+    QueryResults *queryResults_ = nullptr;
+    CddbEntry *cddbEntry_ = nullptr;
 
     static CdTextItem *createItem(CdTextItem::PackType, const char *);
 
     int openConnection();
     void closeConnection();
-    void setupHttpData(const char *userName, const char *hostName, const char *clientName,
-                       const char *version);
+    void setupHttpData(const std::string& userName, const std::string& hostName,
+                       const std::string& clientName, const std::string& version);
 
     void appendQueryResult(const char *category, const char *diskId, const char *title,
                            int exactMatch);
