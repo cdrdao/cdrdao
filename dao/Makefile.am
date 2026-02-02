@@ -7,6 +7,7 @@ cdrdao_SOURCES = \
 
 libdao_a_SOURCES = \
 	main.cc			\
+	cdrdao.cc		\
 	dao.cc			\
 	port.cc			\
 	data.cc			\
@@ -59,14 +60,12 @@ libdao_a_SOURCES = \
 	YamahaCDR10x.h
 
 EXTRA_libdao_a_SOURCES = 	\
-	dao-win32.cc		\
 	decodeSense.cc		\
 	sg_err.cc		\
 	ScsiIf-common.cc	\
 	ScsiIf-linux.cc		\
 	ScsiIf-freebsd-cam.cc	\
 	ScsiIf-netbsd.cc	\
-	ScsiIf-irix.cc		\
 	ScsiIf-osx.cc		\
 	ScsiIf-nt.cc
 
