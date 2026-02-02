@@ -143,51 +143,23 @@ class CdrDriver
     CdrDriver(ScsiIf *scsiIf, unsigned long options);
     virtual ~CdrDriver();
 
-    // returns stored SCSI interface object
-    virtual ScsiIf *scsiIf() const
-    {
-        return scsiIf_;
-    }
+    virtual ScsiIf *scsiIf() const { return scsiIf_; }
+    void scsiIf(ScsiIf *i) { scsiIf_ = i; }
+    virtual const char *driverName() const { return driverName_; }
+    virtual unsigned long options() const { return options_; }
 
-    // sets SCSI interface object
-    void scsiIf(ScsiIf *i)
-    {
-        scsiIf_ = i;
-    }
-
-    // returns name of driver
-    virtual const char *driverName() const
-    {
-        return driverName_;
-    }
-
-    // returns options flags
-    virtual unsigned long options() const
-    {
-        return options_;
-    }
-
-    // returns 1 if drive takes audio samples in big endian byte order or
+    // Returns 1 if drive takes audio samples in big endian byte order or
     // 0 for little endian byte order
     virtual int bigEndianSamples() const = 0;
 
     // return information about drive
-    virtual const DriveInfo *driveInfo(bool showErrorMsg)
-    {
-        return NULL;
-    }
+    virtual const DriveInfo *driveInfo(bool showErrorMsg) { return NULL; }
 
     // returns current writing speed
-    virtual int speed()
-    {
-        return speed_;
-    }
+    virtual int speed() { return speed_; }
 
     // returns current reading speed
-    virtual int rspeed()
-    {
-        return rspeed_;
-    }
+    virtual int rspeed() { return rspeed_; }
 
     // sets writing speed, returns 0 for OK or 1 for illegal speed,
     // this function may send SCSI commands to the drive

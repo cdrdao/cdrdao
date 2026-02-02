@@ -322,6 +322,17 @@ bool CdDevice::ejectCd(bool load)
     return success;
 }
 
+CdrDriver* CdDevice::createDriver()
+{
+    if (!scsiIf_)
+        createScsiIf();
+
+    if (!scsiIf_ or driver_.empty())
+	return nullptr;
+
+    return CdrDriver::createDriver(driver_.c_str(), driverOptions_, scsiIf_);
+}
+
 // Starts a 'cdrdao' for recording given toc. Returns false if an
 // error occured and the process was not successfully launched.
 bool CdDevice::recordDao(Gtk::Window &parent, TocEdit *tocEdit, int simulate, int multiSession,

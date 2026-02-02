@@ -27,6 +27,7 @@
 #include <filesystem>
 #include <iostream>
 
+#include "CdrdaoDirect.h"
 #include "AudioCDProject.h"
 #include "AudioCDView.h"
 #include "CdTextDialog.h"
@@ -347,6 +348,25 @@ void AudioCDProject::recordToc2CD()
 
 void AudioCDProject::tocRead()
 {
+    if (tocEdit_->tocDirty()) {
+	MessageBox::message(*this, _("Save your project first"),
+			   {_("This will replace your current project.")});
+	return;
+    }
+    try {
+	auto task = new FastTocRead();
+	task->signalDone.connect([this, task](Toc* toc) {
+	    if (toc) {
+		this->tocEdit_->toc(toc, "unnamed.toc", true);
+	    } else {
+		this->errorDialog(_("Unable to extra disc TOC"));
+	    }
+	    delete(task);
+	});
+	tocEdit_->taskManager().addJob(task);
+    } catch (...) {
+	MessageBox::message(*this, _("Insert an audio CD first."));
+    }
 }
 
 void AudioCDProject::projectInfo()

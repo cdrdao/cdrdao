@@ -41,18 +41,7 @@
 
 TocEdit::TocEdit(Toc *t, const std::string& filename)
 {
-    toc_ = NULL;
-    sampleManager_ = NULL;
-    trackDataScrap_ = NULL;
-
-    updateLevel_ = 0;
-    editBlocked_ = false;
-
-    if (filename.empty()) {
-        toc(t, "unnamed.toc");
-    } else {
-        toc(t, filename);
-    }
+    toc(t, filename);
 
     tm_.signalQueueStarted.connect(sigc::mem_fun(*this, &TocEdit::taskQueueStarted));
     tm_.signalQueueEmptied.connect(sigc::mem_fun(*this, &TocEdit::taskQueueDone));
@@ -71,7 +60,7 @@ TocEdit::~TocEdit()
         delete trackDataScrap_;
 }
 
-void TocEdit::toc(Toc *t, const std::string& filename)
+void TocEdit::toc(Toc *t, const std::string& filename = "unnamed.toc", bool nodata)
 {
     if (toc_)
         delete toc_;
@@ -85,6 +74,7 @@ void TocEdit::toc(Toc *t, const std::string& filename)
 
     editBlocked_ = false;
     empty_ = false;
+    nodata_ = nodata;
 
     if (sampleManager_)
         delete sampleManager_;
@@ -318,13 +308,14 @@ bool TocEdit::curScan(QueueJob *job)
         job->end = toc_->length().samples() - 1;
         updateLevel_ |= UPD_SAMPLES;
     }
+
     int ret = sampleManager_->scanToc(job->pos, job->end);
 
     if (ret == 0)
         return true;
 
     if (ret == 2) {
-        signalError("Unable to open or read from input audio files");
+	signalError("Unable to open or read from input audio files");
         return false;
     }
 
@@ -471,6 +462,7 @@ void TocEdit::showOutstanding()
 
 void TocEdit::taskQueueStarted()
 {
+    log_message(0, "TASKS STARTED");
     signalCancelEnable(true);
     signalSpinner(true);
     blockEdit();
@@ -480,6 +472,7 @@ void TocEdit::taskQueueStarted()
 
 void TocEdit::taskQueueDone()
 {
+    log_message(0, "TASKS DONE");
     signalProgressFraction(0.0);
     signalSpinner(false);
     unblockEdit();

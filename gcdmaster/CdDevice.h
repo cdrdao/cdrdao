@@ -27,6 +27,7 @@
 class TocEdit;
 class Process;
 class ScsiIf;
+class CdrDriver;
 
 class CdDevice : public sigc::trackable
 {
@@ -118,6 +119,11 @@ class CdDevice : public sigc::trackable
     void progress(int *status, int *totalTracks, int *track, int *trackProgress, int *totalProgress,
                   int *bufferFill, int *writerFill) const;
 
+    CdrDriver* createDriver();
+
+    // Static methods
+    //
+    
     static DeviceType devtypeName2Id(const std::string&);
 
     static const std::string status2string(Status);
@@ -127,17 +133,11 @@ class CdDevice : public sigc::trackable
     static void exportSettings();
 
     static CdDevice *add(const std::string& scsidev, const std::string& vendor, const std::string& product);
-
     static CdDevice *add(const std::string& setting);
-
     static CdDevice *find(const std::string dev);
-
     static bool scan();
-
     static void remove(const std::string& dev);
-
     static void clear();
-
     static int update();
 
     /* not used anymore since Gtk::Main::input signal will call

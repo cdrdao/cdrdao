@@ -42,7 +42,7 @@ class TocEdit : public Glib::Object
     TocEdit(Toc *, const std::string&);
     ~TocEdit();
 
-    void toc(Toc *, const std::string&);
+    void toc(Toc *, const std::string&, bool nodata = false);
     Toc *toc() const;
 
     SampleManager *sampleManager();
@@ -104,6 +104,8 @@ class TocEdit : public Glib::Object
     void setCatalogNumber(const char *);
     void setTocType(Toc::Type);
 
+    TaskManager& taskManager() { return tm_; }
+
     // Signals
     sigc::signal<void()> signalProgressPulse;
     sigc::signal<void(bool)> signalSpinner;
@@ -115,19 +117,20 @@ class TocEdit : public Glib::Object
     sigc::signal<void(const char *)> signalError;
 
   private:
-    Toc *toc_;
-    SampleManager *sampleManager_;
+    Toc *toc_ = nullptr;
+    SampleManager *sampleManager_ = nullptr;
     TaskManager tm_;
 
     std::filesystem::path filename_;
 
-    TrackDataScrap *trackDataScrap_;
+    TrackDataScrap *trackDataScrap_ = nullptr;
 
     bool tocDirty_ = false;
     bool empty_ = true;
-    int editBlocked_;
+    bool nodata_ = false;
+    int editBlocked_ = false;
 
-    unsigned long updateLevel_;
+    unsigned long updateLevel_ = 0;
 
     class QueueJob : public Task
     {
