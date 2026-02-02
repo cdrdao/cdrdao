@@ -42,6 +42,7 @@
 #include <sys/wait.h>
 #include <unistd.h>
 #include <vector>
+#include <optional>
 
 #include "Cddb.h"
 #include "CdrDriver.h"
@@ -82,7 +83,6 @@ extern int setegid(uid_t);
 PrintParams errPrintParams, filePrintParams;
 
 typedef enum {
-    UNKNOWN = -1,
     SHOW_TOC,
     SHOW_DATA,
     READ_TEST,
@@ -103,7 +103,7 @@ typedef enum {
     DISCID,
     SHOW_VERSION,
     CDTEXT,
-    LAST_CMD,
+    EJECT
 } DaoCommand;
 
 typedef enum {
@@ -113,15 +113,16 @@ typedef enum {
     NEED_CDRW_W,
 } DaoDeviceType;
 
-// The cmdInfo[] array provides information about each of cdrdao's
+// The cmdInfo vector provides information about each of cdrdao's
 // main commands, including some of the basic processing steps
 // required, almost as a simplified state machine.
 
-struct {
+struct cmdStruct
+{
     // The command code, which is also the index into the array
     DaoCommand cmd;
     // The command-line string for this command
-    const char *str;
+    std::string str;
     // What type of device does the command require, for device
     // auto-detection.
     DaoDeviceType requiredDevice;
@@ -131,24 +132,42 @@ struct {
     bool tocParse;
     // Does the command require to check the parsed toc file
     bool tocCheck;
-} cmdInfo[LAST_CMD] = {
-    {SHOW_TOC, "show-toc", NO_DEVICE, 1, 1, 0},      {SHOW_DATA, "show-data", NO_DEVICE, 1, 1, 1},
-    {READ_TEST, "read-test", NO_DEVICE, 1, 1, 1},    {SIMULATE, "simulate", NEED_CDR_W, 1, 1, 1},
-    {WRITE, "write", NEED_CDR_W, 1, 1, 1},           {READ_TOC, "read-toc", NEED_CDR_R, 1, 0, 1},
-    {DISK_INFO, "disk-info", NEED_CDR_R, 0, 0, 1},   {READ_CD, "read-cd", NEED_CDR_R, 1, 0, 1},
-    {TOC_INFO, "toc-info", NO_DEVICE, 1, 1, 1},      {TOC_SIZE, "toc-size", NO_DEVICE, 1, 1, 1},
-    {BLANK, "blank", NEED_CDRW_W, 0, 0, 1},          {SCAN_BUS, "scanbus", NO_DEVICE, 0, 0, 1},
-    {UNLOCK, "unlock", NEED_CDR_R, 0, 0, 1},         {COPY_CD, "copy", NEED_CDR_W, 0, 0, 1},
-    {READ_CDDB, "read-cddb", NO_DEVICE, 1, 1, 0},    {MSINFO, "msinfo", NEED_CDR_R, 0, 0, 1},
-    {DRIVE_INFO, "drive-info", NEED_CDR_R, 0, 0, 1}, {DISCID, "discid", NEED_CDR_R, 0, 0, 1},
-    {SHOW_VERSION, "version", NO_DEVICE, 0, 0, 0},   {CDTEXT, "cdtext", NEED_CDR_R, 0, 0, 0},
+    // Does the command accepts an optional toc file
+    bool optionalTocFile;
+};
+
+std::vector<cmdStruct> cmdInfo = {
+    {BLANK, "blank", NEED_CDRW_W, 0, 0, 1, 0},
+    {CDTEXT, "cdtext", NEED_CDR_R, 0, 0, 0, 0},
+    {COPY_CD, "copy", NEED_CDR_W, 0, 0, 1, 0},
+    {DISCID, "discid", NEED_CDR_R, 0, 0, 1, 0},
+    {DISCID, "disc-id", NEED_CDR_R, 0, 0, 1, 0},
+    {DISK_INFO, "disc-info", NEED_CDR_R, 0, 0, 1, 0},
+    {DISK_INFO, "disk-info", NEED_CDR_R, 0, 0, 1, 0},
+    {EJECT, "eject", NEED_CDR_R, 0, 0, 0, 0},
+    {DRIVE_INFO, "drive-info", NEED_CDR_R, 0, 0, 1, 0},
+    {MSINFO, "msinfo", NEED_CDR_R, 0, 0, 1, 0},
+    {READ_CD, "read-cd", NEED_CDR_R, 1, 0, 1, 0},
+    {READ_CDDB, "read-cddb", NO_DEVICE, 1, 1, 0, 0},
+    {READ_TEST, "read-test", NO_DEVICE, 1, 1, 1, 0},
+    {READ_TOC, "read-toc", NEED_CDR_R, 0, 0, 1, 1},
+    {SIMULATE, "simulate", NEED_CDR_W, 1, 1, 1, 0},
+    {SHOW_DATA, "show-data", NO_DEVICE, 1, 1, 1, 0},
+    {SHOW_TOC, "show-toc", NO_DEVICE, 1, 1, 0, 0},
+    {SCAN_BUS, "scanbus", NO_DEVICE, 0, 0, 1, 0},
+    {TOC_INFO, "toc-info", NO_DEVICE, 1, 1, 1, 0},
+    {TOC_SIZE, "toc-size", NO_DEVICE, 1, 1, 1, 0},
+    {UNLOCK, "unlock", NEED_CDR_R, 0, 0, 1, 0},
+    {SHOW_VERSION, "version", NO_DEVICE, 0, 0, 0, 0},
+    {WRITE, "write", NEED_CDR_W, 1, 1, 1, 0}
 };
 
 struct DaoCommandLine {
-    DaoCommand command;
+    std::optional<DaoCommand> command;
+    cmdStruct  commandInfo;
 
     const char *progName;
-    string tocFile;
+    std::optional<std::string> tocFile;
     string driverId;
     string sourceDriverId;
     string scsiDevice;
@@ -215,7 +234,6 @@ DaoCommandLine::DaoCommandLine()
     sourceScsiDevice = NULL;
     readingSpeed = -1;
     writingSpeed = -1;
-    command = UNKNOWN;
     verbose = 2;
     session = 1;
     pause = true;
@@ -271,36 +289,37 @@ void printVersion()
 
 void DaoCommandLine::printUsage()
 {
-    switch (command) {
-
-    case UNKNOWN:
+    if (!command.has_value()) {
         log_message(0, "\nUsage: %s <command> [options] [toc-file]", progName);
         log_message(0, "command:\n"
-                       "  show-toc   - prints out toc and exits\n"
-                       "  toc-info   - prints out short toc-file summary\n"
-                       "  toc-size   - prints total number of blocks for toc\n"
-                       "  read-toc   - create toc file from audio CD\n"
-                       "  read-cd    - create toc and rip audio data from CD\n"
-                       "  read-cddb  - contact CDDB server and add data as CD-TEXT to toc-file\n"
-                       "  show-data  - prints out audio data and exits\n"
-                       "  read-test  - reads all audio files and exits\n"
-                       "  disk-info  - shows information about inserted medium\n"
-                       "  discid     - prints out CDDB information\n"
-                       "  msinfo     - shows multi session info, output is suited for scripts\n"
-                       "  drive-info - shows drive information\n"
-                       "  cdtext     - shows CD CD-TEXT content\n"
-                       "  unlock     - unlock drive after failed writing\n"
-                       "  blank      - blank a CD-RW\n"
-                       "  scanbus    - scan for devices\n"
-                       "  simulate   - shortcut for 'write --simulate'\n"
-                       "  write      - writes CD\n"
-                       "  copy       - copies CD\n");
+		    "  show-toc   - prints out toc and exits\n"
+		    "  toc-info   - prints out short toc-file summary\n"
+		    "  toc-size   - prints total number of blocks for toc\n"
+		    "  read-toc   - create toc file from audio CD\n"
+		    "  read-cd    - create toc and rip audio data from CD\n"
+		    "  read-cddb  - contact CDDB server and add data as CD-TEXT to toc-file\n"
+		    "  show-data  - prints out audio data and exits\n"
+		    "  read-test  - reads all audio files and exits\n"
+		    "  disc-info  - shows information about inserted medium\n"
+		    "  disc-id    - prints out CDDB information\n"
+		    "  msinfo     - shows multi session info, output is suited for scripts\n"
+		    "  drive-info - shows drive information\n"
+		    "  cdtext     - shows CD CD-TEXT content\n"
+		    "  unlock     - unlock drive after failed writing\n"
+		    "  blank      - blank a CD-RW\n"
+		    "  scanbus    - scan for devices\n"
+		    "  simulate   - shortcut for 'write --simulate'\n"
+		    "  write      - writes CD\n"
+		    "  copy       - copies CD\n");
 
         log_message(0,
                     "\n Try '%s <command> -h' to get a list of available "
                     "options\n",
                     progName);
-        break;
+	return;
+    }
+
+    switch (command.value()) {
 
     case SHOW_TOC:
         log_message(0, "\nUsage: %s show-toc [options] toc-file", progName);
@@ -323,6 +342,15 @@ void DaoCommandLine::printUsage()
             0, "options:\n"
                "  -v #                    - sets verbose level\n"
                "  --no-utf8               - don't show CD-TEXT as UTF-8\n"
+               "  --device [proto:]{<x,y,z>|device} - sets SCSI device of CD-ROM reader\n"
+               "  --driver <id>           - force usage of specified driver for source device\n");
+        break;
+
+    case EJECT:
+        log_message(0, "\nUsage: %s cdtext [options]\n", progName);
+        log_message(
+            0, "options:\n"
+               "  -v #                    - sets verbose level\n"
                "  --device [proto:]{<x,y,z>|device} - sets SCSI device of CD-ROM reader\n"
                "  --driver <id>           - force usage of specified driver for source device\n");
         break;
@@ -386,7 +414,7 @@ void DaoCommandLine::printUsage()
         break;
 
     case READ_TOC:
-        log_message(0, "\nUsage: %s read-toc [options] toc-file", progName);
+        log_message(0, "\nUsage: %s read-toc [options] [toc-file]", progName);
         log_message(0,
                     "options:\n"
                     "  --device [proto:]{<x,y,z>|device} - sets SCSI device of CD-ROM reader\n"
@@ -412,7 +440,7 @@ void DaoCommandLine::printUsage()
         break;
 
     case DISK_INFO:
-        log_message(0, "\nUsage: %s disk-info [options]", progName);
+        log_message(0, "\nUsage: %s disc-info [options]", progName);
         log_message(0, "options:\n"
                        "  --device [proto:]{<x,y,z>|device} - sets SCSI device of CD-writer\n"
                        "  --driver <id>           - force usage of specified driver\n"
@@ -420,7 +448,7 @@ void DaoCommandLine::printUsage()
         break;
 
     case DISCID:
-        log_message(0, "\nUsage: %s discid [options]", progName);
+        log_message(0, "\nUsage: %s disc-id [options]", progName);
         log_message(0,
                     "options:\n"
                     "  --device [proto:]{<x,y,z>|device} - sets SCSI device of CD-writer\n"
@@ -583,7 +611,7 @@ void DaoCommandLine::importSettings(Settings *settings)
     const char *sval;
     const int *ival;
 
-    DaoCommand cmd = command;
+    DaoCommand cmd = command.value();
 
     if (cmd == SIMULATE || cmd == WRITE || cmd == COPY_CD) {
         if ((sval = settings->getString(Settings::setWriteDriver)) != NULL) {
@@ -673,7 +701,7 @@ void DaoCommandLine::importSettings(Settings *settings)
 
 void DaoCommandLine::exportSettings(Settings *settings)
 {
-    DaoCommand cmd = command;
+    DaoCommand cmd = *command;
 
     if (cmd == SIMULATE || cmd == WRITE || cmd == COPY_CD) {
         if (!driverId.empty())
@@ -757,19 +785,22 @@ int DaoCommandLine::parseCmdLine(int argc, char **argv, Settings *settings)
 {
     int i;
     bool clear_default_servers = true;
+    bool matched = false;
 
     if (argc < 1) {
         return 1;
     }
 
-    for (i = 0; i < LAST_CMD; i++) {
-        if (strcmp(*argv, cmdInfo[i].str) == 0) {
-            command = cmdInfo[i].cmd;
+    for (const auto& cmd : cmdInfo) {
+        if (cmd.str == *argv) {
+            commandInfo = cmd;
+	    command = cmd.cmd;
+	    matched = true;
             break;
         }
     }
 
-    if (command == UNKNOWN) {
+    if (!matched) {
         log_message(-2, "Illegal command: %s", *argv);
         return 1;
     }
@@ -1097,7 +1128,14 @@ int DaoCommandLine::parseCmdLine(int argc, char **argv, Settings *settings)
         argc--, argv++;
     }
 
-    if (cmdInfo[command].needTocFile) {
+    if (commandInfo.optionalTocFile) {
+	if (argc > 1) {
+	    log_message(-2, "Expecting only one toc-file.");
+	    return 1;
+	} else if (argc == 1) {
+	    tocFile = *argv;
+	}
+    } else if (commandInfo.needTocFile) {
         if (argc < 1) {
             log_message(-2, "Missing toc-file.");
             return 1;
@@ -1165,7 +1203,7 @@ CdrDriver *selectDriver(DaoCommand cmd, ScsiIf *scsiIf, const string &driverId)
         if (id == NULL)
             id = CdrDriver::selectDriver(1, scsiIf->vendor(), scsiIf->product(), &options);
         // if no driver is selected, yet, try to select a read driver for
-        // disk-info
+        // disc-info
         if (id == NULL && (cmd == DISK_INFO || cmd == MSINFO || cmd == DISCID))
             id = CdrDriver::selectDriver(0, scsiIf->vendor(), scsiIf->product(), &options);
         // Still no driver, try to autodetect one
@@ -1518,6 +1556,11 @@ void showData(const Toc *toc, bool swap)
         }
         length -= 1;
     }
+}
+
+void ejectDisc(CdrDriver *cdr, DaoCommandLine &options)
+{
+    cdr->loadUnload(true);
 }
 
 void showCDText(CdrDriver *cdr, DaoCommandLine &options)
@@ -2304,33 +2347,33 @@ int main(int argc, char **argv)
     // ---------------------------------------------------------------------
     //   Parse and check the toc file
     // ---------------------------------------------------------------------
-    if (cmdInfo[options.command].tocParse) {
+    if (options.commandInfo.tocParse) {
 
         // Parse TOC file
-        toc = Toc::read(options.tocFile);
+        toc = Toc::read(*options.tocFile);
 
         if (options.remoteMode) {
-            unlink(options.tocFile.c_str());
+            unlink(options.tocFile->c_str());
         }
 
         // Check and resolve input files paths
-        if (!toc || !toc->resolveFilenames(options.tocFile.c_str())) {
+        if (!toc || !toc->resolveFilenames(options.tocFile->c_str())) {
             exitCode = 1;
             goto fail;
         }
 
         if (!toc->convertFilesToWav()) {
             log_message(-2, "Could not decode audio files from toc file \"%s\".",
-                        options.tocFile.c_str());
+                        options.tocFile->c_str());
             exitCode = 1;
             goto fail;
         }
 
         toc->recomputeLength();
 
-        if (cmdInfo[options.command].tocCheck) {
+        if (options.commandInfo.tocCheck) {
             if (checkToc(toc, options.force) != 0) {
-                log_message(-2, "Toc file \"%s\" is inconsistent.", options.tocFile.c_str());
+                log_message(-2, "Toc file \"%s\" is inconsistent.", options.tocFile->c_str());
                 exitCode = 1;
                 goto fail;
             }
@@ -2341,10 +2384,10 @@ int main(int argc, char **argv)
     //   Setup the CD device, obtain disk media information.
     // ---------------------------------------------------------------------
 
-    if (cmdInfo[options.command].requiredDevice != NO_DEVICE) {
+    if (options.commandInfo.requiredDevice != NO_DEVICE) {
 
         if (options.scsiDevice.empty()) {
-            options.scsiDevice = getDefaultDevice(cmdInfo[options.command].requiredDevice);
+            options.scsiDevice = getDefaultDevice(options.commandInfo.requiredDevice);
         }
 
         if (options.scsiDevice.empty()) {
@@ -2353,7 +2396,7 @@ int main(int argc, char **argv)
             goto fail;
         }
 
-        cdr = setupDevice(options.command, options.scsiDevice, options.driverId,
+        cdr = setupDevice(*options.command, options.scsiDevice, options.driverId,
                           /* init device? */
                           (options.command == UNLOCK) ? 0 : 1,
                           /* check for ready status? */
@@ -2434,11 +2477,11 @@ int main(int argc, char **argv)
     //   Main command dispatch.
     // ---------------------------------------------------------------------
 
-    switch (options.command) {
+    switch (*options.command) {
     case READ_CDDB:
         if ((exitCode = readCddb(options, toc)) == 0) {
-            log_message(1, "Writing CD-TEXT populated toc-file \"%s\".", options.tocFile.c_str());
-            if (toc->write(options.tocFile) != 0)
+            log_message(1, "Writing CD-TEXT populated toc-file \"%s\".", options.tocFile->c_str());
+            if (toc->write(*options.tocFile) != 0)
                 exitCode = 2;
         }
         break;
@@ -2454,21 +2497,21 @@ int main(int argc, char **argv)
     case SHOW_TOC:
         showToc(toc, options);
         if (toc->check() > 1) {
-            log_message(-2, "Toc file \"%s\" is inconsistent.", options.tocFile.c_str());
+            log_message(-2, "Toc file \"%s\" is inconsistent.", options.tocFile->c_str());
         }
         break;
 
     case TOC_INFO:
-        showTocInfo(toc, options.tocFile);
+        showTocInfo(toc, *options.tocFile);
         if (toc->check() > 1) {
-            log_message(-2, "Toc file \"%s\" is inconsistent.", options.tocFile.c_str());
+            log_message(-2, "Toc file \"%s\" is inconsistent.", options.tocFile->c_str());
         }
         break;
 
     case TOC_SIZE:
-        showTocSize(toc, options.tocFile);
+        showTocSize(toc, *options.tocFile);
         if (toc->check() > 1) {
-            log_message(-2, "Toc file \"%s\" is inconsistent.", options.tocFile.c_str());
+            log_message(-2, "Toc file \"%s\" is inconsistent.", options.tocFile->c_str());
         }
         break;
 
@@ -2494,6 +2537,10 @@ int main(int argc, char **argv)
 
     case CDTEXT:
         showCDText(cdr, options);
+        break;
+
+    case EJECT:
+        ejectDisc(cdr, options);
         break;
 
     case DISCID:
@@ -2560,11 +2607,13 @@ int main(int argc, char **argv)
         }
         log_message(1, "Reading toc data...");
 
-        if (access(options.tocFile.c_str(), R_OK) == 0) {
-            log_message(-2, "File \"%s\" exists, will not overwrite.", options.tocFile.c_str());
-            exitCode = 1;
-            goto fail;
-        }
+	if (options.tocFile.has_value()) {
+	    if (access(options.tocFile->c_str(), R_OK) == 0) {
+		log_message(-2, "File \"%s\" exists, will not overwrite.", options.tocFile->c_str());
+		exitCode = 1;
+		goto fail;
+	    }
+	}
 
         cdr->subChanReadMode(options.readSubchanMode);
         cdr->rawDataReading(options.readRaw);
@@ -2591,16 +2640,18 @@ int main(int argc, char **argv)
                 }
             }
 
-            {
-                ofstream out(options.tocFile);
+            if (options.tocFile.has_value()) {
+                ofstream out(*options.tocFile);
                 if (!out) {
-                    log_message(-2, "Cannot open \"%s\" for writing: %s", options.tocFile.c_str(),
+                    log_message(-2, "Cannot open \"%s\" for writing: %s", options.tocFile->c_str(),
                                 strerror(errno));
                     exitCode = 1;
                     goto fail;
                 }
                 toc->print(out, filePrintParams);
-            }
+            } else {
+                toc->print(std::cout, filePrintParams);
+	    }
 
             log_message(1, "Reading of toc data finished successfully.");
         }
@@ -2614,8 +2665,8 @@ int main(int argc, char **argv)
         }
         log_message(1, "Reading toc and track data...");
 
-        if (access(options.tocFile.c_str(), R_OK) == 0) {
-            log_message(-2, "File \"%s\" exists, will not overwrite.", options.tocFile.c_str());
+        if (access(options.tocFile->c_str(), R_OK) == 0) {
+            log_message(-2, "File \"%s\" exists, will not overwrite.", options.tocFile->c_str());
             exitCode = 1;
             goto fail;
         }
@@ -2649,9 +2700,9 @@ int main(int argc, char **argv)
         }
 
         {
-            ofstream out(options.tocFile);
+            ofstream out(*options.tocFile);
             if (!out) {
-                log_message(-2, "Cannot open \"%s\" for writing: %s", options.tocFile.c_str(),
+                log_message(-2, "Cannot open \"%s\" for writing: %s", options.tocFile->c_str(),
                             strerror(errno));
                 exitCode = 1;
                 goto fail;
@@ -2722,7 +2773,7 @@ int main(int argc, char **argv)
                 log_message(-2,
                             "Toc-file \"%s\" may create undefined "
                             "results.",
-                            options.tocFile.c_str());
+                            options.tocFile->c_str());
                 log_message(-2, "Use option --force to use it anyway.");
                 exitCode = 1;
                 goto fail;
@@ -2730,7 +2781,7 @@ int main(int argc, char **argv)
             break;
         default: // error
             log_message(-2, "Toc-file \"%s\" is not suitable for this drive.",
-                        options.tocFile.c_str());
+                        options.tocFile->c_str());
             exitCode = 1;
             goto fail;
             break;
@@ -2911,11 +2962,7 @@ int main(int argc, char **argv)
             cdr->loadUnload(1);
         break;
 
-    case UNKNOWN:
-        assert(0);
-        break;
     case SHOW_VERSION:
-    case LAST_CMD:
         /* To avoid warning */
         break;
     }
