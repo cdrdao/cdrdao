@@ -70,6 +70,7 @@ AudioCDProject::AudioCDProject(BaseObjectType* cobject,
     add_action("save-as", sigc::mem_fun(*this, &AudioCDProject::saveAsProject));
     add_action("project-info", sigc::mem_fun(*this, &AudioCDProject::projectInfo));
     add_action("cdtext", sigc::mem_fun(*this, &AudioCDProject::cdTextDialog));
+    toc_read_action_ = add_action("toc-read", sigc::mem_fun(*this, &AudioCDProject::tocRead));
     add_action("record", sigc::mem_fun(*this, &AudioCDProject::recordToc2CD));
     play_action_ =
         add_action("play", sigc::mem_fun(*this, &AudioCDProject::on_play_clicked));
@@ -118,12 +119,17 @@ AudioCDProject::AudioCDProject(BaseObjectType* cobject,
     auto app_menu = builder->get_object<Gio::MenuModel>("app-menu");
     app_menu_button->set_menu_model(app_menu);
 
-    // Window menu
-    auto gears = builder->get_object<Gtk::MenuButton>("gears");
-    auto wmenu = builder->get_object<Gio::MenuModel>("audiocd-menu");
-    if (!wmenu)
-        throw std::runtime_error("Menu resource not found");
-    gears->set_menu_model(wmenu);
+    {
+	// Window menus
+	auto gears = builder->get_object<Gtk::MenuButton>("gears");
+	auto wmenu = builder->get_object<Gio::MenuModel>("audiocd-menu");
+	auto disc_ops = builder->get_object<Gtk::MenuButton>("disc-ops");
+	auto disc_ops_menu = builder->get_object<Gio::MenuModel>("disc-ops-menu");
+	if (!(gears && wmenu && disc_ops && disc_ops_menu))
+	    throw std::runtime_error("Missing UI resources");
+	gears->set_menu_model(wmenu);
+	disc_ops->set_menu_model(disc_ops_menu);
+    }
 
     headerBarTitle_ = builder->get_object<Gtk::Label>("header-bar-title");
     selectToggle_ = builder->get_object<Gtk::ToggleButton>("select-mode");
@@ -239,7 +245,7 @@ void AudioCDProject::status(const char *msg)
     statusMessage(msg);
 }
 
-void AudioCDProject::errorDialog(const char *msg)
+void AudioCDProject::errorDialog(const Glib::ustring& msg)
 {
     ErrorBox::message(*this, msg);
 }
@@ -317,11 +323,11 @@ void AudioCDProject::saveProject()
         statusMessage(_("Project saved to \"%s\"."), tocEdit_->filename().c_str());
         guiUpdate(UPD_TOC_DIRTY);
     } else {
-        std::string s(_("Cannot save toc to \""));
-        s += tocEdit_->filename();
+	Glib::ustring s(_("Cannot save toc to \""));
+        s += tocEdit_->filename().string();
         s += "\":";
 
-        errorDialog(s.c_str());
+        errorDialog(s);
     }
 }
 
@@ -337,6 +343,10 @@ void AudioCDProject::recordToc2CD()
 
     recordTocDialog_->start(this);
     recordTocDialog_->present();
+}
+
+void AudioCDProject::tocRead()
+{
 }
 
 void AudioCDProject::projectInfo()
@@ -600,10 +610,10 @@ bool AudioCDProject::appendTrack(const char *file)
                 tocEdit_->queueAppendTrack((*i).c_str());
             }
         } else {
-            std::string msg = "Could not read M3U file \"";
+	    Glib::ustring msg = "Could not read M3U file \"";
             msg += file;
             msg += "\"";
-            errorDialog(msg.c_str());
+            errorDialog(msg);
             return false;
         }
         break;

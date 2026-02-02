@@ -175,15 +175,15 @@
           </object>
         </child>
         <child type="end">
-          <object class="GtkButton" id="blank_button">
+          <object class="GtkMenuButton" id="disc-ops">
             <property name="can-focus">False</property>
             <property name="receives-default">True</property>
-            <property name="tooltip-text">Blank CD-RW</property>
-            <property name="action-name">app.blank-cdrw</property>
+            <property name="tooltip-text">Disc Operations</property>
+            <property name="direction">none</property>
             <child type="end">
               <object class="GtkImage">
                 <property name="can-focus">False</property>
-                <property name="resource">/org/gnome/gcdmaster/gcdmaster-blank</property>
+                <property name="resource">/org/gnome/gcdmaster/svg-cd</property>
               </object>
             </child>
           </object>

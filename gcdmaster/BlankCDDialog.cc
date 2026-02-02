@@ -102,10 +102,11 @@ BlankCDDialog::BlankCDDialog()
     frameBox->append(*moreExpander);
     vbox_.append(*blankOptionsFrame);
 
-    // Action Buttons (Start)
+    // Action Buttons
     auto *hbox2 = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL, 20);
     {
 	hbox2->set_margin(10);
+	hbox2->set_spacing(10);
 	hbox2->set_halign(Gtk::Align::CENTER);
 
 	auto *startBtn = Gtk::make_managed<Gtk::Button>();
@@ -120,6 +121,10 @@ BlankCDDialog::BlankCDDialog()
 	startBtn->set_child(*startBox);
 	startBtn->signal_clicked().connect(sigc::mem_fun(*this, &BlankCDDialog::startAction));
 	hbox2->append(*startBtn);
+
+	auto *cancelBut = Gtk::make_managed<Gtk::Button>(_("Cancel"), true);
+	cancelBut->signal_clicked().connect(sigc::mem_fun(*this, &BlankCDDialog::stop));
+	hbox2->append(*cancelBut);
     }
     vbox_.append(*hbox2);
 

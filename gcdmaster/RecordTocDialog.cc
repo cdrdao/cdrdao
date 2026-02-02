@@ -76,7 +76,7 @@ RecordTocDialog::RecordTocDialog(Glib::RefPtr<TocEdit> tocEdit)
 
     auto bbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
     bbox->set_homogeneous(true);
-    bbox->set_spacing(5);
+    bbox->set_spacing(10);
     bbox->set_hexpand(true);
     bbox->set_halign(Gtk::Align::CENTER);
     hbox_bottom->append(*bbox);

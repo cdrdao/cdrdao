@@ -55,6 +55,7 @@ class AudioCDProject : public GCDWindow
     void saveProject();
     void saveAsProject();
     void recordToc2CD();
+    void tocRead();
 
     unsigned long playPosition();
 
@@ -91,7 +92,7 @@ class AudioCDProject : public GCDWindow
     virtual void on_cancel_clicked();
 
     virtual void status(const char *msg);
-    virtual void errorDialog(const char *msg);
+    virtual void errorDialog(const Glib::ustring& msg);
     virtual void progress(double val);
     virtual void spin(bool);
     virtual void fullView();
@@ -122,12 +123,12 @@ class AudioCDProject : public GCDWindow
     bool playCallback();
 
     Glib::RefPtr<Gio::SimpleAction> play_action_, pause_action_, stop_action_;
+    Glib::RefPtr<Gio::SimpleAction> toc_read_action_;
 
     AudioCDView *audioCDView_;
     Glib::RefPtr<RecordTocDialog> recordTocDialog_;
     Glib::RefPtr<TocInfoDialog> tocInfoDialog_;
     Glib::RefPtr<CdTextDialog> cdTextDialog_;
-    Glib::RefPtr<Gio::SimpleActionGroup> m_refActionGroup;
     Glib::RefPtr<Gtk::ToggleButton> selectToggle_;
     Glib::RefPtr<Gtk::ToggleButton> zoomToggle_;
     void projectInfo();

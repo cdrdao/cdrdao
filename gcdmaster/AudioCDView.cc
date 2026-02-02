@@ -131,7 +131,9 @@ AudioCDView::AudioCDView(AudioCDProject *project)
 
 void AudioCDView::setup_actions()
 {
-    project_->add_action("track-info", sigc::mem_fun(*this, &AudioCDView::trackInfo));
+
+    trackInfoAction_ =
+	project_->add_action("track-info", sigc::mem_fun(*this, &AudioCDView::trackInfo));
     project_->add_action("cut", sigc::mem_fun(*this, &AudioCDView::cutTrackData));
     project_->add_action("paste", sigc::mem_fun(*this, &AudioCDView::pasteTrackData));
     project_->add_action("select-all", sigc::mem_fun(*this, &AudioCDView::selectAll));
@@ -158,8 +160,10 @@ void AudioCDView::update(unsigned long level)
 
         if (tocEditView_->trackSelection(&trackNr) && tocEditView_->indexSelection(&indexNr)) {
             sampleDisplay_->setSelectedTrackMarker(trackNr, indexNr);
+	    trackInfoAction_->set_enabled(true);
         } else {
             sampleDisplay_->setSelectedTrackMarker(0, 0);
+	    trackInfoAction_->set_enabled(false);
         }
     }
 

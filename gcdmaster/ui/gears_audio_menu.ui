@@ -85,4 +85,24 @@
       </item>
     </section>
   </menu>
+  <menu id="disc-ops-menu">
+    <section>
+      <item>
+        <attribute name="label" translatable="yes">Read TOC from disc</attribute>
+        <attribute name="action">win.toc-read</attribute>
+      </item>
+    </section>
+    <section>
+      <item>
+        <attribute name="label" translatable="yes">Write to disc</attribute>
+        <attribute name="action">win.record</attribute>
+      </item>
+    </section>
+    <section>
+      <item>
+        <attribute name="label" translatable="yes">Blank CD-RW disc</attribute>
+        <attribute name="action">app.blank-cdrw</attribute>
+      </item>
+    </section>
+  </menu>
 </interface>

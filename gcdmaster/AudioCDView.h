@@ -67,6 +67,8 @@ class AudioCDView : public Gtk::Box
     Glib::RefPtr<AddFileDialog> addFileDialog_;
     Glib::RefPtr<AddSilenceDialog> addSilenceDialog_;
 
+    Glib::RefPtr<Gio::SimpleAction> trackInfoAction_;
+
     Mode mode_;
     SampleDisplay *sampleDisplay_;
 

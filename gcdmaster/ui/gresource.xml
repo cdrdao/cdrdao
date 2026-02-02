@@ -14,6 +14,7 @@
         <file alias="gcdmaster-play">play.png</file>
         <file alias="gcdmaster-record">record.png</file>
         <file alias="gcdmaster-stop">stop.png</file>
+        <file alias="svg-cd">cd.svg</file>
     </gresource>
     <gresource prefix="/org/gnome/gcdmaster">
         <file preprocess="xml-stripblanks">app_menu.ui</file>
