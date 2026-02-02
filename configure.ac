@@ -219,11 +219,6 @@ case "$host" in
       scsilib_objs="ScsiIf-netbsd.o"
       ;;
 
-  *-irix*)
-      scsilib_libs=""
-      scsilib_objs="ScsiIf-irix.o"
-      ;;
-
   *-darwin*)
       scsilib_libs="-framework IOKit -framework CoreFoundation"
       scsilib_objs="ScsiIf-osx.o"
