@@ -124,8 +124,6 @@ AudioCDView::AudioCDView(AudioCDProject *project)
         sigc::mem_fun(*this, &AudioCDView::trackMarkSelectedCallback));
     sampleDisplay_->trackMarkMoved.connect(
         sigc::mem_fun(*this, &AudioCDView::trackMarkMovedCallback));
-    sampleDisplay_->viewModified.connect(sigc::mem_fun(*this, &AudioCDView::viewModifiedCallback));
-
     tocEditView_->sampleViewFull();
 }
 
@@ -159,10 +157,8 @@ void AudioCDView::update(unsigned long level)
         int trackNr, indexNr;
 
         if (tocEditView_->trackSelection(&trackNr) && tocEditView_->indexSelection(&indexNr)) {
-            sampleDisplay_->setSelectedTrackMarker(trackNr, indexNr);
 	    trackInfoAction_->set_enabled(true);
         } else {
-            sampleDisplay_->setSelectedTrackMarker(0, 0);
 	    trackInfoAction_->set_enabled(false);
         }
     }
@@ -301,8 +297,16 @@ int AudioCDView::getMarker(unsigned long *sample)
     return 1;
 }
 
-void AudioCDView::trackMarkSelectedCallback(const Track *, int trackNr, int indexNr)
+void AudioCDView::trackMarkSelectedCallback(int trackNr, int indexNr)
 {
+    if (trackNr) {
+        if (indexNr == 1)
+            project_->statusMessage("Track %d selected.", trackNr);
+        else
+            project_->statusMessage("Track %d Index %d selected.", trackNr, indexNr);
+    } else {
+        project_->statusMessage("");
+    }
     tocEditView_->trackSelection(trackNr);
     tocEditView_->indexSelection(indexNr);
     update(UPD_TRACK_MARK_SEL);
@@ -346,13 +350,6 @@ void AudioCDView::selectionClearedCallback()
 void AudioCDView::cursorMovedCallback(unsigned long pos)
 {
     cursorPos_->set_text(sample2string(pos));
-}
-
-void AudioCDView::viewModifiedCallback(unsigned long start, unsigned long end)
-{
-    if (tocEditView_->sampleView(start, end)) {
-        update(UPD_SAMPLES);
-    }
 }
 
 // Called when the user enters a value in the marker entry

@@ -165,14 +165,17 @@ const TrackManager::Entry *TrackManager::pick(gint x, gint *stopXMin, gint *stop
 
 const TrackManager::Entry* TrackManager::pickRange(gint x)
 {
-    EntryList *run;
-    Entry *pred;
+    EntryList *run = entries_;
+    Entry *pred = nullptr;
 
-    for (run = entries_, pred = NULL; run != NULL; pred = run->ent, run = run->next) {
-        if ((pred == nullptr || x >= pred->xpos) &&
-            x < run->ent->xpos)
+    while (1) {
+        if (!run || x < run->ent->xpos)
             return pred;
-    }
+        pred = run->ent;
+        run = run->next;
+    };
+
+    return nullptr;
 }
 
 void TrackManager::update(const Toc *toc, unsigned long start, unsigned long end, gint width)

@@ -35,7 +35,6 @@ public:
 
     void setTocEdit(Glib::RefPtr<TocEdit>);
     bool getSelection(unsigned long* start, unsigned long* end);
-    void setSelectedTrackMarker(int trackNr, int indexNr);
     void setMarker(unsigned long sample);
     void clearMarker();
     int  getMarker(unsigned long *);
@@ -54,7 +53,7 @@ public:
     sigc::signal<void(unsigned long)> cursorMoved;
     sigc::signal<void(unsigned long, unsigned long)> selectionSet;
     sigc::signal<void()> selectionCleared;
-    sigc::signal<void(const Track *, int, int)> trackMarkSelected;
+    sigc::signal<void(int, int)> trackMarkSelected;
     sigc::signal<void(const Track *, int, int, unsigned long)> trackMarkMoved;
     sigc::signal<void(unsigned long, unsigned long)> viewModified;
   
@@ -68,22 +67,41 @@ protected:
 
     void on_draw_callback(const Cairo::RefPtr<Cairo::Context>& cr, int width, int height);
 
-    void setColor(Gdk::RGBA c, Cairo::RefPtr<Cairo::Context> cr =
-                  Cairo::RefPtr<Cairo::Context>());
-    void drawLine(gint, gint, gint, gint, Cairo::RefPtr<Cairo::Context> cr =
-                  Cairo::RefPtr<Cairo::Context>());
-    void drawRectangle(gint, gint, gint, gint);
-    void drawPixmap(Glib::RefPtr<Gdk::Pixbuf>, gint, gint);
-    void drawText(const char* text, gint, gint);
-    void draw_surface(const Cairo::RefPtr<Cairo::Context>& cr);
+    class Drawer {
+    public:
+        Drawer(SampleDisplay* sd, Cairo::RefPtr<Cairo::ImageSurface> surface) {
+            cr_ = Cairo::Context::create(surface); sd_ = sd; }
+        Drawer(SampleDisplay* sd, Cairo::RefPtr<Cairo::Context> c)
+            : cr_(c), sd_(sd) {}
+        
+        void setColor(Gdk::RGBA c);
+        void setColor(double r, double g, double b, double a = 1.0);
+        void drawLine(gint, gint, gint, gint);
+        void drawRectangle(gint, gint, gint, gint);
+        void drawPixmap(Glib::RefPtr<Gdk::Pixbuf>, gint, gint);
+        void drawText(const char* text, gint, gint);
+
+    private:
+        Cairo::RefPtr<Cairo::Context> cr_;
+        SampleDisplay* sd_;
+    };
+
+    class SampleDrawer : public Drawer {
+    public:
+        SampleDrawer(SampleDisplay* sd) : Drawer(sd, sd->sample_layer_) {}
+    };
+    class MarkerDrawer : public Drawer {
+    public:
+        MarkerDrawer(SampleDisplay* sd) : Drawer(sd, sd->marks_layer_) {}
+    };
 
 private:
     enum DragMode { DRAG_NONE, DRAG_SAMPLE_MARKER, DRAG_TRACK_MARKER };
 
     Glib::RefPtr<Gtk::Adjustment> adjustment_;
 
-    Cairo::RefPtr<Cairo::ImageSurface> surface_;
-    Cairo::RefPtr<Cairo::Context> surface_cr_;
+    Cairo::RefPtr<Cairo::ImageSurface> sample_layer_;
+    Cairo::RefPtr<Cairo::ImageSurface> marks_layer_;
   
     Glib::RefPtr<Gdk::Pixbuf> trackMarkerPixmap_;
     Glib::RefPtr<Gdk::Pixbuf> indexMarkerPixmap_;
@@ -167,19 +185,20 @@ private:
     void scrollTo();
     void redraw(gint x, gint y, gint width, gint height);
     void readSamples(long startBlock, long endBlock);
-    void updateSamples();
-    void draw_cursor(const Cairo::RefPtr<Cairo::Context>& cr);
+    void drawSamples();
+    void drawMarks(Drawer&);
+    void draw_cursor(Drawer&);
     void set_cursor(gint);
     void unset_cursor();
     unsigned long pixel2sample(gint x);
     gint sample2pixel(unsigned long);
-    void draw_marker(const Cairo::RefPtr<Cairo::Context>& cr);
+    void draw_marker(Drawer&);
     void removeMarker();
-    void drawTimeTick(gint x, gint y, unsigned long sample);
-    void drawTimeLine();
-    void drawTrackMarker(int mode, gint x, int trackNr, int indexNr,
+    void drawTimeTick(Drawer&, gint x, gint y, unsigned long sample);
+    void drawTimeLine(Drawer&);
+    void drawTrackMarker(Drawer&, gint x, int trackNr, int indexNr,
                          int selected, int extend);
-    void drawTrackLine();
+    void drawTrackLine(Drawer&);
 };
 
 #endif

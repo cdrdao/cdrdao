@@ -85,9 +85,8 @@ class AudioCDView : public Gtk::Box
     void selectionSetCallback(unsigned long, unsigned long);
     void selectAll();
     void selectionClearedCallback();
-    void trackMarkSelectedCallback(const Track *, int trackNr, int indexNr);
+    void trackMarkSelectedCallback(int trackNr, int indexNr);
     void trackMarkMovedCallback(const Track *, int trackNr, int indexNr, unsigned long sample);
-    void viewModifiedCallback(unsigned long, unsigned long);
     int  snapSampleToBlock(unsigned long sample, long *block);
 
     void trackInfo();
