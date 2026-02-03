@@ -461,7 +461,6 @@ void TocEdit::showOutstanding()
 
 void TocEdit::taskQueueStarted()
 {
-    log_message(0, "TASKS STARTED");
     signalCancelEnable(true);
     signalSpinner(true);
     blockEdit();
@@ -471,7 +470,6 @@ void TocEdit::taskQueueStarted()
 
 void TocEdit::taskQueueDone()
 {
-    log_message(0, "TASKS DONE");
     signalProgressFraction(0.0);
     signalSpinner(false);
     unblockEdit();

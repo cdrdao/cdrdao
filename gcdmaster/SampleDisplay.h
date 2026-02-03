@@ -66,7 +66,7 @@ protected:
     void on_enter(double x, double y);
     void on_leave();
 
-    void on_draw(const Cairo::RefPtr<Cairo::Context>& cr, int width, int height);
+    void on_draw_callback(const Cairo::RefPtr<Cairo::Context>& cr, int width, int height);
 
     void setColor(Gdk::RGBA c, Cairo::RefPtr<Cairo::Context> cr =
                   Cairo::RefPtr<Cairo::Context>());
@@ -157,6 +157,8 @@ private:
     gint dragStart_, dragEnd_;
     gint dragStopMin_, dragStopMax_;
     gint dragLastX_;
+    sigc::connection drag_timeout;
+    bool drag_enabled = false;
 
     // Event controllers
     Glib::RefPtr<Gtk::GestureClick> click_controller_;

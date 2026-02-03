@@ -54,7 +54,6 @@ class TrackManager
             indexNr = in;
             xpos = x;
             extend = 0;
-            drawn = 1;
             selected = 0;
         }
         const Track *track;
@@ -62,7 +61,6 @@ class TrackManager
         int indexNr;
         gint xpos;
         unsigned int extend : 1;
-        unsigned int drawn : 1;
         unsigned int selected : 1;
     };
 
@@ -73,6 +71,9 @@ class TrackManager
 
     // returns entry that is picked at given x-postion
     const Entry *pick(gint x, gint *stopXMin, gint *stopXMax);
+
+    // returns last entry closer to x
+    const Entry *pickRange(gint x);
 
     // selects given entry, use 'NULL' to unselect all
     void select(const Entry *);

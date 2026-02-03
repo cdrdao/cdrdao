@@ -143,7 +143,6 @@ void TaskManager::addJob(Task *job)
 // Runs in worker thread
 void TaskManager::runJob(Task *job)
 {
-    std::cerr << "[THREAD] runJob\n";
     assert(std::this_thread::get_id() != main_thread_id);
     Glib::signal_idle().connect_once([this, job]() { this->signalJobStarted(job); });
     try {
@@ -151,14 +150,12 @@ void TaskManager::runJob(Task *job)
     } catch (std::exception& e) {
 	job->exception = e.what();
     }
-    std::cerr << "[THREAD] runJob done\n";
     Glib::signal_idle().connect_once([this, job]() { this->jobDone(job); });
 }
 
 // Runs in main thread.
 void TaskManager::jobDone(Task *job)
 {
-    std::cerr << "[MAIN] jobDone()\n";
     assert(std::this_thread::get_id() == main_thread_id);
     job->done = true;
 
@@ -170,7 +167,6 @@ void TaskManager::jobDone(Task *job)
 	completionQueue.push(tasks.front());
 	tasks.pop();
     }
-    std::cerr << "[MAIN] jobDone() exit\n";
 }
 
 double TaskManager::completion()
@@ -183,16 +179,12 @@ double TaskManager::completion()
 
 bool TaskManager::completionThread()
 {
-    std::cerr << "[MAIN] completionThread() start\n";
     assert(std::this_thread::get_id() == main_thread_id);
     Task* t = completionQueue.front();
-    std::cerr << "[MAIN] completionThread() tasks " << tasks.size() << "\n";
     t->completed();
     completionQueue.pop();
     num_completed++;
 
-    log_message(0, "[MAIN] completionQueue empty %d/%d", num_completed, num_added);
-    std::cerr << "[MAIN] completionThread() is empty? " << completionQueue.size() << "\n";
     if (completionQueue.empty()) {
 	if (num_completed == num_added) {
 	    signalQueueEmptied();
@@ -200,10 +192,8 @@ bool TaskManager::completionThread()
 	    num_added = 0;
 	    active = false;
 	}
-	std::cerr << "[MAIN] completionThread() returns FALSE\n";
 	return false;
     } else {
-	std::cerr << "[MAIN] completionThread() returns TRUE\n";
 	return true;
     }
 }

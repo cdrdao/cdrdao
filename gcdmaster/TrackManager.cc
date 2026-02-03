@@ -44,6 +44,7 @@
 #include "TrackManager.h"
 
 #include "Toc.h"
+#include "log.h"
 #include "util.h"
 
 TrackManager::TrackManager(gint trackMarkerWidth)
@@ -110,10 +111,7 @@ void TrackManager::select(const Entry *ent)
     EntryList *run;
 
     for (run = entries_; run != NULL; run = run->next) {
-        if (run->ent == ent)
-            run->ent->selected = 1;
-        else
-            run->ent->selected = 0;
+        run->ent->selected = (ent && run->ent == ent) ? 1 : 0;
     }
 }
 
@@ -136,7 +134,7 @@ const TrackManager::Entry *TrackManager::pick(gint x, gint *stopXMin, gint *stop
 
     for (run = entries_, pred = NULL; run != NULL; pred = run->ent, run = run->next) {
         if ((run->ent->indexNr == 1 || run->ent->selected) && run->ent->extend == 0 &&
-            run->ent->drawn && x >= run->ent->xpos && x < run->ent->xpos + trackMarkerWidth_) {
+            x >= run->ent->xpos && x < run->ent->xpos + trackMarkerWidth_) {
 
             if (stopXMin != NULL)
                 *stopXMin = pred != NULL ? pred->xpos + 1 : 0;
@@ -149,7 +147,7 @@ const TrackManager::Entry *TrackManager::pick(gint x, gint *stopXMin, gint *stop
     }
 
     for (run = entries_, pred = NULL; run != NULL; pred = run->ent, run = run->next) {
-        if (run->ent->indexNr != 1 && run->ent->extend == 0 && run->ent->drawn &&
+        if (run->ent->indexNr != 1 && run->ent->extend == 0 && 
             x >= run->ent->xpos && x < run->ent->xpos + trackMarkerWidth_) {
 
             if (stopXMin != NULL)
@@ -163,6 +161,18 @@ const TrackManager::Entry *TrackManager::pick(gint x, gint *stopXMin, gint *stop
     }
 
     return NULL;
+}
+
+const TrackManager::Entry* TrackManager::pickRange(gint x)
+{
+    EntryList *run;
+    Entry *pred;
+
+    for (run = entries_, pred = NULL; run != NULL; pred = run->ent, run = run->next) {
+        if ((pred == nullptr || x >= pred->xpos) &&
+            x < run->ent->xpos)
+            return pred;
+    }
 }
 
 void TrackManager::update(const Toc *toc, unsigned long start, unsigned long end, gint width)

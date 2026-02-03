@@ -117,12 +117,15 @@ static const gchar *INDEX_EXTEND_XPM_DATA[] = {
 
 SampleDisplay::SampleDisplay()
 {
+    signal_resize().connect(sigc::mem_fun(*this,
+                                          &SampleDisplay::on_resize));
+
     adjustment_ = Gtk::Adjustment::create(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
     adjustment_->signal_value_changed().connect(
         sigc::mem_fun(*this, &SampleDisplay::scrollTo));
 
     // Setup drawing function
-    set_draw_func(sigc::mem_fun(*this, &SampleDisplay::on_draw));
+    set_draw_func(sigc::mem_fun(*this, &SampleDisplay::on_draw_callback));
 
     // Setup event controllers
     click_controller_ = Gtk::GestureClick::create();
@@ -478,17 +481,24 @@ void SampleDisplay::on_resize(int w, int h)
     }
 }
 
-void SampleDisplay::on_draw(const Cairo::RefPtr<Cairo::Context>& cr, int w, int h)
+void SampleDisplay::on_draw_callback(const Cairo::RefPtr<Cairo::Context>& cr, int w, int h)
 {
     updateSamples();
-
+    updateTrackMarks();
     if (draw_samples_) {
         draw_surface(cr);
 
-        if (dragMode_ == DRAG_SAMPLE_MARKER) {
+        if (drag_enabled && dragMode_ == DRAG_SAMPLE_MARKER) {
             cr->set_source_rgba(1.0, 0.0, 0.0, 0.5);
             cr->rectangle(selection_drag_x_, 0, selection_drag_w_, h - 1);
             cr->fill();
+        }
+    }
+
+    if (drag_enabled && dragMode_ == DRAG_TRACK_MARKER) {
+        if (dragLastX_ > 0) {
+            drawTrackMarker(1, dragLastX_, pickedTrackMarker_->trackNr,
+                            pickedTrackMarker_->indexNr, 0, 0);
         }
     }
 
@@ -507,6 +517,13 @@ void SampleDisplay::on_pressed(int n_press, double x, double y)
     if (cursorControlExtern_)
 	return;
 
+    drag_timeout = Glib::signal_timeout().connect([this]() {
+        if (dragMode_ != DRAG_NONE) {
+            drag_enabled = true;
+        }
+        return false;
+    }, 300);
+
     if (ix >= sampleStartX_ && ix <= sampleEndX_) {
 	if (iy > trackLineY_) {
 	    dragMode_ = DRAG_SAMPLE_MARKER;
@@ -521,7 +538,23 @@ void SampleDisplay::on_pressed(int n_press, double x, double y)
 		dragLastX_ = -1;
 		dragStopMin_ += sampleStartX_;
 		dragStopMax_ += sampleStartX_;
-	    }
+	    } else {
+                auto pick = trackManager_->pickRange(ix);
+                bool toggled = (pick &&
+                           pick->trackNr == selectedTrack_ && pick->indexNr == selectedIndex_);
+                if (toggled)
+                    pick = nullptr;
+                selectedTrack_ = pick ? pick->trackNr : 0;
+                selectedIndex_ = pick ? pick->indexNr : 0;
+                trackManager_->select(pick);
+                if (pick) {
+                    pickedTrackMarker_ = pick;
+                    trackMarkSelected.emit(pickedTrackMarker_->track,
+                                           selectedTrack_, selectedIndex_);
+                }
+                drawTrackLine();
+                queue_draw();
+            }
 	}
     }
 }
@@ -529,6 +562,8 @@ void SampleDisplay::on_pressed(int n_press, double x, double y)
 void SampleDisplay::on_released(int n_press, double x, double y)
 {
     gint ix = (gint)x;
+
+    drag_timeout.disconnect();
 
     if (cursorControlExtern_)
         return;
@@ -542,7 +577,9 @@ void SampleDisplay::on_released(int n_press, double x, double y)
 
     if (dragMode_ != DRAG_NONE) {
         if (dragMode_ == DRAG_SAMPLE_MARKER) {
-            if (dragStart_ - ix >= -5 && dragStart_ - ix <= 5) {
+
+            if (!drag_enabled || abs(dragStart_ - ix) <= 3) {
+                // Not actually a drag, considered as a click
                 selectionSet_ = false;
                 selectionCleared.emit();
                 markerSet.emit(pixel2sample(dragStart_));
@@ -565,7 +602,9 @@ void SampleDisplay::on_released(int n_press, double x, double y)
             }
         }
         else if (dragMode_ == DRAG_TRACK_MARKER) {
-            if (dragStart_ - ix >= -5 && dragStart_ - ix <= 5) {
+
+            if (!drag_enabled || abs(dragStart_ - ix) <= 3) {
+                // Not considered a drag.
                 trackManager_->select(pickedTrackMarker_);
 
                 if (selectedTrack_ == pickedTrackMarker_->trackNr &&
@@ -585,13 +624,14 @@ void SampleDisplay::on_released(int n_press, double x, double y)
                 trackMarkMoved.emit(pickedTrackMarker_->track, selectedTrack_,
 				    selectedIndex_, pixel2sample(ix));
             }
-            pickedTrackMarker_ = NULL;
+            pickedTrackMarker_ = nullptr;
         }
 
-        dragMode_ = DRAG_NONE;
         set_cursor(ix);
         queue_draw();
     }
+    dragMode_ = DRAG_NONE;
+    drag_enabled = false;
 }
 
 void SampleDisplay::on_motion(double x, double y)
@@ -602,7 +642,7 @@ void SampleDisplay::on_motion(double x, double y)
     if (cursorControlExtern_)
         return;
 
-    if (dragMode_ == DRAG_SAMPLE_MARKER) {
+    if (drag_enabled && dragMode_ == DRAG_SAMPLE_MARKER) {
         gint dw = 0;
         gint dx = 0;
 
@@ -611,57 +651,27 @@ void SampleDisplay::on_motion(double x, double y)
         else if (ix > sampleEndX_)
             ix = sampleEndX_;
 
-        if (selectionEnd_ > dragStart_) {
-            if (ix < selectionEnd_) {
-                if (ix < dragStart_) {
-                    dw = dragStart_ - ix + 1;
-                    dx = ix;
-                }
-            }
-            else {
-                dw = ix - selectionEnd_;
-                dx = selectionEnd_ + 1;
-            }
+        if (x > dragStart_) {
+            selection_drag_x_ = dragStart_;
+            selection_drag_w_ = x - dragStart_ + 1;
+        } else {
+            selection_drag_w_ = dragStart_ - x + 1;
+            selection_drag_x_ = x;
         }
-        else if (selectionEnd_ < dragStart_) {
-            if (ix > selectionEnd_) {
-
-                if (ix > dragStart_) {
-                    dw = ix - dragStart_ + 1;
-                    dx = dragStart_;
-                }
-            }
-            else {
-                dw = selectionEnd_ - ix;
-                dx = ix;
-            }
-        }
-
-        if (dw != 0) {
-            selection_drag_x_ = dx;
-            selection_drag_w_ = dw;
-            queue_draw();
-        }
-        selectionEnd_ = ix;
-
-    } else if (dragMode_ == DRAG_TRACK_MARKER) {
+    } else if (drag_enabled && dragMode_ == DRAG_TRACK_MARKER) {
         if (ix < dragStopMin_)
             ix = dragStopMin_;
 
         if (ix > dragStopMax_)
             ix = dragStopMax_;
 
-        if (dragLastX_ > 0) {
-            drawTrackMarker(2, dragLastX_, 0, 0, 0, 0);
-        }
-        drawTrackMarker(1, ix, pickedTrackMarker_->trackNr,
-                        pickedTrackMarker_->indexNr, 0, 0);
         dragLastX_ = ix;
         set_cursor(ix);
     }
     else {
         set_cursor(ix);
     }
+    queue_draw();
 }
 
 void SampleDisplay::on_enter(double x, double y)
@@ -967,9 +977,7 @@ void SampleDisplay::updateSamples()
     drawTimeLine();
 
     trackManager_->update(toc, minSample_, maxSample_, sampleWidthX_);
-    if (selectedTrack_ > 0) {
-        trackManager_->select(selectedTrack_, selectedIndex_);
-    }
+    trackManager_->select(selectedTrack_, selectedIndex_);
     drawTrackLine();
 }
 
@@ -1179,9 +1187,7 @@ void SampleDisplay::updateTrackMarks()
                   width_ - sampleStartX_, trackLineHeight_);
 
     trackManager_->update(toc, minSample_, maxSample_, sampleWidthX_);
-    if (selectedTrack_ > 0) {
-        trackManager_->select(selectedTrack_, selectedIndex_);
-    }
+    trackManager_->select(selectedTrack_, selectedIndex_);
     drawTrackLine();
 
     queue_draw();
@@ -1231,6 +1237,9 @@ void SampleDisplay::drawText(const char* text, gint x, gint y)
 
 void SampleDisplay::draw_surface(const Cairo::RefPtr<Cairo::Context>& cr)
 {
+    cr->save();
     cr->set_source(surface_, 0.0, 0.0);
     cr->paint();
+    cr->restore();
 }
+
