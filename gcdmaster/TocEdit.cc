@@ -73,7 +73,6 @@ void TocEdit::toc(Toc *t, const std::string& filename = "unnamed.toc", bool noda
     filename_ = filename;
 
     editBlocked_ = false;
-    empty_ = false;
     nodata_ = nodata;
 
     if (sampleManager_)

@@ -225,7 +225,7 @@ void AudioCDView::update(unsigned long level)
     trackInfoDialog_->update(level, tocEditView_);
     addSilenceDialog_->update(level, tocEditView_);
 
-    if (!tocEditView_ || tocEditView_->isSampleViewFull())
+    if (!tocEditView_ || tocEditView_->isSampleViewFull() || project_->tocEdit()->empty())
 	scrollBar_->hide();
     else
 	scrollBar_->show();
