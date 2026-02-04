@@ -46,26 +46,6 @@ RecordCDSource::RecordCDSource(Gtk::Window *parent)
     vbox->set_margin(5);
     vbox->set_spacing(5);
     {
-	auto hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
-	auto *label = Gtk::make_managed<Gtk::Label>(_("Speed: "));
-	hbox->append(*label);
-
-	Glib::RefPtr<Gtk::Adjustment> adjustment = Gtk::Adjustment::create(1, 1, 50);
-	speedSpinButton_ = new Gtk::SpinButton(adjustment);
-	speedSpinButton_->set_digits(0);
-	speedSpinButton_->set_sensitive(false);
-	adjustment->signal_value_changed().connect(sigc::mem_fun(*this, &RecordCDSource::speedChanged));
-	speedSpinButton_->set_margin_start(10);
-	hbox->append(*speedSpinButton_);
-
-	speedButton_ = Gtk::make_managed<Gtk::CheckButton>(_("Use max."));
-	speedButton_->set_active(true);
-	speedButton_->signal_toggled().connect(
-	    sigc::mem_fun(*this, &RecordCDSource::speedButtonChanged));
-	hbox->append(*speedButton_);
-	vbox->append(*hbox);
-    }
-    {
         continueOnErrorButton_ = Gtk::make_managed<Gtk::CheckButton>(_("Continue if errors found"));
         continueOnErrorButton_->set_active(false);
         vbox->append(*continueOnErrorButton_);
@@ -148,19 +128,4 @@ void RecordCDSource::setSubChanReadMode()
 int RecordCDSource::getSubChanReadMode()
 {
     return SUBCHAN_READ_MODE_TABLE[subChanReadMode_].mode;
-}
-
-void RecordCDSource::speedButtonChanged()
-{
-    if (speedButton_->get_active()) {
-        speedSpinButton_->set_sensitive(false);
-    } else {
-        speedSpinButton_->set_sensitive(true);
-    }
-}
-
-void RecordCDSource::speedChanged()
-{
-    // Do some validating here. speed_ <= MAX read speed of CD.
-    speed_ = speedSpinButton_->get_value_as_int();
 }

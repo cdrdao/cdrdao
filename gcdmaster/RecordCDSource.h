@@ -43,14 +43,10 @@ class RecordCDSource : public Gtk::Frame
 
   private:
     int correction_ = 0;
-    int speed_ = 1;
     int subChanReadMode_ = 0;
 
     Gtk::Window *parent_;
     Gtk::Window *moreOptions_ = nullptr;
-
-    Gtk::SpinButton *speedSpinButton_;
-    Gtk::CheckButton *speedButton_;
 
     Gtk::DropDown*    correctionMenu_;
     Gtk::DropDown*    subChanReadModeMenu_;
@@ -61,8 +57,6 @@ class RecordCDSource : public Gtk::Frame
 
     void setCorrection();
     void setSubChanReadMode();
-    void speedButtonChanged();
-    void speedChanged();
 };
 
 #endif
