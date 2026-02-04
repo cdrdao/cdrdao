@@ -31,6 +31,7 @@ class TocInfoDialog;
 class CdTextDialog;
 class TocEdit;
 class RecordTocDialog;
+class AudioCDRead;
 
 #include "Toc.h"
 #include "gcdmaster.h"
@@ -56,6 +57,7 @@ class AudioCDProject : public GCDWindow
     void saveAsProject();
     void recordToc2CD();
     void tocRead();
+    void CDRead();
 
     unsigned long playPosition();
 
@@ -123,7 +125,7 @@ class AudioCDProject : public GCDWindow
     bool playCallback();
 
     Glib::RefPtr<Gio::SimpleAction> play_action_, pause_action_, stop_action_;
-    Glib::RefPtr<Gio::SimpleAction> toc_read_action_;
+    Glib::RefPtr<Gio::SimpleAction> toc_read_action_, cd_read_action_;
 
     AudioCDView *audioCDView_;
     Glib::RefPtr<RecordTocDialog> recordTocDialog_;
@@ -131,6 +133,7 @@ class AudioCDProject : public GCDWindow
     Glib::RefPtr<CdTextDialog> cdTextDialog_;
     Glib::RefPtr<Gtk::ToggleButton> selectToggle_;
     Glib::RefPtr<Gtk::ToggleButton> zoomToggle_;
+    Glib::RefPtr<AudioCDRead> cdReader_;
     void projectInfo();
     void cdTextDialog();
     virtual void update(unsigned long level) override;

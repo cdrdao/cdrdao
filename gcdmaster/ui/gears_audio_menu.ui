@@ -88,7 +88,11 @@
   <menu id="disc-ops-menu">
     <section>
       <item>
-        <attribute name="label" translatable="yes">Read TOC from disc</attribute>
+        <attribute name="label" translatable="yes">Read disc</attribute>
+        <attribute name="action">win.cd-read</attribute>
+      </item>
+      <item>
+        <attribute name="label" translatable="yes">Quick TOC read from disc</attribute>
         <attribute name="action">win.toc-read</attribute>
       </item>
     </section>

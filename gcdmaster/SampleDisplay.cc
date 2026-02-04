@@ -216,6 +216,7 @@ void SampleDisplay::updateToc(unsigned long smin, unsigned long smax)
 
 void SampleDisplay::setView(unsigned long start, unsigned long end)
 {
+    log_message(0, "setView() <%lu,%lu> (%p)", start, end, tocEdit_);
     if (tocEdit_ == NULL)
         return;
 
@@ -255,6 +256,7 @@ void SampleDisplay::setView(unsigned long start, unsigned long end)
     }
 
     drawSamples();
+    queue_draw();
 }
 
 void SampleDisplay::getView(unsigned long *start, unsigned long *end)

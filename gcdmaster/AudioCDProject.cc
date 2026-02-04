@@ -30,6 +30,7 @@
 #include "CdrdaoDirect.h"
 #include "AudioCDProject.h"
 #include "AudioCDView.h"
+#include "AudioCDRead.h"
 #include "CdTextDialog.h"
 #include "MessageBox.h"
 #include "RecordTocDialog.h"
@@ -72,6 +73,7 @@ AudioCDProject::AudioCDProject(BaseObjectType* cobject,
     add_action("project-info", sigc::mem_fun(*this, &AudioCDProject::projectInfo));
     add_action("cdtext", sigc::mem_fun(*this, &AudioCDProject::cdTextDialog));
     toc_read_action_ = add_action("toc-read", sigc::mem_fun(*this, &AudioCDProject::tocRead));
+    cd_read_action_ = add_action("cd-read", sigc::mem_fun(*this, &AudioCDProject::CDRead));
     add_action("record", sigc::mem_fun(*this, &AudioCDProject::recordToc2CD));
     play_action_ =
         add_action("play", sigc::mem_fun(*this, &AudioCDProject::on_play_clicked));
@@ -367,6 +369,19 @@ void AudioCDProject::tocRead()
     } catch (...) {
 	MessageBox::message(*this, _("Insert an audio CD first."));
     }
+}
+
+void AudioCDProject::CDRead()
+{
+    if (tocEdit_->tocDirty()) {
+	MessageBox::message(*this, _("Save your project first"),
+			   {_("This will replace your current project.")});
+	return;
+    }
+    if (!cdReader_)
+	cdReader_ = AudioCDRead::create(this);
+
+    cdReader_->present();
 }
 
 void AudioCDProject::projectInfo()

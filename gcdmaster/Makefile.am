@@ -5,7 +5,10 @@ gcdmaster_SOURCES = \
 	AddFileDialog.cc	\
 	AddSilenceDialog.h	\
 	AddSilenceDialog.cc	\
+	AudioCDProject.h	\
 	AudioCDProject.cc 	\
+	AudioCDRead.h		\
+	AudioCDRead.cc		\
 	AudioCDView.h		\
 	AudioCDView.cc		\
 	BlankCDDialog.cc	\
@@ -62,7 +65,6 @@ gcdmaster_SOURCES = \
 	TrackManager.h		\
 	TrackManager.cc		\
 	gcdmaster.h		\
-	AudioCDProject.h	\
 	GenericView.h		\
 	BlankCDDialog.h		\
 	guiUpdate.h		\
