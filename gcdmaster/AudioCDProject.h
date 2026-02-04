@@ -99,6 +99,7 @@ class AudioCDProject : public GCDWindow
     virtual void spin(bool);
     virtual void fullView();
     virtual void sampleSelect(unsigned long, unsigned long);
+    virtual void saveAsDone(Glib::RefPtr<Gtk::FileDialog>, const Glib::RefPtr<Gio::AsyncResult>&);
 
     virtual void updateWindowTitle();
 
@@ -126,6 +127,7 @@ class AudioCDProject : public GCDWindow
 
     Glib::RefPtr<Gio::SimpleAction> play_action_, pause_action_, stop_action_;
     Glib::RefPtr<Gio::SimpleAction> toc_read_action_, cd_read_action_;
+    Glib::RefPtr<Gio::SimpleAction> save_action_, save_as_action_;
 
     AudioCDView *audioCDView_;
     Glib::RefPtr<RecordTocDialog> recordTocDialog_;

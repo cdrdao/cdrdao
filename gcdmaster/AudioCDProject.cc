@@ -68,8 +68,8 @@ AudioCDProject::AudioCDProject(BaseObjectType* cobject,
     GCDWindow(cobject), builder_(builder)
 {
     // Add actions
-    add_action("save", sigc::mem_fun(*this, &AudioCDProject::saveProject));
-    add_action("save-as", sigc::mem_fun(*this, &AudioCDProject::saveAsProject));
+    save_action_ = add_action("save", sigc::mem_fun(*this, &AudioCDProject::saveProject));
+    save_as_action_ = add_action("save-as", sigc::mem_fun(*this, &AudioCDProject::saveAsProject));
     add_action("project-info", sigc::mem_fun(*this, &AudioCDProject::projectInfo));
     add_action("cdtext", sigc::mem_fun(*this, &AudioCDProject::cdTextDialog));
     toc_read_action_ = add_action("toc-read", sigc::mem_fun(*this, &AudioCDProject::tocRead));
@@ -336,6 +336,33 @@ void AudioCDProject::saveProject()
 
 void AudioCDProject::saveAsProject()
 {
+    auto dialog = Gtk::FileDialog::create();
+    dialog->set_modal(true);
+    dialog->set_title(_("Save Project"));
+    dialog->save(sigc::bind<0>(sigc::mem_fun(*this, &AudioCDProject::saveAsDone), dialog));
+}
+
+void AudioCDProject::saveAsDone(Glib::RefPtr<Gtk::FileDialog> dialog,
+				const Glib::RefPtr<Gio::AsyncResult>& result)
+{
+    try {
+	auto file = dialog->save_finish(result);
+	if (file) {
+	    if (tocEdit_->saveAsToc(file->get_path()) == 0) {
+		statusMessage(_("Project saved to \"%s\"."),
+			      tocEdit_->filename().c_str());
+		updateWindowTitle();
+		guiUpdate(UPD_TOC_DIRTY);
+		new_ = false;
+	    } else {
+		std::string m(_("Cannot save toc to \""));
+		m += tocEdit_->filename();
+		m += "\":";
+		errorDialog(m);
+	    }
+	}
+    } catch (...) {
+    }
 }
 
 void AudioCDProject::recordToc2CD()
@@ -443,6 +470,8 @@ void AudioCDProject::update(unsigned long level)
         }
     }
 
+    save_action_->set_enabled(!tocEdit_->empty());
+    save_as_action_->set_enabled(!tocEdit_->empty());
     stopButton_->set_sensitive(tocEdit_->isQueueActive());
 }
 

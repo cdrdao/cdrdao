@@ -216,7 +216,7 @@ void SampleDisplay::updateToc(unsigned long smin, unsigned long smax)
 
 void SampleDisplay::setView(unsigned long start, unsigned long end)
 {
-    log_message(0, "setView() <%lu,%lu> (%p)", start, end, tocEdit_);
+    log_message(0, "setView() <%lu,%lu>)", start, end);
     if (tocEdit_ == NULL)
         return;
 

@@ -65,7 +65,7 @@ class TocEdit : public Glib::Object
 
     int readToc(const char *);
     int saveToc();
-    int saveAsToc(const char *);
+    int saveAsToc(const std::string&);
 
     int moveTrackMarker(int trackNr, int indexNr, long lba);
     int addTrackMarker(long lba);

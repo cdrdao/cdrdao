@@ -192,11 +192,11 @@ int TocEdit::saveToc()
     return ret;
 }
 
-int TocEdit::saveAsToc(const char *fname)
+int TocEdit::saveAsToc(const std::string& fname)
 {
     int ret;
 
-    if (fname != NULL && *fname != 0) {
+    if (!fname.empty()) {
         ret = toc_->write(fname);
 
         if (ret == 0) {
