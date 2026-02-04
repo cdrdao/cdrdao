@@ -35,8 +35,6 @@ gcdmaster_SOURCES = \
 	RecordCDSource.cc	\
 	RecordCDTarget.h	\
 	RecordCDTarget.cc	\
-	RecordHDTarget.h	\
-	RecordHDTarget.cc	\
 	RecordTocDialog.h	\
 	RecordTocDialog.cc	\
 	RecordTocSource.h	\

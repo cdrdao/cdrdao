@@ -22,7 +22,6 @@
 
 #include "DeviceList.h"
 #include "MessageBox.h"
-#include "RecordCDSource.h"
 #include "RecordCDTarget.h"
 #include "RecordTocDialog.h"
 #include "RecordTocSource.h"

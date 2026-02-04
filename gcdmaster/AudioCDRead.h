@@ -37,7 +37,9 @@ class AudioCDRead : public Gtk::Window
 
   private:
     AudioCDRead(Gtk::Window* parent);
+
     void on_datafile_button_clicked();
+    void execute();
 
     Gtk::Button* datafileButton_;
     std::filesystem::path datafilePath_;
