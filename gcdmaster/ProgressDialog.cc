@@ -127,7 +127,7 @@ ProgressDialog::ProgressDialog(ProgressDialogPool *father)
     setCloseButtonLabel(1);
 }
 
-void ProgressDialog::start(CdDevice *device, const char *tocFileName)
+void ProgressDialog::start(CdDevice *device, const std::string &tocFileName)
 {
     if (!device) return;
     if (active_) {
@@ -567,7 +567,7 @@ void ProgressDialogPool::update(unsigned long status)
         run->update(status);
 }
 
-ProgressDialog *ProgressDialogPool::start(CdDevice *device, const char *tocFileName,
+ProgressDialog *ProgressDialogPool::start(CdDevice *device, const std::string& tocFileName,
                                           bool showBuffer, bool showTrack)
 {
     ProgressDialog *dialog;
@@ -591,7 +591,7 @@ ProgressDialog *ProgressDialogPool::start(CdDevice *device, const char *tocFileN
 }
 
 ProgressDialog *ProgressDialogPool::start(Gtk::Window &parent, CdDevice *device,
-                                          const char *tocFileName, bool showBuffer, bool showTrack)
+                                          const std::string& tocFileName, bool showBuffer, bool showTrack)
 {
     ProgressDialog *dialog = start(device, tocFileName, showBuffer, showTrack);
     dialog->set_transient_for(parent);

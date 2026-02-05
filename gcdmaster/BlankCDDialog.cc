@@ -127,26 +127,6 @@ BlankCDDialog::BlankCDDialog()
 	hbox2->append(*cancelBut);
     }
     vbox_.append(*hbox2);
-
-    // Create dialog boxes
-    ejectWarningDialog = Ask3Box::create(*this,
-					 _("Request"), 0,
-					 { ("Ejecting a CD may block the SCSI bus and"),
-					   _("cause buffer under runs when other devices"), 
-					   _("are still recording."),
-					   "", _("Keep the eject setting anyway?") });
-    ejectWarningDialog->dialogDone.connect(sigc::mem_fun(*this,
-							 &BlankCDDialog::checkEjectWarningAsync));
-
-    reloadWarningDialog = Ask3Box::create(*this,
-					  _("Request"), 0,
-					  { _("Reloading a CD may block the SCSI bus and"),
-					    _("cause buffer under runs when other devices"), 
-					    _("are still recording."),
-					    "", _("Keep the reload setting anyway?")});
-    reloadWarningDialog->dialogDone.connect(sigc::mem_fun(*this,
-							  &BlankCDDialog::checkReloadWarningAsync));
-
 }
 
 void BlankCDDialog::start()
@@ -169,60 +149,18 @@ bool BlankCDDialog::on_close_request()
     return false;
 }
 
-void BlankCDDialog::startAction()
-{
-    if (Devices->selection().empty()) {
-        auto *d = Gtk::make_managed<Gtk::MessageDialog>(*this, _("Please select at least one recorder device"),
-							false, Gtk::MessageType::WARNING, Gtk::ButtonsType::OK, true);
-        d->signal_response().connect([d](int) { d->hide(); });
-        d->show();
-        return;
-    }
-
-    // Start the warning check chain
-    ejectWarningDialog->choose();
-}
-
-void BlankCDDialog::checkEjectWarningAsync(int result)
-{
-    switch (result) {
-    case 0: // Keep eject setting
-	CONFIG_MANAGER->setEjectWarning(false);
-	reloadWarningDialog->choose(); // Move to next check
-	break;
-    case 1: // Don't keep eject setting
-	ejectButton_->set_active(false);
-	reloadWarningDialog->choose(); // Move to next check
-	break;
-    default:
-	// If response is cancel/close, we do nothing (stopping the chain)
-	break;
-    }
-}
-
-void BlankCDDialog::checkReloadWarningAsync(int result)
-{
-    switch (result) {
-    case 0: // keep reload setting
-	CONFIG_MANAGER->setReloadWarning(false);
-	proceedWithBlanking(); // Final step
-	break;
-    case 1: // don't keep reload setting
-	reloadButton_->set_active(false);
-	proceedWithBlanking(); // Final step
-	break;
-    default:
-	break;
-    }
-}
-
 bool BlankCDDialog::getEject()
 {
     return ejectButton_->get_active() ? 1 : 0;
 }
 
-void BlankCDDialog::proceedWithBlanking()
+void BlankCDDialog::startAction()
 {
+    if (Devices->selection().empty()) {
+	MessageBox::message(*this, _("Please select at least one recorder device"));
+        return;
+    }
+
     int fast = fastBlank_rb->get_active() ? 1 : 0;
     int burnSpeed = getSpeed();
     int eject = getEject();
