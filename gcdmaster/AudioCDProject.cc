@@ -166,6 +166,22 @@ AudioCDProject::AudioCDProject(BaseObjectType* cobject,
     }
 }
 
+void AudioCDProject::changeToc(const std::string& tocfile)
+{
+     if (tocEdit_->readToc(tocfile.c_str()) != 0) {
+	errorDialog("Unable to parse audio CD TOC content");
+	return;
+    }
+    std::ostringstream oss;
+    oss << "unnamed-" << projectNumber_ << ".toc";
+    tocEdit_->filename(oss.str().c_str());
+    new_ = true;
+    tocEdit_->tocDirty(true);
+    updateWindowTitle();
+    guiUpdate(UPD_ALL);
+    fullView();
+}
+
 void AudioCDProject::setup(int number, const Glib::ustring& path)
 {
     projectNumber_ = number;
@@ -452,6 +468,9 @@ void AudioCDProject::update(unsigned long level)
 
     if (recordTocDialog_)
         recordTocDialog_->update(level);
+
+    if (cdReader_)
+	cdReader_->update(level);
 
     if (soundInterface_) {
         if (level & UPD_PLAY_STATUS) {

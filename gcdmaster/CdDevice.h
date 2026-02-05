@@ -103,8 +103,9 @@ class CdDevice : public sigc::trackable
                    int eject, int reload, int buffer, int overburn);
     void abortDaoRecording();
 
-    int extractDao(Gtk::Window &parent, const std::string& tocFileName, int correction,
-                   int readSubChanMode);
+    int extractDao(Gtk::Window &parent,
+		   const std::string& tocFile, const std::string& dataFile,
+		   int correction,int readSubChanMode);
     void abortDaoReading();
 
     int duplicateDao(Gtk::Window &parent, int simulate, int multiSession, int speed, int eject,
@@ -121,6 +122,8 @@ class CdDevice : public sigc::trackable
 
     CdrDriver* createDriver();
 
+    sigc::signal<void(CdDevice*)> signalProcessFinished;
+
     // Static methods
     //
     
@@ -136,17 +139,8 @@ class CdDevice : public sigc::trackable
     static CdDevice *add(const std::string& setting);
     static CdDevice *find(const std::string dev);
     static bool scan();
-    static void remove(const std::string& dev);
     static void clear();
     static int update();
-
-    /* not used anymore since Gtk::Main::input signal will call
-     * CdDevice::updateProgress directly.
-
-     static int updateDeviceProgress();
-    */
-
-    static int count();
 
     static std::vector<CdDevice*>&   deviceList()  { return DEVICE_LIST; }
     static std::vector<std::string>& driverNames() { return DRIVER_NAMES; }

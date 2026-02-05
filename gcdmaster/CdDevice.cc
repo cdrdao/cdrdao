@@ -167,6 +167,7 @@ int CdDevice::updateStatus()
                 slaveDevice_->status(DEV_UNKNOWN);
                 slaveDevice_ = NULL;
             }
+	    signalProcessFinished.emit(this);
         }
     }
 
@@ -486,8 +487,9 @@ void CdDevice::progress(int *status, int *totalTracks, int *track, int *trackPro
 // Starts a 'cdrdao' for reading whole cd.
 // Return: 0: OK, process succesfully launched
 //         1: error occured
-int CdDevice::extractDao(Gtk::Window &parent, const std::string& tocFileName, int correction,
-                         int readSubChanMode)
+int CdDevice::extractDao(Gtk::Window &parent,
+			 const std::string& tocFile, const std::string& dataFile,
+			 int correction, int readSubChanMode)
 {
     const char *args[30];
     int n = 0;
@@ -543,15 +545,15 @@ int CdDevice::extractDao(Gtk::Window &parent, const std::string& tocFileName, in
     args[n++] = correctionbuf;
 
     args[n++] = "--datafile";
-    args[n++] = g_strdup_printf("%s.bin", tocFileName.c_str());
+    args[n++] = g_strdup_printf("%s", dataFile.c_str());
 
-    args[n++] = g_strdup_printf("%s.toc", tocFileName.c_str());
+    args[n++] = g_strdup_printf("%s", tocFile.c_str());
 
     args[n++] = NULL;
 
     assert(n <= 20);
 
-    PROGRESS_POOL->start(parent, this, tocFileName.c_str(), false, false);
+    PROGRESS_POOL->start(parent, this, tocFile.c_str(), false, false);
 
     // Remove the SCSI interface of this device to avoid problems with double
     // usage of device nodes.
@@ -1117,19 +1119,6 @@ bool CdDevice::scan()
     }
 
     return changed;
-}
-
-void CdDevice::remove(const std::string& devname)
-{
-    for (auto it = DEVICE_LIST.begin(); it != DEVICE_LIST.end(); ) {
-        if ((*it)->dev() == devname) {
-            if ((*it)->status() == DEV_RECORDING || (*it)->status() == DEV_BLANKING ||
-                (*it)->status() == DEV_READING || (*it)->status() == DEV_WAITING)
-                return;
-	    DEVICE_LIST.erase(it);
-            return;
-	}
-    }
 }
 
 void CdDevice::clear()

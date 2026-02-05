@@ -22,10 +22,11 @@
 
 #include <gtkmm.h>
 #include <filesystem>
-#include "MessageBox.h"
 #include "gcdmaster.h"
 
 class DeviceList;
+class DeviceSelector;
+class RecordCDSource;
 
 class AudioCDRead : public Gtk::Window
 {
@@ -39,10 +40,16 @@ class AudioCDRead : public Gtk::Window
     AudioCDRead(Gtk::Window* parent);
 
     void on_datafile_button_clicked();
+    void on_device_selected();
     void execute();
 
+    RecordCDSource* CDSource_;
     Gtk::Button* datafileButton_;
+    Gtk::Button* startButton_;
     std::filesystem::path datafilePath_;
+    DeviceSelector* deviceSelector_;
+    Gtk::Window* parent_;
+    sigc::connection conn_;
 };
 
 #endif

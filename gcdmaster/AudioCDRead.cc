@@ -3,8 +3,13 @@
 
 #include "AudioCDRead.h"
 #include "DeviceSelector.h"
+#include "MessageBox.h"
 #include "CdDevice.h"
 #include "RecordCDSource.h"
+#include "trackdb/TempFileManager.h"
+#include "guiUpdate.h"
+#include "trackdb/log.h"
+#include "AudioCDProject.h"
 
 Glib::RefPtr<AudioCDRead> AudioCDRead::create(Gtk::Window* parent)
 {
@@ -12,6 +17,7 @@ Glib::RefPtr<AudioCDRead> AudioCDRead::create(Gtk::Window* parent)
 }
 
 AudioCDRead::AudioCDRead(Gtk::Window* parent)
+    : parent_(parent)
 {
     set_hide_on_close(true);
     set_modal(true);
@@ -23,10 +29,11 @@ AudioCDRead::AudioCDRead(Gtk::Window* parent)
     auto *vbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL, 10);
     vbox->set_margin(10);
     {
-	auto *selector = Gtk::make_managed<DeviceSelector>(CdDevice::CD_ROM);
-	selector->import();
-	selector->selectOne();
-	vbox->append(*selector);
+	deviceSelector_ = Gtk::make_managed<DeviceSelector>(CdDevice::CD_ROM);
+	deviceSelector_->import();
+	deviceSelector_->signalChanged.connect(sigc::mem_fun(*this,
+							    &AudioCDRead::on_device_selected));
+	vbox->append(*deviceSelector_);
     }
     {
 	auto *frame = Gtk::make_managed<Gtk::Frame>(_(" Select destination data file:"));
@@ -42,9 +49,9 @@ AudioCDRead::AudioCDRead(Gtk::Window* parent)
     }
     {
 	auto* expander = Gtk::make_managed<Gtk::Expander>(Glib::ustring("  ") + _("More Options"));
-	auto* source = Gtk::make_managed<RecordCDSource>(parent);
-	source->set_margin_top(10);
-	expander->set_child(*source);
+	CDSource_ = Gtk::make_managed<RecordCDSource>(parent);
+	CDSource_->set_margin_top(10);
+	expander->set_child(*CDSource_);
 	vbox->append(*expander);
     }
     {
@@ -54,7 +61,7 @@ AudioCDRead::AudioCDRead(Gtk::Window* parent)
 	hbox->set_margin_start(10);
 	hbox->set_margin_end(10);
 	hbox->set_halign(Gtk::Align::CENTER);
-	auto *startbtn = Gtk::make_managed<Gtk::Button>();
+	startButton_ = Gtk::make_managed<Gtk::Button>();
 	auto *startbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL, 5);
 	startbox->set_margin_start(10);
 	startbox->set_margin_end(10);
@@ -63,10 +70,10 @@ AudioCDRead::AudioCDRead(Gtk::Window* parent)
 	startpix->set_pixel_size(24);
 	startbox->append(*startpix);
 	startbox->append(*Gtk::make_managed<Gtk::Label>(_("Start")));
-	startbtn->set_child(*startbox);
-	startbtn->signal_clicked().connect(sigc::mem_fun(*this,
+	startButton_->set_child(*startbox);
+	startButton_->signal_clicked().connect(sigc::mem_fun(*this,
 							 &AudioCDRead::execute));
-	hbox->append(*startbtn);
+	hbox->append(*startButton_);
 	auto *cancelBut = Gtk::make_managed<Gtk::Button>(_("Cancel"));
 	cancelBut->signal_clicked().connect(sigc::mem_fun(*this,
 							  &Gtk::Window::close));
@@ -74,6 +81,7 @@ AudioCDRead::AudioCDRead(Gtk::Window* parent)
 	vbox->append(*hbox);
     }
 
+    deviceSelector_->selectOne();
     set_child(*vbox);
 }
 
@@ -99,6 +107,41 @@ void AudioCDRead::on_datafile_button_clicked()
     });
 }
 
+void AudioCDRead::on_device_selected()
+{
+    startButton_->set_sensitive(deviceSelector_->selection() != nullptr);
+}
+
 void AudioCDRead::execute()
 {
+    CdDevice* device;
+    std::string tocfile;
+
+    device = deviceSelector_->selection();
+    if (!device) {
+	MessageBox::message(*parent_,_("Please select a reader device first."));
+	return;
+    }
+    tempFileManager.getTempFile(tocfile, "gcdmaster_temporary", "toc");
+    log_message(0, "Creating %s", tocfile.c_str());
+    std::filesystem::remove(tocfile);
+    std::filesystem::remove(datafilePath_);
+
+    device->extractDao(*parent_, tocfile, datafilePath_.string(), 
+		       CDSource_->getCorrection(),
+		       CDSource_->getSubChanReadMode());
+
+    conn_ =
+	device->signalProcessFinished.connect([this, tocfile](CdDevice* device) {
+	    this->conn_.disconnect();
+	    auto proj = dynamic_cast<AudioCDProject*>(parent_);
+	    proj->changeToc(tocfile);
+	});
+    hide();
+}
+
+void AudioCDRead::update(unsigned long level)
+{
+    if (level & UPD_PROGRESS_STATUS) {
+    }
 }

@@ -74,6 +74,8 @@ class AudioCDProject : public GCDWindow
 
     void statusMessage(const char *fmt, ...);
 
+    void changeToc(const std::string& path);
+
     // Controls for app bar
     void cancelEnable(bool);
     sigc::signal<void()> signalCancelClicked;
