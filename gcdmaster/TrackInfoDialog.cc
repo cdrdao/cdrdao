@@ -437,9 +437,9 @@ void TrackInfoDialog::importData(const Toc *toc, int trackNr)
     preEmphasisFlag_.set_active(track->preEmphasis());
 
     if (track->audioType() == 0)
-        twoChannelAudio_.set_sensitive(true);
+        twoChannelAudio_.set_active(true);
     else
-        fourChannelAudio_.set_sensitive(true);
+        fourChannelAudio_.set_active(true);
 
     if (track->isrcValid()) {
         snprintf(buf, sizeof(buf), "%c%c", track->isrcCountry(0), track->isrcCountry(1));
