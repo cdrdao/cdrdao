@@ -54,7 +54,6 @@ TrackInfoDialog::TrackInfoDialog(Gtk::Window* parent)
     set_title(_("Track Info"));
     set_default_size(400, -1);
     set_hide_on_close(true);
-    set_modal();
     set_transient_for(*parent_);
 
     tocEditView_ = nullptr;

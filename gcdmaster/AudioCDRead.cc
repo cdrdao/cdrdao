@@ -135,7 +135,7 @@ void AudioCDRead::execute()
 	device->signalProcessFinished.connect([this, tocfile](CdDevice* device) {
 	    this->conn_.disconnect();
 	    auto proj = dynamic_cast<AudioCDProject*>(parent_);
-	    proj->changeToc(tocfile);
+	    proj->loadNewToc(tocfile, true);
 	});
     hide();
 }

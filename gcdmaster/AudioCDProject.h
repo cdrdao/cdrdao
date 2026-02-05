@@ -74,7 +74,7 @@ class AudioCDProject : public GCDWindow
 
     void statusMessage(const char *fmt, ...);
 
-    void changeToc(const std::string& path);
+    void loadNewToc(const std::string& path, bool anonymous = false);
 
     // Controls for app bar
     void cancelEnable(bool);

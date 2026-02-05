@@ -166,17 +166,19 @@ AudioCDProject::AudioCDProject(BaseObjectType* cobject,
     }
 }
 
-void AudioCDProject::changeToc(const std::string& tocfile)
+void AudioCDProject::loadNewToc(const std::string& tocfile, bool anonymous)
 {
      if (tocEdit_->readToc(tocfile.c_str()) != 0) {
 	errorDialog("Unable to parse audio CD TOC content");
 	return;
     }
-    std::ostringstream oss;
-    oss << "unnamed-" << projectNumber_ << ".toc";
-    tocEdit_->filename(oss.str().c_str());
-    new_ = true;
-    tocEdit_->tocDirty(true);
+     if (anonymous) {
+	 std::ostringstream oss;
+	 oss << "unnamed-" << projectNumber_ << ".toc";
+	 tocEdit_->filename(oss.str().c_str());
+	 new_ = true;
+	 tocEdit_->tocDirty(true);
+     }
     updateWindowTitle();
     guiUpdate(UPD_ALL);
     fullView();
@@ -326,6 +328,7 @@ bool AudioCDProject::on_close_request()
             }
 	    this->set_visible(false);
         });
+	box->choose();
 	return true;
     }
     return false;

@@ -39,7 +39,6 @@ private:
     RecordCDTarget *CDTarget;
 
     Glib::RefPtr<TocEdit> tocEdit_;
-    bool active_;
 
     // Updated from RadioButton to CheckButton
     Gtk::CheckButton *simulate_cb;

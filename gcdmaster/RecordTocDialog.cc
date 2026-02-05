@@ -38,11 +38,11 @@ RecordTocDialog::RecordTocDialog(Glib::RefPtr<TocEdit> tocEdit)
     auto vbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL, 10);
     vbox->set_margin(10);
     set_child(*vbox);
+    set_hide_on_close(true);
+    set_modal(true);
 
     auto hbox_top = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL, 10);
     vbox->append(*hbox_top);
-
-    active_ = false;
 
     TocSource = Gtk::make_managed<RecordTocSource>(tocEdit_);
     CDTarget = Gtk::make_managed<RecordCDTarget>(this);
@@ -104,25 +104,18 @@ RecordTocDialog::RecordTocDialog(Glib::RefPtr<TocEdit> tocEdit)
 
 void RecordTocDialog::start(Gtk::Window *parent)
 {
-    if (!active_) {
-        active_ = true;
-        update(UPD_ALL);
-        set_transient_for(*parent);
-    }
+    update(UPD_ALL);
     present();
 }
 
 void RecordTocDialog::stop()
 {
     hide();
-    active_ = false;
 }
 
 void RecordTocDialog::update(unsigned long level)
 {
     log_message(1, "[update %x] RecordTocDialog", level);
-    if (!active_)
-        return;
 
     std::string title;
     title += _("Record project ");
@@ -177,6 +170,7 @@ void RecordTocDialog::startAction()
                                      _("Do you want to proceed anyway?") });
         ask->dialogDone.connect(sigc::mem_fun(*this,
                                               &RecordTocDialog::startActionConfirmed));
+	ask->choose();
         return;
     }
     
@@ -189,36 +183,39 @@ void RecordTocDialog::startAction()
 
 void RecordTocDialog::startActionConfirmed(int clicked_button)
 {
-    int simulate = 0;
-    if (simulate_cb->get_active())
-        simulate = 1;
-    else if (simulateBurn_cb->get_active())
-        simulate = 2;
 
-    int multiSession = CDTarget->getMultisession();
-    int burnSpeed = CDTarget->getSpeed();
-    int overburn = CDTarget->getOverburn();
-    int buffer = CDTarget->getBuffer();
-    int eject = CDTarget->getEject();
-    int reload = CDTarget->getReload();
+    if (clicked_button == 0) {
+	int simulate = 0;
+	if (simulate_cb->get_active())
+	    simulate = 1;
+	else if (simulateBurn_cb->get_active())
+	    simulate = 2;
 
-    DeviceList *target = CDTarget->getDeviceList();
-    if (target->selection().empty()) {
-        MessageBox::message(*this, _("Please select a writer device"));
-        return;
-    }
+	int multiSession = CDTarget->getMultisession();
+	int burnSpeed = CDTarget->getSpeed();
+	int overburn = CDTarget->getOverburn();
+	int buffer = CDTarget->getBuffer();
+	int eject = CDTarget->getEject();
+	int reload = CDTarget->getReload();
 
-    std::string targetData = target->selection();
-    CdDevice *writeDevice = CdDevice::find(targetData.c_str());
+	DeviceList *target = CDTarget->getDeviceList();
+	if (target->selection().empty()) {
+	    MessageBox::message(*this, _("Please select a writer device"));
+	    return;
+	}
 
-    if (writeDevice) {
-        if (!writeDevice->recordDao(*this, tocEdit_.get(),
-                                    simulate, multiSession, burnSpeed, eject,
-                                    reload, buffer, overburn)) {
-            ErrorBox::message(*this, _("Cannot start disk-at-once recording"));
-        } else {
-            guiUpdate(UPD_CD_DEVICE_STATUS);
-        }
+	std::string targetData = target->selection();
+	CdDevice *writeDevice = CdDevice::find(targetData.c_str());
+
+	if (writeDevice) {
+	    if (!writeDevice->recordDao(*this, tocEdit_.get(),
+					simulate, multiSession, burnSpeed, eject,
+					reload, buffer, overburn)) {
+		ErrorBox::message(*this, _("Cannot start disk-at-once recording"));
+	    } else {
+		guiUpdate(UPD_CD_DEVICE_STATUS);
+	    }
+	}
     }
     stop();
 }

@@ -105,7 +105,8 @@ int ProcessMonitor::statusChanged()
  * Return: newly allocated 'Process' object or NULL on error
  */
 
-Process *ProcessMonitor::start(const char *prg, const char **args, int pipeFdArgNum)
+Process *ProcessMonitor::start(const std::string& prg, std::vector<std::string>& args,
+			       int pipeFdArgNum)
 {
     int pid;
     Process *p;
@@ -123,8 +124,8 @@ Process *ProcessMonitor::start(const char *prg, const char **args, int pipeFdArg
     }
 
     log_message(0, "Starting: ");
-    for (int i = 0; args[i] != NULL; i++)
-        log_message(0, "%s ", args[i]);
+    for (auto &s : args) 
+        log_message(0, "%s ", s.c_str());
     log_message(0, "");
 
     blockProcessMonitorSignals();
@@ -140,9 +141,17 @@ Process *ProcessMonitor::start(const char *prg, const char **args, int pipeFdArg
         // close reading end of pipe
         close(pipeFds[0]);
 
-        execvp(prg, (char *const *)args);
+	{
+	    const char** cargs = new const char*[args.size() + 1];
+	    int idx = 0;
+	    for (auto& it : args)
+		cargs[idx++] = it.c_str();
+	    cargs[idx] = nullptr;
+	    execvp(prg.c_str(), (char *const *)cargs);
+	    delete cargs;
+	}
 
-        log_message(-2, "Cannot execute '%s': %s", prg, strerror(errno));
+        log_message(-2, "Cannot execute '%s': %s", prg.c_str(), strerror(errno));
         _exit(255);
     } else if (pid < 0) {
         log_message(-2, "Cannot fork: %s", strerror(errno));

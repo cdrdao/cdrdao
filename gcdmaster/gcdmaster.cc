@@ -63,13 +63,19 @@ void GCDMaster::on_open(const type_vec_files& files, const Glib::ustring& hint)
 void GCDMaster::openNewProject(const Glib::ustring path = "")
 {
    try {
-       auto new_win = AudioCDProject::create(builder_, path);
-        add_window(*new_win);
-        new_win->present();
+       auto project = dynamic_cast<AudioCDProject*>(get_active_window());
+       if (path.empty() || !project || project->tocEdit()->tocDirty()) {
+	   auto new_win = AudioCDProject::create(builder_, path);
+	   add_window(*new_win);
+	   new_win->present();
+	   guiUpdate(UPD_ALL);
+       } else {
+	   if (!path.empty())
+	       project->loadNewToc(path);
+       }
     } catch (std::exception& e) {
        std::cerr << "Failed: " << e.what() << "\n";
     }
-    guiUpdate(UPD_ALL);
 }
 
 void GCDMaster::newEmptyProject()

@@ -70,7 +70,7 @@ class ProgressDialog : public Gtk::Window
     Gtk::Button *cancelButton_;
     Gtk::Button *closeButton_;
     Gtk::Button *ejectButton_;
-    Gtk::Label *tocName_;
+    Gtk::TextView *command_;
 
     Gtk::Label *statusMsg_;
     Gtk::ProgressBar *trackProgress_;

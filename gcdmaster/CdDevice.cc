@@ -340,14 +340,11 @@ bool CdDevice::recordDao(Gtk::Window &parent, TocEdit *tocEdit, int simulate, in
                          int speed, int eject, int reload, int buffer, int overburn)
 {
     std::string tocFileName;
-    const char *args[30];
-    int n = 0;
+    std::vector<std::string> args;
     char devname[30];
     char drivername[50];
     char speedbuf[20];
-    const char *s;
     char bufferbuf[20];
-    int remoteFdArgNum = 0;
 
     if ((status_ != DEV_READY && status_ != DEV_FAULT &&
          status_ != DEV_UNKNOWN && status_ != DEV_LOCKED) ||
@@ -375,61 +372,44 @@ bool CdDevice::recordDao(Gtk::Window &parent, TocEdit *tocEdit, int simulate, in
     }
 
     Glib::ustring execName = CONFIG_MANAGER->getCdrdaoPath();
+    int remoteFdArgNum = 3;
 
-    args[n++] = execName.c_str();
-
-    if (simulate)
-        args[n++] = "simulate";
-    else
-        args[n++] = "write";
-
-    args[n++] = "--remote";
-
-    remoteFdArgNum = n;
-    args[n++] = NULL;
-
-    args[n++] = "-v0";
+    args.assign(
+	{ execName, (simulate ? "simulate" : "write"),
+		"--remote", "", "-v0",
+		"--device", dev_ });
 
     if (multiSession)
-        args[n++] = "--multi";
+        args.push_back("--multi");
 
     if (speed > 0) {
         snprintf(speedbuf, sizeof(speedbuf), "%d", speed);
-        args[n++] = "--speed";
-        args[n++] = speedbuf;
+        args.push_back("--speed");
+        args.push_back(speedbuf);
     }
 
     if (eject)
-        args[n++] = "--eject";
+        args.push_back("--eject");
 
     if (reload)
-        args[n++] = "--reload";
+        args.push_back("--reload");
 
     if (overburn)
-        args[n++] = "--overburn";
-
-    args[n++] = "--device";
-    args[n++] = (char *)dev_.c_str();
+        args.push_back("--overburn");
 
     if (!driver_.empty()) {
         snprintf(drivername, sizeof(drivername), "%s:0x%lx", driver_.c_str(), driverOptions_);
-        args[n++] = "--driver";
-        args[n++] = drivername;
+        args.push_back("--driver");
+        args.push_back(drivername);
     }
 
     if (buffer >= 10) {
         snprintf(bufferbuf, sizeof(bufferbuf), "%i", buffer);
-        args[n++] = "--buffers";
-        args[n++] = bufferbuf;
+        args.push_back("--buffers");
+        args.push_back(bufferbuf);
     }
 
-    args[n++] = tocFileName.c_str();
-
-    args[n++] = NULL;
-
-    assert(n <= 20);
-
-    PROGRESS_POOL->start(parent, this, tocEdit->filename().c_str());
+    args.push_back(tocFileName);
 
     // Remove the SCSI interface of this device to avoid problems with double
     // usage of device nodes.
@@ -437,6 +417,13 @@ bool CdDevice::recordDao(Gtk::Window &parent, TocEdit *tocEdit, int simulate, in
     scsiIf_ = NULL;
 
     process_ = PROCESS_MONITOR->start(execName.c_str(), args, remoteFdArgNum);
+
+    std::string cmdline;
+    for (auto &c : args) {
+	cmdline += c;
+	cmdline += " ";
+    }
+    PROGRESS_POOL->start(parent, this, cmdline);
 
     if (process_ != NULL) {
         status_ = DEV_RECORDING;
@@ -491,78 +478,62 @@ int CdDevice::extractDao(Gtk::Window &parent,
 			 const std::string& tocFile, const std::string& dataFile,
 			 int correction, int readSubChanMode)
 {
-    const char *args[30];
+    std::vector<std::string> args;
     int n = 0;
     char devname[30];
     char drivername[50];
     const char *s;
     char correctionbuf[20];
-    int remoteFdArgNum = 0;
 
     if ((status_ != DEV_READY && status_ != DEV_FAULT &&
          status_ != DEV_UNKNOWN && status_ != DEV_LOCKED) ||
-        process_ != NULL)
+        process_ != nullptr)
         return 1;
 
     Glib::ustring execName = CONFIG_MANAGER->getCdrdaoPath();
 
-    args[n++] = execName.c_str();
+    int remoteFdArgNum = 3;
 
-    args[n++] = "read-cd";
+    snprintf(correctionbuf, sizeof(correctionbuf), "%d", correction);
 
-    args[n++] = "--remote";
-
-    remoteFdArgNum = n;
-    args[n++] = NULL;
-
-    args[n++] = "-v0";
-
-    args[n++] = "--read-raw";
+    args.assign(
+	{ execName, "read-cd", "--remote", "","-v0", "--read-raw",
+	  "--device", dev_, "--paranoia-mode", correctionbuf,
+	  "--datafile", dataFile});
 
     switch (readSubChanMode) {
     case 1:
-        args[n++] = "--read-subchan";
-        args[n++] = "rw";
+        args.push_back("--read-subchan");
+        args.push_back("rw");
         break;
-
     case 2:
-        args[n++] = "--read-subchan";
-        args[n++] = "rw_raw";
+        args.push_back("--read-subchan");
+        args.push_back("rw_raw");
         break;
     }
-
-    args[n++] = "--device";
-    args[n++] = (char *)dev_.c_str();
 
     if (!driver_.empty()) {
-        snprintf(drivername, sizeof(drivername), "%s:0x%lx", driver_.c_str(), driverOptions_);
-        args[n++] = "--driver";
-        args[n++] = drivername;
+	snprintf(drivername, sizeof(drivername), "%s:0x%lx", driver_.c_str(), driverOptions_);
+        args.push_back("--driver");
+        args.push_back(drivername);
     }
-
-    snprintf(correctionbuf, sizeof(correctionbuf), "%d", correction);
-    args[n++] = "--paranoia-mode";
-    args[n++] = correctionbuf;
-
-    args[n++] = "--datafile";
-    args[n++] = g_strdup_printf("%s", dataFile.c_str());
-
-    args[n++] = g_strdup_printf("%s", tocFile.c_str());
-
-    args[n++] = NULL;
-
-    assert(n <= 20);
-
-    PROGRESS_POOL->start(parent, this, tocFile.c_str(), false, false);
+    args.push_back(tocFile);
 
     // Remove the SCSI interface of this device to avoid problems with double
     // usage of device nodes.
     delete scsiIf_;
-    scsiIf_ = NULL;
+    scsiIf_ = nullptr;
 
-    process_ = PROCESS_MONITOR->start(execName.c_str(), args, remoteFdArgNum);
+    process_ = PROCESS_MONITOR->start(execName, args, remoteFdArgNum);
 
-    if (process_ != NULL) {
+    std::string cmdline;
+    for (auto &c : args) {
+	cmdline += c;
+	cmdline += " ";
+    }
+    PROGRESS_POOL->start(parent, this, cmdline, false, false);
+
+    if (process_) {
         status_ = DEV_READING;
         action_ = A_READ;
 
@@ -595,7 +566,7 @@ int CdDevice::duplicateDao(Gtk::Window &parent, int simulate, int multiSession, 
                            int eject, int reload, int buffer, int onthefly, int correction,
                            int readSubChanMode, CdDevice *readdev)
 {
-    const char *args[30];
+    std::vector<std::string> args;
     int n = 0;
     char devname[30];
     char drivername[50];
@@ -604,7 +575,6 @@ int CdDevice::duplicateDao(Gtk::Window &parent, int simulate, int multiSession, 
     char correctionbuf[20];
     const char *s;
     char bufferbuf[20];
-    int remoteFdArgNum = 0;
 
     int rdstat = readdev->status();
     if ((rdstat != DEV_READY && rdstat != DEV_UNKNOWN && rdstat != DEV_FAULT) ||
@@ -617,86 +587,70 @@ int CdDevice::duplicateDao(Gtk::Window &parent, int simulate, int multiSession, 
 
     Glib::ustring execName = CONFIG_MANAGER->getCdrdaoPath();
 
-    args[n++] = execName.c_str();
+    snprintf(correctionbuf, sizeof(correctionbuf), "%d", correction);
+    int remoteFdArgNum = 3;
 
-    args[n++] = "copy";
+    args.assign(
+	{ execName, "copy", "--remote", "", "-v0",
+	  "--paranoia-mode", correctionbuf,
+	  "--device", dev_ });
 
     if (simulate)
-        args[n++] = "--simulate";
-
-    args[n++] = "--remote";
-
-    remoteFdArgNum = n;
-    args[n++] = NULL;
-
-    args[n++] = "-v0";
+        args.push_back("--simulate");
 
     if (multiSession)
-        args[n++] = "--multi";
-
-    snprintf(correctionbuf, sizeof(correctionbuf), "%d", correction);
-    args[n++] = "--paranoia-mode";
-    args[n++] = correctionbuf;
+        args.push_back("--multi");
 
     if (speed > 0) {
         snprintf(speedbuf, sizeof(speedbuf), "%d", speed);
-        args[n++] = "--speed";
-        args[n++] = speedbuf;
+        args.push_back("--speed");
+        args.push_back(speedbuf);
     }
 
     if (eject)
-        args[n++] = "--eject";
+        args.push_back("--eject");
 
     if (reload)
-        args[n++] = "--reload";
+        args.push_back("--reload");
 
     if (onthefly)
-        args[n++] = "--on-the-fly";
+        args.push_back("--on-the-fly");
 
     switch (readSubChanMode) {
     case 1:
-        args[n++] = "--read-subchan";
-        args[n++] = "rw";
+        args.push_back("--read-subchan");
+        args.push_back("rw");
         break;
 
     case 2:
-        args[n++] = "--read-subchan";
-        args[n++] = "rw_raw";
+        args.push_back("--read-subchan");
+        args.push_back("rw_raw");
         break;
     }
 
-    args[n++] = "--device";
-    args[n++] = (char *)dev_.c_str();
-
     if (!driver_.empty()) {
         snprintf(drivername, sizeof(drivername), "%s:0x%lx", driver_.c_str(), driverOptions_);
-        args[n++] = "--driver";
-        args[n++] = drivername;
+        args.push_back("--driver");
+        args.push_back(drivername);
     }
 
     if (readdev != this) { // reader and write the same, skip source device
 
-        args[n++] = "--source-device";
-        args[n++] = readdev->dev().c_str();
+        args.push_back("--source-device");
+        args.push_back(readdev->dev());
 
         if (!readdev->driver().empty()) {
             snprintf(r_drivername, sizeof(r_drivername), "%s:0x%lx",
                      readdev->driver().c_str(), readdev->driverOptions());
-            args[n++] = "--source-driver";
-            args[n++] = r_drivername;
+            args.push_back("--source-driver");
+            args.push_back(r_drivername);
         }
     }
     if (buffer >= 10) {
         snprintf(bufferbuf, sizeof(bufferbuf), "%i", buffer);
-        args[n++] = "--buffers";
-        args[n++] = bufferbuf;
+        args.push_back("--buffers");
+        args.push_back(bufferbuf);
     }
-
-    args[n++] = NULL;
-
-    assert(n <= 25);
-
-    PROGRESS_POOL->start(parent, this, _("CD to CD copy"));
 
     // Remove the SCSI interface of this device to avoid problems with double
     // usage of device nodes.
@@ -704,6 +658,13 @@ int CdDevice::duplicateDao(Gtk::Window &parent, int simulate, int multiSession, 
     scsiIf_ = NULL;
 
     process_ = PROCESS_MONITOR->start(execName.c_str(), args, remoteFdArgNum);
+
+    std::string cmdline;
+    for (auto &c : args) {
+	cmdline += c;
+	cmdline += " ";
+    }
+    PROGRESS_POOL->start(parent, this, cmdline);
 
     if (process_ != NULL) {
         slaveDevice_ = readdev;
@@ -736,7 +697,7 @@ void CdDevice::abortDaoDuplication()
 //         1: error occured
 int CdDevice::blank(Gtk::Window *parent, int fast, int speed, int eject, int reload)
 {
-    const char *args[20];
+    std::vector<std::string> args;
     int n = 0;
     char devname[30];
     char drivername[50];
@@ -750,55 +711,39 @@ int CdDevice::blank(Gtk::Window *parent, int fast, int speed, int eject, int rel
 
     Glib::ustring execName = CONFIG_MANAGER->getCdrdaoPath();
 
-    args[n++] = execName.c_str();
+    remoteFdArgNum = 3;
 
-    args[n++] = "blank";
-
-    args[n++] = "--remote";
-
-    remoteFdArgNum = n;
-    args[n++] = NULL;
-
-    args[n++] = "-v0";
-
-    args[n++] = "--blank-mode";
-
-    if (fast)
-        args[n++] = "minimal";
-    else
-        args[n++] = "full";
+    args.assign(
+	{ execName,  "blank", "--remote", "", "-v0",
+	  "--blank-mode", (fast ? "minimal" : "full"),
+	  "--device", dev_ });
 
     if (speed > 0) {
         snprintf(speedbuf, sizeof(speedbuf), "%d", speed);
-        args[n++] = "--speed";
-        args[n++] = speedbuf;
+        args.push_back("--speed");
+        args.push_back(speedbuf);
     }
 
     if (eject)
-        args[n++] = "--eject";
+        args.push_back("--eject");
 
     if (reload)
-        args[n++] = "--reload";
-
-    args[n++] = "--device";
-    args[n++] = (char *)dev_.c_str();
+        args.push_back("--reload");
 
     if (!driver_.empty()) {
         snprintf(drivername, sizeof(drivername), "%s:0x%lx",
                  driver_.c_str(),
                  driverOptions_);
-        args[n++] = "--driver";
-        args[n++] = drivername;
+        args.push_back("--driver");
+        args.push_back(drivername);
     }
 
-    args[n++] = NULL;
-
-    assert(n <= 20);
-
-    if (parent)
-        PROGRESS_POOL->start(*parent, this, _("Blanking CDRW"), false, false);
-    else
-        PROGRESS_POOL->start(this, _("Blanking CDRW"), false, false);
+    std::string cmdline;
+    for (auto &c : args) {
+	cmdline += c;
+	cmdline += " ";
+    }
+    PROGRESS_POOL->start(*parent, this, cmdline, false, false);
 
     // Remove the SCSI interface of this device to avoid problems with double
     // usage of device nodes.

@@ -42,21 +42,44 @@ ProgressDialog::ProgressDialog(ProgressDialogPool *father)
     : poolFather_(father)
 {
     set_title(_("Progress"));
-    set_default_size(400, -1);
-    set_resizable(false);
+    set_default_size(600, -1);
+    set_resizable(true);
 
     auto main_vbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL, 10);
     main_vbox->set_margin(10);
     set_child(*main_vbox);
 
     // Project Info
-    auto project_hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL, 5);
-    auto label = Gtk::make_managed<Gtk::Label>(_("Project: "));
-    tocName_ = Gtk::make_managed<Gtk::Label>();
-    project_hbox->append(*label);
-    project_hbox->append(*tocName_);
-    main_vbox->append(*project_hbox);
-
+    {
+	auto label = Gtk::make_managed<Gtk::Label>(_("cdrdao command: "));
+	label->set_halign(Gtk::Align::START);
+	main_vbox->append(*label);
+	auto css = Gtk::CssProvider::create();
+	css->load_from_data(
+	    ".small-console { font-size: smaller; } "
+	    "textview {"
+	    "  background-color: #1e1e1e;"
+	    "  color: #eeeeee;"
+	    "}"
+	    "textview text {"
+	    "  background-color: #1e1e1e;"
+	    "}"
+	    );
+	Gtk::StyleContext::add_provider_for_display(
+	    Gdk::Display::get_default(), css,
+	    GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+	command_ = Gtk::make_managed<Gtk::TextView>();
+	command_->set_editable(false);
+	command_->set_cursor_visible(false);
+	command_->set_monospace(true);
+	command_->set_wrap_mode(Gtk::WrapMode::WORD_CHAR);
+	command_->set_margin_start(10);
+	command_->set_margin_end(10);
+	command_->set_margin_bottom(10);
+	command_->add_css_class("small-console");
+	command_->set_vexpand(true);
+	main_vbox->append(*command_);
+    }
     statusMsg_ = Gtk::make_managed<Gtk::Label>();
     statusMsg_->set_halign(Gtk::Align::START);
     main_vbox->append(*statusMsg_);
@@ -143,7 +166,7 @@ void ProgressDialog::start(CdDevice *device, const std::string &tocFileName)
         sigc::mem_fun(*this, &ProgressDialog::on_timeout), 1000);
 
     statusMsg_->set_text(_("Initializing..."));
-    tocName_->set_text(tocFileName);
+    command_->get_buffer()->set_text("$ " + tocFileName);
 
     setCloseButtonLabel(1);
     cancelButton_->set_sensitive(true);
