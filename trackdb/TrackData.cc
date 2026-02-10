@@ -27,47 +27,50 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <filesystem>
 
 #include "Msf.h"
 #include "TrackData.h"
 #include "log.h"
 #include "util.h"
 
-#ifdef UNIXWARE
-extern "C" {
-extern int strcasecmp(const char *, const char *);
-}
-#endif
-
 // creates an object representing a portion of an audio data file
-TrackData::TrackData(const char *filename, long offset, unsigned long start, unsigned long length)
+TrackData::TrackData(const std::string& filename, long offset,
+		     unsigned long start, unsigned long length)
 {
     init(filename, offset, start, length);
 }
 
-TrackData::TrackData(const char *filename, unsigned long start, unsigned long length)
+TrackData::TrackData(const std::string& filename,
+		     unsigned long start, unsigned long length)
 {
     init(filename, 0, start, length);
 }
 
-void TrackData::init(const char *filename, long offset, unsigned long start, unsigned long length)
+void TrackData::init(const std::string& filename, long offset,
+		     unsigned long start, unsigned long length)
 {
+    if (filename.empty())
+	return init(length);
+
     assert(offset >= 0);
 
     length_ = length;
 
-    if (strcmp(filename, "-") == 0) {
+    // Can't happen, must use other constructor in that case.
+    assert(!filename.empty());
+
+    if (filename == "-") {
         type_ = STDIN;
         fileType_ = RAW; // currently only raw data
-        filename_ = strdupCC("STDIN");
+        filename_ = "STDIN";
     } else {
         type_ = DATAFILE;
 
-        filename_ = strdupCC(filename);
+        filename_ = filename;
         fileType_ = audioFileType(filename_);
     }
 
-    effFilename_ = NULL;
     offset_ = offset;
     startPos_ = start;
     swapSamples_ = 0;
@@ -79,13 +82,16 @@ void TrackData::init(const char *filename, long offset, unsigned long start, uns
 // creates an AUDIO mode object that contains constant zero data
 TrackData::TrackData(unsigned long length)
 {
+    init(length);
+}
+
+void TrackData::init(unsigned long length)
+{
     type_ = ZERODATA;
     mode_ = AUDIO;
     subChannelMode_ = SUBCHAN_NONE;
     audioCutMode_ = 1;
 
-    filename_ = NULL;
-    effFilename_ = NULL;
     fileType_ = RAW;
     startPos_ = 0;
     offset_ = 0;
@@ -96,13 +102,16 @@ TrackData::TrackData(unsigned long length)
 // creates an object that contains constant data with specified mode
 TrackData::TrackData(Mode m, SubChannelMode sm, unsigned long length)
 {
+    init(m, sm, length);
+}
+
+void TrackData::init(Mode m, SubChannelMode sm, unsigned long length)
+{
     type_ = ZERODATA;
     mode_ = m;
     subChannelMode_ = sm;
     audioCutMode_ = 0;
 
-    filename_ = NULL;
-    effFilename_ = NULL;
     fileType_ = RAW;
     startPos_ = 0;
     offset_ = 0;
@@ -111,28 +120,31 @@ TrackData::TrackData(Mode m, SubChannelMode sm, unsigned long length)
 }
 
 // creates a file object  with given mode
-TrackData::TrackData(Mode m, SubChannelMode sm, const char *filename, long offset,
+TrackData::TrackData(Mode m, SubChannelMode sm, const std::string& filename, long offset,
                      unsigned long length)
 {
     init(m, sm, filename, offset, length);
 }
 
-void TrackData::init(Mode m, SubChannelMode sm, const char *filename, long offset,
+void TrackData::init(Mode m, SubChannelMode sm, const std::string& filename, long offset,
                      unsigned long length)
 {
+    if (filename.empty())
+	return init(m, sm, length);
+
     assert(offset >= 0);
 
     mode_ = m;
     subChannelMode_ = sm;
     audioCutMode_ = 0;
 
-    if (strcmp(filename, "-") == 0) {
+    if (filename ==  "-") {
         type_ = STDIN;
         fileType_ = RAW; // currently only raw data
-        filename_ = strdupCC("STDIN");
+        filename_ = "STDIN";
     } else {
         type_ = DATAFILE;
-        filename_ = strdupCC(filename);
+        filename_ = filename;
 
         if (mode_ == AUDIO)
             fileType_ = audioFileType(filename_);
@@ -142,14 +154,13 @@ void TrackData::init(Mode m, SubChannelMode sm, const char *filename, long offse
 
     offset_ = offset;
     length_ = length;
-    effFilename_ = NULL;
     startPos_ = 0;
     swapSamples_ = 0;
 }
 
-TrackData::TrackData(Mode m, SubChannelMode sm, const char *filename, unsigned long length)
+TrackData::TrackData(Mode m, SubChannelMode sm, const std::string& filename, unsigned long length)
 {
-    assert(filename != NULL && *filename != 0);
+    assert(!filename.empty());
 
     mode_ = m;
     subChannelMode_ = sm;
@@ -157,8 +168,7 @@ TrackData::TrackData(Mode m, SubChannelMode sm, const char *filename, unsigned l
 
     type_ = FIFO;
     fileType_ = RAW;
-    filename_ = strdupCC(filename);
-    effFilename_ = NULL;
+    filename_ = filename;
     offset_ = 0;
     length_ = length;
 
@@ -180,15 +190,13 @@ TrackData::TrackData(const TrackData &obj)
     case DATAFILE:
     case STDIN:
     case FIFO:
-        filename_ = strdupCC(obj.filename_);
-        effFilename_ = (obj.effFilename_ ? strdupCC(obj.effFilename_) : NULL);
+        filename_ = obj.filename_;
+        effFilename_ = obj.effFilename_;
         startPos_ = obj.startPos_;
         fileType_ = obj.fileType_;
         break;
 
     case ZERODATA:
-        filename_ = NULL;
-        effFilename_ = NULL;
         startPos_ = 0;
         fileType_ = RAW;
         break;
@@ -201,11 +209,6 @@ TrackData::TrackData(const TrackData &obj)
 
 TrackData::~TrackData()
 {
-    if (filename_) {
-        delete[] filename_;
-    }
-    if (effFilename_)
-        delete[] effFilename_;
 }
 
 unsigned long TrackData::length() const
@@ -229,23 +232,24 @@ int TrackData::determineLength()
         if (mode_ == AUDIO) {
             switch (audioDataLength(filename_, offset_, &len)) {
             case 1:
-                log_message(-2, "Cannot open audio file \"%s\": %s", filename_, strerror(errno));
+                log_message(-2, "Cannot open audio file \"%s\": %s", filename_.c_str(),
+			    strerror(errno));
                 return 1;
                 break;
 
             case 2:
-                log_message(-2, "Cannot determine length of audio file \"%s\": %s", filename_,
-                            strerror(errno));
+                log_message(-2, "Cannot determine length of audio file \"%s\": %s",
+			    filename_.c_str(), strerror(errno));
                 return 1;
                 break;
 
             case 3:
-                log_message(-2, "Header of audio file \"%s\" is corrupted.", filename_);
+                log_message(-2, "Header of audio file \"%s\" is corrupted.", filename_.c_str());
                 return 1;
                 break;
 
             case 4:
-                log_message(-2, "Invalid offset %ld for audio file \"%s\".", offset_, filename_);
+                log_message(-2, "Invalid offset %ld for audio file \"%s\".", offset_, filename_.c_str());
                 return 2;
                 break;
             case 5:
@@ -254,7 +258,7 @@ int TrackData::determineLength()
                     log_message(-2,
                                 "Can't read file \"%s\": cdrdao was compiled "
                                 "without MP3 support.",
-                                filename_);
+                                filename_.c_str());
                     return 4;
                 }
 #endif
@@ -263,7 +267,7 @@ int TrackData::determineLength()
                     log_message(-2,
                                 "Can't read file \"%s\": cdrdao was compiled "
                                 "without Ogg/Vorbis support.",
-                                filename_);
+                                filename_.c_str());
                     return 4;
                 }
 #endif
@@ -272,7 +276,7 @@ int TrackData::determineLength()
                     log_message(-2,
                                 "Can't read file \"%s\": cdrdao was compiled "
                                 "without FLAC support.",
-                                filename_);
+                                filename_.c_str());
                     return 4;
                 }
 #endif
@@ -284,7 +288,7 @@ int TrackData::determineLength()
                     length_ = len - startPos_;
                 } else {
                     log_message(-2, "Start position %lu exceeds available data of file \"%s\".",
-                                startPos_, filename_);
+                                startPos_, filename_.c_str());
                     return 2;
                 }
             } else {
@@ -293,11 +297,11 @@ int TrackData::determineLength()
         } else {
             switch (dataFileLength(filename_, offset_, &len)) {
             case 1:
-                log_message(-2, "Cannot open data file \"%s\": %s", filename_, strerror(errno));
+                log_message(-2, "Cannot open data file \"%s\": %s", filename_.c_str(), strerror(errno));
                 return 1;
                 break;
             case 2:
-                log_message(-2, "Invalid offset %ld for audio file \"%s\".", offset_, filename_);
+                log_message(-2, "Invalid offset %ld for audio file \"%s\".", offset_, filename_.c_str());
                 return 2;
                 break;
             }
@@ -323,9 +327,9 @@ int TrackData::check(int trackNr) const
         // cannot do much here...
         break;
     case FIFO:
-        if (access(filename_, R_OK) != 0) {
-            log_message(-2, "Track %d: Cannot access FIFO \"%s\": %s", trackNr, filename_,
-                        strerror(errno));
+        if (!std::filesystem::is_regular_file(filename_)) {
+		log_message(-2, "Track %d: Cannot access FIFO \"%s\": %s", trackNr,
+			    filename_.c_str(), strerror(errno));
             return 2;
         }
         break;
@@ -343,29 +347,29 @@ int TrackData::check(int trackNr) const
 
             switch (audioDataLength(filename_, offset_, &len)) {
             case 1:
-                log_message(-2, "Track %d: Cannot open audio file \"%s\": %s", trackNr, filename_,
+                log_message(-2, "Track %d: Cannot open audio file \"%s\": %s", trackNr, filename_.c_str(),
                             strerror(errno));
                 return 2;
                 break;
             case 2:
-                log_message(-2, "Track %d: Cannot access audio file \"%s\": %s", trackNr, filename_,
+                log_message(-2, "Track %d: Cannot access audio file \"%s\": %s", trackNr, filename_.c_str(),
                             strerror(errno));
                 return 2;
                 break;
             case 3:
-                log_message(-2, "Track %d: %s: Unacceptable WAVE file.", trackNr, filename_);
+                log_message(-2, "Track %d: %s: Unacceptable WAVE file.", trackNr, filename_.c_str());
                 return 2;
                 break;
             case 4:
                 log_message(-2, "Track %d: Invalid offset %ld for audio file \"%s\".", trackNr,
-                            offset_, filename_);
+                            offset_, filename_.c_str());
                 return 2;
                 break;
             }
 
             if (length() == 0) {
                 log_message(-2, "Track %d: Requested length for audio file \"%s\" is 0.", trackNr,
-                            filename_);
+                            filename_.c_str());
                 return 2;
             }
 
@@ -375,7 +379,7 @@ int TrackData::check(int trackNr) const
                     log_message(-2,
                                 "Track %d: Requested length (%lu + %lu samples) exceeds "
                                 "length of audio file \"%s\" (%lu samples at offset %ld).",
-                                trackNr, startPos_, length(), filename_, len, offset_);
+                                trackNr, startPos_, length(), filename_.c_str(), len, offset_);
                     return 2;
                 }
             } else {
@@ -383,7 +387,7 @@ int TrackData::check(int trackNr) const
                     log_message(-2,
                                 "Track %d: Requested length (%lu bytes) exceeds length of file "
                                 "\"%s\" (%lu bytes at offset %ld).",
-                                trackNr, length(), filename_, len, offset_);
+                                trackNr, length(), filename_.c_str(), len, offset_);
                     return 2;
                 }
             }
@@ -393,20 +397,20 @@ int TrackData::check(int trackNr) const
 
             switch (dataFileLength(filename_, offset_, &len)) {
             case 1:
-                log_message(-2, "Track %d: Cannot open data file \"%s\": %s", trackNr, filename_,
+                log_message(-2, "Track %d: Cannot open data file \"%s\": %s", trackNr, filename_.c_str(),
                             strerror(errno));
                 return 2;
                 break;
             case 2:
                 log_message(-2, "Track %d: Invalid offset %ld for data file \"%s\".", trackNr,
-                            offset_, filename_);
+                            offset_, filename_.c_str());
                 return 2;
                 break;
             }
 
             if (length() == 0) {
                 log_message(-2, "Track %d: Requested length for data file \"%s\" is 0.", trackNr,
-                            filename_);
+                            filename_.c_str());
                 return 2;
             }
 
@@ -414,7 +418,7 @@ int TrackData::check(int trackNr) const
                 log_message(-2,
                             "Track %d: Requested length (%lu bytes) exceeds length of file \"%s\" "
                             "(%lu bytes at offset %ld).",
-                            trackNr, length(), filename_, len, offset_);
+                            trackNr, length(), filename_.c_str(), len, offset_);
                 return 2;
             }
         }
@@ -424,13 +428,10 @@ int TrackData::check(int trackNr) const
     return 0;
 }
 
-void TrackData::effectiveFilename(const char *name)
+void TrackData::effectiveFilename(const std::string& name)
 {
-    if (effFilename_)
-        delete[] effFilename_;
-
     effFilename_ = filename_;
-    filename_ = strdupCC(name);
+    filename_ = name;
     fileType_ = audioFileType(filename_);
 }
 
@@ -438,7 +439,7 @@ void TrackData::effectiveFilename(const char *name)
 void TrackData::print(std::ostream &out, PrintParams &params) const
 {
     unsigned long blen;
-    const char *s;
+    std::string s;
 
     if (audioCutMode()) {
         // we're calculating in samples and not in bytes for audio data
@@ -453,7 +454,7 @@ void TrackData::print(std::ostream &out, PrintParams &params) const
         if (audioCutMode()) {
             if (type() == STDIN)
                 out << "FILE \"-\" ";
-            else if (effFilename_ && !params.conversions)
+            else if (!effFilename_.empty() && !params.conversions)
                 out << "FILE \"" << effFilename_ << "\" ";
             else
                 out << "FILE \"" << filename_ << "\" ";
@@ -474,7 +475,7 @@ void TrackData::print(std::ostream &out, PrintParams &params) const
             // data mode
             if (type() == STDIN)
                 out << "DATAFILE \"-\" ";
-            else if (effFilename_ && !params.conversions)
+            else if (!effFilename_.empty() && !params.conversions)
                 out << "DATAFILE \"" << effFilename_ << "\" ";
             else
                 out << "DATAFILE \"" << filename_ << "\" ";
@@ -518,7 +519,7 @@ void TrackData::print(std::ostream &out, PrintParams &params) const
 
         s = subChannelMode2String(subChannelMode());
 
-        if (*s != 0)
+        if (!s.empty())
             out << s << " ";
 
         if ((length() % blen) == 0)
@@ -564,7 +565,7 @@ TrackData *TrackData::merge(const TrackData *obj) const
         break;
 
     case DATAFILE:
-        if (strcmp(filename_, obj->filename_) == 0 && startPos_ + length_ == obj->startPos_) {
+        if (filename_ == obj->filename_ && startPos_ + length_ == obj->startPos_) {
             data = new TrackData(*this);
             data->length_ += obj->length_;
         }
@@ -585,7 +586,7 @@ TrackData *TrackData::merge(const TrackData *obj) const
 //         1: cannot open or access file
 //         2: file has wrong format
 
-int TrackData::checkAudioFile(const char *fn, unsigned long *length)
+int TrackData::checkAudioFile(const std::string& fn, unsigned long *length)
 {
     int fd;
     int ret;
@@ -598,7 +599,7 @@ int TrackData::checkAudioFile(const char *fn, unsigned long *length)
         return 1;
     }
 
-    if ((fd = open(fn, O_RDONLY)) < 0)
+    if ((fd = open(fn.c_str(), O_RDONLY)) < 0)
         return 1;
 
     ret = fstat(fd, &buf);
@@ -613,7 +614,7 @@ int TrackData::checkAudioFile(const char *fn, unsigned long *length)
             return 2;
     } else {
         if (buf.st_size % sizeof(Sample) != 0) {
-            log_message(-1, "%s: Length is not a multiple of sample size (4).", fn);
+            log_message(-1, "%s: Length is not a multiple of sample size (4).", fn.c_str());
         }
 
         *length = buf.st_size / sizeof(Sample);
@@ -628,7 +629,8 @@ int TrackData::checkAudioFile(const char *fn, unsigned long *length)
 // return: 0: OK
 //         1: error occured
 //         2: illegal WAVE file
-int TrackData::waveLength(const char *filename, long offset, long *hdrlen, unsigned long *datalen)
+int TrackData::waveLength(const std::string& filename, long offset,
+			  long *hdrlen, unsigned long *datalen)
 {
     FILE *fp;
     char magic[4];
@@ -641,9 +643,9 @@ int TrackData::waveLength(const char *filename, long offset, long *hdrlen, unsig
     struct stat sbuf;
 
 #ifdef __CYGWIN__
-    if ((fp = fopen(filename, "rb")) == NULL)
+    if ((fp = fopen(filename.c_str(), "rb")) == NULL)
 #else
-    if ((fp = fopen(filename, "r")) == NULL)
+    if ((fp = fopen(filename.c_str(), "r")) == NULL)
 #endif
     {
         log_message(-2, "Cannot open audio file \"%s\" for reading: %s", filename, strerror(errno));
@@ -812,7 +814,7 @@ int TrackData::waveLength(const char *filename, long offset, long *hdrlen, unsig
 //         4: invalid offset
 //         5: file need conversion
 //         0: OK
-int TrackData::audioDataLength(const char *fname, long offset, unsigned long *length)
+int TrackData::audioDataLength(const std::string& fname, long offset, unsigned long *length)
 {
     int fd;
     struct stat buf;
@@ -821,7 +823,7 @@ int TrackData::audioDataLength(const char *fname, long offset, unsigned long *le
 
     *length = 0;
 
-    if ((fd = open(fname, O_RDONLY)) < 0)
+    if ((fd = open(fname.c_str(), O_RDONLY)) < 0)
         return 1;
 
     ret = fstat(fd, &buf);
@@ -854,14 +856,14 @@ int TrackData::audioDataLength(const char *fname, long offset, unsigned long *le
 // return: 0: OK
 //         1: file cannot be opened or accessed
 //         2: invalid offset
-int TrackData::dataFileLength(const char *fname, long offset, unsigned long *length)
+int TrackData::dataFileLength(const std::string& fname, long offset, unsigned long *length)
 {
     int fd;
     struct stat buf;
     int ret;
     *length = 0;
 
-    if ((fd = open(fname, O_RDONLY)) < 0)
+    if ((fd = open(fname.c_str(), O_RDONLY)) < 0)
         return 1;
 
     ret = fstat(fd, &buf);
@@ -881,7 +883,7 @@ int TrackData::dataFileLength(const char *fname, long offset, unsigned long *len
 // determines type of audio file
 // return: RAW: raw samples
 //         WAVE: wave file
-TrackData::FileType TrackData::audioFileType(const char *filename)
+TrackData::FileType TrackData::audioFileType(const std::string& filename)
 {
     Util::FileExtension p = Util::fileExtension(filename);
 
@@ -953,70 +955,65 @@ unsigned long TrackData::dataBlockSize(Mode m, SubChannelMode sm)
     return b;
 }
 
-const char *TrackData::mode2String(Mode m)
+const std::string TrackData::mode2String(Mode m)
 {
-    const char *ret = NULL;
-
     switch (m) {
     case AUDIO:
-        ret = "AUDIO";
+        return("AUDIO");
         break;
-
     case MODE0:
-        ret = "MODE0";
+        return("MODE0");
         break;
 
     case MODE1:
-        ret = "MODE1";
+        return("MODE1");
         break;
 
     case MODE1_RAW:
-        ret = "MODE1_RAW";
+        return("MODE1_RAW");
         break;
 
     case MODE2:
-        ret = "MODE2";
+        return("MODE2");
         break;
 
     case MODE2_RAW:
-        ret = "MODE2_RAW";
+        return("MODE2_RAW");
         break;
 
     case MODE2_FORM1:
-        ret = "MODE2_FORM1";
+        return("MODE2_FORM1");
         break;
 
     case MODE2_FORM2:
-        ret = "MODE2_FORM2";
+        return("MODE2_FORM2");
         break;
 
     case MODE2_FORM_MIX:
-        ret = "MODE2_FORM_MIX";
+        return("MODE2_FORM_MIX");
         break;
+    default:
+	return "";
     }
-
-    return ret;
 }
 
-const char *TrackData::subChannelMode2String(SubChannelMode m)
+const std::string TrackData::subChannelMode2String(SubChannelMode m)
 {
-    const char *ret = NULL;
-
     switch (m) {
     case SUBCHAN_NONE:
-        ret = "";
+        return("");
         break;
 
     case SUBCHAN_RW:
-        ret = "RW";
+        return("RW");
         break;
 
     case SUBCHAN_RW_RAW:
-        ret = "RW_RAW";
+        return("RW_RAW");
         break;
+    default:
+	return "";
     }
-
-    return ret;
 }
 
 TrackDataReader::TrackDataReader(const TrackData *d)
@@ -1064,17 +1061,17 @@ int TrackDataReader::openData()
             if (trackData_->fileType_ != TrackData::WAVE &&
                 trackData_->fileType_ != TrackData::RAW) {
                 log_message(-2, "Cannot open audio file \"%s\": unsupported format",
-                            trackData_->filename_);
+                            trackData_->filename_.c_str());
                 return 1;
             }
 
 #ifdef __CYGWIN__
-            if ((fd_ = open(trackData_->filename_, O_RDONLY | O_BINARY)) < 0)
+            if ((fd_ = open(trackData_->filename_.c_str(), O_RDONLY | O_BINARY)) < 0)
 #else
-            if ((fd_ = open(trackData_->filename_, O_RDONLY)) < 0)
+            if ((fd_ = open(trackData_->filename_.c_str(), O_RDONLY)) < 0)
 #endif
             {
-                log_message(-2, "Cannot open audio file \"%s\": %s", trackData_->filename_,
+                log_message(-2, "Cannot open audio file \"%s\": %s", trackData_->filename_.c_str(),
                             strerror(errno));
                 return 1;
             }
@@ -1082,7 +1079,7 @@ int TrackDataReader::openData()
             if (trackData_->fileType_ == TrackData::WAVE) {
                 if (TrackData::waveLength(trackData_->filename_, trackData_->offset_,
                                           &headerLength) != 0) {
-                    log_message(-2, "%s: Unacceptable WAVE file.", trackData_->filename_);
+                    log_message(-2, "%s: Unacceptable WAVE file.", trackData_->filename_.c_str());
                     return 1;
                 }
             }
@@ -1090,7 +1087,7 @@ int TrackDataReader::openData()
             if (lseek(fd_,
                       trackData_->offset_ + headerLength + (trackData_->startPos_ * sizeof(Sample)),
                       SEEK_SET) < 0) {
-                log_message(-2, "Cannot seek in audio file \"%s\": %s", trackData_->filename_,
+                log_message(-2, "Cannot seek in audio file \"%s\": %s", trackData_->filename_.c_str(),
                             strerror(errno));
                 return 2;
             }
@@ -1101,12 +1098,12 @@ int TrackDataReader::openData()
             headerLength_ = 0;
 
 #ifdef __CYGWIN__
-            if ((fd_ = open(trackData_->filename_, O_RDONLY | O_BINARY)) < 0)
+            if ((fd_ = open(trackData_->filename_.c_str(), O_RDONLY | O_BINARY)) < 0)
 #else
-            if ((fd_ = open(trackData_->filename_, O_RDONLY)) < 0)
+            if ((fd_ = open(trackData_->filename_.c_str(), O_RDONLY)) < 0)
 #endif
             {
-                log_message(-2, "Cannot open data file \"%s\": %s", trackData_->filename_,
+                log_message(-2, "Cannot open data file \"%s\": %s", trackData_->filename_.c_str(),
                             strerror(errno));
                 return 1;
             }
@@ -1114,19 +1111,19 @@ int TrackDataReader::openData()
             if (trackData_->offset_ > 0) {
                 if (lseek(fd_, trackData_->offset_, SEEK_SET) < 0) {
                     log_message(-2, "Cannot seek to offset %ld in file \"%s\": %s",
-                                trackData_->offset_, trackData_->filename_, strerror(errno));
+                                trackData_->offset_, trackData_->filename_.c_str(), strerror(errno));
                     return 2;
                 }
             }
         }
     } else if (trackData_->type_ == TrackData::FIFO) {
 #ifdef __CYGWIN__
-        if ((fd_ = open(trackData_->filename_, O_RDONLY | O_BINARY)) < 0)
+        if ((fd_ = open(trackData_->filename_.c_str(), O_RDONLY | O_BINARY)) < 0)
 #else
-        if ((fd_ = open(trackData_->filename_, O_RDONLY)) < 0)
+        if ((fd_ = open(trackData_->filename_.c_str(), O_RDONLY)) < 0)
 #endif
         {
-            log_message(-2, "Cannot open FIFO \"%s\": %s", trackData_->filename_, strerror(errno));
+            log_message(-2, "Cannot open FIFO \"%s\": %s", trackData_->filename_.c_str(), strerror(errno));
             return 1;
         }
         headerLength_ = 0;
@@ -1193,14 +1190,14 @@ long TrackDataReader::readData(Sample *buffer, long len)
 
             if (readLen < 0) {
                 log_message(-2, "Read error while reading audio data from file \"%s\": %s",
-                            trackData_->filename_, strerror(errno));
+                            trackData_->filename_.c_str(), strerror(errno));
             } else if (readLen != (long)(len * sizeof(Sample))) {
                 long pad = len * sizeof(Sample) - readLen;
 
                 if (readUnderRunMsgGiven_ == 0) {
                     log_message(-1,
                                 "Could not read expected amount of audio data from file \"%s\".",
-                                trackData_->filename_);
+                                trackData_->filename_.c_str());
                     log_message(-1, "Padding with zeros.");
 
                     readUnderRunMsgGiven_ = 1;
@@ -1216,10 +1213,10 @@ long TrackDataReader::readData(Sample *buffer, long len)
             readLen = fullRead(fd_, buffer, len);
             if (readLen < 0) {
                 log_message(-2, "Read error while reading data from file \"%s\": %s",
-                            trackData_->filename_, strerror(errno));
+                            trackData_->filename_.c_str(), strerror(errno));
             } else if (readLen != len) {
                 log_message(-2, "Could not read expected amount of data from file \"%s\".",
-                            trackData_->filename_);
+                            trackData_->filename_.c_str());
                 readLen = -1;
             }
         }
@@ -1271,14 +1268,14 @@ int TrackDataReader::seekSample(unsigned long sample)
                       trackData_->offset_ + headerLength_ + (sample * sizeof(Sample)) +
                           (trackData_->startPos_ * sizeof(Sample)),
                       SEEK_SET) < 0) {
-                log_message(-2, "Cannot seek in audio file \"%s\": %s", trackData_->filename_,
+                log_message(-2, "Cannot seek in audio file \"%s\": %s", trackData_->filename_.c_str(),
                             strerror(errno));
                 return 10;
             }
         } else {
             // 'sample' has byte as unit
             if (lseek(fd_, trackData_->offset_ + headerLength_ + sample, SEEK_SET) < 0) {
-                log_message(-2, "Cannot seek in audio file \"%s\": %s", trackData_->filename_,
+                log_message(-2, "Cannot seek in audio file \"%s\": %s", trackData_->filename_.c_str(),
                             strerror(errno));
                 return 10;
             }

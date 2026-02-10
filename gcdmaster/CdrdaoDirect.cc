@@ -40,7 +40,7 @@ void FastTocRead::run()
     driver_->fastTocReading(true);
     driver_->taoSource(false);
 
-    toc_ = driver_->readDiskToc(1, "data.wav");
+    toc_ = driver_->readDiskToc(1);
 }
 
 void FastTocRead::completed()

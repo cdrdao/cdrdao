@@ -78,8 +78,8 @@ class TrackData
     };
 
     // creates an audio mode file entry
-    TrackData(const char *filename, long offset, unsigned long start, unsigned long length);
-    TrackData(const char *filename, unsigned long start, unsigned long length);
+    TrackData(const std::string& filename, long offset, unsigned long start, unsigned long length);
+    TrackData(const std::string& filename, unsigned long start, unsigned long length);
 
     // creates a zero audio entry
     TrackData(unsigned long length);
@@ -88,75 +88,50 @@ class TrackData
     TrackData(Mode, SubChannelMode, unsigned long length);
 
     // creates a file entry with given mode
-    TrackData(Mode, SubChannelMode, const char *filename, long offset, unsigned long length);
+    TrackData(Mode, SubChannelMode, const std::string& filename, long offset, unsigned long length);
 
     // create a fifo entry with given mode
-    TrackData(Mode, SubChannelMode, const char *filename, unsigned long length);
+    TrackData(Mode, SubChannelMode, const std::string& filename, unsigned long length);
 
     // copy constructor
     TrackData(const TrackData &);
 
     ~TrackData();
 
-    Type type() const
-    {
-        return type_;
-    }
-    Mode mode() const
-    {
-        return mode_;
-    }
-    SubChannelMode subChannelMode() const
-    {
-        return subChannelMode_;
-    }
-    int audioCutMode() const
-    {
-        return audioCutMode_;
-    }
-
-    const char *filename() const
-    {
-        return filename_;
-    }
-    unsigned long startPos() const
-    {
-        return startPos_;
-    }
+    Type type() const { return type_; }
+    Mode mode() const { return mode_; }
+    SubChannelMode subChannelMode() const { return subChannelMode_; }
+    int audioCutMode() const { return audioCutMode_; }
+    const std::string filename() const { return filename_; }
+    unsigned long startPos() const { return startPos_; }
     unsigned long length() const;
 
     // sets/returns flag for swapping expected byte order of audio samples
-    void swapSamples(int f)
-    {
-        swapSamples_ = f != 0 ? 1 : 0;
-    }
-    int swapSamples() const
-    {
-        return swapSamples_;
-    }
+    void swapSamples(int f) { swapSamples_ = f != 0 ? 1 : 0; }
+    int swapSamples() const { return swapSamples_; }
 
     int determineLength();
     int check(int trackNr) const;
 
-    void effectiveFilename(const char *);
+    void effectiveFilename(const std::string&);
 
     void split(unsigned long, TrackData **part1, TrackData **part2);
     TrackData *merge(const TrackData *) const;
 
     void print(std::ostream &, PrintParams &) const;
 
-    static int checkAudioFile(const char *fn, unsigned long *length);
-    static int waveLength(const char *filename, long offset, long *hdrlen,
+    static int checkAudioFile(const std::string& fn, unsigned long *length);
+    static int waveLength(const std::string& filename, long offset, long *hdrlen,
                           unsigned long *datalen = 0);
-    static int audioDataLength(const char *fname, long offset, unsigned long *length);
-    static FileType audioFileType(const char *filename);
-    static int dataFileLength(const char *fname, long offset, unsigned long *length);
+    static int audioDataLength(const std::string& fname, long offset, unsigned long *length);
+    static FileType audioFileType(const std::string& filename);
+    static int dataFileLength(const std::string& fname, long offset, unsigned long *length);
 
     static unsigned long dataBlockSize(Mode, SubChannelMode);
     static unsigned long subChannelSize(SubChannelMode);
 
-    static const char *mode2String(Mode);
-    static const char *subChannelMode2String(SubChannelMode);
+    static const std::string mode2String(Mode);
+    static const std::string subChannelMode2String(SubChannelMode);
 
   private:
     int audioCutMode_;              /* defines if audio cut mode is requested, if yes
@@ -169,8 +144,8 @@ class TrackData
 
     FileType fileType_; // only for audio mode data, type of file (raw, wave)
 
-    char *filename_;    // used for object type 'FILE'
-    char *effFilename_; // effective filename (absolute path or converted file)
+    std::string filename_;    // used for object type 'FILE'
+    std::string effFilename_; // effective filename (absolute path or converted file)
 
     long offset_; // byte offset into file
 
@@ -184,8 +159,10 @@ class TrackData
 
     friend class TrackDataReader;
 
-    void init(const char *filename, long offset, unsigned long start, unsigned long length);
-    void init(Mode, SubChannelMode, const char *filename, long offset, unsigned long length);
+    void init(const std::string& filename, long offset, unsigned long start, unsigned long length);
+    void init(Mode, SubChannelMode, const std::string& filename, long offset, unsigned long length);
+    void init(unsigned long length);
+    void init(Mode, SubChannelMode, unsigned long length);
 };
 
 class TrackDataReader

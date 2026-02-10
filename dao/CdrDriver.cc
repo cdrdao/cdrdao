@@ -2114,7 +2114,7 @@ int CdrDriver::checkSubChanReadCaps(TrackData::Mode mode, unsigned long caps)
 // session: session that should be analyzed
 // audioFilename: name of audio file that is placed into TOC
 // Return: newly allocated 'Toc' object or 'NULL' on error
-Toc *CdrDriver::readDiskToc(int session, const char *dataFilename)
+Toc *CdrDriver::readDiskToc(int session, const char* dataFilename)
 {
     int nofTracks = 0;
     int i, j;
@@ -2124,9 +2124,8 @@ Toc *CdrDriver::readDiskToc(int session, const char *dataFilename)
     char isrcCode[13];
     unsigned char trackCtl; // control nibbles of track
     int ctlCheckOk;
-    char *fname;
-    char *extension = NULL;
-    char *p;
+    std::string fname;
+    std::string extension;
     TrackInfo *trackInfos;
 
     if (cdToc == NULL) {
@@ -2148,14 +2147,14 @@ Toc *CdrDriver::readDiskToc(int session, const char *dataFilename)
 
     readCapabilities_ = getReadCapabilities(cdToc, nofTracks);
 
-    fname = strdupCC(dataFilename);
-    if ((p = strrchr(fname, '.')) != NULL) {
-        extension = strdupCC(p);
-        *p = 0;
+    if (dataFilename) {
+	fname = dataFilename;
+	auto found = fname.find_last_of(".");
+	if (found != string::npos)
+	    extension = fname.substr(found);
     }
 
     trackInfos = new TrackInfo[nofTracks + 1];
-    memset(trackInfos, 0, (nofTracks + 1) * sizeof(TrackInfo));
 
     for (i = 0; i < nofTracks; i++) {
         TrackData::Mode trackMode;
@@ -2190,7 +2189,6 @@ Toc *CdrDriver::readDiskToc(int session, const char *dataFilename)
                         TrackData::subChannelMode2String(subChanReadMode_));
             delete[] cdToc;
             delete[] trackInfos;
-            delete[] fname;
             return NULL;
         }
 
@@ -2202,7 +2200,9 @@ Toc *CdrDriver::readDiskToc(int session, const char *dataFilename)
         trackInfos[i].fill = 0;
         trackInfos[i].indexCnt = 0;
         trackInfos[i].isrcCode[0] = 0;
-        trackInfos[i].filename = buildDataFileName(i, cdToc, nofTracks, fname, extension);
+	if (!fname.empty())
+	    trackInfos[i].filename = buildDataFileName(i, cdToc, nofTracks,
+						       fname.c_str(), extension.c_str());
         trackInfos[i].bytesWritten = 0;
     }
 
@@ -2218,7 +2218,6 @@ Toc *CdrDriver::readDiskToc(int session, const char *dataFilename)
     trackInfos[nofTracks].fill = 0;
     trackInfos[nofTracks].indexCnt = 0;
     trackInfos[nofTracks].isrcCode[0] = 0;
-    trackInfos[nofTracks].filename = NULL;
     trackInfos[nofTracks].bytesWritten = 0;
 
     long pregap = 0;
@@ -2257,7 +2256,7 @@ Toc *CdrDriver::readDiskToc(int session, const char *dataFilename)
         Msf trackLength(elba - slba);
 
         log_message(1, "Analyzing track %02d (%s): start %s, ", i + 1,
-                    TrackData::mode2String(trackInfos[i].mode), Msf(cdToc[i].start).str());
+                    TrackData::mode2String(trackInfos[i].mode).c_str(), Msf(cdToc[i].start).str());
         log_message(1, "length %s...", trackLength.str());
 
         if (pregap > 0) {
@@ -2347,11 +2346,6 @@ Toc *CdrDriver::readDiskToc(int session, const char *dataFilename)
 
     delete[] cdToc;
     delete[] trackInfos;
-
-    delete[] fname;
-    if (extension != NULL)
-        delete[] extension;
-
     return toc;
 }
 
@@ -3305,7 +3299,6 @@ Toc *CdrDriver::readDisk(int session, const char *dataFilename)
     trackInfos[nofTracks].pregap = 0;
     trackInfos[nofTracks].indexCnt = 0;
     trackInfos[nofTracks].isrcCode[0] = 0;
-    trackInfos[nofTracks].filename = NULL;
     trackInfos[nofTracks].bytesWritten = 0;
 
     if (onTheFly_) {

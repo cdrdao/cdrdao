@@ -91,8 +91,8 @@ void TocEdit::toc(Toc *t, const std::string& filename = "unnamed.toc", bool noda
             queueConversion((*i).c_str());
 
         // Second, queue for toc scan.
-        unsigned long maxSample = toc_->length().samples() - 1;
-        queueScan(0, -1);
+	if (!nodata_)
+	    queueScan(0, -1);
     }
 
     updateLevel_ = UPD_ALL;
@@ -524,6 +524,7 @@ void TocEdit::QueueJob::completed()
 
 void TocEdit::runCompletion(QueueJob *job)
 {
+    log_message(0, "Running %s", job->op.c_str());
     showOutstanding();
 
     if (job->op == "scan") {

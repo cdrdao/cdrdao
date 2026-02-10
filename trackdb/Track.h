@@ -185,8 +185,8 @@ class Track
     void print(std::ostream &, PrintParams &) const;
 
     void collectFiles(std::set<std::string> &set);
-    void markFileConversion(const char *src, const char *dst);
-    bool resolveFilename(const char *path);
+    void markFileConversion(const std::string& src, const std::string& dst);
+    bool resolveFilename(const std::string& path);
     bool recomputeLength();
 
   private:
@@ -254,7 +254,7 @@ class TrackReader
     long readSamples(Sample *buf, long len);
     void closeData();
 
-    const char *curFilename();
+    const std::string curFilename();
 
   private:
     const Track *track_;

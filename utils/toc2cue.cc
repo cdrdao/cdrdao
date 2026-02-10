@@ -109,7 +109,7 @@ long sectorSize(TrackData::Mode m)
     return bsize;
 }
 
-int convertBin(Toc *toc, char *oldBin, char *newBin, int byteSwap)
+int convertBin(Toc *toc, const char *oldBin, char *newBin, int byteSwap)
 {
     Msf start, end;
     const Track *trun;
@@ -306,7 +306,7 @@ int main(int argc, char **argv)
     const Track *trun;
     int trackNr;
     TrackIterator titr(toc);
-    char *binFileName = NULL;
+    std::string binFileName;
     int err = 0;
     int subchan_data_found = 0;
 
@@ -349,10 +349,10 @@ int main(int argc, char **argv)
 
             // check if whole toc-file just references a single bin file
             if (strun->TrackData::type() == TrackData::DATAFILE) {
-                if (binFileName == NULL) {
-                    binFileName = strdupCC(strun->filename());
+                if (binFileName.empty()) {
+                    binFileName = strun->filename();
                 } else {
-                    if (strcmp(binFileName, strun->filename()) != 0) {
+                    if (binFileName != strun->filename()) {
                         message(-2, "Cannot convert: toc-file references multiple data files.");
                         err = 1;
                     }
@@ -387,7 +387,7 @@ int main(int argc, char **argv)
         }
     }
 
-    if (binFileName == NULL) {
+    if (binFileName.empty()) {
         message(-2, "Cannot convert: toc-file references no data file.");
         err = 1;
     }
@@ -479,11 +479,11 @@ int main(int argc, char **argv)
 
     if (convertedBinFile) {
         message(1, "Converting bin file...");
-        if (convertBin(toc, binFileName, convertedBinFile, byteSwapBinAudio)) {
-            message(1, "Error converting bin file '%s' to '%s'", binFileName, convertedBinFile);
+        if (convertBin(toc, binFileName.c_str(), convertedBinFile, byteSwapBinAudio)) {
+            message(1, "Error converting bin file '%s' to '%s'", binFileName.c_str(), convertedBinFile);
             message(1, "");
         } else {
-            message(1, "Converted bin file '%s' to '%s'", binFileName, convertedBinFile);
+            message(1, "Converted bin file '%s' to '%s'", binFileName.c_str(), convertedBinFile);
             message(1, "");
         }
     }

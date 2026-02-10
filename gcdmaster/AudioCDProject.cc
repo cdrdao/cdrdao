@@ -405,11 +405,13 @@ void AudioCDProject::tocRead()
 	auto task = new FastTocRead();
 	task->signalDone.connect([this, task](Toc* toc) {
 	    if (toc) {
-		this->tocEdit_->toc(toc, "unnamed.toc", true);
+		this->tocEdit_->toc(toc, "", true);
 	    } else {
 		this->errorDialog(_("Unable to extra disc TOC"));
 	    }
 	    delete(task);
+	    guiUpdate(UPD_ALL);
+	    this->fullView();
 	});
 	tocEdit_->taskManager().addJob(task);
     } catch (...) {

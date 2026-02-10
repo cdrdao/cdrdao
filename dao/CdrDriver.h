@@ -124,6 +124,9 @@ struct CdRawToc {
 };
 
 struct TrackInfo {
+    TrackInfo() :
+	trackNr(0), ctl(0), mode(TrackData::AUDIO),
+	start(0), pregap(0), fill(0), indexCnt(0), bytesWritten(0) {}
     int trackNr;          // track number
     unsigned char ctl;    // flags
     TrackData::Mode mode; // track data mode
@@ -133,7 +136,7 @@ struct TrackInfo {
     int indexCnt;         // number of index increments
     long index[98];       // index marks
     char isrcCode[13];    // ISRC code, valid if 'isrcCode[0] != 0'
-    char *filename;       // data file name
+    std::string filename; // data file name
     long bytesWritten;    // number of bytes written to file
 };
 
@@ -416,7 +419,7 @@ class CdrDriver
     // disk read commands
 
     // analyzes the CD structure (Q sub-channels) of the inserted CD
-    virtual Toc *readDiskToc(int session, const char *);
+    virtual Toc *readDiskToc(int session, const char * fn = nullptr);
 
     // analyzes the CD structure and reads data
     virtual Toc *readDisk(int session, const char *);

@@ -258,7 +258,7 @@ class TocReader
     long readSamples(Sample *buf, long len);
     void closeData();
 
-    const char *curFilename();
+    const std::string curFilename();
 
   private:
     const Toc *toc_;

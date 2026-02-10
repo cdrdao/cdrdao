@@ -497,14 +497,14 @@ int Track::isPadded() const
 void Track::print(std::ostream &out, PrintParams &params) const
 {
     SubTrack *st;
-    const char *s;
+    std::string s;
     int i;
 
     out << "TRACK " << TrackData::mode2String(type());
 
     s = TrackData::subChannelMode2String(subChannelType());
 
-    if (*s != 0)
+    if (!s.empty())
         out << " " << s;
 
     out << std::endl;
@@ -551,39 +551,38 @@ void Track::collectFiles(std::set<std::string> &set)
 {
     SubTrack *st;
     for (st = subTracks_; st != NULL; st = st->next_) {
-        const char *f = st->filename();
-        if (f)
+        auto f = st->filename();
+        if (!f.empty())
             set.insert(f);
     }
 }
 
-void Track::markFileConversion(const char *src, const char *dst)
+void Track::markFileConversion(const std::string& src, const std::string& dst)
 {
     SubTrack *st;
     for (st = subTracks_; st != NULL; st = st->next_) {
-        const char *f = st->filename();
-        if (f && strcmp(f, src) == 0) {
+        auto f = st->filename();
+        if (f == src)
             st->effectiveFilename(dst);
-        }
     }
 }
 
-bool Track::resolveFilename(const char *path)
+bool Track::resolveFilename(const std::string& path)
 {
     SubTrack *st;
     for (st = subTracks_; st != NULL; st = st->next_) {
         std::string rfilename;
-        const char *f = st->filename();
+        auto f = st->filename();
 
-        if (f) {
+        if (!f.empty()) {
             // STDIN is a special case (stdin input), don't process it.
-            if (strcmp(f, "STDIN") == 0)
+            if (f == "STDIN")
                 continue;
 
-            if (::resolveFilename(rfilename, f, path)) {
+            if (::resolveFilename(rfilename, f.c_str(), path.c_str())) {
                 st->effectiveFilename(rfilename.c_str());
             } else {
-                log_message(-2, "Could not find input file \"%s\".", f);
+                log_message(-2, "Could not find input file \"%s\".", f.c_str());
                 return false;
             }
         }
@@ -1866,14 +1865,14 @@ long TrackReader::readSamples(Sample *buf, long len)
     return ret;
 }
 
-const char *TrackReader::curFilename()
+const std::string TrackReader::curFilename()
 {
     const TrackData *td = reader.trackData();
 
     if (td)
         return td->filename();
     else
-        return NULL;
+        return "";
 }
 
 SubTrackIterator::SubTrackIterator(const Track *t)
