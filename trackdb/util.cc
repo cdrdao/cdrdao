@@ -148,29 +148,29 @@ long fullRead(int fd, void *buf, long count)
     return nread;
 }
 
-long fullWrite(int fd, const void *buf, long count)
+long fullWrite(int fd, const std::string& buffer)
 {
-    long n;
-    long nwritten = 0;
-    const char *p = (const char *)buf;
+    auto ptr = buffer.data();
+    auto remaining = buffer.size();
+    ssize_t totalWritten = 0;
 
-    do {
-        do {
-            n = write(fd, p, count);
-        } while (n < 0 && (errno == EAGAIN || errno == EINTR));
+    while (remaining > 0) {
+	auto written = ::write(fd, ptr, remaining);
 
-        if (n < 0)
-            return -1;
+	if (written < 0) {
+	    if (errno = EINTR)
+		continue;
+	    return -1;
+	}
 
-        if (n == 0)
-            return nwritten;
+	if (written == 0)
+	    return totalWritten;
 
-        count -= n;
-        nwritten += n;
-        p += n;
-    } while (count > 0);
-
-    return nwritten;
+	ptr += written;
+	remaining -= (size_t)written;
+	totalWritten += written;
+    }
+    return totalWritten;
 }
 
 long readLong(FILE *fp)

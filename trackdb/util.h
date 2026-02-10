@@ -41,7 +41,7 @@ char *strdup3CC(const char *s1, const char *s2, const char *s3);
 char *strdupvCC(const char *s1, ...);
 
 long fullRead(int fd, void *buf, long count);
-long fullWrite(int fd, const void *buf, long count);
+long fullWrite(int fd, const std::string& buffer);
 long readLong(FILE *fp);
 short readShort(FILE *fp);
 

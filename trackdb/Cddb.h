@@ -26,8 +26,13 @@
 
 #include <string>
 #include <vector>
+#include <filesystem>
+#include <memory>
+#include <optional>
 
 #include "CdTextItem.h"
+
+namespace fs = std::filesystem;
 
 class Toc;
 
@@ -35,36 +40,40 @@ class Cddb
 {
   public:
     struct QueryResults {
-        char *category;
-        char *diskId;
-        char *title;
-        int exactMatch;
-        struct QueryResults *next;
+        std::string category;
+        std::string diskId;
+        std::string title;
+        bool exactMatch;
     };
 
     struct CddbEntry {
-        char *diskTitle;
-        char *diskArtist;
-        char *diskExt;
+        std::string diskTitle;
+        std::string diskArtist;
+        std::string diskExt;
         int ntracks;
-        char **trackTitles;
-        char **trackExt;
+	std::vector<std::string> trackTitles;
+	std::vector<std::string> trackExt;
+
+	CddbEntry(int n) : ntracks(n),
+			   trackTitles(n, std::string()),
+			   trackExt(n, std::string()) {}
     };
 
-    Cddb(Toc *);
+    Cddb(Toc *t) : toc_(t) {};
     ~Cddb();
 
     void localCddbDirectory(const std::string &);
-    void appendServer(const char *s);
+    void appendServer(std::string_view s);
 
     void timeout(int);
 
-    int connectDb(const char *userName, const char *hostName, const char *clientName,
-                  const char *version);
+    int connectDb(const std::string& userName, const std::string& hostName,
+		  const std::string& clientName, const std::string& version);
 
-    int queryDb(QueryResults **);
+    int queryDb();
+    const std::vector<QueryResults>& results() { return queryResults_; }
 
-    int readDb(const char *category, const char *diskId, CddbEntry **);
+    std::optional<CddbEntry>& readDb(const std::string& category, const std::string& diskId);
 
     int addAsCdText(Toc *toc);
 
@@ -74,18 +83,20 @@ class Cddb
     // available.
     bool printDbEntry();
 
+    static std::string& convertEscapeSequences(std::string& s);
+    static void trimSpaces(std::string& s);
+
   private:
     struct ServerList {
-        char *server;
+	std::string server;
         unsigned short port;
-        char *httpCgiBin;
-        char *httpProxyServer;
+	std::string httpCgiBin;
+	std::string httpProxyServer;
         unsigned short httpProxyPort;
-        struct ServerList *next;
     };
 
     Toc *toc_;
-    ServerList *serverList_ = nullptr;
+    std::vector<ServerList> serverList_;
     ServerList *selectedServer_ = nullptr;
 
     std::string localCddbDirectory_;
@@ -97,28 +108,29 @@ class Cddb
     std::string httpCmd_;
     std::string httpData_;
     
-    QueryResults *queryResults_ = nullptr;
-    CddbEntry *cddbEntry_ = nullptr;
+    std::vector<QueryResults> queryResults_;
+    std::optional<CddbEntry> cddbEntry_;
 
-    static CdTextItem *createItem(CdTextItem::PackType, const char *);
+    static CdTextItem *createItem(CdTextItem::PackType, const std::string& );
 
-    int openConnection();
+    bool openConnection();
+    bool openSingleConnection(ServerList*);
     void closeConnection();
     void setupHttpData(const std::string& userName, const std::string& hostName,
                        const std::string& clientName, const std::string& version);
 
-    void appendQueryResult(const char *category, const char *diskId, const char *title,
-                           int exactMatch);
-    void clearQueryResults();
-    void clearCddbEntry();
+    void appendQueryResult(const std::string& category, const std::string& diskId,
+			   const std::string& title, bool exactMatch);
+    bool parseQueryResult(std::string_view line, bool exact);
 
-    const char *readLine();
-    const char *getServerResponse(int code[3]);
+    std::optional<std::string> readLine();
+    std::optional<std::string> getServerResponse(int code[3]);
     int sendCommand(const std::vector<std::string> &cmds);
-    const char *calcCddbId();
+    std::string calcCddbId();
     int readDbEntry(int);
     void shutdown();
-    int createLocalCddbFile(const char *category, const char *diskId);
+    bool getCode(std::string_view, int code[3]);
+    int createLocalCddbFile(const std::string& category, const std::string& diskId);
 };
 
 #endif

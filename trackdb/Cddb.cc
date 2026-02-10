@@ -36,6 +36,9 @@
 #include <sys/time.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <filesystem>
+#include <array>
+#include <stdexcept>
 
 #include "CdTextItem.h"
 #include "Toc.h"
@@ -44,17 +47,12 @@
 
 #include "Cddb.h"
 
-using std::string;
-using std::vector;
-
 #define CDDB_MAX_LINE_LEN 1024
 #define CDDB_DEFAULT_PORT_CDDBP 8880
 #define CDDB_DEFAULT_PORT_HTTP 80
 
 static int getCode(const char *line, int code[3]);
 static unsigned int cddbSum(unsigned int n);
-static void convertEscapeSequences(const char *in, char *out);
-static int parseQueryResult(char *line, char *category, char *diskId, char *title);
 
 static RETSIGTYPE alarmHandler(int sig)
 {
@@ -64,36 +62,9 @@ static RETSIGTYPE alarmHandler(int sig)
 #endif
 }
 
-Cddb::Cddb(Toc *t)
-{
-    toc_ = t;
-}
-
 Cddb::~Cddb()
 {
-    ServerList *snext;
-
     shutdown();
-
-    clearQueryResults();
-    clearCddbEntry();
-
-    while (serverList_ != NULL) {
-        snext = serverList_->next;
-
-        delete[] serverList_->server;
-        serverList_->server = NULL;
-
-        delete[] serverList_->httpCgiBin;
-        serverList_->httpCgiBin = NULL;
-
-        delete[] serverList_->httpProxyServer;
-        serverList_->httpProxyServer = NULL;
-
-        delete serverList_;
-
-        serverList_ = snext;
-    }
 }
 
 void Cddb::timeout(int t)
@@ -104,10 +75,10 @@ void Cddb::timeout(int t)
 
 void Cddb::localCddbDirectory(const std::string &dir)
 {
-    const char *homeDir;
+    const char *homeDir = nullptr;
 
     // replace ~/ by the path to the home directory as indicated by $HOME
-    if (dir[0] == '~' && dir[1] == '/' && (homeDir = getenv("HOME")) != NULL) {
+    if (dir[0] == '~' && dir[1] == '/' && (homeDir = getenv("HOME")) != nullptr) {
         localCddbDirectory_ = homeDir;
         localCddbDirectory_ += dir.substr(1);
     } else {
@@ -115,81 +86,11 @@ void Cddb::localCddbDirectory(const std::string &dir)
     }
 }
 
-void Cddb::appendQueryResult(const char *category, const char *diskId, const char *title,
-                             int exactMatch)
+void Cddb::appendQueryResult(const std::string& category, const std::string& diskId,
+                             const std::string& title, bool exactMatch)
 {
-    QueryResults *run, *ent;
-
-    for (run = queryResults_; run != NULL && run->next != NULL; run = run->next)
-        ;
-
-    ent = new QueryResults;
-
-    ent->category = strdupCC(category);
-    ent->diskId = strdupCC(diskId);
-    ent->title = strdupCC(title);
-    ent->exactMatch = (exactMatch != 0) ? 1 : 0;
-
-    ent->next = NULL;
-
-    if (run == NULL)
-        queryResults_ = ent;
-    else
-        run->next = ent;
-}
-
-void Cddb::clearQueryResults()
-{
-    QueryResults *next;
-
-    while (queryResults_ != NULL) {
-        next = queryResults_->next;
-
-        delete[] queryResults_->category;
-        queryResults_->category = NULL;
-
-        delete[] queryResults_->diskId;
-        queryResults_->diskId = NULL;
-
-        delete[] queryResults_->title;
-        queryResults_->title = NULL;
-
-        delete queryResults_;
-        queryResults_ = next;
-    }
-}
-
-void Cddb::clearCddbEntry()
-{
-    int i;
-
-    if (cddbEntry_ != NULL) {
-        delete[] cddbEntry_->diskTitle;
-        cddbEntry_->diskTitle = NULL;
-
-        delete[] cddbEntry_->diskArtist;
-        cddbEntry_->diskArtist = NULL;
-
-        delete[] cddbEntry_->diskExt;
-        cddbEntry_->diskExt = NULL;
-
-        for (i = 0; i < cddbEntry_->ntracks; i++) {
-            delete[] cddbEntry_->trackTitles[i];
-            cddbEntry_->trackTitles[i] = NULL;
-
-            delete[] cddbEntry_->trackExt[i];
-            cddbEntry_->trackExt[i] = NULL;
-        }
-
-        delete[] cddbEntry_->trackTitles;
-        cddbEntry_->trackTitles = NULL;
-
-        delete[] cddbEntry_->trackExt;
-        cddbEntry_->trackExt = NULL;
-
-        delete cddbEntry_;
-        cddbEntry_ = NULL;
-    }
+    queryResults_.emplace(queryResults_.end(),
+                          QueryResults{category, diskId, title, exactMatch});
 }
 
 /* NOTE: gnudb is deprecating the HTTP method.
@@ -211,83 +112,59 @@ void Cddb::clearCddbEntry()
  *   connect to <proxy-server>, port <proxy-port>, use http protocol,
  *   url: http://<server>:<port>/<cgi-bin-path>
  */
-void Cddb::appendServer(const char *s)
+void Cddb::appendServer(std::string_view name)
 {
-    ServerList *run, *ent;
-    char *name;
-    char *port;
-    char *httpCgiBin = NULL;
-    char *httpProxyServer = NULL;
-    char *httpProxyPort = NULL;
+    std::string port;
+    std::string httpCgiBin;
+    std::string httpProxyServer;
+    std::string httpProxyPort;
     unsigned short portNr = CDDB_DEFAULT_PORT_CDDBP;
     unsigned short httpProxyPortNr = CDDB_DEFAULT_PORT_HTTP;
+    std::size_t found;
 
-    if (s == NULL || *s == 0)
+    if (name.empty())
         return;
 
-    name = strdupCC(s);
+    if ((found = name.find_first_of(":")) != std::string::npos) {
+        port = name.substr(found + 1);
+        name = name.substr(0, found);
 
-    if ((port = strchr(name, ':')) != NULL) {
-        *port = 0;
-        port++;
-
-        if (!isdigit(*port)) {
-            httpCgiBin = port;
-            port = NULL;
-            portNr = CDDB_DEFAULT_PORT_HTTP;
-        } else {
-            if ((httpCgiBin = strchr(port, ':')) != NULL) {
-                *httpCgiBin = 0;
-                httpCgiBin++;
+        try {
+            portNr = std::stoi(port);
+            if ((found = port.find_first_of(":")) != std::string::npos) {
+                httpCgiBin = port.substr(found + 1);
             }
+        } catch (...) {
+            httpCgiBin = port;
+            port.clear();
+            portNr = CDDB_DEFAULT_PORT_HTTP;
         }
 
-        if (httpCgiBin != NULL && (httpProxyServer = strchr(httpCgiBin, ':')) != NULL) {
-            *httpProxyServer = 0;
-            httpProxyServer++;
+        if ((found = httpCgiBin.find_first_of(":")) != std::string::npos) {
+            httpProxyServer = httpCgiBin.substr(found + 1);
         }
 
-        if (httpProxyServer != NULL && (httpProxyPort = strchr(httpProxyServer, ':')) != NULL) {
-            *httpProxyPort = 0;
-            httpProxyPort++;
+        if ((found = httpProxyServer.find_first_of(":")) != std::string::npos) {
+            httpProxyPort = httpProxyServer.substr(found + 1);
         }
     }
 
-    for (run = serverList_; run != NULL && run->next != NULL; run = run->next) {
-        if (strcmp(run->server, name) == 0) {
-            delete[] name;
+    for (auto const& s : serverList_) {
+        if (s.server == name)
             return;
+    }
+
+    if (!httpProxyPort.empty()) {
+        try {
+            httpProxyPortNr = std::stoi(httpProxyPort);
+        } catch (...) {
+            httpProxyPortNr = CDDB_DEFAULT_PORT_HTTP;
         }
     }
 
-    if (run != NULL && strcmp(run->server, s) == 0) {
-        delete[] name;
-        return;
-    }
-
-    if (port != NULL)
-        portNr = (unsigned short)strtoul(port, NULL, 0);
-
-    if (httpProxyPort != NULL)
-        httpProxyPortNr = (unsigned short)strtoul(httpProxyPort, NULL, 0);
-
-    ent = new ServerList;
-    ent->server = name;
-    ent->port = portNr;
-    ent->httpCgiBin = (httpCgiBin != NULL) ? strdupCC(httpCgiBin) : NULL;
-    if (httpProxyServer != NULL) {
-        ent->httpProxyServer = strdupCC(httpProxyServer);
-        ent->httpProxyPort = httpProxyPortNr;
-    } else {
-        ent->httpProxyServer = NULL;
-        ent->httpProxyPort = 0;
-    }
-    ent->next = NULL;
-
-    if (run == NULL)
-        serverList_ = ent;
-    else
-        run->next = ent;
+    serverList_.emplace(serverList_.end(),
+                        ServerList{std::string{name}, portNr, httpCgiBin,
+                            httpProxyServer, httpProxyPortNr});
 }
 
 /* Tries to connect to a CDDB server. If no server was previously connected
@@ -297,13 +174,78 @@ void Cddb::appendServer(const char *s)
  *         1: could not connect to any server
  */
 
-int Cddb::openConnection()
+bool Cddb::openSingleConnection(ServerList* sl)
 {
-    ServerList *run;
-    struct hostent *hostEnt;
     struct sockaddr_in sockAddr;
-    const char *server;
-    unsigned short port;
+    struct hostent *hostEnt;
+
+    auto server = sl->server;
+    auto port = sl->port;
+
+    if (!sl->httpCgiBin.empty()) {
+        if (!sl->httpProxyServer.empty()) {
+            server = sl->httpProxyServer;
+            port = sl->httpProxyPort;
+
+            log_message(1, "CDDB: Connecting to http://%s:%u%s via proxy %s:%u ...",
+                        sl->server.c_str(), sl->port, sl->httpCgiBin.c_str(), server.c_str(), port);
+        } else {
+            log_message(1, "CDDB: Connecting to http://%s:%u%s ...",
+                        server.c_str(), port,sl->httpCgiBin.c_str());
+        }
+    } else {
+        log_message(1, "CDDB: Connecting to cddbp://%s:%u ...", server.c_str(), port);
+    }
+
+#ifdef HAVE_INET_ATON
+    if (!inet_aton(server.c_str(), &sockAddr.sin_addr)) {
+#else
+    if ((inetAddr = (long)inet_addr(server.c_str())) == -1) {
+#endif
+        if ((hostEnt = gethostbyname(server.c_str())) == NULL || hostEnt->h_addrtype != AF_INET) {
+            alarm(0);
+            log_message(-1, "CDDB: Cannot resolve hostname '%s' - skipping.", server.c_str());
+            return false;
+        } else {
+            memcpy((char *)&sockAddr.sin_addr, hostEnt->h_addr, hostEnt->h_length);
+        }
+    }
+#ifndef HAVE_INET_ATON
+    else {
+        memcpy((char *)&sockAddr.sin_addr, (char *)&inetAddr, sizeof(inetAddr));
+    }
+#endif
+
+    log_message(4, "CDDB: Hostname: %s -> IP: %s", server.c_str(), inet_ntoa(sockAddr.sin_addr));
+
+    if ((fd_ = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+        log_message(-2, "CDDB: Cannot create socket: %s", strerror(errno));
+        return false;
+    }
+
+    sockAddr.sin_family = AF_INET;
+    sockAddr.sin_port = htons(port);
+
+    alarm(timeout_);
+
+    if (connect(fd_, (struct sockaddr *)&sockAddr, sizeof(sockAddr)) == 0) {
+        alarm(0);
+        log_message(1, "CDDB: Ok.");
+        selectedServer_ = sl;
+        return true;
+    } else {
+        alarm(0);
+        log_message(-1, "CDDB: Failed to connect to '%s:%u: %s", server, port, strerror(errno));
+        closeConnection();
+        return false;
+    }
+}
+
+//
+// Returns true if connection is successful.
+//
+bool Cddb::openConnection()
+{
     struct sigaction newAlarmHandler;
     struct sigaction oldAlarmHandler;
 #ifndef HAVE_INET_ATON
@@ -311,7 +253,7 @@ int Cddb::openConnection()
 #endif
 
     if (fd_ >= 0) // already connected
-        return 0;
+        return true;
 
     memset(&newAlarmHandler, 0, sizeof(newAlarmHandler));
     sigemptyset(&(newAlarmHandler.sa_mask));
@@ -324,87 +266,33 @@ int Cddb::openConnection()
 
     if (sigaction(SIGALRM, &newAlarmHandler, &oldAlarmHandler) != 0) {
         log_message(-2, "CDDB: Cannot install alarm signal handler: %s", strerror(errno));
-        return 1;
+        return false;
     }
     alarm(0);
 
-    for (run = (selectedServer_ != NULL) ? selectedServer_ : serverList_; run != NULL;
-         run = (selectedServer_ != NULL) ? (ServerList *)0 : run->next) {
+    bool success = false;
 
-        server = run->server;
-        port = run->port;
-
-        if (run->httpCgiBin != NULL) {
-            if (run->httpProxyServer != NULL) {
-                server = run->httpProxyServer;
-                port = run->httpProxyPort;
-
-                log_message(1, "CDDB: Connecting to http://%s:%u%s via proxy %s:%u ...",
-                            run->server, run->port, run->httpCgiBin, server, port);
-            } else {
-                log_message(1, "CDDB: Connecting to http://%s:%u%s ...", server, port,
-                            run->httpCgiBin);
-            }
-        } else {
-            log_message(1, "CDDB: Connecting to cddbp://%s:%u ...", server, port);
-        }
-
-#ifdef HAVE_INET_ATON
-        if (!inet_aton(server, &sockAddr.sin_addr)) {
-#else
-        if ((inetAddr = (long)inet_addr(server)) == -1) {
-#endif
-            if ((hostEnt = gethostbyname(server)) == NULL || hostEnt->h_addrtype != AF_INET) {
-                alarm(0);
-                log_message(-1, "CDDB: Cannot resolve hostname '%s' - skipping.", server);
-                continue;
-            } else {
-                memcpy((char *)&sockAddr.sin_addr, hostEnt->h_addr, hostEnt->h_length);
-            }
-        }
-#ifndef HAVE_INET_ATON
-        else {
-            memcpy((char *)&sockAddr.sin_addr, (char *)&inetAddr, sizeof(inetAddr));
-        }
-#endif
-
-        log_message(4, "CDDB: Hostname: %s -> IP: %s", server, inet_ntoa(sockAddr.sin_addr));
-
-        if ((fd_ = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-            log_message(-2, "CDDB: Cannot create socket: %s", strerror(errno));
-            goto fail;
-        }
-
-        sockAddr.sin_family = AF_INET;
-        sockAddr.sin_port = htons(port);
-
-        alarm(timeout_);
-
-        if (connect(fd_, (struct sockaddr *)&sockAddr, sizeof(sockAddr)) == 0) {
-            alarm(0);
-            log_message(1, "CDDB: Ok.");
-            selectedServer_ = run;
-            break;
-        } else {
-            alarm(0);
-            log_message(-1, "CDDB: Failed to connect to '%s:%u: %s", server, port, strerror(errno));
-            closeConnection();
+    if (selectedServer_)
+        success =  openSingleConnection(selectedServer_);
+    else {
+        for (auto& srv : serverList_) {
+            if (success = openSingleConnection(&srv))
+                break;
         }
     }
 
-fail:
-    connected_ = 0;
-
-    alarm(0);
-
-    if (sigaction(SIGALRM, &oldAlarmHandler, NULL) != 0) {
-        log_message(-1, "CDDB: Cannot restore alarm signal handler: %s", strerror(errno));
+    if (!success) {
+        connected_ = 0;
+        alarm(0);
+        if (sigaction(SIGALRM, &oldAlarmHandler, NULL) != 0) {
+            log_message(-1, "CDDB: Cannot restore alarm signal handler: %s", strerror(errno));
+        }
     }
 
     if (fd_ < 0)
-        return 1;
+        return true;
 
-    return 0;
+    return false;
 }
 
 /* Closes connection.
@@ -438,20 +326,20 @@ void Cddb::setupHttpData(const std::string& userName, const std::string& hostNam
  *         2: handshake failed
  */
 
-int Cddb::connectDb(const char *userName, const char *hostName, const char *clientName,
-                    const char *version)
+int Cddb::connectDb(const std::string& userName, const std::string& hostName,
+                    const std::string& clientName, const std::string& version)
 {
     int code[3];
-    const char *response;
-    const char *cmdArgs[6];
+    std::string response;
+    std::array<std::string, 6> cmdArgs;
 
     if (connected_)
         return 0;
 
-    if (openConnection() != 0)
+    if (!openConnection())
         return 1;
 
-    if (!selectedServer_->httpCgiBin)
+    if (selectedServer_->httpCgiBin.empty())
         return 1;
     
     setupHttpData(userName, hostName, clientName, version);
@@ -462,7 +350,6 @@ int Cddb::connectDb(const char *userName, const char *hostName, const char *clie
  */
 void Cddb::printDbQuery()
 {
-    const char *cddbId;
     int ntracks;
     const Track *t;
     Msf start, end;
@@ -470,22 +357,21 @@ void Cddb::printDbQuery()
 
     ntracks = toc_->nofTracks();
 
-    cddbId = calcCddbId();
+    auto cddbId = calcCddbId();
 
-    printf("%s ", cddbId);
-
-    printf("%d ", ntracks);
+    std::cout << cddbId << " ";
+    std::cout << ntracks << " ";
 
     TrackIterator itr(toc_);
 
     for (t = itr.first(start, end); t != NULL; t = itr.next(start, end)) {
         long trackStart = start.lba() + 150;
 
-        printf("%ld ", trackStart);
+        std::cout << trackStart << " ";
     }
 
     diskLength = toc_->length().min() * 60 + toc_->length().sec() + 2;
-    printf("%ld\n", diskLength);
+    std::cout << diskLength << "\n";
 }
 
 bool Cddb::printDbEntry()
@@ -493,16 +379,17 @@ bool Cddb::printDbEntry()
     if (!cddbEntry_)
         return false;
 
-    if (cddbEntry_->diskArtist)
-        printf("Artist: %s\n", cddbEntry_->diskArtist);
-    if (cddbEntry_->diskTitle)
-        printf("Title: %s\n", cddbEntry_->diskTitle);
-    if (cddbEntry_->diskExt)
-        printf("Ext: %s\n", cddbEntry_->diskExt);
+    if (!cddbEntry_->diskArtist.empty())
+        std::cout << "Artist: " << cddbEntry_->diskArtist << "\n";
+    if (!cddbEntry_->diskTitle.empty())
+        std::cout << "Title: " << cddbEntry_->diskTitle << "\n";
+    if (!cddbEntry_->diskExt.empty())
+        std::cout << "Ext: " << cddbEntry_->diskExt << "\n";
     for (int i = 0; i < cddbEntry_->ntracks; i++) {
-        printf("Track %02d: %s\n", i + 1, cddbEntry_->trackTitles[i]);
-        if (cddbEntry_->trackExt && cddbEntry_->trackExt[i])
-            printf("Trach %02d ext: %s\n", i + 1, cddbEntry_->trackExt[i]);
+        std::printf("Track %02d: ", i + 1);
+        std::cout << cddbEntry_->trackTitles[i] << "\n";
+        if (!cddbEntry_->trackExt[i].empty())
+            printf("Track %02d ext: %s\n", i + 1, cddbEntry_->trackExt[i].c_str());
     }
 
     return true;
@@ -514,108 +401,80 @@ bool Cddb::printDbEntry()
  * Return: 0: OK
  *         1: communication error occured
  */
-int Cddb::queryDb(QueryResults **results)
+int Cddb::queryDb()
 {
-    const char *cddbId;
-    vector<string> args;
-    const char *resp;
-    char qtitle[CDDB_MAX_LINE_LEN];
-    char qcategory[CDDB_MAX_LINE_LEN];
-    char qdiskId[CDDB_MAX_LINE_LEN];
-    char respBuf[CDDB_MAX_LINE_LEN];
-    char *buf;
+    std::vector<std::string> args;
     int code[3];
     int err = 0;
-    int i;
-    int ntracks;
-    const Track *t;
-    Msf start, end;
 
     // clear previous results
-    clearQueryResults();
+    queryResults_.clear();
 
-    if (openConnection() != 0)
+    if (!openConnection())
         return 1;
-
-    ntracks = toc_->nofTracks();
 
     args = {"cddb", "query"};
 
-    cddbId = calcCddbId();
+    auto cddbId = calcCddbId();
 
     args.push_back(cddbId);
-    args.push_back(std::to_string(ntracks));
-
-    TrackIterator itr(toc_);
-
-    for (t = itr.first(start, end); t != NULL; t = itr.next(start, end))
-        args.push_back(std::to_string(start.lba() + 150));
-
-   {
+    args.push_back(std::to_string(toc_->nofTracks()));
+    {
+        TrackIterator itr(toc_);
+        Msf start, end;
+        for (auto t = itr.first(start, end); t != NULL; t = itr.next(start, end))
+            args.push_back(std::to_string(start.lba() + 150));
         long diskLength = toc_->length().min() * 60 + toc_->length().sec() + 2;
         args.push_back(std::to_string(diskLength));
     }
 
     if (sendCommand(args) != 0) {
         log_message(-2, "CDDB: Failed to send QUERY command.");
-        err = 1;
-        goto fail;
+        closeConnection();
+        return 1;
     }
 
-    if ((resp = getServerResponse(code)) == NULL) {
+    auto resp = getServerResponse(code);
+    if (!resp) {
         log_message(-2, "CDDB: EOF while waiting for QUERY response.");
-        err = 1;
-        goto fail;
+        closeConnection();
+        return 1;
     }
 
-    log_message(4, "CDDB: QUERY response: %s", resp);
+    log_message(4, "CDDB: QUERY response: %s", resp->c_str());
 
     if (code[0] != 2) {
-        log_message(-2, "CDDB: QUERY failed: %s", resp);
+        log_message(-2, "CDDB: QUERY failed: %s", resp->c_str());
         err = 1;
-        goto fail;
     } else {
         if (code[2] == 0) {
             // found exact match
-            strcpy(respBuf, readLine());
-            if (parseQueryResult(respBuf, qcategory, qdiskId, qtitle)) {
-                appendQueryResult(qcategory, qdiskId, qtitle, 1);
-            } else {
-                log_message(-2, "CDDB: Received invalid QUERY response: %s", resp);
+            auto resp = readLine();
+            if (!parseQueryResult(*resp, true)) {
+                log_message(-2, "CDDB: Received invalid QUERY response: %s", resp->c_str());
                 err = 1;
-                goto fail;
             }
         } else if (code[2] == 1) {
             // found inexact matches
-            while ((resp = readLine()) != NULL && strcmp(resp, ".") != 0) {
-                strcpy(respBuf, resp);
+            while (true) {
+                auto resp = readLine();
+                if (!resp || *resp == ".")
+                    break;
 
-                log_message(4, "CDDB: Query data: %s", resp);
+                log_message(4, "CDDB: Query data: %s", resp->c_str());
 
-                if (parseQueryResult(respBuf, qcategory, qdiskId, qtitle)) {
-                    appendQueryResult(qcategory, qdiskId, qtitle, 0);
-                } else {
-                    log_message(-2, "CDDB: Received invalid QUERY data: %s", resp);
+                if (!parseQueryResult(*resp, false)) {
+                    log_message(-2, "CDDB: Received invalid QUERY data: %s", resp->c_str());
                     err = 1;
-                    goto fail;
+                    break;
                 }
             }
-
-            if (resp == NULL) {
-                log_message(-2, "CDDB: EOF while reading QUERY data.");
-                err = 1;
-                goto fail;
-            }
-        } else {
-            // found no match
         }
     }
 
-fail:
+    if (err)
+        closeConnection();
 
-    closeConnection();
-
-    *results = queryResults_;
     return err;
 }
 
@@ -624,68 +483,58 @@ fail:
  * Return: 0: OK
  *         1: communication error or could not retrieve CDDB entry
  */
-int Cddb::readDb(const char *category, const char *diskId, CddbEntry **entry)
+std::optional<Cddb::CddbEntry>& Cddb::readDb(const std::string& category, const std::string& diskId)
 {
     int code[3];
-    const char *resp;
     int localRecordFd = -1;
 
-    clearCddbEntry();
+    try {
 
-    if (openConnection() != 0)
-        return 1;
+        if (!openConnection())
+            throw std::runtime_error("");
 
-    if (sendCommand({"cddb", "read", category, diskId}) != 0) {
-        log_message(-2, "CDDB: Failed to send READ command.");
-        goto fail;
-    }
-
-    if ((resp = getServerResponse(code)) == NULL) {
-        log_message(-2, "CDDB: EOF while waiting for READ response.");
-        goto fail;
-    }
-
-    log_message(4, "CDDB: READ response: %s", resp);
-
-    if (code[0] == 2) {
-        if ((localRecordFd = createLocalCddbFile(category, diskId)) == -2) {
-            log_message(-1, "Existing local CDDB record for %s/%s will not be overwritten.",
-                        category, diskId);
+        if (sendCommand({"cddb", "read", category, diskId}) != 0) {
+            log_message(-2, "CDDB: Failed to send READ command.");
+            throw std::runtime_error("");
         }
-        if (readDbEntry(localRecordFd) != 0) {
-            log_message(-2, "CDDB: Received invalid database entry.");
-            goto fail;
-        }
-    } else {
-        log_message(-2, "CDDB: READ failed: %s", resp);
-        goto fail;
-    }
 
-    *entry = cddbEntry_;
+        auto resp = getServerResponse(code);
+        if (!resp) {
+            log_message(-2, "CDDB: EOF while waiting for READ response.");
+            throw std::runtime_error("");
+        }
+
+        log_message(4, "CDDB: READ response: %s", resp->c_str());
+
+        if (code[0] == 2) {
+            if ((localRecordFd = createLocalCddbFile(category, diskId)) == -2) {
+                log_message(-1, "Existing local CDDB record for %s/%s will not be overwritten.",
+                            category, diskId);
+            }
+            if (readDbEntry(localRecordFd) != 0) {
+                log_message(-2, "CDDB: Received invalid database entry.");
+                throw std::runtime_error("");
+            }
+        } else {
+            log_message(-2, "CDDB: READ failed: %s", resp);
+            throw std::runtime_error("");
+        }
+    } catch (...) {
+        cddbEntry_ = std::nullopt;
+    }
 
     closeConnection();
 
     if (localRecordFd >= 0)
         close(localRecordFd);
 
-    return 0;
-
-fail:
-
-    closeConnection();
-
-    if (localRecordFd >= 0)
-        close(localRecordFd);
-
-    *entry = NULL;
-    return 1;
+    return cddbEntry_;
 }
 
 /* Shuts down the connection to the CDDB server.
  */
 void Cddb::shutdown()
 {
-    const char *resp;
     int code[3];
 
     if (fd_ < 0)
@@ -697,10 +546,11 @@ void Cddb::shutdown()
     }
 
     if (sendCommand({"quit"}) == 0) {
-        if ((resp = getServerResponse(code)) == NULL) {
+        auto resp = getServerResponse(code);
+        if (!resp) {
             log_message(-1, "CDDB: EOF while waiting for QUIT response.");
         } else {
-            log_message(4, "CDDB: QUIT response: %s", resp);
+            log_message(4, "CDDB: QUIT response: %s", resp->c_str());
         }
     } else {
         log_message(-1, "CDDB: Failed to send QUIT command.");
@@ -711,18 +561,16 @@ void Cddb::shutdown()
 
 /* Filter characters of given string so that it is suitable as CD-TEXT data.
  */
-static char *cdTextFilter(char *s)
+static std::string cdTextFilter(std::string_view s)
 {
-    char *p = s;
+    std::string ret;
 
-    while (*p != 0) {
-        if (*p == '\n' || *p == '\t')
-            *p = ' ';
-
-        p++;
+    for (auto c : s) {
+        if (c == '\n' ||  c == '\t')
+            c = ' ';
+        ret.push_back(c);
     }
-
-    return s;
+    return ret;
 }
 
 /* Adds the data of the retrieved CDDB record stored in 'cddbEntry_' to
@@ -738,23 +586,23 @@ int Cddb::addAsCdText(Toc *toc)
     int trun;
     CdTextItem *item;
 
-    if (cddbEntry_ == NULL)
+    if (!cddbEntry_)
         return 0;
 
-    if (cddbEntry_->diskTitle != NULL)
+    if (!cddbEntry_->diskTitle.empty())
         haveTitle = 1;
 
-    if (cddbEntry_->diskArtist != NULL)
+    if (!cddbEntry_->diskArtist.empty())
         havePerformer = 1;
 
-    if (cddbEntry_->diskExt != NULL)
+    if (!cddbEntry_->diskExt.empty())
         haveMessage = 1;
 
     for (trun = 0; trun < cddbEntry_->ntracks; trun++) {
-        if (cddbEntry_->trackTitles[trun] != NULL)
+        if (!cddbEntry_->trackTitles[trun].empty())
             haveTitle = 1;
 
-        if (cddbEntry_->trackExt[trun] != NULL)
+        if (!cddbEntry_->trackExt[trun].empty())
             haveMessage = 1;
     }
 
@@ -766,20 +614,22 @@ int Cddb::addAsCdText(Toc *toc)
     if (haveTitle) {
         item =
             createItem(CdTextItem::PackType::TITLE,
-                       (cddbEntry_->diskTitle != NULL) ? cdTextFilter(cddbEntry_->diskTitle) : "");
+                       cddbEntry_->diskTitle.empty() ? "" :
+                       cdTextFilter(cddbEntry_->diskTitle.c_str()));
         toc->addCdTextItem(0, item);
     }
 
     if (havePerformer) {
         item = createItem(CdTextItem::PackType::PERFORMER,
-                          (cddbEntry_->diskArtist != NULL) ? cdTextFilter(cddbEntry_->diskArtist)
-                                                           : "");
+                          cddbEntry_->diskArtist.empty() ? "" :
+                          cdTextFilter(cddbEntry_->diskArtist.c_str()));
         toc->addCdTextItem(0, item);
     }
 
     if (haveMessage) {
         item = createItem(CdTextItem::PackType::MESSAGE,
-                          (cddbEntry_->diskExt != NULL) ? cdTextFilter(cddbEntry_->diskExt) : "");
+                          cddbEntry_->diskExt.empty() ? "" :
+                          cdTextFilter(cddbEntry_->diskExt.c_str()));
         toc->addCdTextItem(0, item);
     }
 
@@ -788,7 +638,7 @@ int Cddb::addAsCdText(Toc *toc)
         item = nullptr;
         if (haveTitle) {
             item = createItem(CdTextItem::PackType::TITLE,
-                              (trun < cddbEntry_->ntracks && cddbEntry_->trackTitles[trun] != NULL)
+                              (trun < cddbEntry_->ntracks && !cddbEntry_->trackTitles[trun].empty())
                                   ? cdTextFilter(cddbEntry_->trackTitles[trun])
                                   : "");
             toc->addCdTextItem(trun + 1, item);
@@ -796,12 +646,12 @@ int Cddb::addAsCdText(Toc *toc)
         if (havePerformer) {
             item = createItem(
                 CdTextItem::PackType::PERFORMER,
-                (cddbEntry_->diskArtist != NULL) ? cdTextFilter(cddbEntry_->diskArtist) : "");
+                cddbEntry_->diskArtist.empty() ? "" : cdTextFilter(cddbEntry_->diskArtist));
             toc->addCdTextItem(trun + 1, item);
         }
         if (haveMessage) {
             item = createItem(CdTextItem::PackType::MESSAGE,
-                              (trun < cddbEntry_->ntracks && cddbEntry_->trackExt[trun] != NULL)
+                              (trun < cddbEntry_->ntracks && !cddbEntry_->trackExt[trun].empty())
                                   ? cdTextFilter(cddbEntry_->trackExt[trun])
                                   : "");
             toc->addCdTextItem(trun + 1, item);
@@ -813,76 +663,78 @@ int Cddb::addAsCdText(Toc *toc)
 
 /* Reads a line (until '\n') from 'fd_'. Checks for timeouts.
  */
-const char *Cddb::readLine()
+std::optional<std::string> Cddb::readLine()
 {
-    static char buf[CDDB_MAX_LINE_LEN];
-    int pos = 0;
-    struct timeval tv;
-    fd_set readFds;
-    int ret;
-    char *s;
-    int characterRead = 0;
+    static std::vector<char> read_buf_(CDDB_MAX_LINE_LEN);
+    static bool eof = false;
+    static std::string buffer;
 
-    while (pos < CDDB_MAX_LINE_LEN) {
-        FD_ZERO(&readFds);
-        FD_SET(fd_, &readFds);
+    std::string line;
 
+    while (true) {
+        auto nl = buffer.find('\n');
+        if (nl != std::string::npos) {
+            std::string line = buffer.substr(0, nl);
+            buffer.erase(0, nl + 1);
+            if (!line.empty() && line.back() == '\r') line.pop_back();
+            break;
+        }
+        if (eof) {
+            if (buffer.empty()) return std::nullopt;
+            std::string line = std::move(buffer);
+            buffer.clear();
+            if (!line.empty() && line.back() == '\r') line.pop_back();
+            break;
+        }
+        fd_set fds;
+        FD_ZERO(&fds);
+        FD_SET(fd_, &fds);
+        timeval tv;
         tv.tv_sec = timeout_;
         tv.tv_usec = 0;
 
-        ret = select(fd_ + 1, &readFds, NULL, NULL, &tv);
-
+        auto ret = ::select(fd_ + 1, &fds, nullptr, nullptr, &tv);
+        if (ret < 0 && errno != EINTR) {
+            log_message(-2, "CDDB: Error while waiting for data: %s", strerror(errno));
+            return std::nullopt;
+        }
         if (ret == 0) {
             log_message(-2, "CDDB: Timeout while reading data.");
-            return NULL;
+            return std::nullopt;
         }
 
-        if (ret < 0) {
-            log_message(-2, "CDDB: Error while waiting for data: %s", strerror(errno));
-            return NULL;
-        }
-
-        ret = read(fd_, &(buf[pos]), 1);
-
-        if (ret == 0) {
-            // end of file
-            break;
-        }
-
-        if (ret < 0) {
+        auto n = ::read(fd_, read_buf_.data(), read_buf_.size());
+        if (n < 0) {
             log_message(-2, "CDDB: Error while reading data: %s", strerror(errno));
-            return NULL;
+            return std::nullopt;
         }
 
-        characterRead = 1;
-
-        if (buf[pos] == '\n')
-            break;
-
-        pos++;
+        if (n == 0) {
+            eof = true;
+            continue;
+        }
+        buffer.append(read_buf_.data(), (size_t)n);
     }
 
-    if (pos >= CDDB_MAX_LINE_LEN)
-        buf[CDDB_MAX_LINE_LEN - 1] = 0;
-    else
-        buf[pos] = 0;
+    auto first = line.find_first_not_of(" \t\n\r\f\v");
+    if (first == std::string::npos)
+        return std::string();
+    auto last = line.find_last_not_of(" \t\n\r\f\v");
+    line = line.substr(first, (last - first + 1));
+    log_message(5, "CDDB: Data read: %s", line.c_str());
 
-    if (buf[0] == 0 && !characterRead) {
-        // end of file
-        return NULL;
+    return line;
+}
+
+void Cddb::trimSpaces(std::string& str)
+{
+    auto first = str.find_first_not_of(" \t\n\r\f\v");
+    if (first == std::string::npos) {
+        str.clear();
+        return;
     }
-
-    // skip leading blanks
-    for (s = buf; *s != 0 && isspace(*s); s++)
-        ;
-
-    // skip trailing blanks
-    for (pos = strlen(s) - 1; pos >= 0 && isspace(s[pos]); pos--)
-        s[pos] = 0;
-
-    log_message(5, "CDDB: Data read: %s", s);
-
-    return s;
+    auto last = str.find_last_not_of(" \t\n\r\f\v");
+    str = str.substr(first, (last - first + 1));
 }
 
 /* Checks if 'line' contains a cddb server status and sets 'code' to the
@@ -890,7 +742,7 @@ const char *Cddb::readLine()
  * Return: 0: 'line' is not a cddb server status line
  *         1: 'line' is a cddb server status line, 'code' contains valid data
  */
-static int getCode(const char *line, int code[3])
+bool Cddb::getCode(std::string_view line, int code[3])
 {
     if (isdigit(line[0]) && isdigit(line[1]) && isdigit(line[2]) && isspace(line[3])) {
         code[0] = line[0] - '0';
@@ -907,23 +759,23 @@ static int getCode(const char *line, int code[3])
  * 'code' is set to the server status code on success.
  * Return: server status line or 'NULL' on timeout or communication error
  */
-const char *Cddb::getServerResponse(int code[3])
+std::optional<std::string> Cddb::getServerResponse(int code[3])
 {
-    const char *line;
-
-    while ((line = readLine()) != NULL && !getCode(line, code));
-
-    return line;
+    while (auto line = readLine()) {
+        if (getCode(*line, code))
+            return line;
+    }
+    return std::nullopt;
 }
 
 /* Sends command in 'args' to 'fd_'. cdbbp and http protocols are handled.
  * Return: 0: OK
  *         1: communication error occured.
  */
-int Cddb::sendCommand(const vector<string> &args)
+int Cddb::sendCommand(const std::vector<std::string> &args)
 {
     int err = 0;
-    string cmd;
+    std::string cmd;
 
     for (const auto &s : args) {
         if (!cmd.empty())
@@ -932,7 +784,7 @@ int Cddb::sendCommand(const vector<string> &args)
     }
 
     std::ostringstream ss;
-    if (selectedServer_->httpProxyServer != NULL) {
+    if (!selectedServer_->httpProxyServer.empty()) {
         ss << "GET http://" << selectedServer_->server;
         ss << selectedServer_->port << selectedServer_->httpCgiBin;
         ss << "?cmd=" << cmd << httpCmd_ << " HTTP/1.0\r\n";
@@ -976,7 +828,7 @@ static unsigned int cddbSum(unsigned int n)
     return ret;
 }
 
-const char *Cddb::calcCddbId()
+std::string Cddb::calcCddbId()
 {
     const Track *t;
     Msf start, end;
@@ -1002,74 +854,58 @@ const char *Cddb::calcCddbId()
     return buf;
 }
 
-static void convertEscapeSequences(const char *in, char *out)
+std::string& Cddb::convertEscapeSequences(std::string& s)
 {
-    while (*in != 0) {
-        if (*in == '\\') {
-            switch (*(in + 1)) {
-            case 'n':
-                *out++ = '\n';
-                in++;
-                break;
-
-            case 't':
-                *out++ = '\t';
-                in++;
-                break;
-
-            case '\\':
-                *out++ = '\\';
-                in++;
-                break;
-
-            default:
-                *out++ = '\\';
-                break;
+    std::string result;
+    result.reserve(s.size());
+    for (size_t i = 0; i < s.size(); ++i) {
+        if (s[i] == '\\' && i + 1 < s.size()) {
+            switch (s[i + 1]) {
+            case 'n':  result += '\n'; ++i; break;
+            case 't':  result += '\t'; ++i; break;
+            case '\\': result += '\\'; ++i; break;
+            default:   result += s[i]; break;
             }
         } else {
-            *out++ = *in;
+            result += s[i];
         }
-
-        in++;
     }
-
-    *out = 0;
+    s = std::move(result);
+    return s;
 }
 
-/* Retrieves the category, disk ID and title from a query response string.
- * The provided strings 'category', 'diskId' and 'title' must point to
- * existing buffers with at least the same length as 'line'.
- * Return: 1 if 'line' was successfully parsed, else 0
- */
-static int parseQueryResult(char *line, char *category, char *diskId, char *title)
+// Retrieves the category, disk ID and title from a query response
+// string.  and append to the result list.  Returns false if parsing
+// failed.
+///
+bool Cddb::parseQueryResult(std::string_view line, bool exactMatch)
 {
-    const char *sep = " \t";
-    char *p;
-    log_message(0, "PARSE QUERY %s", line);
+    std::array<std::string, 3> result;
+    size_t componentIndex = 0;
 
-    if ((p = strtok(line, sep)) != NULL) {
-        strcpy(category, p);
+    for (char c : line) {
+        if (c == '\n') break;
 
-        if ((p = strtok(NULL, sep)) != NULL) {
-            strcpy(diskId, p);
-
-            if ((p = strtok(NULL, "")) != NULL) {
-                // remove leading white space
-                while (*p != 0 && isspace(*p))
-                    p++;
-
-                convertEscapeSequences(p, title);
-
-                // remove newline from title string
-                if ((p = strchr(title, '\n')) != NULL)
-                    *p = 0;
-
-                return 1;
+        if (c == ' ' || c == '\t') {
+            if (!result[componentIndex].empty()) {
+                ++componentIndex;
+                if (componentIndex >= 3) break;
             }
+        } else {
+            result[componentIndex] += c;
         }
     }
 
-    return 0;
+    // Check that all three components are present and non-empty
+    if (result[0].empty() || result[1].empty() || result[2].empty()) {
+        return false;
+    }
+
+    appendQueryResult(convertEscapeSequences(result[0]),
+                      convertEscapeSequences(result[1]),
+                      convertEscapeSequences(result[2]),
+                      exactMatch);
+    return true;
 }
 
 /* Reads a CDDB record from 'fd_' and fills 'cddbEntry_' with the required
@@ -1079,135 +915,72 @@ static int parseQueryResult(char *line, char *category, char *diskId, char *titl
  */
 int Cddb::readDbEntry(int localRecordFd)
 {
-    const char *resp;
-    char buf[CDDB_MAX_LINE_LEN];
     char *line;
     char *p, *s;
     char *val;
     int ntracks = toc_->nofTracks();
     int i, trackNr;
 
-    cddbEntry_ = new CddbEntry;
+    cddbEntry_.emplace(ntracks);
 
-    cddbEntry_->diskTitle = NULL;
-    cddbEntry_->diskArtist = NULL;
-    cddbEntry_->diskExt = NULL;
-    cddbEntry_->ntracks = ntracks;
-    cddbEntry_->trackTitles = new char *[ntracks];
-    cddbEntry_->trackExt = new char *[ntracks];
+    while (true) {
+        auto resp = readLine();
+        if (!resp || *resp == ".")
+            break;
 
-    for (i = 0; i < ntracks; i++) {
-        cddbEntry_->trackTitles[i] = NULL;
-        cddbEntry_->trackExt[i] = NULL;
-    }
-
-    while ((resp = readLine()) != NULL && strcmp(resp, ".") != 0) {
-        log_message(4, "CDDB: READ data: %s", resp);
+        log_message(4, "CDDB: READ data: %s", resp->c_str());
 
         if (localRecordFd >= 0) {
             // save to local CDDB record file
-            fullWrite(localRecordFd, resp, strlen(resp));
-            fullWrite(localRecordFd, "\n", 1);
+            fullWrite(localRecordFd, *resp);
+            fullWrite(localRecordFd, "\n");
         }
 
-        convertEscapeSequences(resp, buf);
+        convertEscapeSequences(*resp);
 
-        // remove comments
-        // if ((p = strchr(buf, '#')) != NULL)
-        //  *p = 0;
-        if (buf[0] == '#')
-            buf[0] = 0; // xxam!
+        auto equal = resp->find('=');
+        if (equal != std::string::npos) {
+            std::string key = resp->substr(0, equal);
+            std::string value = resp->substr(equal+1);
 
-        // remove leading blanks
-        for (line = buf; *line != 0 && isspace(*line); line++)
-            ;
-
-        if ((val = strchr(line, '=')) != NULL) {
-            *val = 0;
-            val++;
-
-            if (strcmp(line, "DTITLE") == 0) {
-                if (*val != 0) {
-                    if (cddbEntry_->diskArtist == NULL) {
-                        cddbEntry_->diskArtist = strdupCC(val);
-                    } else {
-                        s = strdup3CC(cddbEntry_->diskArtist, val, NULL);
-                        delete[] cddbEntry_->diskArtist;
-                        cddbEntry_->diskArtist = s;
-                    }
-                }
-            } else if (strcmp(line, "EXTD") == 0) {
-                if (*val != 0) {
-                    if (cddbEntry_->diskExt == NULL) {
-                        cddbEntry_->diskExt = strdupCC(val);
-                    } else {
-                        s = strdup3CC(cddbEntry_->diskExt, val, NULL);
-                        delete[] cddbEntry_->diskExt;
-                        cddbEntry_->diskExt = s;
-                    }
-                }
-            } else if (strncmp(line, "TTITLE", 6) == 0) {
-                if (*val != 0) {
-                    trackNr = atoi(line + 6);
+            if (key == "DTITLE") {
+                cddbEntry_->diskArtist = value;
+            } else if (key == "EXTD") {
+                cddbEntry_->diskExt = value;
+            } else if (key.substr(0,6) == "TTITLE") {
+                try {
+                    auto trackNr = std::stoi(key.substr(6));
                     if (trackNr >= 0 && trackNr < ntracks) {
-                        if (cddbEntry_->trackTitles[trackNr] == NULL) {
-                            cddbEntry_->trackTitles[trackNr] = strdupCC(val);
-                        } else {
-                            s = strdup3CC(cddbEntry_->trackTitles[trackNr], val, NULL);
-                            delete[] cddbEntry_->trackTitles[trackNr];
-                            cddbEntry_->trackTitles[trackNr] = s;
-                        }
+                        cddbEntry_->trackTitles[trackNr] = value;
                     }
+                } catch (...) {
                 }
-            } else if (strncmp(line, "EXTT", 4) == 0) {
-                if (*val != 0) {
-                    trackNr = atoi(line + 4);
+            } else if (key.substr(0,4) == "EXTT") {
+                try {
+                    auto trackNr = std::stoi(key.substr(4));
                     if (trackNr >= 0 && trackNr < ntracks) {
-                        if (cddbEntry_->trackExt[trackNr] == NULL) {
-                            cddbEntry_->trackExt[trackNr] = strdupCC(val);
-                        } else {
-                            s = strdup3CC(cddbEntry_->trackExt[trackNr], val, NULL);
-                            delete[] cddbEntry_->trackExt[trackNr];
-                            cddbEntry_->trackExt[trackNr] = s;
-                        }
+                        cddbEntry_->trackExt[trackNr] = value;
                     }
+                } catch (...) {
                 }
             }
         }
     }
 
-    if (resp == NULL) {
-        log_message(-2, "CDDB: EOF while reading database entry.");
-        goto fail;
+    auto found = cddbEntry_->diskArtist.find('/');
+    if (found != std::string::npos) {
+        cddbEntry_->diskArtist = cddbEntry_->diskArtist.substr(0, found);
+        cddbEntry_->diskTitle = cddbEntry_->diskArtist.substr(found+1);
+    } else {
+        cddbEntry_->diskTitle = cddbEntry_->diskArtist;
     }
-
-    if (cddbEntry_->diskArtist != NULL) {
-        if ((p = strchr(cddbEntry_->diskArtist, '/')) != NULL) {
-            *p = 0;
-
-            // remove leading white space of disk title
-            for (s = p + 1; *s != 0 && isspace(*s); s++)
-                ;
-
-            cddbEntry_->diskTitle = strdupCC(s);
-
-            // remove trailing white space of disk artist
-            for (p = p - 1; p >= cddbEntry_->diskArtist && isspace(*p); p--)
-                *p = 0;
-        } else {
-            cddbEntry_->diskTitle = strdupCC(cddbEntry_->diskArtist);
-        }
-    }
+    trimSpaces(cddbEntry_->diskArtist);
+    trimSpaces(cddbEntry_->diskTitle);
 
     return 0;
-
-fail:
-    clearCddbEntry();
-
-    return 1;
 }
 
-int Cddb::createLocalCddbFile(const char *category, const char *diskId)
+int Cddb::createLocalCddbFile(const std::string& category, const std::string& diskId)
 {
     std::string categoryDir;
     std::string recordFile;
@@ -1278,9 +1051,9 @@ fail:
     return fd;
 }
 
-CdTextItem *Cddb::createItem(CdTextItem::PackType ptype, const char *text)
+CdTextItem *Cddb::createItem(CdTextItem::PackType ptype, const std::string& text)
 {
     auto item = new CdTextItem(ptype, 0);
-    item->setText(text);
+    item->setText(text.c_str());
     return item;
 }
