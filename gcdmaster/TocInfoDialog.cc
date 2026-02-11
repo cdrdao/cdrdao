@@ -26,6 +26,9 @@
 #include "TextEdit.h"
 #include "Toc.h"
 #include "guiUpdate.h"
+#include "trackdb/log.h"
+#include "trackdb/Cddb.h"
+#include "MessageBox.h"
 
 #define MAX_CD_TEXT_LANGUAGE_CODES 22
 
@@ -89,12 +92,12 @@ TocInfoDialog::TocInfoDialog(Gtk::Window* parent)
     set_title(_("Project Info"));
     set_modal(true);
     set_transient_for(*parent);
+    set_hide_on_close(true);
 
     auto contents = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL, 10);
     contents->set_margin(10);
 
     tocEdit_ = nullptr;
-    active_ = false;
     selectedTocType_ = Toc::Type::CD_DA;
 
     nofTracks_ = Gtk::make_managed<Gtk::Label>("99");
@@ -158,12 +161,20 @@ TocInfoDialog::TocInfoDialog(Gtk::Window* parent)
     bbox->set_spacing(5);
     bbox->set_halign(Gtk::Align::END);
 
+    imdbButton_ = Gtk::make_managed<Gtk::Button>("Query IMDB");
+    imdbButton_->signal_clicked().connect(sigc::mem_fun(*this, &TocInfoDialog::imdbAction));
+    bbox->append(*imdbButton_);
+    {
+        auto cb = Gtk::make_managed<Gtk::Button>("Clear");
+        cb->signal_clicked().connect([this](){ this->clear(); });
+        bbox->append(*cb);
+    }
     applyButton_ = Gtk::make_managed<Gtk::Button>("Apply");
     applyButton_->signal_clicked().connect(sigc::mem_fun(*this, &TocInfoDialog::applyAction));
     bbox->append(*applyButton_);
     auto closeButton = Gtk::make_managed<Gtk::Button>("Close");
     closeButton->signal_clicked().connect(
-        sigc::mem_fun(*this, &TocInfoDialog::closeAction));
+        sigc::mem_fun(*this, &Gtk::Widget::hide));
     bbox->append(*closeButton);
     contents->append(*bbox);
 
@@ -223,20 +234,8 @@ Gtk::Box* TocInfoDialog::createCdTextPage(int n)
 
 void TocInfoDialog::start(TocEdit *view)
 {
-    active_ = true;
-    update(UPD_ALL, view);
-}
-
-bool TocInfoDialog::on_close_request()
-{
-    stop();
-    return true; // Handle the hide ourselves
-}
-
-void TocInfoDialog::stop()
-{
-    hide();
-    active_ = false;
+    tocEdit_ = view;
+    update(UPD_ALL);
 }
 
 void TocInfoDialog::setSelectedTocType()
@@ -330,11 +329,6 @@ void TocInfoDialog::createCdTextGenreMenu(int n)
         bind(mem_fun(*this, &TocInfoDialog::setSelectedCDTextGenre), n));
 }
 
-void TocInfoDialog::closeAction()
-{
-    stop();
-}
-
 void TocInfoDialog::clear()
 {
     nofTracks_->set_text("");
@@ -349,24 +343,19 @@ void TocInfoDialog::clear()
     clearCdText();
 }
 
-void TocInfoDialog::update(unsigned long level, TocEdit *view)
+void TocInfoDialog::update(unsigned long level)
 {
     const Toc *toc;
 
-    if (!active_)
-        return;
-
-    tocEdit_ = view;
-
-    if (view == NULL) {
+    if (tocEdit_ == NULL) {
         clear();
         return;
     }
 
-    std::string s(view->filename());
+    auto s = tocEdit_->filename().string();
     s += " - ";
     s += APP_NAME;
-    if (view->tocDirty())
+    if (tocEdit_->tocDirty())
         s += "(*)";
     set_title(s);
 
@@ -377,7 +366,11 @@ void TocInfoDialog::update(unsigned long level, TocEdit *view)
 
     if (level & UPD_EDITABLE_STATE) {
         applyButton_->set_sensitive(tocEdit_->editable() ? true : false);
+        imdbButton_->set_sensitive(tocEdit_->editable() ? true : false);
     }
+
+    if (tocEdit_->empty())
+        imdbButton_->set_sensitive(false);
 }
 
 void TocInfoDialog::clearCdText()
@@ -828,4 +821,43 @@ void TocInfoDialog::exportCdText(TocEdit *tocEdit)
                 tocEdit->setCdTextLanguage(l, langCode);
         }
     }
+}
+
+void TocInfoDialog::imdbAction()
+{
+    log_message(0, "IMDB");
+
+    Cddb cddb(tocEdit_->toc());
+
+    if (cddb.connectDb("unknown", "unknown", "cdrdao", VERSION) != 0) {
+        ErrorBox::message(*this, _("Unable to connect to CDDB database."));
+        return;
+    }
+    if (cddb.queryDb() != 0) {
+        ErrorBox::message(*this, _("Querying of CDDB database failed."));
+        return;
+    }
+
+    auto results = cddb.results();
+
+    if (results.size() == 0) {
+        ErrorBox::message(*this, _("No CDDB record found."));
+        return;
+    }
+
+    // We skip the choice and go with the first one.
+    for (const auto& res : results) {
+        log_message(0, "%d %s %s %s", res.exactMatch,
+                    res.category.c_str(),
+                    res.diskId.c_str(),
+                    res.title.c_str());
+    }
+
+    auto dbentry = cddb.readDb(results[0].category, results[0].diskId);
+    if (!dbentry) {
+        ErrorBox::message(*this, _("Unable to download CDDB record."));
+        return;
+    }
+    cdTextPages_[0].title->set_text(dbentry->diskTitle);
+    cdTextPages_[0].performer->set_text(dbentry->diskArtist);
 }

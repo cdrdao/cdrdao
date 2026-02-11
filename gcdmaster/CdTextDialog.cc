@@ -221,13 +221,13 @@ void CdTextDialog::fillPerformerAction()
     int l = languages_->get_current_page();
 
     if (l >= 0 && l <= 7) {
-        const char *s = checkString(page_[l].performer->get_text());
+        auto s = checkString(page_[l].performer->get_text());
 
-        if (s == NULL) return;
+        if (s.empty())
+            return;
 
         for (int i = 0; i < trackEntries_; i++) {
-            if (checkString(page_[l].tracks[i].performer->get_text()) == NULL)
-                page_[l].tracks[i].performer->set_text(s);
+            page_[l].tracks[i].performer->set_text(s);
         }
     }
 }
@@ -291,16 +291,17 @@ void CdTextDialog::setCdTextItem(CdTextItem::PackType type, int trackNr, int l,
     }
 }
 
-const char *CdTextDialog::checkString(const std::string &str)
+Glib::ustring CdTextDialog::checkString(const Glib::ustring &src)
 {
-    static std::string static_buf;
-    if (str.empty()) return nullptr;
+    auto str(src);
+    if (str.empty()) return str;
 
     // Basic trim logic
-    size_t first = str.find_first_not_of(" \t\n\r");
-    if (first == std::string::npos) return nullptr;
-    size_t last = str.find_last_not_of(" \t\n\r");
+    size_t first = str.find_first_not_of(" \t\n\r\f\v");
+    if (first == std::string::npos)
+        return str;
+    size_t last = str.find_last_not_of(" \t\n\r\f\v");
     
-    static_buf = str.substr(first, (last - first + 1));
-    return static_buf.c_str();
+    str = str.substr(first, (last - first + 1));
+    return str;
 }

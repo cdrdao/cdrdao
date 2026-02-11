@@ -148,6 +148,32 @@ long fullRead(int fd, void *buf, long count)
     return nread;
 }
 
+
+long fullWrite(int fd, const void *buf, long count)
+{
+  long n;
+  long nwritten = 0;
+  const char *p = (const char *)buf;
+
+  do {
+    do {
+      n = write(fd, p, count);
+    } while (n < 0 && (errno == EAGAIN || errno == EINTR));
+
+    if (n < 0)
+      return -1;
+
+    if (n == 0)
+      return nwritten;
+
+    count -= n;
+    nwritten += n;
+    p += n;
+  } while (count > 0);
+
+  return nwritten;
+}
+
 long fullWrite(int fd, const std::string& buffer)
 {
     auto ptr = buffer.data();
@@ -158,7 +184,7 @@ long fullWrite(int fd, const std::string& buffer)
 	auto written = ::write(fd, ptr, remaining);
 
 	if (written < 0) {
-	    if (errno = EINTR)
+	    if (errno == EINTR)
 		continue;
 	    return -1;
 	}
@@ -442,8 +468,6 @@ bool processMixedString(std::string &str, bool &is_utf8)
     return true;
 }
 
-} // namespace Util
-
 bool resolveFilename(std::string &abs, const char *file, const char *path)
 {
     struct stat st;
@@ -481,3 +505,18 @@ bool resolveFilename(std::string &abs, const char *file, const char *path)
     abs = "";
     return false;
 }
+
+// Remove leading and trailing white spaces in a string, in place.
+//
+void trimSpaces(std::string& str)
+{
+    auto first = str.find_first_not_of(" \t\n\r\f\v");
+    if (first == std::string::npos) {
+        str.clear();
+        return;
+    }
+    auto last = str.find_last_not_of(" \t\n\r\f\v");
+    str = str.substr(first, (last - first + 1));
+}
+
+} // namespace Util

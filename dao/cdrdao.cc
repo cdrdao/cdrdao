@@ -1034,10 +1034,10 @@ void Cdrdao::showToc(Toc *toc, DaoCommandLine &options)
         if (tcount > 1)
             printf("\n");
 
-        printf("TRACK %2d  Mode %s", tcount, TrackData::mode2String(t->type()));
+        printf("TRACK %2d  Mode %s", tcount, TrackData::mode2String(t->type()).c_str());
 
         if (t->subChannelType() != TrackData::SUBCHAN_NONE)
-            printf(" %s", TrackData::subChannelMode2String(t->subChannelType()));
+            printf(" %s", TrackData::subChannelMode2String(t->subChannelType()).c_str());
 
         printf(":\n");
 
@@ -1308,11 +1308,10 @@ int Cdrdao::readCddb(const DaoCommandLine &opts, Toc *toc, bool showEntry)
     int err = 0;
     char *p;
     const char *sep = " ,";
-    char *user = NULL;
-    char *host = NULL;
+    std::string user;
+    std::string host;
     struct passwd *pwent;
-    Cddb::QueryResults *qres, *qrun, *qsel;
-    Cddb::CddbEntry *dbEntry;
+    int resultIdx;
 
     Cddb cddb(toc);
 
@@ -1325,111 +1324,106 @@ int Cdrdao::readCddb(const DaoCommandLine &opts, Toc *toc, bool showEntry)
         cddb.appendServer(p.c_str());
 
     if ((pwent = getpwuid(getuid())) != NULL && pwent->pw_name != NULL) {
-        user = strdupCC(pwent->pw_name);
+        user = pwent->pw_name;
     } else {
-        user = strdupCC("unknown");
+        user = "unknown";
     }
 
     {
         struct utsname sinfo;
         if (uname(&sinfo) == 0) {
-            host = strdupCC(sinfo.nodename);
+            host = sinfo.nodename;
         } else {
-            host = strdupCC("unknown");
+            host = "unknown";
         }
     }
 
     if (cddb.connectDb(user, host, "cdrdao", VERSION) != 0) {
         log_message(-2, "Cannot connect to any CDDB server.");
-        err = 2;
-        goto fail;
+        return 2;
     }
 
-    if (cddb.queryDb(&qres) != 0) {
+    if (cddb.queryDb() != 0) {
         log_message(-2, "Querying of CDDB server failed.");
-        err = 2;
-        goto fail;
+        return 2;
     }
 
-    if (qres == NULL) {
+    auto results = cddb.results();
+
+    if (results.size() == 0) {
         log_message(1, "No CDDB record found for this toc-file.");
-        err = 1;
-        goto fail;
+        return 1;
     }
 
-    if (qres->next != NULL || !(qres->exactMatch)) {
-        int qcount;
+    resultIdx = -1;
 
-        if (qres->next == NULL)
+    if (results.size() > 1 || !results[0].exactMatch) {
+
+        if (results.size() == 1)
             log_message(0, "Found following inexact match:");
         else
             log_message(0, "Found following inexact matches:");
 
         log_message(0, "\n    DISKID   CATEGORY     TITLE\n");
 
-        for (qrun = qres, qcount = 0; qrun != NULL; qrun = qrun->next, qcount++) {
-            log_message(0, "%2d. %-8s %-12s %s", qcount + 1, qrun->diskId, qrun->category,
-                        qrun->title);
+        {
+            int idx = 0;
+            for (auto const& qrun : results)
+                log_message(0, "%2d. %-8s %-12s %s", idx++ + 1,
+                            qrun.diskId.c_str(),
+                            qrun.category.c_str(),
+                            qrun.title.c_str());
         }
 
         log_message(0, "\n");
-
-        qsel = NULL;
 
         while (1) {
             char buf[20];
             int sel;
 
-            log_message(0, "Select match, 0 for none [0-%d]?", qcount);
+            log_message(0, "Select match, 0 for none [0-%d]?", results.size());
 
             if (fgets(buf, 20, stdin) == NULL)
                 break;
 
-            for (p = buf; *p != 0 && isspace(*p); p++)
-                ;
+            for (p = buf; *p != 0 && isspace(*p); p++);
 
             if (*p != 0 && isdigit(*p)) {
                 sel = atoi(p);
 
                 if (sel == 0) {
                     break;
-                } else if (sel > 0 && sel <= qcount) {
-                    sel--;
-                    for (qsel = qres, qcount = 0; qsel != NULL && qcount != sel;
-                         qsel = qsel->next, qcount++)
-                        ;
-
+                } else if (sel > 0 && sel <= results.size()) {
+                    resultIdx = sel - 1;
                     break;
                 }
             }
         }
 
-        if (qsel == NULL) {
+        if (resultIdx < 0) {
             log_message(0, "No match selected.");
-            err = 1;
-            goto fail;
+            return 1;
         }
     } else {
-        qsel = qres;
+        resultIdx = 0;
     }
 
-    log_message(1, "Reading CDDB record for: %s-%s-%s", qsel->diskId, qsel->category, qsel->title);
+    auto qsel = results[resultIdx];
 
-    if (cddb.readDb(qsel->category, qsel->diskId, &dbEntry) != 0) {
+    log_message(1, "Reading CDDB record for: %s-%s-%s",
+                qsel.diskId.c_str(), qsel.category.c_str(), qsel.title.c_str());
+
+    auto dbEntry = cddb.readDb(qsel.category, qsel.diskId);
+    if (!dbEntry) {
         log_message(-2, "Reading of CDDB record failed.");
-        err = 2;
-        goto fail;
+        return 2;
     }
 
     if (showEntry)
         cddb.printDbEntry();
 
     if (!cddb.addAsCdText(toc))
-        err = 1;
-
-fail:
-    delete[] user;
-    delete[] host;
+        return 1;
 
     return err;
 }

@@ -2186,7 +2186,7 @@ Toc *CdrDriver::readDiskToc(int session, const char* dataFilename)
 
         if (!checkSubChanReadCaps(trackMode, readCapabilities_)) {
             log_message(-2, "This drive does not support %s sub-channel reading.",
-                        TrackData::subChannelMode2String(subChanReadMode_));
+                        TrackData::subChannelMode2String(subChanReadMode_).c_str());
             delete[] cdToc;
             delete[] trackInfos;
             return NULL;
@@ -3272,7 +3272,7 @@ Toc *CdrDriver::readDisk(int session, const char *dataFilename)
 
         if (!checkSubChanReadCaps(trackMode, readCapabilities_)) {
             log_message(-2, "This drive does not support %s sub-channel reading.",
-                        TrackData::subChannelMode2String(subChanReadMode_));
+                        TrackData::subChannelMode2String(subChanReadMode_).c_str());
             goto fail;
         }
 
@@ -3350,9 +3350,10 @@ Toc *CdrDriver::readDisk(int session, const char *dataFilename)
             }
 
             log_message(1, "Copying data track %d (%s): start %s, ", trs + 1,
-                        TrackData::mode2String(trackInfos[trs].mode), Msf(cdToc[trs].start).str());
+                        TrackData::mode2String(trackInfos[trs].mode).c_str(),
+                        Msf(cdToc[trs].start).str());
             log_message(1, "length %s to \"%s\"...", Msf(elba - slba).str(),
-                        trackInfos[trs].filename);
+                        trackInfos[trs].filename.c_str());
 
             if (readDataTrack(&info, fp, slba, elba, &trackInfos[trs]) != 0)
                 goto fail;
@@ -3400,7 +3401,7 @@ Toc *CdrDriver::readDisk(int session, const char *dataFilename)
 
             log_message(1, "Copying audio tracks %d-%d: start %s, ", trs + 1, tre, Msf(slba).str());
             log_message(1, "length %s to \"%s\"...", Msf(elba - slba).str(),
-                        trackInfos[trs].filename);
+                        trackInfos[trs].filename.c_str());
 
             if (readAudioRange(&info, fp, slba, elba, trs, tre - 1, trackInfos) != 0)
                 goto fail;

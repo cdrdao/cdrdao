@@ -31,19 +31,14 @@ class TocInfoDialog : public Gtk::Window
 public:
     TocInfoDialog(Gtk::Window* parent);
 
-    void update(unsigned long, TocEdit *);
+    void update(unsigned long);
     void start(TocEdit *);
-    void stop();
-
-protected:
-    // GTK4 signal for window close
-    bool on_close_request() override;
 
 private:
     TocEdit *tocEdit_;
-    bool active_;
 
     Gtk::Button *applyButton_;
+    Gtk::Button *imdbButton_;
     Gtk::Label *tocLength_;
     Gtk::Label *nofTracks_;
     TextEdit *catalog_;
@@ -70,8 +65,8 @@ private:
 
     CdTextPage cdTextPages_[8];
 
-    void closeAction();
     void applyAction();
+    void imdbAction();
 
     void createCdTextLanguageMenu(int);
     void createCdTextGenreMenu(int n);

@@ -334,8 +334,9 @@ static int writer(const Toc *toc, CdrDriver *cdr, BufferHeader *header, long lba
 
         if (buf.trackNr > 0) {
             log_message(1, "Writing track %02d (mode %s/%s %s)...", buf.trackNr,
-                        TrackData::mode2String(buf.trackMode), TrackData::mode2String(dataMode),
-                        TrackData::subChannelMode2String(subChanMode));
+                        TrackData::mode2String(buf.trackMode).c_str(),
+                        TrackData::mode2String(dataMode).c_str(),
+                        TrackData::subChannelMode2String(subChanMode).c_str());
 
             actTrackNr = buf.trackNr;
         }

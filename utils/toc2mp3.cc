@@ -452,7 +452,9 @@ int encode_track(lame_global_flags *lf, const Toc *toc, const string &fileName, 
         }
 
         if (count > 0) {
-            if (fullWrite(fd, mp3buffer, count) != count) {
+            mp3buffer[count] = 0;
+            std::string buf((const char*)mp3buffer);
+            if (fullWrite(fd, buf) != count) {
                 message(-2, "Failed to write encoded data: %s", strerror(errno));
                 ret = 0;
                 break;
@@ -466,7 +468,9 @@ int encode_track(lame_global_flags *lf, const Toc *toc, const string &fileName, 
         int count = lame_encode_flush_nogap(lf, mp3buffer, sizeof(mp3buffer));
 
         if (count > 0) {
-            if (fullWrite(fd, mp3buffer, count) != count) {
+            mp3buffer[count] = 0;
+            std::string buf((const char*)mp3buffer);
+            if (fullWrite(fd, buf) != count) {
                 message(-2, "Failed to write encoded data: %s", strerror(errno));
                 ret = 0;
             }

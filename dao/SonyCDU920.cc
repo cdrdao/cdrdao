@@ -902,7 +902,7 @@ long SonyCDU920::readTrackData(TrackData::Mode mode, TrackData::SubChannelMode, 
                (actMode == TrackData::MODE2 || actMode == TrackData::MODE2_FORM1 ||
                 actMode == TrackData::MODE2_FORM2)))) {
             log_message(4, "Stopped because sector with not matching mode %s found.",
-                        TrackData::mode2String(actMode));
+                        TrackData::mode2String(actMode).c_str());
             return i;
         }
 

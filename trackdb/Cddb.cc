@@ -235,7 +235,7 @@ bool Cddb::openSingleConnection(ServerList* sl)
         return true;
     } else {
         alarm(0);
-        log_message(-1, "CDDB: Failed to connect to '%s:%u: %s", server, port, strerror(errno));
+        log_message(-1, "CDDB: Failed to connect to '%s:%u: %s", server.c_str(), port, strerror(errno));
         closeConnection();
         return false;
     }
@@ -276,7 +276,7 @@ bool Cddb::openConnection()
         success =  openSingleConnection(selectedServer_);
     else {
         for (auto& srv : serverList_) {
-            if (success = openSingleConnection(&srv))
+            if ((success = openSingleConnection(&srv)))
                 break;
         }
     }
@@ -290,9 +290,9 @@ bool Cddb::openConnection()
     }
 
     if (fd_ < 0)
-        return true;
+        return false;
 
-    return false;
+    return true;
 }
 
 /* Closes connection.
@@ -316,7 +316,9 @@ void Cddb::setupHttpData(const std::string& userName, const std::string& hostNam
     httpCmd_ = "&hello=";
     httpCmd_ += userName + "+" + hostName + "+" + clientName + "+" + version + "&proto=6";
     httpData_ =
-        "User-Agent: " + clientName + "/" + version + "\r\n" + "Accept: text/plain\r\n";
+        "User-Agent: " + clientName + "/" + version + "\r\n" +
+        "Accept: text/plain\r\n" +
+        "Keep-Alive: timeout=60, max=200\r\n";
 }
 
 /* Tries to connect to a server of the internal server list and performs the
@@ -472,9 +474,7 @@ int Cddb::queryDb()
         }
     }
 
-    if (err)
-        closeConnection();
-
+    closeConnection();
     return err;
 }
 
@@ -509,14 +509,14 @@ std::optional<Cddb::CddbEntry>& Cddb::readDb(const std::string& category, const 
         if (code[0] == 2) {
             if ((localRecordFd = createLocalCddbFile(category, diskId)) == -2) {
                 log_message(-1, "Existing local CDDB record for %s/%s will not be overwritten.",
-                            category, diskId);
+                            category.c_str(), diskId.c_str());
             }
             if (readDbEntry(localRecordFd) != 0) {
                 log_message(-2, "CDDB: Received invalid database entry.");
                 throw std::runtime_error("");
             }
         } else {
-            log_message(-2, "CDDB: READ failed: %s", resp);
+            log_message(-2, "CDDB: READ failed: %s", resp->c_str());
             throw std::runtime_error("");
         }
     } catch (...) {
@@ -674,7 +674,7 @@ std::optional<std::string> Cddb::readLine()
     while (true) {
         auto nl = buffer.find('\n');
         if (nl != std::string::npos) {
-            std::string line = buffer.substr(0, nl);
+            line = buffer.substr(0, nl);
             buffer.erase(0, nl + 1);
             if (!line.empty() && line.back() == '\r') line.pop_back();
             break;
@@ -724,17 +724,6 @@ std::optional<std::string> Cddb::readLine()
     log_message(5, "CDDB: Data read: %s", line.c_str());
 
     return line;
-}
-
-void Cddb::trimSpaces(std::string& str)
-{
-    auto first = str.find_first_not_of(" \t\n\r\f\v");
-    if (first == std::string::npos) {
-        str.clear();
-        return;
-    }
-    auto last = str.find_last_not_of(" \t\n\r\f\v");
-    str = str.substr(first, (last - first + 1));
 }
 
 /* Checks if 'line' contains a cddb server status and sets 'code' to the
@@ -886,10 +875,9 @@ bool Cddb::parseQueryResult(std::string_view line, bool exactMatch)
     for (char c : line) {
         if (c == '\n') break;
 
-        if (c == ' ' || c == '\t') {
+        if (componentIndex < 2 && (c == ' ' || c == '\t')) {
             if (!result[componentIndex].empty()) {
                 ++componentIndex;
-                if (componentIndex >= 3) break;
             }
         } else {
             result[componentIndex] += c;
@@ -927,8 +915,6 @@ int Cddb::readDbEntry(int localRecordFd)
         auto resp = readLine();
         if (!resp || *resp == ".")
             break;
-
-        log_message(4, "CDDB: READ data: %s", resp->c_str());
 
         if (localRecordFd >= 0) {
             // save to local CDDB record file
@@ -969,13 +955,13 @@ int Cddb::readDbEntry(int localRecordFd)
 
     auto found = cddbEntry_->diskArtist.find('/');
     if (found != std::string::npos) {
-        cddbEntry_->diskArtist = cddbEntry_->diskArtist.substr(0, found);
         cddbEntry_->diskTitle = cddbEntry_->diskArtist.substr(found+1);
+        cddbEntry_->diskArtist = cddbEntry_->diskArtist.substr(0, found);
     } else {
         cddbEntry_->diskTitle = cddbEntry_->diskArtist;
     }
-    trimSpaces(cddbEntry_->diskArtist);
-    trimSpaces(cddbEntry_->diskTitle);
+    Util::trimSpaces(cddbEntry_->diskArtist);
+    Util::trimSpaces(cddbEntry_->diskTitle);
 
     return 0;
 }

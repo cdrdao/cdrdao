@@ -595,7 +595,7 @@ int TrackData::checkAudioFile(const std::string& fn, unsigned long *length)
 
     enum FileType ft = audioFileType(fn);
     if (ft != WAVE && ft != RAW) {
-        log_message(-2, "Checking audio file \"%s\": format not supported", fn);
+        log_message(-2, "Checking audio file \"%s\": format not supported", fn.c_str());
         return 1;
     }
 
@@ -648,20 +648,21 @@ int TrackData::waveLength(const std::string& filename, long offset,
     if ((fp = fopen(filename.c_str(), "r")) == NULL)
 #endif
     {
-        log_message(-2, "Cannot open audio file \"%s\" for reading: %s", filename, strerror(errno));
+        log_message(-2, "Cannot open audio file \"%s\" for reading: %s", filename.c_str(),
+                    strerror(errno));
         return 1;
     }
 
     if (offset != 0) {
         if (fseek(fp, offset, SEEK_SET) != 0) {
-            log_message(-2, "Cannot seek to offset %ld in file \"%s\": %s", offset, filename,
+            log_message(-2, "Cannot seek to offset %ld in file \"%s\": %s", offset, filename.c_str(),
                         strerror(errno));
             return 1;
         }
     }
 
     if (fread(magic, sizeof(char), 4, fp) != 4 || strncmp("RIFF", magic, 4) != 0) {
-        log_message(-2, "%s: not a WAVE file.", filename);
+        log_message(-2, "%s: not a WAVE file.", filename.c_str());
         fclose(fp);
         return 2;
     }
@@ -669,7 +670,7 @@ int TrackData::waveLength(const std::string& filename, long offset,
     readLong(fp);
 
     if (fread(magic, sizeof(char), 4, fp) != 4 || strncmp("WAVE", magic, 4) != 0) {
-        log_message(-2, "%s: not a WAVE file.", filename);
+        log_message(-2, "%s: not a WAVE file.", filename.c_str());
         fclose(fp);
         return 2;
     }
@@ -677,7 +678,7 @@ int TrackData::waveLength(const std::string& filename, long offset,
     // search for format chunk
     for (;;) {
         if (fread(magic, sizeof(char), 4, fp) != 4) {
-            log_message(-2, "%s: corrupted WAVE file.", filename);
+            log_message(-2, "%s: corrupted WAVE file.", filename.c_str());
             fclose(fp);
             return 1;
         }
@@ -692,14 +693,14 @@ int TrackData::waveLength(const std::string& filename, long offset,
 
         // skip chunk data
         if (fseek(fp, len, SEEK_CUR) != 0) {
-            log_message(-2, "%s: corrupted WAVE file.", filename);
+            log_message(-2, "%s: corrupted WAVE file.", filename.c_str());
             fclose(fp);
             return 1;
         }
     }
 
     if (len < 16) {
-        log_message(-2, "%s: corrupted WAVE file.", filename);
+        log_message(-2, "%s: corrupted WAVE file.", filename.c_str());
         fclose(fp);
         return 1;
     }
@@ -708,21 +709,21 @@ int TrackData::waveLength(const std::string& filename, long offset,
 
     if (waveFormat != 1 && waveFormat != -2) {
         // not PCM format
-        log_message(-2, "%s: not in PCM format.", filename);
+        log_message(-2, "%s: not in PCM format.", filename.c_str());
         fclose(fp);
         return 2;
     }
 
     waveChannels = readShort(fp);
     if (waveChannels != 2) {
-        log_message(-2, "%s: found %d channel(s), require 2 channels.", filename, waveChannels);
+        log_message(-2, "%s: found %d channel(s), require 2 channels.", filename.c_str(), waveChannels);
         fclose(fp);
         return 2;
     }
 
     waveRate = readLong(fp);
     if (waveRate != 44100) {
-        log_message(-2, "%s: found sampling rate %ld, require 44100.", filename, waveRate);
+        log_message(-2, "%s: found sampling rate %ld, require 44100.", filename.c_str(), waveRate);
         fclose(fp);
         return 2;
     }
@@ -732,7 +733,7 @@ int TrackData::waveLength(const std::string& filename, long offset,
 
     waveBits = readShort(fp);
     if (waveBits != 16) {
-        log_message(-2, "%s: found %d bits per sample, require 16.", filename, waveBits);
+        log_message(-2, "%s: found %d bits per sample, require 16.", filename.c_str(), waveBits);
         fclose(fp);
         return 2;
     }
@@ -741,7 +742,7 @@ int TrackData::waveLength(const std::string& filename, long offset,
 
     // skip chunk data
     if (fseek(fp, len, SEEK_CUR) != 0) {
-        log_message(-2, "%s: corrupted WAVE file.", filename);
+        log_message(-2, "%s: corrupted WAVE file.", filename.c_str());
         fclose(fp);
         return 1;
     }
@@ -749,7 +750,7 @@ int TrackData::waveLength(const std::string& filename, long offset,
     // search wave data chunk
     for (;;) {
         if (fread(magic, sizeof(char), 4, fp) != 4) {
-            log_message(-2, "%s: corrupted WAVE file.", filename);
+            log_message(-2, "%s: corrupted WAVE file.", filename.c_str());
             fclose(fp);
             return 1;
         }
@@ -765,14 +766,14 @@ int TrackData::waveLength(const std::string& filename, long offset,
 
         // skip chunk data
         if (fseek(fp, len, SEEK_CUR) != 0) {
-            log_message(-2, "%s: corrupted WAVE file.", filename);
+            log_message(-2, "%s: corrupted WAVE file.", filename.c_str());
             fclose(fp);
             return 1;
         }
     }
 
     if ((headerLen = ftell(fp)) < 0) {
-        log_message(-2, "%s: cannot determine file position: %s", filename, strerror(errno));
+        log_message(-2, "%s: cannot determine file position: %s", filename.c_str(), strerror(errno));
         fclose(fp);
         return 1;
     }
@@ -780,7 +781,7 @@ int TrackData::waveLength(const std::string& filename, long offset,
     headerLen -= offset;
 
     if (fstat(fileno(fp), &sbuf) != 0) {
-        log_message(-2, "Cannot fstat audio file \"%s\": %s", filename, strerror(errno));
+        log_message(-2, "Cannot fstat audio file \"%s\": %s", filename.c_str(), strerror(errno));
         fclose(fp);
         return 1;
     }
@@ -790,12 +791,12 @@ int TrackData::waveLength(const std::string& filename, long offset,
     if (len + headerLen + offset > sbuf.st_size) {
         log_message(-1,
                     "%s: file length does not match length from WAVE header - using actual length.",
-                    filename);
+                    filename.c_str());
         len = sbuf.st_size - offset - headerLen;
     }
 
     if (len % sizeof(Sample) != 0) {
-        log_message(-1, "%s: length of data chunk is not a multiple of sample size (4).", filename);
+        log_message(-1, "%s: length of data chunk is not a multiple of sample size (4).", filename.c_str());
     }
 
     *hdrlen = headerLen;
@@ -843,7 +844,8 @@ int TrackData::audioDataLength(const std::string& fname, long offset, unsigned l
         return 5;
     } else {
         if (((buf.st_size - offset) % sizeof(Sample)) != 0) {
-            log_message(-1, "Length of file \"%s\" is not a multiple of sample size (4).", fname);
+            log_message(-1, "Length of file \"%s\" is not a multiple of sample size (4).",
+                        fname.c_str());
         }
 
         *length = (buf.st_size - offset) / sizeof(Sample);

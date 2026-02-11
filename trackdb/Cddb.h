@@ -39,6 +39,8 @@ class Toc;
 class Cddb
 {
   public:
+    static constexpr const char* default_server{"gnudb.gnudb.org:80:/~cddb/cddb.cgi"};
+
     struct QueryResults {
         std::string category;
         std::string diskId;
@@ -59,7 +61,7 @@ class Cddb
 			   trackExt(n, std::string()) {}
     };
 
-    Cddb(Toc *t) : toc_(t) {};
+    Cddb(Toc *t) : toc_(t) { appendServer(default_server); };
     ~Cddb();
 
     void localCddbDirectory(const std::string &);
@@ -84,7 +86,6 @@ class Cddb
     bool printDbEntry();
 
     static std::string& convertEscapeSequences(std::string& s);
-    static void trimSpaces(std::string& s);
 
   private:
     struct ServerList {

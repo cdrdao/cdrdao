@@ -82,7 +82,7 @@ protected:
     void setCdTextItem(CdTextItem::PackType, int trackNr, int l,
                        const Glib::ustring&);
 
-    const char *checkString(const std::string &);
+    static Glib::ustring checkString(const Glib::ustring &);
 };
 
 #endif

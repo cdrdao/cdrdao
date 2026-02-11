@@ -579,7 +579,7 @@ bool Track::resolveFilename(const std::string& path)
             if (f == "STDIN")
                 continue;
 
-            if (::resolveFilename(rfilename, f.c_str(), path.c_str())) {
+            if (Util::resolveFilename(rfilename, f.c_str(), path.c_str())) {
                 st->effectiveFilename(rfilename.c_str());
             } else {
                 log_message(-2, "Could not find input file \"%s\".", f.c_str());

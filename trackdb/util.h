@@ -41,6 +41,7 @@ char *strdup3CC(const char *s1, const char *s2, const char *s3);
 char *strdupvCC(const char *s1, ...);
 
 long fullRead(int fd, void *buf, long count);
+long fullWrite(int fd, const void *buf, long count);
 long fullWrite(int fd, const std::string& buffer);
 long readLong(FILE *fp);
 short readShort(FILE *fp);
@@ -51,8 +52,6 @@ unsigned char int2bcd(int);
 int bcd2int(unsigned char);
 
 const char *stripCwd(const char *fname);
-
-bool resolveFilename(std::string &dest, const char *file, const char *path);
 
 namespace Util
 {
@@ -90,6 +89,8 @@ const char *encodingToString(Encoding);
 bool isStrictAscii(const char *ptr);
 bool isValidUTF8(const char *ptr);
 bool processMixedString(std::string &str, bool &is_utf8);
+void trimSpaces(std::string& s);
+bool resolveFilename(std::string &dest, const char *file, const char *path);
 
 } // namespace Util
 

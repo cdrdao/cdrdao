@@ -148,7 +148,7 @@ Process *ProcessMonitor::start(const std::string& prg, std::vector<std::string>&
 		cargs[idx++] = it.c_str();
 	    cargs[idx] = nullptr;
 	    execvp(prg.c_str(), (char *const *)cargs);
-	    delete cargs;
+	    delete[] cargs;
 	}
 
         log_message(-2, "Cannot execute '%s': %s", prg.c_str(), strerror(errno));

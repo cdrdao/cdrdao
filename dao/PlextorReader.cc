@@ -564,7 +564,7 @@ long PlextorReader::readTrackData(TrackData::Mode mode, TrackData::SubChannelMod
                (actMode == TrackData::MODE2 || actMode == TrackData::MODE2_FORM1 ||
                 actMode == TrackData::MODE2_FORM2)))) {
             log_message(4, "Stopped because sector with not matching mode %s found.",
-                        TrackData::mode2String(actMode));
+                        TrackData::mode2String(actMode).c_str());
             log_message(4, "%02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x", sector[0],
                         sector[1], sector[2], sector[3], sector[4], sector[5], sector[6], sector[7],
                         sector[8], sector[9], sector[10], sector[11]);

@@ -466,7 +466,7 @@ void AudioCDProject::update(unsigned long level)
     audioCDView_->update(level);
 
     if (tocInfoDialog_)
-        tocInfoDialog_->update(level, tocEdit_.get());
+        tocInfoDialog_->update(level);
 
     if (cdTextDialog_)
         cdTextDialog_->update(level);
