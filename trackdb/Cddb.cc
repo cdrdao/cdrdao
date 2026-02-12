@@ -733,6 +733,8 @@ std::optional<std::string> Cddb::readLine()
  */
 bool Cddb::getCode(std::string_view line, int code[3])
 {
+    if (line.size() <= 3)
+	return 0;
     if (isdigit(line[0]) && isdigit(line[1]) && isdigit(line[2]) && isspace(line[3])) {
         code[0] = line[0] - '0';
         code[1] = line[1] - '0';
