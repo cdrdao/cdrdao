@@ -788,7 +788,7 @@ int Cddb::sendCommand(const std::vector<std::string> &args)
     }
 
     cmd = ss.str();
-    log_message(0, "CDDB: Sending command '%s'...", cmd.c_str());
+    log_message(4, "CDDB: Sending command '%s'...", cmd.c_str());
 
     auto ret = ::write(fd_, cmd.c_str(), cmd.size());
 

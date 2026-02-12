@@ -21,6 +21,10 @@
         <attribute name="label" translatable="yes">CD-TEXT</attribute>
         <attribute name="action">win.cdtext</attribute>
       </item>
+      <item>
+        <attribute name="label" translatable="yes">Query CDDB</attribute>
+        <attribute name="action">win.cddb</attribute>
+      </item>
     </section>
     <section>
       <item>

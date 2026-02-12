@@ -1,3 +1,5 @@
+#include <cassert>
+
 #include "CddbWindow.h"
 #include "TocEdit.h"
 #include "TaskManager.h"
@@ -6,16 +8,15 @@
 
 Glib::RefPtr<CddbWindow> CddbWindow::create(Glib::RefPtr<TocEdit> te)
 {
-    return Glib::make_refptr_for_instance<CddbWindow>(new CddbWindow(te));
+    auto obj = Glib::make_refptr_for_instance<CddbWindow>(new CddbWindow());
+    obj->setTocEdit(te);
+    return obj;
 }
 
-CddbWindow::CddbWindow(Glib::RefPtr<TocEdit> te)
-    : tocEdit_(te)
+CddbWindow::CddbWindow()
 {
     set_modal(true);
     set_hide_on_close(true);
-
-    cddb_ = new Cddb(te->toc());
 }
 
 CddbWindow::~CddbWindow()
@@ -23,53 +24,84 @@ CddbWindow::~CddbWindow()
     delete(cddb_);
 }
 
+void CddbWindow::setTocEdit(Glib::RefPtr<TocEdit> te)
+{
+    assert(te);
+    tocEdit_ = te;
+    if (cddb_)
+	delete cddb_;
+    cddb_ = new Cddb(te->toc());
+}
+
 class QueryTask : public Task
 {
 public:
     QueryTask(Cddb* cddb) : cddb_(cddb) {}
 
-    sigc::signal<void(int)> done;
+    sigc::signal<void(CddbWindow::Error)> done;
     
     void run() {
-        if (cddb.connectDb("unknown", "unknown", "cdrdao", VERSION) != 0) {
-            err_ = 1;
-            returnl
+	sendUpdate("Connecting to CCDB server...");
+        if (cddb_->connectDb("unknown", "unknown", "cdrdao", VERSION) != 0) {
+            err_ = CddbWindow::CONNERR;
+            return;
         }
-        if (cddb.queryDb() != 0) {
-            err = 2;
+	sendUpdate("Connection established with CCDB server.");
+        if (cddb_->queryDb() != 0) {
+            err_ = CddbWindow::QUERYERR;
             return;
         }
     }
-    void completion() {
+    void completed() {
         done.emit(err_);
     }
 
 private:
-    int err_ = 0;
+    CddbWindow::Error err_ = CddbWindow::OK;
     Cddb* cddb_;
-    Cddb
 };
 
 class ReadTask : public Task
 {
 public:
     ReadTask(Cddb* cddb, const std::string& c, const std::string& id) :
-        cddb_(cddb), category_(c), diskid_(id) {}
+        cddb_(cddb), category_(c), id_(id) {}
 
-    sigc::signal<void(int)> done;
+    sigc::signal<void(CddbWindow::Error)> done;
     
     void run() {
-        auto res = cddb->readDb(category_, id_);
+        auto res = cddb_->readDb(category_, id_);
         if (!res)
-            err_ = 1;
+            err_ = CddbWindow::READERR;
     }
-    void completion() {
+    void completed() {
         done.emit(err_);
     }
 
 private:
     const std::string &category_, &id_;
-    int err_ = 0;
+    CddbWindow::Error err_ = CddbWindow::OK;
     Cddb* cddb_;
-    Cddb
 };
+
+void CddbWindow::doQuery()
+{
+    auto task = new QueryTask(cddb_);
+    task->done.connect([this, task](CddbWindow::Error err) {
+	this->signalQueryDone.emit(cddb_, err);
+	delete task;
+    });
+
+    tocEdit_->taskManager().addJob(task);
+}
+
+void CddbWindow::getEntry(const std::string& category, const std::string& diskid)
+{
+    auto task = new ReadTask(cddb_, category, diskid);
+    task->done.connect([this, task](CddbWindow::Error err) {
+	this->signalReadDone.emit(cddb_, err);
+	delete task;
+    });
+
+    tocEdit_->taskManager().addJob(task);
+}

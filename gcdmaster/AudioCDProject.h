@@ -29,12 +29,15 @@ class SoundIF;
 class AudioCDView;
 class TocInfoDialog;
 class CdTextDialog;
+class CddbWindow;
 class TocEdit;
 class RecordTocDialog;
 class AudioCDRead;
+class Cddb;
 
 #include "Toc.h"
 #include "gcdmaster.h"
+#include "CddbWindow.h"
 
 class AudioCDProject : public GCDWindow
 {
@@ -135,11 +138,15 @@ class AudioCDProject : public GCDWindow
     Glib::RefPtr<RecordTocDialog> recordTocDialog_;
     Glib::RefPtr<TocInfoDialog> tocInfoDialog_;
     Glib::RefPtr<CdTextDialog> cdTextDialog_;
+    Glib::RefPtr<CddbWindow> cddbWindow_;
     Glib::RefPtr<Gtk::ToggleButton> selectToggle_;
     Glib::RefPtr<Gtk::ToggleButton> zoomToggle_;
     Glib::RefPtr<AudioCDRead> cdReader_;
     void projectInfo();
     void cdTextDialog();
+    void cddbQuery();
+    void cddbQuery1(Cddb*, CddbWindow::Error);
+    void cddbQuery2(Cddb*, CddbWindow::Error);
     virtual void update(unsigned long level) override;
 
     Glib::RefPtr<Gtk::Label> headerBarTitle_;

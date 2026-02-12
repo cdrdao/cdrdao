@@ -43,6 +43,7 @@
 #include "guiUpdate.h"
 #include "util.h"
 #include "xcdrdao.h"
+#include "CddbWindow.h"
 
 AudioCDProject* AudioCDProject::create(Glib::RefPtr<Gtk::Builder> builder,
 				       const Glib::ustring& path)
@@ -72,6 +73,7 @@ AudioCDProject::AudioCDProject(BaseObjectType* cobject,
     save_as_action_ = add_action("save-as", sigc::mem_fun(*this, &AudioCDProject::saveAsProject));
     add_action("project-info", sigc::mem_fun(*this, &AudioCDProject::projectInfo));
     add_action("cdtext", sigc::mem_fun(*this, &AudioCDProject::cdTextDialog));
+    add_action("cddb", sigc::mem_fun(*this, &AudioCDProject::cddbQuery));
     toc_read_action_ = add_action("toc-read", sigc::mem_fun(*this, &AudioCDProject::tocRead));
     cd_read_action_ = add_action("cd-read", sigc::mem_fun(*this, &AudioCDProject::CDRead));
     add_action("record", sigc::mem_fun(*this, &AudioCDProject::recordToc2CD));
@@ -450,6 +452,69 @@ void AudioCDProject::cdTextDialog()
 
     cdTextDialog_->set(tocEdit_);
     cdTextDialog_->start();
+}
+
+void AudioCDProject::cddbQuery()
+{
+    spin(true);
+    if (!cddbWindow_) {
+	cddbWindow_ = CddbWindow::create(tocEdit_);
+	cddbWindow_->signalQueryDone.connect(sigc::mem_fun(*this,
+						   &AudioCDProject::cddbQuery1));
+	cddbWindow_->signalReadDone.connect(sigc::mem_fun(*this,
+						   &AudioCDProject::cddbQuery2));
+    }
+    cddbWindow_->setTocEdit(tocEdit_);
+    cddbWindow_->doQuery();
+}
+
+void AudioCDProject::cddbQuery1(Cddb* cddb, CddbWindow::Error err)
+{
+    if (err != CddbWindow::OK) {
+	spin(false);
+	if (err == CddbWindow::CONNERR) {
+	    ErrorBox::message(*this, _("Unable to connect to CDDB server."));
+	} else if (err == CddbWindow::QUERYERR) {
+	    ErrorBox::message(*this, _("An error occured while talking to CDDB server."));
+	}
+	statusMessage("");
+	return;
+    }
+
+    auto rc = cddb->queryResults().size();
+    
+    log_message(0, "CDDB Query done with %d results, err=%d", rc, err);
+
+    if (rc > 0) {
+	statusMessage("Downloading CDDB data for %s...",
+		      cddb->queryResults()[0].title.c_str());
+	cddbWindow_->getEntry(cddb->queryResults()[0].category,
+			      cddb->queryResults()[0].diskId);
+    } else {
+	statusMessage("CDDB query yielded %d possible match%s.",
+		      rc, (rc > 1 ? "es" : ""));
+	spin(false);
+    }
+}
+
+void AudioCDProject::cddbQuery2(Cddb* cddb, CddbWindow::Error err)
+{
+    spin(false);
+
+    if (err == CddbWindow::READERR) {
+	ErrorBox::message(*this,
+			  _("An error occured while downloading data from the CDDB server."));
+	return;
+    }
+
+    assert(cddb->dbEntry().has_value());
+
+    statusMessage("Data found for \"%s / %s\". CD-TEXT updated.",
+		  cddb->dbEntry()->diskArtist.c_str(),
+		  cddb->dbEntry()->diskTitle.c_str());
+
+    log_message(0, "CDDB Read done: has result? %d, err=%d",
+		cddb->dbEntry().has_value(), err);
 }
 
 void AudioCDProject::update(unsigned long level)
