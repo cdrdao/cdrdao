@@ -376,10 +376,10 @@ void Cddb::printDbQuery()
     std::cout << diskLength << "\n";
 }
 
-bool Cddb::printDbEntry()
+void Cddb::printDbEntry()
 {
     if (!cddbEntry_)
-        return false;
+        return;
 
     if (!cddbEntry_->diskArtist.empty())
         std::cout << "Artist: " << cddbEntry_->diskArtist << "\n";
@@ -393,8 +393,6 @@ bool Cddb::printDbEntry()
         if (!cddbEntry_->trackExt[i].empty())
             printf("Track %02d ext: %s\n", i + 1, cddbEntry_->trackExt[i].c_str());
     }
-
-    return true;
 }
 
 /* Queries for entries that match the current 'toc_'.

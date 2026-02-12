@@ -12,6 +12,8 @@ gcdmaster_SOURCES = \
 	AudioCDView.h		\
 	AudioCDView.cc		\
 	BlankCDDialog.cc	\
+	CddbWindow.h		\
+	CddbWindow.cc		\
 	CdDevice.h		\
 	CdDevice.cc		\
 	CdTextDialog.h		\

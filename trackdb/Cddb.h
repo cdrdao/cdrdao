@@ -73,17 +73,16 @@ class Cddb
 		  const std::string& clientName, const std::string& version);
 
     int queryDb();
-    const std::vector<QueryResults>& results() { return queryResults_; }
+    
+    const std::vector<QueryResults>& queryResults() { return queryResults_; }
+    const std::optional<CddbEntry>&  dbEntry() { return cddbEntry_; }
 
     std::optional<CddbEntry>& readDb(const std::string& category, const std::string& diskId);
 
     int addAsCdText(Toc *toc);
 
     void printDbQuery();
-
-    // Print the found CDDB entry to stdout. Returns false if no entry
-    // available.
-    bool printDbEntry();
+    void printDbEntry();
 
     static std::string& convertEscapeSequences(std::string& s);
 

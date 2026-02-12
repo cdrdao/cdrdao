@@ -28,7 +28,8 @@
 #include "CdTextItem.h"
 #include "FormatConverter.h"
 #include "TaskManager.h"
-#include "Toc.h"
+#include "trackdb/Toc.h"
+#include "trackdb/Cddb.h"
 
 class Toc;
 class TrackData;
@@ -129,29 +130,20 @@ class TocEdit : public Glib::Object
     bool empty_ = true;
     bool nodata_ = false;
     int editBlocked_ = false;
-
+    std::unique_ptr<Cddb> cddb_;
     unsigned long updateLevel_ = 0;
 
     class QueueJob : public Task
     {
       public:
-        QueueJob(TocEdit *t, const char *o)
-        {
-            te = t;
-            op = o;
-            pos = 0;
-            end = 0;
-            len = 0;
-        }
-        ~QueueJob()
-        {
-        }
+        QueueJob(TocEdit *t, const char *o) : te(t), op(o) {}
+        ~QueueJob() {}
         std::string op;
         std::string file;
         std::string cfile;
-        long pos;
-        long end;
-        long len;
+        long pos = 0;
+        long end = 0;
+        long len = 0;
         TocEdit *te;
         FormatSupport::Status conv_err;
 

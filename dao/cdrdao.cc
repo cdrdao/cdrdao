@@ -1348,7 +1348,7 @@ int Cdrdao::readCddb(const DaoCommandLine &opts, Toc *toc, bool showEntry)
         return 2;
     }
 
-    auto results = cddb.results();
+    auto results = cddb.queryResults();
 
     if (results.size() == 0) {
         log_message(1, "No CDDB record found for this toc-file.");

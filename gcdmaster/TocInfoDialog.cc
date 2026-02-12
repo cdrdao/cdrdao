@@ -838,7 +838,7 @@ void TocInfoDialog::imdbAction()
         return;
     }
 
-    auto results = cddb.results();
+    auto results = cddb.queryResults();
 
     if (results.size() == 0) {
         ErrorBox::message(*this, _("No CDDB record found."));
