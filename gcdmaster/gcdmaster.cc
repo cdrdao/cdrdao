@@ -93,6 +93,9 @@ void GCDMaster::update(unsigned long level)
     }
     if (preferences_)
 	preferences_->update(level);
+
+    if (blanker_)
+	blanker_->update(level);
 }
 
 void GCDMaster::on_startup()
