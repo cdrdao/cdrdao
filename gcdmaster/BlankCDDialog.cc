@@ -22,7 +22,7 @@
 
 #include "BlankCDDialog.h"
 #include "CdDevice.h"
-#include "DeviceList.h"
+#include "DeviceSelector.h"
 #include "MessageBox.h"
 #include "guiUpdate.h"
 #include "xcdrdao.h"
@@ -48,9 +48,9 @@ BlankCDDialog::BlankCDDialog()
 	set_titlebar(*headerbar);
     }
     // Device List
-    Devices = Gtk::make_managed<DeviceList>(CdDevice::CD_RW);
-    Devices->set_expand(true);
-    vbox_.append(*Devices);
+    deviceSelector_ = Gtk::make_managed<DeviceSelector>(CdDevice::CD_RW);
+    deviceSelector_->set_expand(true);
+    vbox_.append(*deviceSelector_);
 
     // Blank Options Frame
     auto *blankOptionsFrame = Gtk::make_managed<Gtk::Frame>(_(" Blank Options "));
@@ -156,7 +156,7 @@ bool BlankCDDialog::getEject()
 
 void BlankCDDialog::startAction()
 {
-    if (Devices->selection().empty()) {
+    if (deviceSelector_->selection() == nullptr) {
 	MessageBox::message(*this, _("Please select at least one recorder device"));
         return;
     }
@@ -166,8 +166,7 @@ void BlankCDDialog::startAction()
     int eject = getEject();
     int reload = getReload();
 
-    std::string targetData = Devices->selection();
-    CdDevice *writeDevice = CdDevice::find(targetData);
+    CdDevice *writeDevice = deviceSelector_->selection();
 
     if (writeDevice) {
         if (writeDevice->blank(this, fast, burnSpeed, eject, reload) != 0) {
@@ -239,12 +238,12 @@ void BlankCDDialog::update(unsigned long level)
     set_title("Blank CD Rewritable");
 
     if (level & UPD_CD_DEVICES) {
-	Devices->import();
+	deviceSelector_->import();
     }
     
     if (level & UPD_CD_DEVICE_STATUS) {
-	Devices->importStatus();
-	Devices->selectOne();
+	deviceSelector_->importStatus();
+	deviceSelector_->selectOne();
     }
 }
 

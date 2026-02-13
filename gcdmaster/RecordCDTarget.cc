@@ -32,7 +32,7 @@
 
 #include "CdDevice.h"
 #include "ConfigManager.h"
-#include "DeviceList.h"
+#include "DeviceSelector.h"
 #include "TocEdit.h"
 #include "guiUpdate.h"
 
@@ -45,7 +45,7 @@ RecordCDTarget::RecordCDTarget(Gtk::Window *parent)
     moreOptions_ = nullptr;
     set_spacing(10);
 
-    devices_ = Gtk::make_managed<DeviceList>(CdDevice::CD_R);
+    devices_ = Gtk::make_managed<DeviceSelector>(CdDevice::CD_R);
     append(*devices_);
 
     // device settings

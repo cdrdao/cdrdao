@@ -21,7 +21,6 @@
 #define __RECORD_CD_SOURCE_H
 
 class CdDevice;
-class DeviceList;
 
 class RecordCDSource : public Gtk::Frame
 {

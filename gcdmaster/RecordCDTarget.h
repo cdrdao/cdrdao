@@ -25,7 +25,7 @@
 
 class TocEdit;
 class CdDevice;
-class DeviceList;
+class DeviceSelector;
 
 class RecordCDTarget : public Gtk::Box
 {
@@ -34,7 +34,7 @@ class RecordCDTarget : public Gtk::Box
 
     void update(unsigned long level);
 
-    DeviceList *getDeviceList() { return devices_; }
+    DeviceSelector *deviceSelector() { return devices_; }
     int getMultisession();
     int getCopies();
     int getSpeed();
@@ -44,7 +44,7 @@ class RecordCDTarget : public Gtk::Box
     int getBuffer();
 
   private:
-    DeviceList *devices_;
+    DeviceSelector *devices_;
     int speed_ = 1;
     Gtk::Window *parent_;
     Gtk::Window* moreOptions_ = nullptr;

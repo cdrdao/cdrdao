@@ -24,7 +24,7 @@
 #include "MessageBox.h"
 #include "gcdmaster.h"
 
-class DeviceList;
+class DeviceSelector;
 
 class BlankCDDialog : public Gtk::Window
 {
@@ -41,7 +41,7 @@ class BlankCDDialog : public Gtk::Window
     BlankCDDialog();
 
     // UI Components
-    DeviceList *Devices;
+    DeviceSelector* deviceSelector_;
     Gtk::Box vbox_{Gtk::Orientation::VERTICAL, 10};
 
     bool active_ = false;

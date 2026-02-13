@@ -174,9 +174,9 @@ void DeviceSelector::import()
 
 void DeviceSelector::importStatus()
 {
-    // Temporary. Normally, updates should be done by setting GObject
-    // properties, requiring a better implementation of the
-    // ridiculously complicated model-view-controller pattern.
+    // Changing a single value is particularly difficult with the
+    // incredibly complicated MVC pattern of gtk4. So instead we
+    // rebuild it all.
     import();
     
 }

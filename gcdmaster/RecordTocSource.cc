@@ -33,7 +33,6 @@
 #include "TocEdit.h"
 #include "guiUpdate.h"
 
-#include "DeviceList.h"
 #include "util.h"
 
 RecordTocSource::RecordTocSource(Glib::RefPtr<TocEdit> tocEdit)

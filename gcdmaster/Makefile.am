@@ -21,8 +21,6 @@ gcdmaster_SOURCES = \
 	CdrdaoDirect.h		\
 	CdrdaoDirect.cc		\
 	ConfigManager.cc	\
-	DeviceList.h		\
-	DeviceList.cc		\
 	DeviceSelector.h	\
 	DeviceSelector.cc	\
 	gcdmaster.cc 		\

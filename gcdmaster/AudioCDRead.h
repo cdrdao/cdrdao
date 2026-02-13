@@ -24,7 +24,6 @@
 #include <filesystem>
 #include "gcdmaster.h"
 
-class DeviceList;
 class DeviceSelector;
 class RecordCDSource;
 

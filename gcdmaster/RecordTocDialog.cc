@@ -20,7 +20,7 @@
 #include <glibmm/i18n.h>
 #include <gtkmm.h>
 
-#include "DeviceList.h"
+#include "DeviceSelector.h"
 #include "MessageBox.h"
 #include "RecordCDTarget.h"
 #include "RecordTocDialog.h"
@@ -127,7 +127,7 @@ void RecordTocDialog::update(unsigned long level)
     CDTarget->update(level);
 
     if (level & UPD_CD_DEVICE_STATUS)
-        CDTarget->getDeviceList()->selectOne();
+        CDTarget->deviceSelector()->selectOne();
 }
 
 void RecordTocDialog::startAction()
@@ -135,9 +135,7 @@ void RecordTocDialog::startAction()
     if (tocEdit_ == NULL)
         return;
 
-    DeviceList *targetList = CDTarget->getDeviceList();
-
-    if (targetList->selection().empty()) {
+    if (!CDTarget->deviceSelector()->selection()) {
         MessageBox::message(*this,_("Please select at least one recorder device"));
         return;
     }
@@ -198,14 +196,13 @@ void RecordTocDialog::startActionConfirmed(int clicked_button)
 	int eject = CDTarget->getEject();
 	int reload = CDTarget->getReload();
 
-	DeviceList *target = CDTarget->getDeviceList();
-	if (target->selection().empty()) {
+	auto selector = CDTarget->deviceSelector();
+	if (!selector->selection()) {
 	    MessageBox::message(*this, _("Please select a writer device"));
 	    return;
 	}
 
-	std::string targetData = target->selection();
-	CdDevice *writeDevice = CdDevice::find(targetData.c_str());
+	auto writeDevice = selector->selection();
 
 	if (writeDevice) {
 	    if (!writeDevice->recordDao(*this, tocEdit_.get(),
