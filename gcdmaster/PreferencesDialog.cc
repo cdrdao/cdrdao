@@ -65,8 +65,8 @@ PreferencesDialog::PreferencesDialog(BaseObjectType* cobject,
     driverOptionsEntry_ = builder->get_widget<Gtk::Entry>("driver-options");
     driverOptionsEntry_->signal_activate().connect(
 	sigc::mem_fun(*this, &PreferencesDialog::on_options_activate));
-    driverMenu_ = builder->get_widget<Gtk::ComboBoxText>("driver-list");
-    devtypeMenu_ = builder->get_widget<Gtk::ComboBoxText>("device-type-list");
+    driverMenu_ = builder->get_widget<Gtk::DropDown>("driver-list");
+    devtypeMenu_ = builder->get_widget<Gtk::DropDown>("device-type-list");
 
     if (!(applyButton && okButton && cancelButton && resetButton && driverMenu_ && devtypeMenu_)) {
         throw std::runtime_error("Unable to create all GUI widgets from builder file");
@@ -88,16 +88,20 @@ PreferencesDialog::PreferencesDialog(BaseObjectType* cobject,
     deviceBox->prepend(*deviceSelector_);
 
 
-    // Populate Driver Combo box
+    // Populate Driver dropdown
     if (driverMenu_) {
+        auto list = Gtk::StringList::create({});
         for (const auto& str : CdDevice::driverNames())
-            driverMenu_->append(str);
+            list->append(str);
+        driverMenu_->set_model(list);
     }
 
-    // Populate Device type combo box
+    // Populate Device type dropdown
     if (devtypeMenu_) {
+        auto list = Gtk::StringList::create({});
         for (const auto& str : CdDevice::deviceNames())
-            devtypeMenu_->append(str);
+            list->append(str);
+        devtypeMenu_->set_model(list);
     }
 
     read_from_settings();
@@ -246,8 +250,8 @@ void PreferencesDialog::export_selected_row(CdDevice* device)
     if (!device)
         return;
     auto data = dataMap_[device];
-    data.driver = driverMenu_->get_active_text();
-    data.deviceType = devtypeMenu_->get_active_text();
+    data.driver = *dropDownGet(driverMenu_);
+    data.deviceType = *dropDownGet(devtypeMenu_);
     data.options = driverOptionsEntry_->get_buffer()->get_text();
     dataMap_[device] = data;
 }
@@ -258,9 +262,9 @@ void PreferencesDialog::import_selected_row(CdDevice* device)
         auto data = dataMap_[device];
     
         driverMenu_->set_sensitive(true);
-        driverMenu_->set_active_text(data.driver);
+        dropDownSet(driverMenu_, data.driver);
         devtypeMenu_->set_sensitive(true);
-        devtypeMenu_->set_active_text(data.deviceType);
+        dropDownSet(devtypeMenu_, data.deviceType);
         driverOptionsEntry_->set_sensitive(true);
         driverOptionsEntry_->get_buffer()->set_text(data.options);
     } else {
@@ -335,4 +339,32 @@ void PreferencesDialog::on_cdrdao_exec_button_clicked()
 	} catch (...) {
 	}
     });
+}
+
+std::optional<Glib::ustring> dropDownGet(Gtk::DropDown* dd)
+{
+    auto obj = dd->get_selected_item();
+    if (obj) {
+        auto sobj = std::dynamic_pointer_cast<Gtk::StringObject>(obj);
+        if (sobj)
+            return sobj->get_string();
+    }
+    return std::nullopt;
+}
+
+bool dropDownSet(Gtk::DropDown* dd, const Glib::ustring& val)
+{
+    auto model = dd->get_model();
+    int i = 0;
+    while (model->get_object(i)) {
+        auto obj = model->get_object(i);
+        auto string_obj = std::dynamic_pointer_cast<Gtk::StringObject>(obj);
+
+        if (string_obj && string_obj->get_string() == val) {
+            dd->set_selected(i);
+            return true;
+        }
+        i++;
+    }
+    return false;
 }

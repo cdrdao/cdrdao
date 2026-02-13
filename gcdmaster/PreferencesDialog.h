@@ -65,8 +65,8 @@ protected:
     Gtk::Button* tempDirButton_ = nullptr;
     Gtk::Button* cdrdaoExecButton_ = nullptr;
     Gtk::Entry* driverOptionsEntry_ = nullptr;
-    Gtk::ComboBoxText* driverMenu_ = nullptr;
-    Gtk::ComboBoxText* devtypeMenu_ = nullptr;
+    Gtk::DropDown* driverMenu_ = nullptr;
+    Gtk::DropDown* devtypeMenu_ = nullptr;
 
     std::string selectedTempPath_;
     std::string selectedCdrdaoExec_;
@@ -81,5 +81,8 @@ protected:
     std::unordered_map<CdDevice*, struct DeviceData> dataMap_;
     CdDevice* selectedDevice_;
 };
+
+std::optional<Glib::ustring> dropDownGet(Gtk::DropDown* dd);
+bool dropDownSet(Gtk::DropDown* dd, const Glib::ustring& val);
 
 #endif

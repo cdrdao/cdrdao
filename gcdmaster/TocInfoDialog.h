@@ -43,13 +43,13 @@ private:
     Gtk::Label *nofTracks_;
     TextEdit *catalog_;
 
-    Gtk::ComboBoxText tocType_;
+    Gtk::DropDown tocType_;
     Toc::Type selectedTocType_;
 
     struct CdTextPage {
-        Gtk::ComboBoxText *language;
+        Gtk::DropDown *language;
         int selectedLanguage;
-        Gtk::ComboBoxText *genre;
+        Gtk::DropDown *genre;
         int selectedGenre;
         Gtk::Label *label;
         Gtk::Entry *title;
