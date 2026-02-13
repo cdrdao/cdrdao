@@ -45,57 +45,21 @@ typedef struct {
     unsigned res_3_67 : 2;
 } cd_page_2a;
 
-class ScsiIfImpl;
-
-//! \brief Base class to communicate with SCSI device
-
 class ScsiIf
 {
   public:
-    //! \brief Constructor. Does not do SCSI initialization.
-    //
-    // Sets up some internal data and gets page size.
+    virtual ~ScsiIf() {}
 
-    ScsiIf(const char *dev);
-    ~ScsiIf();
+    // Create a SCSI interface based on its opaque string device representation.
+    static ScsiIf* create(const std::string& dev);
+    
+    const std::string& vendor() const   { return vendor_; }
+    const std::string& product() const  { return product_; }
+    const std::string& revision() const { return revision_; }
 
-    //! \brief Accessor method: vendor string of the device.
-    const char *vendor() const
-    {
-        return vendor_;
-    }
-    //! \brief Accessor method: product string of the device.
-    const char *product() const
-    {
-        return product_;
-    }
-    //! \brief Accessor method: revision string of the device.
-    const char *revision() const
-    {
-        return revision_;
-    }
+    virtual int init() = 0;
 
-    //! \brief Accessor method: SCSI bus this device is connected to.
-    const int bus();
-    //! \brief Accessor method: SCSI ID of the device.
-    const int id();
-    /*! \brief Accessor method: SCSI LUN of the device. */
-    const int lun();
-
-    //! \brief Opens the scsi device. Issues an inquiry to test the
-    // communication. Gets max DMA transfer length.
-    //
-    // \return int
-    //   - 0 OK
-    //   - 1 device could not be opened
-    //   - 2 inquiry failed
-    int init();
-
-    // \brief Accessor method: returns max DMA transfer length.
-    int maxDataLen() const
-    {
-        return maxDataLen_;
-    }
+    int maxDataLen() const { return maxDataLen_; }
 
     //! \brief Sends a SCSI command and receives data
     // \param cmd Buffer with CDB
@@ -114,15 +78,16 @@ class ScsiIf
     //   - 0 OK
     //   - 1 scsi command failed (os level, no sense data available)
     //   - 2 scsi command failed (sense data available)
-    int sendCmd(const u8 *cmd, int cmdLen, const u8 *dataOut, int dataOutLen, u8 *dataIn,
-                int dataInLen, int showMessage = 1);
+
+    virtual int sendCmd(const u8 *cmd, int cmdLen, const u8 *dataOut, int dataOutLen, u8 *dataIn,
+                        int dataInLen, int showMessage = 1) = 0;
 
     //! \brief Return the actual sense buffer
     // \param len will be overwritten and contain
     //        the length of returned buffer.
     //	\return buffer contains last sense data available. The
     //	      buffer is owned and must not be freed.
-    const u8 *getSense(int &len) const;
+    virtual const u8 *getSense(int &len) const = 0;
 
     //! \brief Prints extended status information of the last SCSI command.
     // Prints the following SCSI codes:
@@ -134,52 +99,44 @@ class ScsiIf
     //  - DMA status
     //  - SCSI timing
     //
-    void printError();
+    virtual void printError() = 0;
 
-    //! \brief Sets new timeout (seconds) and returns old timeout.
-    int timeout(int);
+    // Sets new timeout (in seconds) and returns old timeout.
+    virtual int timeout(int) = 0;
 
-    //! \brief Issues TEST UNIT READY command
-    //	\return int
-    //   - 0 OK, ready
-    //   - 1 not ready (busy, default case when TUR command fails,
-    //       except when there's no disk in drive, see below)
-    //   - 2 not ready, no disk in drive
-    //   - 3 scsi command failed at OS level, no sense available
-    int testUnitReady();
+    // Check for mmc capability. Return whether the driver/drive can
+    // read and write CD-R and CD-RW disks.
+    //
+    virtual cd_page_2a *checkMmc();
 
-    //! \brief Check for mmc capability. Return whether the
-    // driver/drive can read and write CD-R and CD-RW disks.
-    cd_page_2a *checkMmc();
+    // Standard INQUIRY command used to fill ScsiIf::vendor_ ,
+    // ScsiIf::product_ , ScsiIf::revision_
+    //
+    // Returns int
+    //   - 0 if all right
+    //   - 1 if INQUIRY command failed
+    //
+    virtual int inquiry();
 
     struct ScanData {
         std::string dev;
-        // This is crazy, but the schily header #define vendor, product
-        // and revision. Talk about namespace pollution...
-        char vendor[9];
-        char product[17];
-        char revision[5];
+        std::string vendor;
+        std::string product;
+        std::string revision;
     };
 
-    //! Scans for all SCSI devices and returns a newly allocated
+    // Scans for all SCSI devices and returns a newly allocated
     // 'ScanData' array.
+    //
     static ScanData *scan(int *len, char *scsi_dev_path = NULL);
 
-  private:
-    char vendor_[9];
-    char product_[17];
-    char revision_[5];
+  protected:
+    std::string dev_;
+    std::string vendor_;
+    std::string product_;
+    std::string revision_;
 
     int maxDataLen_;
-
-    // \brief Standard INQUIRY command used to fill ScsiIf::vendor_ ,
-    // ScsiIf::product_ , ScsiIf::revision_
-    // \return int
-    //   - 0 if all right
-    //   - 1 if INQUIRY command failed
-    int inquiry();
-
-    ScsiIfImpl *impl_;
 };
 
 #endif

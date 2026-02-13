@@ -1435,8 +1435,8 @@ void Cdrdao::scanBus()
 
     if (sdata) {
         for (i = 0; i < len; i++) {
-            log_message(0, "%s : %s, %s, %s", sdata[i].dev.c_str(), sdata[i].vendor,
-                        sdata[i].product, sdata[i].revision);
+            log_message(0, "%s : %s, %s, %s", sdata[i].dev.c_str(), sdata[i].vendor.c_str(),
+                        sdata[i].product.c_str(), sdata[i].revision.c_str());
         }
         delete[] sdata;
     }
@@ -1855,15 +1855,18 @@ CdrDriver *Cdrdao::selectDriver(DaoCommand cmd, ScsiIf *scsiIf, const std::strin
 
         // for reading commands try to select a special read driver first:
         if (cmd == READ_TOC || cmd == READ_CD)
-            id = CdrDriver::selectDriver(0, scsiIf->vendor(), scsiIf->product(), &options);
+            id = CdrDriver::selectDriver(0, scsiIf->vendor().c_str(),
+                                         scsiIf->product().c_str(), &options);
 
         // try to select a write driver
         if (id == NULL)
-            id = CdrDriver::selectDriver(1, scsiIf->vendor(), scsiIf->product(), &options);
+            id = CdrDriver::selectDriver(1, scsiIf->vendor().c_str(),
+                                         scsiIf->product().c_str(), &options);
         // if no driver is selected, yet, try to select a read driver for
         // disc-info
         if (id == NULL && (cmd == DISK_INFO || cmd == MSINFO || cmd == DISCID))
-            id = CdrDriver::selectDriver(0, scsiIf->vendor(), scsiIf->product(), &options);
+            id = CdrDriver::selectDriver(0, scsiIf->vendor().c_str(),
+                                         scsiIf->product().c_str(), &options);
         // Still no driver, try to autodetect one
         if (id == NULL)
             id = CdrDriver::detectDriver(scsiIf, &options);
@@ -1872,8 +1875,8 @@ CdrDriver *Cdrdao::selectDriver(DaoCommand cmd, ScsiIf *scsiIf, const std::strin
             ret = CdrDriver::createDriver(id, options, scsiIf);
         } else {
             log_message(0, "");
-            log_message(-2, "No driver found for '%s %s', available drivers:\n", scsiIf->vendor(),
-                        scsiIf->product());
+            log_message(-2, "No driver found for '%s %s', available drivers:\n",
+                        scsiIf->vendor().c_str(), scsiIf->product().c_str());
             CdrDriver::printDriverIds();
 
             log_message(0, "\nFor all recent recorder models either the 'generic-mmc' or");
@@ -1900,14 +1903,14 @@ std::string Cdrdao::getDefaultDevice(DaoDeviceType req)
     if (sdata) {
         for (i = 0; i < len; i++) {
 
-            ScsiIf testif(sdata[i].dev.c_str());
+            auto testif = ScsiIf::create(sdata[i].dev);
 
-            if (testif.init() != 0) {
+            if (testif->init() != 0) {
                 continue;
             }
             cd_page_2a *p2a;
 
-            if (!(p2a = testif.checkMmc()))
+            if (!(p2a = testif->checkMmc()))
                 continue;
 
             if (req == NEED_CDR_R && !p2a->cd_r_read)
@@ -1940,7 +1943,7 @@ CdrDriver *Cdrdao::setupDevice(DaoCommand cmd, const std::string &scsiDevice,
     int initTries = 2;
     int ret = 0;
 
-    scsiIf = new ScsiIf(scsiDevice.c_str());
+    scsiIf = ScsiIf::create(scsiDevice);
 
     switch (scsiIf->init()) {
     case 1:
@@ -1954,8 +1957,9 @@ CdrDriver *Cdrdao::setupDevice(DaoCommand cmd, const std::string &scsiDevice,
         break;
     }
 
-    log_message(2, "%s: %s %s\tRev: %s", scsiDevice.c_str(), scsiIf->vendor(), scsiIf->product(),
-                scsiIf->revision());
+    log_message(2, "%s: %s %s\tRev: %s", scsiDevice.c_str(),
+                scsiIf->vendor().c_str(), scsiIf->product().c_str(),
+                scsiIf->revision().c_str());
 
     if (inquiryFailed && driverId.empty()) {
         log_message(-2, "Inquiry failed and no driver id is specified.");

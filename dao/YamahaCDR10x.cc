@@ -760,7 +760,7 @@ int YamahaCDR10x::driveInfo(DriveInfo *info, bool showErrorMsg)
 
     info->maxReadSpeed = mult2Speed(4);
 
-    if (!strncmp(scsiIf_->product(), "CDR100", 6)) {
+    if (scsiIf_->product().substr(0, 6) == "CDR100") {
         info->maxWriteSpeed = mult2Speed(4);
         info->currentWriteSpeed = info->currentReadSpeed = mult2Speed(1 << (mp[3] >> 4));
     } else { // CDR102, crippled to 2x write

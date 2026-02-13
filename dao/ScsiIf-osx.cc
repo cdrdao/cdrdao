@@ -30,14 +30,18 @@
 #include <IOKit/scsi/SCSICommandOperationCodes.h>
 #include <IOKit/scsi/SCSITaskLib.h>
 
-int inq(SCSITaskDeviceInterface **scsi, SCSIServiceResponse *response, SCSITaskStatus *status,
-        struct SCSI_Sense_Data *sense, char *vend, char *prod, char *rev);
 
-    class ScsiIfImpl
+class ScsiIfOsx : public ScsiIf
 {
   public:
-    ScsiIfImpl() {}
-    ~ScsiIfImpl();
+    ScsiIfOsx(const std::string& dev);
+    ~ScsiIfOsx() override;
+
+    virtual int init() override;
+    virtual int sendCmd(const u8 *, int, const u8 *, int, u8 *, int, int showMessage = 1) override;
+    virtual const u8 *getSense(int &len) const override;
+    virtual void printError() override;
+    virtual int timeout(int) override;
 
     int num_ = 0;
     std::string path_;
@@ -46,17 +50,14 @@ int inq(SCSITaskDeviceInterface **scsi, SCSIServiceResponse *response, SCSITaskS
     MMCDeviceInterface **mmc_ = nullptr;
     SCSITaskDeviceInterface **scsi_ = nullptr;
     bool exclusive_ = false;
-    long timeout_ = 10 * 1000;
+    long timeout_ms_ = 10 * 1000;
     std::string error_;
     SCSIServiceResponse response_;
     SCSITaskStatus status_;
     struct SCSI_Sense_Data sense_;
-    char vendor_[9];
-    char product_[17];
-    char revision_[5];
 };
 
-ScsiIfImpl::~ScsiIfImpl()
+ScsiIfOsx::~ScsiIfOsx()
 {
     if (scsi_) {
         if (exclusive_)
@@ -79,7 +80,7 @@ public:
     void scan();
     void delete_all();
 
-    std::map<std::string, ScsiIfImpl*> devmap;
+    std::map<std::string, ScsiIfOsx*> devmap;
 };
 
 DeviceManager* DM = new DeviceManager();
@@ -107,67 +108,65 @@ void DeviceManager::scan()
     }
     while (auto object = IOIteratorNext(iterator)) {
 
-        auto impl = new ScsiIfImpl();
-        impl->object_ = object;
         io_string_t path;
         
         if (IORegistryEntryGetPath(object, kIOServicePlane, path) != noErr) {
-            delete(impl);
             continue;
         }
         // Check if we already have this device
         if (devmap.find(path) != devmap.end()) {
-            delete(impl);
             scanned.insert(path);
             continue;
         }
 
-        impl->path_ = path;            
+        auto sif = new ScsiIfOsx(path);
+        sif->object_ = object;
+
         SInt32 score;
         if (IOCreatePlugInInterfaceForService(object, kIOMMCDeviceUserClientTypeID,
                                               kIOCFPlugInInterfaceID,
-                                              &(impl->plugin_), &score) != noErr) {
+                                              &(sif->plugin_), &score) != noErr) {
             log_message(-2, "scan: IOCreatePlugInInterfaceForService failed");
-            delete(impl);
+            delete(sif);
             continue;
         }
-        if (!impl->plugin_) {
+        if (!sif->plugin_) {
             log_message(-2, "scan: no plugin");
-            delete(impl);
+            delete(sif);
             continue;
         }
-        auto herr = (*(impl->plugin_))->
-            QueryInterface(impl->plugin_, CFUUIDGetUUIDBytes(kIOMMCDeviceInterfaceID),
-                           (LPVOID *)&(impl->mmc_));
-        if (!impl->mmc_) {
+        auto herr = (*(sif->plugin_))->
+            QueryInterface(sif->plugin_, CFUUIDGetUUIDBytes(kIOMMCDeviceInterfaceID),
+                           (LPVOID *)&(sif->mmc_));
+        if (!sif->mmc_) {
             log_message(-2, "scan: no mmc");
-            delete(impl);
+            delete(sif);
             continue;
         }
-        impl->scsi_ = (*(impl->mmc_))->GetSCSITaskDeviceInterface(impl->mmc_);
-        if (!impl->scsi_) {
+        sif->scsi_ = (*(sif->mmc_))->GetSCSITaskDeviceInterface(sif->mmc_);
+        if (!sif->scsi_) {
             log_message(-2, "scan: no scsi");
-            delete(impl);
+            delete(sif);
             continue;
         }
-        if ((*(impl->scsi_))->ObtainExclusiveAccess(impl->scsi_) != noErr) {
+        if ((*(sif->scsi_))->ObtainExclusiveAccess(sif->scsi_) != noErr) {
             log_message(-2, "Device already in use, please use diskutil "
                         "to unmount the disc first");
-            delete(impl);
+            delete(sif);
             continue;
         }
-        impl->exclusive_ = true;
+        sif->exclusive_ = true;
 
-        if (inq(impl->scsi_, &(impl->response_), &(impl->status_),
-                nullptr, impl->vendor_, impl->product_, impl->revision_) != 0) {
+        if (sif->inquiry() != 0) {
             log_message(-2, "scan: inq failed");
-            delete(impl);
+            delete(sif);
             continue;
         }
 
-        log_message(0, "Scan: found device %s %s", impl->vendor_, impl->product_);
+        log_message(0, "Scan: found device %s %s",
+                    sif->vendor().c_str(), sif->product().c_str());
         scanned.insert(path);
-        devmap[path] = impl;
+        devmap[path] = sif;
     }
 
     // Remove devices that are no longer there.
@@ -179,57 +178,43 @@ void DeviceManager::scan()
     }
 }
 
-ScsiIf::ScsiIf(const char *name)
+ScsiIfOsx::ScsiIfOsx(const std::string& dev)
 {
-    int len;
-    int bus, targ, lun, count;
-
-    if (DM->devmap.find(name) == DM->devmap.end()) {
-        log_message(-2, "Unknown SCSI device %s", name); 
-        throw("Creating unknown SCSI device.");
-    }
-    impl_ = DM->devmap[name];
-    vendor_[0] = 0;
-    product_[0] = 0;
-    revision_[0] = 0;
-    maxDataLen_ = 64 * 1024; /* XXX */
+    dev_ = dev;
+    maxDataLen_ = 64 * 1024;
 }
 
-ScsiIf::~ScsiIf()
-{
-}
-
-int ScsiIf::init()
+int ScsiIfOsx::init()
 {
     return 0;
 }
 
-int ScsiIf::timeout(int t)
+int ScsiIfOsx::timeout(int t)
 {
-    int ret = impl_->timeout_ / 1000;
-    impl_->timeout_ = t * 1000;
+    int ret = timeout_ms_ / 1000;
+    timeout_ms_ = t * 1000;
     return ret;
 }
 
-int ScsiIf::sendCmd(const unsigned char *cmd, int cmdLen, const unsigned char *dataOut,
-                    int dataOutLen, unsigned char *dataIn, int dataInLen, int showMessage)
+int ScsiIfOsx::sendCmd(const unsigned char *cmd, int cmdLen, const unsigned char *dataOut,
+                       int dataOutLen, unsigned char *dataIn, int dataInLen, int showMessage)
 {
     SCSITaskInterface **task;
     IOVirtualRange range;
     IOReturn ret;
     UInt64 len;
 
-    impl_->error_.clear();
+    error_.clear();
 
     auto ERROR=[&](const std::string msg) {
-        impl_->error_ = "sendCmd: " + msg;
+        error_ = "sendCmd: " + msg;
         if (showMessage)
             printError();
         if (task)
             (*task)->Release(task);
     };
 
-    task = (*impl_->scsi_)->CreateSCSITask(impl_->scsi_);
+    task = (*scsi_)->CreateSCSITask(scsi_);
     if (!task) {
         ERROR("no task");
         return 1;
@@ -265,51 +250,51 @@ int ScsiIf::sendCmd(const unsigned char *cmd, int cmdLen, const unsigned char *d
         ERROR("SetScatterGatherEntries failed");
         return 1;
     }
-    ret = (*task)->SetTimeoutDuration(task, impl_->timeout_);
+    ret = (*task)->SetTimeoutDuration(task, timeout_ms_);
     if (ret != kIOReturnSuccess) {
         ERROR("SetTimeoutDuration failed");
         return 1;
     }
-    ret = (*task)->ExecuteTaskSync(task, &impl_->sense_, &impl_->status_, &len);
+    ret = (*task)->ExecuteTaskSync(task, &sense_, &status_, &len);
     if (ret != kIOReturnSuccess) {
         ERROR("ExecuteTaskSync failed");
         return 1;
     }
-    ret = (*task)->GetSCSIServiceResponse(task, &impl_->response_);
+    ret = (*task)->GetSCSIServiceResponse(task, &response_);
     if (ret != kIOReturnSuccess) {
         ERROR("GetSCSIServiceResponse failed");
         return 1;
     }
     (*task)->Release(task);
-    if (impl_->response_ == kSCSIServiceResponse_TASK_COMPLETE) {
-        if (impl_->status_ == kSCSITaskStatus_GOOD)
+    if (response_ == kSCSIServiceResponse_TASK_COMPLETE) {
+        if (status_ == kSCSITaskStatus_GOOD)
             return 0;
-        if (impl_->status_ == kSCSITaskStatus_CHECK_CONDITION)
+        if (status_ == kSCSITaskStatus_CHECK_CONDITION)
             return 2;
     }
-    if (impl_->response_ == kSCSIServiceResponse_SERVICE_DELIVERY_OR_TARGET_FAILURE)
+    if (response_ == kSCSIServiceResponse_SERVICE_DELIVERY_OR_TARGET_FAILURE)
         return 1;
     return 1 /* XXX This shouldn't happen */;
 }
 
-const unsigned char *ScsiIf::getSense(int &len) const
+const unsigned char *ScsiIfOsx::getSense(int &len) const
 {
     len = kSenseDefaultSize;
-    return (unsigned char *)&impl_->sense_;
+    return (unsigned char *)&sense_;
 }
 
-void ScsiIf::printError()
+void ScsiIfOsx::printError()
 {
     const char *s;
 
-    if (!impl_->error_.empty())
+    if (!error_.empty())
         /* Internal error in sendCmd(). We saved a message string. */
-        s = impl_->error_.c_str();
+        s = error_.c_str();
     else
-        switch (impl_->response_) {
+        switch (response_) {
         case kSCSIServiceResponse_SERVICE_DELIVERY_OR_TARGET_FAILURE:
             /* The SCSI command didn't complete */
-            switch (impl_->status_) {
+            switch (status_) {
             case kSCSITaskStatus_TaskTimeoutOccurred:
                 s = "task timeout";
                 break;
@@ -335,12 +320,12 @@ void ScsiIf::printError()
             break;
         case kSCSIServiceResponse_TASK_COMPLETE:
             /* The SCSI command did complete */
-            switch (impl_->status_) {
+            switch (status_) {
             case kSCSITaskStatus_GOOD:
                 s = "good";
                 break;
             case kSCSITaskStatus_CHECK_CONDITION:
-                decodeSense((unsigned char *)&impl_->sense_, sizeof(impl_->sense_));
+                decodeSense((unsigned char *)&sense_, sizeof(sense_));
                 s = NULL;
                 break;
             case kSCSITaskStatus_CONDITION_MET:
@@ -377,101 +362,9 @@ void ScsiIf::printError()
         log_message(-2, s);
 }
 
-/*
- * Internal form or inquiry command.
- * Used by both inquiry() and scanData(), but with different data.
- */
-int inq(SCSITaskDeviceInterface **scsi, SCSIServiceResponse *response, SCSITaskStatus *status,
-        struct SCSI_Sense_Data *sense, char *vend, char *prod, char *rev)
-{
-    SCSICmd_INQUIRY_StandardData inq_data;
-    SCSICommandDescriptorBlock cdb;
-    SCSITaskInterface **task;
-    IOVirtualRange range;
-    IOReturn ret;
-    UInt64 len;
-    int i;
-
-    task = (*scsi)->CreateSCSITask(scsi);
-    if (!task) {
-        log_message(-2, "inq: no task");
-        return 1;
-    }
-    bzero(cdb, sizeof(cdb));
-    cdb[0] = kSCSICmd_INQUIRY;
-    cdb[4] = sizeof(inq_data);
-    ret = (*task)->SetCommandDescriptorBlock(task, cdb, kSCSICDBSize_6Byte);
-    if (ret != kIOReturnSuccess) {
-        log_message(-2, "inq: SetCommandDescriptorBlock failed: %d", ret);
-        (*task)->Release(task);
-        return 1;
-    }
-    range.address = (IOVirtualAddress)&inq_data;
-    range.length = sizeof(inq_data);
-    ret = (*task)->SetScatterGatherEntries(task, &range, 1, sizeof(inq_data),
-                                           kSCSIDataTransfer_FromTargetToInitiator);
-    if (ret != kIOReturnSuccess) {
-        log_message(-2, "inq: SetScatterGatherEntries failed: %d", ret);
-        (*task)->Release(task);
-        return 1;
-    }
-    ret = (*task)->SetTimeoutDuration(task, 1000);
-    if (ret != kIOReturnSuccess) {
-        log_message(-2, "inq: SetTimeoutDuration failed: %d", ret);
-        (*task)->Release(task);
-        return 1;
-    }
-    ret = (*task)->ExecuteTaskSync(task, sense, status, &len);
-    if (ret != kIOReturnSuccess) {
-        log_message(-2, "inq: ExecuteTaskSync failed: %d", ret);
-        (*task)->Release(task);
-        return 1;
-    }
-    ret = (*task)->GetSCSIServiceResponse(task, response);
-    if (ret != kIOReturnSuccess) {
-        log_message(-2, "inq: GetSCSIServiceResponse failed: %d", ret);
-        (*task)->Release(task);
-        return 1;
-    }
-    if (*response != kSCSIServiceResponse_TASK_COMPLETE) {
-        log_message(-2, "inq: response=%d", *response);
-        (*task)->Release(task);
-        return 1;
-    }
-    if (*status != kSCSITaskStatus_GOOD) {
-        log_message(-2, "inq: status=%d", *status);
-        (*task)->Release(task);
-        return 1;
-    }
-    (*task)->Release(task);
-    /* Copy vendor/product/revision stripping traiiling spaces */
-    i = kINQUIRY_VENDOR_IDENTIFICATION_Length;
-    while (i > 0 && inq_data.VENDOR_IDENTIFICATION[i - 1] == ' ')
-        i--;
-    memcpy(vend, inq_data.VENDOR_IDENTIFICATION, i);
-    vend[i] = '\0';
-    i = kINQUIRY_PRODUCT_IDENTIFICATION_Length;
-    while (i > 0 && inq_data.PRODUCT_IDENTIFICATION[i - 1] == ' ')
-        i--;
-    memcpy(prod, inq_data.PRODUCT_IDENTIFICATION, i);
-    prod[i] = '\0';
-    i = kINQUIRY_PRODUCT_REVISION_LEVEL_Length;
-    while (i > 0 && inq_data.PRODUCT_REVISION_LEVEL[i - 1] == ' ')
-        i--;
-    memcpy(rev, inq_data.PRODUCT_REVISION_LEVEL, i);
-    rev[i] = '\0';
-    return 0;
-}
-
-int ScsiIf::inquiry()
-{
-    return inq(impl_->scsi_, &impl_->response_, &impl_->status_, &impl_->sense_, vendor_, product_,
-               revision_);
-}
-
 #define MAX_SCAN 10
 
-ScsiIf::ScanData *ScsiIf::scan(int *len, char *dev)
+ScsiIf::ScanData *ScsiIf::scan(int *len, char *)
 {
     if (!DM) {
         DM = new DeviceManager();
@@ -488,12 +381,20 @@ ScsiIf::ScanData *ScsiIf::scan(int *len, char *dev)
     for (auto const& [key, val] : DM->devmap)
     {
         scanData[i].dev = val->path_;
-        strncpy(scanData[i].vendor, val->vendor_, 9);
-        strncpy(scanData[i].product, val->product_, 17);
-        strncpy(scanData[i].revision, val->revision_, 5);
+        scanData[i].vendor = val->vendor_;
+        scanData[i].product = val->product_;
+        scanData[i].revision = val->revision_;
         i++;
     }
     return scanData;
 }
 
-#include "ScsiIf-common.cc"
+ScsiIf* ScsiIf::create(const std::string& dev)
+{
+    if (DM->devmap.find(dev) == DM->devmap.end()) {
+        log_message(-2, "Unknown SCSI device %s", dev.c_str()); 
+        throw("Creating unknown SCSI device.");
+    }
+    auto sif = DM->devmap[dev];
+    return sif;
+}

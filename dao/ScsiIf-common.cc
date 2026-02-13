@@ -17,53 +17,33 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-// checks if unit is ready
-// return: 0: OK, ready
-//         1: not ready (busy)
-//         2: not ready, no disk in drive
-//         3: scsi command failed
+#include "ScsiIf.h"
 
-int ScsiIf::testUnitReady()
+#include "trackdb/util.h"
+#include "trackdb/log.h"
+
+int ScsiIf::inquiry()
 {
-    unsigned char cmd[6];
-    const unsigned char *senseData;
-    int senseLen;
-    int ret = 0;
+    unsigned char cmd[6] = { 0x12 /* INQUIRY */, 0, 0, 0, 0x2c, 0};
+    unsigned char result[0x2c];
+    int i;
 
-    memset(cmd, 0, 6);
+    memset(result, 0, sizeof(result));
 
-    switch (sendCmd(cmd, 6, NULL, 0, NULL, 0, 0)) {
-    case 1:
-        ret = 3;
-        break;
-
-    case 2:
-        senseData = getSense(senseLen);
-
-        switch (senseData[2] & 0x0f) {
-        case 0x02: // Not ready
-            switch (senseData[12]) {
-            case 0x3a: // medium not present
-                ret = 2;
-                break;
-
-            default:
-                ret = 1;
-                break;
-            }
-            break;
-
-        case 0x06: // Unit attention
-            ret = 0;
-            break;
-
-        default:
-            ret = 3;
-            break;
-        }
+    if (sendCmd(cmd, 6, NULL, 0, result, 0x2c, 1) != 0) {
+        log_message(-2, "Inquiry command failed on \"%s\"", dev_.c_str());
+        return 1;
     }
 
-    return ret;
+    vendor_ = std::string(result + 8, result + 16);
+    product_ = std::string(result + 16, result + 32);
+    revision_ = std::string(result + 32, result + 36);
+
+    Util::trimSpaces(vendor_);
+    Util::trimSpaces(product_);
+    Util::trimSpaces(revision_);
+
+    return 0;
 }
 
 cd_page_2a *ScsiIf::checkMmc()

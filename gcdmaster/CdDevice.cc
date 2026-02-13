@@ -131,7 +131,7 @@ int CdDevice::autoSelectDriver()
     } else {
         cd_page_2a *p2a;
 
-        ScsiIf *sif = new ScsiIf(dev_.c_str());
+        ScsiIf *sif = ScsiIf::create(dev_);
 
         if (sif && sif->init() == 0 && (p2a = sif->checkMmc())) {
 
@@ -332,7 +332,7 @@ void CdDevice::createDriver()
         scsiIf_ = nullptr;
     }
 
-    scsiIf_ = new ScsiIf(dev_.c_str());
+    scsiIf_ = ScsiIf::create(dev_);
 
     if (!scsiIf_ or driver_.empty()) {
         status(DEV_FAULT);

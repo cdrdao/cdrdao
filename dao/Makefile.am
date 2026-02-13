@@ -49,6 +49,7 @@ libdao_a_SOURCES = \
 	remote.h		\
 	RicohMP6200.h		\
 	ScsiIf.h		\
+	ScsiIf-common.cc	\
 	Settings.h		\
 	sg_err.h		\
 	SonyCDU920.h		\
@@ -62,7 +63,6 @@ libdao_a_SOURCES = \
 EXTRA_libdao_a_SOURCES = 	\
 	decodeSense.cc		\
 	sg_err.cc		\
-	ScsiIf-common.cc	\
 	ScsiIf-linux.cc		\
 	ScsiIf-freebsd-cam.cc	\
 	ScsiIf-netbsd.cc	\
