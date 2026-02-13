@@ -155,20 +155,20 @@ void GCDMaster::on_startup()
     openFileChooser_ = Gtk::FileDialog::create();
     openFileChooser_->set_filters(filter_list);
 
-    about_ = Glib::RefPtr<Gtk::AboutDialog>(new Gtk::AboutDialog());
     std::vector<Glib::ustring> authors;
     authors.push_back("Denis Leroy <denis@poolshark.org>");
     authors.push_back("Manuel Clos <llanero@jazzfree.com>");
-    about_->set_authors(authors);
-    about_->set_program_name("gcdmaster");
-    about_->set_version(VERSION);
+    about_.set_authors(authors);
+    about_.set_program_name("gcdmaster");
+    about_.set_version(VERSION);
+    about_.set_hide_on_close();
 
-    about_->set_website("hhttps://github.com/cdrdao/cdrdao/wiki");
-    about_->set_comments("A Gnome Audio CD Mastering Tool");
-    about_->set_copyright("Copyright \xc2\xa9 2000-2026 The Cdrdao Team");
-    about_->set_logo_icon_name("gcdmaster");
-    about_->set_wrap_license(true);
-    about_->set_license_type(Gtk::License::GPL_2_0);
+    about_.set_website("hhttps://github.com/cdrdao/cdrdao/wiki");
+    about_.set_comments("A Gnome Audio CD Mastering Tool");
+    about_.set_copyright("Copyright \xc2\xa9 2000-2026 The Cdrdao Team");
+    about_.set_logo_icon_name("gcdmaster");
+    about_.set_wrap_license(true);
+    about_.set_license_type(Gtk::License::GPL_2_0);
 
     // Configure update periodic signal.
     updateSignal_ = Glib::signal_timeout().connect(sigc::ptr_fun(&guiUpdatePeriodic), 2000);
@@ -243,8 +243,7 @@ void GCDMaster::on_activate()
 
 void GCDMaster::on_action_about()
 {
-    about_->set_transient_for(*get_active_window());
-    about_->present();
+    about_.set_visible();
 }
 
 void GCDMaster::on_action_blank_cdrw()

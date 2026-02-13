@@ -70,7 +70,7 @@ class GCDMaster : public Gtk::Application
     void speedButtonChanged();
 
     // Windows
-    Glib::RefPtr<Gtk::AboutDialog> about_;
+    Gtk::AboutDialog about_;
     Glib::RefPtr<Gtk::FileDialog> openFileChooser_;
     Glib::RefPtr<Gtk::FileFilter> openFilter_;
     Glib::RefPtr<Gtk::FileFilter> allFilter_;

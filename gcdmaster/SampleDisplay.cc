@@ -115,6 +115,31 @@ static const gchar *INDEX_EXTEND_XPM_DATA[] = {
     "........."};
 
 
+static Glib::RefPtr<Gdk::Pixbuf> pixbuf_from_xpm(const gchar* xpm_data[])
+{
+    // Reconstruct the XPM file text.  XPM is a plain-text format:
+    //   "/* XPM */\nstatic char *x[] = {\n" + quoted rows + "};\n"
+    std::string buf("/* XPM */\nstatic char *xpm[] = {\n");
+    // First line is the header ("width height ncolors cpp").
+    // Count total lines by parsing ncolors + height from it.
+    int w, h, nc, cpp;
+    if (std::sscanf(xpm_data[0], "%d %d %d %d", &w, &h, &nc, &cpp) != 4)
+        throw std::runtime_error("Bad XPM header");
+
+    int total_lines = 1 + nc + h;          // header + color rows + pixel rows
+    for (int i = 0; i < total_lines; ++i) {
+        buf += '"';
+        buf += xpm_data[i];
+        buf += '"';
+        buf += (i + 1 < total_lines) ? ",\n" : "\n";
+    }
+    buf += "};\n";
+
+    auto stream = Gio::MemoryInputStream::create();
+    stream->add_data(buf.c_str(), buf.size(), nullptr);   // no destroy — buf outlives the call
+    return Gdk::Pixbuf::create_from_stream(stream);
+}
+
 SampleDisplay::SampleDisplay()
 {
     signal_resize().connect(sigc::mem_fun(*this,
@@ -145,18 +170,12 @@ SampleDisplay::SampleDisplay()
         sigc::mem_fun(*this, &SampleDisplay::on_leave));
     add_controller(motion_controller_);
 
-    trackMarkerPixmap_ =
-        Gdk::Pixbuf::create_from_xpm_data(TRACK_MARKER_XPM_DATA);
-    indexMarkerPixmap_ =
-        Gdk::Pixbuf::create_from_xpm_data(INDEX_MARKER_XPM_DATA);
-    trackMarkerSelectedPixmap_ =
-	Gdk::Pixbuf::create_from_xpm_data(TRACK_MARKER_XPM_DATA);
-    indexMarkerSelectedPixmap_ =
-        Gdk::Pixbuf::create_from_xpm_data(INDEX_MARKER_XPM_DATA);
-    trackExtendPixmap_ =
-	Gdk::Pixbuf::create_from_xpm_data(TRACK_EXTEND_XPM_DATA);
-    indexExtendPixmap_ =
-        Gdk::Pixbuf::create_from_xpm_data(INDEX_EXTEND_XPM_DATA);
+    trackMarkerPixmap_ =         pixbuf_from_xpm(TRACK_MARKER_XPM_DATA);
+    indexMarkerPixmap_ =         pixbuf_from_xpm(INDEX_MARKER_XPM_DATA);
+    trackMarkerSelectedPixmap_ = pixbuf_from_xpm(TRACK_MARKER_XPM_DATA);
+    indexMarkerSelectedPixmap_ = pixbuf_from_xpm(INDEX_MARKER_XPM_DATA);
+    trackExtendPixmap_ =         pixbuf_from_xpm(TRACK_EXTEND_XPM_DATA);
+    indexExtendPixmap_ =         pixbuf_from_xpm(INDEX_EXTEND_XPM_DATA);
 
     trackManager_ = new TrackManager(TRACK_MARKER_XPM_WIDTH);
 }

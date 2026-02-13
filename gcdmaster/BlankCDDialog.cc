@@ -170,10 +170,7 @@ void BlankCDDialog::startAction()
 
     if (writeDevice) {
         if (writeDevice->blank(this, fast, burnSpeed, eject, reload) != 0) {
-            auto *d = Gtk::make_managed<Gtk::MessageDialog>(*this, _("Cannot start blanking"), 
-							    false, Gtk::MessageType::ERROR, Gtk::ButtonsType::OK, true);
-            d->signal_response().connect([d](int) { d->hide(); });
-            d->show();
+            ErrorBox::message(*this, _("Cannot start blanking"));
         } else {
             guiUpdate(UPD_CD_DEVICE_STATUS);
         }
