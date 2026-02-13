@@ -36,7 +36,7 @@ int inq(SCSITaskDeviceInterface **scsi, SCSIServiceResponse *response, SCSITaskS
     class ScsiIfImpl
 {
   public:
-    ScsiIfImpl() { printf("[SCSI] created\n"); }
+    ScsiIfImpl() {}
     ~ScsiIfImpl();
 
     int num_ = 0;
@@ -69,8 +69,6 @@ ScsiIfImpl::~ScsiIfImpl()
         IODestroyPlugInInterface(plugin_);
     if (object_)
         IOObjectRelease(object_);
-
-    printf("[SCSI] %s deleted\n", vendor_);
 }
 
 class DeviceManager
@@ -84,7 +82,7 @@ public:
     std::map<std::string, ScsiIfImpl*> devmap;
 };
 
-DeviceManager* DM = nullptr;
+DeviceManager* DM = new DeviceManager();
 
 void DeviceManager::delete_all()
 {

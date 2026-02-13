@@ -1028,6 +1028,8 @@ int CdrDriver::sendCmd(const unsigned char *cmd, int cmdLen, const unsigned char
 //         2: not ready
 //         3: not ready, no disk in drive
 //         4: not ready, tray out
+//         5: spinning up
+//         6: incompatible disk
 
 int CdrDriver::testUnitReady(int ignoreUnitAttention) const
 {
@@ -1045,10 +1047,25 @@ int CdrDriver::testUnitReady(int ignoreUnitAttention) const
         sense = scsiIf_->getSense(senseLen);
 
         int code = sense[2] & 0x0f;
+        int asc = (sense[12] << 8) + sense[13];
 
         if (code == 0x02) {
-            // not ready
-            return 2;
+            switch (asc) {
+            case 0x3000: // INCOMPATIBLE MEDIUM INSTALLED
+            case 0x3a00: // MEDIUM NOT PRESENT (no disc in drive)
+            case 0x3a01: // MEDIUM NOT PRESENT, tray closed
+                return 3;
+            case 0x3a02: // MEDIUM NOT PRESENT, tray open
+                return 4;
+            case 0x0401: // NOT READY, becoming ready (spinning up)
+                return 5;
+                return 6;
+            case 0x0402: // NOT READY, need START UNIT command
+                startStopUnit(1);
+                return testUnitReady(ignoreUnitAttention);
+            default:
+                return 2;
+            }
         } else if (code != 0x06) {
             scsiIf_->printError();
             return 1;
@@ -1076,7 +1093,7 @@ int CdrDriver::mult2Speed(int mult)
     return mult * 177;
 }
 
-// start unit ('startStop' == 1) or stop unit ('startStop' == 0)
+// starts unit ('startStop' == 1) or stop unit ('startStop' == 0)
 // return: 0: OK
 //         1: scsi command failed
 

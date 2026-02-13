@@ -90,7 +90,6 @@ int main(int argc, char* argv[])
     installSignalHandler(SIGPIPE, SIG_IGN);
 
     // Setup devices configuration.
-    CdDevice::importSettings();
     CdDevice::scan();
     {
         auto tmpdir = CONFIG_MANAGER->getTempDir();

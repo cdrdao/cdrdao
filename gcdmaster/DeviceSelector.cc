@@ -174,6 +174,11 @@ void DeviceSelector::import()
 
 void DeviceSelector::importStatus()
 {
+    // Temporary. Normally, updates should be done by setting GObject
+    // properties, requiring a better implementation of the
+    // ridiculously complicated model-view-controller pattern.
+    import();
+    
 }
 
 void DeviceSelector::selectOne()

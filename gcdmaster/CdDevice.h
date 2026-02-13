@@ -36,12 +36,14 @@ class CdDevice : public sigc::trackable
         DEV_READY,
         DEV_RECORDING,
         DEV_READING,
-        DEV_WAITING,
+        DEV_SPINNING_UP,
         DEV_BUSY,
-        DEV_NO_DISK,
+        DEV_NO_DISC,
         DEV_BLANKING,
         DEV_FAULT,
         DEV_LOCKED,
+        DEV_TRAY_OPEN,
+        DEV_BAD_DISC,
         DEV_UNKNOWN
     };
     enum DeviceType {
@@ -120,7 +122,7 @@ class CdDevice : public sigc::trackable
     void progress(int *status, int *totalTracks, int *track, int *trackProgress, int *totalProgress,
                   int *bufferFill, int *writerFill) const;
 
-    CdrDriver* createDriver();
+    CdrDriver* cdDriver() { return cdDriver_; }
 
     sigc::signal<void(CdDevice*)> signalProcessFinished;
 
@@ -145,7 +147,6 @@ class CdDevice : public sigc::trackable
     static std::vector<CdDevice*>&   deviceList()  { return DEVICE_LIST; }
     static std::vector<std::string>& driverNames() { return DRIVER_NAMES; }
     static std::vector<std::string>  deviceNames() { return DEV_TYPE_NAMES; }
-    static std::vector<std::string>  statusNames() { return STATUS_NAMES; }
 
   private:
     std::string dev_; // SCSI device
@@ -160,7 +161,7 @@ class CdDevice : public sigc::trackable
     bool manuallyConfigured_ = false;
 
     ScsiIf *scsiIf_ = nullptr;
-    bool scsiIfInitFailed_ = false;
+    CdrDriver* cdDriver_ = nullptr;
     Status status_ = DEV_UNKNOWN;
 
     enum Action action_;
@@ -181,7 +182,7 @@ class CdDevice : public sigc::trackable
     // slave device (used when copying etc.)
     CdDevice *slaveDevice_ = nullptr;
 
-    void createScsiIf();
+    void createDriver();
 
     static std::vector<std::string> DRIVER_NAMES;
     static std::vector<CdDevice*> DEVICE_LIST;

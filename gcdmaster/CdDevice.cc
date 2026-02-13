@@ -53,7 +53,8 @@ std::vector<std::string> CdDevice::STATUS_NAMES = {
 
 
 
-CdDevice::CdDevice(const std::string& dev, const std::string& vendor, const std::string& product)
+CdDevice::CdDevice(const std::string& dev,
+                   const std::string& vendor, const std::string& product)
 {
     dev_ = dev;
     vendor_ = vendor;
@@ -61,12 +62,15 @@ CdDevice::CdDevice(const std::string& dev, const std::string& vendor, const std:
     description_ = vendor_ + std::string(" ") + product_;
 
     autoSelectDriver();
+    createDriver();
 }
 
 CdDevice::~CdDevice()
 {
-    delete scsiIf_;
-    scsiIf_ = NULL;
+    if (cdDriver_)
+        delete cdDriver_;
+    if (scsiIf_)
+        delete scsiIf_;
 }
 
 Glib::ustring CdDevice::settingString() const
@@ -171,38 +175,37 @@ int CdDevice::updateStatus()
         }
     }
 
-    if (status_ == DEV_READY || status_ == DEV_BUSY || status_ == DEV_NO_DISK ||
-        status_ == DEV_UNKNOWN) {
-        if (scsiIf_ == NULL)
-            createScsiIf();
-
-        if (scsiIf_ != NULL) {
-            switch (scsiIf_->testUnitReady()) {
-            case 0:
-                newStatus = DEV_READY;
-                break;
-            case 1:
-                newStatus = DEV_BUSY;
-                break;
-            case 2:
-                newStatus = DEV_NO_DISK;
-                break;
-            case 3:
-                // Most likely a timeout error.
-                newStatus = DEV_BUSY;
-                break;
-            case 4:
-                // Used by another process.
-                newStatus = DEV_LOCKED;
-                break;
-            default:
-                assert(-1);
-            }
-            if (status_ != newStatus)
-                log_message(1, "TEST UNIT READY, status was %d,  is now %d", status_, newStatus);
-        } else {
+    if (!cdDriver_) {
+        status_ = DEV_FAULT;
+    } else {
+        switch (cdDriver_->testUnitReady()) {
+        case 0:
+            newStatus = DEV_READY;
+            break;
+        case 1:
             newStatus = DEV_FAULT;
+            break;
+        case 2:
+            newStatus = DEV_BUSY;
+            break;
+        case 3:
+            newStatus = DEV_NO_DISC;
+            break;
+        case 4:
+            newStatus = DEV_TRAY_OPEN;
+            break;
+        case 5:
+            newStatus = DEV_SPINNING_UP;
+            break;
+        case 6:
+            newStatus = DEV_BAD_DISC;
+            break;
+        default:
+            assert(-1);
         }
+        if (status_ != newStatus)
+            log_message(1, "TEST UNIT READY, status was %d,  is now %d",
+                        status_, newStatus);
     }
 
     if (newStatus != status_) {
@@ -308,30 +311,37 @@ bool CdDevice::ejectCd(bool load)
 {
     bool success = false;
 
-    if (!scsiIf_)
-        createScsiIf();
-
-    if (scsiIf_) {
-        CdrDriver *driver = CdrDriver::createDriver(driver_.c_str(),
-						    driverOptions_, scsiIf_);
-
-        int ret = driver->loadUnload((load ? 0 : 1));
+    if (cdDriver_) {
+        int ret = cdDriver_->loadUnload((load ? 0 : 1));
         success = (ret == 0);
-        delete (driver);
     }
 
     return success;
 }
 
-CdrDriver* CdDevice::createDriver()
+// Create or recreate Driver.
+//
+void CdDevice::createDriver()
 {
-    if (!scsiIf_)
-        createScsiIf();
+    if (cdDriver_) {
+        delete cdDriver_;
+        cdDriver_ = nullptr;
+    }
+    if (scsiIf_) {
+        delete scsiIf_;
+        scsiIf_ = nullptr;
+    }
 
-    if (!scsiIf_ or driver_.empty())
-	return nullptr;
+    scsiIf_ = new ScsiIf(dev_.c_str());
 
-    return CdrDriver::createDriver(driver_.c_str(), driverOptions_, scsiIf_);
+    if (!scsiIf_ or driver_.empty()) {
+        status(DEV_FAULT);
+	return;
+    }
+
+    cdDriver_ = CdrDriver::createDriver(driver_.c_str(), driverOptions_, scsiIf_);
+    if (cdDriver_)
+        status(DEV_FAULT);
 }
 
 // Starts a 'cdrdao' for recording given toc. Returns false if an
@@ -413,8 +423,7 @@ bool CdDevice::recordDao(Gtk::Window &parent, TocEdit *tocEdit, int simulate, in
 
     // Remove the SCSI interface of this device to avoid problems with double
     // usage of device nodes.
-    delete scsiIf_;
-    scsiIf_ = NULL;
+    createDriver();
 
     process_ = PROCESS_MONITOR->start(execName.c_str(), args, remoteFdArgNum);
 
@@ -521,8 +530,7 @@ int CdDevice::extractDao(Gtk::Window &parent,
 
     // Remove the SCSI interface of this device to avoid problems with double
     // usage of device nodes.
-    delete scsiIf_;
-    scsiIf_ = nullptr;
+    createDriver();
 
     process_ = PROCESS_MONITOR->start(execName, args, remoteFdArgNum);
 
@@ -654,8 +662,7 @@ int CdDevice::duplicateDao(Gtk::Window &parent, int simulate, int multiSession, 
 
     // Remove the SCSI interface of this device to avoid problems with double
     // usage of device nodes.
-    delete scsiIf_;
-    scsiIf_ = NULL;
+    createDriver();
 
     process_ = PROCESS_MONITOR->start(execName.c_str(), args, remoteFdArgNum);
 
@@ -747,8 +754,7 @@ int CdDevice::blank(Gtk::Window *parent, int fast, int speed, int eject, int rel
 
     // Remove the SCSI interface of this device to avoid problems with double
     // usage of device nodes.
-    delete scsiIf_;
-    scsiIf_ = NULL;
+    createDriver();
 
     process_ = PROCESS_MONITOR->start(execName.c_str(), args, remoteFdArgNum);
 
@@ -774,23 +780,6 @@ void CdDevice::abortBlank()
     }
 }
 
-void CdDevice::createScsiIf()
-{
-    char buf[100];
-
-    if (scsiIfInitFailed_)
-        return;
-
-    delete scsiIf_;
-    scsiIf_ = new ScsiIf(dev_.c_str());
-
-    if (scsiIf_->init() != 0) {
-        delete scsiIf_;
-        scsiIf_ = NULL;
-        scsiIfInitFailed_ = true;
-    }
-}
-
 CdDevice::DeviceType CdDevice::devtypeName2Id(const std::string& dt)
 {
     int i = 0;
@@ -805,42 +794,33 @@ CdDevice::DeviceType CdDevice::devtypeName2Id(const std::string& dt)
 
 const std::string CdDevice::status2string(Status s)
 {
-    const char *ret = NULL;
-
     switch (s) {
     case DEV_READY:
-        ret = "Ready";
-        break;
+        return("Ready");
     case DEV_RECORDING:
-        ret = "Recording";
-        break;
+        return("Recording");
     case DEV_READING:
-        ret = "Reading";
-        break;
-    case DEV_WAITING:
-        ret = "Waiting";
-        break;
-    case DEV_BLANKING:
-        ret = "Blanking";
-        break;
+        return("Reading");
+    case DEV_SPINNING_UP:
+        return("Spinning Up");
     case DEV_BUSY:
-        ret = "Busy";
-        break;
-    case DEV_NO_DISK:
-        ret = "No disk";
-        break;
+        return("Busy");
+    case DEV_NO_DISC:
+        return("No Disc");
+    case DEV_BLANKING:
+        return("Blanking");
     case DEV_FAULT:
-        ret = "Not available";
-        break;
+        return("Not Available");
     case DEV_LOCKED:
-        ret = "Already In Use";
-        break;
+        return("Already In Use");
+    case DEV_TRAY_OPEN:
+        return("Tray Open");
+    case DEV_BAD_DISC:
+        return("Incompatible Disc");
     case DEV_UNKNOWN:
-        ret = "Unknown";
-        break;
+    default:
+        return("Unknown");
     }
-
-    return ret;
 }
 
 const std::string CdDevice::deviceType2string(DeviceType t)
@@ -869,35 +849,18 @@ const std::string CdDevice::deviceType2string(DeviceType t)
 //
 void CdDevice::importSettings()
 {
-    CdDevice *dev;
-
-    std::vector<Glib::ustring> settingsStrings = CONFIG_MANAGER->getConfiguredDevices();
-    std::vector<Glib::ustring>::iterator i;
-
-    for (i = settingsStrings.begin(); i != settingsStrings.end(); ++i) {
-        if (!i->empty()) {
-            if ((dev = CdDevice::add(i->c_str())) != NULL)
-                dev->manuallyConfigured(true);
-        }
-    }
+    // Needs complete rerwite, current implementatio makes no sense as
+    // the "dev" string will change, key needs to be the name and
+    // model #.
 }
 
 /* saves manually configured devices as gnome settings
  */
 void CdDevice::exportSettings()
 {
-    int n;
-    std::vector<Glib::ustring> settingStrings;
-
-    for (auto dev : DEVICE_LIST)
-        if (dev->manuallyConfigured())
-            settingStrings.push_back(dev->settingString());
-
-    try {
-        CONFIG_MANAGER->setConfiguredDevices(settingStrings);
-    } catch (const Glib::Error &e) {
-        std::cerr << e.what() << std::endl;
-    }
+    // Needs complete rerwite, current implementatio makes no sense as
+    // the "dev" string will change, key needs to be the name and
+    // model #.
 }
 
 CdDevice *CdDevice::add(const std::string& dev, const std::string& vendor, const std::string& product)
@@ -1075,7 +1038,9 @@ void CdDevice::clear()
 
 int CdDevice::update()
 {
-    static int skipcnt = 0;
+    log_message(1, "[update] CdDevice");
+
+     static int skipcnt = 0;
     int status = 0;
 
     blockProcessMonitorSignals();

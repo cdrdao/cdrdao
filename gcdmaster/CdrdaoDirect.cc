@@ -33,7 +33,7 @@ void FastTocRead::run()
 {
     Cdrdao cdrdao;
 
-    driver_ = dev_->createDriver();
+    driver_ = dev_->cdDriver();
     driver_->subChanReadMode(TrackData::SUBCHAN_NONE);
     driver_->rawDataReading(true);
     driver_->mode2Mixed(false);

@@ -341,7 +341,7 @@ class CdrDriver
     }
 
     // general commands
-    virtual int testUnitReady(int) const;
+    virtual int testUnitReady(int ignoreAttention = true) const;
 
     virtual int startStopUnit(int) const;
 
