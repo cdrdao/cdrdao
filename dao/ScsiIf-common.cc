@@ -19,6 +19,8 @@
 
 #include "ScsiIf.h"
 
+#include <cstring>
+
 #include "trackdb/util.h"
 #include "trackdb/log.h"
 
