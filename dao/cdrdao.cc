@@ -1713,9 +1713,7 @@ int Cdrdao::copyCdOnTheFly(DaoCommandLine &opts, CdrDriver *src, CdrDriver *dst)
          * ASPI layer which is required for the child process
          */
 
-        delete src->scsiIf();
-
-        src->scsiIf(new ScsiIf(opts.sourceScsiDevice));
+        src->scsiIf = ScsiIf::create(opts.sourceScsiDevice);
 
         if (src->scsiIf()->init() != 0) {
             log_message(-2, "Re-init of SCSI interace failed.");
@@ -1828,7 +1826,8 @@ void Cdrdao::printVersion()
 
 
 // Selects driver for device of 'scsiIf'.
-CdrDriver *Cdrdao::selectDriver(DaoCommand cmd, ScsiIf *scsiIf, const std::string &driverId)
+CdrDriver *Cdrdao::selectDriver(DaoCommand cmd, std::shared_ptr<ScsiIf> scsiIf,
+                                const std::string &driverId)
 {
     unsigned long options = 0;
     CdrDriver *ret = NULL;
@@ -1935,7 +1934,6 @@ CdrDriver *Cdrdao::setupDevice(DaoCommand cmd, const std::string &scsiDevice,
 			       int initDevice, int checkReady, int checkEmpty, int readingSpeed,
 			       bool remote, bool reload)
 {
-    ScsiIf *scsiIf = NULL;
     CdrDriver *cdr = NULL;
     DiskInfo *di = NULL;
     int inquiryFailed = 0;
@@ -1943,13 +1941,12 @@ CdrDriver *Cdrdao::setupDevice(DaoCommand cmd, const std::string &scsiDevice,
     int initTries = 2;
     int ret = 0;
 
-    scsiIf = ScsiIf::create(scsiDevice);
+    auto scsiIf = ScsiIf::create(scsiDevice);
 
     switch (scsiIf->init()) {
     case 1:
         log_message(-2, "Please use option '--device device'"
                         ", e.g. --device /dev/cdrom");
-        delete scsiIf;
         return NULL;
         break;
     case 2:
@@ -1964,12 +1961,10 @@ CdrDriver *Cdrdao::setupDevice(DaoCommand cmd, const std::string &scsiDevice,
     if (inquiryFailed && driverId.empty()) {
         log_message(-2, "Inquiry failed and no driver id is specified.");
         log_message(-2, "Please use option --driver to specify a driver id.");
-        delete scsiIf;
         return NULL;
     }
 
     if ((cdr = selectDriver(cmd, scsiIf, driverId)) == NULL) {
-        delete scsiIf;
         return NULL;
     }
 
@@ -1998,7 +1993,6 @@ CdrDriver *Cdrdao::setupDevice(DaoCommand cmd, const std::string &scsiDevice,
                     break;
                 if (ret == 1) {
                     delete cdr;
-                    delete scsiIf;
                     return NULL;
                 }
                 log_message(-1, "Unit not ready, still trying...");
@@ -2007,7 +2001,6 @@ CdrDriver *Cdrdao::setupDevice(DaoCommand cmd, const std::string &scsiDevice,
             if (ret != 0) {
                 log_message(-2, "Unit not ready, giving up.");
                 delete cdr;
-                delete scsiIf;
                 return NULL;
             }
 
@@ -2024,7 +2017,6 @@ CdrDriver *Cdrdao::setupDevice(DaoCommand cmd, const std::string &scsiDevice,
             if ((di = cdr->diskInfo()) == NULL) {
                 log_message(-2, "Cannot get disk information.");
                 delete cdr;
-                delete scsiIf;
                 return NULL;
             }
 
@@ -2039,7 +2031,6 @@ CdrDriver *Cdrdao::setupDevice(DaoCommand cmd, const std::string &scsiDevice,
 
                 if (cdr->loadUnload(1) != 0) {
                     delete cdr;
-                    delete scsiIf;
                     return NULL;
                 }
 
@@ -2049,7 +2040,6 @@ CdrDriver *Cdrdao::setupDevice(DaoCommand cmd, const std::string &scsiDevice,
                 if (cdr->loadUnload(0) != 0) {
                     log_message(-2, "Cannot load tray.");
                     delete cdr;
-                    delete scsiIf;
                     return NULL;
                 }
 

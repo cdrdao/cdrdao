@@ -35,7 +35,7 @@
 #include "log.h"
 #include "port.h"
 
-YamahaCDR10x::YamahaCDR10x(ScsiIf *scsiIf, unsigned long options) : CdrDriver(scsiIf, options)
+YamahaCDR10x::YamahaCDR10x(std::shared_ptr<ScsiIf> scsiIf, unsigned long options) : CdrDriver(scsiIf, options)
 {
     int i;
 
@@ -56,7 +56,7 @@ YamahaCDR10x::YamahaCDR10x(ScsiIf *scsiIf, unsigned long options) : CdrDriver(sc
 }
 
 // static constructor
-CdrDriver *YamahaCDR10x::instance(ScsiIf *scsiIf, unsigned long options)
+CdrDriver *YamahaCDR10x::instance(std::shared_ptr<ScsiIf> scsiIf, unsigned long options)
 {
     return new YamahaCDR10x(scsiIf, options);
 }

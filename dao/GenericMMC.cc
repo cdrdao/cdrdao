@@ -49,7 +49,8 @@
 
 #define WMP_VAR_MAX 0x1
 
-GenericMMC::GenericMMC(ScsiIf *scsiIf, unsigned long options) : CdrDriver(scsiIf, options)
+GenericMMC::GenericMMC(std::shared_ptr<ScsiIf> scsiIf, unsigned long options)
+    : CdrDriver(scsiIf, options)
 {
     int i;
     driverName_ = "Generic SCSI-3/MMC - Version 2.0";
@@ -106,7 +107,7 @@ GenericMMC::~GenericMMC()
 }
 
 // static constructor
-CdrDriver *GenericMMC::instance(ScsiIf *scsiIf, unsigned long options)
+CdrDriver *GenericMMC::instance(std::shared_ptr<ScsiIf> scsiIf, unsigned long options)
 {
     return new GenericMMC(scsiIf, options);
 }

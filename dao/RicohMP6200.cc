@@ -31,7 +31,7 @@
 #include "Toc.h"
 #include "log.h"
 
-RicohMP6200::RicohMP6200(ScsiIf *scsiIf, unsigned long options)
+RicohMP6200::RicohMP6200(std::shared_ptr<ScsiIf> scsiIf, unsigned long options)
     : GenericMMC(scsiIf, options), CDD2600Base(this)
 {
     driverName_ = "Ricoh MP6200 - Version 0.1(alpha)";
@@ -45,7 +45,7 @@ RicohMP6200::~RicohMP6200()
 }
 
 // static constructor
-CdrDriver *RicohMP6200::instance(ScsiIf *scsiIf, unsigned long options)
+CdrDriver *RicohMP6200::instance(std::shared_ptr<ScsiIf> scsiIf, unsigned long options)
 {
     return new RicohMP6200(scsiIf, options);
 }

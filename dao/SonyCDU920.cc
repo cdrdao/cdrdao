@@ -30,7 +30,7 @@
 #include "log.h"
 #include "port.h"
 
-SonyCDU920::SonyCDU920(ScsiIf *scsiIf, unsigned long options) : CdrDriver(scsiIf, options)
+SonyCDU920::SonyCDU920(std::shared_ptr<ScsiIf> scsiIf, unsigned long options) : CdrDriver(scsiIf, options)
 {
     int i;
     driverName_ = "Sony CDU920 - Version 0.1 (data) (alpha)";
@@ -61,7 +61,7 @@ SonyCDU920::~SonyCDU920()
 }
 
 // static constructor
-CdrDriver *SonyCDU920::instance(ScsiIf *scsiIf, unsigned long options)
+CdrDriver *SonyCDU920::instance(std::shared_ptr<ScsiIf> scsiIf, unsigned long options)
 {
     return new SonyCDU920(scsiIf, options);
 }

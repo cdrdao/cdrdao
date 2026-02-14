@@ -160,7 +160,7 @@ class CdDevice : public sigc::trackable
     unsigned long driverOptions_ = 0;
     bool manuallyConfigured_ = false;
 
-    ScsiIf *scsiIf_ = nullptr;
+    std::shared_ptr<ScsiIf> scsiIf_;
     CdrDriver* cdDriver_ = nullptr;
     Status status_ = DEV_UNKNOWN;
 

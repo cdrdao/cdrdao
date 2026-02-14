@@ -27,10 +27,10 @@
 class GenericMMCraw : public GenericMMC, private PQChannelEncoder
 {
   public:
-    GenericMMCraw(ScsiIf *scsiIf, unsigned long options);
+    GenericMMCraw(std::shared_ptr<ScsiIf> scsiIf, unsigned long options);
     ~GenericMMCraw();
 
-    static CdrDriver *instance(ScsiIf *scsiIf, unsigned long options);
+    static CdrDriver *instance(std::shared_ptr<ScsiIf> scsiIf, unsigned long options);
 
     int multiSession(bool);
 

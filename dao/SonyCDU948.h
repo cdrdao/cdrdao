@@ -30,9 +30,9 @@ class CdTextEncoder;
 class SonyCDU948 : public SonyCDU920
 {
   public:
-    SonyCDU948(ScsiIf *scsiIf, unsigned long options);
+    SonyCDU948(std::shared_ptr<ScsiIf> scsiIf, unsigned long options);
     ~SonyCDU948();
-    static CdrDriver *instance(ScsiIf *scsiIf, unsigned long options);
+    static CdrDriver *instance(std::shared_ptr<ScsiIf> scsiIf, unsigned long options);
 
     int checkToc(const Toc *);
 

@@ -29,7 +29,7 @@
 #include "Toc.h"
 #include "log.h"
 
-PlextorReaderScan::PlextorReaderScan(ScsiIf *scsiIf, unsigned long options)
+PlextorReaderScan::PlextorReaderScan(std::shared_ptr<ScsiIf> scsiIf, unsigned long options)
     : PlextorReader(scsiIf, options)
 {
     int i;
@@ -55,7 +55,7 @@ PlextorReaderScan::~PlextorReaderScan()
 }
 
 // static constructor
-CdrDriver *PlextorReaderScan::instance(ScsiIf *scsiIf, unsigned long options)
+CdrDriver *PlextorReaderScan::instance(std::shared_ptr<ScsiIf> scsiIf, unsigned long options)
 {
     return new PlextorReaderScan(scsiIf, options);
 }

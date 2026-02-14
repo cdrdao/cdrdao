@@ -62,7 +62,7 @@
 
 using namespace std;
 
-typedef CdrDriver *(*CdrDriverConstructor)(ScsiIf *, unsigned long);
+typedef CdrDriver *(*CdrDriverConstructor)(std::shared_ptr<ScsiIf>, unsigned long);
 
 struct DriverSelectTable {
     const char *driverId;
@@ -805,7 +805,8 @@ const char *CdrDriver::selectDriver(int readWrite, const char *vendor, const cha
     return NULL;
 }
 
-CdrDriver *CdrDriver::createDriver(const char *driverId, unsigned long options, ScsiIf *scsiIf)
+CdrDriver *CdrDriver::createDriver(const char *driverId, unsigned long options,
+                                   std::shared_ptr<ScsiIf> scsiIf)
 {
     DriverTable *run = DRIVERS;
 
@@ -819,7 +820,7 @@ CdrDriver *CdrDriver::createDriver(const char *driverId, unsigned long options, 
     return NULL;
 }
 
-const char *CdrDriver::detectDriver(ScsiIf *scsiIf, unsigned long *options)
+const char *CdrDriver::detectDriver(std::shared_ptr<ScsiIf> scsiIf, unsigned long *options)
 {
     if (scsiIf->checkMmc()) {
         *options |= OPT_MMC_CD_TEXT;
@@ -839,49 +840,18 @@ void CdrDriver::printDriverIds()
     }
 }
 
-CdrDriver::CdrDriver(ScsiIf *scsiIf, unsigned long options)
+CdrDriver::CdrDriver(std::shared_ptr<ScsiIf> scsiIf, unsigned long options)
+    : scsiIf_(scsiIf)
 {
     size16 byteOrderTest = 1;
     char *byteOrderTestP = (char *)&byteOrderTest;
 
     options_ = options;
-    scsiIf_ = scsiIf;
-    toc_ = NULL;
 
     if (*byteOrderTestP == 1)
         hostByteOrder_ = 0; // little endian
     else
         hostByteOrder_ = 1; // big endian
-
-    enableBufferUnderRunProtection_ = 1;
-    enableWriteSpeedControl_ = 1;
-
-    readCapabilities_ = 0; // reading capabilities are determined dynamically
-
-    audioDataByteOrder_ = 0; // default to little endian
-
-    fastTocReading_ = false;
-    rawDataReading_ = false;
-    mode2Mixed_ = true;
-    subChanReadMode_ = TrackData::SUBCHAN_NONE;
-    taoSource_ = 0;
-    taoSourceAdjust_ = 2; // usually we have 2 unreadable sectors between tracks
-    // written in TAO mode
-    padFirstPregap_ = 1;
-    onTheFly_ = 0;
-    onTheFlyFd_ = -1;
-    multiSession_ = false;
-    encodingMode_ = 0;
-    force_ = false;
-    remote_ = 0;
-    remoteFd_ = -1;
-
-    blockLength_ = 0;
-    blocksPerWrite_ = 0;
-    zeroBuffer_ = NULL;
-
-    userCapacity_ = 0;
-    fullBurn_ = false;
 
     scsiMaxDataLen_ = scsiIf_->maxDataLen();
 

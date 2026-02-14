@@ -28,9 +28,9 @@ class Track;
 class SonyCDU920 : public CdrDriver
 {
   public:
-    SonyCDU920(ScsiIf *scsiIf, unsigned long options);
+    SonyCDU920(std::shared_ptr<ScsiIf> scsiIf, unsigned long options);
     ~SonyCDU920();
-    static CdrDriver *instance(ScsiIf *scsiIf, unsigned long options);
+    static CdrDriver *instance(std::shared_ptr<ScsiIf> scsiIf, unsigned long options);
 
     unsigned long getReadCapabilities(const CdToc *, int) const
     {

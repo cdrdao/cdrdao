@@ -143,224 +143,102 @@ struct TrackInfo {
 class CdrDriver
 {
   public:
-    CdrDriver(ScsiIf *scsiIf, unsigned long options);
+    CdrDriver(std::shared_ptr<ScsiIf>, unsigned long options);
     virtual ~CdrDriver();
 
-    virtual ScsiIf *scsiIf() const { return scsiIf_; }
-    void scsiIf(ScsiIf *i) { scsiIf_ = i; }
+    virtual std::shared_ptr<ScsiIf> scsiIf() const { return scsiIf_; }
+    void scsiIf(std::shared_ptr<ScsiIf> i) { scsiIf_ = i; }
     virtual const char *driverName() const { return driverName_; }
     virtual unsigned long options() const { return options_; }
 
     // Returns 1 if drive takes audio samples in big endian byte order or
     // 0 for little endian byte order
     virtual int bigEndianSamples() const = 0;
-
     // return information about drive
     virtual const DriveInfo *driveInfo(bool showErrorMsg) { return NULL; }
-
     // returns current writing speed
     virtual int speed() { return speed_; }
-
     // returns current reading speed
     virtual int rspeed() { return rspeed_; }
-
     // sets writing speed, returns 0 for OK or 1 for illegal speed,
     // this function may send SCSI commands to the drive
     virtual int speed(int) = 0;
-
     // sets reading speed, returns 0 for OK or 1 for illegal speed,
     // this function may send SCSI commands to the drive
     virtual bool rspeed(int);
-
     // sets/return buffer under run protection setting (if supported by
     // the drive: 1 = enabled, 0 = disbaled
-    virtual int bufferUnderRunProtection() const
-    {
-        return enableBufferUnderRunProtection_;
-    }
-
-    virtual void bufferUnderRunProtection(int s)
-    {
-        enableBufferUnderRunProtection_ = s != 0 ? 1 : 0;
-    }
-
+    virtual int bufferUnderRunProtection() const {
+        return enableBufferUnderRunProtection_; }
+    virtual void bufferUnderRunProtection(int s) {
+        enableBufferUnderRunProtection_ = s != 0 ? 1 : 0; }
     // sets/return writing speed control setting (if supported by
     // the drive: 1 = enabled, 0 = disbaled
-    virtual int writeSpeedControl() const
-    {
-        return enableWriteSpeedControl_;
-    }
-
-    virtual void writeSpeedControl(int s)
-    {
-        enableWriteSpeedControl_ = s != 0 ? 1 : 0;
-    }
-
+    virtual int writeSpeedControl() const { return enableWriteSpeedControl_; }
+    virtual void writeSpeedControl(int s) { enableWriteSpeedControl_ = s != 0 ? 1 : 0; }
     // returns 1 if simulation mode, 0 for real writing
-    virtual bool simulate() const
-    {
-        return simulate_;
-    }
-
+    virtual bool simulate() const { return simulate_; }
     // sets simulation mode, returns 0 for OK, 1 if given mode is not supported
-    virtual void simulate(bool s)
-    {
-        simulate_ = s;
-    }
-
+    virtual void simulate(bool s) { simulate_ = s; }
     // Sets multi session mode (0: close session, 1: open next session).
     // Returns 1 if multi session is not supported by driver, else 0
     virtual int multiSession(bool);
-
     // Returns mutli session mode.
-    virtual bool multiSession() const
-    {
-        return multiSession_;
-    }
-
+    virtual bool multiSession() const { return multiSession_; }
     // Returns/sets fast toc reading flag (no sub-channel analysis)
-    virtual bool fastTocReading() const
-    {
-        return fastTocReading_;
-    }
-    virtual void fastTocReading(bool f)
-    {
-        fastTocReading_ = f;
-    }
-
+    virtual bool fastTocReading() const { return fastTocReading_; }
+    virtual void fastTocReading(bool f) { fastTocReading_ = f; }
     // Returns/sets raw data track reading flag
-    virtual bool rawDataReading() const
-    {
-        return rawDataReading_;
-    }
-    virtual void rawDataReading(bool f)
-    {
-        rawDataReading_ = f;
-    }
-
+    virtual bool rawDataReading() const { return rawDataReading_; }
+    virtual void rawDataReading(bool f) { rawDataReading_ = f; }
     // Returns/sets mode2 mixed track reading flag
-    virtual bool mode2Mixed() const
-    {
-        return mode2Mixed_;
-    }
-    virtual void mode2Mixed(bool f)
-    {
-        mode2Mixed_ = f;
-    }
-
-    virtual TrackData::SubChannelMode subChanReadMode() const
-    {
-        return subChanReadMode_;
-    }
-    virtual void subChanReadMode(TrackData::SubChannelMode m)
-    {
-        subChanReadMode_ = m;
-    }
-
+    virtual bool mode2Mixed() const { return mode2Mixed_; }
+    virtual void mode2Mixed(bool f) { mode2Mixed_ = f; }
+    virtual TrackData::SubChannelMode subChanReadMode() const { return subChanReadMode_; }
+    virtual void subChanReadMode(TrackData::SubChannelMode m) { subChanReadMode_ = m; }
     // Sets/returns the pad first pre-gap flag
-    virtual int padFirstPregap() const
-    {
-        return padFirstPregap_;
-    }
-    virtual void padFirstPregap(int f)
-    {
-        padFirstPregap_ = f != 0 ? 1 : 0;
-    }
-
+    virtual int padFirstPregap() const { return padFirstPregap_; }
+    virtual void padFirstPregap(int f) { padFirstPregap_ = f != 0 ? 1 : 0; }
     // Returns the on-thy-fly flag.
-    virtual int onTheFly() const
-    {
-        return onTheFly_;
-    }
-
+    virtual int onTheFly() const { return onTheFly_; }
     // Sets file descriptor for on the fly data and sets the on-the-fly flag
     // if 'fd' is >= 0 and clears it otherwise
     virtual void onTheFly(int fd);
-
     // Returns force flag
-    virtual bool force() const
-    {
-        return force_;
-    }
-
+    virtual bool force() const { return force_; }
     // Sets force flag
-    virtual void force(bool f)
-    {
-        force_ = f;
-    }
-
+    virtual void force(bool f) { force_ = f; }
     // Returns TAO source flag
-    virtual bool taoSource() const
-    {
-        return taoSource_;
-    }
-
+    virtual bool taoSource() const { return taoSource_; }
     // Sets TAO source flag
-    virtual void taoSource(bool f)
-    {
-        taoSource_ = f;
-    }
-
+    virtual void taoSource(bool f) { taoSource_ = f; }
     // Return number of adjust sectors for reading TAO source disks
-    virtual int taoSourceAdjust() const
-    {
-        return taoSourceAdjust_;
-    }
-
+    virtual int taoSourceAdjust() const { return taoSourceAdjust_; }
     // Sets number of adjust sectors for reading TAO source disks
     virtual void taoSourceAdjust(int val);
-
     // Sets remote mode
     virtual void remote(int flag, int fd);
-
     // Return remote mode flag
-    virtual int remote()
-    {
-        return remote_;
-    }
-
+    virtual int remote() { return remote_; }
     // Sets cdda paranoia mode
     void paranoiaMode(int);
-
     // Sets user defined capacity
-    virtual void userCapacity(int c)
-    {
-        userCapacity_ = c;
-    }
-
+    virtual void userCapacity(int c) { userCapacity_ = c; }
     // Sets burning to the outer edge mode
-    virtual void fullBurn(bool f)
-    {
-        fullBurn_ = f;
-    }
-
+    virtual void fullBurn(bool f) { fullBurn_ = f; }
     // Return byte order of host (0: little endian, 1: big endian)
-    int hostByteOrder() const
-    {
-        return hostByteOrder_;
-    }
+    int hostByteOrder() const { return hostByteOrder_; }
 
     // general commands
     virtual int testUnitReady(int ignoreAttention = true) const;
-
     virtual int startStopUnit(int) const;
-
     virtual int preventMediumRemoval(int) const;
-
     virtual int rezeroUnit(int showMessage = 1) const;
-
     virtual int loadUnload(int) const = 0;
-
     virtual int flushCache() const;
-
     virtual int readCapacity(long *length, int showMessage = 1);
-
     virtual int getPerformance();
-
-    virtual bool readBufferCapacity(long *total, long *available)
-    {
-        return false;
-    }
+    virtual bool readBufferCapacity(long *total, long *available) { return false; }
 
     // CD-RW specific commands
 
@@ -460,10 +338,11 @@ class CdrDriver
                                     unsigned long *options);
 
     // Creates instance of driver with specified id.
-    static CdrDriver *createDriver(const char *driverId, unsigned long options, ScsiIf *);
+    static CdrDriver *createDriver(const char *driverId, unsigned long options,
+                                   std::shared_ptr<ScsiIf>);
 
     // Try to autodetect a driver on given Scsi interface.
-    static const char *detectDriver(ScsiIf *, unsigned long *options);
+    static const char *detectDriver(std::shared_ptr<ScsiIf>, unsigned long *options);
 
     // Prints list of all available driver ids.
     static void printDriverIds();
@@ -486,42 +365,42 @@ class CdrDriver
     };
 
     unsigned long options_; // driver option flags
-    ScsiIf *scsiIf_;
+    std::shared_ptr<ScsiIf> scsiIf_;
     int scsiMaxDataLen_;
     const char *driverName_;
 
     int hostByteOrder_; // 0: little endian, 1: big endian
 
-    unsigned long readCapabilities_;
+    unsigned long readCapabilities_ = 0;
 
-    int blockLength_;     // length of data block for 'writeData' command
-    long blocksPerWrite_; // number of blocks that can be written with a
-                          // single SCSI WRITE command
-    char *zeroBuffer_;    // zeroed buffer for writing zeros
+    int blockLength_ = 0;         // length of data block for 'writeData' command
+    long blocksPerWrite_ = 0;     // number of blocks that can be written with a
+                                  // single SCSI WRITE command
+    char *zeroBuffer_ = nullptr;  // zeroed buffer for writing zeros
 
-    int enableBufferUnderRunProtection_;
-    int enableWriteSpeedControl_;
+    int enableBufferUnderRunProtection_ = 1;
+    int enableWriteSpeedControl_ = 1;
     int speed_;
     int rspeed_;
     bool simulate_;
-    bool multiSession_;
-    int encodingMode_; // mode for encoding data sectors
-    bool fastTocReading_;
-    bool rawDataReading_;
-    int mode2Mixed_;
-    TrackData::SubChannelMode subChanReadMode_;
-    int padFirstPregap_;  // used by 'read-toc': defines if the first audio
+    bool multiSession_ = false;
+    int encodingMode_ = 0; // mode for encoding data sectors
+    bool fastTocReading_ = false;
+    bool rawDataReading_ = false;
+    int mode2Mixed_ = true;
+    TrackData::SubChannelMode subChanReadMode_ = TrackData::SUBCHAN_NONE;
+    int padFirstPregap_ = 1;  // used by 'read-toc': defines if the first audio
                           // track's pre-gap is padded with zeros in the toc-file
                           // or if it is taken from the data file
-    int onTheFly_;        // 1 if operating in on-the-fly mode
-    int onTheFlyFd_;      // file descriptor for on the fly data
-    bool force_;          // force flag to allow certain operations
-    int remote_;          // 1 for remote mode, else 0
-    int remoteFd_;        // file descriptor for remote messages
-    bool taoSource_;      // 1 to indicate a TAO writting source CD for read-cd/read-toc
-    int taoSourceAdjust_; // number of unreadable sectors between two tracks
-                          // written in TAO mode
-    const Toc *toc_;
+    int onTheFly_ = 0;    // 1 if operating in on-the-fly mode
+    int onTheFlyFd_ = -1; // file descriptor for on the fly data
+    bool force_ = false;  // force flag to allow certain operations
+    int remote_ = 0;      // 1 for remote mode, else 0
+    int remoteFd_ = -1;   // file descriptor for remote messages
+    bool taoSource_ = 0;  // 1 to indicate a TAO writting source CD for read-cd/read-toc
+    int taoSourceAdjust_ = 2; // number of unreadable sectors between
+                              // two tracks, usually we have two
+    const Toc *toc_ = nullptr;
 
     SubChannel **scannedSubChannels_;
     long maxScannedSubChannels_;
@@ -530,10 +409,10 @@ class CdrDriver
 
     // Byte order of audio samples read from the drive, e.g. with
     // 'readSubChannels()'. 0: little endian, 1: big endian
-    int audioDataByteOrder_;
+    int audioDataByteOrder_ = 0;
 
-    int userCapacity_;
-    bool fullBurn_;
+    int userCapacity_ = 0;
+    bool fullBurn_ = false;
 
     static unsigned char syncPattern[12];
     static unsigned char REMOTE_MSG_SYNC_[4];
@@ -726,9 +605,9 @@ class CdrDriver
 
   private:
     // dynamic data
-    void *paranoia_;                    // paranoia structure
-    struct cdrom_drive *paranoiaDrive_; // paranoia device
-    int paranoiaMode_;                  // paranoia mode
+    void *paranoia_ = nullptr;                    // paranoia structure
+    struct cdrom_drive *paranoiaDrive_ = nullptr; // paranoia device
+    int paranoiaMode_          ;                  // paranoia mode
     ReadDiskInfo *audioReadInfo_;
     TrackInfo *audioReadTrackInfo_;
     int audioReadStartTrack_;

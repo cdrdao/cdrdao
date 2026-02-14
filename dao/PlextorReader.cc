@@ -32,7 +32,8 @@
 
 #include "PWSubChannel96.h"
 
-PlextorReader::PlextorReader(ScsiIf *scsiIf, unsigned long options) : CdrDriver(scsiIf, options)
+PlextorReader::PlextorReader(std::shared_ptr<ScsiIf> scsiIf, unsigned long options)
+    : CdrDriver(scsiIf, options)
 {
     driverName_ = "Plextor CD-ROM Reader - Version 1.3";
 
@@ -193,7 +194,7 @@ int PlextorReader::WaitMaxSpeed(int wait)
 }
 
 // static constructor
-CdrDriver *PlextorReader::instance(ScsiIf *scsiIf, unsigned long options)
+CdrDriver *PlextorReader::instance(std::shared_ptr<ScsiIf> scsiIf, unsigned long options)
 {
     return new PlextorReader(scsiIf, options);
 }

@@ -66,14 +66,14 @@ class Track;
 class PlextorReader : public CdrDriver
 {
   public:
-    PlextorReader(ScsiIf *scsiIf, unsigned long options);
+    PlextorReader(std::shared_ptr<ScsiIf> scsiIf, unsigned long options);
 
     /*!
      * Its only purpose is to reset Plextor special features to their value
      * before cdrdao initialization.
      */
     virtual ~PlextorReader();
-    static CdrDriver *instance(ScsiIf *scsiIf, unsigned long options);
+    static CdrDriver *instance(std::shared_ptr<ScsiIf> scsiIf, unsigned long options);
 
     unsigned long getReadCapabilities(const CdToc *, int) const
     {

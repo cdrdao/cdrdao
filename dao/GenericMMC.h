@@ -62,10 +62,10 @@ class CdTextEncoder;
 class GenericMMC : public CdrDriver
 {
   public:
-    GenericMMC(ScsiIf *scsiIf, unsigned long options);
+    GenericMMC(std::shared_ptr<ScsiIf> scsiIf, unsigned long options);
     ~GenericMMC();
 
-    static CdrDriver *instance(ScsiIf *scsiIf, unsigned long options);
+    static CdrDriver *instance(std::shared_ptr<ScsiIf> scsiIf, unsigned long options);
 
     /*! \brief See what subchannel reading modes are available
 

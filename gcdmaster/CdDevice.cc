@@ -69,8 +69,6 @@ CdDevice::~CdDevice()
 {
     if (cdDriver_)
         delete cdDriver_;
-    if (scsiIf_)
-        delete scsiIf_;
 }
 
 Glib::ustring CdDevice::settingString() const
@@ -131,7 +129,7 @@ int CdDevice::autoSelectDriver()
     } else {
         cd_page_2a *p2a;
 
-        ScsiIf *sif = ScsiIf::create(dev_);
+        auto sif = ScsiIf::create(dev_);
 
         if (sif && sif->init() == 0 && (p2a = sif->checkMmc())) {
 
@@ -146,8 +144,6 @@ int CdDevice::autoSelectDriver()
             driver_ = DRIVER_DEFAULT;
             driverOptions_ = 0;
         }
-        if (sif)
-            delete sif;
     }
 
     return 1;
@@ -327,12 +323,9 @@ void CdDevice::createDriver()
         delete cdDriver_;
         cdDriver_ = nullptr;
     }
-    if (scsiIf_) {
-        delete scsiIf_;
-        scsiIf_ = nullptr;
+    if (!scsiIf_) {
+        scsiIf_ = ScsiIf::create(dev_);
     }
-
-    scsiIf_ = ScsiIf::create(dev_);
 
     if (!scsiIf_ or driver_.empty()) {
         status(DEV_FAULT);

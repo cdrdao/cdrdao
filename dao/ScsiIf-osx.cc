@@ -16,6 +16,7 @@
 #include <string.h>
 #include <map>
 #include <set>
+#include <memory>
 
 /* cdrdao specific includes and prototype */
 #include "ScsiIf.h"
@@ -44,7 +45,6 @@ class ScsiIfOsx : public ScsiIf
     virtual int timeout(int) override;
 
     int num_ = 0;
-    std::string path_;
     io_object_t object_ = 0;
     IOCFPlugInInterface **plugin_ = nullptr;
     MMCDeviceInterface **mmc_ = nullptr;
@@ -80,7 +80,7 @@ public:
     void scan();
     void delete_all();
 
-    std::map<std::string, ScsiIfOsx*> devmap;
+    std::map<std::string, std::shared_ptr<ScsiIf>> devmap;
 };
 
 DeviceManager* DM = new DeviceManager();
@@ -119,7 +119,7 @@ void DeviceManager::scan()
             continue;
         }
 
-        auto sif = new ScsiIfOsx(path);
+        auto sif = std::make_shared<ScsiIfOsx>(path);
         sif->object_ = object;
 
         SInt32 score;
@@ -127,12 +127,10 @@ void DeviceManager::scan()
                                               kIOCFPlugInInterfaceID,
                                               &(sif->plugin_), &score) != noErr) {
             log_message(-2, "scan: IOCreatePlugInInterfaceForService failed");
-            delete(sif);
             continue;
         }
         if (!sif->plugin_) {
             log_message(-2, "scan: no plugin");
-            delete(sif);
             continue;
         }
         auto herr = (*(sif->plugin_))->
@@ -140,26 +138,22 @@ void DeviceManager::scan()
                            (LPVOID *)&(sif->mmc_));
         if (!sif->mmc_) {
             log_message(-2, "scan: no mmc");
-            delete(sif);
             continue;
         }
         sif->scsi_ = (*(sif->mmc_))->GetSCSITaskDeviceInterface(sif->mmc_);
         if (!sif->scsi_) {
             log_message(-2, "scan: no scsi");
-            delete(sif);
             continue;
         }
         if ((*(sif->scsi_))->ObtainExclusiveAccess(sif->scsi_) != noErr) {
             log_message(-2, "Device already in use, please use diskutil "
                         "to unmount the disc first");
-            delete(sif);
             continue;
         }
         sif->exclusive_ = true;
 
         if (sif->inquiry() != 0) {
             log_message(-2, "scan: inq failed");
-            delete(sif);
             continue;
         }
 
@@ -380,7 +374,7 @@ ScsiIf::ScanData *ScsiIf::scan(int *len, char *)
     int i = 0;
     for (auto const& [key, val] : DM->devmap)
     {
-        scanData[i].dev = val->path_;
+        scanData[i].dev = val->dev_;
         scanData[i].vendor = val->vendor_;
         scanData[i].product = val->product_;
         scanData[i].revision = val->revision_;
@@ -389,12 +383,11 @@ ScsiIf::ScanData *ScsiIf::scan(int *len, char *)
     return scanData;
 }
 
-ScsiIf* ScsiIf::create(const std::string& dev)
+std::shared_ptr<ScsiIf> ScsiIf::create(const std::string& dev)
 {
     if (DM->devmap.find(dev) == DM->devmap.end()) {
         log_message(-2, "Unknown SCSI device %s", dev.c_str()); 
         throw("Creating unknown SCSI device.");
     }
-    auto sif = DM->devmap[dev];
-    return sif;
+    return DM->devmap[dev];
 }

@@ -26,6 +26,7 @@
 #include "util.h"
 #include <stdlib.h>
 #include <string>
+#include <memory>
 
 typedef struct {
     unsigned char p_len;
@@ -51,7 +52,7 @@ class ScsiIf
     virtual ~ScsiIf() {}
 
     // Create a SCSI interface based on its opaque string device representation.
-    static ScsiIf* create(const std::string& dev);
+    static std::shared_ptr<ScsiIf> create(const std::string& dev);
     
     const std::string& vendor() const   { return vendor_; }
     const std::string& product() const  { return product_; }

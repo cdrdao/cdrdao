@@ -28,8 +28,8 @@ class Track;
 class ToshibaReader : public PlextorReader
 {
   public:
-    ToshibaReader(ScsiIf *scsiIf, unsigned long options);
-    static CdrDriver *instance(ScsiIf *scsiIf, unsigned long options);
+    ToshibaReader(std::shared_ptr<ScsiIf> scsiIf, unsigned long options);
+    static CdrDriver *instance(std::shared_ptr<ScsiIf> scsiIf, unsigned long options);
 
     unsigned long getReadCapabilites(const CdToc *, int) const
     {

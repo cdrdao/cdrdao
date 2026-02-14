@@ -29,7 +29,7 @@
 #include "Toc.h"
 #include "log.h"
 
-CDD2600::CDD2600(ScsiIf *scsiIf, unsigned long options)
+CDD2600::CDD2600(std::shared_ptr<ScsiIf> scsiIf, unsigned long options)
     : CdrDriver(scsiIf, options | OPT_DRV_NO_PREGAP_READ), CDD2600Base(this)
 {
     driverName_ = "CDD2600 - Version 1.1";
@@ -50,7 +50,7 @@ CDD2600::~CDD2600()
 }
 
 // static constructor
-CdrDriver *CDD2600::instance(ScsiIf *scsiIf, unsigned long options)
+CdrDriver *CDD2600::instance(std::shared_ptr<ScsiIf> scsiIf, unsigned long options)
 {
     return new CDD2600(scsiIf, options);
 }

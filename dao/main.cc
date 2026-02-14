@@ -31,8 +31,8 @@ int main(int argc, char **argv)
 {
     int exitCode = 0;
     Toc *toc = NULL;
-    ScsiIf *cdrScsi = NULL;
-    ScsiIf *srcCdrScsi = NULL;
+    std::shared_ptr<ScsiIf> cdrScsi;
+    std::shared_ptr<ScsiIf> srcCdrScsi;
     CdrDriver *cdr = NULL;
     CdrDriver *srcCdr = NULL;
     int delSrcDevice = 0;
@@ -736,9 +736,6 @@ fail:
     delete cdr;
     if (delSrcDevice)
         delete srcCdr;
-    delete cdrScsi;
-    if (delSrcDevice)
-        delete srcCdrScsi;
 
     delete toc;
     exit(exitCode);

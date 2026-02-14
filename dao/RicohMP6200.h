@@ -30,9 +30,9 @@
 class RicohMP6200 : public GenericMMC, private CDD2600Base
 {
   public:
-    RicohMP6200(ScsiIf *scsiIf, unsigned long options);
+    RicohMP6200(std::shared_ptr<ScsiIf> scsiIf, unsigned long options);
     ~RicohMP6200();
-    static CdrDriver *instance(ScsiIf *scsiIf, unsigned long options);
+    static CdrDriver *instance(std::shared_ptr<ScsiIf> scsiIf, unsigned long options);
 
     int initDao(const Toc *);
     int startDao();

@@ -31,7 +31,7 @@
 #include "log.h"
 #include "port.h"
 
-GenericMMCraw::GenericMMCraw(ScsiIf *scsiIf, unsigned long options)
+GenericMMCraw::GenericMMCraw(std::shared_ptr<ScsiIf> scsiIf, unsigned long options)
     : GenericMMC(scsiIf, options), PQChannelEncoder()
 {
     driverName_ = "Generic SCSI-3/MMC (raw writing) - Version 2.0";
@@ -79,7 +79,7 @@ int GenericMMCraw::multiSession(bool m)
 }
 
 // static constructor
-CdrDriver *GenericMMCraw::instance(ScsiIf *scsiIf, unsigned long options)
+CdrDriver *GenericMMCraw::instance(std::shared_ptr<ScsiIf> scsiIf, unsigned long options)
 {
     return new GenericMMCraw(scsiIf, options);
 }
