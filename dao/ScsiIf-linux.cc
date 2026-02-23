@@ -258,17 +258,6 @@ int ScsiIfLinux::adjustReservedBuffer(int requestedSize)
     return maxTransferLength;
 }
 
-// ------------------------------------------------
-//
-// ScsiIf static methods.
-//
-//
-
-ScsiIf* ScsiIf::create(const std::string& dev)
-{
-    return new ScsiIfLinux(dev);
-}
-
 // Scan implementation uses sysfs to
 
 ScsiIf::ScanData *ScsiIf::scan(int *len, char *scsi_dev_path)
@@ -390,4 +379,9 @@ ScsiIf::ScanData *ScsiIf::scan(int *len, char *scsi_dev_path)
  fail:
     *len = 0;
     return NULL;
+}
+
+std::shared_ptr<ScsiIf> ScsiIf::create(const std::string& dev)
+{
+    return std::make_shared<ScsiIfLinux>(dev);
 }
