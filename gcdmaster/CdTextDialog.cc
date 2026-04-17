@@ -32,6 +32,29 @@
 
 #include "guiUpdate.h"
 
+namespace {
+
+// Encodings supported by the Audio CD "Red Book" specification.
+// Indices here are the positions in the dropdown model.
+constexpr Util::Encoding kEncodings[] = {
+    Util::Encoding::ASCII,
+    Util::Encoding::LATIN,
+    Util::Encoding::MSJIS,
+};
+constexpr int kEncodingCount = sizeof(kEncodings) / sizeof(kEncodings[0]);
+constexpr int kDefaultEncodingIndex = 1; // ISO-8859-1
+
+int encodingToIndex(Util::Encoding enc)
+{
+    for (int i = 0; i < kEncodingCount; i++) {
+        if (kEncodings[i] == enc)
+            return i;
+    }
+    return kDefaultEncodingIndex;
+}
+
+} // namespace
+
 CdTextDialog::CdTextDialog(Gtk::Window* parent)
 {
     set_title(_("CD-TEXT Entry"));
@@ -59,8 +82,27 @@ CdTextDialog::CdTextDialog(Gtk::Window* parent)
         page_[i].performerButton->signal_toggled().connect(
             [this, i] { activatePerformerAction(i); });
 
+        page_[i].encoding = Gtk::make_managed<Gtk::DropDown>();
+        {
+            auto encList = Gtk::StringList::create();
+            encList->append("ASCII");
+            encList->append("ISO-8859-1");
+            encList->append("MS-JIS");
+            page_[i].encoding->set_model(encList);
+            page_[i].encoding->set_selected(kDefaultEncodingIndex);
+        }
+        page_[i].encoding->property_selected().signal_changed().connect(
+            [this, i] { recomputeEncoding(i); });
+
+        page_[i].encodingWarning = Gtk::make_managed<Gtk::Label>();
+        page_[i].encodingWarning->set_halign(Gtk::Align::START);
+        page_[i].encodingWarning->set_visible(false);
+
+        page_[i].title->signal_changed().connect([this, i] { recomputeEncoding(i); });
+        page_[i].performer->signal_changed().connect([this, i] { recomputeEncoding(i); });
+
         page_[i].tracks = nullptr;
-        
+
         // Grid attachment: column, row, width, height
         page_[i].table->attach(*Gtk::make_managed<Gtk::Label>(_("Performer")), 1, 0);
         page_[i].table->attach(*Gtk::make_managed<Gtk::Label>(_("Title")), 2, 0);
@@ -73,6 +115,11 @@ CdTextDialog::CdTextDialog(Gtk::Window* parent)
 
         // Performer Toggle row
         page_[i].table->attach(*(page_[i].performerButton), 1, 2);
+
+        // Encoding selector row
+        page_[i].table->attach(*Gtk::make_managed<Gtk::Label>(_("Encoding")), 0, 3);
+        page_[i].table->attach(*(page_[i].encoding), 1, 3);
+        page_[i].table->attach(*(page_[i].encodingWarning), 2, 3);
 
         // Scrolled Window for the tracks
         auto swin = Gtk::make_managed<Gtk::ScrolledWindow>();
@@ -163,9 +210,14 @@ void CdTextDialog::adjustTableEntries(int n)
 
                 page_[l].tracks[i].hbox->append(*(page_[l].tracks[i].label));
 
-                page_[l].table->attach(*(page_[l].tracks[i].hbox), 0, i + 3);
-                page_[l].table->attach(*(page_[l].tracks[i].title), 2, i + 3);
-                page_[l].table->attach(*(page_[l].tracks[i].performer), 1, i + 3);
+                page_[l].table->attach(*(page_[l].tracks[i].hbox), 0, i + 4);
+                page_[l].table->attach(*(page_[l].tracks[i].title), 2, i + 4);
+                page_[l].table->attach(*(page_[l].tracks[i].performer), 1, i + 4);
+
+                page_[l].tracks[i].title->signal_changed().connect(
+                    [this, l] { recomputeEncoding(l); });
+                page_[l].tracks[i].performer->signal_changed().connect(
+                    [this, l] { recomputeEncoding(l); });
             }
         }
     }
@@ -241,8 +293,62 @@ void CdTextDialog::activatePerformerAction(int l)
     }
 }
 
+void CdTextDialog::recomputeEncoding(int l)
+{
+    if (importing_ || l < 0 || l >= 8)
+        return;
+
+    // Concatenate all text fields for this language; if the whole blob
+    // fits an encoding, every individual field does too.
+    std::string all;
+    all += page_[l].title->get_text().raw();
+    all += '\n';
+    all += page_[l].performer->get_text().raw();
+    for (int i = 0; i < trackEntries_; i++) {
+        all += '\n';
+        all += page_[l].tracks[i].title->get_text().raw();
+        all += '\n';
+        all += page_[l].tracks[i].performer->get_text().raw();
+    }
+
+    bool fits[kEncodingCount];
+    for (int e = 0; e < kEncodingCount; e++) {
+        std::vector<u8> out;
+        fits[e] = Util::from_utf8(all, out, kEncodings[e]);
+    }
+
+    int cur = page_[l].encoding->get_selected();
+    if (cur < 0 || cur >= kEncodingCount)
+        cur = kDefaultEncodingIndex;
+
+    if (!fits[cur]) {
+        // Current selection cannot represent the text — upgrade to the
+        // smallest encoding that can. Never auto-downgrade.
+        for (int e = 0; e < kEncodingCount; e++) {
+            if (fits[e]) {
+                page_[l].encoding->set_selected(e);
+                // set_selected() re-enters this function via signal_changed;
+                // the recursive call will refresh the warning state.
+                return;
+            }
+        }
+    }
+
+    bool anyFits = fits[0] || fits[1] || fits[2];
+    if (!anyFits) {
+        page_[l].encodingWarning->set_markup(
+            Glib::ustring("<span color=\"red\">") +
+            Glib::Markup::escape_text(_("Text cannot be encoded")) +
+            "</span>");
+        page_[l].encodingWarning->set_visible(true);
+    } else {
+        page_[l].encodingWarning->set_visible(false);
+    }
+}
+
 void CdTextDialog::importData()
 {
+    importing_ = true;
     const Toc *toc = tocEdit_->toc();
     int n = toc->nofTracks();
     adjustTableEntries(n);
@@ -254,6 +360,8 @@ void CdTextDialog::importData()
         auto perfItem = toc->getCdTextItem(0, l, CdTextItem::PackType::PERFORMER);
         page_[l].performer->set_text(perfItem ? perfItem->getText() : "");
 
+        page_[l].encoding->set_selected(encodingToIndex(toc->cdTextEncoding(l)));
+
         for (int i = 0; i < n; i++) {
             auto tTitle = toc->getCdTextItem(i + 1, l, CdTextItem::PackType::TITLE);
             page_[l].tracks[i].title->set_text(tTitle ? tTitle->getText() : "");
@@ -262,6 +370,10 @@ void CdTextDialog::importData()
             page_[l].tracks[i].performer->set_text(tPerf ? tPerf->getText() : "");
         }
     }
+    importing_ = false;
+
+    for (int l = 0; l < 8; l++)
+        recomputeEncoding(l);
 }
 
 void CdTextDialog::exportData()
@@ -274,6 +386,10 @@ void CdTextDialog::exportData()
             setCdTextItem(CdTextItem::PackType::TITLE, i + 1, l, checkString(page_[l].tracks[i].title->get_text()));
             setCdTextItem(CdTextItem::PackType::PERFORMER, i + 1, l, checkString(page_[l].tracks[i].performer->get_text()));
         }
+
+        int encIdx = page_[l].encoding->get_selected();
+        if (encIdx >= 0 && encIdx < kEncodingCount)
+            tocEdit_->setCdTextEncoding(l, kEncodings[encIdx]);
     }
 }
 

@@ -101,6 +101,7 @@ class TocEdit : public Glib::Object
     void setCdTextItem(int trackNr, CdTextItem::PackType, int blockNr, const char *);
     void setCdTextGenreItem(int blockNr, int code1, int code2, const char *description);
     void setCdTextLanguage(int blockNr, int langCode);
+    void setCdTextEncoding(int blockNr, Util::Encoding enc);
 
     void setCatalogNumber(const char *);
     void setTocType(Toc::Type);

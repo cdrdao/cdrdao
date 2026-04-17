@@ -45,6 +45,7 @@ protected:
 
   private:
     bool active_ = false;
+    bool importing_ = false;
 
     Glib::RefPtr<TocEdit> tocEdit_;
     int trackEntries_ = 0;
@@ -66,6 +67,8 @@ protected:
         Gtk::Entry *title;
         Gtk::Label *tabLabel;
         Gtk::CheckButton *performerButton;
+        Gtk::DropDown *encoding;
+        Gtk::Label *encodingWarning;
         TableEntry *tracks;
     };
 
@@ -76,6 +79,7 @@ protected:
     void applyAction();
     void fillPerformerAction();
     void activatePerformerAction(int);
+    void recomputeEncoding(int l);
 
     void importData();
     void exportData();

@@ -2,7 +2,12 @@
   "permissions": {
     "allow": [
       "Bash(wc -l /home/denis/cdrdao/git/dao/*.cc)",
-      "Bash(wc -l /home/denis/cdrdao/git/trackdb/*.cc)"
+      "Bash(wc -l /home/denis/cdrdao/git/trackdb/*.cc)",
+      "Bash(make -j4)",
+      "Bash(make check *)",
+      "Bash(git stash *)",
+      "Bash(./dao/cdrdao show-toc *)",
+      "Bash(make)"
     ]
   }
 }

@@ -789,6 +789,20 @@ void TocEdit::setCdTextLanguage(int blockNr, int langCode)
     updateLevel_ |= UPD_TOC_DATA;
 }
 
+void TocEdit::setCdTextEncoding(int blockNr, Util::Encoding enc)
+{
+    if (!editable())
+        return;
+
+    if (toc_->cdTextEncoding(blockNr) == enc)
+        return;
+
+    toc_->cdTextEncoding(blockNr, enc);
+    tocDirty(true);
+
+    updateLevel_ |= UPD_TOC_DATA;
+}
+
 void TocEdit::setCatalogNumber(const char *s)
 {
     if (!editable())

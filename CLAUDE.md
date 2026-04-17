@@ -41,6 +41,19 @@ To test a single TOC file manually:
 diff - testtocs/gold/t1.showtoc
 ```
 
+### Commonly Used Dev Commands
+
+Non-destructive entry points — no CD-R required, useful when iterating on drivers or the TOC parser:
+
+```bash
+./dao/cdrdao scanbus                    # enumerate drives
+./dao/cdrdao show-toc file.toc          # parse/validate TOC
+./dao/cdrdao read-test file.toc         # verify referenced audio files are readable
+./dao/cdrdao simulate file.toc          # dry-run write (laser off)
+```
+
+Stray files at the repo root (`cd16082.toc`, `cddata16082.bin`, `denizart.toc`, `km.toc`) are ad-hoc developer fixtures, not part of the canonical test suite in `testtocs/`. Don't rely on them for regression coverage.
+
 ## Architecture
 
 The codebase layers as follows:
@@ -58,15 +71,17 @@ CLI (dao/cdrdao.cc) / GUI (gcdmaster/)
 ### Key Subsystems
 
 **SCSI Interface (`dao/ScsiIf.h`)**  
-Abstract base for all SCSI I/O. Static factory `ScsiIf::create(devicePath)` and `ScsiIf::scan()` return platform-specific instances. Implementations: `ScsiIf-linux.cc` (uses `/dev/sg*`/`/dev/sr*`), `ScsiIf-osx.cc` (IOKit), `ScsiIf-freebsd-cam.cc` (CAM), `ScsiIf-netbsd.cc`, `ScsiIf-nt.cc` (Windows/Cygwin). The `shared_ptr` ownership model was recently adopted.
+Abstract base for all SCSI I/O. Static factory `ScsiIf::create(devicePath)` and `ScsiIf::scan()` return platform-specific instances. Implementations: `ScsiIf-linux.cc` (uses `/dev/sg*`/`/dev/sr*`), `ScsiIf-osx.cc` (IOKit), `ScsiIf-freebsd-cam.cc` (CAM), `ScsiIf-netbsd.cc`, `ScsiIf-nt.cc` (Windows/Cygwin). `ScsiIf` ownership is `std::shared_ptr` — a recent rewrite (commits `f22a7d2`, `db6a78b`, `de0431e`, `1d76f49`) replaced raw-pointer ownership and reworked the Linux backend. Don't revert to raw pointers or reintroduce manual `delete` on these instances.
 
 **CD Device Drivers (`dao/CdrDriver.h`)**  
 Abstract base class for all drive operations (`readToc()`, `write()`, `simulate()`, `blank()`, `readCd()`). `GenericMMC` / `GenericMMCraw` cover most modern drives. Vendor-specific subclasses exist for older hardware (Sony, Plextor, Yamaha, Teac, CDD2600, etc.). Driver selection is by string name (e.g. `generic-mmc`) resolved at runtime.
 
+Driver options use a bitfield passed as `--driver name:0xHHHH`. Convention: high word (`0xFFFF0000`) holds **global** option bits shared across all drivers (byte-order, CD-TEXT suppression, pre-gap workarounds — see `README.md` for the list); low word (`0x0000FFFF`) holds **driver-specific** bits. When adding a new option to a driver, pick a bit in the low word and document it in `README.md`. Don't overload existing bits — the numbers look arbitrary but are stable ABI from the user's perspective.
+
 **Track/TOC Database (`trackdb/`)**  
 - `Toc` — in-memory CD table of contents; reads/writes `.toc` files; types: `CD_DA`, `CD_ROM`, `CD_ROM_XA`, `CD_I`  
 - `Track` / `TrackData` — individual track and audio/data content, supporting file types `RAW`, `WAVE`, `MP3`, `OGG`, `FLAC` and data modes `AUDIO`, `MODE1`, `MODE2`, `MODE2_FORM1/2`  
-- TOC file parser is ANTLR 1.33 generated (grammar: `trackdb/TocParser.g`); regenerate with `pccts/` tools  
+- TOC file parser is ANTLR 1.33 generated (grammar: `trackdb/TocParser.g`); regenerate with `pccts/` tools. **Never edit `trackdb/TocParser.cc` / `TocParserTokens.h` / `TocScanner.cc` directly** — edit the `.g` grammar and regenerate, or your changes will be silently overwritten on the next build.  
 - `Cue2Toc` / `Toc2Cue` handle CUE sheet interoperability
 
 **Audio Extraction (`paranoia/`)**  
