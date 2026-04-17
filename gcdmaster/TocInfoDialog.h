@@ -20,6 +20,7 @@
 #ifndef __TOC_INFO_DIALOG_H__
 #define __TOC_INFO_DIALOG_H__
 
+#include <vector>
 #include <gtkmm.h>
 #include "Toc.h"
 
@@ -36,6 +37,7 @@ public:
 
 private:
     TocEdit *tocEdit_;
+    bool importing_ = false;
 
     Gtk::Button *applyButton_;
     Gtk::Button *imdbButton_;
@@ -46,12 +48,25 @@ private:
     Gtk::DropDown tocType_;
     Toc::Type selectedTocType_;
 
+    struct TrackEntry {
+        Gtk::Label *label;
+        Gtk::Entry *title;
+        Gtk::Entry *performer;
+    };
+
     struct CdTextPage {
+        // Outer tab label (language name)
+        Gtk::Label *tabLabel;
+
+        // Per-language controls (above inner notebook)
         Gtk::DropDown *language;
         int selectedLanguage;
+        Gtk::DropDown *encoding;
+        Gtk::Label *encodingWarning;
+
+        // Disc sub-tab
         Gtk::DropDown *genre;
         int selectedGenre;
-        Gtk::Label *label;
         Gtk::Entry *title;
         Gtk::Entry *performer;
         Gtk::Entry *songwriter;
@@ -61,16 +76,30 @@ private:
         Gtk::Entry *catalog;
         Gtk::Entry *upcEan;
         Gtk::Entry *genreInfo;
+
+        // Tracks sub-tab
+        Gtk::Grid *tracksGrid;
+        Gtk::CheckButton *performerButton;
+        std::vector<TrackEntry> tracks;
     };
 
     CdTextPage cdTextPages_[8];
+    int trackEntries_ = 0;
 
     void applyAction();
     void imdbAction();
+    void fillPerformerAction(int l);
+    void activatePerformerAction(int l);
 
     void createCdTextLanguageMenu(int);
     void createCdTextGenreMenu(int n);
-    Gtk::Box* createCdTextPage(int);
+    Gtk::Widget* createCdTextPage(int);
+    Gtk::Widget* createDiscTab(int);
+    Gtk::Widget* createTracksTab(int);
+
+    void adjustTableEntries(int n);
+    void updateTabLabels();
+    void recomputeEncoding(int l);
 
     void clear();
     void clearCdText();

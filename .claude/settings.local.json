@@ -7,7 +7,11 @@
       "Bash(make check *)",
       "Bash(git stash *)",
       "Bash(./dao/cdrdao show-toc *)",
-      "Bash(make)"
+      "Bash(make)",
+      "Bash(automake --no-force gcdmaster/Makefile)",
+      "Bash(./config.status Makefile)",
+      "Bash(./config.status gcdmaster/Makefile)",
+      "Bash(make -C /home/denis/cdrdao/git)"
     ]
   }
 }
