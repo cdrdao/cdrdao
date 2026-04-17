@@ -88,9 +88,10 @@ gcdmaster_LDADD =					\
 	$(top_builddir)/trackdb/libtrackdb.a		\
 	@scsilib_libs@					\
 	@GTKMM_LIBS@					\
+	@LIBADWAITAMM_LIBS@				\
 	@LIBICONV@
 
-AM_CXXFLAGS = @GTKMM_CFLAGS@ @AO_CFLAGS@
+AM_CXXFLAGS = @GTKMM_CFLAGS@ @LIBADWAITAMM_CFLAGS@ @AO_CFLAGS@
 
 if COND_MP3
 gcdmaster_LDADD += @MAD_LIBS@

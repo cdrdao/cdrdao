@@ -12,7 +12,10 @@
       "Bash(./config.status Makefile)",
       "Bash(./config.status gcdmaster/Makefile)",
       "Bash(make -C /home/denis/cdrdao/git)",
-      "Bash(make TocInfoDialog.o)"
+      "Bash(make TocInfoDialog.o)",
+      "Bash(pkg-config --exists libadwaitamm-1.0)",
+      "Bash(brew info *)",
+      "Bash(brew search *)"
     ]
   }
 }

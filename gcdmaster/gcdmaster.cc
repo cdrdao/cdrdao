@@ -49,7 +49,7 @@ Glib::RefPtr<GCDMaster> GCDMaster::create()
 }
 
 GCDMaster::GCDMaster()
-    : Gtk::Application("org.gnome.gcdmaster", Gio::Application::Flags::HANDLES_OPEN)
+    : Adw::Application("org.gnome.gcdmaster", Gio::Application::Flags::HANDLES_OPEN)
 {
     builder_ = Gtk::Builder::create();
 }

@@ -22,10 +22,10 @@
 
 #include <vector>
 #include <gtkmm.h>
+#include <adwaitamm.h>
 #include "Toc.h"
 
 class TocEdit;
-class TextEdit;
 
 class TocInfoDialog : public Gtk::Window
 {
@@ -43,15 +43,15 @@ private:
     Gtk::Button *imdbButton_;
     Gtk::Label *tocLength_;
     Gtk::Label *nofTracks_;
-    TextEdit *catalog_;
+    Adw::EntryRow *catalog_;
 
-    Gtk::DropDown tocType_;
+    Adw::ComboRow *tocType_;
     Toc::Type selectedTocType_;
 
     struct TrackEntry {
-        Gtk::Label *label;
-        Gtk::Entry *title;
-        Gtk::Entry *performer;
+        Adw::ExpanderRow *row;
+        Adw::EntryRow *title;
+        Adw::EntryRow *performer;
     };
 
     struct CdTextPage {
@@ -62,26 +62,26 @@ private:
         Gtk::Label *tabLabel;
 
         // Per-language controls (above inner notebook)
-        Gtk::DropDown *language;
+        Adw::ComboRow *language;
         int selectedLanguage;
-        Gtk::DropDown *encoding;
+        Adw::ComboRow *encoding;
         Gtk::Label *encodingWarning;
 
         // Disc sub-tab
-        Gtk::DropDown *genre;
+        Adw::ComboRow *genre;
         int selectedGenre;
-        Gtk::Entry *title;
-        Gtk::Entry *performer;
-        Gtk::Entry *songwriter;
-        Gtk::Entry *composer;
-        Gtk::Entry *arranger;
-        Gtk::Entry *message;
-        Gtk::Entry *catalog;
-        Gtk::Entry *upcEan;
-        Gtk::Entry *genreInfo;
+        Adw::EntryRow *title;
+        Adw::EntryRow *performer;
+        Adw::EntryRow *songwriter;
+        Adw::EntryRow *composer;
+        Adw::EntryRow *arranger;
+        Adw::EntryRow *message;
+        Adw::EntryRow *catalog;
+        Adw::EntryRow *upcEan;
+        Adw::EntryRow *genreInfo;
 
         // Tracks sub-tab
-        Gtk::Grid *tracksGrid;
+        Adw::PreferencesGroup *tracksGroup;
         Gtk::CheckButton *performerButton;
         std::vector<TrackEntry> tracks;
     };

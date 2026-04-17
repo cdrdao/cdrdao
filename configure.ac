@@ -191,6 +191,8 @@ if test "$gcdmaster" = yes; then
         [echo "Building of gcdmaster disabled"; en_gcdmaster=no])
   PKG_CHECK_MODULES([GTKMM], [gtkmm-4.0], [],
         [echo "Building of gcdmaster disabled"; en_gcdmaster=no])
+  PKG_CHECK_MODULES([LIBADWAITAMM], [libadwaitamm-1.0 >= 1.4.0], [],
+        [echo "Building of gcdmaster disabled"; en_gcdmaster=no])
 fi
 
 AM_ICONV

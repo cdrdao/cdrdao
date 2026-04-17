@@ -29,17 +29,19 @@ Optional configure flags of note:
 
 ## Tests
 
-Tests live in `testtocs/`. They compare `show-toc` output against gold files in `testtocs/gold/`. Run the test suite via:
+Tests live in `testtocs/`. They compare `show-toc -v 9` output against gold files in `testtocs/gold/`. Run the test suite via the Perl harness (there is no `make check` target wired up):
 
 ```bash
-make check
+cd testtocs && ./test
 ```
 
-To test a single TOC file manually:
+The harness iterates every `*.toc` in `testtocs/` that has a matching `gold/<name>.showtoc` and prints PASS/FAIL per case. To test a single TOC file manually:
+
 ```bash
-./dao/cdrdao show-toc testtocs/t1.toc
-diff - testtocs/gold/t1.showtoc
+./dao/cdrdao show-toc -v 9 testtocs/t1.toc | diff - testtocs/gold/t1.showtoc
 ```
+
+When intentionally changing `show-toc` output, regenerate the gold file with the same `-v 9` invocation rather than editing it by hand.
 
 ### Commonly Used Dev Commands
 
@@ -81,7 +83,7 @@ Driver options use a bitfield passed as `--driver name:0xHHHH`. Convention: high
 **Track/TOC Database (`trackdb/`)**  
 - `Toc` — in-memory CD table of contents; reads/writes `.toc` files; types: `CD_DA`, `CD_ROM`, `CD_ROM_XA`, `CD_I`  
 - `Track` / `TrackData` — individual track and audio/data content, supporting file types `RAW`, `WAVE`, `MP3`, `OGG`, `FLAC` and data modes `AUDIO`, `MODE1`, `MODE2`, `MODE2_FORM1/2`  
-- TOC file parser is ANTLR 1.33 generated (grammar: `trackdb/TocParser.g`); regenerate with `pccts/` tools. **Never edit `trackdb/TocParser.cc` / `TocParserTokens.h` / `TocScanner.cc` directly** — edit the `.g` grammar and regenerate, or your changes will be silently overwritten on the next build.  
+- TOC file parser is PCCTS/ANTLR 1.33 generated (grammar: `trackdb/TocParser.g`); regenerate using the vendored tools under `pccts/`. **Never edit the generated files directly** — `trackdb/TocParser.cpp`, `TocParserGram.cpp`/`.h`, `TocParserTokens.h`, `TocLexerBase.cpp`/`.h`. Edit `TocParser.g` and regenerate, or your changes will be silently overwritten on the next build.  
 - `Cue2Toc` / `Toc2Cue` handle CUE sheet interoperability
 
 **Audio Extraction (`paranoia/`)**  

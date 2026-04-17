@@ -22,6 +22,7 @@
 
 #include <gtk/gtk.h>
 #include <gtkmm.h>
+#include <adwaitamm.h>
 
 #include <list>
 
@@ -42,7 +43,7 @@ public:
     virtual void update(unsigned long level) = 0;
 };
 
-class GCDMaster : public Gtk::Application
+class GCDMaster : public Adw::Application
 {
   public:
     static Glib::RefPtr<GCDMaster> create();
