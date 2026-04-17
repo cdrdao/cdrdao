@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(wc -l /home/denis/cdrdao/git/dao/*.cc)",
+      "Bash(wc -l /home/denis/cdrdao/git/trackdb/*.cc)"
+    ]
+  }
+}
