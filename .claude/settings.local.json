@@ -11,7 +11,8 @@
       "Bash(automake --no-force gcdmaster/Makefile)",
       "Bash(./config.status Makefile)",
       "Bash(./config.status gcdmaster/Makefile)",
-      "Bash(make -C /home/denis/cdrdao/git)"
+      "Bash(make -C /home/denis/cdrdao/git)",
+      "Bash(make TocInfoDialog.o)"
     ]
   }
 }

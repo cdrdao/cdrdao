@@ -20,6 +20,7 @@
 
 #include "TocInfoDialog.h"
 #include "config.h"
+#include <algorithm>
 #include <glibmm/i18n.h>
 #include "TocEdit.h"
 #include "CdTextItem.h"
@@ -182,14 +183,23 @@ TocInfoDialog::TocInfoDialog(Gtk::Window* parent)
 
     // CD-TEXT data
     auto frameText = Gtk::make_managed<Gtk::Frame>(" CD-TEXT ");
-    auto notebook = Gtk::make_managed<Gtk::Notebook>();
-    notebook->set_vexpand(true);
+    cdTextNotebook_ = Gtk::make_managed<Gtk::Notebook>();
+    cdTextNotebook_->set_vexpand(true);
 
-    for (int i = 0; i < 8; i++) {
-        auto pageWidget = createCdTextPage(i);
-        notebook->append_page(*pageWidget, *(cdTextPages_[i].tabLabel));
-    }
-    frameText->set_child(*notebook);
+    // Build all 8 page widgets up front, but keep them detached — they
+    // are appended to the notebook only when the corresponding slot is
+    // a "visible" language block.
+    for (int i = 0; i < 8; i++)
+        createCdTextPage(i);
+
+    addBlockButton_ = Gtk::make_managed<Gtk::Button>();
+    addBlockButton_->set_icon_name("list-add-symbolic");
+    addBlockButton_->set_tooltip_text(_("Add language block"));
+    addBlockButton_->signal_clicked().connect(
+        sigc::mem_fun(*this, &TocInfoDialog::addBlockAction));
+    cdTextNotebook_->set_action_widget(addBlockButton_, Gtk::PackType::END);
+
+    frameText->set_child(*cdTextNotebook_);
     contents->append(*frameText);
 
     auto bbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
@@ -222,7 +232,16 @@ Gtk::Widget* TocInfoDialog::createCdTextPage(int n)
 {
     auto& page = cdTextPages_[n];
 
+    // Composite tab label: language-name label + close button.
     page.tabLabel = Gtk::make_managed<Gtk::Label>(std::to_string(n));
+    auto closeButton = Gtk::make_managed<Gtk::Button>();
+    closeButton->set_icon_name("window-close-symbolic");
+    closeButton->set_has_frame(false);
+    closeButton->set_tooltip_text(_("Remove this language block"));
+    closeButton->signal_clicked().connect([this, n] { removeBlock(n); });
+    page.tabWidget = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL, 4);
+    page.tabWidget->append(*(page.tabLabel));
+    page.tabWidget->append(*closeButton);
 
     createCdTextLanguageMenu(n);
     createCdTextGenreMenu(n);
@@ -265,6 +284,16 @@ Gtk::Widget* TocInfoDialog::createCdTextPage(int n)
     inner->append_page(*createDiscTab(n), *Gtk::make_managed<Gtk::Label>(_("Disc")));
     inner->append_page(*createTracksTab(n), *Gtk::make_managed<Gtk::Label>(_("Tracks")));
     vbox->append(*inner);
+
+    page.pageWidget = vbox;
+
+    // Managed widgets die when their parent drops its last ref. Since we
+    // reparent these between the notebook and "detached" state, hold an
+    // extra reference on the outer page + tab widgets to keep them alive
+    // across remove_page/append_page cycles. (Inner children are owned
+    // by the outer widget and follow its lifetime.)
+    page.pageWidget->reference();
+    page.tabWidget->reference();
 
     return vbox;
 }
@@ -407,14 +436,150 @@ void TocInfoDialog::adjustTableEntries(int n)
 
 void TocInfoDialog::updateTabLabels()
 {
-    if (!tocEdit_)
-        return;
-    const Toc *toc = tocEdit_->toc();
-    for (int l = 0; l < 8; l++) {
-        const char *s = CdTextContainer::languageName(toc->cdTextLanguage(l));
-        if (cdTextPages_[l].tabLabel->get_label() != s)
-            cdTextPages_[l].tabLabel->set_label(s);
+    // Labels reflect the language currently selected in each visible tab.
+    for (int slot : visibleBlocks_) {
+        auto& page = cdTextPages_[slot];
+        int langIdx = page.selectedLanguage;
+        if (langIdx < 0 || langIdx >= MAX_CD_TEXT_LANGUAGE_CODES)
+            langIdx = 1;
+        const char *s =
+            CdTextContainer::languageName(CD_TEXT_LANGUAGE_CODES[langIdx].code);
+        if (page.tabLabel->get_label() != s)
+            page.tabLabel->set_label(s);
     }
+}
+
+int TocInfoDialog::findUnusedSlot() const
+{
+    for (int i = 0; i < 8; i++) {
+        if (std::find(visibleBlocks_.begin(), visibleBlocks_.end(), i) ==
+            visibleBlocks_.end())
+            return i;
+    }
+    return -1;
+}
+
+int TocInfoDialog::findUnusedLanguageIndex() const
+{
+    // CD_TEXT_LANGUAGE_CODES indices 0 and 1 are "Unknown"/"Undefined"; skip.
+    for (int i = 2; i < MAX_CD_TEXT_LANGUAGE_CODES; i++) {
+        bool used = false;
+        for (int slot : visibleBlocks_) {
+            if (cdTextPages_[slot].selectedLanguage == i) {
+                used = true;
+                break;
+            }
+        }
+        if (!used)
+            return i;
+    }
+    return 2; // all used — fall back to the first real language
+}
+
+void TocInfoDialog::resetBlockData(int slot)
+{
+    auto& page = cdTextPages_[slot];
+    bool wasImporting = importing_;
+    importing_ = true;
+
+    page.title->set_text("");
+    page.performer->set_text("");
+    page.songwriter->set_text("");
+    page.composer->set_text("");
+    page.arranger->set_text("");
+    page.message->set_text("");
+    page.catalog->set_text("");
+    page.upcEan->set_text("");
+    page.genreInfo->set_text("");
+
+    page.selectedGenre = 1; // not used
+    page.genre->set_selected(page.selectedGenre);
+
+    page.encoding->set_selected(kDefaultEncodingIndex);
+    page.encodingWarning->set_visible(false);
+
+    page.performerButton->set_active(false);
+    for (auto& t : page.tracks) {
+        t.title->set_text("");
+        t.performer->set_text("");
+        t.performer->set_sensitive(false);
+    }
+
+    importing_ = wasImporting;
+}
+
+void TocInfoDialog::updateAddButtonSensitivity()
+{
+    addBlockButton_->set_sensitive((int)visibleBlocks_.size() < 8);
+}
+
+void TocInfoDialog::syncTabs()
+{
+    // Remove every page from the notebook (without destroying the widgets),
+    // then re-append in visibleBlocks_ order.
+    while (cdTextNotebook_->get_n_pages() > 0)
+        cdTextNotebook_->remove_page(0);
+
+    for (int slot : visibleBlocks_) {
+        cdTextNotebook_->append_page(*cdTextPages_[slot].pageWidget,
+                                     *cdTextPages_[slot].tabWidget);
+    }
+    updateAddButtonSensitivity();
+    updateTabLabels();
+}
+
+void TocInfoDialog::addBlockAction()
+{
+    if ((int)visibleBlocks_.size() >= 8)
+        return;
+
+    int slot = findUnusedSlot();
+    if (slot < 0)
+        return;
+
+    auto& page = cdTextPages_[slot];
+    resetBlockData(slot);
+
+    // Make entries editable — a prior `clearCdText` may have left them
+    // read-only for unused slots.
+    page.title->set_editable(true);
+    page.performer->set_editable(true);
+    page.songwriter->set_editable(true);
+    page.composer->set_editable(true);
+    page.arranger->set_editable(true);
+    page.message->set_editable(true);
+    page.catalog->set_editable(true);
+    page.upcEan->set_editable(true);
+
+    // Pick a language that isn't already used by another visible block.
+    int langIdx = findUnusedLanguageIndex();
+    page.selectedLanguage = langIdx;
+    importing_ = true;
+    page.language->set_selected(langIdx);
+    importing_ = false;
+
+    visibleBlocks_.push_back(slot);
+
+    cdTextNotebook_->append_page(*page.pageWidget, *page.tabWidget);
+    updateAddButtonSensitivity();
+    updateTabLabels();
+
+    // Focus the newly added tab for immediate editing.
+    int pos = cdTextNotebook_->page_num(*page.pageWidget);
+    if (pos >= 0)
+        cdTextNotebook_->set_current_page(pos);
+}
+
+void TocInfoDialog::removeBlock(int slot)
+{
+    auto it = std::find(visibleBlocks_.begin(), visibleBlocks_.end(), slot);
+    if (it == visibleBlocks_.end())
+        return;
+
+    visibleBlocks_.erase(it);
+    cdTextNotebook_->remove_page(*cdTextPages_[slot].pageWidget);
+    resetBlockData(slot);
+    updateAddButtonSensitivity();
 }
 
 void TocInfoDialog::start(TocEdit *view)
@@ -440,35 +605,22 @@ void TocInfoDialog::setSelectedTocType()
 
 void TocInfoDialog::setSelectedCDTextLanguage(int block)
 {
-    int i;
-
-    if (block < 0 || block >= 8)
+    if (importing_ || block < 0 || block >= 8)
         return;
 
     int value = cdTextPages_[block].language->get_selected();
 
-    if (value <= 0) {
-        // cannot set to 'unknown' or invalid value, restore old setting
-        if (cdTextPages_[block].selectedLanguage != 0)
+    // A visible tab must pick a real language. Reject "Unknown" (0) and
+    // "Undefined" (1); restore the prior selection if either is chosen.
+    if (value <= 1) {
+        if (cdTextPages_[block].selectedLanguage > 1)
             cdTextPages_[block].language->set_selected(cdTextPages_[block].selectedLanguage);
-
         return;
     }
 
-    if (value != 1) {
-        // check if same language is already used
-        bool found = false;
-
-        for (i = 0; i < 8; i++) {
-            if (i != block && cdTextPages_[i].selectedLanguage == value) {
-                found = true;
-                break;
-            }
-        }
-
-        if (found || (block > 0 && cdTextPages_[block - 1].selectedLanguage == 1)) {
-            // reset to old value if the same language is already used or
-            // if the language of the previous block is undefined
+    // Reject duplicates — only visible blocks count.
+    for (int other : visibleBlocks_) {
+        if (other != block && cdTextPages_[other].selectedLanguage == value) {
             cdTextPages_[block].language->set_selected(cdTextPages_[block].selectedLanguage);
             return;
         }
@@ -651,9 +803,8 @@ void TocInfoDialog::update(unsigned long level)
 
 void TocInfoDialog::clearCdText()
 {
-    int l;
-
-    for (l = 0; l < 8; l++) {
+    importing_ = true;
+    for (int l = 0; l < 8; l++) {
         auto& page = cdTextPages_[l];
 
         page.title->set_text("");
@@ -692,6 +843,14 @@ void TocInfoDialog::clearCdText()
 
     // Remove any track rows as well.
     adjustTableEntries(0);
+
+    // Drop all tabs from the notebook.
+    visibleBlocks_.clear();
+    while (cdTextNotebook_->get_n_pages() > 0)
+        cdTextNotebook_->remove_page(0);
+    updateAddButtonSensitivity();
+
+    importing_ = false;
 }
 
 void TocInfoDialog::applyAction()
@@ -768,12 +927,26 @@ int TocInfoDialog::getCdTextGenreIndex(int code1, int code2)
 
 void TocInfoDialog::importCdText(const Toc *toc)
 {
-    int l;
     const CdTextItem *item;
 
     adjustTableEntries(toc->nofTracks());
 
-    for (l = 0; l < 8; l++) {
+    // Reset every slot first (clears fields and drops prior warnings).
+    for (int l = 0; l < 8; l++)
+        resetBlockData(l);
+
+    // Determine which TOC blocks have a language defined — those are the
+    // ones the user cares about. The TOC's 1:1 slot↔block mapping at
+    // import time means we can use the TOC block number as the slot
+    // number directly; the mapping may diverge later if the user
+    // deletes tabs.
+    visibleBlocks_.clear();
+    for (int l = 0; l < 8; l++) {
+        if (toc->cdTextLanguage(l) >= 0)
+            visibleBlocks_.push_back(l);
+    }
+
+    for (int l : visibleBlocks_) {
         auto& page = cdTextPages_[l];
 
         if ((item = toc->getCdTextItem(0, l, CdTextItem::PackType::TITLE)) != NULL)
@@ -866,6 +1039,9 @@ void TocInfoDialog::importCdText(const Toc *toc)
             page.tracks[i].performer->set_text(tPerf ? tPerf->getText() : "");
         }
     }
+
+    // Re-attach the right set of tabs to the notebook.
+    syncTabs();
 }
 
 void TocInfoDialog::importData(const Toc *toc)
@@ -944,7 +1120,6 @@ void TocInfoDialog::exportData(TocEdit *tocEdit)
 
 void TocInfoDialog::exportCdText(TocEdit *tocEdit)
 {
-    int l;
     const char *s;
     const Toc *toc = tocEdit->toc();
 
@@ -973,8 +1148,14 @@ void TocInfoDialog::exportCdText(TocEdit *tocEdit)
         delete newItem;
     };
 
-    for (l = 0; l < 8; l++) {
-        auto& page = cdTextPages_[l];
+    // For each tab position p, write the associated slot's data into
+    // TOC block p. This compacts the blocks starting at 0 and preserves
+    // the Red Book requirement that language-block numbers be
+    // contiguous starting at 0.
+    for (int p = 0; p < (int)visibleBlocks_.size(); p++) {
+        int slot = visibleBlocks_[p];
+        auto& page = cdTextPages_[slot];
+        int l = p;
 
         applyPack(l, CdTextItem::PackType::TITLE, page.title);
         applyPack(l, CdTextItem::PackType::PERFORMER, page.performer);
@@ -1052,6 +1233,41 @@ void TocInfoDialog::exportCdText(TocEdit *tocEdit)
         if (encIdx >= 0 && encIdx < kEncodingCount)
             tocEdit->setCdTextEncoding(l, kEncodings[encIdx]);
     }
+
+    // TOC blocks beyond the number of visible tabs are no longer in use
+    // — wipe any CD-TEXT data still hanging off them.
+    for (int l = (int)visibleBlocks_.size(); l < 8; l++)
+        clearBlockInToc(tocEdit, l);
+}
+
+void TocInfoDialog::clearBlockInToc(TocEdit *tocEdit, int blockNr)
+{
+    const Toc *toc = tocEdit->toc();
+
+    static const CdTextItem::PackType discPacks[] = {
+        CdTextItem::PackType::TITLE,       CdTextItem::PackType::PERFORMER,
+        CdTextItem::PackType::SONGWRITER,  CdTextItem::PackType::COMPOSER,
+        CdTextItem::PackType::ARRANGER,    CdTextItem::PackType::MESSAGE,
+        CdTextItem::PackType::DISK_ID,     CdTextItem::PackType::UPCEAN_ISRC,
+    };
+    for (auto t : discPacks) {
+        if (toc->getCdTextItem(0, blockNr, t))
+            tocEdit->setCdTextItem(0, t, blockNr, NULL);
+    }
+    if (toc->getCdTextItem(0, blockNr, CdTextItem::PackType::GENRE))
+        tocEdit->setCdTextGenreItem(blockNr, -1, -1, NULL);
+
+    int n = toc->nofTracks();
+    for (int i = 1; i <= n; i++) {
+        if (toc->getCdTextItem(i, blockNr, CdTextItem::PackType::TITLE))
+            tocEdit->setCdTextItem(i, CdTextItem::PackType::TITLE, blockNr, NULL);
+        if (toc->getCdTextItem(i, blockNr, CdTextItem::PackType::PERFORMER))
+            tocEdit->setCdTextItem(i, CdTextItem::PackType::PERFORMER, blockNr, NULL);
+    }
+
+    if (toc->cdTextLanguage(blockNr) != -1)
+        tocEdit->setCdTextLanguage(blockNr, -1);
+    tocEdit->setCdTextEncoding(blockNr, Util::Encoding::UNSET);
 }
 
 void TocInfoDialog::imdbAction()

@@ -55,7 +55,10 @@ private:
     };
 
     struct CdTextPage {
-        // Outer tab label (language name)
+        // Outer tab page + tab-label widgets (kept stable across tab
+        // insertions/removals — reparented when the tab is shown/hidden).
+        Gtk::Widget *pageWidget;
+        Gtk::Box *tabWidget;
         Gtk::Label *tabLabel;
 
         // Per-language controls (above inner notebook)
@@ -86,6 +89,12 @@ private:
     CdTextPage cdTextPages_[8];
     int trackEntries_ = 0;
 
+    // Notebook state: which cdTextPages_ slots are currently shown, in
+    // tab order. Slots not present are "unused" and their data is ignored.
+    Gtk::Notebook *cdTextNotebook_;
+    Gtk::Button *addBlockButton_;
+    std::vector<int> visibleBlocks_;
+
     void applyAction();
     void imdbAction();
     void fillPerformerAction(int l);
@@ -100,6 +109,16 @@ private:
     void adjustTableEntries(int n);
     void updateTabLabels();
     void recomputeEncoding(int l);
+
+    // Block add/remove
+    void addBlockAction();
+    void removeBlock(int slot);
+    int findUnusedSlot() const;
+    int findUnusedLanguageIndex() const;
+    void resetBlockData(int slot);
+    void clearBlockInToc(TocEdit *tocEdit, int blockNr);
+    void syncTabs();
+    void updateAddButtonSensitivity();
 
     void clear();
     void clearCdText();
