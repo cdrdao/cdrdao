@@ -16,8 +16,6 @@ gcdmaster_SOURCES = \
 	CddbWindow.cc		\
 	CdDevice.h		\
 	CdDevice.cc		\
-	CdTextDialog.h		\
-	CdTextDialog.cc		\
 	CdrdaoDirect.h		\
 	CdrdaoDirect.cc		\
 	ConfigManager.cc	\

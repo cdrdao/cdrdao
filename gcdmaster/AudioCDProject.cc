@@ -31,7 +31,6 @@
 #include "AudioCDProject.h"
 #include "AudioCDView.h"
 #include "AudioCDRead.h"
-#include "CdTextDialog.h"
 #include "MessageBox.h"
 #include "RecordTocDialog.h"
 #include "SoundIF.h"
@@ -72,7 +71,6 @@ AudioCDProject::AudioCDProject(BaseObjectType* cobject,
     save_action_ = add_action("save", sigc::mem_fun(*this, &AudioCDProject::saveProject));
     save_as_action_ = add_action("save-as", sigc::mem_fun(*this, &AudioCDProject::saveAsProject));
     add_action("project-info", sigc::mem_fun(*this, &AudioCDProject::projectInfo));
-    add_action("cdtext", sigc::mem_fun(*this, &AudioCDProject::cdTextDialog));
     add_action("cddb", sigc::mem_fun(*this, &AudioCDProject::cddbQuery));
     toc_read_action_ = add_action("toc-read", sigc::mem_fun(*this, &AudioCDProject::tocRead));
     cd_read_action_ = add_action("cd-read", sigc::mem_fun(*this, &AudioCDProject::CDRead));
@@ -444,16 +442,6 @@ void AudioCDProject::projectInfo()
     tocInfoDialog_->present();
 }
 
-void AudioCDProject::cdTextDialog()
-{
-    if (!cdTextDialog_)
-        cdTextDialog_ = Glib::make_refptr_for_instance<CdTextDialog>(
-            new CdTextDialog(this));
-
-    cdTextDialog_->set(tocEdit_);
-    cdTextDialog_->start();
-}
-
 void AudioCDProject::cddbQuery()
 {
     spin(true);
@@ -532,9 +520,6 @@ void AudioCDProject::update(unsigned long level)
 
     if (tocInfoDialog_)
         tocInfoDialog_->update(level);
-
-    if (cdTextDialog_)
-        cdTextDialog_->update(level);
 
     if (recordTocDialog_)
         recordTocDialog_->update(level);
