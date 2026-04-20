@@ -24,7 +24,7 @@ Optional configure flags of note:
 - `--without-posix-threads` — disable pthreads
 
 **Mandatory deps:** C++17 compiler, iconv  
-**Optional deps for gcdmaster GUI:** gtkmm-4.0, sigc++-3.0  
+**Optional deps for gcdmaster GUI:** gtkmm-4.0, libadwaitamm-1.0 (≥ 1.4.0), sigc++-3.0  
 **Optional audio deps:** libao, libvorbis, libmad (MP3), flac++, libsamplerate, lame
 
 ## Tests

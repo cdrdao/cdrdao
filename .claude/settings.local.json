@@ -15,7 +15,8 @@
       "Bash(make TocInfoDialog.o)",
       "Bash(pkg-config --exists libadwaitamm-1.0)",
       "Bash(brew info *)",
-      "Bash(brew search *)"
+      "Bash(brew search *)",
+      "Bash(make -C gcdmaster)"
     ]
   }
 }
