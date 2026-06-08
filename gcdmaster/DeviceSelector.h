@@ -22,11 +22,13 @@
 
 #include <gtk/gtk.h>
 #include <gtkmm.h>
+#include <memory>
 #include <string>
 #include <optional>
 
 class TocEdit;
 #include "CdDevice.h"
+#include "DeviceMonitor.h"
 
 class DeviceSelector : public Gtk::Frame
 {
@@ -45,7 +47,13 @@ class DeviceSelector : public Gtk::Frame
   private:
     void on_selection_changed(guint, guint);
 
+    // Invoked (on the main thread) when the DeviceMonitor reports that the
+    // set of available devices has changed.
+    void onDevicesChanged();
+
     std::optional<CdDevice::DeviceType> filterType_;
+
+    std::unique_ptr<DeviceMonitor> monitor_;
 
     class ListColumns : public Glib::Object
     {

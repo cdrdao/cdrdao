@@ -1022,6 +1022,40 @@ bool CdDevice::scan()
     return changed;
 }
 
+bool CdDevice::updateDeviceList(const std::vector<DeviceMonitor::DeviceInfo>& devices)
+{
+    bool changed = false;
+
+    // Remove devices that are no longer present.
+    for (auto it = DEVICE_LIST.begin(); it != DEVICE_LIST.end();) {
+	bool present = false;
+	for (const auto& info : devices) {
+	    if (info.node == (*it)->dev()) {
+		present = true;
+		break;
+	    }
+	}
+	if (present) {
+	    ++it;
+	} else {
+	    delete *it;
+	    it = DEVICE_LIST.erase(it);
+	    changed = true;
+	}
+    }
+
+    // Add devices that just appeared. add() is a no-op for devices already
+    // in the list, so persisting entries keep their existing object.
+    for (const auto& info : devices) {
+	if (find(info.node) == nullptr) {
+	    add(info.node, info.vendor, info.product);
+	    changed = true;
+	}
+    }
+
+    return changed;
+}
+
 void CdDevice::clear()
 {
     for (auto dev : DEVICE_LIST)

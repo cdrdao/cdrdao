@@ -16,6 +16,8 @@ gcdmaster_SOURCES = \
 	CddbWindow.cc		\
 	CdDevice.h		\
 	CdDevice.cc		\
+	DeviceMonitor.h		\
+	DeviceMonitor.cc	\
 	CdrdaoDirect.h		\
 	CdrdaoDirect.cc		\
 	ConfigManager.cc	\
@@ -75,7 +77,13 @@ EXTRA_gcdmaster_SOURCES =	\
 	SoundIF-ao.cc 		\
 	SoundIF-linux.cc 	\
 	SoundIF-none.cc 	\
-	SoundIF-solaris.cc
+	SoundIF-solaris.cc	\
+	DeviceMonitorLinux.cc	\
+	DeviceMonitorFreeBSD.cc	\
+	DeviceMonitorNetBSD.cc	\
+	DeviceMonitorOSX.cc	\
+	DeviceMonitorWindows.cc	\
+	DeviceMonitorNull.cc
 
 nodist_gcdmaster_SOURCES = resources.cc
 
@@ -83,6 +91,7 @@ BUILT_SOURCES = resources.cc resources.h
 
 gcdmaster_LDADD =					\
 	@sound_if_obj@					\
+	@device_monitor_obj@				\
 	$(top_builddir)/dao/libdao.a			\
 	$(top_builddir)/paranoia/libcdda_paranoia.a	\
 	$(top_builddir)/trackdb/libtrackdb.a		\
@@ -112,7 +121,8 @@ gcdmaster_DEPENDENCIES = \
 	$(top_builddir)/dao/libdao.a			\
 	$(top_builddir)/paranoia/libcdda_paranoia.a	\
 	$(top_builddir)/trackdb/libtrackdb.a		\
-	@sound_if_obj@
+	@sound_if_obj@					\
+	@device_monitor_obj@
 
 AM_CPPFLAGS =					\
 	-I$(srcdir)/../trackdb			\

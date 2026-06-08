@@ -24,6 +24,8 @@
 #include <string>
 #include <vector>
 
+#include "DeviceMonitor.h"
+
 class TocEdit;
 class Process;
 class ScsiIf;
@@ -141,6 +143,14 @@ class CdDevice : public sigc::trackable
     static CdDevice *add(const std::string& setting);
     static CdDevice *find(const std::string dev);
     static bool scan();
+
+    // Reconcile DEVICE_LIST with the set of devices reported by a
+    // DeviceMonitor. New devices are added, devices that have disappeared
+    // are removed; entries that persist keep their existing CdDevice
+    // object (and thus their status and any running process). Returns true
+    // if the list was modified.
+    static bool updateDeviceList(const std::vector<DeviceMonitor::DeviceInfo>& devices);
+
     static void clear();
     static int update();
 

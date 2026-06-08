@@ -254,7 +254,7 @@ dnl -lc_r is automatically done by the linker
 	      ;;
   *darwin*)
             AC_DEFINE(_P1003_1B_VISIBLE,1,"")
-            LIBS="$LIBS -framework CoreServices -framework IOKit"
+            LIBS="$LIBS -framework CoreServices -framework IOKit -framework DiskArbitration -framework CoreFoundation"
             ;;
   *-openbsd*)
             CPPFLAGS="$CPPFLAGS -I/usr/local/include"
@@ -270,6 +270,34 @@ case "$host" in
 
   *)
      sound_if_obj=SoundIF-none.o
+     ;;
+esac
+
+dnl Platform-specific device monitor for gcdmaster. Platforms without a
+dnl native backend fall back to a no-op monitor.
+case "$host" in
+  *-linux*)
+     device_monitor_obj=DeviceMonitorLinux.o
+     ;;
+
+  *-freebsd* | *-dragonfly*)
+     device_monitor_obj=DeviceMonitorFreeBSD.o
+     ;;
+
+  *-netbsd* | *-openbsd*)
+     device_monitor_obj=DeviceMonitorNetBSD.o
+     ;;
+
+  *-darwin*)
+     device_monitor_obj=DeviceMonitorOSX.o
+     ;;
+
+  *-pc-cygwin* | *mingw*)
+     device_monitor_obj=DeviceMonitorWindows.o
+     ;;
+
+  *)
+     device_monitor_obj=DeviceMonitorNull.o
      ;;
 esac
 
@@ -344,6 +372,7 @@ AC_SUBST(scsilib_libs)
 AC_SUBST(scsilib_objs)
 AC_SUBST(dao_src)
 AC_SUBST(sound_if_obj)
+AC_SUBST(device_monitor_obj)
 AC_SUBST(thread_libs)
 AC_SUBST(mydefs)
 

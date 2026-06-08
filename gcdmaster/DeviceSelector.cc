@@ -118,6 +118,21 @@ DeviceSelector::DeviceSelector(std::optional<CdDevice::DeviceType> filterType)
 	set_label(_(" Available Devices: "));
     }
 
+    // Watch for devices being plugged in or removed. The monitor scans in
+    // its own thread and notifies us on the main thread; onDevicesChanged()
+    // then refreshes the shared device list and our view.
+    monitor_ = DeviceMonitor::create();
+    monitor_->signal_changed().connect(
+        sigc::mem_fun(*this, &DeviceSelector::onDevicesChanged));
+    monitor_->start();
+}
+
+void DeviceSelector::onDevicesChanged()
+{
+    if (CdDevice::updateDeviceList(monitor_->devices())) {
+	import();
+	selectOne();
+    }
 }
 
 void DeviceSelector::on_selection_changed(guint, guint)
