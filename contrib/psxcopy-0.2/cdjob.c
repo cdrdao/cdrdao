@@ -19,6 +19,11 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <errno.h>
+#include <stdlib.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <unistd.h>
 
 #define BUF_S 1024
 #define DATA_SIGN "DATAFILE"
@@ -35,6 +40,38 @@ int is_data_track = 0, line_count = 0;
 int i, j, k, x, data_size, chr;
 int min, sec, frame, size_in_sect, rcode = 0, rem, readin;
 int audio_begin = 0, audio_end = 0, tracks = 0, prevseek = 0;
+
+static int run_command(char *const argv[])
+{
+    int status;
+    pid_t pid;
+
+    pid = fork();
+    if (pid < 0) {
+	perror("fork");
+	return -1;
+    }
+
+    if (pid == 0) {
+	execvp(argv[0], argv);
+	perror(argv[0]);
+	_exit(127);
+    }
+
+    while (waitpid(pid, &status, 0) < 0) {
+	if (errno != EINTR) {
+	    perror("waitpid");
+	    return -1;
+	}
+    }
+
+    if (WIFEXITED(status))
+	return WEXITSTATUS(status);
+    if (WIFSIGNALED(status))
+	return 128 + WTERMSIG(status);
+
+    return -1;
+}
 
 int main(int argc, char *argv[])
 {
@@ -58,17 +95,19 @@ int main(int argc, char *argv[])
 	return 4;
     }
     fclose (device);
-*/    
+*/
     /* Testing for PSX CD */
 
-    sprintf (buf, "psxdump -T -d %s", cdrom_device);
-    i=system (buf);   
-    
+    {
+	char *psxdump_args[] = { "psxdump", "-T", "-d", cdrom_device, NULL };
+	i = run_command(psxdump_args);
+    }
+
     if (i!=0) {
        fprintf(stderr, "Unable to read from %s or disk is not PSX, please check and retry.\n", cdrom_device);
        exit (1);
     }
-    
+
     /* Total bytes (about to) read */
     readin = 0;
 
@@ -152,16 +191,20 @@ int main(int argc, char *argv[])
 			    printf("bogus size info!\n");
 			    rcode = 102;
 			} else {
-                            char toshell[1024]; /* HACK!!! */
 			    size_in_sect = (((min * 60 + sec) * 75 + frame) * SECT_SIZE);
 			    track_info[1]=0x20;
 			    track_info[2]='/';
 			    track_info[3]='/';
                             fseek (inf, prevseek, SEEK_SET);
                             fputs (buf, inf);
-                                       			    
-			    sprintf (toshell, "psxdump -f %s -d %s", file_to_read, cdrom_device);
-                            system (toshell);
+	    
+			    {
+				char *psxdump_args[] = {
+				    "psxdump", "-f", file_to_read, "-d",
+				    cdrom_device, NULL
+				};
+				run_command(psxdump_args);
+			    }
 			}
 		    } else {
 			/* Silenty trash garbage */
