@@ -656,41 +656,33 @@ int Cddb::queryDb(QueryResults **results)
         log_message(-2, "CDDB: QUERY failed: %s", resp);
         err = 1;
         goto fail;
-    } else {
-        if (code[2] == 0) {
-            // found exact match
-            strcpy(respBuf, resp + 3);
+    } else if (code[1] == 0 && code[2] == 0) { // exactly one match
+	strcpy(respBuf, resp + 3);
+	if (parseQueryResult(respBuf, qcategory, qdiskId, qtitle)) {
+	    appendQueryResult(qcategory, qdiskId, qtitle, 1);
+	}
+	else {
+	    log_message(-2, "CDDB: Received invalid QUERY response: %s", resp);
+	    err = 1;
+	    goto fail;
+	}
+    } else if (code[1] == 1 && (code[2] == 0 || code[2] == 1)) { // multiple matches
+	while ((resp = readLine()) != NULL &&
+	       strcmp(resp, ".") != 0) {
+	    strcpy(respBuf, resp);
+
+	    log_message(4, "CDDB: Query data: %s", resp);
+
             if (parseQueryResult(respBuf, qcategory, qdiskId, qtitle)) {
-                appendQueryResult(qcategory, qdiskId, qtitle, 1);
+                appendQueryResult(qcategory, qdiskId, qtitle, 0);
             } else {
-                log_message(-2, "CDDB: Received invalid QUERY response: %s", resp);
+                log_message(-2, "CDDB: Received invalid QUERY data: %s", resp);
                 err = 1;
                 goto fail;
             }
-        } else if (code[2] == 1) {
-            // found inexact matches
-            while ((resp = readLine()) != NULL && strcmp(resp, ".") != 0) {
-                strcpy(respBuf, resp);
-
-                log_message(4, "CDDB: Query data: %s", resp);
-
-                if (parseQueryResult(respBuf, qcategory, qdiskId, qtitle)) {
-                    appendQueryResult(qcategory, qdiskId, qtitle, 0);
-                } else {
-                    log_message(-2, "CDDB: Received invalid QUERY data: %s", resp);
-                    err = 1;
-                    goto fail;
-                }
-            }
-
-            if (resp == NULL) {
-                log_message(-2, "CDDB: EOF while reading QUERY data.");
-                err = 1;
-                goto fail;
-            }
-        } else {
-            // found no match
         }
+    } else {
+	// fond no match
     }
 
 fail:
