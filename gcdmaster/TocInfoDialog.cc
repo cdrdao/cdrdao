@@ -950,49 +950,49 @@ void TocInfoDialog::importCdText(const Toc *toc)
         auto& page = cdTextPages_[l];
 
         if ((item = toc->getCdTextItem(0, l, CdTextItem::PackType::TITLE)) != NULL)
-            page.title->set_text((const char *)(item->data()));
+            page.title->set_text(item->getText());
         else
             page.title->set_text("");
         page.title->set_editable(true);
 
         if ((item = toc->getCdTextItem(0, l, CdTextItem::PackType::PERFORMER)) != NULL)
-            page.performer->set_text((const char *)(item->data()));
+            page.performer->set_text(item->getText());
         else
             page.performer->set_text("");
         page.performer->set_editable(true);
 
         if ((item = toc->getCdTextItem(0, l, CdTextItem::PackType::SONGWRITER)) != NULL)
-            page.songwriter->set_text((const char *)(item->data()));
+            page.songwriter->set_text(item->getText());
         else
             page.songwriter->set_text("");
         page.songwriter->set_editable(true);
 
         if ((item = toc->getCdTextItem(0, l, CdTextItem::PackType::COMPOSER)) != NULL)
-            page.composer->set_text((const char *)(item->data()));
+            page.composer->set_text(item->getText());
         else
             page.composer->set_text("");
         page.composer->set_editable(true);
 
         if ((item = toc->getCdTextItem(0, l, CdTextItem::PackType::ARRANGER)) != NULL)
-            page.arranger->set_text((const char *)(item->data()));
+            page.arranger->set_text(item->getText());
         else
             page.arranger->set_text("");
         page.arranger->set_editable(true);
 
         if ((item = toc->getCdTextItem(0, l, CdTextItem::PackType::MESSAGE)) != NULL)
-            page.message->set_text((const char *)(item->data()));
+            page.message->set_text(item->getText());
         else
             page.message->set_text("");
         page.message->set_editable(true);
 
         if ((item = toc->getCdTextItem(0, l, CdTextItem::PackType::DISK_ID)) != NULL)
-            page.catalog->set_text((const char *)(item->data()));
+            page.catalog->set_text(item->getText());
         else
             page.catalog->set_text("");
         page.catalog->set_editable(true);
 
         if ((item = toc->getCdTextItem(0, l, CdTextItem::PackType::UPCEAN_ISRC)) != NULL)
-            page.upcEan->set_text((const char *)(item->data()));
+            page.upcEan->set_text(item->getText());
         else
             page.upcEan->set_text("");
         page.upcEan->set_editable(true);

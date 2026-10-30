@@ -352,43 +352,43 @@ void TrackInfoDialog::importCdText(const Toc *toc, int trackNr)
 
     for (l = 0; l < 8; l++) {
         if ((item = toc->getCdTextItem(trackNr, l, CdTextItem::PackType::TITLE)) != NULL)
-            cdTextPages_[l].title.set_text((const char *)item->data());
+            cdTextPages_[l].title.set_text(item->getText());
         else
             cdTextPages_[l].title.set_text("");
         cdTextPages_[l].title.set_editable(true);
 
         if ((item = toc->getCdTextItem(trackNr, l, CdTextItem::PackType::PERFORMER)) != NULL)
-            cdTextPages_[l].performer.set_text((const char *)item->data());
+            cdTextPages_[l].performer.set_text(item->getText());
         else
             cdTextPages_[l].performer.set_text("");
         cdTextPages_[l].performer.set_editable(true);
 
         if ((item = toc->getCdTextItem(trackNr, l, CdTextItem::PackType::SONGWRITER)) != NULL)
-            cdTextPages_[l].songwriter.set_text((const char *)item->data());
+            cdTextPages_[l].songwriter.set_text(item->getText());
         else
             cdTextPages_[l].songwriter.set_text("");
         cdTextPages_[l].songwriter.set_editable(true);
 
         if ((item = toc->getCdTextItem(trackNr, l, CdTextItem::PackType::COMPOSER)) != NULL)
-            cdTextPages_[l].composer.set_text((const char *)item->data());
+            cdTextPages_[l].composer.set_text(item->getText());
         else
             cdTextPages_[l].composer.set_text("");
         cdTextPages_[l].composer.set_editable(true);
 
         if ((item = toc->getCdTextItem(trackNr, l, CdTextItem::PackType::ARRANGER)) != NULL)
-            cdTextPages_[l].arranger.set_text((const char *)item->data());
+            cdTextPages_[l].arranger.set_text(item->getText());
         else
             cdTextPages_[l].arranger.set_text("");
         cdTextPages_[l].arranger.set_editable(true);
 
         if ((item = toc->getCdTextItem(trackNr, l, CdTextItem::PackType::MESSAGE)) != NULL)
-            cdTextPages_[l].message.set_text((const char *)item->data());
+            cdTextPages_[l].message.set_text(item->getText());
         else
             cdTextPages_[l].message.set_text("");
         cdTextPages_[l].message.set_editable(true);
 
         if ((item = toc->getCdTextItem(trackNr, l, CdTextItem::PackType::UPCEAN_ISRC)) != NULL)
-            cdTextPages_[l].isrc.set_text((const char *)item->data());
+            cdTextPages_[l].isrc.set_text(item->getText());
         else
             cdTextPages_[l].isrc.set_text("");
         cdTextPages_[l].isrc.set_editable(true);

@@ -143,7 +143,7 @@ class CdTextItem
     // Info fields only, ignored during burn
     int trackNr_;
 
-    void updateEncoding();
+    void updateEncoding(bool reencode = false);
 };
 
 #endif

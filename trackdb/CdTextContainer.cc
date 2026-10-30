@@ -72,12 +72,22 @@ void CdTextContainer::print(int isTrack, std::ostream &out, PrintParams &params)
             }
         }
 
+        // ISO-8859-1 is the default when reading a TOC file back, so
+        // only other encodings need to be spelled out.
+        auto printEncoding = [&](int blockNr) {
+            if (!isTrack && encodings[blockNr] != Util::Encoding::UNSET &&
+                encodings[blockNr] != Util::Encoding::LATIN)
+                out << "    " << Util::encodingToString(encodings[blockNr]) << "\n";
+        };
+
         out << "  LANGUAGE " << actBlockNr << " {\n";
+        printEncoding(actBlockNr);
 
         for (const auto &item : items_) {
             if (item->blockNr() != actBlockNr) {
                 actBlockNr = item->blockNr();
                 out << "  }\n  LANGUAGE " << actBlockNr << " {\n";
+                printEncoding(actBlockNr);
             }
             out << "    ";
             item->print(out, params);
@@ -149,6 +159,14 @@ void CdTextContainer::encoding(int blockNr, Util::Encoding enc)
     assert(blockNr >= 0 && blockNr <= 7);
 
     encodings[blockNr] = enc;
+
+    if (enc == Util::Encoding::UNSET)
+        return;
+
+    for (auto &i : items_) {
+        if (i->blockNr() == blockNr)
+            i->encoding(enc);
+    }
 }
 
 void CdTextContainer::enforceEncoding(CdTextContainer *global)

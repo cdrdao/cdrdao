@@ -527,9 +527,9 @@ u8 CdTextEncoder::characterCode(Util::Encoding enctype)
     case Util::Encoding::MSJIS:
         return 0x80;
     case Util::Encoding::KOREAN:
-        return 0x82;
+        return 0x81;
     case Util::Encoding::MANDARIN:
-        return 0x83;
+        return 0x82;
     default:
         return 0; // Always default to ISO-8859-1
     }

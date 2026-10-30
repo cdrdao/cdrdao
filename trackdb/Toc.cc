@@ -944,6 +944,9 @@ int Toc::cdTextLanguage(int blockNr) const
 void Toc::cdTextEncoding(int blockNr, Util::Encoding t)
 {
     cdtext_.encoding(blockNr, t);
+
+    for (auto run = tracks_; run; run = run->next)
+        run->track->cdtext_.encoding(blockNr, t);
 }
 Util::Encoding Toc::cdTextEncoding(int blockNr) const
 {

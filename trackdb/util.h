@@ -80,7 +80,8 @@ enum class Encoding {
     UTF8
 };
 
-bool from_utf8(const std::string &input, std::vector<u8> &output, Encoding enc);
+bool from_utf8(const std::string &input, std::vector<u8> &output, Encoding enc,
+               bool transliterate = false);
 std::string to_utf8(const u8 *input, size_t input_size, Encoding enc);
 
 Encoding characterCodeToEncoding(u8);

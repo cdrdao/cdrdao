@@ -47,6 +47,7 @@ void CdTextItem::setData(const u8 *buffer, size_t buffer_len)
 void CdTextItem::setRawText(const u8 *buffer, size_t buffer_len)
 {
     setData(buffer, buffer_len);
+    u8text.clear();
     dataType_ = DataType::SBCC;
     updateEncoding();
 }
@@ -58,6 +59,7 @@ void CdTextItem::setRawText(const std::string &str)
     for (const auto c : str)
         *writer++ = c;
     *writer++ = '\0';
+    u8text.clear();
     dataType_ = DataType::SBCC;
     updateEncoding();
 }
@@ -65,6 +67,7 @@ void CdTextItem::setRawText(const std::string &str)
 void CdTextItem::setText(const char *utf8_text)
 {
     u8text = utf8_text;
+    data_.clear();
     dataType_ = DataType::SBCC;
     updateEncoding();
 }
@@ -147,8 +150,15 @@ void CdTextItem::print(std::ostream &out, PrintParams &params) const
 
 int CdTextItem::operator==(const CdTextItem &obj)
 {
-    return !(packType_ != obj.packType_ || blockNr_ != obj.blockNr_ || dataType_ != obj.dataType_ ||
-             data_ != obj.data_ || u8text != obj.u8text);
+    if (packType_ != obj.packType_ || blockNr_ != obj.blockNr_ || dataType_ != obj.dataType_)
+        return 0;
+
+    // The UTF-8 text is authoritative when both sides have it; the
+    // encoded data may not have been generated yet on one of them.
+    if (dataType_ == DataType::SBCC && !u8text.empty() && !obj.u8text.empty())
+        return u8text == obj.u8text;
+
+    return data_ == obj.data_ && u8text == obj.u8text;
 }
 
 int CdTextItem::operator!=(const CdTextItem &obj)
@@ -297,19 +307,37 @@ int CdTextItem::isBinaryPack(PackType type)
 
 void CdTextItem::encoding(Util::Encoding e)
 {
+    bool changed = (e != encoding_);
     encoding_ = e;
 
-    updateEncoding();
+    updateEncoding(changed);
 }
 
-void CdTextItem::updateEncoding()
+// Keeps the UTF-8 text and the encoded data in sync. The UTF-8 text,
+// when present, is the reference: the encoded data is (re)generated
+// from it when missing or when the encoding changed. Otherwise the
+// UTF-8 text is decoded from the raw data.
+void CdTextItem::updateEncoding(bool reencode)
 {
-    if (encoding_ != Util::Encoding::UNSET) {
-        if (u8text.empty()) {
-            u8text = Util::to_utf8(data(), dataLen(), encoding_);
-        } else if (data_.empty()) {
-            if (!Util::from_utf8(u8text, data_, encoding_))
-                log_message(-2, "CD-TEXT: Unable to encode \"%s\" into compatible format");
+    if (encoding_ == Util::Encoding::UNSET || dataType_ != DataType::SBCC)
+        return;
+
+    if (!u8text.empty() && (data_.empty() || reencode)) {
+        data_.clear();
+        if (Util::from_utf8(u8text, data_, encoding_))
+            return;
+
+        data_.clear();
+        if (Util::from_utf8(u8text, data_, encoding_, true)) {
+            log_message(-1, "CD-TEXT: \"%s\" cannot be represented exactly in %s, approximating.",
+                        u8text.c_str(), Util::encodingToString(encoding_));
+        } else {
+            log_message(-2, "CD-TEXT: Unable to encode \"%s\" into %s.", u8text.c_str(),
+                        Util::encodingToString(encoding_));
+            data_.clear();
+            data_.push_back(0);
         }
+    } else if (u8text.empty() && !data_.empty()) {
+        u8text = Util::to_utf8(data(), dataLen(), encoding_);
     }
 }
