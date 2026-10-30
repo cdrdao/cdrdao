@@ -122,6 +122,8 @@ AudioCDView::AudioCDView(AudioCDProject *project)
     sampleDisplay_->cursorMoved.connect(sigc::mem_fun(*this, &AudioCDView::cursorMovedCallback));
     sampleDisplay_->trackMarkSelected.connect(
         sigc::mem_fun(*this, &AudioCDView::trackMarkSelectedCallback));
+    sampleDisplay_->trackMarkActivated.connect(
+        sigc::hide(sigc::hide(sigc::mem_fun(*this, &AudioCDView::trackInfo))));
     sampleDisplay_->trackMarkMoved.connect(
         sigc::mem_fun(*this, &AudioCDView::trackMarkMovedCallback));
     tocEditView_->sampleViewFull();

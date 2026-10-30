@@ -553,7 +553,8 @@ void SampleDisplay::on_pressed(int n_press, double x, double y)
 		dragStopMax_ += sampleStartX_;
 	    } else {
                 auto pick = trackManager_->pickRange(ix);
-                bool toggled = (pick &&
+                // A double-click keeps the track selected instead of toggling it off.
+                bool toggled = (n_press < 2 && pick &&
                            pick->trackNr == selectedTrack_ && pick->indexNr == selectedIndex_);
                 if (toggled)
                     pick = nullptr;
@@ -564,6 +565,8 @@ void SampleDisplay::on_pressed(int n_press, double x, double y)
                     pickedTrackMarker_ = pick;
                 }
                 trackMarkSelected.emit(selectedTrack_, selectedIndex_);
+                if (pick && n_press == 2)
+                    trackMarkActivated.emit(selectedTrack_, selectedIndex_);
                 queue_draw();
             }
 	}
@@ -618,7 +621,8 @@ void SampleDisplay::on_released(int n_press, double x, double y)
                 // Not considered a drag.
                 trackManager_->select(pickedTrackMarker_);
 
-                if (selectedTrack_ == pickedTrackMarker_->trackNr &&
+                // A double-click keeps the mark selected instead of toggling it off.
+                if (n_press < 2 && selectedTrack_ == pickedTrackMarker_->trackNr &&
 		    selectedIndex_ == pickedTrackMarker_->indexNr) {
 		    selectedTrack_ = selectedIndex_ = 0;
 		} else {
@@ -626,6 +630,8 @@ void SampleDisplay::on_released(int n_press, double x, double y)
 		    selectedIndex_ = pickedTrackMarker_->indexNr;
 		}
                 trackMarkSelected.emit(selectedTrack_, selectedIndex_);
+                if (n_press == 2)
+                    trackMarkActivated.emit(selectedTrack_, selectedIndex_);
             }
             else {
                 selectedTrack_ = pickedTrackMarker_->trackNr;

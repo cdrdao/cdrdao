@@ -54,6 +54,7 @@ public:
     sigc::signal<void(unsigned long, unsigned long)> selectionSet;
     sigc::signal<void()> selectionCleared;
     sigc::signal<void(int, int)> trackMarkSelected;
+    sigc::signal<void(int, int)> trackMarkActivated;
     sigc::signal<void(const Track *, int, int, unsigned long)> trackMarkMoved;
     sigc::signal<void(unsigned long, unsigned long)> viewModified;
   

@@ -26,6 +26,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "CdTextContainer.h"
 #include "CdTextItem.h"
 #include "TextEdit.h"
 #include "Toc.h"
@@ -134,12 +135,17 @@ TrackInfoDialog::TrackInfoDialog(Gtk::Window* parent)
 
     // 3. CD-TEXT Notebook
     auto cdTextFrame = Gtk::make_managed<Gtk::Frame>(_(" CD-TEXT "));
-    auto notebook = Gtk::make_managed<Gtk::Notebook>();
-    for (int i = 0; i < 8; i++) {
+    auto cdTextBox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL);
+    for (int i = 0; i < 8; i++)
         setupCdTextPage(i);
-        notebook->append_page(cdTextPages_[i].pageBox, cdTextPages_[i].label);
-    }
-    cdTextFrame->set_child(*notebook);
+    noCdTextLabel_.set_text(_("No CD-TEXT language defined. Languages can be added in the "
+                              "CD-Text dialog."));
+    noCdTextLabel_.set_wrap(true);
+    noCdTextLabel_.set_margin(10);
+    noCdTextLabel_.set_visible(false);
+    cdTextBox->append(cdTextNotebook_);
+    cdTextBox->append(noCdTextLabel_);
+    cdTextFrame->set_child(*cdTextBox);
     contentBox_.append(*cdTextFrame);
 
     // Action Buttons
@@ -263,7 +269,7 @@ void TrackInfoDialog::update(unsigned long level, TocEditView *view)
         s += "(*)";
     set_title(s);
 
-    if (level & (UPD_TRACK_DATA | UPD_TRACK_MARK_SEL)) {
+    if (level & (UPD_TOC_DATA | UPD_TRACK_DATA | UPD_TRACK_MARK_SEL)) {
         toc = view->tocEdit()->toc();
         importData(toc, selectedTrack_);
         applyButton_.set_sensitive(view->tocEdit()->editable() ? TRUE : FALSE);
@@ -345,12 +351,37 @@ const char *TrackInfoDialog::checkString(const std::string &str)
     return s;
 }
 
+void TrackInfoDialog::syncCdTextTabs(const Toc *toc)
+{
+    std::vector<int> blocks;
+
+    for (int l = 0; l < 8; l++) {
+        if (toc->cdTextLanguage(l) >= 0)
+            blocks.push_back(l);
+    }
+
+    for (int l : blocks)
+        cdTextPages_[l].label.set_text(CdTextContainer::languageName(toc->cdTextLanguage(l)));
+
+    if (blocks != visibleBlocks_) {
+        visibleBlocks_ = blocks;
+        while (cdTextNotebook_.get_n_pages() > 0)
+            cdTextNotebook_.remove_page(0);
+        for (int l : visibleBlocks_)
+            cdTextNotebook_.append_page(cdTextPages_[l].pageBox, cdTextPages_[l].label);
+    }
+
+    cdTextNotebook_.set_visible(!visibleBlocks_.empty());
+    noCdTextLabel_.set_visible(visibleBlocks_.empty());
+}
+
 void TrackInfoDialog::importCdText(const Toc *toc, int trackNr)
 {
-    int l;
     const CdTextItem *item;
 
-    for (l = 0; l < 8; l++) {
+    syncCdTextTabs(toc);
+
+    for (int l : visibleBlocks_) {
         if ((item = toc->getCdTextItem(trackNr, l, CdTextItem::PackType::TITLE)) != NULL)
             cdTextPages_[l].title.set_text(item->getText());
         else
@@ -523,14 +554,13 @@ void TrackInfoDialog::exportData(Glib::RefPtr<TocEdit> tocEdit, int trackNr)
 
 void TrackInfoDialog::exportCdText(Glib::RefPtr<TocEdit> tocEdit, int trackNr)
 {
-    int l;
     const char *s;
     const Toc *toc = tocEdit->toc();
 
     const CdTextItem *item;
     CdTextItem *newItem;
 
-    for (l = 0; l < 8; l++) {
+    for (int l : visibleBlocks_) {
         // Title
         if ((s = checkString(cdTextPages_[l].title.get_text())) != NULL) {
             newItem = new CdTextItem(CdTextItem::PackType::TITLE, l);

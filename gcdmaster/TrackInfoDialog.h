@@ -23,6 +23,7 @@
 #include <gtk/gtk.h>
 #include <gtkmm.h>
 #include <string>
+#include <vector>
 
 class Toc;
 class TocEdit;
@@ -82,6 +83,12 @@ class TrackInfoDialog : public Gtk::Window
 
     CdTextPage cdTextPages_[8];
 
+    // CD-TEXT blocks that have a language defined, shown as notebook tabs
+    // in block order. Languages are added/removed in the CD-Text dialog.
+    Gtk::Notebook cdTextNotebook_;
+    Gtk::Label noCdTextLabel_;
+    std::vector<int> visibleBlocks_;
+
     void closeAction();
     void applyAction();
 
@@ -89,6 +96,7 @@ class TrackInfoDialog : public Gtk::Window
 
     void clear();
     void clearCdText();
+    void syncCdTextTabs(const Toc *);
 
     const char *checkString(const std::string &);
     void importCdText(const Toc *, int);
