@@ -14,6 +14,7 @@
 #include <ctype.h>
 #include <stdio.h>
 #include <string.h>
+#include <algorithm>
 #include <map>
 #include <set>
 #include <memory>
@@ -44,6 +45,13 @@ class ScsiIfOsx : public ScsiIf
     virtual void printError() override;
     virtual int timeout(int) override;
 
+    // Returns the unit serial number from INQUIRY VPD page 0x80, or from
+    // the MMC Logical Unit Serial Number feature (0x0108) for drives that
+    // don't support VPD pages. Returns an empty string if neither works.
+    std::string serialNumber();
+
+    using ScsiIf::dev_;
+    std::string path_;
     int num_ = 0;
     io_object_t object_ = 0;
     IOCFPlugInInterface **plugin_ = nullptr;
@@ -80,7 +88,10 @@ public:
     void scan();
     void delete_all();
 
-    std::map<std::string, std::shared_ptr<ScsiIf>> devmap;
+    std::shared_ptr<ScsiIfOsx> find(const std::string& dev);
+
+    // Keyed by full IOService-plane path.
+    std::map<std::string, std::shared_ptr<ScsiIfOsx>> devmap;
 };
 
 DeviceManager* DM = new DeviceManager();
@@ -88,6 +99,19 @@ DeviceManager* DM = new DeviceManager();
 void DeviceManager::delete_all()
 {
     devmap.clear();
+}
+
+std::shared_ptr<ScsiIfOsx> DeviceManager::find(const std::string& dev)
+{
+    auto it = devmap.find(dev);
+    if (it != devmap.end())
+        return it->second;
+
+    for (auto const& [path, sif] : devmap) {
+        if (sif->dev_ == dev)
+            return sif;
+    }
+    return nullptr;
 }
 
 void DeviceManager::scan()
@@ -120,6 +144,7 @@ void DeviceManager::scan()
         }
 
         auto sif = std::make_shared<ScsiIfOsx>(path);
+        sif->path_ = path;
         sif->object_ = object;
 
         SInt32 score;
@@ -157,8 +182,14 @@ void DeviceManager::scan()
             continue;
         }
 
-        log_message(0, "Scan: found device %s %s",
-                    sif->vendor().c_str(), sif->product().c_str());
+        // Use the serial number as the device name, unless it's missing
+        // or already used by another drive.
+        auto serial = sif->serialNumber();
+        if (!serial.empty() && !find(serial))
+            sif->dev_ = serial;
+
+        log_message(0, "Scan: found device %s %s (%s)",
+                    sif->vendor().c_str(), sif->product().c_str(), sif->dev_.c_str());
         scanned.insert(path);
         devmap[path] = sif;
     }
@@ -181,6 +212,53 @@ ScsiIfOsx::ScsiIfOsx(const std::string& dev)
 int ScsiIfOsx::init()
 {
     return 0;
+}
+
+// Converts a serial number field to a string. Returns an empty string
+// if it contains non-printable characters.
+static std::string serialString(const unsigned char *buf, int len)
+{
+    std::string serial;
+    for (int i = 0; i < len; i++) {
+        if (buf[i] == 0)
+            break;
+        if (!isprint(buf[i]))
+            return "";
+        serial += buf[i];
+    }
+    Util::trimSpaces(serial);
+    return serial;
+}
+
+std::string ScsiIfOsx::serialNumber()
+{
+    unsigned char result[0xfc];
+
+    // INQUIRY, Unit Serial Number VPD page
+    unsigned char inq[6] = { 0x12 /* INQUIRY */, 0x01 /* EVPD */, 0x80, 0, sizeof(result), 0 };
+    memset(result, 0, sizeof(result));
+    if (sendCmd(inq, 6, NULL, 0, result, sizeof(result), 0) == 0 && result[1] == 0x80) {
+        int len = std::min<int>(result[3], sizeof(result) - 4);
+        auto serial = serialString(result + 4, len);
+        if (!serial.empty())
+            return serial;
+    }
+
+    // GET CONFIGURATION, Logical Unit Serial Number feature (RT=2: only
+    // the requested feature)
+    unsigned char cfg[10] = { 0x46 /* GET CONFIGURATION */, 0x02, 0x01, 0x08, 0, 0, 0, 0,
+                              sizeof(result), 0 };
+    memset(result, 0, sizeof(result));
+    if (sendCmd(cfg, 10, NULL, 0, result, sizeof(result), 0) == 0) {
+        // 8-byte feature header, then the feature descriptor
+        const unsigned char *desc = result + 8;
+        if (desc[0] == 0x01 && desc[1] == 0x08) {
+            int len = std::min<int>(desc[3], sizeof(result) - 12);
+            return serialString(desc + 4, len);
+        }
+    }
+
+    return "";
 }
 
 int ScsiIfOsx::timeout(int t)
@@ -385,9 +463,19 @@ ScsiIf::ScanData *ScsiIf::scan(int *len, char *)
 
 std::shared_ptr<ScsiIf> ScsiIf::create(const std::string& dev)
 {
-    if (DM->devmap.find(dev) == DM->devmap.end()) {
-        log_message(-2, "Unknown SCSI device %s", dev.c_str()); 
+    if (!DM) {
+        DM = new DeviceManager();
+    }
+
+    // Accept either the serial number or the full IOService-plane path.
+    auto sif = DM->find(dev);
+    if (!sif) {
+        DM->scan();
+        sif = DM->find(dev);
+    }
+    if (!sif) {
+        log_message(-2, "Unknown SCSI device %s", dev.c_str());
         throw("Creating unknown SCSI device.");
     }
-    return DM->devmap[dev];
+    return sif;
 }
