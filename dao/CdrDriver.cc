@@ -2258,9 +2258,18 @@ Toc *CdrDriver::readDiskToc(int session, const char* dataFilename)
         if (!fastTocReading_) {
             // Find index increments and pre-gap of next track
             if (trackInfos[i].mode == TrackData::AUDIO) {
-                analyzeTrack(TrackData::AUDIO, i + 1, slba, elba, indexIncrements,
-                             &indexIncrementCnt, i < nofTracks - 1 ? &pregap : 0, isrcCode,
-                             &trackCtl);
+                if (analyzeTrack(TrackData::AUDIO, i + 1, slba, elba, indexIncrements,
+                                 &indexIncrementCnt, i < nofTracks - 1 ? &pregap : 0, isrcCode,
+                                 &trackCtl) != 0) {
+                    log_message(-1, "Analysis of track %d failed - pre-gap, index marks and "
+                                    "ISRC code of track may be incomplete.",
+                                i + 1);
+                }
+                if (pregap < 0 || pregap >= elba - slba) {
+                    log_message(-1, "Ignoring invalid pre-gap length %ld of track %d.", pregap,
+                                i + 2);
+                    pregap = 0;
+                }
                 if (defaultPregap != 0)
                     pregap = defaultPregap;
             }
@@ -2427,6 +2436,13 @@ long CdrDriver::findIndex(int track, int index, long trackStart, long trackEnd)
     return 0;
 }
 
+// Maximum distance in blocks between the absolute time of a Q sub-channel
+// and the position it was read from. Q sub-channels further away are bogus.
+#define MAX_Q_POSITION_DEVIATION 20
+
+// Number of identical ISRC codes that must be found before it is accepted.
+#define MIN_ISRC_MATCHES 3
+
 int CdrDriver::analyzeTrackScan(TrackData::Mode, int trackNr, long startLba, long endLba,
                                 Msf *index, int *indexCnt, long *pregap, char *isrcCode,
                                 unsigned char *ctl)
@@ -2436,10 +2452,20 @@ int CdrDriver::analyzeTrackScan(TrackData::Mode, int trackNr, long startLba, lon
     int actIndex = 1;
     long length;
     long crcErrCnt = 0;
+    long posErrCnt = 0;
     long timeCnt = 0;
     int ctlSet = 0;
     int isrcCodeFound = 0;
+    char isrcCandidate[13] = "";
+    int isrcMatches = 0;
     long trackStartLba = startLba;
+
+    auto logErrors = [&]() {
+        if (crcErrCnt != 0)
+            log_message(2, "Found %ld Q sub-channels with CRC errors.", crcErrCnt);
+        if (posErrCnt != 0)
+            log_message(2, "Ignored %ld Q sub-channels with inconsistent position.", posErrCnt);
+    };
 
     *isrcCode = 0;
 
@@ -2473,6 +2499,14 @@ int CdrDriver::analyzeTrackScan(TrackData::Mode, int trackNr, long startLba, lon
                     Msf time(chan->min(), chan->sec(), chan->frame());     // track rel time
                     Msf atime(chan->amin(), chan->asec(), chan->aframe()); // abs time
 
+                    // Some drives return Q sub-channels with valid looking fields but
+                    // zeroed or stale times; reject them (issue #85)
+                    if (labs(atime.lba() - 150 - (startLba + i)) > MAX_Q_POSITION_DEVIATION) {
+                        posErrCnt++;
+                        timeCnt++;
+                        continue;
+                    }
+
                     if (timeCnt > 74) {
                         log_message(1, "%s\r", time.str());
                         timeCnt = 0;
@@ -2502,17 +2536,29 @@ int CdrDriver::analyzeTrackScan(TrackData::Mode, int trackNr, long startLba, lon
                                 // atime starts at 02:00, so subtract it
                                 *pregap = endLba - (atime.lba() - 150);
                             }
-                            if (crcErrCnt != 0)
-                                log_message(2, "Found %ld Q sub-channels with CRC errors.",
-                                            crcErrCnt);
+                            logErrors();
 
                             return 0;
                         }
                     }
                 } else if (chan->type() == SubChannel::QMODE3) {
+                    // Q sub-channels carrying the ISRC have no time information that
+                    // could be verified, so only accept an ISRC code once it was
+                    // read several times
                     if (!isrcCodeFound && startLba > trackStartLba) {
-                        strcpy(isrcCode, chan->isrc());
-                        isrcCodeFound = 1;
+                        const char *isrc = chan->isrc();
+
+                        if (strcmp(isrc, isrcCandidate) == 0) {
+                            isrcMatches++;
+                        } else {
+                            strcpy(isrcCandidate, isrc);
+                            isrcMatches = 1;
+                        }
+
+                        if (isrcMatches >= MIN_ISRC_MATCHES) {
+                            strcpy(isrcCode, isrcCandidate);
+                            isrcCodeFound = 1;
+                        }
                     }
                 }
             } else {
@@ -2540,8 +2586,7 @@ int CdrDriver::analyzeTrackScan(TrackData::Mode, int trackNr, long startLba, lon
         startLba += n;
     }
 
-    if (crcErrCnt != 0)
-        log_message(2, "Found %ld Q sub-channels with CRC errors.", crcErrCnt);
+    logErrors();
 
     return 0;
 }

@@ -1669,10 +1669,11 @@ int GenericMMC::analyzeTrack(TrackData::Mode mode, int trackNr, long startLba, l
     }
 
     if (noScan || (options_ & OPT_MMC_READ_ISRC) != 0 ||
-        (readCapabilities_ & CDR_READ_CAP_AUDIO_PQ_HEX) != 0) {
+        (readCapabilities_ & CDR_READ_CAP_AUDIO_PW_RAW) == 0) {
         // The ISRC code is usually not usable if the PQ channel data is
-        // converted to hex numbers by the drive. Read them with the
-        // appropriate command in this case
+        // formatted by the drive: the CRC cannot be checked and some
+        // drives return garbage. Read them with the appropriate command
+        // in this case
 
         *isrcCode = 0;
         if (mode == TrackData::AUDIO)
