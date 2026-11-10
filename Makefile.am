@@ -18,9 +18,8 @@ EXTRA_DIST =		\
 	CREDITS		\
 	INSTALL		\
 	NEWS		\
-	README		\
+	README.md	\
 	README.PlexDAE	\
-	README.Win32	\
 	specs/*.in	\
 	aspi.reg	\
 	cdrdao.lsm	\

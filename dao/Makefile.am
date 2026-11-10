@@ -34,6 +34,7 @@ libdao_a_SOURCES = \
 	CDD2600Base.h		\
 	CDD2600.h		\
 	cdda_interface.h	\
+	cdrdao.h		\
 	CdrDriver.h		\
 	CdTextEncoder.h		\
 	dao.h			\
