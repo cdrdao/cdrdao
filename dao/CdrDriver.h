@@ -71,6 +71,22 @@ struct DiskInfo {
     unsigned int append : 1; // 1 if CD-R is appendable, else 0
     unsigned int cdrw : 1;   // 1 if disk is a CD-RW
 
+    // ATIP fields (CD-R/RW only, see MMC READ TOC/PMA/ATIP format 0100b)
+    int atipCdrw;           // disc type: 1 = CD-RW, 0 = CD-R
+    int atipSubType;        // disc sub-type
+    int atipRefSpeed;       // reference speed code
+    int atipWritePower;     // indicative target writing power code
+    int atipUnrestricted;   // URU bit
+    unsigned char a1[3];    // A1 values
+    unsigned char a2[3];    // A2 values
+    unsigned char a3[3];    // A3 values
+
+    // Write speeds supported by the drive for the inserted medium, in kB/s
+    // (1000 bytes/s), from GET PERFORMANCE
+    static const int MAX_WRITE_SPEEDS = 16;
+    int writeSpeedCnt;
+    int writeSpeeds[MAX_WRITE_SPEEDS];
+
     struct {
         unsigned int empty : 1;
         unsigned int append : 1;
@@ -78,6 +94,10 @@ struct DiskInfo {
         unsigned int capacity : 1;
         unsigned int manufacturerId : 1;
         unsigned int recSpeed : 1;
+        unsigned int atip : 1;
+        unsigned int a1 : 1;
+        unsigned int a2 : 1;
+        unsigned int a3 : 1;
     } valid;
 };
 
@@ -347,8 +367,12 @@ class CdrDriver
     // Prints list of all available driver ids.
     static void printDriverIds();
 
-    // returns vendor/type of CD-R medium
+    // returns vendor (and CD-R dye strategy type) of a CD-R/RW medium
     static int cdrVendor(Msf &, const char **vendor, const char **mediumType);
+
+    // convert between speed in kB/s and CD speed factor ("X")
+    static int speed2Mult(int);
+    static int mult2Speed(int);
 
     // Generic function to retrieve basic TOC data. Cannot distinguish
     // between different sessions.
@@ -416,9 +440,6 @@ class CdrDriver
 
     static unsigned char syncPattern[12];
     static unsigned char REMOTE_MSG_SYNC_[4];
-
-    static int speed2Mult(int);
-    static int mult2Speed(int);
 
     virtual int sendCmd(const unsigned char *cmd, int cmdLen, const unsigned char *dataOut,
                         int dataOutLen, unsigned char *dataIn, int dataInLen,

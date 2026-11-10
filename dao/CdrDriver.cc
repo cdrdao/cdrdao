@@ -493,6 +493,15 @@ static CDRVendorTable VENDOR_TABLE[] = {
     {97, 18, 10, 0, 0, 0, "WEALTH FAIR INVESTMENT LIMITED"},
     {97, 22, 00, 0, 0, 0, "Woongjin Media corp."},
 
+    // Additional codes borrowed from libburn
+    {97, 10, 00, 0, 0, 0, "TDK / Ritek"},
+    {97, 15, 30, 0, 0, 0, "Nan-Ya Plastics Corporation"},
+    {97, 15, 50, 0, 0, 0, "Delphi"},
+    {97, 16, 20, 0, 0, 0, "Shenzhen SG&SAST"},
+    {97, 17, 00, 0, 0, 0, "Moser Baer India Limited"},
+    {97, 17, 10, 0, 0, 0, "SKY media Manufacturing SA"},
+    {97, 18, 20, 0, 0, 0, "DDT"},
+
     {0, 0, 0, 0, 0, 0, NULL}};
 
 unsigned char CdrDriver::syncPattern[12] = {0,    0xff, 0xff, 0xff, 0xff, 0xff,

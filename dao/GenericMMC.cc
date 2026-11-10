@@ -19,6 +19,7 @@
 
 #include <config.h>
 
+#include <algorithm>
 #include <assert.h>
 #include <string.h>
 #include <time.h>
@@ -1440,9 +1441,12 @@ DiskInfo *GenericMMC::diskInfo()
     u8 cmd[10];
     unsigned long dataLen = 34;
     u8 data[34];
-    char spd;
 
     memset(&diskInfo_, 0, sizeof(DiskInfo));
+
+    // The manufacturer ID is derived from CD lead-in/ATIP time codes, which
+    // are meaningless on other media types (e.g. DVD).
+    bool cdMedium = isCdProfile(currentProfile());
 
     // perform READ DISK INFORMATION
     memset(cmd, 0, 10);
@@ -1462,8 +1466,10 @@ DiskInfo *GenericMMC::diskInfo()
             diskInfo_.empty = 1;
             diskInfo_.append = 1;
 
-            diskInfo_.manufacturerId = Msf(data[17], data[18], data[19]);
-            diskInfo_.valid.manufacturerId = 1;
+            if (cdMedium) {
+                diskInfo_.manufacturerId = Msf(data[17], data[18], data[19]);
+                diskInfo_.valid.manufacturerId = 1;
+            }
             break;
 
         case 1:
@@ -1552,20 +1558,68 @@ DiskInfo *GenericMMC::diskInfo()
     cmd[7] = 0;
     cmd[8] = dataLen; // data length
 
-    if (sendCmd(cmd, 10, NULL, 0, data, dataLen, 0) == 0) {
-        if (data[6] & 0x04) {
-            diskInfo_.valid.recSpeed = 1;
-            spd = (data[16] >> 4) & 0x07;
-            diskInfo_.recSpeedLow = spd == 1 ? 2 : 0;
+    // Bit 7 of bytes 4 and 6 is always set in a valid ATIP descriptor.
+    if (cdMedium && sendCmd(cmd, 10, NULL, 0, data, dataLen, 0) == 0 && (data[4] & 0x80) &&
+        (data[6] & 0x80)) {
+        diskInfo_.valid.atip = 1;
+        diskInfo_.atipWritePower = (data[4] >> 4) & 0x07;
+        diskInfo_.atipRefSpeed = data[4] & 0x07;
+        diskInfo_.atipUnrestricted = (data[5] >> 6) & 0x01;
+        diskInfo_.atipCdrw = (data[6] >> 6) & 0x01;
+        // MMC-1 defines a 2-bit sub-type (bits 4-3), later MMC versions
+        // extend it to bits 5-3; bit 5 was reserved (zero) before.
+        diskInfo_.atipSubType = (data[6] >> 3) & 0x07;
 
-            spd = (data[16] & 0x0f);
-            diskInfo_.recSpeedHigh = spd >= 1 && spd <= 4 ? spd * 2 : 0;
+        if (data[6] & 0x04) {
+            diskInfo_.valid.a1 = 1;
+            memcpy(diskInfo_.a1, data + 16, 3);
+        }
+        if (data[6] & 0x02) {
+            diskInfo_.valid.a2 = 1;
+            memcpy(diskInfo_.a2, data + 20, 3);
+        }
+        if (data[6] & 0x01) {
+            diskInfo_.valid.a3 = 1;
+            memcpy(diskInfo_.a3, data + 24, 3);
+        }
+
+        // Fallback recording speed from A1 (lowest/highest CLV recording
+        // speed). Only the MMC-1 code values are decoded; higher codes used
+        // by high-speed media are not standardized in MMC, and such media
+        // is expected to be handled by GET PERFORMANCE below.
+        if (diskInfo_.valid.a1) {
+            int low = (data[16] >> 4) & 0x07;
+            int high = data[16] & 0x0f;
+
+            if (low == 1 && high >= 1 && high <= 4) {
+                diskInfo_.valid.recSpeed = 1;
+                diskInfo_.recSpeedLow = 2;
+                diskInfo_.recSpeedHigh = high * 2;
+            }
         }
 
         if (data[8] >= 80 && data[8] <= 99) {
             diskInfo_.manufacturerId = Msf(data[8], data[9], data[10]);
             diskInfo_.valid.manufacturerId = 1;
         }
+    }
+
+    // Recording speeds supported by the drive for the inserted medium.
+    // Expressed as CD speed factors, so only meaningful for CD media.
+    if (cdMedium && getWriteSpeeds(diskInfo_.writeSpeeds, DiskInfo::MAX_WRITE_SPEEDS,
+                                   &diskInfo_.writeSpeedCnt) == 0 &&
+        diskInfo_.writeSpeedCnt > 0) {
+        int low = diskInfo_.writeSpeeds[0];
+        int high = low;
+
+        for (int i = 1; i < diskInfo_.writeSpeedCnt; i++) {
+            low = std::min(low, diskInfo_.writeSpeeds[i]);
+            high = std::max(high, diskInfo_.writeSpeeds[i]);
+        }
+
+        diskInfo_.valid.recSpeed = 1;
+        diskInfo_.recSpeedLow = speed2Mult(low);
+        diskInfo_.recSpeedHigh = speed2Mult(high);
     }
 
     return &diskInfo_;
@@ -1852,6 +1906,97 @@ int GenericMMC::readSubChannels(TrackData::SubChannelMode sm, long lba, long len
         *chans = scannedSubChannels_;
 
     return 0;
+}
+
+// Retrieves the current profile (MMC GET CONFIGURATION header).
+// Return: profile number, 0 if no medium/profile, -1 if the command failed
+//         (e.g. pre-MMC2 drive).
+int GenericMMC::currentProfile()
+{
+    u8 cmd[10];
+    u8 header[8];
+
+    memset(cmd, 0, 10);
+    memset(header, 0, 8);
+
+    cmd[0] = 0x46; // GET CONFIGURATION
+    cmd[1] = 0x01; // current features only
+    cmd[8] = 8;    // allocation length: header only
+
+    if (sendCmd(cmd, 10, NULL, 0, header, 8, 0) != 0)
+        return -1;
+
+    int profile = (header[6] << 8) | header[7];
+    log_message(4, "currentProfile: 0x%04x", profile);
+
+    return profile;
+}
+
+// Retrieves the write speeds supported for the inserted medium with
+// GET PERFORMANCE, type 03h (write speed descriptors). Duplicate speeds
+// (e.g. one descriptor per rotation control mode) are reported once.
+// 'speeds' receives up to 'maxSpeeds' values in kB/s, in drive order.
+// Return: 0: OK
+//         1: SCSI command failed (e.g. pre-MMC3 drive)
+int GenericMMC::getWriteSpeeds(int *speeds, int maxSpeeds, int *cnt)
+{
+    const int maxDescr = 32;
+    const int dataLen = 8 + maxDescr * 16;
+    u8 cmd[12];
+    u8 data[dataLen];
+
+    *cnt = 0;
+
+    memset(cmd, 0, 12);
+    memset(data, 0, dataLen);
+
+    cmd[0] = 0xac; // GET PERFORMANCE
+    cmd[8] = maxDescr >> 8;
+    cmd[9] = maxDescr;
+    cmd[10] = 0x03; // type: write speed descriptors
+
+    if (sendCmd(cmd, 12, NULL, 0, data, dataLen, 0) != 0)
+        return 1;
+
+    long len = (data[0] << 24) | (data[1] << 16) | (data[2] << 8) | data[3];
+    int n = (len + 4 - 8) / 16;
+
+    if (n > maxDescr)
+        n = maxDescr;
+
+    for (int i = 0; i < n; i++) {
+        const u8 *d = data + 8 + i * 16;
+        int speed = (d[12] << 24) | (d[13] << 16) | (d[14] << 8) | d[15];
+
+        log_message(4, "getWriteSpeeds: end lba %ld, read %d kB/s, write %d kB/s",
+                    (long)((d[4] << 24) | (d[5] << 16) | (d[6] << 8) | d[7]),
+                    (d[8] << 24) | (d[9] << 16) | (d[10] << 8) | d[11], speed);
+
+        if (speed <= 0 || std::find(speeds, speeds + *cnt, speed) != speeds + *cnt)
+            continue;
+
+        if (*cnt < maxSpeeds)
+            speeds[(*cnt)++] = speed;
+    }
+
+    return 0;
+}
+
+// Return: true if 'profile' is a CD profile, or if the profile is unknown
+//         (command failure or no current profile), to preserve the behavior
+//         of drives that do not support GET CONFIGURATION.
+bool GenericMMC::isCdProfile(int profile)
+{
+    switch (profile) {
+    case -1:   // GET CONFIGURATION not supported
+    case 0x00: // no current profile reported
+    case 0x08: // CD-ROM
+    case 0x09: // CD-R
+    case 0x0a: // CD-RW
+        return true;
+    default:
+        return false;
+    }
 }
 
 // Tries to retrieve configuration feature 'feature' and fills data to

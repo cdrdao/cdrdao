@@ -176,7 +176,7 @@ public:
     void showData(const Toc *toc, bool swap);
     void ejectDisc(CdrDriver *cdr, DaoCommandLine &options);
     void showCDText(CdrDriver *cdr, DaoCommandLine &options);
-    void showDiskInfo(DiskInfo *di);
+    void showDiskInfo(DiskInfo *di, int verbose);
     int showMultiSessionInfo(DiskInfo *di);
     void printCddbQuery(Toc *toc);
     int readCddb(const DaoCommandLine &opts, Toc *toc, bool showEntry = false);
