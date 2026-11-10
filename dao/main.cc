@@ -297,7 +297,7 @@ int main(int argc, char **argv)
         break;
 
     case DISK_INFO:
-        cdrdao.showDiskInfo(di);
+        cdrdao.showDiskInfo(di, options.verbose);
         break;
 
     case CDTEXT:

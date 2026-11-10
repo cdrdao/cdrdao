@@ -271,6 +271,12 @@ class GenericMMC : public CdrDriver
     virtual int getStartOfSession(long *);
     /*! \brief Still unused */
     virtual int getFeature(unsigned int feature, u8 *buf, unsigned long bufLen, int showMsg);
+    /*! \brief Returns the drive's current MMC profile, 0 if none, -1 on error */
+    int currentProfile();
+    /*! \brief True if 'profile' (from currentProfile()) may be a CD */
+    static bool isCdProfile(int profile);
+    /*! \brief Write speeds (kB/s) for the inserted medium, from GET PERFORMANCE */
+    int getWriteSpeeds(int *speeds, int maxSpeeds, int *cnt);
 
     /*! \brief Reads Media Catalog Number
 

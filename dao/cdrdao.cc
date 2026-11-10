@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <cstring>
 #include <unistd.h>
 #include <sys/types.h>
@@ -6,6 +7,7 @@
 #include <signal.h>
 #include <pwd.h>
 #include <sstream>
+#include <vector>
 #include <cassert>
 
 #include "cdrdao.h"
@@ -1175,7 +1177,7 @@ void Cdrdao::showCDText(CdrDriver *cdr, DaoCommandLine &options)
     // }
 }
 
-void Cdrdao::showDiskInfo(DiskInfo *di)
+void Cdrdao::showDiskInfo(DiskInfo *di, int verbose)
 {
     const char *s1, *s2;
 
@@ -1204,12 +1206,21 @@ void Cdrdao::showDiskInfo(DiskInfo *di)
     if (di->valid.manufacturerId) {
         if (CdrDriver::cdrVendor(di->manufacturerId, &s1, &s2)) {
             printf("%s\n", s1);
-            printf("                       %s\n", s2);
+            // The strategy type refers to the recording dye of CD-R media
+            // and does not apply to phase-change CD-RW media.
+            if (!(di->valid.cdrw && di->cdrw) && !(di->valid.atip && di->atipCdrw))
+                printf("                       %s\n", s2);
         } else {
             printf("%s: unknown vendor ID\n", di->manufacturerId.str());
         }
     } else {
         printf("n/a\n");
+    }
+
+    if (di->valid.atip) {
+        printf("Disc type (ATIP)     : %s, sub-type %d\n", di->atipCdrw ? "CD-RW" : "CD-R",
+               di->atipSubType);
+        printf("Unrestricted use     : %s\n", di->atipUnrestricted ? "yes" : "no");
     }
 
     printf("Recording Speed      : ");
@@ -1219,6 +1230,45 @@ void Cdrdao::showDiskInfo(DiskInfo *di)
         printf("n/a");
 
     printf("\n");
+
+    if (di->writeSpeedCnt > 0) {
+        std::vector<int> speeds(di->writeSpeeds, di->writeSpeeds + di->writeSpeedCnt);
+        std::sort(speeds.begin(), speeds.end());
+
+        printf("Write speeds         : ");
+        for (size_t i = 0; i < speeds.size(); i++)
+            printf("%s%dX", i ? ", " : "", CdrDriver::speed2Mult(speeds[i]));
+        printf("\n");
+    }
+
+    if (verbose >= 3 && di->valid.atip) {
+        printf("ATIP writing power   : %d (indicative target, code)\n", di->atipWritePower);
+        printf("ATIP reference speed : %d (code)\n", di->atipRefSpeed);
+
+        const struct {
+            const char *label;
+            bool valid;
+            const unsigned char *v;
+        } avals[] = {{"A1 values            : ", di->valid.a1, di->a1},
+                     {"A2 values            : ", di->valid.a2, di->a2},
+                     {"A3 values            : ", di->valid.a3, di->a3}};
+
+        for (const auto &a : avals) {
+            printf("%s", a.label);
+            if (a.valid)
+                printf("%02X %02X %02X", a.v[0], a.v[1], a.v[2]);
+            else
+                printf("n/a");
+            printf("\n");
+        }
+
+        // A1 bytes 2 and 3 as defined in MMC-1 (READ TOC/PMA/ATIP, table 77)
+        if (di->valid.a1) {
+            printf("  Power mult. factor : %d (code)\n", (di->a1[1] >> 4) & 0x07);
+            printf("  Target gamma       : %d (code)\n", (di->a1[1] >> 1) & 0x07);
+            printf("  Erase/write ratio  : %d (code)\n", (di->a1[2] >> 4) & 0x07);
+        }
+    }
 
     printf("CD-R empty           : ");
     if (di->valid.empty)
