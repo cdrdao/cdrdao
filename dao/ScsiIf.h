@@ -120,10 +120,13 @@ class ScsiIf
     virtual int inquiry();
 
     struct ScanData {
-        std::string dev;
+        std::string dev;      // name to pass to create() / --device
         std::string vendor;
         std::string product;
         std::string revision;
+        std::string id;       // if set, a name for the same device that
+                              // stays the same across runs (e.g. serial)
+        bool inUse = false;   // found, but opened by another process
     };
 
     // Scans for all SCSI devices and returns a newly allocated

@@ -10,14 +10,39 @@
  * neighbour's brother-in-law or anybody else, but rewrite them to your taste.
  */
 
+/*
+ * Device naming
+ *
+ * macOS has no short device node for optical drives, so each drive found
+ * by scan() gets a small number ("1", "2", ...), the same 1-based scheme
+ * 'drutil list' uses. Numbers are handed out in the order the drives were
+ * attached (IORegistry entry ID); a drive keeps its number for the life of
+ * the process, and a newly attached drive gets the lowest free number.
+ *
+ * Numbers can change between runs when drives come and go, so a drive can
+ * also be named by its unit serial number, its full IOService-plane path,
+ * or the BSD node of the inserted disc ("/dev/disk4"). ScanData::id holds
+ * the serial number (or the path when there is none) for callers that need
+ * a name that stays the same, such as gcdmaster's saved settings.
+ *
+ * Drives are not held open between commands. scan() only opens a drive
+ * briefly to read its serial number; it gets exclusive access when a
+ * command first uses it (init() or sendCmd()). A drive that cannot be
+ * opened, typically because a disc in it is mounted, is still listed and
+ * flagged as in use.
+ */
+
 /* standard includes */
 #include <ctype.h>
 #include <stdio.h>
 #include <string.h>
 #include <algorithm>
+#include <atomic>
 #include <map>
-#include <set>
 #include <memory>
+#include <mutex>
+#include <set>
+#include <vector>
 
 /* cdrdao specific includes and prototype */
 #include "ScsiIf.h"
@@ -31,6 +56,7 @@
 #include <IOKit/scsi/SCSICmds_INQUIRY_Definitions.h>
 #include <IOKit/scsi/SCSICommandOperationCodes.h>
 #include <IOKit/scsi/SCSITaskLib.h>
+#include <IOKit/storage/IOStorageDeviceCharacteristics.h>
 
 
 class ScsiIfOsx : public ScsiIf
@@ -45,19 +71,52 @@ class ScsiIfOsx : public ScsiIf
     virtual void printError() override;
     virtual int timeout(int) override;
 
+    // Opens the drive with exclusive access and keeps it open until the
+    // object is destroyed. Returns 0 on success.
+    int acquire();
+
+    // Opens the drive briefly to update the in-use flag and read the
+    // serial number. Does nothing if the drive is already acquired.
+    void probe();
+
     // Returns the unit serial number from INQUIRY VPD page 0x80, or from
     // the MMC Logical Unit Serial Number feature (0x0108) for drives that
     // don't support VPD pages. Returns an empty string if neither works.
     std::string serialNumber();
 
+    // Fills vendor, product and revision from the IORegistry, which works
+    // without opening the drive.
+    void readCharacteristics();
+
+    // BSD name of the disc in the drive ("disk4"), or empty if none.
+    std::string mediaBsdName() const;
+
     using ScsiIf::dev_;
     std::string path_;
+    std::string serial_;
     int num_ = 0;
+    uint64_t entryId_ = 0;
     io_object_t object_ = 0;
+    std::atomic<bool> inUse_{false};
+
+  private:
+    int open();
+    void close();
+
     IOCFPlugInInterface **plugin_ = nullptr;
     MMCDeviceInterface **mmc_ = nullptr;
     SCSITaskDeviceInterface **scsi_ = nullptr;
     bool exclusive_ = false;
+
+    // Set once acquire() succeeds; the drive then stays open.
+    std::atomic<bool> held_{false};
+    // True while probe() has the drive open, so that its own commands
+    // don't try to acquire it.
+    bool probing_ = false;
+    // Guards open/close. Recursive because probe() and acquire() hold it
+    // while sending commands, and sendCmd() takes it too.
+    std::recursive_mutex mutex_;
+
     long timeout_ms_ = 10 * 1000;
     std::string error_;
     SCSIServiceResponse response_;
@@ -67,17 +126,149 @@ class ScsiIfOsx : public ScsiIf
 
 ScsiIfOsx::~ScsiIfOsx()
 {
+    close();
+    if (object_)
+        IOObjectRelease(object_);
+}
+
+int ScsiIfOsx::open()
+{
+    if (scsi_)
+        return 0;
+
+    SInt32 score;
+    if (IOCreatePlugInInterfaceForService(object_, kIOMMCDeviceUserClientTypeID,
+                                          kIOCFPlugInInterfaceID, &plugin_,
+                                          &score) != kIOReturnSuccess ||
+        !plugin_) {
+        error_ = "cannot create plugin interface";
+        close();
+        return 1;
+    }
+    (*plugin_)->QueryInterface(plugin_, CFUUIDGetUUIDBytes(kIOMMCDeviceInterfaceID),
+                               (LPVOID *)&mmc_);
+    if (!mmc_) {
+        error_ = "no MMC interface";
+        close();
+        return 1;
+    }
+    scsi_ = (*mmc_)->GetSCSITaskDeviceInterface(mmc_);
+    if (!scsi_) {
+        error_ = "no SCSI task interface";
+        close();
+        return 1;
+    }
+    if ((*scsi_)->ObtainExclusiveAccess(scsi_) != kIOReturnSuccess) {
+        error_ = "device is in use";
+        close();
+        return 1;
+    }
+    exclusive_ = true;
+    return 0;
+}
+
+void ScsiIfOsx::close()
+{
     if (scsi_) {
         if (exclusive_)
             (*scsi_)->ReleaseExclusiveAccess(scsi_);
         (*scsi_)->Release(scsi_);
+        scsi_ = nullptr;
     }
-    if (mmc_)
+    exclusive_ = false;
+    if (mmc_) {
         (*mmc_)->Release(mmc_);
-    if (plugin_)
+        mmc_ = nullptr;
+    }
+    if (plugin_) {
         IODestroyPlugInInterface(plugin_);
-    if (object_)
-        IOObjectRelease(object_);
+        plugin_ = nullptr;
+    }
+}
+
+int ScsiIfOsx::acquire()
+{
+    std::lock_guard<std::recursive_mutex> lock(mutex_);
+
+    if (held_)
+        return 0;
+    if (open() != 0) {
+        inUse_ = true;
+        return 1;
+    }
+    inUse_ = false;
+    held_ = true;
+    return 0;
+}
+
+void ScsiIfOsx::probe()
+{
+    std::lock_guard<std::recursive_mutex> lock(mutex_);
+
+    if (held_)
+        return;
+    if (open() != 0) {
+        inUse_ = true;
+        return;
+    }
+    inUse_ = false;
+
+    probing_ = true;
+    if (serial_.empty())
+        serial_ = serialNumber();
+    if (vendor_.empty() && product_.empty())
+        inquiry();
+    probing_ = false;
+
+    close();
+}
+
+// Returns a string value of a CF dictionary, trimmed, or "" if absent.
+static std::string dictString(CFDictionaryRef dict, CFStringRef key)
+{
+    CFTypeRef value = CFDictionaryGetValue(dict, key);
+    if (!value || CFGetTypeID(value) != CFStringGetTypeID())
+        return "";
+
+    char buf[256];
+    if (!CFStringGetCString((CFStringRef)value, buf, sizeof(buf), kCFStringEncodingUTF8))
+        return "";
+    std::string s(buf);
+    Util::trimSpaces(s);
+    return s;
+}
+
+void ScsiIfOsx::readCharacteristics()
+{
+    CFTypeRef prop = IORegistryEntryCreateCFProperty(
+        object_, CFSTR(kIOPropertyDeviceCharacteristicsKey), kCFAllocatorDefault, 0);
+    if (!prop)
+        return;
+    if (CFGetTypeID(prop) == CFDictionaryGetTypeID()) {
+        auto dict = (CFDictionaryRef)prop;
+        vendor_ = dictString(dict, CFSTR(kIOPropertyVendorNameKey));
+        product_ = dictString(dict, CFSTR(kIOPropertyProductNameKey));
+        revision_ = dictString(dict, CFSTR(kIOPropertyProductRevisionLevelKey));
+    }
+    CFRelease(prop);
+}
+
+std::string ScsiIfOsx::mediaBsdName() const
+{
+    // The whole-disc media object is the first BSD node below the drive.
+    CFTypeRef prop = IORegistryEntrySearchCFProperty(object_, kIOServicePlane, CFSTR("BSD Name"),
+                                                     kCFAllocatorDefault,
+                                                     kIORegistryIterateRecursively);
+    if (!prop)
+        return "";
+    std::string name;
+    if (CFGetTypeID(prop) == CFStringGetTypeID()) {
+        char buf[64];
+        if (CFStringGetCString((CFStringRef)prop, buf, sizeof(buf), kCFStringEncodingUTF8))
+            name = buf;
+    }
+    CFRelease(prop);
+    return name;
 }
 
 class DeviceManager
@@ -86,9 +277,14 @@ public:
     DeviceManager() {};
 
     void scan();
-    void delete_all();
 
     std::shared_ptr<ScsiIfOsx> find(const std::string& dev);
+
+    // Drives sorted by number.
+    std::vector<std::shared_ptr<ScsiIfOsx>> sorted() const;
+
+    // The serial number if no other drive has the same one, else "".
+    std::string uniqueSerial(const ScsiIfOsx& sif) const;
 
     // Keyed by full IOService-plane path.
     std::map<std::string, std::shared_ptr<ScsiIfOsx>> devmap;
@@ -96,9 +292,29 @@ public:
 
 DeviceManager* DM = new DeviceManager();
 
-void DeviceManager::delete_all()
+// Serializes access to DM: gcdmaster scans from its device monitor thread
+// while the main thread may be creating interfaces.
+static std::mutex DMmutex;
+
+std::string DeviceManager::uniqueSerial(const ScsiIfOsx& sif) const
 {
-    devmap.clear();
+    if (sif.serial_.empty())
+        return "";
+    for (auto const& [path, other] : devmap) {
+        if (other.get() != &sif && other->serial_ == sif.serial_)
+            return "";
+    }
+    return sif.serial_;
+}
+
+std::vector<std::shared_ptr<ScsiIfOsx>> DeviceManager::sorted() const
+{
+    std::vector<std::shared_ptr<ScsiIfOsx>> list;
+    for (auto const& [path, sif] : devmap)
+        list.push_back(sif);
+    std::sort(list.begin(), list.end(),
+              [](const auto& a, const auto& b) { return a->num_ < b->num_; });
+    return list;
 }
 
 std::shared_ptr<ScsiIfOsx> DeviceManager::find(const std::string& dev)
@@ -110,96 +326,119 @@ std::shared_ptr<ScsiIfOsx> DeviceManager::find(const std::string& dev)
     for (auto const& [path, sif] : devmap) {
         if (sif->dev_ == dev)
             return sif;
+        if (!sif->serial_.empty() && uniqueSerial(*sif) == dev)
+            return sif;
     }
-    return nullptr;
+
+    // Accept a BSD node name ("/dev/disk4", as reported by Disk
+    // Arbitration) by walking up the IOService plane from the media
+    // object until we reach one of our authoring devices.
+    std::string bsd = dev;
+    if (bsd.rfind("/dev/", 0) == 0)
+        bsd = bsd.substr(5);
+    if (bsd.rfind("rdisk", 0) == 0)
+        bsd = bsd.substr(1);
+    if (bsd.rfind("disk", 0) != 0)
+        return nullptr;
+
+    io_registry_entry_t entry = IOServiceGetMatchingService(
+        kIOMainPortDefault, IOBSDNameMatching(kIOMainPortDefault, 0, bsd.c_str()));
+    std::shared_ptr<ScsiIfOsx> found;
+    while (entry && !found) {
+        io_string_t path;
+        if (IORegistryEntryGetPath(entry, kIOServicePlane, path) == KERN_SUCCESS) {
+            auto it = devmap.find(path);
+            if (it != devmap.end())
+                found = it->second;
+        }
+        io_registry_entry_t parent = 0;
+        if (IORegistryEntryGetParentEntry(entry, kIOServicePlane, &parent) != KERN_SUCCESS)
+            parent = 0;
+        IOObjectRelease(entry);
+        entry = parent;
+    }
+    if (entry)
+        IOObjectRelease(entry);
+    return found;
 }
 
 void DeviceManager::scan()
 {
-    std::set<std::string> scanned;
+    struct Found {
+        uint64_t entryId;
+        std::string path;
+        io_object_t object;
+    };
+    std::vector<Found> found;
 
-    auto dict = CFDictionaryCreateMutable(kCFAllocatorDefault, 0, NULL, NULL);
-    auto sub = CFDictionaryCreateMutable(kCFAllocatorDefault, 0, NULL, NULL);
+    auto dict = CFDictionaryCreateMutable(kCFAllocatorDefault, 0, &kCFTypeDictionaryKeyCallBacks,
+                                          &kCFTypeDictionaryValueCallBacks);
+    auto sub = CFDictionaryCreateMutable(kCFAllocatorDefault, 0, &kCFTypeDictionaryKeyCallBacks,
+                                         &kCFTypeDictionaryValueCallBacks);
     CFDictionarySetValue(sub, CFSTR(kIOPropertySCSITaskDeviceCategory),
                          CFSTR(kIOPropertySCSITaskAuthoringDevice));
     CFDictionarySetValue(dict, CFSTR(kIOPropertyMatchKey), sub);
+    CFRelease(sub);
 
+    // Consumes dict.
     io_iterator_t iterator = 0;
-    IOServiceGetMatchingServices(kIOMainPortDefault, dict, &iterator);
-    if (!iterator) {
-        delete_all();
-        return;
-    }
-    while (auto object = IOIteratorNext(iterator)) {
-
-        io_string_t path;
-        
-        if (IORegistryEntryGetPath(object, kIOServicePlane, path) != noErr) {
-            continue;
+    if (IOServiceGetMatchingServices(kIOMainPortDefault, dict, &iterator) == KERN_SUCCESS &&
+        iterator) {
+        while (io_object_t object = IOIteratorNext(iterator)) {
+            io_string_t path;
+            uint64_t entryId = 0;
+            if (IORegistryEntryGetPath(object, kIOServicePlane, path) != KERN_SUCCESS) {
+                IOObjectRelease(object);
+                continue;
+            }
+            IORegistryEntryGetRegistryEntryID(object, &entryId);
+            found.push_back({entryId, path, object});
         }
-        // Check if we already have this device
-        if (devmap.find(path) != devmap.end()) {
-            scanned.insert(path);
-            continue;
-        }
-
-        auto sif = std::make_shared<ScsiIfOsx>(path);
-        sif->path_ = path;
-        sif->object_ = object;
-
-        SInt32 score;
-        if (IOCreatePlugInInterfaceForService(object, kIOMMCDeviceUserClientTypeID,
-                                              kIOCFPlugInInterfaceID,
-                                              &(sif->plugin_), &score) != noErr) {
-            log_message(-2, "scan: IOCreatePlugInInterfaceForService failed");
-            continue;
-        }
-        if (!sif->plugin_) {
-            log_message(-2, "scan: no plugin");
-            continue;
-        }
-        auto herr = (*(sif->plugin_))->
-            QueryInterface(sif->plugin_, CFUUIDGetUUIDBytes(kIOMMCDeviceInterfaceID),
-                           (LPVOID *)&(sif->mmc_));
-        if (!sif->mmc_) {
-            log_message(-2, "scan: no mmc");
-            continue;
-        }
-        sif->scsi_ = (*(sif->mmc_))->GetSCSITaskDeviceInterface(sif->mmc_);
-        if (!sif->scsi_) {
-            log_message(-2, "scan: no scsi");
-            continue;
-        }
-        if ((*(sif->scsi_))->ObtainExclusiveAccess(sif->scsi_) != noErr) {
-            log_message(-2, "Device already in use, please use diskutil "
-                        "to unmount the disc first");
-            continue;
-        }
-        sif->exclusive_ = true;
-
-        if (sif->inquiry() != 0) {
-            log_message(-2, "scan: inq failed");
-            continue;
-        }
-
-        // Use the serial number as the device name, unless it's missing
-        // or already used by another drive.
-        auto serial = sif->serialNumber();
-        if (!serial.empty() && !find(serial))
-            sif->dev_ = serial;
-
-        log_message(0, "Scan: found device %s %s (%s)",
-                    sif->vendor().c_str(), sif->product().c_str(), sif->dev_.c_str());
-        scanned.insert(path);
-        devmap[path] = sif;
+        IOObjectRelease(iterator);
     }
 
-    // Remove devices that are no longer there.
+    // Forget drives that are gone, so their numbers become free.
+    std::set<std::string> present;
+    for (auto const& f : found)
+        present.insert(f.path);
     for (auto it = devmap.begin(); it != devmap.end();) {
-        if (scanned.count(it->first) == 0)
+        if (present.count(it->first) == 0)
             it = devmap.erase(it);
         else
             it++;
+    }
+
+    // Number new drives in attach order.
+    std::sort(found.begin(), found.end(),
+              [](const Found& a, const Found& b) { return a.entryId < b.entryId; });
+
+    for (auto const& f : found) {
+        auto it = devmap.find(f.path);
+        if (it != devmap.end()) {
+            IOObjectRelease(f.object);
+            it->second->probe();
+            continue;
+        }
+
+        std::set<int> used;
+        for (auto const& [path, sif] : devmap)
+            used.insert(sif->num_);
+        int num = 1;
+        while (used.count(num))
+            num++;
+
+        auto sif = std::make_shared<ScsiIfOsx>(std::to_string(num));
+        sif->num_ = num;
+        sif->path_ = f.path;
+        sif->entryId_ = f.entryId;
+        sif->object_ = f.object;
+        sif->readCharacteristics();
+        sif->probe();
+        devmap[f.path] = sif;
+
+        log_message(3, "Scan: found device %d: %s %s%s (%s)", num, sif->vendor().c_str(),
+                    sif->product().c_str(), sif->inUse_ ? " [in use]" : "",
+                    sif->serial_.empty() ? f.path.c_str() : sif->serial_.c_str());
     }
 }
 
@@ -211,6 +450,20 @@ ScsiIfOsx::ScsiIfOsx(const std::string& dev)
 
 int ScsiIfOsx::init()
 {
+    if (acquire() != 0) {
+        log_message(-2, "Cannot open device %s (%s %s): %s.", dev_.c_str(), vendor_.c_str(),
+                    product_.c_str(), error_.c_str());
+        auto bsd = mediaBsdName();
+        if (!bsd.empty())
+            log_message(-2, "If the disc is mounted, unmount it first with "
+                            "'diskutil unmountDisk %s'.",
+                        bsd.c_str());
+        return 1;
+    }
+
+    if (vendor_.empty() && product_.empty() && inquiry() != 0)
+        return 2;
+
     return 0;
 }
 
@@ -271,7 +524,7 @@ int ScsiIfOsx::timeout(int t)
 int ScsiIfOsx::sendCmd(const unsigned char *cmd, int cmdLen, const unsigned char *dataOut,
                        int dataOutLen, unsigned char *dataIn, int dataInLen, int showMessage)
 {
-    SCSITaskInterface **task;
+    SCSITaskInterface **task = nullptr;
     IOVirtualRange range;
     IOReturn ret;
     UInt64 len;
@@ -285,6 +538,16 @@ int ScsiIfOsx::sendCmd(const unsigned char *cmd, int cmdLen, const unsigned char
         if (task)
             (*task)->Release(task);
     };
+
+    // Open the drive on first use. Waits for a probe() running on another
+    // thread to finish; probe()'s own commands skip this.
+    if (!held_) {
+        std::lock_guard<std::recursive_mutex> lock(mutex_);
+        if (!held_ && !probing_ && acquire() != 0) {
+            ERROR(error_);
+            return 1;
+        }
+    }
 
     task = (*scsi_)->CreateSCSITask(scsi_);
     if (!task) {
@@ -434,28 +697,31 @@ void ScsiIfOsx::printError()
         log_message(-2, s);
 }
 
-#define MAX_SCAN 10
-
 ScsiIf::ScanData *ScsiIf::scan(int *len, char *)
 {
+    std::lock_guard<std::mutex> lock(DMmutex);
+
     if (!DM) {
         DM = new DeviceManager();
     }
 
     DM->scan();
 
-    *len = DM->devmap.size();
+    auto list = DM->sorted();
+    *len = list.size();
     auto scanData = new ScanData[*len];
 
-    log_message(0, "Scan: %d devices found", *len);
-    
+    log_message(3, "Scan: %d devices found", *len);
+
     int i = 0;
-    for (auto const& [key, val] : DM->devmap)
-    {
-        scanData[i].dev = val->dev_;
-        scanData[i].vendor = val->vendor_;
-        scanData[i].product = val->product_;
-        scanData[i].revision = val->revision_;
+    for (auto const& sif : list) {
+        scanData[i].dev = sif->dev_;
+        scanData[i].vendor = sif->vendor_;
+        scanData[i].product = sif->product_;
+        scanData[i].revision = sif->revision_;
+        auto serial = DM->uniqueSerial(*sif);
+        scanData[i].id = serial.empty() ? sif->path_ : serial;
+        scanData[i].inUse = sif->inUse_;
         i++;
     }
     return scanData;
@@ -463,11 +729,14 @@ ScsiIf::ScanData *ScsiIf::scan(int *len, char *)
 
 std::shared_ptr<ScsiIf> ScsiIf::create(const std::string& dev)
 {
+    std::lock_guard<std::mutex> lock(DMmutex);
+
     if (!DM) {
         DM = new DeviceManager();
     }
 
-    // Accept either the serial number or the full IOService-plane path.
+    // Accept the drive number, the serial number, the full IOService-plane
+    // path, or the BSD node name of the inserted media.
     auto sif = DM->find(dev);
     if (!sif) {
         DM->scan();
@@ -475,7 +744,7 @@ std::shared_ptr<ScsiIf> ScsiIf::create(const std::string& dev)
     }
     if (!sif) {
         log_message(-2, "Unknown SCSI device %s", dev.c_str());
-        throw("Creating unknown SCSI device.");
+        return nullptr;
     }
     return sif;
 }

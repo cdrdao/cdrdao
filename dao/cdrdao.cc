@@ -1484,10 +1484,18 @@ void Cdrdao::scanBus()
     ScsiIf::ScanData *sdata = ScsiIf::scan(&len);
 
     if (sdata) {
+        bool anyInUse = false;
         for (i = 0; i < len; i++) {
-            log_message(0, "%s : %s, %s, %s", sdata[i].dev.c_str(), sdata[i].vendor.c_str(),
-                        sdata[i].product.c_str(), sdata[i].revision.c_str());
+            log_message(0, "%s : %s, %s, %s%s", sdata[i].dev.c_str(), sdata[i].vendor.c_str(),
+                        sdata[i].product.c_str(), sdata[i].revision.c_str(),
+                        sdata[i].inUse ? "  (in use)" : "");
+            if (!sdata[i].id.empty() && sdata[i].id != sdata[i].dev)
+                log_message(3, "    also: %s", sdata[i].id.c_str());
+            anyInUse = anyInUse || sdata[i].inUse;
         }
+        if (anyInUse)
+            log_message(0, "Devices marked 'in use' are held by another process, e.g. because "
+                           "a disc in them is mounted.");
         delete[] sdata;
     }
 
@@ -1951,10 +1959,12 @@ std::string Cdrdao::getDefaultDevice(DaoDeviceType req)
 
     if (sdata) {
         for (i = 0; i < len; i++) {
+            if (sdata[i].inUse)
+                continue;
 
             auto testif = ScsiIf::create(sdata[i].dev);
 
-            if (testif->init() != 0) {
+            if (!testif || testif->init() != 0) {
                 continue;
             }
             cd_page_2a *p2a;
@@ -1993,10 +2003,15 @@ CdrDriver *Cdrdao::setupDevice(DaoCommand cmd, const std::string &scsiDevice,
 
     auto scsiIf = ScsiIf::create(scsiDevice);
 
+    if (!scsiIf) {
+        log_message(-2, "Cannot open SCSI device '%s'.", scsiDevice.c_str());
+        return NULL;
+    }
+
     switch (scsiIf->init()) {
     case 1:
-        log_message(-2, "Please use option '--device device'"
-                        ", e.g. --device /dev/cdrom");
+        log_message(-2, "Run 'cdrdao scanbus' to list devices, and select one with "
+                        "'--device device'.");
         return NULL;
         break;
     case 2:

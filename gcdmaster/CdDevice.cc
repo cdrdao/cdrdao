@@ -998,11 +998,14 @@ bool CdDevice::scan()
 
     log_message(0, "  scan() returned %d devices", len);
 
+    // Prefer the stable name, since device names are saved in settings.
+    auto name = [&](int i) { return sdata[i].id.empty() ? sdata[i].dev : sdata[i].id; };
+
     if (len != DEVICE_LIST.size()) {
 	changed = true;
     } else {
 	for (int i = 0; i < len; i++)
-	    if (DEVICE_LIST[i]->dev() != sdata[i].dev) {
+	    if (DEVICE_LIST[i]->dev() != name(i)) {
 		changed = true;
 		break;
 	    }
@@ -1012,12 +1015,10 @@ bool CdDevice::scan()
         log_message(0, "  scan() status change");
 	CdDevice::clear();
 
-	if (sdata) {
-	    for (i = 0; i < len; i++)
-		CdDevice::add(sdata[i].dev.c_str(), sdata[i].vendor, sdata[i].product);
-	    delete[] sdata;
-	}
+	for (i = 0; sdata && i < len; i++)
+	    CdDevice::add(name(i).c_str(), sdata[i].vendor, sdata[i].product);
     }
+    delete[] sdata;
 
     return changed;
 }

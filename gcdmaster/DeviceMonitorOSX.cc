@@ -18,26 +18,31 @@
  */
 
 // \file DeviceMonitorOSX.cc
-//   \brief macOS CD-ROM device monitor, built on Disk Arbitration.
+//   \brief macOS CD-ROM device monitor, built on IOKit notifications.
 //
-// A DASession is scheduled on the worker thread's run loop and disk
-// appeared/disappeared callbacks maintain the set of optical devices.
-// Disk Arbitration reports *media* rather than empty drives, so a CD-ROM
-// drive shows up once a disc is inserted and disappears when it is
-// ejected -- which is exactly the plug/unplug semantics the GUI needs.
+// The monitor watches for the drives themselves (SCSI authoring devices,
+// the same IOKit match ScsiIf-osx uses), not for the media in them, so a
+// drive stays listed whether or not it holds a disc. Whenever a drive is
+// attached or detached, the device list is rebuilt with ScsiIf::scan().
+// Drives are reported by their stable name (serial number, or IOService
+// path), the same name CdDevice::scan() uses.
 //
-// Only whole optical media that expose vendor/model identification are
-// reported. The callbacks all run on the worker thread, so the device map
-// needs no extra locking; publish() handles the thread-safe hand-off to
-// the main GTK thread.
+// A drive whose disc is mounted is listed but flagged as in use, and its
+// serial number can't be read until it is free. A Disk Arbitration
+// "disappeared" callback triggers a rescan so that is picked up once the
+// disc goes away.
+//
+// All callbacks run on the worker thread's run loop; publish() handles
+// the thread-safe hand-off to the main GTK thread.
 
 #include "DeviceMonitor.h"
 
-#include <cstring>
-#include <map>
-
 #include <CoreFoundation/CoreFoundation.h>
 #include <DiskArbitration/DiskArbitration.h>
+#include <IOKit/IOKitLib.h>
+#include <IOKit/scsi/SCSITaskLib.h>
+
+#include "ScsiIf.h"
 
 namespace
 {
@@ -45,49 +50,26 @@ namespace
 // How long each run-loop pass blocks before stop() is re-checked.
 constexpr double RUNLOOP_INTERVAL_S = 0.25;
 
-std::string trim(const std::string& s)
+// Matching dictionary for CD/DVD authoring devices. Each call returns a
+// new dictionary, since IOServiceAddMatchingNotification consumes one.
+CFMutableDictionaryRef authoringDeviceMatch()
 {
-    auto begin = s.find_first_not_of(" \t\r\n");
-    if (begin == std::string::npos)
-        return std::string();
-    auto end = s.find_last_not_of(" \t\r\n");
-    return s.substr(begin, end - begin + 1);
+    auto dict = CFDictionaryCreateMutable(kCFAllocatorDefault, 0, &kCFTypeDictionaryKeyCallBacks,
+                                          &kCFTypeDictionaryValueCallBacks);
+    auto sub = CFDictionaryCreateMutable(kCFAllocatorDefault, 0, &kCFTypeDictionaryKeyCallBacks,
+                                         &kCFTypeDictionaryValueCallBacks);
+    CFDictionarySetValue(sub, CFSTR(kIOPropertySCSITaskDeviceCategory),
+                         CFSTR(kIOPropertySCSITaskAuthoringDevice));
+    CFDictionarySetValue(dict, CFSTR(kIOPropertyMatchKey), sub);
+    CFRelease(sub);
+    return dict;
 }
 
-// Fetch a CFString value from a disk description dictionary as UTF-8.
-std::string dictString(CFDictionaryRef desc, CFStringRef key)
+// Consume all entries of a notification iterator, which (re)arms it.
+void drain(io_iterator_t it)
 {
-    CFTypeRef value = CFDictionaryGetValue(desc, key);
-    if (!value || CFGetTypeID(value) != CFStringGetTypeID())
-        return std::string();
-
-    CFStringRef str = static_cast<CFStringRef>(value);
-    CFIndex max =
-        CFStringGetMaximumSizeForEncoding(CFStringGetLength(str), kCFStringEncodingUTF8) + 1;
-    std::string out(max, '\0');
-    if (!CFStringGetCString(str, out.data(), max, kCFStringEncodingUTF8))
-        return std::string();
-    out.resize(std::strlen(out.c_str()));
-    return out;
-}
-
-bool dictBool(CFDictionaryRef desc, CFStringRef key)
-{
-    CFTypeRef value = CFDictionaryGetValue(desc, key);
-    if (!value || CFGetTypeID(value) != CFBooleanGetTypeID())
-        return false;
-    return CFBooleanGetValue(static_cast<CFBooleanRef>(value));
-}
-
-// Decide whether a disk is optical from its Disk Arbitration description.
-// The media kind is the IOKit media class ("IOCDMedia", "IODVDMedia",
-// "IOBDMedia", ...) and the media type is a human string ("CD-ROM",
-// "DVD-R", ...); either is enough to recognise optical media.
-bool isOpticalMedia(const std::string& mediaKind, const std::string& mediaType)
-{
-    const std::string both = mediaKind + " " + mediaType;
-    return both.find("CD") != std::string::npos || both.find("DVD") != std::string::npos ||
-           both.find("BD") != std::string::npos;
+    while (io_object_t obj = IOIteratorNext(it))
+        IOObjectRelease(obj);
 }
 
 class OSXDeviceMonitor : public DeviceMonitor
@@ -95,91 +77,107 @@ class OSXDeviceMonitor : public DeviceMonitor
   protected:
     void scanLoop() override
     {
+        CFRunLoopRef runLoop = CFRunLoopGetCurrent();
+
+        port_ = IONotificationPortCreate(kIOMainPortDefault);
+        if (port_) {
+            CFRunLoopAddSource(runLoop, IONotificationPortGetRunLoopSource(port_),
+                               kCFRunLoopDefaultMode);
+            if (IOServiceAddMatchingNotification(port_, kIOFirstMatchNotification,
+                                                 authoringDeviceMatch(),
+                                                 &OSXDeviceMonitor::ioChanged, this,
+                                                 &addedIter_) == KERN_SUCCESS)
+                drain(addedIter_);
+            if (IOServiceAddMatchingNotification(port_, kIOTerminatedNotification,
+                                                 authoringDeviceMatch(),
+                                                 &OSXDeviceMonitor::ioChanged, this,
+                                                 &removedIter_) == KERN_SUCCESS)
+                drain(removedIter_);
+        }
+
         session_ = DASessionCreate(kCFAllocatorDefault);
-        if (!session_)
-            return;
+        if (session_) {
+            DASessionScheduleWithRunLoop(session_, runLoop, kCFRunLoopDefaultMode);
+            DARegisterDiskDisappearedCallback(session_, NULL, &OSXDeviceMonitor::diskDisappeared,
+                                              this);
+        }
 
-        DASessionScheduleWithRunLoop(session_, CFRunLoopGetCurrent(), kCFRunLoopDefaultMode);
-        DARegisterDiskAppearedCallback(session_, NULL, &OSXDeviceMonitor::diskAppeared, this);
-        DARegisterDiskDisappearedCallback(session_, NULL, &OSXDeviceMonitor::diskDisappeared,
-                                          this);
+        // Initial list.
+        rescan();
 
-        // Disk Arbitration delivers a callback for every disk already
-        // present right after registration, so the initial set is built
-        // without an explicit scan. The bounded run-loop interval keeps
-        // stop() responsive.
-        while (!stopRequested())
+        while (!stopRequested()) {
             CFRunLoopRunInMode(kCFRunLoopDefaultMode, RUNLOOP_INTERVAL_S, false);
+            if (rescanPending_) {
+                rescanPending_ = false;
+                rescan();
+            }
+        }
 
-        DAUnregisterCallback(session_, (void*)&OSXDeviceMonitor::diskAppeared, this);
-        DAUnregisterCallback(session_, (void*)&OSXDeviceMonitor::diskDisappeared, this);
-        DASessionUnscheduleFromRunLoop(session_, CFRunLoopGetCurrent(), kCFRunLoopDefaultMode);
-        CFRelease(session_);
-        session_ = nullptr;
+        if (session_) {
+            DAUnregisterCallback(session_, (void*)&OSXDeviceMonitor::diskDisappeared, this);
+            DASessionUnscheduleFromRunLoop(session_, runLoop, kCFRunLoopDefaultMode);
+            CFRelease(session_);
+            session_ = nullptr;
+        }
+        if (addedIter_) {
+            IOObjectRelease(addedIter_);
+            addedIter_ = 0;
+        }
+        if (removedIter_) {
+            IOObjectRelease(removedIter_);
+            removedIter_ = 0;
+        }
+        if (port_) {
+            CFRunLoopRemoveSource(runLoop, IONotificationPortGetRunLoopSource(port_),
+                                  kCFRunLoopDefaultMode);
+            IONotificationPortDestroy(port_);
+            port_ = nullptr;
+        }
     }
 
   private:
-    static void diskAppeared(DADiskRef disk, void* context)
+    static void ioChanged(void* context, io_iterator_t it)
     {
-        static_cast<OSXDeviceMonitor*>(context)->onAppeared(disk);
+        drain(it);
+        static_cast<OSXDeviceMonitor*>(context)->rescanPending_ = true;
     }
 
-    static void diskDisappeared(DADiskRef disk, void* context)
+    static void diskDisappeared(DADiskRef, void* context)
     {
-        static_cast<OSXDeviceMonitor*>(context)->onDisappeared(disk);
+        static_cast<OSXDeviceMonitor*>(context)->rescanPending_ = true;
     }
 
-    void onAppeared(DADiskRef disk)
+    // Rebuild the device list from a fresh SCSI scan. Callbacks only flag
+    // a rescan, so a burst of events (a disc with many partitions going
+    // away) results in a single scan per run-loop pass.
+    void rescan()
     {
-        const char* bsdName = DADiskGetBSDName(disk);
-        if (!bsdName)
-            return;
+        int len = 0;
+        ScsiIf::ScanData* sdata = ScsiIf::scan(&len);
 
-        CFDictionaryRef desc = DADiskCopyDescription(disk);
-        if (!desc)
-            return;
-
-        bool whole = dictBool(desc, kDADiskDescriptionMediaWholeKey);
-        std::string mediaKind = dictString(desc, kDADiskDescriptionMediaKindKey);
-        std::string mediaType = dictString(desc, kDADiskDescriptionMediaTypeKey);
-
-        DeviceInfo info;
-        info.node = std::string("/dev/") + bsdName;
-        info.vendor = trim(dictString(desc, kDADiskDescriptionDeviceVendorKey));
-        info.product = trim(dictString(desc, kDADiskDescriptionDeviceModelKey));
-        info.revision = trim(dictString(desc, kDADiskDescriptionDeviceRevisionKey));
-        CFRelease(desc);
-
-        if (!whole || !isOpticalMedia(mediaKind, mediaType))
-            return;
-        if (info.vendor.empty() && info.product.empty())
-            return;
-
-        devmap_[info.node] = std::move(info);
-        publishMap();
-    }
-
-    void onDisappeared(DADiskRef disk)
-    {
-        const char* bsdName = DADiskGetBSDName(disk);
-        if (!bsdName)
-            return;
-
-        if (devmap_.erase(std::string("/dev/") + bsdName) > 0)
-            publishMap();
-    }
-
-    void publishMap()
-    {
         std::vector<DeviceInfo> devices;
-        devices.reserve(devmap_.size());
-        for (const auto& entry : devmap_)
-            devices.push_back(entry.second);
+        for (int i = 0; sdata && i < len; i++) {
+            if (sdata[i].vendor.empty() && sdata[i].product.empty())
+                continue;
+            DeviceInfo info;
+            // The stable name (serial number or IOService path), not the
+            // drive number, which can change when drives come and go.
+            info.node = sdata[i].id.empty() ? sdata[i].dev : sdata[i].id;
+            info.vendor = sdata[i].vendor;
+            info.product = sdata[i].product;
+            info.revision = sdata[i].revision;
+            devices.push_back(std::move(info));
+        }
+        delete[] sdata;
+
         publish(std::move(devices));
     }
 
+    IONotificationPortRef port_ = nullptr;
+    io_iterator_t addedIter_ = 0;
+    io_iterator_t removedIter_ = 0;
     DASessionRef session_ = nullptr;
-    std::map<std::string, DeviceInfo> devmap_; // worker-thread only
+    bool rescanPending_ = false; // worker-thread only
 };
 
 } // namespace
