@@ -2146,8 +2146,10 @@ Toc *CdrDriver::readDiskToc(int session, const char* dataFilename)
     if (dataFilename) {
 	fname = dataFilename;
 	auto found = fname.find_last_of(".");
-	if (found != string::npos)
+	if (found != string::npos) {
 	    extension = fname.substr(found);
+            fname.erase(found);
+        }
     }
 
     trackInfos = new TrackInfo[nofTracks + 1];
