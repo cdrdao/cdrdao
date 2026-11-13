@@ -171,6 +171,10 @@ int CdDevice::updateStatus()
         }
     }
 
+    // Leave the drive alone while a cdrdao process is using it.
+    if (newStatus == DEV_RECORDING || newStatus == DEV_READING || newStatus == DEV_BLANKING)
+        return 0;
+
     if (!cdDriver_) {
         status_ = DEV_FAULT;
     } else {
@@ -333,8 +337,15 @@ void CdDevice::createDriver()
     }
 
     cdDriver_ = CdrDriver::createDriver(driver_.c_str(), driverOptions_, scsiIf_);
-    if (cdDriver_)
+    if (!cdDriver_)
         status(DEV_FAULT);
+}
+
+void CdDevice::releaseDevice()
+{
+    createDriver();
+    if (scsiIf_)
+        scsiIf_->release();
 }
 
 // Starts a 'cdrdao' for recording given toc. Returns false if an
@@ -414,22 +425,20 @@ bool CdDevice::recordDao(Gtk::Window &parent, TocEdit *tocEdit, int simulate, in
 
     args.push_back(tocFileName);
 
-    // Remove the SCSI interface of this device to avoid problems with double
-    // usage of device nodes.
-    createDriver();
+    releaseDevice();
 
     process_ = PROCESS_MONITOR->start(execName.c_str(), args, remoteFdArgNum);
-
-    std::string cmdline;
-    for (auto &c : args) {
-	cmdline += c;
-	cmdline += " ";
-    }
-    PROGRESS_POOL->start(parent, this, cmdline);
 
     if (process_ != NULL) {
         status_ = DEV_RECORDING;
         action_ = A_RECORD;
+
+        std::string cmdline;
+        for (auto &c : args) {
+            cmdline += c;
+            cmdline += " ";
+        }
+        PROGRESS_POOL->start(parent, this, cmdline);
 
         if (process_->commFd() >= 0) {
             Glib::signal_io().connect(
@@ -521,22 +530,20 @@ int CdDevice::extractDao(Gtk::Window &parent,
     }
     args.push_back(tocFile);
 
-    // Remove the SCSI interface of this device to avoid problems with double
-    // usage of device nodes.
-    createDriver();
+    releaseDevice();
 
     process_ = PROCESS_MONITOR->start(execName, args, remoteFdArgNum);
-
-    std::string cmdline;
-    for (auto &c : args) {
-	cmdline += c;
-	cmdline += " ";
-    }
-    PROGRESS_POOL->start(parent, this, cmdline, false, false);
 
     if (process_) {
         status_ = DEV_READING;
         action_ = A_READ;
+
+        std::string cmdline;
+        for (auto &c : args) {
+            cmdline += c;
+            cmdline += " ";
+        }
+        PROGRESS_POOL->start(parent, this, cmdline, false, false);
 
         if (process_->commFd() >= 0) {
             Glib::signal_io().connect(
@@ -653,18 +660,11 @@ int CdDevice::duplicateDao(Gtk::Window &parent, int simulate, int multiSession, 
         args.push_back(bufferbuf);
     }
 
-    // Remove the SCSI interface of this device to avoid problems with double
-    // usage of device nodes.
-    createDriver();
+    releaseDevice();
+    if (readdev != this)
+        readdev->releaseDevice();
 
     process_ = PROCESS_MONITOR->start(execName.c_str(), args, remoteFdArgNum);
-
-    std::string cmdline;
-    for (auto &c : args) {
-	cmdline += c;
-	cmdline += " ";
-    }
-    PROGRESS_POOL->start(parent, this, cmdline);
 
     if (process_ != NULL) {
         slaveDevice_ = readdev;
@@ -672,6 +672,13 @@ int CdDevice::duplicateDao(Gtk::Window &parent, int simulate, int multiSession, 
         status_ = DEV_RECORDING;
 
         action_ = A_DUPLICATE;
+
+        std::string cmdline;
+        for (auto &c : args) {
+            cmdline += c;
+            cmdline += " ";
+        }
+        PROGRESS_POOL->start(parent, this, cmdline);
 
         if (process_->commFd() >= 0) {
             Glib::signal_io().connect(
@@ -738,22 +745,20 @@ int CdDevice::blank(Gtk::Window *parent, int fast, int speed, int eject, int rel
         args.push_back(drivername);
     }
 
-    std::string cmdline;
-    for (auto &c : args) {
-	cmdline += c;
-	cmdline += " ";
-    }
-    PROGRESS_POOL->start(*parent, this, cmdline, false, false);
-
-    // Remove the SCSI interface of this device to avoid problems with double
-    // usage of device nodes.
-    createDriver();
+    releaseDevice();
 
     process_ = PROCESS_MONITOR->start(execName.c_str(), args, remoteFdArgNum);
 
     if (process_ != NULL) {
         status_ = DEV_BLANKING;
         action_ = A_BLANK;
+
+        std::string cmdline;
+        for (auto &c : args) {
+            cmdline += c;
+            cmdline += " ";
+        }
+        PROGRESS_POOL->start(*parent, this, cmdline, false, false);
 
         if (process_->commFd() >= 0) {
             Glib::signal_io().connect(

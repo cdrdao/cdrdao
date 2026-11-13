@@ -25,11 +25,13 @@
  * the serial number (or the path when there is none) for callers that need
  * a name that stays the same, such as gcdmaster's saved settings.
  *
- * Drives are not held open between commands. scan() only opens a drive
- * briefly to read its serial number; it gets exclusive access when a
- * command first uses it (init() or sendCmd()). A drive that cannot be
- * opened, typically because a disc in it is mounted, is still listed and
- * flagged as in use.
+ * scan() only opens a drive briefly to read its serial number. It gets
+ * exclusive access when a command first uses it (init() or sendCmd()) and
+ * keeps it until release() is called or the drive goes away. A drive that
+ * cannot be opened, typically because a disc in it is mounted or another
+ * process holds it, is still listed and flagged as in use. Such a drive
+ * can't be found by its serial number, since reading the serial number
+ * needs the drive to be open.
  */
 
 /* standard includes */
@@ -70,6 +72,7 @@ class ScsiIfOsx : public ScsiIf
     virtual const u8 *getSense(int &len) const override;
     virtual void printError() override;
     virtual int timeout(int) override;
+    virtual void release() override;
 
     // Opens the drive with exclusive access and keeps it open until the
     // object is destroyed. Returns 0 on success.
@@ -113,8 +116,8 @@ class ScsiIfOsx : public ScsiIf
     // True while probe() has the drive open, so that its own commands
     // don't try to acquire it.
     bool probing_ = false;
-    // Guards open/close. Recursive because probe() and acquire() hold it
-    // while sending commands, and sendCmd() takes it too.
+    // Guards open/close and each command. Recursive because probe() holds
+    // it while sending commands, and sendCmd() takes it too.
     std::recursive_mutex mutex_;
 
     long timeout_ms_ = 10 * 1000;
@@ -199,6 +202,16 @@ int ScsiIfOsx::acquire()
     inUse_ = false;
     held_ = true;
     return 0;
+}
+
+void ScsiIfOsx::release()
+{
+    std::lock_guard<std::recursive_mutex> lock(mutex_);
+
+    if (!held_)
+        return;
+    close();
+    held_ = false;
 }
 
 void ScsiIfOsx::probe()
@@ -539,14 +552,14 @@ int ScsiIfOsx::sendCmd(const unsigned char *cmd, int cmdLen, const unsigned char
             (*task)->Release(task);
     };
 
-    // Open the drive on first use. Waits for a probe() running on another
-    // thread to finish; probe()'s own commands skip this.
-    if (!held_) {
-        std::lock_guard<std::recursive_mutex> lock(mutex_);
-        if (!held_ && !probing_ && acquire() != 0) {
-            ERROR(error_);
-            return 1;
-        }
+    // Held for the whole command so that probe() or release() on another
+    // thread can't close the drive under it.
+    std::lock_guard<std::recursive_mutex> lock(mutex_);
+
+    // Open the drive on first use; probe()'s own commands skip this.
+    if (!held_ && !probing_ && acquire() != 0) {
+        ERROR(error_);
+        return 1;
     }
 
     task = (*scsi_)->CreateSCSITask(scsi_);
@@ -744,6 +757,14 @@ std::shared_ptr<ScsiIf> ScsiIf::create(const std::string& dev)
     }
     if (!sif) {
         log_message(-2, "Unknown SCSI device %s", dev.c_str());
+        // A drive that is in use can't be found by serial number.
+        for (auto const& d : DM->sorted()) {
+            if (d->inUse_ && d->serial_.empty())
+                log_message(-2, "Device %s (%s %s) is in use by another process; "
+                                "if it is %s, close that process first.",
+                            d->dev_.c_str(), d->vendor_.c_str(), d->product_.c_str(),
+                            dev.c_str());
+        }
         return nullptr;
     }
     return sif;

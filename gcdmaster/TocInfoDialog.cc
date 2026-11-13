@@ -461,6 +461,16 @@ int TocInfoDialog::findUnusedSlot() const
 
 int TocInfoDialog::findUnusedLanguageIndex() const
 {
+    // Prefer English (the usual first CD-TEXT block) when it's free.
+    const int englishIdx = getCdTextLanguageIndex(0x09);
+    bool englishUsed = false;
+    for (int slot : visibleBlocks_) {
+        if (cdTextPages_[slot].selectedLanguage == englishIdx)
+            englishUsed = true;
+    }
+    if (englishIdx > 1 && !englishUsed)
+        return englishIdx;
+
     // CD_TEXT_LANGUAGE_CODES indices 0 and 1 are "Unknown"/"Undefined"; skip.
     for (int i = 2; i < MAX_CD_TEXT_LANGUAGE_CODES; i++) {
         bool used = false;
@@ -898,7 +908,7 @@ const char *TocInfoDialog::checkString(const std::string &str)
     return s;
 }
 
-int TocInfoDialog::getCdTextLanguageIndex(int code)
+int TocInfoDialog::getCdTextLanguageIndex(int code) const
 {
     int i;
 
@@ -1322,7 +1332,22 @@ void TocInfoDialog::imdbAction()
     page.title->set_text(dbentry->diskTitle);
     page.performer->set_text(dbentry->diskArtist);
 
+    // Track performers default to the disc artist. Various-artists CDDB
+    // entries encode per-track artists as "Artist / Title".
     size_t n = std::min(dbentry->trackTitles.size(), page.tracks.size());
-    for (size_t i = 0; i < n; i++)
-        page.tracks[i].title->set_text(dbentry->trackTitles[i]);
+    for (size_t i = 0; i < n; i++) {
+        std::string title = dbentry->trackTitles[i];
+        std::string performer = dbentry->diskArtist;
+        auto sep = title.find(" / ");
+        if (sep != std::string::npos) {
+            performer = title.substr(0, sep);
+            title = title.substr(sep + 3);
+            Util::trimSpaces(performer);
+            Util::trimSpaces(title);
+        }
+        page.tracks[i].title->set_text(title);
+        page.tracks[i].performer->set_text(performer);
+    }
+    if (n > 0)
+        page.performerButton->set_active(true);
 }

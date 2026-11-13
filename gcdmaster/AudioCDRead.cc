@@ -127,9 +127,12 @@ void AudioCDRead::execute()
     std::filesystem::remove(tocfile);
     std::filesystem::remove(datafilePath_);
 
-    device->extractDao(*parent_, tocfile, datafilePath_.string(), 
-		       CDSource_->getCorrection(),
-		       CDSource_->getSubChanReadMode());
+    if (device->extractDao(*parent_, tocfile, datafilePath_.string(),
+                           CDSource_->getCorrection(),
+                           CDSource_->getSubChanReadMode()) != 0) {
+        ErrorBox::message(*parent_, _("Cannot start reading"));
+        return;
+    }
 
     conn_ =
 	device->signalProcessFinished.connect([this, tocfile](CdDevice* device) {

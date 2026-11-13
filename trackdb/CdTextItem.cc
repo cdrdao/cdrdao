@@ -106,7 +106,8 @@ void CdTextItem::print(std::ostream &out, PrintParams &params) const
         else if (c == '\\')
             out << "\\\\";
         else if (ascii_only && (c < 32 || c >= 127))
-            out << "\\" << std::oct << std::setfill('0') << std::setw(3) << (unsigned int)c;
+            out << "\\" << std::oct << std::setfill('0') << std::setw(3) << (unsigned int)c
+                << std::dec << std::setfill(' ');
         else
             out << c;
     };

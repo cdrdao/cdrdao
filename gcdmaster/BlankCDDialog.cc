@@ -138,8 +138,10 @@ void BlankCDDialog::start()
 
 void BlankCDDialog::stop()
 {
-    set_visible(false);
+    // Hiding may delete this dialog (see GCDMaster::on_action_blank_cdrw),
+    // so it must be the last thing done here.
     active_ = false;
+    set_visible(false);
 }
 
 bool BlankCDDialog::on_close_request()
@@ -168,14 +170,20 @@ void BlankCDDialog::startAction()
 
     CdDevice *writeDevice = deviceSelector_->selection();
 
-    if (writeDevice) {
-        if (writeDevice->blank(this, fast, burnSpeed, eject, reload) != 0) {
-            ErrorBox::message(*this, _("Cannot start blanking"));
-        } else {
-            guiUpdate(UPD_CD_DEVICE_STATUS);
-        }
+    // Leave this dialog up if blanking could not be started, so that the
+    // error alert stays attached to a visible parent.
+    // Attach the progress window to our parent, not to this dialog: this
+    // dialog is hidden (and deleted) below while the progress window is up.
+    Gtk::Window *progressParent = get_transient_for();
+    if (!progressParent)
+        progressParent = this;
+
+    if (writeDevice->blank(progressParent, fast, burnSpeed, eject, reload) != 0) {
+        ErrorBox::message(*this, _("Cannot start blanking"));
+        return;
     }
 
+    guiUpdate(UPD_CD_DEVICE_STATUS);
     stop();
 }
 

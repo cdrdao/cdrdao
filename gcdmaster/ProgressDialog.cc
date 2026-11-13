@@ -541,7 +541,10 @@ void ProgressDialog::update(unsigned long level)
         break;
 
     default:
+        // Never leave the dialog without a working Close button.
         statusMsg_->set_text(_("Unknown device action!"));
+        finished_ = 1;
+        setCloseButtonLabel(2);
         break;
     }
 }

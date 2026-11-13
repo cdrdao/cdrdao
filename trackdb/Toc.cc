@@ -28,6 +28,7 @@
 
 #include <fstream>
 #include <iostream>
+#include <locale>
 #include <sstream>
 
 #include "CdTextItem.h"
@@ -260,8 +261,39 @@ const char *Toc::catalog() const
 }
 
 // writes contents in TOC file syntax
+namespace {
+// TOC output must be parseable by the TOC parser regardless of the
+// stream's state: force the classic "C" locale (no thousands separators
+// from e.g. the GUI's user locale) and default formatting, and restore
+// the caller's stream settings afterwards.
+class ClassicStreamGuard
+{
+  public:
+    explicit ClassicStreamGuard(std::ostream &out)
+        : out_(out), locale_(out.imbue(std::locale::classic())), flags_(out.flags()),
+          fill_(out.fill())
+    {
+        out_.flags(std::ios_base::dec | std::ios_base::skipws);
+        out_.fill(' ');
+    }
+    ~ClassicStreamGuard()
+    {
+        out_.flags(flags_);
+        out_.fill(fill_);
+        out_.imbue(locale_);
+    }
+
+  private:
+    std::ostream &out_;
+    std::locale locale_;
+    std::ios_base::fmtflags flags_;
+    char fill_;
+};
+} // namespace
+
 void Toc::print(std::ostream &out, PrintParams &params) const
 {
+    ClassicStreamGuard guard(out);
     int i;
     TrackEntry *t;
 

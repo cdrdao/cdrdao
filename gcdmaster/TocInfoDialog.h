@@ -124,7 +124,7 @@ private:
     void clearCdText();
 
     const char *checkString(const std::string &);
-    int getCdTextLanguageIndex(int code);
+    int getCdTextLanguageIndex(int code) const;
     int getCdTextGenreIndex(int code1, int code2);
 
     void importCdText(const Toc *);

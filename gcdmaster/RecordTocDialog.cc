@@ -104,6 +104,8 @@ RecordTocDialog::RecordTocDialog(Glib::RefPtr<TocEdit> tocEdit)
 
 void RecordTocDialog::start(Gtk::Window *parent)
 {
+    if (parent)
+        set_transient_for(*parent);
     update(UPD_ALL);
     present();
 }
@@ -181,8 +183,10 @@ void RecordTocDialog::startAction()
 
 void RecordTocDialog::startActionConfirmed(int clicked_button)
 {
+    if (clicked_button != 0)
+        return;
 
-    if (clicked_button == 0) {
+    {
 	int simulate = 0;
 	if (simulate_cb->get_active())
 	    simulate = 1;
@@ -204,15 +208,24 @@ void RecordTocDialog::startActionConfirmed(int clicked_button)
 
 	auto writeDevice = selector->selection();
 
-	if (writeDevice) {
-	    if (!writeDevice->recordDao(*this, tocEdit_.get(),
-					simulate, multiSession, burnSpeed, eject,
-					reload, buffer, overburn)) {
-		ErrorBox::message(*this, _("Cannot start disk-at-once recording"));
-	    } else {
-		guiUpdate(UPD_CD_DEVICE_STATUS);
-	    }
+	// The progress window must not be a child of this dialog: it is
+	// hidden below while the (modal) progress window is up, and on macOS
+	// hiding a window that has a visible transient child leaves it on
+	// screen but unresponsive. Attach it to our own parent instead.
+	Gtk::Window *progressParent = get_transient_for();
+	if (!progressParent)
+	    progressParent = this;
+
+	// Leave this dialog up if recording could not be started, so the
+	// error alert stays attached to a visible window.
+	if (!writeDevice->recordDao(*progressParent, tocEdit_.get(),
+				    simulate, multiSession, burnSpeed, eject,
+				    reload, buffer, overburn)) {
+	    ErrorBox::message(*this, _("Cannot start disk-at-once recording"));
+	    return;
 	}
+
+	guiUpdate(UPD_CD_DEVICE_STATUS);
     }
     stop();
 }

@@ -193,6 +193,9 @@ class CdDevice : public sigc::trackable
     CdDevice *slaveDevice_ = nullptr;
 
     void createDriver();
+    // Recreates the driver and closes the drive, so that a cdrdao child
+    // process can open it.
+    void releaseDevice();
 
     static std::vector<std::string> DRIVER_NAMES;
     static std::vector<CdDevice*> DEVICE_LIST;

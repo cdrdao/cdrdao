@@ -105,6 +105,11 @@ class ScsiIf
     // Sets new timeout (in seconds) and returns old timeout.
     virtual int timeout(int) = 0;
 
+    // Closes the device so that another process can open it. It is
+    // reopened by the next command. Does nothing on platforms that don't
+    // keep the device open exclusively.
+    virtual void release() {}
+
     // Check for mmc capability. Return whether the driver/drive can
     // read and write CD-R and CD-RW disks.
     //
