@@ -1305,6 +1305,24 @@ void TocInfoDialog::imdbAction()
         ErrorBox::message(*this, _("Unable to download CDDB record."));
         return;
     }
-    cdTextPages_[0].title->set_text(dbentry->diskTitle);
-    cdTextPages_[0].performer->set_text(dbentry->diskArtist);
+
+    // Fill the language block currently shown. If the TOC has no CD-TEXT
+    // yet, no tab is visible: create one so the data is shown and exported
+    // on Apply.
+    if (visibleBlocks_.empty())
+        addBlockAction();
+    if (visibleBlocks_.empty())
+        return;
+
+    int pos = cdTextNotebook_->get_current_page();
+    if (pos < 0 || pos >= (int)visibleBlocks_.size())
+        pos = 0;
+    auto& page = cdTextPages_[visibleBlocks_[pos]];
+
+    page.title->set_text(dbentry->diskTitle);
+    page.performer->set_text(dbentry->diskArtist);
+
+    size_t n = std::min(dbentry->trackTitles.size(), page.tracks.size());
+    for (size_t i = 0; i < n; i++)
+        page.tracks[i].title->set_text(dbentry->trackTitles[i]);
 }
