@@ -19,6 +19,7 @@
 
 #include <config.h>
 
+#include <algorithm>
 #include <assert.h>
 #include <ctype.h>
 #include <errno.h>
@@ -4029,6 +4030,69 @@ int CdrDriver::sendBlankCdProgressMsg(int totalProgress)
     return 0;
 }
 
+void CdrDriver::audioReadInit(ReadDiskInfo *info, TrackInfo *trackInfo, long startLba,
+                              int startTrack, int endTrack)
+{
+    audioReadInfo_ = info;
+    audioReadTrackInfo_ = trackInfo;
+    audioReadStartTrack_ = startTrack;
+    audioReadEndTrack_ = endTrack;
+    audioReadLastLba_ = audioReadActLba_ = startLba + 149;
+    audioReadActTrack_ = startTrack;
+    audioReadActIndex_ = 1;
+    audioReadCrcCount_ = 0;
+    audioReadError_ = 0;
+    audioReadProgress_ = 0;
+    audioReadIsrc_.assign(endTrack + 1, IsrcCandidate());
+}
+
+// Q sub-channels carrying the ISRC have no time information that could be
+// verified, so only accept an ISRC code once it was read from several
+// distinct sectors. Paranoia may read a sector several times, these reads
+// only count once.
+void CdrDriver::audioReadIsrcFound(int track, long lba, const char *isrc)
+{
+    IsrcCandidate &cand = audioReadIsrc_[track];
+
+    if (audioReadTrackInfo_[track].isrcCode[0] != 0)
+        return;
+
+    if (strcmp(cand.code, isrc) != 0) {
+        strcpy(cand.code, isrc);
+        cand.lbas.clear();
+    }
+
+    if (std::find(cand.lbas.begin(), cand.lbas.end(), lba) != cand.lbas.end())
+        return;
+
+    cand.lbas.push_back(lba);
+
+    if (cand.lbas.size() >= MIN_ISRC_MATCHES) {
+        log_message(2, "Found ISRC code.");
+        strcpy(audioReadTrackInfo_[track].isrcCode, cand.code);
+    }
+}
+
+int CdrDriver::qMode1Track(SubChannel **chans, long startLba, long len, long i, int dir)
+{
+    for (long k = i + dir; k >= 0 && k < len; k += dir) {
+        SubChannel *chan = chans[k];
+
+        if (chan->type() != SubChannel::QMODE1DATA || !chan->checkCrc() ||
+            !chan->checkConsistency())
+            continue;
+
+        Msf atime(chan->amin(), chan->asec(), chan->aframe());
+
+        if (labs(atime.lba() - 150 - (startLba + k)) > MAX_Q_POSITION_DEVIATION)
+            continue;
+
+        return chan->trackNr() - 1;
+    }
+
+    return -1;
+}
+
 long CdrDriver::audioRead(TrackData::SubChannelMode sm, int byteOrder, Sample *buffer,
                           long startLba, long len)
 {
@@ -4160,21 +4224,18 @@ long CdrDriver::audioRead(TrackData::SubChannelMode sm, int byteOrder, Sample *b
                     audioReadActTrack_ = t;
                 }
             } else if (chan->type() == SubChannel::QMODE3) {
-                // Q mode 3 carries no position, and paranoia may re-read sectors
-                // behind the current track, so attribute the ISRC by the sector's
-                // own LBA rather than by audioReadActTrack_.
-                long lba = startLba + i;
+                // Q mode 3 carries neither track number nor position. Neither
+                // audioReadActTrack_ (paranoia re-reads sectors behind it) nor the
+                // index 1 track boundaries (a pre-gap carries the ISRC of the
+                // track it belongs to) can be used to attribute it. Take the track
+                // number of the closest Q mode 1 sub-channels read in this same
+                // call, on both sides, and only accept the ISRC if they agree.
+                int before = qMode1Track(chans, startLba, len, i, -1);
+                int after = qMode1Track(chans, startLba, len, i, 1);
 
-                for (int t = audioReadStartTrack_; t <= audioReadEndTrack_; t++) {
-                    if (lba >= audioReadTrackInfo_[t].start &&
-                        lba < audioReadTrackInfo_[t + 1].start) {
-                        if (audioReadTrackInfo_[t].isrcCode[0] == 0) {
-                            log_message(2, "Found ISRC code.");
-                            strcpy(audioReadTrackInfo_[t].isrcCode, chan->isrc());
-                        }
-                        break;
-                    }
-                }
+                if (before >= 0 && before == after && before >= audioReadStartTrack_ &&
+                    before <= audioReadEndTrack_)
+                    audioReadIsrcFound(before, startLba + i, chan->isrc());
             }
         } else {
             audioReadCrcCount_++;
@@ -4200,16 +4261,7 @@ int CdrDriver::readAudioRangeStream(ReadDiskInfo *info, int fd, long start, long
 
     buf = new unsigned char[blocking * blockLen];
 
-    audioReadInfo_ = info;
-    audioReadTrackInfo_ = trackInfo;
-    audioReadStartTrack_ = startTrack;
-    audioReadEndTrack_ = endTrack;
-    audioReadLastLba_ = audioReadActLba_ = startLba + 149;
-    audioReadActTrack_ = startTrack;
-    audioReadActIndex_ = 1;
-    audioReadCrcCount_ = 0;
-    audioReadError_ = 0;
-    audioReadProgress_ = 0;
+    audioReadInit(info, trackInfo, startLba, startTrack, endTrack);
 
     len = endLba - startLba + 1;
 
@@ -4288,16 +4340,7 @@ int CdrDriver::readAudioRangeParanoia(ReadDiskInfo *info, int fd, long start, lo
     paranoia_set_range(paranoia_, startLba, endLba);
     paranoia_modeset(paranoia_, paranoiaMode_);
 
-    audioReadInfo_ = info;
-    audioReadTrackInfo_ = trackInfo;
-    audioReadStartTrack_ = startTrack;
-    audioReadEndTrack_ = endTrack;
-    audioReadLastLba_ = audioReadActLba_ = startLba + 149;
-    audioReadActTrack_ = startTrack;
-    audioReadActIndex_ = 1;
-    audioReadCrcCount_ = 0;
-    audioReadError_ = 0;
-    audioReadProgress_ = 0;
+    audioReadInit(info, trackInfo, startLba, startTrack, endTrack);
 
     len = endLba - startLba + 1;
 

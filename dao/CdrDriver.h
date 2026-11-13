@@ -617,6 +617,14 @@ class CdrDriver
     long audioRead(TrackData::SubChannelMode, int byteOrder, Sample *buffer, long startLba,
                    long len);
 
+  private:
+    // Returns the 0-based track number of the closest valid Q mode 1
+    // sub-channel before (dir < 0) or after (dir > 0) index 'i' in 'chans',
+    // or -1 if there is none.
+    static int qMode1Track(SubChannel **chans, long startLba, long len, long i, int dir);
+
+  public:
+
     // Interface for Monty's paranoia library:
   protected:
     // Extracts audio data for given track range with the help of
@@ -640,6 +648,16 @@ class CdrDriver
     long audioReadCrcCount_;
     int audioReadError_;
     long audioReadProgress_;
+
+    // ISRC code candidate of a track while reading audio data: the code is
+    // only accepted once it was read from enough distinct sectors
+    struct IsrcCandidate {
+        char code[13] = "";
+        std::vector<long> lbas; // sectors 'code' was read from
+    };
+    std::vector<IsrcCandidate> audioReadIsrc_; // indexed by track
+    void audioReadInit(ReadDiskInfo *, TrackInfo *, long startLba, int startTrack, int endTrack);
+    void audioReadIsrcFound(int track, long lba, const char *isrc);
 
     // callback for the paranoia library, does nothing, currently
     static void paranoiaCallback(long, int);
