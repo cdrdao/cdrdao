@@ -1795,6 +1795,12 @@ int GenericMMC::readSubChannels(TrackData::SubChannelMode sm, long lba, long len
     case TrackData::SUBCHAN_RW_RAW:
         blockLen = AUDIO_BLOCK_LEN + 96;
         cmd[10] = 0x01;
+
+        // Raw P-W data also carries the Q channel, so decode it for the
+        // pre-gap, index and ISRC detection. The scanned sub-channel objects
+        // are only able to decode it if they are PWSubChannel96 objects.
+        if ((options_ & OPT_MMC_USE_PQ) == 0)
+            subChanMode = CDR_READ_CAP_AUDIO_PW_RAW;
         break;
     }
 
