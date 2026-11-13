@@ -4160,9 +4160,20 @@ long CdrDriver::audioRead(TrackData::SubChannelMode sm, int byteOrder, Sample *b
                     audioReadActTrack_ = t;
                 }
             } else if (chan->type() == SubChannel::QMODE3) {
-                if (audioReadTrackInfo_[audioReadActTrack_].isrcCode[0] == 0) {
-                    log_message(2, "Found ISRC code.");
-                    strcpy(audioReadTrackInfo_[audioReadActTrack_].isrcCode, chan->isrc());
+                // Q mode 3 carries no position, and paranoia may re-read sectors
+                // behind the current track, so attribute the ISRC by the sector's
+                // own LBA rather than by audioReadActTrack_.
+                long lba = startLba + i;
+
+                for (int t = audioReadStartTrack_; t <= audioReadEndTrack_; t++) {
+                    if (lba >= audioReadTrackInfo_[t].start &&
+                        lba < audioReadTrackInfo_[t + 1].start) {
+                        if (audioReadTrackInfo_[t].isrcCode[0] == 0) {
+                            log_message(2, "Found ISRC code.");
+                            strcpy(audioReadTrackInfo_[t].isrcCode, chan->isrc());
+                        }
+                        break;
+                    }
                 }
             }
         } else {
