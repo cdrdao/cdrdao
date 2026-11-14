@@ -39,7 +39,7 @@ private:
     TocEdit *tocEdit_;
     bool importing_ = false;
 
-    Gtk::Button *applyButton_;
+    Gtk::Button *okButton_;
     Gtk::Button *imdbButton_;
     Gtk::Label *tocLength_;
     Gtk::Label *nofTracks_;
@@ -93,9 +93,11 @@ private:
     // tab order. Slots not present are "unused" and their data is ignored.
     Gtk::Notebook *cdTextNotebook_;
     Gtk::Button *addBlockButton_;
+    Gtk::Box *cdTextEmptyBox_;
     std::vector<int> visibleBlocks_;
 
-    void applyAction();
+    void okAction();
+    void cancelAction();
     void imdbAction();
     void fillPerformerAction(int l);
     void activatePerformerAction(int l);

@@ -57,6 +57,9 @@ class CdTextEncoder;
 // drive supports Yamaha's Force Speed feature
 #define OPT_MMC_YAMAHA_FORCE_SPEED 0x0200
 
+// never write CD-TEXT, even if the drive supports it
+#define OPT_MMC_NO_CD_TEXT 0x0400
+
 // Driver for Generic MMC units
 
 class GenericMMC : public CdrDriver
@@ -106,6 +109,7 @@ class GenericMMC : public CdrDriver
       \return 0 if OK, 1 if some warning, 2 on error
     */
     int checkToc(const Toc *);
+    CdTextWrite cdTextWrite() const override;
 
     /*! \brief Sets read/write speed
 
@@ -247,6 +251,7 @@ class GenericMMC : public CdrDriver
     DriveInfo *driveInfo_;         // Various info about the device
     CdTextEncoder *cdTextEncoder_; // Called by GenericMMC::initDao if needed.
     bool cdtextEnabled_;           // Write CD-TEXT subchannels
+    bool cdtextDisabled_;          // CD-TEXT turned off by OPT_MMC_NO_CD_TEXT
 
     /*! \brief Determines start and length of lead-in and length of lead-out.
 

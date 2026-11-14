@@ -48,8 +48,8 @@ class TrackInfoDialog : public Gtk::Window
     int selectedTrack_ = 0;
     Gtk::Window* parent_;
 
-    Gtk::Button applyButton_;
-    Gtk::Button closeButton_;
+    Gtk::Button okButton_;
+    Gtk::Button cancelButton_;
 
     Gtk::Label trackNr_;
     Gtk::Label pregapLen_;
@@ -89,8 +89,8 @@ class TrackInfoDialog : public Gtk::Window
     Gtk::Label noCdTextLabel_;
     std::vector<int> visibleBlocks_;
 
-    void closeAction();
-    void applyAction();
+    void cancelAction();
+    void okAction();
 
     void setupCdTextPage(int);
 

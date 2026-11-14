@@ -949,6 +949,26 @@ int Toc::existCdTextBlock(int blockNr) const
     return 0;
 }
 
+bool Toc::hasCdText() const
+{
+    auto nonEmpty = [](const CdTextContainer &c) {
+        for (const auto &item : c)
+            if (!item.empty())
+                return true;
+        return false;
+    };
+
+    if (nonEmpty(cdtext_))
+        return true;
+
+    for (auto run = tracks_; run != NULL; run = run->next) {
+        if (nonEmpty(run->track->getCdTextItems()))
+            return true;
+    }
+
+    return false;
+}
+
 const CdTextItem *Toc::getCdTextItem(int trackNr, int blockNr, CdTextItem::PackType type) const
 {
     if (trackNr == 0) {

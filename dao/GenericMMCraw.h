@@ -37,6 +37,10 @@ class GenericMMCraw : public GenericMMC, private PQChannelEncoder
     int subChannelEncodingMode(TrackData::SubChannelMode) const;
 
     int initDao(const Toc *);
+    CdTextWrite cdTextWrite() const override
+    {
+        return cdtextDisabled_ ? CdTextWrite::DISABLED : CdTextWrite::ENABLED;
+    }
     int startDao();
     int finishDao();
 

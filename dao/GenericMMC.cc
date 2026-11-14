@@ -89,6 +89,17 @@ GenericMMC::GenericMMC(std::shared_ptr<ScsiIf> scsiIf, unsigned long options)
             cdtextEnabled_ = true;
         }
     }
+
+    cdtextDisabled_ = (options_ & OPT_MMC_NO_CD_TEXT) != 0;
+    if (cdtextDisabled_)
+        cdtextEnabled_ = false;
+}
+
+CdrDriver::CdTextWrite GenericMMC::cdTextWrite() const
+{
+    if (cdtextDisabled_)
+        return CdTextWrite::DISABLED;
+    return cdtextEnabled_ ? CdTextWrite::ENABLED : CdTextWrite::UNSUPPORTED;
 }
 
 GenericMMC::~GenericMMC()

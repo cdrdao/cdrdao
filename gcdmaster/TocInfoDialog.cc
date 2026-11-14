@@ -199,8 +199,32 @@ TocInfoDialog::TocInfoDialog(Gtk::Window* parent)
         sigc::mem_fun(*this, &TocInfoDialog::addBlockAction));
     cdTextNotebook_->set_action_widget(addBlockButton_, Gtk::PackType::END);
 
-    frameText->set_child(*cdTextNotebook_);
+    // Gtk::Notebook hides its tab header (and thus its action widgets) when
+    // it has no pages. Provide an empty-state placeholder with its own "+"
+    // button so a language block can still be added when there is no
+    // CD-TEXT at all.
+    cdTextEmptyBox_ = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL, 10);
+    cdTextEmptyBox_->set_vexpand(true);
+    cdTextEmptyBox_->set_valign(Gtk::Align::CENTER);
+    cdTextEmptyBox_->set_halign(Gtk::Align::CENTER);
+    cdTextEmptyBox_->append(*Gtk::make_managed<Gtk::Label>(_("No CD-TEXT data")));
+    {
+        auto emptyAddButton = Gtk::make_managed<Gtk::Button>();
+        auto bc = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL, 5);
+        bc->append(*Gtk::make_managed<Gtk::Image>("list-add-symbolic"));
+        bc->append(*Gtk::make_managed<Gtk::Label>(_("Add language block")));
+        emptyAddButton->set_child(*bc);
+        emptyAddButton->signal_clicked().connect(
+            sigc::mem_fun(*this, &TocInfoDialog::addBlockAction));
+        cdTextEmptyBox_->append(*emptyAddButton);
+    }
+
+    auto textBox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL);
+    textBox->append(*cdTextNotebook_);
+    textBox->append(*cdTextEmptyBox_);
+    frameText->set_child(*textBox);
     contents->append(*frameText);
+    updateAddButtonSensitivity();
 
     auto bbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
     bbox->set_margin(10);
@@ -215,13 +239,14 @@ TocInfoDialog::TocInfoDialog(Gtk::Window* parent)
         cb->signal_clicked().connect([this](){ this->clear(); });
         bbox->append(*cb);
     }
-    applyButton_ = Gtk::make_managed<Gtk::Button>("Apply");
-    applyButton_->signal_clicked().connect(sigc::mem_fun(*this, &TocInfoDialog::applyAction));
-    bbox->append(*applyButton_);
-    auto closeButton = Gtk::make_managed<Gtk::Button>("Close");
-    closeButton->signal_clicked().connect(
-        sigc::mem_fun(*this, &Gtk::Widget::hide));
-    bbox->append(*closeButton);
+    auto cancelButton = Gtk::make_managed<Gtk::Button>(_("Cancel"));
+    cancelButton->signal_clicked().connect(sigc::mem_fun(*this, &TocInfoDialog::cancelAction));
+    bbox->append(*cancelButton);
+    okButton_ = Gtk::make_managed<Gtk::Button>(_("OK"));
+    okButton_->add_css_class("suggested-action");
+    okButton_->signal_clicked().connect(sigc::mem_fun(*this, &TocInfoDialog::okAction));
+    bbox->append(*okButton_);
+    set_default_widget(*okButton_);
     contents->append(*bbox);
 
     set_child(*contents);
@@ -521,6 +546,11 @@ void TocInfoDialog::resetBlockData(int slot)
 void TocInfoDialog::updateAddButtonSensitivity()
 {
     addBlockButton_->set_sensitive((int)visibleBlocks_.size() < 8);
+
+    // Swap between the notebook and the empty-state placeholder.
+    bool empty = visibleBlocks_.empty();
+    cdTextNotebook_->set_visible(!empty);
+    cdTextEmptyBox_->set_visible(empty);
 }
 
 void TocInfoDialog::syncTabs()
@@ -803,7 +833,6 @@ void TocInfoDialog::update(unsigned long level)
     }
 
     if (level & UPD_EDITABLE_STATE) {
-        applyButton_->set_sensitive(tocEdit_->editable() ? true : false);
         imdbButton_->set_sensitive(tocEdit_->editable() ? true : false);
     }
 
@@ -863,14 +892,19 @@ void TocInfoDialog::clearCdText()
     importing_ = false;
 }
 
-void TocInfoDialog::applyAction()
+void TocInfoDialog::okAction()
 {
-    if (tocEdit_ == NULL || !tocEdit_->editable())
-        return;
+    if (tocEdit_ != NULL && tocEdit_->editable()) {
+        exportData(tocEdit_);
+        guiUpdate(UPD_TOC_DATA);
+    }
+    hide();
+}
 
-    exportData(tocEdit_);
-
-    guiUpdate(UPD_TOC_DATA);
+void TocInfoDialog::cancelAction()
+{
+    // Edits are discarded: start() re-imports the TOC on the next open.
+    hide();
 }
 
 const char *TocInfoDialog::checkString(const std::string &str)

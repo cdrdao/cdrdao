@@ -432,15 +432,21 @@ int GenericMMCraw::initDao(const Toc *toc)
     }
 
     delete cdTextEncoder_;
-    cdTextEncoder_ = new CdTextEncoder(toc);
-    if (cdTextEncoder_->encode() != 0) {
-        log_message(-2, "CD-TEXT encoding failed.");
-        return 1;
-    }
+    cdTextEncoder_ = NULL;
 
-    if (cdTextEncoder_->getSubChannels(&n) == NULL || n == 0) {
-        delete cdTextEncoder_;
-        cdTextEncoder_ = NULL;
+    // Raw mode generates the lead-in itself, so CD-TEXT does not depend on
+    // drive support; only OPT_MMC_NO_CD_TEXT turns it off.
+    if (!cdtextDisabled_) {
+        cdTextEncoder_ = new CdTextEncoder(toc);
+        if (cdTextEncoder_->encode() != 0) {
+            log_message(-2, "CD-TEXT encoding failed.");
+            return 1;
+        }
+
+        if (cdTextEncoder_->getSubChannels(&n) == NULL || n == 0) {
+            delete cdTextEncoder_;
+            cdTextEncoder_ = NULL;
+        }
     }
 
     if (setSubChannelMode() != 0)

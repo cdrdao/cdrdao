@@ -48,8 +48,8 @@ TrackInfoDialog::TrackInfoDialog(Gtk::Window* parent)
       preEmphasisFlag_(_("Pre Emphasis")),
       twoChannelAudio_(_("Two Channel Audio")),
       fourChannelAudio_(_("Four Channel Audio")),
-      applyButton_(_("Apply")),
-      closeButton_(_("Close")),
+      okButton_(_("OK")),
+      cancelButton_(_("Cancel")),
       parent_(parent)
 {
     set_title(_("Track Info"));
@@ -153,13 +153,22 @@ TrackInfoDialog::TrackInfoDialog(Gtk::Window* parent)
     actionBox->set_halign(Gtk::Align::END);
     actionBox->set_margin(10);
     
-    applyButton_.set_has_frame(true);
-    applyButton_.signal_clicked().connect(sigc::mem_fun(*this, &TrackInfoDialog::applyAction));
-    
-    closeButton_.signal_clicked().connect(sigc::mem_fun(*this, &TrackInfoDialog::closeAction));
+    okButton_.add_css_class("suggested-action");
+    okButton_.signal_clicked().connect(sigc::mem_fun(*this, &TrackInfoDialog::okAction));
 
-    actionBox->append(applyButton_);
-    actionBox->append(closeButton_);
+    cancelButton_.signal_clicked().connect(sigc::mem_fun(*this, &TrackInfoDialog::cancelAction));
+
+    actionBox->append(cancelButton_);
+    actionBox->append(okButton_);
+    set_default_widget(okButton_);
+
+    // Closing the window discards edits, same as Cancel.
+    signal_close_request().connect(
+        [this]() {
+            active_ = false;
+            return false; // let hide-on-close proceed
+        },
+        false);
 
     // Final Assembly
     contentBox_.set_margin(10);
@@ -215,8 +224,18 @@ void TrackInfoDialog::stop()
     }
 }
 
-void TrackInfoDialog::closeAction()
+void TrackInfoDialog::okAction()
 {
+    if (tocEditView_ != NULL && tocEditView_->tocEdit()->editable() && selectedTrack_ != 0) {
+        exportData(tocEditView_->tocEdit(), selectedTrack_);
+        guiUpdate(UPD_TRACK_DATA);
+    }
+    stop();
+}
+
+void TrackInfoDialog::cancelAction()
+{
+    // Edits are discarded: start() re-imports the track on the next open.
     stop();
 }
 
@@ -257,7 +276,6 @@ void TrackInfoDialog::update(unsigned long level, TocEditView *view)
 
     if (view == NULL || !view->trackSelection(&selectedTrack_)) {
         selectedTrack_ = 0;
-        applyButton_.set_sensitive(FALSE);
         clear();
         return;
     }
@@ -272,9 +290,6 @@ void TrackInfoDialog::update(unsigned long level, TocEditView *view)
     if (level & (UPD_TOC_DATA | UPD_TRACK_DATA | UPD_TRACK_MARK_SEL)) {
         toc = view->tocEdit()->toc();
         importData(toc, selectedTrack_);
-        applyButton_.set_sensitive(view->tocEdit()->editable() ? TRUE : FALSE);
-    } else if (level & UPD_EDITABLE_STATE) {
-        applyButton_.set_sensitive(view->tocEdit()->editable() ? TRUE : FALSE);
     }
 }
 
@@ -304,16 +319,6 @@ void TrackInfoDialog::clearCdText()
         cdTextPages_[l].isrc.set_text("");
         cdTextPages_[l].isrc.set_editable(false);
     }
-}
-
-void TrackInfoDialog::applyAction()
-{
-    if (tocEditView_ == NULL || !tocEditView_->tocEdit()->editable() || selectedTrack_ == 0)
-        return;
-
-    exportData(tocEditView_->tocEdit(), selectedTrack_);
-
-    guiUpdate(UPD_TRACK_DATA);
 }
 
 const char *TrackInfoDialog::checkString(const std::string &str)

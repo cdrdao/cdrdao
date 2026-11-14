@@ -133,7 +133,12 @@ int CdDevice::autoSelectDriver()
 
         if (sif && sif->init() == 0 && (p2a = sif->checkMmc())) {
 
-            driver_ = DRIVER_DEFAULT;
+            // Same fallback as the cdrdao CLI (CdrDriver::detectDriver):
+            // a generic MMC drive gets CD-TEXT writing enabled.
+            options = 0;
+            detected = CdrDriver::detectDriver(sif, &options);
+            driver_ = detected ? detected : DRIVER_DEFAULT;
+            driverOptions_ = options;
             if (p2a->cd_r_read)
                 deviceType_ = CD_ROM;
             if (p2a->cd_r_write)

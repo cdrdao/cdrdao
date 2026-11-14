@@ -35,6 +35,7 @@ class SonyCDU948 : public SonyCDU920
     static CdrDriver *instance(std::shared_ptr<ScsiIf> scsiIf, unsigned long options);
 
     int checkToc(const Toc *);
+    CdTextWrite cdTextWrite() const override { return CdTextWrite::ENABLED; }
 
     int multiSession(int);
     int speed(int);

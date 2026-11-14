@@ -171,6 +171,14 @@ class CdrDriver
     virtual const char *driverName() const { return driverName_; }
     virtual unsigned long options() const { return options_; }
 
+    // Whether this driver will write CD-TEXT data to the lead-in.
+    enum class CdTextWrite {
+        UNSUPPORTED, // driver or drive cannot write CD-TEXT
+        DISABLED,    // supported, but turned off by a driver option
+        ENABLED
+    };
+    virtual CdTextWrite cdTextWrite() const { return CdTextWrite::UNSUPPORTED; }
+
     // Returns 1 if drive takes audio samples in big endian byte order or
     // 0 for little endian byte order
     virtual int bigEndianSamples() const = 0;
