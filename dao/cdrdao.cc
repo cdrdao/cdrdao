@@ -1024,9 +1024,11 @@ void Cdrdao::showToc(Toc *toc, DaoCommandLine &options)
 
     if (options.verbose > 2) {
         for (const auto &item : toc->globalCdTextItems()) {
-	    std::cout << "          ";
-            item.print(std::cout, filePrintParams);
-	    std::cout << "\n";
+            if (!item.empty()) {
+                std::cout << "          ";
+                item.print(std::cout, filePrintParams);
+                std::cout << "\n";
+            }
         }
     }
 
@@ -1073,9 +1075,11 @@ void Cdrdao::showToc(Toc *toc, DaoCommandLine &options)
 
         if (options.verbose > 2) {
             for (const auto &item : t->getCdTextItems()) {
-		std::cout << "          ";
-                item.print(std::cout, filePrintParams);
-		std::cout << "\n";
+                if (!item.empty()) {
+                    std::cout << "          ";
+                    item.print(std::cout, filePrintParams);
+                    std::cout << "\n";
+                }
             }
         }
 
