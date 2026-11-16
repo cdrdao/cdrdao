@@ -25,7 +25,6 @@
 
 #include <list>
 
-class ProjectChooser;
 class BlankCDDialog;
 class BlankCDDialog;
 class TocEdit;

@@ -63,7 +63,6 @@ gcdmaster_SOURCES = \
 	TrackManager.h		\
 	TrackManager.cc		\
 	gcdmaster.h		\
-	GenericView.h		\
 	BlankCDDialog.h		\
 	guiUpdate.h		\
 	ProcessMonitor.h	\
@@ -77,7 +76,6 @@ EXTRA_gcdmaster_SOURCES =	\
 	SoundIF-ao.cc 		\
 	SoundIF-linux.cc 	\
 	SoundIF-none.cc 	\
-	SoundIF-solaris.cc	\
 	DeviceMonitorLinux.cc	\
 	DeviceMonitorFreeBSD.cc	\
 	DeviceMonitorNetBSD.cc	\
@@ -149,13 +147,31 @@ icon_DATA = gcdmaster.png gcdmaster-doc.png
 gsettings_SCHEMAS = org.gnome.gcdmaster.gschema.xml
 @GSETTINGS_RULES@
 
-resources.cc: ui/gresource.xml
+RESOURCE_DEPS = \
+	ui/app_menu.ui		\
+	ui/gears_audio_menu.ui	\
+	ui/preferences.ui	\
+	ui/window.ui		\
+	ui/gcdmaster.css	\
+	ui/gcdmaster.png	\
+	ui/audiocd.png		\
+	ui/blank.png		\
+	ui/copycd.png		\
+	ui/dumpcd.png		\
+	ui/open.png		\
+	ui/pause.png		\
+	ui/play.png		\
+	ui/record.png		\
+	ui/stop.png		\
+	ui/cd.svg
+
+resources.cc: ui/gresource.xml $(RESOURCE_DEPS)
 	glib-compile-resources \
 		--target=$@ \
 		--sourcedir=ui \
 		--generate-source \
 		$<
-resources.h: ui/gresource.xml
+resources.h: ui/gresource.xml $(RESOURCE_DEPS)
 	glib-compile-resources \
 		--target=$@ \
 		--sourcedir=ui \
@@ -171,7 +187,7 @@ EXTRA_DIST = \
 	$(icon_DATA)	\
 	$(freedesktop_DATA)	\
 	$(appreg_DATA)	\
-	gresource.xml \
+	ui/gresource.xml \
 	org.gnome.gcdmaster.gschema.xml \
 	$(RESOURCE_DEPS) \
 	BUGS TASKS
