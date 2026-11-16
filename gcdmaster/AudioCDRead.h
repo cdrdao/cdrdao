@@ -1,6 +1,6 @@
 /*  cdrdao - write audio CD-Rs in disc-at-once mode
  *
- *  Copyright (C) 2000  Andreas Mueller <mueller@daneb.ping.de>
+ *  Copyright (C) 2026  Denis Leroy <denis@poolshark.org>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -17,19 +17,38 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#include "GenericView.h"
+#ifndef __AUDIO_CD_READ_H__
+#define __AUDIO_CD_READ_H__
 
-GenericView::GenericView()
-{
-    tocEditView_ = (TocEditView *)0;
-}
+#include <gtkmm.h>
+#include <filesystem>
+#include "gcdmaster.h"
 
-GenericView::~GenericView()
-{
-    tocEditView_ = (TocEditView *)0;
-}
+class DeviceSelector;
+class RecordCDSource;
 
-TocEditView *GenericView::tocEditView() const
+class AudioCDRead : public Gtk::Window
 {
-    return tocEditView_;
-}
+  public:
+    static Glib::RefPtr<AudioCDRead> create(Gtk::Window* parent);
+
+    void update(unsigned long level);
+    void start();
+
+  private:
+    AudioCDRead(Gtk::Window* parent);
+
+    void on_datafile_button_clicked();
+    void on_device_selected();
+    void execute();
+
+    RecordCDSource* CDSource_;
+    Gtk::Button* datafileButton_;
+    Gtk::Button* startButton_;
+    std::filesystem::path datafilePath_;
+    DeviceSelector* deviceSelector_;
+    Gtk::Window* parent_;
+    sigc::connection conn_;
+};
+
+#endif

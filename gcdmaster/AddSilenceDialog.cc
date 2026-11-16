@@ -34,68 +34,52 @@
 
 #include "Sample.h"
 
-AddSilenceDialog::AddSilenceDialog()
+Glib::RefPtr<AddSilenceDialog> AddSilenceDialog::create(Gtk::Window* parent)
 {
-    Gtk::Button *button;
-    Gtk::VBox *vbox;
-    Gtk::HBox *hbox;
-
-    tocEditView_ = NULL;
-    active_ = false;
-    mode_ = M_APPEND;
-
-    Gtk::Frame *frame = new Gtk::Frame(_(" Length of Silence "));
-
-    Gtk::Table *table = new Gtk::Table(4, 2, false);
-    table->set_row_spacings(5);
-    table->set_col_spacings(5);
-    hbox = new Gtk::HBox;
-    hbox->pack_start(*table, true, true, 5);
-    vbox = new Gtk::VBox;
-    vbox->pack_start(*hbox, false, false, 5);
-    frame->add(*vbox);
-
-    Gtk::Label *label = new Gtk::Label(_("Minutes:"));
-    table->attach(*label, 0, 1, 0, 1, Gtk::SHRINK);
-    table->attach(minutes_, 1, 2, 0, 1);
-
-    label = new Gtk::Label(_("Seconds:"));
-    table->attach(*label, 0, 1, 1, 2, Gtk::SHRINK);
-    table->attach(seconds_, 1, 2, 1, 2);
-
-    label = new Gtk::Label(_("Frames:"));
-    table->attach(*label, 0, 1, 2, 3, Gtk::SHRINK);
-    table->attach(frames_, 1, 2, 2, 3);
-
-    label = new Gtk::Label(_("Samples:"));
-    table->attach(*label, 0, 1, 3, 4, Gtk::SHRINK);
-    table->attach(samples_, 1, 2, 3, 4);
-
-    hbox = new Gtk::HBox;
-    hbox->pack_start(*frame, true, true, 10);
-
-    get_vbox()->pack_start(*hbox, false, false, 10);
-
-    Gtk::HButtonBox *bbox = new Gtk::HButtonBox(Gtk::BUTTONBOX_SPREAD);
-
-    applyButton_ = new Gtk::Button(Gtk::StockID(Gtk::Stock::APPLY));
-    bbox->pack_start(*applyButton_);
-    applyButton_->signal_clicked().connect(mem_fun(*this, &AddSilenceDialog::applyAction));
-
-    button = new Gtk::Button(Gtk::StockID(Gtk::Stock::CLEAR));
-    bbox->pack_start(*button);
-    button->signal_clicked().connect(mem_fun(*this, &AddSilenceDialog::clearAction));
-
-    button = new Gtk::Button(Gtk::StockID(Gtk::Stock::CLOSE));
-    bbox->pack_start(*button);
-    button->signal_clicked().connect(mem_fun(*this, &AddSilenceDialog::closeAction));
-
-    get_action_area()->pack_start(*bbox);
-    show_all_children();
+    return Glib::make_refptr_for_instance(new AddSilenceDialog(parent));
 }
 
-AddSilenceDialog::~AddSilenceDialog()
+AddSilenceDialog::AddSilenceDialog(Gtk::Window* parent) :
+    parent_(parent)
 {
+    set_hide_on_close(true);
+
+    auto main_vbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL, 10);
+    main_vbox->set_margin(10);
+    set_child(*main_vbox);
+
+    auto *grid = Gtk::make_managed<Gtk::Grid>();
+    grid->set_row_spacing(5);
+    grid->set_column_spacing(5);
+    grid->set_margin(10);
+
+    auto add_row = [&](const std::string& label_text, Gtk::Widget& entry, int row) {
+        auto label = Gtk::make_managed<Gtk::Label>(label_text);
+        label->set_halign(Gtk::Align::START);
+        grid->attach(*label, 0, row, 1, 1);
+        grid->attach(entry, 1, row, 1, 1);
+        entry.set_expand(true);
+    };
+
+    add_row(_("Minutes:"), minutes_, 0);
+    add_row(_("Seconds:"), seconds_, 1);
+    add_row(_("Frames:"), frames_, 2);
+    add_row(_("Samples:"), samples_, 3);
+
+    auto frame = Gtk::make_managed<Gtk::Frame>(_(" Length of Silence "));
+    frame->set_child(*grid);
+    main_vbox->append(*frame);
+    
+    auto bbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL, 6);
+    bbox->set_halign(Gtk::Align::END);
+    bbox->set_margin_top(10);
+
+    applyButton_ = Gtk::make_managed<Gtk::Button>(_("Apply"));
+    applyButton_->add_css_class("suggested-action");
+    applyButton_->signal_clicked().connect(sigc::mem_fun(*this, &AddSilenceDialog::applyAction));
+
+    bbox->append(*applyButton_);
+    main_vbox->append(*bbox);
 }
 
 void AddSilenceDialog::mode(Mode m)
@@ -105,16 +89,23 @@ void AddSilenceDialog::mode(Mode m)
     switch (mode_) {
     case M_APPEND:
         set_title(_("Append Silence"));
+        applyButton_->set_label(_("Append"));
         break;
     case M_INSERT:
         set_title(_("Insert Silence"));
+        applyButton_->set_label(_("Insert"));
         break;
     }
 }
 
-void AddSilenceDialog::start(TocEditView *view)
+void AddSilenceDialog::start(Mode m,TocEditView *view)
 {
+    mode(m);
     active_ = true;
+    if (view) {
+        if (parent_)
+            set_transient_for(*parent_);
+    }
     update(UPD_ALL, view);
     present();
     tocEditView_ = view;
@@ -122,8 +113,8 @@ void AddSilenceDialog::start(TocEditView *view)
 
 void AddSilenceDialog::stop()
 {
-    hide();
     active_ = false;
+    hide();
 }
 
 void AddSilenceDialog::update(unsigned long level, TocEditView *view)
@@ -151,92 +142,46 @@ void AddSilenceDialog::update(unsigned long level, TocEditView *view)
     tocEditView_ = view;
 }
 
-bool AddSilenceDialog::on_delete_event(GdkEventAny *)
-{
-    stop();
-    return 1;
-}
-
-void AddSilenceDialog::closeAction()
-{
-    stop();
-}
-
-void AddSilenceDialog::clearAction()
-{
-    minutes_.set_text("");
-    seconds_.set_text("");
-    frames_.set_text("");
-    samples_.set_text("");
-}
-
 void AddSilenceDialog::applyAction()
 {
-    unsigned long length = 0;
     char buf[20];
     long val;
-    TocEdit *tocEdit;
 
     if (tocEditView_ == NULL)
         return;
 
-    tocEdit = tocEditView_->tocEdit();
+    auto tocEdit = tocEditView_->tocEdit();
 
     if (!tocEdit->editable())
         return;
 
-    const char *s = minutes_.get_text().c_str();
-    if (s != NULL && *s != 0) {
-        val = atol(s);
-        length += val * 60 * 75 * SAMPLES_PER_BLOCK;
-        snprintf(buf, sizeof(buf), "%ld", val);
-        minutes_.set_text(buf);
-    }
+    unsigned long length = 0;
+    auto parse = [&](Gtk::Entry& e) {
+        auto t = e.get_text();
+        return t.empty() ? 0 : std::atol(t.c_str());
+    };
 
-    s = seconds_.get_text().c_str();
-    if (s != NULL && *s != 0) {
-        val = atol(s);
-        length += val * 75 * SAMPLES_PER_BLOCK;
-        snprintf(buf, sizeof(buf), "%ld", val);
-        seconds_.set_text(buf);
-    }
+    length += parse(minutes_) * 60 * 75 * SAMPLES_PER_BLOCK;
+    length += parse(seconds_) * 75 * SAMPLES_PER_BLOCK;
+    length += parse(frames_) * SAMPLES_PER_BLOCK;
+    length += parse(samples_);
 
-    s = frames_.get_text().c_str();
-    if (s != NULL && *s != 0) {
-        val = atol(s);
-        length += val * SAMPLES_PER_BLOCK;
-        snprintf(buf, sizeof(buf), "%ld", val);
-        frames_.set_text(buf);
-    }
-
-    s = samples_.get_text().c_str();
-    if (s != NULL && *s != 0) {
-        val = atol(s);
-        length += val;
-        snprintf(buf, sizeof(buf), "%ld", val);
-        samples_.set_text(buf);
-    }
 
     if (length > 0) {
         unsigned long pos;
 
-        switch (mode_) {
-        case M_APPEND:
+        if (mode_ == M_APPEND) {
             tocEdit->appendSilence(length);
             update(UPD_TOC_DATA | UPD_TRACK_DATA | UPD_SAMPLE_SEL, tocEditView_);
-            signal_tocModified(UPD_TOC_DATA | UPD_TRACK_DATA | UPD_SAMPLE_SEL);
-            signal_fullView();
-            signal_tocModified(UPD_SAMPLES);
-            break;
-        case M_INSERT:
-            if (tocEditView_->sampleMarker(&pos)) {
-                if (tocEdit->insertSilence(length, pos) == 0) {
-                    tocEditView_->sampleSelect(pos, pos + length - 1);
-                    update(UPD_TOC_DATA | UPD_TRACK_DATA, tocEditView_);
-                    signal_tocModified(UPD_TOC_DATA | UPD_TRACK_DATA);
-                }
+            signal_tocModified.emit(UPD_TOC_DATA | UPD_TRACK_DATA | UPD_SAMPLE_SEL);
+            signal_fullView.emit();
+            signal_tocModified.emit(UPD_SAMPLES);
+        } else if (mode_ ==  M_INSERT && tocEditView_->sampleMarker(&pos)) {
+            if (tocEdit->insertSilence(length, pos) == 0) {
+                tocEditView_->sampleSelect(pos, pos + length - 1);
+                update(UPD_TOC_DATA | UPD_TRACK_DATA, tocEditView_);
+                signal_tocModified.emit(UPD_TOC_DATA | UPD_TRACK_DATA);
             }
-            break;
         }
         guiUpdate();
     }

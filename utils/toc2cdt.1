@@ -1,0 +1,68 @@
+.TH "TOC2CDT" "1" "2026-11-15" "" "CDRDAO"
+
+.SH "NAME"
+toc2cdt \- writes the CD-TEXT data of a
+.I cdrdao(1)
+TOC file as a raw CD-TEXT pack file
+
+.SH "SYNOPSIS"
+.B toc2cdt
+.RB [\| \-v
+.IR verbosity_level \|]
+.RB [\| \-H \|]
+.I input_toc_file
+.RI [\| output_cdt_file \|]
+.PP
+.B toc2cdt
+.RB { \-V | \-h }
+
+.SH "DESCRIPTION"
+.B toc2cdt
+encodes the CD-TEXT data of a TOC file of
+.I cdrdao(1)
+into the 18 byte CD-TEXT packs that are written into the lead-in of a CD,
+including the size information packs and the CRCs, and writes them to a file.
+All languages, pack types and character encodings supported by the TOC file
+format are encoded.
+
+The output file contains the packs without any header or trailer. This is the
+format expected by the CUE sheet
+.B CDTEXTFILE
+statement and used for the CD-TEXT file of a DDP image, so the output can be
+used together with a CUE sheet (for example one created with
+.IR toc2cue(1) )
+to pass detailed CD-TEXT data to other tools.
+
+If
+.I output_cdt_file
+is omitted, the name of the TOC file with its extension replaced by
+.B .cdt
+is used.
+
+.SH "OPTIONS"
+.TP
+.BI "\-v " verbosity_level
+Sets the verbosity level (default 1). Level 0 only shows errors.
+.TP
+.B \-H
+Prepends the 4 byte header returned by the MMC READ TOC/PMA/ATIP command
+(2 bytes big-endian data length, 2 reserved bytes), which some tools expect.
+.TP
+.B \-V
+Prints the version of toc2cdt.
+.TP
+.B \-h
+Prints a usage summary.
+
+.SH "EXIT STATUS"
+0 on success; 1 if the TOC file cannot be read, contains no CD-TEXT data,
+has more CD-TEXT data than fits in a block, or the output cannot be written.
+
+.SH "SEE ALSO"
+.IR cdrdao(1) ,
+.I toc2cue(1)
+
+.SH "AUTHOR"
+.B toc2cdt
+is part of
+.I cdrdao(1).

@@ -32,9 +32,9 @@
 class PlextorReaderScan : public PlextorReader
 {
   public:
-    PlextorReaderScan(ScsiIf *scsiIf, unsigned long options);
+    PlextorReaderScan(std::shared_ptr<ScsiIf> scsiIf, unsigned long options);
     ~PlextorReaderScan();
-    static CdrDriver *instance(ScsiIf *scsiIf, unsigned long options);
+    static CdrDriver *instance(std::shared_ptr<ScsiIf> scsiIf, unsigned long options);
 
     Toc *readDisk(int session, const char *);
 

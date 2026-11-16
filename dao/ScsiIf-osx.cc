@@ -10,10 +10,41 @@
  * neighbour's brother-in-law or anybody else, but rewrite them to your taste.
  */
 
+/*
+ * Device naming
+ *
+ * macOS has no short device node for optical drives, so each drive found
+ * by scan() gets a small number ("1", "2", ...), the same 1-based scheme
+ * 'drutil list' uses. Numbers are handed out in the order the drives were
+ * attached (IORegistry entry ID); a drive keeps its number for the life of
+ * the process, and a newly attached drive gets the lowest free number.
+ *
+ * Numbers can change between runs when drives come and go, so a drive can
+ * also be named by its unit serial number, its full IOService-plane path,
+ * or the BSD node of the inserted disc ("/dev/disk4"). ScanData::id holds
+ * the serial number (or the path when there is none) for callers that need
+ * a name that stays the same, such as gcdmaster's saved settings.
+ *
+ * scan() only opens a drive briefly to read its serial number. It gets
+ * exclusive access when a command first uses it (init() or sendCmd()) and
+ * keeps it until release() is called or the drive goes away. A drive that
+ * cannot be opened, typically because a disc in it is mounted or another
+ * process holds it, is still listed and flagged as in use. Such a drive
+ * can't be found by its serial number, since reading the serial number
+ * needs the drive to be open.
+ */
+
 /* standard includes */
 #include <ctype.h>
 #include <stdio.h>
 #include <string.h>
+#include <algorithm>
+#include <atomic>
+#include <map>
+#include <memory>
+#include <mutex>
+#include <set>
+#include <vector>
 
 /* cdrdao specific includes and prototype */
 #include "ScsiIf.h"
@@ -27,207 +58,525 @@
 #include <IOKit/scsi/SCSICmds_INQUIRY_Definitions.h>
 #include <IOKit/scsi/SCSICommandOperationCodes.h>
 #include <IOKit/scsi/SCSITaskLib.h>
+#include <IOKit/storage/IOStorageDeviceCharacteristics.h>
 
-class ScsiIfImpl
+
+class ScsiIfOsx : public ScsiIf
 {
   public:
-    int num_;    /* number of device for compatibility mode */
-    char *path_; /* native (IO registry) pathname of device */
-    io_object_t object_;
-    IOCFPlugInInterface **plugin_;
-    MMCDeviceInterface **mmc_;
-    SCSITaskDeviceInterface **scsi_;
-    int exclusive_;
-    long timeout_; /* in ms */
-    char *error_;  /* sendCmd() internal error string */
+    ScsiIfOsx(const std::string& dev);
+    ~ScsiIfOsx() override;
+
+    virtual int init() override;
+    virtual int sendCmd(const u8 *, int, const u8 *, int, u8 *, int, int showMessage = 1) override;
+    virtual const u8 *getSense(int &len) const override;
+    virtual void printError() override;
+    virtual int timeout(int) override;
+    virtual void release() override;
+
+    // Opens the drive with exclusive access and keeps it open until the
+    // object is destroyed. Returns 0 on success.
+    int acquire();
+
+    // Opens the drive briefly to update the in-use flag and read the
+    // serial number. Does nothing if the drive is already acquired.
+    void probe();
+
+    // Returns the unit serial number from INQUIRY VPD page 0x80, or from
+    // the MMC Logical Unit Serial Number feature (0x0108) for drives that
+    // don't support VPD pages. Returns an empty string if neither works.
+    std::string serialNumber();
+
+    // Fills vendor, product and revision from the IORegistry, which works
+    // without opening the drive.
+    void readCharacteristics();
+
+    // BSD name of the disc in the drive ("disk4"), or empty if none.
+    std::string mediaBsdName() const;
+
+    using ScsiIf::dev_;
+    std::string path_;
+    std::string serial_;
+    int num_ = 0;
+    uint64_t entryId_ = 0;
+    io_object_t object_ = 0;
+    std::atomic<bool> inUse_{false};
+
+  private:
+    int open();
+    void close();
+
+    IOCFPlugInInterface **plugin_ = nullptr;
+    MMCDeviceInterface **mmc_ = nullptr;
+    SCSITaskDeviceInterface **scsi_ = nullptr;
+    bool exclusive_ = false;
+
+    // Set once acquire() succeeds; the drive then stays open.
+    std::atomic<bool> held_{false};
+    // True while probe() has the drive open, so that its own commands
+    // don't try to acquire it.
+    bool probing_ = false;
+    // Guards open/close and each command. Recursive because probe() holds
+    // it while sending commands, and sendCmd() takes it too.
+    std::recursive_mutex mutex_;
+
+    long timeout_ms_ = 10 * 1000;
+    std::string error_;
     SCSIServiceResponse response_;
     SCSITaskStatus status_;
     struct SCSI_Sense_Data sense_;
 };
 
-ScsiIf::ScsiIf(const char *name)
+ScsiIfOsx::~ScsiIfOsx()
 {
-    int len;
-    int bus, targ, lun, count;
-
-    impl_ = new ScsiIfImpl;
-    impl_->num_ = 0;
-    impl_->path_ = NULL;
-    len = strlen(name);
-    if (len) {
-        if (isdigit(name[0])) {
-            /* Compatibility mode. Just add bus+targ+lun */
-            if (sscanf(name, "%i,%i,%i%n", &bus, &targ, &lun, &count) == 3 && count == len) {
-                if ((bus >= 0) && (targ >= 0) && (lun >= 0))
-                    impl_->num_ = 1 + bus + targ + lun;
-            }
-        } else {
-            /* Native mode. Take name as IOreg path */
-            impl_->path_ = strdupCC(name);
-        }
-    }
-    impl_->object_ = 0;
-    impl_->plugin_ = NULL;
-    impl_->mmc_ = NULL;
-    impl_->scsi_ = NULL;
-    impl_->exclusive_ = 0;
-    impl_->timeout_ = 10 * 1000;
-    impl_->error_ = NULL;
-
-    vendor_[0] = 0;
-    product_[0] = 0;
-    revision_[0] = 0;
-
-    maxDataLen_ = 64 * 1024; /* XXX */
+    close();
+    if (object_)
+        IOObjectRelease(object_);
 }
 
-ScsiIf::~ScsiIf()
+int ScsiIfOsx::open()
 {
-    if (impl_->scsi_) {
-        if (impl_->exclusive_)
-            (*impl_->scsi_)->ReleaseExclusiveAccess(impl_->scsi_);
-        (*impl_->scsi_)->Release(impl_->scsi_);
-    }
-    if (impl_->mmc_)
-        (*impl_->mmc_)->Release(impl_->mmc_);
-    if (impl_->plugin_)
-        IODestroyPlugInInterface(impl_->plugin_);
-    if (impl_->object_)
-        IOObjectRelease(impl_->object_);
-    if (impl_->path_ != NULL)
-        delete[] impl_->path_;
-    if (impl_->error_ != NULL)
-        delete[] impl_->error_;
-    delete impl_;
-}
+    if (scsi_)
+        return 0;
 
-int ScsiIf::init()
-{
-    CFMutableDictionaryRef dict = NULL;
-    CFMutableDictionaryRef sub = NULL;
-    io_iterator_t iterator = 0;
-    kern_return_t err;
     SInt32 score;
-    HRESULT herr;
-    int i;
-
-    if (impl_->num_) {
-        /*
-         * Compatibility mode.
-         * Build dictionaries to search for num_'th device having the
-         * authoring property using an IO iterator.
-         */
-        dict = CFDictionaryCreateMutable(kCFAllocatorDefault, 0, NULL, NULL);
-        sub = CFDictionaryCreateMutable(kCFAllocatorDefault, 0, NULL, NULL);
-        CFDictionarySetValue(sub, CFSTR(kIOPropertySCSITaskDeviceCategory),
-                             CFSTR(kIOPropertySCSITaskAuthoringDevice));
-        CFDictionarySetValue(dict, CFSTR(kIOPropertyMatchKey), sub);
-        IOServiceGetMatchingServices(kIOMainPortDefault, dict, &iterator);
-        if (!iterator)
-            log_message(3, "init: no iterator");
-        if (iterator) {
-            i = impl_->num_;
-            do {
-                impl_->object_ = IOIteratorNext(iterator);
-                i--;
-            } while (i && impl_->object_);
-            IOObjectRelease(iterator);
-        }
-    } else if (impl_->path_) {
-        /* Native mode. Just use the IO Registry pathname */
-        impl_->object_ = IORegistryEntryFromPath(kIOMainPortDefault, impl_->path_);
+    if (IOCreatePlugInInterfaceForService(object_, kIOMMCDeviceUserClientTypeID,
+                                          kIOCFPlugInInterfaceID, &plugin_,
+                                          &score) != kIOReturnSuccess ||
+        !plugin_) {
+        error_ = "cannot create plugin interface";
+        close();
+        return 1;
     }
-    /* Strange if (!x) ... if (x) style so you can #ifdef out the !x part */
-    if (!impl_->object_)
-        log_message(-2, "init: no object");
-    if (impl_->object_) {
-        /* Get intermediate (IOCFPlugIn) plug-in for MMC device */
-        err = IOCreatePlugInInterfaceForService(impl_->object_, kIOMMCDeviceUserClientTypeID,
-                                                kIOCFPlugInInterfaceID, &impl_->plugin_, &score);
-        if (err != noErr)
-            log_message(-2, "init: IOCreatePlugInInterfaceForService failed: %d", err);
+    (*plugin_)->QueryInterface(plugin_, CFUUIDGetUUIDBytes(kIOMMCDeviceInterfaceID),
+                               (LPVOID *)&mmc_);
+    if (!mmc_) {
+        error_ = "no MMC interface";
+        close();
+        return 1;
     }
-    if (!impl_->plugin_)
-        log_message(-2, "init: no plugin");
-    if (impl_->plugin_) {
-        /* Get the MMC interface (MMCDeviceInterface) */
-        herr = (*impl_->plugin_)
-                   ->QueryInterface(impl_->plugin_, CFUUIDGetUUIDBytes(kIOMMCDeviceInterfaceID),
-                                    /*
-                                     * Most of Apple's examples erroneously cast to LPVOID,
-                                     * not LPVOID *.
-                                     */
-                                    (LPVOID *)&impl_->mmc_);
-        if (herr != S_OK)
-            log_message(-2, "init: QueryInterface failed: %d", herr);
+    scsi_ = (*mmc_)->GetSCSITaskDeviceInterface(mmc_);
+    if (!scsi_) {
+        error_ = "no SCSI task interface";
+        close();
+        return 1;
     }
-    if (!impl_->mmc_)
-        log_message(-2, "init: no mmc");
-    if (impl_->mmc_) {
-        /* Get the SCSI interface */
-        impl_->scsi_ = (*impl_->mmc_)->GetSCSITaskDeviceInterface(impl_->mmc_);
+    if ((*scsi_)->ObtainExclusiveAccess(scsi_) != kIOReturnSuccess) {
+        error_ = "device is in use";
+        close();
+        return 1;
     }
-    if (!impl_->scsi_)
-        log_message(-2, "init: no scsi");
-    if (impl_->scsi_) {
-        /* Obtain exclusive access to device */
-        err = (*impl_->scsi_)->ObtainExclusiveAccess(impl_->scsi_);
-        if (err != noErr)
-            log_message(-2, "Device already in use, please use diskutil to unmount the disc first");
-        if (err == noErr) {
-            impl_->exclusive_ = 1;
-            /* Send SCSI inquiry command */
-            i = inquiry();
-            if (i != 0)
-                log_message(-2, "init: inquiry failed: %d", i);
-            return (i == 0) ? 0 : 2;
-        }
-    }
-    log_message(-2, "init: failed");
-    return 1;
+    exclusive_ = true;
+    return 0;
 }
 
-int ScsiIf::timeout(int t)
+void ScsiIfOsx::close()
 {
-    int ret = impl_->timeout_ / 1000;
-    impl_->timeout_ = t * 1000;
+    if (scsi_) {
+        if (exclusive_)
+            (*scsi_)->ReleaseExclusiveAccess(scsi_);
+        (*scsi_)->Release(scsi_);
+        scsi_ = nullptr;
+    }
+    exclusive_ = false;
+    if (mmc_) {
+        (*mmc_)->Release(mmc_);
+        mmc_ = nullptr;
+    }
+    if (plugin_) {
+        IODestroyPlugInInterface(plugin_);
+        plugin_ = nullptr;
+    }
+}
+
+int ScsiIfOsx::acquire()
+{
+    std::lock_guard<std::recursive_mutex> lock(mutex_);
+
+    if (held_)
+        return 0;
+    if (open() != 0) {
+        inUse_ = true;
+        return 1;
+    }
+    inUse_ = false;
+    held_ = true;
+    return 0;
+}
+
+void ScsiIfOsx::release()
+{
+    std::lock_guard<std::recursive_mutex> lock(mutex_);
+
+    if (!held_)
+        return;
+    close();
+    held_ = false;
+}
+
+void ScsiIfOsx::probe()
+{
+    std::lock_guard<std::recursive_mutex> lock(mutex_);
+
+    if (held_)
+        return;
+    if (open() != 0) {
+        inUse_ = true;
+        return;
+    }
+    inUse_ = false;
+
+    probing_ = true;
+    if (serial_.empty())
+        serial_ = serialNumber();
+    if (vendor_.empty() && product_.empty())
+        inquiry();
+    probing_ = false;
+
+    close();
+}
+
+// Returns a string value of a CF dictionary, trimmed, or "" if absent.
+static std::string dictString(CFDictionaryRef dict, CFStringRef key)
+{
+    CFTypeRef value = CFDictionaryGetValue(dict, key);
+    if (!value || CFGetTypeID(value) != CFStringGetTypeID())
+        return "";
+
+    char buf[256];
+    if (!CFStringGetCString((CFStringRef)value, buf, sizeof(buf), kCFStringEncodingUTF8))
+        return "";
+    std::string s(buf);
+    Util::trimSpaces(s);
+    return s;
+}
+
+void ScsiIfOsx::readCharacteristics()
+{
+    CFTypeRef prop = IORegistryEntryCreateCFProperty(
+        object_, CFSTR(kIOPropertyDeviceCharacteristicsKey), kCFAllocatorDefault, 0);
+    if (!prop)
+        return;
+    if (CFGetTypeID(prop) == CFDictionaryGetTypeID()) {
+        auto dict = (CFDictionaryRef)prop;
+        vendor_ = dictString(dict, CFSTR(kIOPropertyVendorNameKey));
+        product_ = dictString(dict, CFSTR(kIOPropertyProductNameKey));
+        revision_ = dictString(dict, CFSTR(kIOPropertyProductRevisionLevelKey));
+    }
+    CFRelease(prop);
+}
+
+std::string ScsiIfOsx::mediaBsdName() const
+{
+    // The whole-disc media object is the first BSD node below the drive.
+    CFTypeRef prop = IORegistryEntrySearchCFProperty(object_, kIOServicePlane, CFSTR("BSD Name"),
+                                                     kCFAllocatorDefault,
+                                                     kIORegistryIterateRecursively);
+    if (!prop)
+        return "";
+    std::string name;
+    if (CFGetTypeID(prop) == CFStringGetTypeID()) {
+        char buf[64];
+        if (CFStringGetCString((CFStringRef)prop, buf, sizeof(buf), kCFStringEncodingUTF8))
+            name = buf;
+    }
+    CFRelease(prop);
+    return name;
+}
+
+class DeviceManager
+{
+public:
+    DeviceManager() {};
+
+    void scan();
+
+    std::shared_ptr<ScsiIfOsx> find(const std::string& dev);
+
+    // Drives sorted by number.
+    std::vector<std::shared_ptr<ScsiIfOsx>> sorted() const;
+
+    // The serial number if no other drive has the same one, else "".
+    std::string uniqueSerial(const ScsiIfOsx& sif) const;
+
+    // Keyed by full IOService-plane path.
+    std::map<std::string, std::shared_ptr<ScsiIfOsx>> devmap;
+};
+
+DeviceManager* DM = new DeviceManager();
+
+// Serializes access to DM: gcdmaster scans from its device monitor thread
+// while the main thread may be creating interfaces.
+static std::mutex DMmutex;
+
+std::string DeviceManager::uniqueSerial(const ScsiIfOsx& sif) const
+{
+    if (sif.serial_.empty())
+        return "";
+    for (auto const& [path, other] : devmap) {
+        if (other.get() != &sif && other->serial_ == sif.serial_)
+            return "";
+    }
+    return sif.serial_;
+}
+
+std::vector<std::shared_ptr<ScsiIfOsx>> DeviceManager::sorted() const
+{
+    std::vector<std::shared_ptr<ScsiIfOsx>> list;
+    for (auto const& [path, sif] : devmap)
+        list.push_back(sif);
+    std::sort(list.begin(), list.end(),
+              [](const auto& a, const auto& b) { return a->num_ < b->num_; });
+    return list;
+}
+
+std::shared_ptr<ScsiIfOsx> DeviceManager::find(const std::string& dev)
+{
+    auto it = devmap.find(dev);
+    if (it != devmap.end())
+        return it->second;
+
+    for (auto const& [path, sif] : devmap) {
+        if (sif->dev_ == dev)
+            return sif;
+        if (!sif->serial_.empty() && uniqueSerial(*sif) == dev)
+            return sif;
+    }
+
+    // Accept a BSD node name ("/dev/disk4", as reported by Disk
+    // Arbitration) by walking up the IOService plane from the media
+    // object until we reach one of our authoring devices.
+    std::string bsd = dev;
+    if (bsd.rfind("/dev/", 0) == 0)
+        bsd = bsd.substr(5);
+    if (bsd.rfind("rdisk", 0) == 0)
+        bsd = bsd.substr(1);
+    if (bsd.rfind("disk", 0) != 0)
+        return nullptr;
+
+    io_registry_entry_t entry = IOServiceGetMatchingService(
+        kIOMainPortDefault, IOBSDNameMatching(kIOMainPortDefault, 0, bsd.c_str()));
+    std::shared_ptr<ScsiIfOsx> found;
+    while (entry && !found) {
+        io_string_t path;
+        if (IORegistryEntryGetPath(entry, kIOServicePlane, path) == KERN_SUCCESS) {
+            auto it = devmap.find(path);
+            if (it != devmap.end())
+                found = it->second;
+        }
+        io_registry_entry_t parent = 0;
+        if (IORegistryEntryGetParentEntry(entry, kIOServicePlane, &parent) != KERN_SUCCESS)
+            parent = 0;
+        IOObjectRelease(entry);
+        entry = parent;
+    }
+    if (entry)
+        IOObjectRelease(entry);
+    return found;
+}
+
+void DeviceManager::scan()
+{
+    struct Found {
+        uint64_t entryId;
+        std::string path;
+        io_object_t object;
+    };
+    std::vector<Found> found;
+
+    auto dict = CFDictionaryCreateMutable(kCFAllocatorDefault, 0, &kCFTypeDictionaryKeyCallBacks,
+                                          &kCFTypeDictionaryValueCallBacks);
+    auto sub = CFDictionaryCreateMutable(kCFAllocatorDefault, 0, &kCFTypeDictionaryKeyCallBacks,
+                                         &kCFTypeDictionaryValueCallBacks);
+    CFDictionarySetValue(sub, CFSTR(kIOPropertySCSITaskDeviceCategory),
+                         CFSTR(kIOPropertySCSITaskAuthoringDevice));
+    CFDictionarySetValue(dict, CFSTR(kIOPropertyMatchKey), sub);
+    CFRelease(sub);
+
+    // Consumes dict.
+    io_iterator_t iterator = 0;
+    if (IOServiceGetMatchingServices(kIOMainPortDefault, dict, &iterator) == KERN_SUCCESS &&
+        iterator) {
+        while (io_object_t object = IOIteratorNext(iterator)) {
+            io_string_t path;
+            uint64_t entryId = 0;
+            if (IORegistryEntryGetPath(object, kIOServicePlane, path) != KERN_SUCCESS) {
+                IOObjectRelease(object);
+                continue;
+            }
+            IORegistryEntryGetRegistryEntryID(object, &entryId);
+            found.push_back({entryId, path, object});
+        }
+        IOObjectRelease(iterator);
+    }
+
+    // Forget drives that are gone, so their numbers become free.
+    std::set<std::string> present;
+    for (auto const& f : found)
+        present.insert(f.path);
+    for (auto it = devmap.begin(); it != devmap.end();) {
+        if (present.count(it->first) == 0)
+            it = devmap.erase(it);
+        else
+            it++;
+    }
+
+    // Number new drives in attach order.
+    std::sort(found.begin(), found.end(),
+              [](const Found& a, const Found& b) { return a.entryId < b.entryId; });
+
+    for (auto const& f : found) {
+        auto it = devmap.find(f.path);
+        if (it != devmap.end()) {
+            IOObjectRelease(f.object);
+            it->second->probe();
+            continue;
+        }
+
+        std::set<int> used;
+        for (auto const& [path, sif] : devmap)
+            used.insert(sif->num_);
+        int num = 1;
+        while (used.count(num))
+            num++;
+
+        auto sif = std::make_shared<ScsiIfOsx>(std::to_string(num));
+        sif->num_ = num;
+        sif->path_ = f.path;
+        sif->entryId_ = f.entryId;
+        sif->object_ = f.object;
+        sif->readCharacteristics();
+        sif->probe();
+        devmap[f.path] = sif;
+
+        log_message(3, "Scan: found device %d: %s %s%s (%s)", num, sif->vendor().c_str(),
+                    sif->product().c_str(), sif->inUse_ ? " [in use]" : "",
+                    sif->serial_.empty() ? f.path.c_str() : sif->serial_.c_str());
+    }
+}
+
+ScsiIfOsx::ScsiIfOsx(const std::string& dev)
+{
+    dev_ = dev;
+    maxDataLen_ = 64 * 1024;
+}
+
+int ScsiIfOsx::init()
+{
+    if (acquire() != 0) {
+        log_message(-2, "Cannot open device %s (%s %s): %s.", dev_.c_str(), vendor_.c_str(),
+                    product_.c_str(), error_.c_str());
+        auto bsd = mediaBsdName();
+        if (!bsd.empty())
+            log_message(-2, "If the disc is mounted, unmount it first with "
+                            "'diskutil unmountDisk %s'.",
+                        bsd.c_str());
+        return 1;
+    }
+
+    if (vendor_.empty() && product_.empty() && inquiry() != 0)
+        return 2;
+
+    return 0;
+}
+
+// Converts a serial number field to a string. Returns an empty string
+// if it contains non-printable characters.
+static std::string serialString(const unsigned char *buf, int len)
+{
+    std::string serial;
+    for (int i = 0; i < len; i++) {
+        if (buf[i] == 0)
+            break;
+        if (!isprint(buf[i]))
+            return "";
+        serial += buf[i];
+    }
+    Util::trimSpaces(serial);
+    return serial;
+}
+
+std::string ScsiIfOsx::serialNumber()
+{
+    unsigned char result[0xfc];
+
+    // INQUIRY, Unit Serial Number VPD page
+    unsigned char inq[6] = { 0x12 /* INQUIRY */, 0x01 /* EVPD */, 0x80, 0, sizeof(result), 0 };
+    memset(result, 0, sizeof(result));
+    if (sendCmd(inq, 6, NULL, 0, result, sizeof(result), 0) == 0 && result[1] == 0x80) {
+        int len = std::min<int>(result[3], sizeof(result) - 4);
+        auto serial = serialString(result + 4, len);
+        if (!serial.empty())
+            return serial;
+    }
+
+    // GET CONFIGURATION, Logical Unit Serial Number feature (RT=2: only
+    // the requested feature)
+    unsigned char cfg[10] = { 0x46 /* GET CONFIGURATION */, 0x02, 0x01, 0x08, 0, 0, 0, 0,
+                              sizeof(result), 0 };
+    memset(result, 0, sizeof(result));
+    if (sendCmd(cfg, 10, NULL, 0, result, sizeof(result), 0) == 0) {
+        // 8-byte feature header, then the feature descriptor
+        const unsigned char *desc = result + 8;
+        if (desc[0] == 0x01 && desc[1] == 0x08) {
+            int len = std::min<int>(desc[3], sizeof(result) - 12);
+            return serialString(desc + 4, len);
+        }
+    }
+
+    return "";
+}
+
+int ScsiIfOsx::timeout(int t)
+{
+    int ret = timeout_ms_ / 1000;
+    timeout_ms_ = t * 1000;
     return ret;
 }
 
-int ScsiIf::sendCmd(const unsigned char *cmd, int cmdLen, const unsigned char *dataOut,
-                    int dataOutLen, unsigned char *dataIn, int dataInLen, int showMessage)
+int ScsiIfOsx::sendCmd(const unsigned char *cmd, int cmdLen, const unsigned char *dataOut,
+                       int dataOutLen, unsigned char *dataIn, int dataInLen, int showMessage)
 {
-    SCSITaskInterface **task;
+    SCSITaskInterface **task = nullptr;
     IOVirtualRange range;
     IOReturn ret;
     UInt64 len;
 
-    if (impl_->error_ != NULL) {
-        delete[] impl_->error_;
-        impl_->error_ = NULL;
+    error_.clear();
+
+    auto ERROR=[&](const std::string msg) {
+        error_ = "sendCmd: " + msg;
+        if (showMessage)
+            printError();
+        if (task)
+            (*task)->Release(task);
+    };
+
+    // Held for the whole command so that probe() or release() on another
+    // thread can't close the drive under it.
+    std::lock_guard<std::recursive_mutex> lock(mutex_);
+
+    // Open the drive on first use; probe()'s own commands skip this.
+    if (!held_ && !probing_ && acquire() != 0) {
+        ERROR(error_);
+        return 1;
     }
 
-#define ERROR(msg)                                                                                 \
-    do {                                                                                           \
-        impl_->error_ = new char[9 + strlen(msg) + 1];                                             \
-        strcpy(impl_->error_, "sendCmd: ");                                                        \
-        strcat(impl_->error_, msg);                                                                \
-        if (showMessage)                                                                           \
-            printError();                                                                          \
-        if (task)                                                                                  \
-            (*task)->Release(task);                                                                \
-        return 1;                                                                                  \
-    } while (0)
-
-    task = (*impl_->scsi_)->CreateSCSITask(impl_->scsi_);
-    if (!task)
+    task = (*scsi_)->CreateSCSITask(scsi_);
+    if (!task) {
         ERROR("no task");
+        return 1;
+    }
     ret = (*task)->SetCommandDescriptorBlock(task, (UInt8 *)cmd, cmdLen);
-    if (ret != kIOReturnSuccess)
+    if (ret != kIOReturnSuccess) {
         ERROR("SetCommandDescriptorBlock failed");
+        return 1;
+    }
     /* The OSX SCSI interface can't deal with two data phases */
-    if (dataIn && dataOut)
+    if (dataIn && dataOut) {
         ERROR("dataIn && dataOut");
+        return 1;
+    }
     if (dataIn) {
         range.address = (IOVirtualAddress)dataIn;
         range.length = dataInLen;
@@ -245,49 +594,55 @@ int ScsiIf::sendCmd(const unsigned char *cmd, int cmdLen, const unsigned char *d
         ret =
             (*task)->SetScatterGatherEntries(task, &range, 0, 0, kSCSIDataTransfer_NoDataTransfer);
     }
-    if (ret != kIOReturnSuccess)
+    if (ret != kIOReturnSuccess) {
         ERROR("SetScatterGatherEntries failed");
-    ret = (*task)->SetTimeoutDuration(task, impl_->timeout_);
-    if (ret != kIOReturnSuccess)
+        return 1;
+    }
+    ret = (*task)->SetTimeoutDuration(task, timeout_ms_);
+    if (ret != kIOReturnSuccess) {
         ERROR("SetTimeoutDuration failed");
-    ret = (*task)->ExecuteTaskSync(task, &impl_->sense_, &impl_->status_, &len);
-    if (ret != kIOReturnSuccess)
+        return 1;
+    }
+    ret = (*task)->ExecuteTaskSync(task, &sense_, &status_, &len);
+    if (ret != kIOReturnSuccess) {
         ERROR("ExecuteTaskSync failed");
-    ret = (*task)->GetSCSIServiceResponse(task, &impl_->response_);
-    if (ret != kIOReturnSuccess)
+        return 1;
+    }
+    ret = (*task)->GetSCSIServiceResponse(task, &response_);
+    if (ret != kIOReturnSuccess) {
         ERROR("GetSCSIServiceResponse failed");
+        return 1;
+    }
     (*task)->Release(task);
-    if (impl_->response_ == kSCSIServiceResponse_TASK_COMPLETE) {
-        if (impl_->status_ == kSCSITaskStatus_GOOD)
+    if (response_ == kSCSIServiceResponse_TASK_COMPLETE) {
+        if (status_ == kSCSITaskStatus_GOOD)
             return 0;
-        if (impl_->status_ == kSCSITaskStatus_CHECK_CONDITION)
+        if (status_ == kSCSITaskStatus_CHECK_CONDITION)
             return 2;
     }
-    if (impl_->response_ == kSCSIServiceResponse_SERVICE_DELIVERY_OR_TARGET_FAILURE)
+    if (response_ == kSCSIServiceResponse_SERVICE_DELIVERY_OR_TARGET_FAILURE)
         return 1;
     return 1 /* XXX This shouldn't happen */;
-
-#undef ERROR
 }
 
-const unsigned char *ScsiIf::getSense(int &len) const
+const unsigned char *ScsiIfOsx::getSense(int &len) const
 {
     len = kSenseDefaultSize;
-    return (unsigned char *)&impl_->sense_;
+    return (unsigned char *)&sense_;
 }
 
-void ScsiIf::printError()
+void ScsiIfOsx::printError()
 {
     const char *s;
 
-    if (impl_->error_)
+    if (!error_.empty())
         /* Internal error in sendCmd(). We saved a message string. */
-        s = impl_->error_;
+        s = error_.c_str();
     else
-        switch (impl_->response_) {
+        switch (response_) {
         case kSCSIServiceResponse_SERVICE_DELIVERY_OR_TARGET_FAILURE:
             /* The SCSI command didn't complete */
-            switch (impl_->status_) {
+            switch (status_) {
             case kSCSITaskStatus_TaskTimeoutOccurred:
                 s = "task timeout";
                 break;
@@ -313,12 +668,12 @@ void ScsiIf::printError()
             break;
         case kSCSIServiceResponse_TASK_COMPLETE:
             /* The SCSI command did complete */
-            switch (impl_->status_) {
+            switch (status_) {
             case kSCSITaskStatus_GOOD:
                 s = "good";
                 break;
             case kSCSITaskStatus_CHECK_CONDITION:
-                decodeSense((unsigned char *)&impl_->sense_, sizeof(impl_->sense_));
+                decodeSense((unsigned char *)&sense_, sizeof(sense_));
                 s = NULL;
                 break;
             case kSCSITaskStatus_CONDITION_MET:
@@ -355,198 +710,62 @@ void ScsiIf::printError()
         log_message(-2, s);
 }
 
-/*
- * Internal form or inquiry command.
- * Used by both inquiry() and scanData(), but with different data.
- */
-int inq(SCSITaskDeviceInterface **scsi, SCSIServiceResponse *response, SCSITaskStatus *status,
-        struct SCSI_Sense_Data *sense, char *vend, char *prod, char *rev)
+ScsiIf::ScanData *ScsiIf::scan(int *len, char *)
 {
-    SCSICmd_INQUIRY_StandardData inq_data;
-    SCSICommandDescriptorBlock cdb;
-    SCSITaskInterface **task;
-    IOVirtualRange range;
-    IOReturn ret;
-    UInt64 len;
-    int i;
+    std::lock_guard<std::mutex> lock(DMmutex);
 
-    task = (*scsi)->CreateSCSITask(scsi);
-    if (!task) {
-        log_message(-2, "inq: no task");
-        return 1;
+    if (!DM) {
+        DM = new DeviceManager();
     }
-    bzero(cdb, sizeof(cdb));
-    cdb[0] = kSCSICmd_INQUIRY;
-    cdb[4] = sizeof(inq_data);
-    ret = (*task)->SetCommandDescriptorBlock(task, cdb, kSCSICDBSize_6Byte);
-    if (ret != kIOReturnSuccess) {
-        log_message(-2, "inq: SetCommandDescriptorBlock failed: %d", ret);
-        (*task)->Release(task);
-        return 1;
-    }
-    range.address = (IOVirtualAddress)&inq_data;
-    range.length = sizeof(inq_data);
-    ret = (*task)->SetScatterGatherEntries(task, &range, 1, sizeof(inq_data),
-                                           kSCSIDataTransfer_FromTargetToInitiator);
-    if (ret != kIOReturnSuccess) {
-        log_message(-2, "inq: SetScatterGatherEntries failed: %d", ret);
-        (*task)->Release(task);
-        return 1;
-    }
-    ret = (*task)->SetTimeoutDuration(task, 1000);
-    if (ret != kIOReturnSuccess) {
-        log_message(-2, "inq: SetTimeoutDuration failed: %d", ret);
-        (*task)->Release(task);
-        return 1;
-    }
-    ret = (*task)->ExecuteTaskSync(task, sense, status, &len);
-    if (ret != kIOReturnSuccess) {
-        log_message(-2, "inq: ExecuteTaskSync failed: %d", ret);
-        (*task)->Release(task);
-        return 1;
-    }
-    ret = (*task)->GetSCSIServiceResponse(task, response);
-    if (ret != kIOReturnSuccess) {
-        log_message(-2, "inq: GetSCSIServiceResponse failed: %d", ret);
-        (*task)->Release(task);
-        return 1;
-    }
-    if (*response != kSCSIServiceResponse_TASK_COMPLETE) {
-        log_message(-2, "inq: response=%d", *response);
-        (*task)->Release(task);
-        return 1;
-    }
-    if (*status != kSCSITaskStatus_GOOD) {
-        log_message(-2, "inq: status=%d", *status);
-        (*task)->Release(task);
-        return 1;
-    }
-    (*task)->Release(task);
-    /* Copy vendor/product/revision stripping traiiling spaces */
-    i = kINQUIRY_VENDOR_IDENTIFICATION_Length;
-    while (i > 0 && inq_data.VENDOR_IDENTIFICATION[i - 1] == ' ')
-        i--;
-    memcpy(vend, inq_data.VENDOR_IDENTIFICATION, i);
-    vend[i] = '\0';
-    i = kINQUIRY_PRODUCT_IDENTIFICATION_Length;
-    while (i > 0 && inq_data.PRODUCT_IDENTIFICATION[i - 1] == ' ')
-        i--;
-    memcpy(prod, inq_data.PRODUCT_IDENTIFICATION, i);
-    prod[i] = '\0';
-    i = kINQUIRY_PRODUCT_REVISION_LEVEL_Length;
-    while (i > 0 && inq_data.PRODUCT_REVISION_LEVEL[i - 1] == ' ')
-        i--;
-    memcpy(rev, inq_data.PRODUCT_REVISION_LEVEL, i);
-    rev[i] = '\0';
-    return 0;
-}
 
-int ScsiIf::inquiry()
-{
-    return inq(impl_->scsi_, &impl_->response_, &impl_->status_, &impl_->sense_, vendor_, product_,
-               revision_);
-}
+    DM->scan();
 
-#define MAX_SCAN 10
+    auto list = DM->sorted();
+    *len = list.size();
+    auto scanData = new ScanData[*len];
 
-ScsiIf::ScanData *ScsiIf::scan(int *len, char *dev)
-{
-    ScanData *scanData;
-    CFMutableDictionaryRef dict = NULL;
-    CFMutableDictionaryRef sub = NULL;
-    io_iterator_t iterator = 0;
-    io_object_t object = 0;
-    IOCFPlugInInterface **plugin = NULL;
-    MMCDeviceInterface **mmc = NULL;
-    SCSITaskDeviceInterface **scsi = NULL;
-    SCSIServiceResponse response;
-    SCSITaskStatus status;
-    int exclusive = 0;
-    io_string_t path;
-    kern_return_t err;
-    SInt32 score;
-    HRESULT herr;
-    int ret;
-    int i;
+    log_message(3, "Scan: %d devices found", *len);
 
-    /* Ignore dev. We don't support different kinds of busses that way. */
-    /* Build matching dictionaries to find authoring decices. See init(). */
-    dict = CFDictionaryCreateMutable(kCFAllocatorDefault, 0, NULL, NULL);
-    sub = CFDictionaryCreateMutable(kCFAllocatorDefault, 0, NULL, NULL);
-    CFDictionarySetValue(sub, CFSTR(kIOPropertySCSITaskDeviceCategory),
-                         CFSTR(kIOPropertySCSITaskAuthoringDevice));
-    CFDictionarySetValue(dict, CFSTR(kIOPropertyMatchKey), sub);
-    IOServiceGetMatchingServices(kIOMainPortDefault, dict, &iterator);
-    if (!iterator) {
-        log_message(3, "scan: no iterator");
-        *len = 0;
-        return NULL;
+    int i = 0;
+    for (auto const& sif : list) {
+        scanData[i].dev = sif->dev_;
+        scanData[i].vendor = sif->vendor_;
+        scanData[i].product = sif->product_;
+        scanData[i].revision = sif->revision_;
+        auto serial = DM->uniqueSerial(*sif);
+        scanData[i].id = serial.empty() ? sif->path_ : serial;
+        scanData[i].inUse = sif->inUse_;
+        i++;
     }
-    scanData = new ScanData[MAX_SCAN];
-    *len = 0;
-    for (i = 0;; i++) {
-        object = IOIteratorNext(iterator);
-        if (!object)
-            break;
-        if (*len == MAX_SCAN)
-            break;
-        /* Get native (IO Registry) pathname of this device. */
-        err = IORegistryEntryGetPath(object, kIOServicePlane, path);
-        if (err == noErr) {
-            scanData[*len].dev = strdupCC(path);
-        }
-        /* See init() for a description of the plugin/interface tour. */
-        err = IOCreatePlugInInterfaceForService(object, kIOMMCDeviceUserClientTypeID,
-                                                kIOCFPlugInInterfaceID, &plugin, &score);
-        if (err != noErr) {
-            log_message(-2, "scan: IOCreatePlugInInterfaceForService failed: %d", err);
-            goto clean;
-        }
-        if (!plugin) {
-            log_message(-2, "scan: no plugin");
-            goto clean;
-        }
-        herr = (*plugin)->QueryInterface(plugin, CFUUIDGetUUIDBytes(kIOMMCDeviceInterfaceID),
-                                         (LPVOID *)&mmc);
-        if (herr != S_OK) {
-            log_message(-2, "scan: QueryInterface failed: %d", herr);
-            goto clean;
-        }
-        if (!mmc) {
-            log_message(-2, "scan: no mmc");
-            goto clean;
-        }
-        scsi = (*mmc)->GetSCSITaskDeviceInterface(mmc);
-        if (!scsi) {
-            log_message(-2, "scan: no scsi");
-            goto clean;
-        }
-        err = (*scsi)->ObtainExclusiveAccess(scsi);
-        if (err != noErr) {
-            log_message(-2, "Device already in use, please use diskutil to unmount the disc first");
-            goto clean;
-        }
-        ret = inq(scsi, &response, &status, NULL, scanData[*len].vendor, scanData[*len].product,
-                  scanData[*len].revision);
-        if (ret != 0) {
-            log_message(-2, "scan: inq failed: %d", ret);
-            goto clean;
-        }
-        (*len)++;
-    clean:
-        if (exclusive)
-            (*scsi)->ReleaseExclusiveAccess(scsi);
-        if (scsi)
-            (*scsi)->Release(scsi);
-        if (mmc)
-            (*mmc)->Release(mmc);
-        if (plugin)
-            IODestroyPlugInInterface(plugin);
-        if (object)
-            IOObjectRelease(object);
-    }
-    IOObjectRelease(iterator);
     return scanData;
 }
 
-#include "ScsiIf-common.cc"
+std::shared_ptr<ScsiIf> ScsiIf::create(const std::string& dev)
+{
+    std::lock_guard<std::mutex> lock(DMmutex);
+
+    if (!DM) {
+        DM = new DeviceManager();
+    }
+
+    // Accept the drive number, the serial number, the full IOService-plane
+    // path, or the BSD node name of the inserted media.
+    auto sif = DM->find(dev);
+    if (!sif) {
+        DM->scan();
+        sif = DM->find(dev);
+    }
+    if (!sif) {
+        log_message(-2, "Unknown SCSI device %s", dev.c_str());
+        // A drive that is in use can't be found by serial number.
+        for (auto const& d : DM->sorted()) {
+            if (d->inUse_ && d->serial_.empty())
+                log_message(-2, "Device %s (%s %s) is in use by another process; "
+                                "if it is %s, close that process first.",
+                            d->dev_.c_str(), d->vendor_.c_str(), d->product_.c_str(),
+                            dev.c_str());
+        }
+        return nullptr;
+    }
+    return sif;
+}

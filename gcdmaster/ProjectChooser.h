@@ -22,13 +22,13 @@
 
 #include <gtkmm.h>
 
-class ProjectChooser : public Gtk::VBox
+class ProjectChooser : public Gtk::Box
 {
   public:
     ProjectChooser();
 
-    sigc::signal0<void> newAudioCDProject;
-    sigc::signal0<void> newDuplicateCDProject;
-    sigc::signal0<void> newDumpCDProject;
+    sigc::signal<void()> newAudioCDProject;
+    sigc::signal<void()> newDuplicateCDProject;
+    sigc::signal<void()> newDumpCDProject;
 };
 #endif

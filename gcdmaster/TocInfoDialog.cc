@@ -17,22 +17,22 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+
 #include "TocInfoDialog.h"
 #include "config.h"
-
+#include <algorithm>
 #include <glibmm/i18n.h>
-#include <gtkmm.h>
-
-#include <ctype.h>
-#include <stddef.h>
-#include <stdio.h>
-
 #include "TocEdit.h"
-// #include "TocEditView.h"
 #include "CdTextItem.h"
+#include "CdTextContainer.h"
 #include "TextEdit.h"
 #include "Toc.h"
+#include "util.h"
 #include "guiUpdate.h"
+#include "trackdb/log.h"
+#include "trackdb/Cddb.h"
+#include "MessageBox.h"
+#include "PreferencesDialog.h"
 
 #define MAX_CD_TEXT_LANGUAGE_CODES 22
 
@@ -91,177 +91,586 @@ static const char *TOC_TYPE_CD_ROM = "CD-ROM";
 static const char *TOC_TYPE_CD_ROM_XA = "CD-ROM-XA";
 static const char *TOC_TYPE_CD_I = "CD-I";
 
-TocInfoDialog::TocInfoDialog(Gtk::Window *parent)
+namespace {
+
+// Audio CD ("Red Book") supported text encodings; dropdown-index order.
+constexpr Util::Encoding kEncodings[] = {
+    Util::Encoding::ASCII,
+    Util::Encoding::LATIN,
+    Util::Encoding::MSJIS,
+};
+constexpr int kEncodingCount = sizeof(kEncodings) / sizeof(kEncodings[0]);
+constexpr int kDefaultEncodingIndex = 1; // ISO-8859-1
+
+int encodingToIndex(Util::Encoding enc)
 {
-    int i;
-    Gtk::Label *label;
-    Gtk::HBox *hbox;
-    Gtk::VBox *vbox, *vbox1;
-    Gtk::Frame *frame;
-    Gtk::Table *table;
-    Gtk::Button *button;
-    Gtk::VBox *contents = manage(new Gtk::VBox);
-
-    tocEdit_ = NULL;
-    active_ = false;
-    selectedTocType_ = Toc::Type::CD_DA;
-
-    nofTracks_ = manage(new Gtk::Label("99"));
-    nofTracks_->set_alignment(Gtk::ALIGN_START);
-    tocLength_ = manage(new Gtk::Label("100:00:00"));
-    tocLength_->set_alignment(Gtk::ALIGN_START);
-
-    catalog_ = manage(new TextEdit("1234567890123"));
-    catalog_->set_max_length(13);
-    catalog_->lowerCase(0);
-    catalog_->upperCase(0);
-    catalog_->space(0);
-    catalog_->digits(1);
-
-    tocType_.append(TOC_TYPE_CD_DA);
-    tocType_.append(TOC_TYPE_CD_ROM);
-    tocType_.append(TOC_TYPE_CD_ROM_XA);
-    tocType_.append(TOC_TYPE_CD_I);
-    tocType_.signal_changed().connect(sigc::mem_fun(*this, &TocInfoDialog::setSelectedTocType));
-
-    contents->set_spacing(10);
-
-    // Summary frame (time & data)
-    frame = manage(new Gtk::Frame(_(" Summary ")));
-    table = manage(new Gtk::Table(2, 2, false));
-    table->set_border_width(5);
-    table->set_row_spacings(5);
-    table->set_col_spacings(5);
-    label = manage(new Gtk::Label(_("Tracks:")));
-    table->attach(*label, 0, 1, 0, 1, Gtk::SHRINK);
-    table->attach(*nofTracks_, 1, 2, 0, 1, Gtk::FILL | Gtk::SHRINK);
-    label = manage(new Gtk::Label(_("Length:")));
-    table->attach(*label, 0, 1, 1, 2, Gtk::SHRINK);
-    table->attach(*tocLength_, 1, 2, 1, 2, Gtk::FILL | Gtk::SHRINK);
-    frame->add(*table);
-    contents->pack_start(*frame, false, false);
-
-    // Sub-channel frame
-    frame = manage(new Gtk::Frame(_(" Sub-Channel ")));
-    table = manage(new Gtk::Table(2, 2, false));
-    table->set_border_width(5);
-    table->set_row_spacings(5);
-    table->set_col_spacings(5);
-    label = manage(new Gtk::Label(_("Toc Type: ")));
-    table->attach(*label, 0, 1, 0, 1, Gtk::SHRINK);
-    table->attach(tocType_, 1, 2, 0, 1);
-    label = manage(new Gtk::Label("UPC/EAN: "));
-    table->attach(*label, 0, 1, 1, 2, Gtk::SHRINK);
-    table->attach(*catalog_, 1, 2, 1, 2);
-    frame->add(*table);
-    contents->pack_start(*frame, Gtk::PACK_SHRINK);
-
-    // CD-TEXT data
-    frame = manage(new Gtk::Frame(" CD-TEXT "));
-
-    Gtk::Notebook *notebook = manage(new Gtk::Notebook);
-
-    for (i = 0; i < 8; i++) {
-        vbox = createCdTextPage(i);
-        notebook->append_page(*vbox, *(cdTextPages_[i].label));
+    for (int i = 0; i < kEncodingCount; i++) {
+        if (kEncodings[i] == enc)
+            return i;
     }
-
-    vbox1 = manage(new Gtk::VBox);
-    vbox1->pack_start(*notebook, false, false, 5);
-    hbox = manage(new Gtk::HBox);
-    hbox->pack_start(*vbox1, true, true, 5);
-    frame->add(*hbox);
-
-    contents->pack_start(*frame, Gtk::PACK_SHRINK);
-
-    hbox = manage(new Gtk::HBox);
-    hbox->pack_start(*contents, true, true, 10);
-    get_vbox()->pack_start(*hbox, true, true, 10);
-
-    Gtk::HButtonBox *bbox = manage(new Gtk::HButtonBox(Gtk::BUTTONBOX_SPREAD));
-
-    applyButton_ = manage(new Gtk::Button(Gtk::StockID(Gtk::Stock::APPLY)));
-    bbox->pack_start(*applyButton_);
-    applyButton_->signal_clicked().connect(sigc::mem_fun(*this, &TocInfoDialog::applyAction));
-
-    button = manage(new Gtk::Button(Gtk::StockID(Gtk::Stock::CLOSE)));
-    bbox->pack_start(*button);
-    button->signal_clicked().connect(sigc::mem_fun(*this, &TocInfoDialog::closeAction));
-
-    get_action_area()->pack_start(*bbox);
-    show_all_children();
-
-    set_title(_("Project Info"));
-    set_transient_for(*parent);
+    return kDefaultEncodingIndex;
 }
 
-TocInfoDialog::~TocInfoDialog()
+} // namespace
+
+TocInfoDialog::TocInfoDialog(Gtk::Window* parent)
 {
+    set_title(_("Project Info"));
+    set_modal(true);
+    set_transient_for(*parent);
+    set_hide_on_close(true);
+
+    auto contents = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL, 10);
+    contents->set_margin(10);
+
+    tocEdit_ = nullptr;
+    selectedTocType_ = Toc::Type::CD_DA;
+
+    nofTracks_ = Gtk::make_managed<Gtk::Label>("99");
+    nofTracks_->set_halign(Gtk::Align::START);
+    tocLength_ = Gtk::make_managed<Gtk::Label>("100:00:00");
+    tocLength_->set_halign(Gtk::Align::START);
+
+    catalog_ = Gtk::make_managed<TextEdit>("1234567890123");
+    catalog_->set_max_length(13);
+
+    {
+        auto list = Gtk::StringList::create({});
+        list->append(TOC_TYPE_CD_DA);
+        list->append(TOC_TYPE_CD_ROM);
+        list->append(TOC_TYPE_CD_ROM_XA);
+        list->append(TOC_TYPE_CD_I);
+        tocType_.set_model(list);
+        tocType_.property_selected().signal_changed().connect(
+            sigc::mem_fun(*this, &TocInfoDialog::setSelectedTocType));
+    }
+
+    // Summary frame
+    auto frameSummary = Gtk::make_managed<Gtk::Frame>(_(" Summary "));
+    auto gridSummary = Gtk::make_managed<Gtk::Grid>();
+    gridSummary->set_row_spacing(5);
+    gridSummary->set_column_spacing(5);
+    gridSummary->set_margin(5);
+
+    gridSummary->attach(*Gtk::make_managed<Gtk::Label>(_("Tracks:")), 0, 0);
+    gridSummary->attach(*nofTracks_, 1, 0);
+    gridSummary->attach(*Gtk::make_managed<Gtk::Label>(_("Length:")), 0, 1);
+    gridSummary->attach(*tocLength_, 1, 1);
+
+    frameSummary->set_child(*gridSummary);
+
+    // Sub-channel frame
+    auto frameSub = Gtk::make_managed<Gtk::Frame>(_(" Sub-Channel "));
+    auto gridSub = Gtk::make_managed<Gtk::Grid>();
+    gridSub->set_row_spacing(5);
+    gridSub->set_column_spacing(5);
+    gridSub->set_margin(5);
+
+    gridSub->attach(*Gtk::make_managed<Gtk::Label>(_("Toc Type: ")), 0, 0);
+    gridSub->attach(tocType_, 1, 0);
+    gridSub->attach(*Gtk::make_managed<Gtk::Label>("UPC/EAN: "), 0, 1);
+    gridSub->attach(*catalog_, 1, 1);
+
+    frameSub->set_child(*gridSub);
+
+    // Summary and Sub-Channel side by side.
+    auto topRow = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL, 10);
+    frameSummary->set_hexpand(true);
+    frameSub->set_hexpand(true);
+    topRow->append(*frameSummary);
+    topRow->append(*frameSub);
+    contents->append(*topRow);
+
+    // CD-TEXT data
+    auto frameText = Gtk::make_managed<Gtk::Frame>(" CD-TEXT ");
+    cdTextNotebook_ = Gtk::make_managed<Gtk::Notebook>();
+    cdTextNotebook_->set_vexpand(true);
+
+    // Build all 8 page widgets up front, but keep them detached — they
+    // are appended to the notebook only when the corresponding slot is
+    // a "visible" language block.
+    for (int i = 0; i < 8; i++)
+        createCdTextPage(i);
+
+    addBlockButton_ = Gtk::make_managed<Gtk::Button>();
+    addBlockButton_->set_icon_name("list-add-symbolic");
+    addBlockButton_->set_tooltip_text(_("Add language block"));
+    addBlockButton_->signal_clicked().connect(
+        sigc::mem_fun(*this, &TocInfoDialog::addBlockAction));
+    cdTextNotebook_->set_action_widget(addBlockButton_, Gtk::PackType::END);
+
+    // Gtk::Notebook hides its tab header (and thus its action widgets) when
+    // it has no pages. Provide an empty-state placeholder with its own "+"
+    // button so a language block can still be added when there is no
+    // CD-TEXT at all.
+    cdTextEmptyBox_ = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL, 10);
+    cdTextEmptyBox_->set_vexpand(true);
+    cdTextEmptyBox_->set_valign(Gtk::Align::CENTER);
+    cdTextEmptyBox_->set_halign(Gtk::Align::CENTER);
+    cdTextEmptyBox_->append(*Gtk::make_managed<Gtk::Label>(_("No CD-TEXT data")));
+    {
+        auto emptyAddButton = Gtk::make_managed<Gtk::Button>();
+        auto bc = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL, 5);
+        bc->append(*Gtk::make_managed<Gtk::Image>("list-add-symbolic"));
+        bc->append(*Gtk::make_managed<Gtk::Label>(_("Add language block")));
+        emptyAddButton->set_child(*bc);
+        emptyAddButton->signal_clicked().connect(
+            sigc::mem_fun(*this, &TocInfoDialog::addBlockAction));
+        cdTextEmptyBox_->append(*emptyAddButton);
+    }
+
+    auto textBox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL);
+    textBox->append(*cdTextNotebook_);
+    textBox->append(*cdTextEmptyBox_);
+    frameText->set_child(*textBox);
+    contents->append(*frameText);
+    updateAddButtonSensitivity();
+
+    auto bbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
+    bbox->set_margin(10);
+    bbox->set_spacing(5);
+    bbox->set_halign(Gtk::Align::END);
+
+    imdbButton_ = Gtk::make_managed<Gtk::Button>("Query IMDB");
+    imdbButton_->signal_clicked().connect(sigc::mem_fun(*this, &TocInfoDialog::imdbAction));
+    bbox->append(*imdbButton_);
+    {
+        auto cb = Gtk::make_managed<Gtk::Button>("Clear");
+        cb->signal_clicked().connect([this](){ this->clear(); });
+        bbox->append(*cb);
+    }
+    auto cancelButton = Gtk::make_managed<Gtk::Button>(_("Cancel"));
+    cancelButton->signal_clicked().connect(sigc::mem_fun(*this, &TocInfoDialog::cancelAction));
+    bbox->append(*cancelButton);
+    okButton_ = Gtk::make_managed<Gtk::Button>(_("OK"));
+    okButton_->add_css_class("suggested-action");
+    okButton_->signal_clicked().connect(sigc::mem_fun(*this, &TocInfoDialog::okAction));
+    bbox->append(*okButton_);
+    set_default_widget(*okButton_);
+    contents->append(*bbox);
+
+    set_child(*contents);
+    set_default_size(650, 600);
+}
+
+Gtk::Widget* TocInfoDialog::createCdTextPage(int n)
+{
+    auto& page = cdTextPages_[n];
+
+    // Composite tab label: language-name label + close button.
+    page.tabLabel = Gtk::make_managed<Gtk::Label>(std::to_string(n));
+    auto closeButton = Gtk::make_managed<Gtk::Button>();
+    closeButton->set_icon_name("window-close-symbolic");
+    closeButton->set_has_frame(false);
+    closeButton->set_tooltip_text(_("Remove this language block"));
+    closeButton->signal_clicked().connect([this, n] { removeBlock(n); });
+    page.tabWidget = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL, 4);
+    page.tabWidget->append(*(page.tabLabel));
+    page.tabWidget->append(*closeButton);
+
+    createCdTextLanguageMenu(n);
+    createCdTextGenreMenu(n);
+
+    // Per-language encoding selector (row above inner notebook)
+    page.encoding = Gtk::make_managed<Gtk::DropDown>();
+    {
+        auto encList = Gtk::StringList::create();
+        encList->append("ASCII");
+        encList->append("ISO-8859-1");
+        encList->append("MS-JIS");
+        page.encoding->set_model(encList);
+        page.encoding->set_selected(kDefaultEncodingIndex);
+    }
+    page.encoding->property_selected().signal_changed().connect(
+        [this, n] { recomputeEncoding(n); });
+
+    page.encodingWarning = Gtk::make_managed<Gtk::Label>();
+    page.encodingWarning->set_halign(Gtk::Align::START);
+    page.encodingWarning->set_visible(false);
+
+    auto vbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL, 5);
+    vbox->set_margin(5);
+
+    // Header row: language + encoding
+    auto hbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL, 5);
+    hbox->append(*Gtk::make_managed<Gtk::Label>(_("Language:")));
+    hbox->append(*(page.language));
+    auto spacer = Gtk::make_managed<Gtk::Label>();
+    spacer->set_hexpand(true);
+    hbox->append(*spacer);
+    hbox->append(*Gtk::make_managed<Gtk::Label>(_("Encoding:")));
+    hbox->append(*(page.encoding));
+    vbox->append(*hbox);
+    vbox->append(*(page.encodingWarning));
+
+    // Inner notebook with Disc and Tracks sub-tabs
+    auto inner = Gtk::make_managed<Gtk::Notebook>();
+    inner->set_vexpand(true);
+    inner->append_page(*createDiscTab(n), *Gtk::make_managed<Gtk::Label>(_("Disc")));
+    inner->append_page(*createTracksTab(n), *Gtk::make_managed<Gtk::Label>(_("Tracks")));
+    vbox->append(*inner);
+
+    page.pageWidget = vbox;
+
+    // Managed widgets die when their parent drops its last ref. Since we
+    // reparent these between the notebook and "detached" state, hold an
+    // extra reference on the outer page + tab widgets to keep them alive
+    // across remove_page/append_page cycles. (Inner children are owned
+    // by the outer widget and follow its lifetime.)
+    page.pageWidget->reference();
+    page.tabWidget->reference();
+
+    return vbox;
+}
+
+Gtk::Widget* TocInfoDialog::createDiscTab(int n)
+{
+    auto& page = cdTextPages_[n];
+
+    auto grid = Gtk::make_managed<Gtk::Grid>();
+    grid->set_row_spacing(5);
+    grid->set_column_spacing(5);
+    grid->set_margin(5);
+
+    page.title = Gtk::make_managed<Gtk::Entry>();
+    page.performer = Gtk::make_managed<Gtk::Entry>();
+    page.songwriter = Gtk::make_managed<Gtk::Entry>();
+    page.composer = Gtk::make_managed<Gtk::Entry>();
+    page.arranger = Gtk::make_managed<Gtk::Entry>();
+    page.message = Gtk::make_managed<Gtk::Entry>();
+    page.catalog = Gtk::make_managed<Gtk::Entry>();
+    page.upcEan = Gtk::make_managed<Gtk::Entry>();
+    page.genreInfo = Gtk::make_managed<Gtk::Entry>();
+
+    int row = 0;
+    auto add_row = [&](const std::string& labelText, Gtk::Widget& widget) {
+        auto lbl = Gtk::make_managed<Gtk::Label>(labelText);
+        lbl->set_halign(Gtk::Align::END);
+        grid->attach(*lbl, 0, row);
+        grid->attach(widget, 1, row);
+        widget.set_hexpand(true);
+        row++;
+    };
+
+    add_row(_("Title:"), *(page.title));
+    add_row(_("Performer:"), *(page.performer));
+    add_row(_("Songwriter:"), *(page.songwriter));
+    add_row(_("Composer:"), *(page.composer));
+    add_row(_("Arranger:"), *(page.arranger));
+    add_row(_("Message:"), *(page.message));
+    add_row(_("Catalog:"), *(page.catalog));
+    add_row(_("UPC/EAN:"), *(page.upcEan));
+    add_row(_("Genre:"), *(page.genre));
+    add_row(_("Genre Info:"), *(page.genreInfo));
+
+    auto attachEncodingRecompute = [this, n](Gtk::Entry *e) {
+        e->signal_changed().connect([this, n] { recomputeEncoding(n); });
+    };
+    attachEncodingRecompute(page.title);
+    attachEncodingRecompute(page.performer);
+    attachEncodingRecompute(page.songwriter);
+    attachEncodingRecompute(page.composer);
+    attachEncodingRecompute(page.arranger);
+    attachEncodingRecompute(page.message);
+    attachEncodingRecompute(page.catalog);
+    attachEncodingRecompute(page.upcEan);
+    attachEncodingRecompute(page.genreInfo);
+
+    return grid;
+}
+
+Gtk::Widget* TocInfoDialog::createTracksTab(int n)
+{
+    auto& page = cdTextPages_[n];
+
+    auto vbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL, 5);
+    vbox->set_margin(5);
+
+    // Controls row: enable-performer + fill-performer
+    auto controls = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL, 10);
+    page.performerButton = Gtk::make_managed<Gtk::CheckButton>(_("Enable Performer Entries"));
+    page.performerButton->set_active(false);
+    page.performerButton->signal_toggled().connect(
+        [this, n] { activatePerformerAction(n); });
+    controls->append(*(page.performerButton));
+
+    auto fillButton = Gtk::make_managed<Gtk::Button>(_("Fill Performer"));
+    fillButton->signal_clicked().connect([this, n] { fillPerformerAction(n); });
+    controls->append(*fillButton);
+    vbox->append(*controls);
+
+    // Scrolled grid of per-track entries
+    page.tracksGrid = Gtk::make_managed<Gtk::Grid>();
+    page.tracksGrid->set_row_spacing(5);
+    page.tracksGrid->set_column_spacing(5);
+    page.tracksGrid->set_margin(5);
+
+    // Column headers at row 0
+    page.tracksGrid->attach(*Gtk::make_managed<Gtk::Label>(_("Performer")), 1, 0);
+    page.tracksGrid->attach(*Gtk::make_managed<Gtk::Label>(_("Title")), 2, 0);
+
+    auto swin = Gtk::make_managed<Gtk::ScrolledWindow>();
+    swin->set_policy(Gtk::PolicyType::AUTOMATIC, Gtk::PolicyType::AUTOMATIC);
+    swin->set_child(*(page.tracksGrid));
+    swin->set_expand(true);
+    vbox->append(*swin);
+
+    return vbox;
+}
+
+void TocInfoDialog::adjustTableEntries(int n)
+{
+    if (trackEntries_ == n) return;
+
+    for (int l = 0; l < 8; l++) {
+        auto& page = cdTextPages_[l];
+
+        if (n < trackEntries_) {
+            for (int i = n; i < trackEntries_; i++) {
+                page.tracksGrid->remove(*page.tracks[i].label);
+                page.tracksGrid->remove(*page.tracks[i].title);
+                page.tracksGrid->remove(*page.tracks[i].performer);
+            }
+            page.tracks.resize(n);
+        } else {
+            bool performerActive = page.performerButton->get_active();
+            page.tracks.resize(n);
+
+            for (int i = trackEntries_; i < n; i++) {
+                char buf[20];
+                snprintf(buf, sizeof(buf), _("Track %02d"), i + 1);
+
+                page.tracks[i].performer = Gtk::make_managed<Gtk::Entry>();
+                page.tracks[i].performer->set_sensitive(performerActive);
+                page.tracks[i].title = Gtk::make_managed<Gtk::Entry>();
+                page.tracks[i].label = Gtk::make_managed<Gtk::Label>(buf);
+
+                page.tracksGrid->attach(*(page.tracks[i].label), 0, i + 1);
+                page.tracksGrid->attach(*(page.tracks[i].performer), 1, i + 1);
+                page.tracksGrid->attach(*(page.tracks[i].title), 2, i + 1);
+
+                page.tracks[i].title->signal_changed().connect(
+                    [this, l] { recomputeEncoding(l); });
+                page.tracks[i].performer->signal_changed().connect(
+                    [this, l] { recomputeEncoding(l); });
+            }
+        }
+    }
+    trackEntries_ = n;
+}
+
+void TocInfoDialog::updateTabLabels()
+{
+    // Labels reflect the language currently selected in each visible tab.
+    for (int slot : visibleBlocks_) {
+        auto& page = cdTextPages_[slot];
+        int langIdx = page.selectedLanguage;
+        if (langIdx < 0 || langIdx >= MAX_CD_TEXT_LANGUAGE_CODES)
+            langIdx = 1;
+        const char *s =
+            CdTextContainer::languageName(CD_TEXT_LANGUAGE_CODES[langIdx].code);
+        if (page.tabLabel->get_label() != s)
+            page.tabLabel->set_label(s);
+    }
+}
+
+int TocInfoDialog::findUnusedSlot() const
+{
+    for (int i = 0; i < 8; i++) {
+        if (std::find(visibleBlocks_.begin(), visibleBlocks_.end(), i) ==
+            visibleBlocks_.end())
+            return i;
+    }
+    return -1;
+}
+
+int TocInfoDialog::findUnusedLanguageIndex() const
+{
+    // Prefer English (the usual first CD-TEXT block) when it's free.
+    const int englishIdx = getCdTextLanguageIndex(0x09);
+    bool englishUsed = false;
+    for (int slot : visibleBlocks_) {
+        if (cdTextPages_[slot].selectedLanguage == englishIdx)
+            englishUsed = true;
+    }
+    if (englishIdx > 1 && !englishUsed)
+        return englishIdx;
+
+    // CD_TEXT_LANGUAGE_CODES indices 0 and 1 are "Unknown"/"Undefined"; skip.
+    for (int i = 2; i < MAX_CD_TEXT_LANGUAGE_CODES; i++) {
+        bool used = false;
+        for (int slot : visibleBlocks_) {
+            if (cdTextPages_[slot].selectedLanguage == i) {
+                used = true;
+                break;
+            }
+        }
+        if (!used)
+            return i;
+    }
+    return 2; // all used — fall back to the first real language
+}
+
+void TocInfoDialog::resetBlockData(int slot)
+{
+    auto& page = cdTextPages_[slot];
+    bool wasImporting = importing_;
+    importing_ = true;
+
+    page.title->set_text("");
+    page.performer->set_text("");
+    page.songwriter->set_text("");
+    page.composer->set_text("");
+    page.arranger->set_text("");
+    page.message->set_text("");
+    page.catalog->set_text("");
+    page.upcEan->set_text("");
+    page.genreInfo->set_text("");
+
+    page.selectedGenre = 1; // not used
+    page.genre->set_selected(page.selectedGenre);
+
+    page.encoding->set_selected(kDefaultEncodingIndex);
+    page.encodingWarning->set_visible(false);
+
+    page.performerButton->set_active(false);
+    for (auto& t : page.tracks) {
+        t.title->set_text("");
+        t.performer->set_text("");
+        t.performer->set_sensitive(false);
+    }
+
+    importing_ = wasImporting;
+}
+
+void TocInfoDialog::updateAddButtonSensitivity()
+{
+    addBlockButton_->set_sensitive((int)visibleBlocks_.size() < 8);
+
+    // Swap between the notebook and the empty-state placeholder.
+    bool empty = visibleBlocks_.empty();
+    cdTextNotebook_->set_visible(!empty);
+    cdTextEmptyBox_->set_visible(empty);
+}
+
+void TocInfoDialog::syncTabs()
+{
+    // Remove every page from the notebook (without destroying the widgets),
+    // then re-append in visibleBlocks_ order.
+    while (cdTextNotebook_->get_n_pages() > 0)
+        cdTextNotebook_->remove_page(0);
+
+    for (int slot : visibleBlocks_) {
+        cdTextNotebook_->append_page(*cdTextPages_[slot].pageWidget,
+                                     *cdTextPages_[slot].tabWidget);
+    }
+    updateAddButtonSensitivity();
+    updateTabLabels();
+}
+
+void TocInfoDialog::addBlockAction()
+{
+    if ((int)visibleBlocks_.size() >= 8)
+        return;
+
+    int slot = findUnusedSlot();
+    if (slot < 0)
+        return;
+
+    auto& page = cdTextPages_[slot];
+    resetBlockData(slot);
+
+    // Make entries editable — a prior `clearCdText` may have left them
+    // read-only for unused slots.
+    page.title->set_editable(true);
+    page.performer->set_editable(true);
+    page.songwriter->set_editable(true);
+    page.composer->set_editable(true);
+    page.arranger->set_editable(true);
+    page.message->set_editable(true);
+    page.catalog->set_editable(true);
+    page.upcEan->set_editable(true);
+
+    // Pick a language that isn't already used by another visible block.
+    int langIdx = findUnusedLanguageIndex();
+    page.selectedLanguage = langIdx;
+    importing_ = true;
+    page.language->set_selected(langIdx);
+    importing_ = false;
+
+    visibleBlocks_.push_back(slot);
+
+    cdTextNotebook_->append_page(*page.pageWidget, *page.tabWidget);
+    updateAddButtonSensitivity();
+    updateTabLabels();
+
+    // Focus the newly added tab for immediate editing.
+    int pos = cdTextNotebook_->page_num(*page.pageWidget);
+    if (pos >= 0)
+        cdTextNotebook_->set_current_page(pos);
+}
+
+void TocInfoDialog::removeBlock(int slot)
+{
+    auto it = std::find(visibleBlocks_.begin(), visibleBlocks_.end(), slot);
+    if (it == visibleBlocks_.end())
+        return;
+
+    visibleBlocks_.erase(it);
+    cdTextNotebook_->remove_page(*cdTextPages_[slot].pageWidget);
+    resetBlockData(slot);
+    updateAddButtonSensitivity();
 }
 
 void TocInfoDialog::start(TocEdit *view)
 {
-    present();
-    active_ = true;
-    update(UPD_ALL, view);
-}
-
-void TocInfoDialog::stop()
-{
-    hide();
-    active_ = false;
+    tocEdit_ = view;
+    update(UPD_ALL);
 }
 
 void TocInfoDialog::setSelectedTocType()
 {
-    if (tocType_.get_active_text() == TOC_TYPE_CD_DA) {
+    auto sel = dropDownGet(&tocType_);
+    if (!sel.has_value())
+        return;
+    if (*sel == TOC_TYPE_CD_DA)
         selectedTocType_ = Toc::Type::CD_DA;
-    } else if (tocType_.get_active_text() == TOC_TYPE_CD_ROM) {
+    else if (*sel == TOC_TYPE_CD_ROM)
         selectedTocType_ = Toc::Type::CD_ROM;
-    } else if (tocType_.get_active_text() == TOC_TYPE_CD_ROM_XA) {
+    else if (*sel == TOC_TYPE_CD_ROM_XA)
         selectedTocType_ = Toc::Type::CD_ROM_XA;
-    } else if (tocType_.get_active_text() == TOC_TYPE_CD_I) {
+    else if (*sel == TOC_TYPE_CD_I)
         selectedTocType_ = Toc::Type::CD_I;
-    }
 }
 
 void TocInfoDialog::setSelectedCDTextLanguage(int block)
 {
-    int i;
-
-    if (block < 0 || block >= 8)
+    if (importing_ || block < 0 || block >= 8)
         return;
 
-    int value = cdTextPages_[block].language->get_active_row_number();
+    int value = cdTextPages_[block].language->get_selected();
 
-    if (value <= 0) {
-        // cannot set to 'unknown' or invalid value, restore old setting
-        if (cdTextPages_[block].selectedLanguage != 0)
-            cdTextPages_[block].language->set_active(cdTextPages_[block].selectedLanguage);
-
+    // A visible tab must pick a real language. Reject "Unknown" (0) and
+    // "Undefined" (1); restore the prior selection if either is chosen.
+    if (value <= 1) {
+        if (cdTextPages_[block].selectedLanguage > 1)
+            cdTextPages_[block].language->set_selected(cdTextPages_[block].selectedLanguage);
         return;
     }
 
-    if (value != 1) {
-        // check if same language is already used
-        bool found = false;
-
-        for (i = 0; i < 8; i++) {
-            if (i != block && cdTextPages_[i].selectedLanguage == value) {
-                found = true;
-                break;
-            }
-        }
-
-        if (found || (block > 0 && cdTextPages_[block - 1].selectedLanguage == 1)) {
-            // reset to old value if the same language is already used or
-            // if the language of the previous block is undefined
-            cdTextPages_[block].language->set_active(cdTextPages_[block].selectedLanguage);
+    // Reject duplicates — only visible blocks count.
+    for (int other : visibleBlocks_) {
+        if (other != block && cdTextPages_[other].selectedLanguage == value) {
+            cdTextPages_[block].language->set_selected(cdTextPages_[block].selectedLanguage);
             return;
         }
     }
 
     cdTextPages_[block].selectedLanguage = value;
+
+    // Refresh the outer tab label to reflect the new language.
+    const char *s = CdTextContainer::languageName(CD_TEXT_LANGUAGE_CODES[value].code);
+    cdTextPages_[block].tabLabel->set_label(s);
 }
 
 void TocInfoDialog::setSelectedCDTextGenre(int block)
@@ -269,11 +678,11 @@ void TocInfoDialog::setSelectedCDTextGenre(int block)
     if (block < 0 || block >= 8)
         return;
 
-    int value = cdTextPages_[block].genre->get_active_row_number();
+    int value = cdTextPages_[block].genre->get_selected();
     if (value <= 0) {
         // cannot set to 'unknown', restore old setting
         if (cdTextPages_[block].selectedGenre != 0)
-            cdTextPages_[block].genre->set_active(cdTextPages_[block].selectedGenre);
+            cdTextPages_[block].genre->set_selected(cdTextPages_[block].selectedGenre);
 
         return;
     }
@@ -283,176 +692,26 @@ void TocInfoDialog::setSelectedCDTextGenre(int block)
 
 void TocInfoDialog::createCdTextLanguageMenu(int n)
 {
-    cdTextPages_[n].language = manage(new Gtk::ComboBoxText);
+    cdTextPages_[n].language = Gtk::make_managed<Gtk::DropDown>();
+    auto list = Gtk::StringList::create();
     for (int i = 0; i < MAX_CD_TEXT_LANGUAGE_CODES; i++) {
-        cdTextPages_[n].language->append(CD_TEXT_LANGUAGE_CODES[i].name);
+        list->append(CD_TEXT_LANGUAGE_CODES[i].name);
     }
-    cdTextPages_[n].language->show();
-
-    cdTextPages_[n].language->signal_changed().connect(
-        bind(mem_fun(*this, &TocInfoDialog::setSelectedCDTextLanguage), n));
+    cdTextPages_[n].language->set_model(list);
+    cdTextPages_[n].language->property_selected().signal_changed().connect(
+        bind(sigc::mem_fun(*this, &TocInfoDialog::setSelectedCDTextLanguage), n));
 }
 
 void TocInfoDialog::createCdTextGenreMenu(int n)
 {
-    cdTextPages_[n].genre = manage(new Gtk::ComboBoxText);
+    cdTextPages_[n].genre = Gtk::make_managed<Gtk::DropDown>();
+    auto list = Gtk::StringList::create();
     for (int i = 0; i < MAX_CD_TEXT_GENRE_CODES; ++i) {
-        cdTextPages_[n].genre->append(CD_TEXT_GENRE_CODES[i].name);
+        list->append(CD_TEXT_GENRE_CODES[i].name);
     }
-    cdTextPages_[n].genre->signal_changed().connect(
-        bind(mem_fun(*this, &TocInfoDialog::setSelectedCDTextGenre), n));
-}
-
-Gtk::VBox *TocInfoDialog::createCdTextPage(int n)
-{
-    char buf[20];
-    Gtk::Table *table = manage(new Gtk::Table(11, 2, false));
-    Gtk::VBox *vbox1;
-    Gtk::HBox *hbox;
-    Gtk::Label *label;
-
-    snprintf(buf, sizeof(buf), " %d ", n);
-    cdTextPages_[n].label = manage(new Gtk::Label(buf));
-    cdTextPages_[n].label->show();
-
-    cdTextPages_[n].title = manage(new Gtk::Entry);
-    cdTextPages_[n].performer = manage(new Gtk::Entry);
-    cdTextPages_[n].songwriter = manage(new Gtk::Entry);
-    cdTextPages_[n].composer = manage(new Gtk::Entry);
-    cdTextPages_[n].arranger = manage(new Gtk::Entry);
-    cdTextPages_[n].message = manage(new Gtk::Entry);
-    cdTextPages_[n].catalog = manage(new Gtk::Entry);
-    cdTextPages_[n].upcEan = manage(new Gtk::Entry);
-    cdTextPages_[n].genreInfo = manage(new Gtk::Entry);
-
-    createCdTextLanguageMenu(n);
-    createCdTextGenreMenu(n);
-
-    table->set_row_spacings(5);
-    table->set_col_spacings(5);
-    table->show();
-
-    label = manage(new Gtk::Label(_("Language:")));
-    hbox = manage(new Gtk::HBox);
-    hbox->pack_end(*label, Gtk::PACK_SHRINK);
-    table->attach(*hbox, 0, 1, 0, 1, Gtk::FILL);
-    hbox->show();
-    label->show();
-    table->attach(*(cdTextPages_[n].language), 1, 2, 0, 1);
-    cdTextPages_[n].language->show();
-
-    label = manage(new Gtk::Label(_("Title:")));
-    hbox = manage(new Gtk::HBox);
-    hbox->pack_end(*label, Gtk::PACK_SHRINK);
-    table->attach(*hbox, 0, 1, 1, 2, Gtk::FILL);
-    hbox->show();
-    label->show();
-    table->attach(*(cdTextPages_[n].title), 1, 2, 1, 2);
-    cdTextPages_[n].title->show();
-
-    label = manage(new Gtk::Label(_("Performer:")));
-    hbox = manage(new Gtk::HBox);
-    hbox->pack_end(*label, Gtk::PACK_SHRINK);
-    table->attach(*hbox, 0, 1, 2, 3, Gtk::FILL);
-    hbox->show();
-    label->show();
-    table->attach(*(cdTextPages_[n].performer), 1, 2, 2, 3);
-    cdTextPages_[n].performer->show();
-
-    label = new Gtk::Label(_("Songwriter:"));
-    hbox = manage(new Gtk::HBox);
-    hbox->pack_end(*label, Gtk::PACK_SHRINK);
-    table->attach(*hbox, 0, 1, 3, 4, Gtk::FILL);
-    hbox->show();
-    label->show();
-    table->attach(*(cdTextPages_[n].songwriter), 1, 2, 3, 4);
-    cdTextPages_[n].songwriter->show();
-
-    label = new Gtk::Label(_("Composer:"));
-    hbox = manage(new Gtk::HBox);
-    hbox->pack_end(*label, Gtk::PACK_SHRINK);
-    table->attach(*hbox, 0, 1, 4, 5, Gtk::FILL);
-    hbox->show();
-    label->show();
-    table->attach(*(cdTextPages_[n].composer), 1, 2, 4, 5);
-    cdTextPages_[n].composer->show();
-
-    label = new Gtk::Label(_("Arranger:"));
-    hbox = manage(new Gtk::HBox);
-    hbox->pack_end(*label, Gtk::PACK_SHRINK);
-    table->attach(*hbox, 0, 1, 5, 6, Gtk::FILL);
-    hbox->show();
-    label->show();
-    table->attach(*(cdTextPages_[n].arranger), 1, 2, 5, 6);
-    cdTextPages_[n].arranger->show();
-
-    label = new Gtk::Label(_("Message:"));
-    hbox = manage(new Gtk::HBox);
-    hbox->pack_end(*label, Gtk::PACK_SHRINK);
-    table->attach(*hbox, 0, 1, 6, 7, Gtk::FILL);
-    hbox->show();
-    label->show();
-    table->attach(*(cdTextPages_[n].message), 1, 2, 6, 7);
-    cdTextPages_[n].message->show();
-
-    label = new Gtk::Label(_("Catalog:"));
-    hbox = manage(new Gtk::HBox);
-    hbox->pack_end(*label, Gtk::PACK_SHRINK);
-    table->attach(*hbox, 0, 1, 7, 8, Gtk::FILL);
-    hbox->show();
-    label->show();
-    table->attach(*(cdTextPages_[n].catalog), 1, 2, 7, 8);
-    cdTextPages_[n].catalog->show();
-
-    label = new Gtk::Label("UPC/EAN:");
-    hbox = manage(new Gtk::HBox);
-    hbox->pack_end(*label, Gtk::PACK_SHRINK);
-    table->attach(*hbox, 0, 1, 8, 9, Gtk::FILL);
-    hbox->show();
-    label->show();
-    table->attach(*(cdTextPages_[n].upcEan), 1, 2, 8, 9);
-    cdTextPages_[n].upcEan->show();
-
-    label = new Gtk::Label(_("Genre:"));
-    hbox = manage(new Gtk::HBox);
-    hbox->pack_end(*label, Gtk::PACK_SHRINK);
-    table->attach(*hbox, 0, 1, 9, 10, Gtk::FILL);
-    hbox->show();
-    label->show();
-    table->attach(*(cdTextPages_[n].genre), 1, 2, 9, 10);
-    cdTextPages_[n].genre->show();
-
-    label = new Gtk::Label(_("Genre Info:"));
-    hbox = manage(new Gtk::HBox);
-    hbox->pack_end(*label, Gtk::PACK_SHRINK);
-    table->attach(*hbox, 0, 1, 10, 11, Gtk::FILL);
-    hbox->show();
-    label->show();
-    table->attach(*(cdTextPages_[n].genreInfo), 1, 2, 10, 11);
-    cdTextPages_[n].genreInfo->show();
-
-    hbox = manage(new Gtk::HBox);
-    hbox->pack_start(*table, true, true, 3);
-    table->show();
-
-    vbox1 = manage(new Gtk::VBox);
-    vbox1->pack_start(*hbox, true, true, 3);
-    hbox->show();
-
-    vbox1->show();
-
-    return vbox1;
-}
-
-bool TocInfoDialog::on_delete_event(GdkEventAny *)
-{
-    stop();
-    return 1;
-}
-
-void TocInfoDialog::closeAction()
-{
-    stop();
+    cdTextPages_[n].genre->set_model(list);
+    cdTextPages_[n].genre->property_selected().signal_changed().connect(
+        bind(sigc::mem_fun(*this, &TocInfoDialog::setSelectedCDTextGenre), n));
 }
 
 void TocInfoDialog::clear()
@@ -460,7 +719,7 @@ void TocInfoDialog::clear()
     nofTracks_->set_text("");
     tocLength_->set_text("");
 
-    tocType_.set_active(0);
+    tocType_.set_selected(0);
     selectedTocType_ = Toc::Type::CD_DA;
 
     catalog_->set_text("");
@@ -469,82 +728,183 @@ void TocInfoDialog::clear()
     clearCdText();
 }
 
-void TocInfoDialog::update(unsigned long level, TocEdit *view)
+void TocInfoDialog::fillPerformerAction(int l)
+{
+    if (l < 0 || l >= 8)
+        return;
+    auto& page = cdTextPages_[l];
+    const char *s = checkString(page.performer->get_text());
+    if (!s)
+        return;
+    for (auto& t : page.tracks)
+        t.performer->set_text(s);
+}
+
+void TocInfoDialog::activatePerformerAction(int l)
+{
+    if (l < 0 || l >= 8)
+        return;
+    bool val = cdTextPages_[l].performerButton->get_active();
+    for (auto& t : cdTextPages_[l].tracks)
+        t.performer->set_sensitive(val);
+}
+
+void TocInfoDialog::recomputeEncoding(int l)
+{
+    if (importing_ || l < 0 || l >= 8)
+        return;
+
+    auto& page = cdTextPages_[l];
+
+    // Concatenate every text field for this language; if the blob fits
+    // an encoding, every individual field does too.
+    std::string all;
+    auto append = [&](Gtk::Entry *e) {
+        all += e->get_text().raw();
+        all += '\n';
+    };
+    append(page.title);
+    append(page.performer);
+    append(page.songwriter);
+    append(page.composer);
+    append(page.arranger);
+    append(page.message);
+    append(page.catalog);
+    append(page.upcEan);
+    append(page.genreInfo);
+    for (auto& t : page.tracks) {
+        append(t.title);
+        append(t.performer);
+    }
+
+    bool fits[kEncodingCount];
+    for (int e = 0; e < kEncodingCount; e++) {
+        std::vector<u8> out;
+        fits[e] = Util::from_utf8(all, out, kEncodings[e]);
+    }
+
+    int cur = page.encoding->get_selected();
+    if (cur < 0 || cur >= kEncodingCount)
+        cur = kDefaultEncodingIndex;
+
+    if (!fits[cur]) {
+        // Auto-upgrade to smallest encoding that fits; never downgrade.
+        for (int e = 0; e < kEncodingCount; e++) {
+            if (fits[e]) {
+                page.encoding->set_selected(e);
+                // set_selected() re-enters via signal_changed; that call
+                // refreshes the warning state.
+                return;
+            }
+        }
+    }
+
+    bool anyFits = fits[0] || fits[1] || fits[2];
+    if (!anyFits) {
+        page.encodingWarning->set_markup(
+            Glib::ustring("<span color=\"red\">") +
+            Glib::Markup::escape_text(_("Text cannot be encoded")) +
+            "</span>");
+        page.encodingWarning->set_visible(true);
+    } else {
+        page.encodingWarning->set_visible(false);
+    }
+}
+
+void TocInfoDialog::update(unsigned long level)
 {
     const Toc *toc;
 
-    if (!active_)
-        return;
-
-    tocEdit_ = view;
-
-    if (view == NULL) {
+    if (tocEdit_ == NULL) {
         clear();
         return;
     }
 
-    std::string s(view->filename());
+    auto s = tocEdit_->filename().string();
     s += " - ";
     s += APP_NAME;
-    if (view->tocDirty())
+    if (tocEdit_->tocDirty())
         s += "(*)";
     set_title(s);
 
-    if (level & UPD_TOC_DATA) {
+    if (level & (UPD_TOC_DATA | UPD_TRACK_DATA)) {
         toc = tocEdit_->toc();
         importData(toc);
     }
 
     if (level & UPD_EDITABLE_STATE) {
-        applyButton_->set_sensitive(tocEdit_->editable() ? true : false);
+        imdbButton_->set_sensitive(tocEdit_->editable() ? true : false);
     }
+
+    if (tocEdit_->empty())
+        imdbButton_->set_sensitive(false);
 }
 
 void TocInfoDialog::clearCdText()
 {
-    int l;
+    importing_ = true;
+    for (int l = 0; l < 8; l++) {
+        auto& page = cdTextPages_[l];
 
-    for (l = 0; l < 8; l++) {
-        cdTextPages_[l].title->set_text("");
-        cdTextPages_[l].title->set_editable(false);
+        page.title->set_text("");
+        page.title->set_editable(false);
 
-        cdTextPages_[l].performer->set_text("");
-        cdTextPages_[l].performer->set_editable(false);
+        page.performer->set_text("");
+        page.performer->set_editable(false);
 
-        cdTextPages_[l].songwriter->set_text("");
-        cdTextPages_[l].songwriter->set_editable(false);
+        page.songwriter->set_text("");
+        page.songwriter->set_editable(false);
 
-        cdTextPages_[l].composer->set_text("");
-        cdTextPages_[l].composer->set_editable(false);
+        page.composer->set_text("");
+        page.composer->set_editable(false);
 
-        cdTextPages_[l].arranger->set_text("");
-        cdTextPages_[l].arranger->set_editable(false);
+        page.arranger->set_text("");
+        page.arranger->set_editable(false);
 
-        cdTextPages_[l].message->set_text("");
-        cdTextPages_[l].message->set_editable(false);
+        page.message->set_text("");
+        page.message->set_editable(false);
 
-        cdTextPages_[l].catalog->set_text("");
-        cdTextPages_[l].catalog->set_editable(false);
+        page.catalog->set_text("");
+        page.catalog->set_editable(false);
 
-        cdTextPages_[l].upcEan->set_text("");
-        cdTextPages_[l].upcEan->set_editable(false);
+        page.upcEan->set_text("");
+        page.upcEan->set_editable(false);
 
-        cdTextPages_[l].language->set_active(1);
-        cdTextPages_[l].selectedLanguage = 1;
+        page.language->set_selected(1);
+        page.selectedLanguage = 1;
 
-        cdTextPages_[l].genre->set_active(1);
-        cdTextPages_[l].selectedGenre = 1;
+        page.genre->set_selected(1);
+        page.selectedGenre = 1;
+
+        page.encoding->set_selected(kDefaultEncodingIndex);
+        page.encodingWarning->set_visible(false);
     }
+
+    // Remove any track rows as well.
+    adjustTableEntries(0);
+
+    // Drop all tabs from the notebook.
+    visibleBlocks_.clear();
+    while (cdTextNotebook_->get_n_pages() > 0)
+        cdTextNotebook_->remove_page(0);
+    updateAddButtonSensitivity();
+
+    importing_ = false;
 }
 
-void TocInfoDialog::applyAction()
+void TocInfoDialog::okAction()
 {
-    if (tocEdit_ == NULL || !tocEdit_->editable())
-        return;
+    if (tocEdit_ != NULL && tocEdit_->editable()) {
+        exportData(tocEdit_);
+        guiUpdate(UPD_TOC_DATA);
+    }
+    hide();
+}
 
-    exportData(tocEdit_);
-
-    guiUpdate(UPD_TOC_DATA);
+void TocInfoDialog::cancelAction()
+{
+    // Edits are discarded: start() re-imports the TOC on the next open.
+    hide();
 }
 
 const char *TocInfoDialog::checkString(const std::string &str)
@@ -582,7 +942,7 @@ const char *TocInfoDialog::checkString(const std::string &str)
     return s;
 }
 
-int TocInfoDialog::getCdTextLanguageIndex(int code)
+int TocInfoDialog::getCdTextLanguageIndex(int code) const
 {
     int i;
 
@@ -611,93 +971,127 @@ int TocInfoDialog::getCdTextGenreIndex(int code1, int code2)
 
 void TocInfoDialog::importCdText(const Toc *toc)
 {
-    int l;
     const CdTextItem *item;
 
-    for (l = 0; l < 8; l++) {
+    adjustTableEntries(toc->nofTracks());
+
+    // Reset every slot first (clears fields and drops prior warnings).
+    for (int l = 0; l < 8; l++)
+        resetBlockData(l);
+
+    // Determine which TOC blocks have a language defined — those are the
+    // ones the user cares about. The TOC's 1:1 slot↔block mapping at
+    // import time means we can use the TOC block number as the slot
+    // number directly; the mapping may diverge later if the user
+    // deletes tabs.
+    visibleBlocks_.clear();
+    for (int l = 0; l < 8; l++) {
+        if (toc->cdTextLanguage(l) >= 0)
+            visibleBlocks_.push_back(l);
+    }
+
+    for (int l : visibleBlocks_) {
+        auto& page = cdTextPages_[l];
+
         if ((item = toc->getCdTextItem(0, l, CdTextItem::PackType::TITLE)) != NULL)
-            cdTextPages_[l].title->set_text((const char *)(item->data()));
+            page.title->set_text(item->getText());
         else
-            cdTextPages_[l].title->set_text("");
-        cdTextPages_[l].title->set_editable(true);
+            page.title->set_text("");
+        page.title->set_editable(true);
 
         if ((item = toc->getCdTextItem(0, l, CdTextItem::PackType::PERFORMER)) != NULL)
-            cdTextPages_[l].performer->set_text((const char *)(item->data()));
+            page.performer->set_text(item->getText());
         else
-            cdTextPages_[l].performer->set_text("");
-        cdTextPages_[l].performer->set_editable(true);
+            page.performer->set_text("");
+        page.performer->set_editable(true);
 
         if ((item = toc->getCdTextItem(0, l, CdTextItem::PackType::SONGWRITER)) != NULL)
-            cdTextPages_[l].songwriter->set_text((const char *)(item->data()));
+            page.songwriter->set_text(item->getText());
         else
-            cdTextPages_[l].songwriter->set_text("");
-        cdTextPages_[l].songwriter->set_editable(true);
+            page.songwriter->set_text("");
+        page.songwriter->set_editable(true);
 
         if ((item = toc->getCdTextItem(0, l, CdTextItem::PackType::COMPOSER)) != NULL)
-            cdTextPages_[l].composer->set_text((const char *)(item->data()));
+            page.composer->set_text(item->getText());
         else
-            cdTextPages_[l].composer->set_text("");
-        cdTextPages_[l].composer->set_editable(true);
+            page.composer->set_text("");
+        page.composer->set_editable(true);
 
         if ((item = toc->getCdTextItem(0, l, CdTextItem::PackType::ARRANGER)) != NULL)
-            cdTextPages_[l].arranger->set_text((const char *)(item->data()));
+            page.arranger->set_text(item->getText());
         else
-            cdTextPages_[l].arranger->set_text("");
-        cdTextPages_[l].arranger->set_editable(true);
+            page.arranger->set_text("");
+        page.arranger->set_editable(true);
 
         if ((item = toc->getCdTextItem(0, l, CdTextItem::PackType::MESSAGE)) != NULL)
-            cdTextPages_[l].message->set_text((const char *)(item->data()));
+            page.message->set_text(item->getText());
         else
-            cdTextPages_[l].message->set_text("");
-        cdTextPages_[l].message->set_editable(true);
+            page.message->set_text("");
+        page.message->set_editable(true);
 
         if ((item = toc->getCdTextItem(0, l, CdTextItem::PackType::DISK_ID)) != NULL)
-            cdTextPages_[l].catalog->set_text((const char *)(item->data()));
+            page.catalog->set_text(item->getText());
         else
-            cdTextPages_[l].catalog->set_text("");
-        cdTextPages_[l].catalog->set_editable(true);
+            page.catalog->set_text("");
+        page.catalog->set_editable(true);
 
         if ((item = toc->getCdTextItem(0, l, CdTextItem::PackType::UPCEAN_ISRC)) != NULL)
-            cdTextPages_[l].upcEan->set_text((const char *)(item->data()));
+            page.upcEan->set_text(item->getText());
         else
-            cdTextPages_[l].upcEan->set_text("");
-        cdTextPages_[l].upcEan->set_editable(true);
+            page.upcEan->set_text("");
+        page.upcEan->set_editable(true);
 
         if ((item = toc->getCdTextItem(0, l, CdTextItem::PackType::GENRE)) != NULL) {
             if (item->dataLen() >= 2) {
-                cdTextPages_[l].selectedGenre =
+                page.selectedGenre =
                     getCdTextGenreIndex(item->data()[0], item->data()[1]);
             } else {
-                cdTextPages_[l].selectedGenre = 0; // Unknwon
+                page.selectedGenre = 0; // Unknown
             }
 
             if (item->dataLen() > 2) {
-                // Copy the supplementary genre information from the CD-TEXT item.
                 // Carefully handle the case that the terminating 0 is missing.
                 int len = item->dataLen() - 2 + 1;
                 char *s = new char[len];
                 memcpy(s, item->data() + 2, len - 1);
                 s[len - 1] = 0;
 
-                cdTextPages_[l].genreInfo->set_text(s);
+                page.genreInfo->set_text(s);
 
                 delete[] s;
             } else {
-                cdTextPages_[l].genreInfo->set_text("");
+                page.genreInfo->set_text("");
             }
         } else {
-            cdTextPages_[l].selectedGenre = 1; // not used
-            cdTextPages_[l].genreInfo->set_text("");
+            page.selectedGenre = 1; // not used
+            page.genreInfo->set_text("");
         }
-        cdTextPages_[l].genre->set_active(cdTextPages_[l].selectedGenre);
+        page.genre->set_selected(page.selectedGenre);
 
-        cdTextPages_[l].selectedLanguage = getCdTextLanguageIndex(toc->cdTextLanguage(l));
-        cdTextPages_[l].language->set_active(cdTextPages_[l].selectedLanguage);
+        page.selectedLanguage = getCdTextLanguageIndex(toc->cdTextLanguage(l));
+        page.language->set_selected(page.selectedLanguage);
+
+        page.encoding->set_selected(encodingToIndex(toc->cdTextEncoding(l)));
+
+        // Per-track entries
+        int n = toc->nofTracks();
+        for (int i = 0; i < n; i++) {
+            auto tTitle = toc->getCdTextItem(i + 1, l, CdTextItem::PackType::TITLE);
+            page.tracks[i].title->set_text(tTitle ? tTitle->getText() : "");
+
+            auto tPerf = toc->getCdTextItem(i + 1, l, CdTextItem::PackType::PERFORMER);
+            page.tracks[i].performer->set_text(tPerf ? tPerf->getText() : "");
+        }
     }
+
+    // Re-attach the right set of tabs to the notebook.
+    syncTabs();
 }
 
 void TocInfoDialog::importData(const Toc *toc)
 {
+    importing_ = true;
+
     char buf[50];
     int i;
 
@@ -723,21 +1117,27 @@ void TocInfoDialog::importData(const Toc *toc)
 
     switch (toc->tocType()) {
     case Toc::Type::CD_DA:
-        tocType_.set_active(0);
+        tocType_.set_selected(0);
         break;
     case Toc::Type::CD_ROM:
-        tocType_.set_active(1);
+        tocType_.set_selected(1);
         break;
     case Toc::Type::CD_ROM_XA:
-        tocType_.set_active(2);
+        tocType_.set_selected(2);
         break;
     case Toc::Type::CD_I:
-        tocType_.set_active(3);
+        tocType_.set_selected(3);
         break;
     }
     selectedTocType_ = toc->tocType();
 
     importCdText(toc);
+    updateTabLabels();
+
+    importing_ = false;
+
+    for (int l = 0; l < 8; l++)
+        recomputeEncoding(l);
 }
 
 void TocInfoDialog::exportData(TocEdit *tocEdit)
@@ -764,165 +1164,59 @@ void TocInfoDialog::exportData(TocEdit *tocEdit)
 
 void TocInfoDialog::exportCdText(TocEdit *tocEdit)
 {
-    int l;
     const char *s;
     const Toc *toc = tocEdit->toc();
 
     const CdTextItem *item;
     CdTextItem *newItem;
 
-    for (l = 0; l < 8; l++) {
-        // Title
-        if ((s = checkString(cdTextPages_[l].title->get_text())) != NULL) {
-            newItem = new CdTextItem(CdTextItem::PackType::TITLE, l);
-            newItem->setText(s);
-        } else
+    // Write the disc-level CD-TEXT pack or clear it when the field is empty.
+    auto applyPack = [&](int block, CdTextItem::PackType type, Gtk::Entry *entry) {
+        const char *text = checkString(entry->get_text());
+        if (text != NULL) {
+            newItem = new CdTextItem(type, block);
+            newItem->setText(text);
+        } else {
             newItem = NULL;
+        }
 
-        if ((item = toc->getCdTextItem(0, l, CdTextItem::PackType::TITLE)) != NULL) {
+        if ((item = toc->getCdTextItem(0, block, type)) != NULL) {
             if (newItem == NULL)
-                tocEdit->setCdTextItem(0, CdTextItem::PackType::TITLE, l, NULL);
+                tocEdit->setCdTextItem(0, type, block, NULL);
             else if (*newItem != *item)
-                tocEdit->setCdTextItem(0, CdTextItem::PackType::TITLE, l, s);
+                tocEdit->setCdTextItem(0, type, block, text);
         } else if (newItem != NULL) {
-            tocEdit->setCdTextItem(0, CdTextItem::PackType::TITLE, l, s);
+            tocEdit->setCdTextItem(0, type, block, text);
         }
 
         delete newItem;
+    };
 
-        // Performer
-        if ((s = checkString(cdTextPages_[l].performer->get_text())) != NULL) {
-            newItem = new CdTextItem(CdTextItem::PackType::PERFORMER, l);
-            newItem->setText(s);
-        } else
-            newItem = NULL;
+    // For each tab position p, write the associated slot's data into
+    // TOC block p. This compacts the blocks starting at 0 and preserves
+    // the Red Book requirement that language-block numbers be
+    // contiguous starting at 0.
+    for (int p = 0; p < (int)visibleBlocks_.size(); p++) {
+        int slot = visibleBlocks_[p];
+        auto& page = cdTextPages_[slot];
+        int l = p;
 
-        if ((item = toc->getCdTextItem(0, l, CdTextItem::PackType::PERFORMER)) != NULL) {
-            if (newItem == NULL)
-                tocEdit->setCdTextItem(0, CdTextItem::PackType::PERFORMER, l, NULL);
-            else if (*newItem != *item)
-                tocEdit->setCdTextItem(0, CdTextItem::PackType::PERFORMER, l, s);
-        } else if (newItem != NULL) {
-            tocEdit->setCdTextItem(0, CdTextItem::PackType::PERFORMER, l, s);
-        }
-
-        delete newItem;
-
-        // Songwriter
-        if ((s = checkString(cdTextPages_[l].songwriter->get_text())) != NULL) {
-            newItem = new CdTextItem(CdTextItem::PackType::SONGWRITER, l);
-            newItem->setText(s);
-        } else
-            newItem = NULL;
-
-        if ((item = toc->getCdTextItem(0, l, CdTextItem::PackType::SONGWRITER)) != NULL) {
-            if (newItem == NULL)
-                tocEdit->setCdTextItem(0, CdTextItem::PackType::SONGWRITER, l, NULL);
-            else if (*newItem != *item)
-                tocEdit->setCdTextItem(0, CdTextItem::PackType::SONGWRITER, l, s);
-        } else if (newItem != NULL) {
-            tocEdit->setCdTextItem(0, CdTextItem::PackType::SONGWRITER, l, s);
-        }
-
-        delete newItem;
-
-        // Composer
-        if ((s = checkString(cdTextPages_[l].composer->get_text())) != NULL) {
-            newItem = new CdTextItem(CdTextItem::PackType::COMPOSER, l);
-            newItem->setText(s);
-        } else
-            newItem = NULL;
-
-        if ((item = toc->getCdTextItem(0, l, CdTextItem::PackType::COMPOSER)) != NULL) {
-            if (newItem == NULL)
-                tocEdit->setCdTextItem(0, CdTextItem::PackType::COMPOSER, l, NULL);
-            else if (*newItem != *item)
-                tocEdit->setCdTextItem(0, CdTextItem::PackType::COMPOSER, l, s);
-        } else if (newItem != NULL) {
-            tocEdit->setCdTextItem(0, CdTextItem::PackType::COMPOSER, l, s);
-        }
-
-        delete newItem;
-
-        // Arranger
-        if ((s = checkString(cdTextPages_[l].arranger->get_text())) != NULL) {
-            newItem = new CdTextItem(CdTextItem::PackType::ARRANGER, l);
-            newItem->setText(s);
-        } else
-            newItem = NULL;
-
-        if ((item = toc->getCdTextItem(0, l, CdTextItem::PackType::ARRANGER)) != NULL) {
-            if (newItem == NULL)
-                tocEdit->setCdTextItem(0, CdTextItem::PackType::ARRANGER, l, NULL);
-            else if (*newItem != *item)
-                tocEdit->setCdTextItem(0, CdTextItem::PackType::ARRANGER, l, s);
-        } else if (newItem != NULL) {
-            tocEdit->setCdTextItem(0, CdTextItem::PackType::ARRANGER, l, s);
-        }
-
-        delete newItem;
-
-        // Message
-        if ((s = checkString(cdTextPages_[l].message->get_text())) != NULL) {
-            newItem = new CdTextItem(CdTextItem::PackType::MESSAGE, l);
-            newItem->setText(s);
-        } else
-            newItem = NULL;
-
-        if ((item = toc->getCdTextItem(0, l, CdTextItem::PackType::MESSAGE)) != NULL) {
-            if (newItem == NULL)
-                tocEdit->setCdTextItem(0, CdTextItem::PackType::MESSAGE, l, NULL);
-            else if (*newItem != *item)
-                tocEdit->setCdTextItem(0, CdTextItem::PackType::MESSAGE, l, s);
-        } else if (newItem != NULL) {
-            tocEdit->setCdTextItem(0, CdTextItem::PackType::MESSAGE, l, s);
-        }
-
-        delete newItem;
-
-        // Catalog
-        if ((s = checkString(cdTextPages_[l].catalog->get_text())) != NULL) {
-            newItem = new CdTextItem(CdTextItem::PackType::DISK_ID, l);
-            newItem->setText(s);
-        } else
-            newItem = NULL;
-
-        if ((item = toc->getCdTextItem(0, l, CdTextItem::PackType::DISK_ID)) != NULL) {
-            if (newItem == NULL)
-                tocEdit->setCdTextItem(0, CdTextItem::PackType::DISK_ID, l, NULL);
-            else if (*newItem != *item)
-                tocEdit->setCdTextItem(0, CdTextItem::PackType::DISK_ID, l, s);
-        } else if (newItem != NULL) {
-            tocEdit->setCdTextItem(0, CdTextItem::PackType::DISK_ID, l, s);
-        }
-
-        delete newItem;
-
-        // Upc/Ean
-        if ((s = checkString(cdTextPages_[l].upcEan->get_text())) != NULL) {
-            newItem = new CdTextItem(CdTextItem::PackType::UPCEAN_ISRC, l);
-            newItem->setText(s);
-        } else
-            newItem = NULL;
-
-        if ((item = toc->getCdTextItem(0, l, CdTextItem::PackType::UPCEAN_ISRC)) != NULL) {
-            if (newItem == NULL)
-                tocEdit->setCdTextItem(0, CdTextItem::PackType::UPCEAN_ISRC, l, NULL);
-            else if (*newItem != *item)
-                tocEdit->setCdTextItem(0, CdTextItem::PackType::UPCEAN_ISRC, l, s);
-        } else if (newItem != NULL) {
-            tocEdit->setCdTextItem(0, CdTextItem::PackType::UPCEAN_ISRC, l, s);
-        }
-
-        delete newItem;
+        applyPack(l, CdTextItem::PackType::TITLE, page.title);
+        applyPack(l, CdTextItem::PackType::PERFORMER, page.performer);
+        applyPack(l, CdTextItem::PackType::SONGWRITER, page.songwriter);
+        applyPack(l, CdTextItem::PackType::COMPOSER, page.composer);
+        applyPack(l, CdTextItem::PackType::ARRANGER, page.arranger);
+        applyPack(l, CdTextItem::PackType::MESSAGE, page.message);
+        applyPack(l, CdTextItem::PackType::DISK_ID, page.catalog);
+        applyPack(l, CdTextItem::PackType::UPCEAN_ISRC, page.upcEan);
 
         // Genre
-        if (cdTextPages_[l].selectedGenre != 0) {
-            int code1 = CD_TEXT_GENRE_CODES[cdTextPages_[l].selectedGenre].code1;
-            int code2 = CD_TEXT_GENRE_CODES[cdTextPages_[l].selectedGenre].code2;
-            s = checkString(cdTextPages_[l].genreInfo->get_text());
+        if (page.selectedGenre != 0) {
+            int code1 = CD_TEXT_GENRE_CODES[page.selectedGenre].code1;
+            int code2 = CD_TEXT_GENRE_CODES[page.selectedGenre].code2;
+            s = checkString(page.genreInfo->get_text());
 
-            if (cdTextPages_[l].selectedGenre > 1) {
+            if (page.selectedGenre > 1) {
                 newItem = new CdTextItem(CdTextItem::PackType::GENRE, l);
                 newItem->setGenre(code1, code2, s);
             } else
@@ -940,12 +1234,154 @@ void TocInfoDialog::exportCdText(TocEdit *tocEdit)
             delete newItem;
         }
 
-        // language
-        if (cdTextPages_[l].selectedLanguage != 0) {
-            int langCode = CD_TEXT_LANGUAGE_CODES[cdTextPages_[l].selectedLanguage].code;
+        // Language
+        if (page.selectedLanguage != 0) {
+            int langCode = CD_TEXT_LANGUAGE_CODES[page.selectedLanguage].code;
 
             if (langCode != toc->cdTextLanguage(l))
                 tocEdit->setCdTextLanguage(l, langCode);
         }
+
+        // Per-track title/performer (applyPack only handles trackNr=0,
+        // so write tracks directly).
+        for (int i = 0; i < (int)page.tracks.size(); i++) {
+            int trackNr = i + 1;
+
+            const char *tText = checkString(page.tracks[i].title->get_text());
+            const CdTextItem *tItem =
+                toc->getCdTextItem(trackNr, l, CdTextItem::PackType::TITLE);
+            if (tText != NULL) {
+                CdTextItem tmp(CdTextItem::PackType::TITLE, l);
+                tmp.setText(tText);
+                if (!tItem || tmp != *tItem)
+                    tocEdit->setCdTextItem(trackNr, CdTextItem::PackType::TITLE, l, tText);
+            } else if (tItem) {
+                tocEdit->setCdTextItem(trackNr, CdTextItem::PackType::TITLE, l, NULL);
+            }
+
+            const char *pText = checkString(page.tracks[i].performer->get_text());
+            const CdTextItem *pItem =
+                toc->getCdTextItem(trackNr, l, CdTextItem::PackType::PERFORMER);
+            if (pText != NULL) {
+                CdTextItem tmp(CdTextItem::PackType::PERFORMER, l);
+                tmp.setText(pText);
+                if (!pItem || tmp != *pItem)
+                    tocEdit->setCdTextItem(trackNr, CdTextItem::PackType::PERFORMER, l, pText);
+            } else if (pItem) {
+                tocEdit->setCdTextItem(trackNr, CdTextItem::PackType::PERFORMER, l, NULL);
+            }
+        }
+
+        // Encoding
+        int encIdx = page.encoding->get_selected();
+        if (encIdx >= 0 && encIdx < kEncodingCount)
+            tocEdit->setCdTextEncoding(l, kEncodings[encIdx]);
     }
+
+    // TOC blocks beyond the number of visible tabs are no longer in use
+    // — wipe any CD-TEXT data still hanging off them.
+    for (int l = (int)visibleBlocks_.size(); l < 8; l++)
+        clearBlockInToc(tocEdit, l);
+}
+
+void TocInfoDialog::clearBlockInToc(TocEdit *tocEdit, int blockNr)
+{
+    const Toc *toc = tocEdit->toc();
+
+    static const CdTextItem::PackType discPacks[] = {
+        CdTextItem::PackType::TITLE,       CdTextItem::PackType::PERFORMER,
+        CdTextItem::PackType::SONGWRITER,  CdTextItem::PackType::COMPOSER,
+        CdTextItem::PackType::ARRANGER,    CdTextItem::PackType::MESSAGE,
+        CdTextItem::PackType::DISK_ID,     CdTextItem::PackType::UPCEAN_ISRC,
+    };
+    for (auto t : discPacks) {
+        if (toc->getCdTextItem(0, blockNr, t))
+            tocEdit->setCdTextItem(0, t, blockNr, NULL);
+    }
+    if (toc->getCdTextItem(0, blockNr, CdTextItem::PackType::GENRE))
+        tocEdit->setCdTextGenreItem(blockNr, -1, -1, NULL);
+
+    int n = toc->nofTracks();
+    for (int i = 1; i <= n; i++) {
+        if (toc->getCdTextItem(i, blockNr, CdTextItem::PackType::TITLE))
+            tocEdit->setCdTextItem(i, CdTextItem::PackType::TITLE, blockNr, NULL);
+        if (toc->getCdTextItem(i, blockNr, CdTextItem::PackType::PERFORMER))
+            tocEdit->setCdTextItem(i, CdTextItem::PackType::PERFORMER, blockNr, NULL);
+    }
+
+    if (toc->cdTextLanguage(blockNr) != -1)
+        tocEdit->setCdTextLanguage(blockNr, -1);
+    tocEdit->setCdTextEncoding(blockNr, Util::Encoding::UNSET);
+}
+
+void TocInfoDialog::imdbAction()
+{
+    log_message(0, "IMDB");
+
+    Cddb cddb(tocEdit_->toc());
+
+    if (cddb.connectDb("unknown", "unknown", "cdrdao", VERSION) != 0) {
+        ErrorBox::message(*this, _("Unable to connect to CDDB database."));
+        return;
+    }
+    if (cddb.queryDb() != 0) {
+        ErrorBox::message(*this, _("Querying of CDDB database failed."));
+        return;
+    }
+
+    auto results = cddb.queryResults();
+
+    if (results.size() == 0) {
+        ErrorBox::message(*this, _("No CDDB record found."));
+        return;
+    }
+
+    // We skip the choice and go with the first one.
+    for (const auto& res : results) {
+        log_message(0, "%d %s %s %s", res.exactMatch,
+                    res.category.c_str(),
+                    res.diskId.c_str(),
+                    res.title.c_str());
+    }
+
+    auto dbentry = cddb.readDb(results[0].category, results[0].diskId);
+    if (!dbentry) {
+        ErrorBox::message(*this, _("Unable to download CDDB record."));
+        return;
+    }
+
+    // Fill the language block currently shown. If the TOC has no CD-TEXT
+    // yet, no tab is visible: create one so the data is shown and exported
+    // on Apply.
+    if (visibleBlocks_.empty())
+        addBlockAction();
+    if (visibleBlocks_.empty())
+        return;
+
+    int pos = cdTextNotebook_->get_current_page();
+    if (pos < 0 || pos >= (int)visibleBlocks_.size())
+        pos = 0;
+    auto& page = cdTextPages_[visibleBlocks_[pos]];
+
+    page.title->set_text(dbentry->diskTitle);
+    page.performer->set_text(dbentry->diskArtist);
+
+    // Track performers default to the disc artist. Various-artists CDDB
+    // entries encode per-track artists as "Artist / Title".
+    size_t n = std::min(dbentry->trackTitles.size(), page.tracks.size());
+    for (size_t i = 0; i < n; i++) {
+        std::string title = dbentry->trackTitles[i];
+        std::string performer = dbentry->diskArtist;
+        auto sep = title.find(" / ");
+        if (sep != std::string::npos) {
+            performer = title.substr(0, sep);
+            title = title.substr(sep + 3);
+            Util::trimSpaces(performer);
+            Util::trimSpaces(title);
+        }
+        page.tracks[i].title->set_text(title);
+        page.tracks[i].performer->set_text(performer);
+    }
+    if (n > 0)
+        page.performerButton->set_active(true);
 }

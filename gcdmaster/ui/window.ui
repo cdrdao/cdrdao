@@ -1,0 +1,207 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Generated with glade 3.40.0 -->
+<interface>
+  <requires lib="gtk+" version="4.10"/>
+  <object class="GtkApplicationWindow" id="app_window">
+    <property name="can-focus">False</property>
+    <property name="default-width">350</property>
+    <property name="default-height">250</property>
+    <child>
+      <object class="GtkBox">
+        <property name="can-focus">False</property>
+        <property name="orientation">vertical</property>
+        <child>
+          <object class="GtkBox" id="audio-toolbar">
+            <property name="orientation">horizontal</property>
+            <property name="can-focus">True</property>
+            <child>
+              <object class="GtkButton">
+                <property name="can-focus">False</property>
+                <property name="receives-default">False</property>
+                <property name="tooltip-text" translatable="yes">Save current project</property>
+                <property name="action-name">win.save</property>
+                <property name="icon-name">document-save-symbolic</property>
+                <property name="use-underline">True</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkButton">
+                <property name="can-focus">True</property>
+                <property name="sensitive">True</property>
+                <property name="tooltip-text" translatable="yes">Record project onto media</property>
+                <property name="action-name">win.record</property>
+                <property name="icon-name">media-record-symbolic</property>
+                <property name="use-underline">True</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkSeparator">
+                <property name="orientation">vertical</property>
+                <property name="can-focus">False</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkButton">
+                <property name="can-focus">False</property>
+                <property name="receives-default">False</property>
+                <property name="tooltip-text" translatable="yes">Play audio from current position</property>
+                <property name="action-name">win.play</property>
+                <property name="icon-name">media-playback-start-symbolic</property>
+                <property name="use-underline">True</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkButton">
+                <property name="can-focus">False</property>
+                <property name="receives-default">False</property>
+                <property name="tooltip-text" translatable="yes">Stop audio playback</property>
+                <property name="action-name">win.stop</property>
+                <property name="icon-name">media-playback-stop-symbolic</property>
+                <property name="use-underline">True</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkButton">
+                <property name="can-focus">False</property>
+                <property name="receives-default">False</property>
+                <property name="tooltip-text" translatable="yes">Pause audio playback</property>
+                <property name="action-name">win.pause</property>
+                <property name="icon-name">media-playback-pause-symbolic</property>
+                <property name="use-underline">True</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkSeparator" id="sep-mode">
+                <property name="orientation">vertical</property>
+                <property name="can-focus">False</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkSeparator">
+                <property name="orientation">vertical</property>
+                <property name="can-focus">False</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkButton">
+                <property name="can-focus">False</property>
+                <property name="receives-default">False</property>
+                <property name="action-name">win.zoom-in</property>
+                <property name="icon-name">zoom-in-symbolic</property>
+                <property name="use-underline">True</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkButton">
+                <property name="can-focus">False</property>
+                <property name="receives-default">False</property>
+                <property name="action-name">win.zoom-out</property>
+                <property name="icon-name">zoom-out-symbolic</property>
+                <property name="use-underline">True</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkButton">
+                <property name="can-focus">False</property>
+                <property name="receives-default">False</property>
+                <property name="action-name">win.zoom-fit</property>
+                <property name="icon-name">zoom-original-symbolic</property>
+                <property name="use-underline">True</property>
+              </object>
+            </child>
+            <style>
+              <class name="toolbar"/>
+            </style>
+          </object>
+        </child>
+        <child>
+          <object class="GtkProgressBar" id="progress-bar">
+            <property name="visible">False</property>
+            <property name="can-focus">False</property>
+            <property name="margin-top">2</property>
+            <property name="margin-bottom">2</property>
+          </object>
+        </child>
+        <child>
+          <object class="GtkBox" id="status-bar">
+            <property name="can-focus">False</property>
+            <property name="spacing">2</property>
+            <child>
+              <object class="GtkLabel" id="status-bar-label">
+                <property name="can-focus">False</property>
+                <property name="halign">start</property>
+                <property name="margin-start">10</property>
+                <property name="margin-end">4</property>
+                <property name="margin-top">4</property>
+                <property name="margin-bottom">4</property>
+                <property name="single-line-mode">True</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkButton" id="gtk-stop">
+                <property name="visible">False</property>
+                <property name="can-focus">True</property>
+                <property name="receives-default">True</property>
+                <property name="margin-start">1</property>
+                <property name="margin-end">1</property>
+                <property name="margin-bottom">1</property>
+                <property name="icon-name">window-close</property>
+              </object>
+            </child>
+          </object>
+        </child>
+      </object>
+    </child>
+    <child type="titlebar">
+      <object class="GtkHeaderBar" id="header">
+        <property name="show-title-buttons">True</property>
+        <property name="decoration-layout">menu:close</property>
+        <child type="start">
+          <object class="GtkMenuButton" id="app-menu-button">
+            <property name="can-focus">False</property>
+            <property name="receives-default">False</property>
+            <property name="direction">none</property>
+            <child type="end">
+              <object class="GtkImage">
+                <property name="can-focus">False</property>
+                <property name="resource">/org/gnome/gcdmaster/gcdmaster</property>
+              </object>
+            </child>
+          </object>
+        </child>
+        <child type="title">
+          <object class="GtkLabel" id="header-bar-title">
+            <property name="label" translatable="yes">Gnome CD Master</property>
+          </object>
+        </child>
+        <child type="end">
+          <object class="GtkMenuButton" id="disc-ops">
+            <property name="can-focus">False</property>
+            <property name="receives-default">True</property>
+            <property name="tooltip-text">Disc Operations</property>
+            <property name="direction">none</property>
+            <child type="end">
+              <object class="GtkImage">
+                <property name="can-focus">False</property>
+                <property name="resource">/org/gnome/gcdmaster/svg-cd</property>
+              </object>
+            </child>
+          </object>
+        </child>
+        <child type="end">
+          <object class="GtkMenuButton" id="gears">
+            <property name="can-focus">False</property>
+            <property name="receives-default">False</property>
+            <property name="direction">none</property>
+            <child>
+              <placeholder/>
+            </child>
+            <style>
+              <class name="image-button"/>
+            </style>
+          </object>
+        </child>
+      </object>
+    </child>
+  </object>
+</interface>

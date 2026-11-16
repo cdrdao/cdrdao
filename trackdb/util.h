@@ -42,6 +42,7 @@ char *strdupvCC(const char *s1, ...);
 
 long fullRead(int fd, void *buf, long count);
 long fullWrite(int fd, const void *buf, long count);
+long fullWrite(int fd, const std::string& buffer);
 long readLong(FILE *fp);
 short readShort(FILE *fp);
 
@@ -51,8 +52,6 @@ unsigned char int2bcd(int);
 int bcd2int(unsigned char);
 
 const char *stripCwd(const char *fname);
-
-bool resolveFilename(std::string &dest, const char *file, const char *path);
 
 namespace Util
 {
@@ -69,6 +68,7 @@ enum class FileExtension {
 };
 
 FileExtension fileExtension(const char *fname);
+FileExtension fileExtension(const std::string& path);
 
 enum class Encoding {
     UNSET,
@@ -80,7 +80,8 @@ enum class Encoding {
     UTF8
 };
 
-bool from_utf8(const std::string &input, std::vector<u8> &output, Encoding enc);
+bool from_utf8(const std::string &input, std::vector<u8> &output, Encoding enc,
+               bool transliterate = false);
 std::string to_utf8(const u8 *input, size_t input_size, Encoding enc);
 
 Encoding characterCodeToEncoding(u8);
@@ -89,6 +90,8 @@ const char *encodingToString(Encoding);
 bool isStrictAscii(const char *ptr);
 bool isValidUTF8(const char *ptr);
 bool processMixedString(std::string &str, bool &is_utf8);
+void trimSpaces(std::string& s);
+bool resolveFilename(std::string &dest, const char *file, const char *path);
 
 } // namespace Util
 

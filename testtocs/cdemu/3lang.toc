@@ -1,0 +1,66 @@
+CD_DA
+
+CD_TEXT {
+  LANGUAGE_MAP {
+    0: 9
+    1: 15
+    2: 105
+  }
+  LANGUAGE 0 {
+    ENCODING_ASCII
+    TITLE "The Water"
+    PERFORMER "Georges Duchmoll"
+  }
+  LANGUAGE 1 {
+    TITLE "Cé balot"
+    PERFORMER "Duchmoll"
+  }
+  LANGUAGE 2 {
+    ENCODING_MS_JIS
+    TITLE "湿った水"
+    PERFORMER "白人のフランス人女性"
+  }
+}
+
+// Track 1
+TRACK AUDIO
+NO COPY
+NO PRE_EMPHASIS
+TWO_CHANNEL_AUDIO
+CD_TEXT {
+  LANGUAGE 0 {
+    TITLE "One"
+    PERFORMER "Georges Duchmoll"
+  }
+  LANGUAGE 1 {
+    TITLE "Salùt"
+    PERFORMER "Duchmoll"
+  }
+  LANGUAGE 2 {
+    TITLE "白人のフランス人女性"
+    PERFORMER "白人のフランス人女性"
+  }
+}
+ZERO 03:16:11
+
+
+// Track 2
+TRACK AUDIO
+NO COPY
+NO PRE_EMPHASIS
+TWO_CHANNEL_AUDIO
+CD_TEXT {
+  LANGUAGE 0 {
+    TITLE "Two"
+    PERFORMER "Georges Duchmoll"
+  }
+  LANGUAGE 1 {
+    TITLE "C'est ça la vie"
+    PERFORMER "Duchmoll"
+  }
+  LANGUAGE 2 {
+    TITLE "白人のフランス人女性"
+    PERFORMER "白人のフランス人女性"
+  }
+}
+ZERO 02:58:65

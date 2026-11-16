@@ -35,7 +35,7 @@
 #include "log.h"
 #include "port.h"
 
-YamahaCDR10x::YamahaCDR10x(ScsiIf *scsiIf, unsigned long options) : CdrDriver(scsiIf, options)
+YamahaCDR10x::YamahaCDR10x(std::shared_ptr<ScsiIf> scsiIf, unsigned long options) : CdrDriver(scsiIf, options)
 {
     int i;
 
@@ -56,7 +56,7 @@ YamahaCDR10x::YamahaCDR10x(ScsiIf *scsiIf, unsigned long options) : CdrDriver(sc
 }
 
 // static constructor
-CdrDriver *YamahaCDR10x::instance(ScsiIf *scsiIf, unsigned long options)
+CdrDriver *YamahaCDR10x::instance(std::shared_ptr<ScsiIf> scsiIf, unsigned long options)
 {
     return new YamahaCDR10x(scsiIf, options);
 }
@@ -760,7 +760,7 @@ int YamahaCDR10x::driveInfo(DriveInfo *info, bool showErrorMsg)
 
     info->maxReadSpeed = mult2Speed(4);
 
-    if (!strncmp(scsiIf_->product(), "CDR100", 6)) {
+    if (scsiIf_->product().substr(0, 6) == "CDR100") {
         info->maxWriteSpeed = mult2Speed(4);
         info->currentWriteSpeed = info->currentReadSpeed = mult2Speed(1 << (mp[3] >> 4));
     } else { // CDR102, crippled to 2x write

@@ -26,7 +26,7 @@
 
 #include "GenericMMC.h"
 
-#include "CdTextEncoder.h"
+#include "CdTextSubChannelEncoder.h"
 #include "PQSubChannel16.h"
 #include "PWSubChannel96.h"
 #include "Toc.h"
@@ -50,7 +50,8 @@
 
 #define WMP_VAR_MAX 0x1
 
-GenericMMC::GenericMMC(ScsiIf *scsiIf, unsigned long options) : CdrDriver(scsiIf, options)
+GenericMMC::GenericMMC(std::shared_ptr<ScsiIf> scsiIf, unsigned long options)
+    : CdrDriver(scsiIf, options)
 {
     int i;
     driverName_ = "Generic SCSI-3/MMC - Version 2.0";
@@ -88,6 +89,17 @@ GenericMMC::GenericMMC(ScsiIf *scsiIf, unsigned long options) : CdrDriver(scsiIf
             cdtextEnabled_ = true;
         }
     }
+
+    cdtextDisabled_ = (options_ & OPT_MMC_NO_CD_TEXT) != 0;
+    if (cdtextDisabled_)
+        cdtextEnabled_ = false;
+}
+
+CdrDriver::CdTextWrite GenericMMC::cdTextWrite() const
+{
+    if (cdtextDisabled_)
+        return CdTextWrite::DISABLED;
+    return cdtextEnabled_ ? CdTextWrite::ENABLED : CdTextWrite::UNSUPPORTED;
 }
 
 GenericMMC::~GenericMMC()
@@ -107,7 +119,7 @@ GenericMMC::~GenericMMC()
 }
 
 // static constructor
-CdrDriver *GenericMMC::instance(ScsiIf *scsiIf, unsigned long options)
+CdrDriver *GenericMMC::instance(std::shared_ptr<ScsiIf> scsiIf, unsigned long options)
 {
     return new GenericMMC(scsiIf, options);
 }
@@ -1071,7 +1083,7 @@ int GenericMMC::initDao(const Toc *toc)
 
     if (cdtextEnabled_) {
         delete cdTextEncoder_;
-        cdTextEncoder_ = new CdTextEncoder(toc_);
+        cdTextEncoder_ = new CdTextSubChannelEncoder(toc_);
         if (cdTextEncoder_->encode() != 0) {
             log_message(-2, "CD-TEXT encoding failed.");
             return 1;
@@ -1722,10 +1734,11 @@ int GenericMMC::analyzeTrack(TrackData::Mode mode, int trackNr, long startLba, l
     }
 
     if (noScan || (options_ & OPT_MMC_READ_ISRC) != 0 ||
-        (readCapabilities_ & CDR_READ_CAP_AUDIO_PQ_HEX) != 0) {
+        (readCapabilities_ & CDR_READ_CAP_AUDIO_PW_RAW) == 0) {
         // The ISRC code is usually not usable if the PQ channel data is
-        // converted to hex numbers by the drive. Read them with the
-        // appropriate command in this case
+        // formatted by the drive: the CRC cannot be checked and some
+        // drives return garbage. Read them with the appropriate command
+        // in this case
 
         *isrcCode = 0;
         if (mode == TrackData::AUDIO)
@@ -1793,6 +1806,12 @@ int GenericMMC::readSubChannels(TrackData::SubChannelMode sm, long lba, long len
     case TrackData::SUBCHAN_RW_RAW:
         blockLen = AUDIO_BLOCK_LEN + 96;
         cmd[10] = 0x01;
+
+        // Raw P-W data also carries the Q channel, so decode it for the
+        // pre-gap, index and ISRC detection. The scanned sub-channel objects
+        // are only able to decode it if they are PWSubChannel96 objects.
+        if ((options_ & OPT_MMC_USE_PQ) == 0)
+            subChanMode = CDR_READ_CAP_AUDIO_PW_RAW;
         break;
     }
 

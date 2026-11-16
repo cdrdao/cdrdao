@@ -21,28 +21,14 @@
 #define __RECORD_CD_SOURCE_H
 
 class CdDevice;
-class DeviceList;
 
-class RecordCDSource : public Gtk::VBox
+class RecordCDSource : public Gtk::Frame
 {
   public:
     RecordCDSource(Gtk::Window *);
-    ~RecordCDSource();
 
-    void start();
-    void stop();
-
-    void update(unsigned long level);
-
-    bool getOnTheFly();
-    void setOnTheFly(bool);
     int getCorrection();
     int getSubChanReadMode();
-    DeviceList *getDeviceList()
-    {
-        return DEVICES;
-    }
-    void onTheFlyOption(bool);
 
     struct CorrectionTable {
         int correction;
@@ -55,24 +41,14 @@ class RecordCDSource : public Gtk::VBox
     };
 
   private:
-    DeviceList *DEVICES;
-
-    int active_;
-    int correction_;
-    int speed_;
-    int subChanReadMode_;
-
-    //  bool onTheFly_;
+    int correction_ = 0;
+    int subChanReadMode_ = 0;
 
     Gtk::Window *parent_;
-    Gtk::MessageDialog *moreOptionsDialog_;
+    Gtk::Window *moreOptions_ = nullptr;
 
-    Gtk::SpinButton *speedSpinButton_;
-    Gtk::CheckButton *speedButton_;
-
-    Gtk::ComboBoxText correctionMenu_;
-    Gtk::ComboBoxText subChanReadModeMenu_;
-    Gtk::CheckButton *onTheFlyButton_;
+    Gtk::DropDown*    correctionMenu_;
+    Gtk::DropDown*    subChanReadModeMenu_;
     Gtk::CheckButton *continueOnErrorButton_;
     Gtk::CheckButton *ignoreIncorrectTOCButton_;
 
@@ -80,8 +56,6 @@ class RecordCDSource : public Gtk::VBox
 
     void setCorrection();
     void setSubChanReadMode();
-    void speedButtonChanged();
-    void speedChanged();
 };
 
 #endif

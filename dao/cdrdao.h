@@ -21,6 +21,7 @@
 #define __CDRDAO_H__
 
 #include <string>
+#include <memory.h>
 #include <optional>
 
 #include "trackdb/util.h"
@@ -184,7 +185,7 @@ public:
     int copyCd(DaoCommandLine &opts, CdrDriver *src, CdrDriver *dst);
     int copyCdOnTheFly(DaoCommandLine &opts, CdrDriver *src, CdrDriver *dst);
 
-    CdrDriver *selectDriver(DaoCommand, ScsiIf *, const std::string &);
+    CdrDriver *selectDriver(DaoCommand, std::shared_ptr<ScsiIf>, const std::string &);
     std::string getDefaultDevice(DaoDeviceType req);
     CdrDriver *setupDevice(DaoCommand, const std::string &dev, const std::string &driver,
 			   int initDevice, int checkReady, int checkEmpty, int readingSpeed,

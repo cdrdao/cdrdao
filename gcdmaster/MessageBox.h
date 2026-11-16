@@ -20,59 +20,74 @@
 #ifndef __MESSAGE_BOX_H__
 #define __MESSAGE_BOX_H__
 
-#include <gtk/gtk.h>
 #include <gtkmm.h>
-#include <stdarg.h>
+#include <iostream>
 
-class MessageBoxBase : public Gtk::Dialog
+class MessageBox
 {
   public:
-    MessageBoxBase(Gtk::Window *);
-    virtual ~MessageBoxBase();
+    virtual ~MessageBox() {}
 
-    void init(const char *type, const char *titel, int askDontShow, int nButtons, int defaultButton,
-              Gtk::BuiltinStockID buttons[], va_list);
+    static Glib::RefPtr<MessageBox>
+    create(Gtk::Window& p, const Glib::ustring title,
+                        const std::vector<Glib::ustring> buttons,
+                        int defaultButton, int cancelButton,
+                        const std::vector<Glib::ustring> extra_lines = {});
 
-    int run();
+    static void message(Gtk::Window& p, const Glib::ustring title,
+                        const std::vector<Glib::ustring> extra_lines = {});
 
-    int dontShowAgain() const;
+    virtual void choose();
+    sigc::signal<void(int)> dialogDone;
 
   protected:
-    int done_;
-    int doneDefault_;
+    Glib::RefPtr<Gtk::AlertDialog> dialog;
+    Gtk::Window& parentWindow;
 
-    Gtk::CheckButton *dontShowAgain_;
+    struct PtrHolder {
+        PtrHolder(Glib::RefPtr<MessageBox> b) : box(b) {}
+        Glib::RefPtr<MessageBox> box;
+    }* holder = NULL;
 
-    Gtk::Button *createButton(const Gtk::BuiltinStockID);
-    bool on_delete_event(GdkEventAny *);
-    void buttonAction(int);
+private:
+    MessageBox(Gtk::Window&);
+
+    void init(const Glib::ustring title,
+              const std::vector<Glib::ustring> buttons,
+              int defaultButton, int cancelButton,
+              const std::vector<Glib::ustring> extra_lines = {});
+
 };
 
-class MessageBox : public MessageBoxBase
+class Ask2Box
 {
   public:
-    MessageBox(Gtk::Window *, const char *title, int askDontShow, ...);
-    ~MessageBox();
+    static Glib::RefPtr<MessageBox>
+    create(Gtk::Window& p, const Glib::ustring title, int defaultButton,
+           const std::vector<Glib::ustring> extra_lines = {});
 };
 
-class Ask2Box : public MessageBoxBase
+class Ask3Box
 {
   public:
-    Ask2Box(Gtk::Window *, const char *title, int askDontShow, int defaultButton, ...);
-    ~Ask2Box();
+    static Glib::RefPtr<MessageBox>
+    create(Gtk::Window& p, const Glib::ustring title, int defaultButton,
+           const std::vector<Glib::ustring> extra_lines = {});
+
+    static void message(Gtk::Window& p, const Glib::ustring title,
+                        int defaultButton,
+                        const std::vector<Glib::ustring> extra_lines = {});
 };
 
-class Ask3Box : public MessageBoxBase
+class ErrorBox
 {
   public:
-    Ask3Box(Gtk::Window *, const char *title, int askDontShow, int defaultButton, ...);
-    ~Ask3Box();
-};
+    static Glib::RefPtr<MessageBox>
+    create(Gtk::Window& p, const Glib::ustring title,
+           const std::vector<Glib::ustring> extra_lines = {});
 
-class ErrorBox : public Gtk::MessageDialog
-{
-  public:
-    ErrorBox(const char *msg);
+    static void message(Gtk::Window& p, const Glib::ustring msg,
+                        const std::vector<Glib::ustring> extra_lines = {});
 };
 
 #endif

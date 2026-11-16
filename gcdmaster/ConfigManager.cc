@@ -29,6 +29,10 @@ static const char *KEY_CONFIGURED_DEVICES = "configured-devices";
 
 ConfigManager::ConfigManager()
 {
+    // You would think this throws an exception if running locally
+    // (for debugging) without an installed schema. But no, it
+    // *crashes*. The schema system in Gnome is just pointless.
+    // TODO: switch to simpler GKeyFile.
     settings_ = Gio::Settings::create(NAME_SCHEMA);
 }
 
@@ -42,6 +46,12 @@ ConfigManager::~ConfigManager()
 Glib::ustring ConfigManager::getCdrdaoPath() const
 {
     return settings_->get_string(KEY_CDRDAO_PATH);
+}
+
+void ConfigManager::setCdrdaoPath(const Glib::ustring &dir) const
+{
+    settings_->set_string(KEY_CDRDAO_PATH, dir);
+    settings_->apply();
 }
 
 void ConfigManager::setTempDir(const Glib::ustring &dir) const

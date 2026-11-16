@@ -35,46 +35,41 @@
 #include "util.h"
 #include "xcdrdao.h"
 
-AddFileDialog::AddFileDialog(AudioCDProject *project) : Gtk::FileChooserDialog("")
+Glib::RefPtr<AddFileDialog> AddFileDialog::create(AudioCDProject* project)
 {
-    active_ = false;
-    project_ = project;
+    return Glib::make_refptr_for_instance<AddFileDialog>(new AddFileDialog(project));
+}
 
-    set_select_multiple(true);
-    set_transient_for(*project->getParentWindow());
+AddFileDialog::AddFileDialog(AudioCDProject *project) :
+    project_(project)
+{
+    set_modal(true);
     mode(M_APPEND_TRACK);
 
-    Glib::RefPtr<Gtk::FileFilter> filter_tocs = Gtk::FileFilter::create();
-    std::string fname = "Audio Files (wav";
-#ifdef HAVE_MP3_SUPPORT
-    fname = fname + ", mp3, m3u";
-#endif
-#ifdef HAVE_OGG_SUPPORT
-    fname = fname + ", ogg";
-#endif
-    fname = fname + ")";
-    filter_tocs->set_name(fname);
+    // Set up filters
+    filters_ = Gio::ListStore<Gtk::FileFilter>::create();
 
-    filter_tocs->add_pattern("*.wav");
+    auto filter_audio = Gtk::FileFilter::create();
+    filter_audio->set_name(_("Audio Files"));
+    filter_audio->add_pattern("*.wav");
 #ifdef HAVE_OGG_SUPPORT
-    filter_tocs->add_pattern("*.ogg");
+    filter_audio->add_pattern("*.ogg");
 #endif
 #ifdef HAVE_MP3_SUPPORT
-    filter_tocs->add_pattern("*.mp3");
-    filter_tocs->add_pattern("*.m3u");
+    filter_audio->add_pattern("*.mp3");
+    filter_audio->add_pattern("*.m3u");
 #endif
 #ifdef HAVE_FLAC_SUPPORT
-    filter_tocs->add_pattern("*.flac");
+    filter_audio->add_pattern("*.flac");
 #endif
-    add_filter(filter_tocs);
+    filters_->append(filter_audio);
 
-    Glib::RefPtr<Gtk::FileFilter> filter_all = Gtk::FileFilter::create();
-    filter_all->set_name("Any files");
+    auto filter_all = Gtk::FileFilter::create();
+    filter_all->set_name(_("Any files"));
     filter_all->add_pattern("*");
-    add_filter(filter_all);
+    filters_->append(filter_all);
 
-    add_button(Gtk::Stock::CLOSE, Gtk::RESPONSE_CANCEL);
-    add_button(Gtk::Stock::ADD, Gtk::RESPONSE_OK);
+    set_filters(filters_);
 }
 
 void AddFileDialog::mode(Mode m)
@@ -94,83 +89,56 @@ void AddFileDialog::mode(Mode m)
     }
 }
 
-void AddFileDialog::start()
+void AddFileDialog::start(Mode m)
 {
-    if (active_) {
-        get_window()->raise();
-        return;
-    }
-
-    active_ = true;
-    show();
-
-    bool contFlag = true;
-
-    while (contFlag) {
-
-        int result = run();
-
-        switch (result) {
-        case Gtk::RESPONSE_CANCEL:
-            contFlag = false;
-            break;
-        case Gtk::RESPONSE_OK:
-            contFlag = applyAction();
-            break;
-        }
-    }
-
-    stop();
+    mode(m);
+    open_multiple(*project_,
+                  sigc::mem_fun(*this,
+                                &AddFileDialog::on_file_dialog_finish));
 }
 
-void AddFileDialog::stop()
+void AddFileDialog::on_file_dialog_finish(const Glib::RefPtr<Gio::AsyncResult>& result)
 {
-    if (active_) {
-        hide();
-        active_ = false;
+    try {
+        auto files_list = open_multiple_finish(result);
+	applyAction(files_list);
+    }
+    catch (const Gtk::DialogError& e) {
+        // User cancelled or error occurred
+    }
+    catch (const Glib::Error& e) {
+        // Handle other errors
     }
 }
 
-bool AddFileDialog::on_delete_event(GdkEventAny *)
+bool AddFileDialog::applyAction(const std::vector<Glib::RefPtr<Gio::File>>& selected_files)
 {
-    stop();
-    return 1;
-}
+    std::list<std::string> files_to_process;
 
-bool AddFileDialog::applyAction()
-{
-    std::vector<std::string> sfiles = get_filenames();
-    std::list<std::string> files;
+    for (const auto& file : selected_files) {
+        std::string path = file->get_path();
+        const char *s = stripCwd(path.c_str());
 
-    for (std::vector<std::string>::const_iterator i = sfiles.begin(); i != sfiles.end(); i++) {
-
-        const char *s = stripCwd((*i).c_str());
-
-        if (s && *s != 0 && s[strlen(s) - 1] != '/') {
-
+        if (s && *s != 0) {
             if (Util::fileExtension(s) == Util::FileExtension::M3U)
-                parseM3u(s, files);
+                parseM3u(s, files_to_process);
             else
-                files.push_back(s);
+                files_to_process.push_back(s);
         }
     }
 
-    if (files.size() > 0) {
+    if (!files_to_process.empty()) {
         switch (mode_) {
         case M_APPEND_TRACK:
-            project_->appendTracks(files);
+            project_->appendTracks(files_to_process);
             break;
-
         case M_APPEND_FILE:
-            project_->appendFiles(files);
+            project_->appendFiles(files_to_process);
             break;
-
         case M_INSERT_FILE:
-            project_->insertFiles(files);
+            project_->insertFiles(files_to_process);
             break;
         }
-        if (files.size() > 1)
-            return false;
     }
 
     return true;

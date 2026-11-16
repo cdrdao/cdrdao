@@ -18,13 +18,15 @@
  */
 
 #include <glibmm.h>
-
+#include <iostream>
 #include <atomic>
 #include <cassert>
 #include <condition_variable>
 #include <queue>
 #include <thread>
+#include <exception>
 
+#include "log.h"
 #include "TaskManager.h"
 
 class ThreadPool
@@ -114,7 +116,6 @@ TaskManager::TaskManager(int num_threads)
     threadpool = new ThreadPool(num_threads);
     main_thread_id = std::this_thread::get_id();
     active = false;
-    nextid = 1;
 }
 
 TaskManager::~TaskManager()
@@ -126,7 +127,7 @@ TaskManager::~TaskManager()
 void TaskManager::addJob(Task *job)
 {
     assert(std::this_thread::get_id() == main_thread_id);
-    if (tasks.size() == 0) {
+    if (tasks.empty() && completionQueue.empty()) {
         num_added = 0;
         num_completed = 0;
 	active = true;
@@ -135,7 +136,6 @@ void TaskManager::addJob(Task *job)
     tasks.push(job);
     num_added++;
     job->tm_ = this;
-    job->id = nextid++;
 
     threadpool->enqueue([this, job]() { this->runJob(job); });
 }
@@ -145,7 +145,11 @@ void TaskManager::runJob(Task *job)
 {
     assert(std::this_thread::get_id() != main_thread_id);
     Glib::signal_idle().connect_once([this, job]() { this->signalJobStarted(job); });
-    job->run();
+    try {
+	job->run();
+    } catch (std::exception& e) {
+	job->exception = e.what();
+    }
     Glib::signal_idle().connect_once([this, job]() { this->jobDone(job); });
 }
 
@@ -177,7 +181,6 @@ bool TaskManager::completionThread()
 {
     assert(std::this_thread::get_id() == main_thread_id);
     Task* t = completionQueue.front();
-    auto tid = t->id;
     t->completed();
     completionQueue.pop();
     num_completed++;

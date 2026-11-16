@@ -27,16 +27,20 @@
 class GenericMMCraw : public GenericMMC, private PQChannelEncoder
 {
   public:
-    GenericMMCraw(ScsiIf *scsiIf, unsigned long options);
+    GenericMMCraw(std::shared_ptr<ScsiIf> scsiIf, unsigned long options);
     ~GenericMMCraw();
 
-    static CdrDriver *instance(ScsiIf *scsiIf, unsigned long options);
+    static CdrDriver *instance(std::shared_ptr<ScsiIf> scsiIf, unsigned long options);
 
     int multiSession(bool);
 
     int subChannelEncodingMode(TrackData::SubChannelMode) const;
 
     int initDao(const Toc *);
+    CdTextWrite cdTextWrite() const override
+    {
+        return cdtextDisabled_ ? CdTextWrite::DISABLED : CdTextWrite::ENABLED;
+    }
     int startDao();
     int finishDao();
 

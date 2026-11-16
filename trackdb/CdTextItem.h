@@ -103,6 +103,13 @@ class CdTextItem
     {
         return data_.size();
     }
+    bool empty() const
+    {
+        if (dataType_ == DataType::BINARY)
+            return data_.size() == 0;
+        else
+            return u8text.empty();
+    }
 
     const std::string &getText() const
     {
@@ -143,7 +150,7 @@ class CdTextItem
     // Info fields only, ignored during burn
     int trackNr_;
 
-    void updateEncoding();
+    void updateEncoding(bool reencode = false);
 };
 
 #endif

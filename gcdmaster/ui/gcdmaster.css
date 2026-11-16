@@ -1,0 +1,5 @@
+.device-view {
+    border: 1px solid @borders; /* Uses the theme's default border color */
+    border-radius: 6px;         /* Optional: rounds the corners */
+    background-color: @view_bg_color;
+}

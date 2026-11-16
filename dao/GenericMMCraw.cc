@@ -22,7 +22,7 @@
 #include <assert.h>
 #include <string.h>
 
-#include "CdTextEncoder.h"
+#include "CdTextSubChannelEncoder.h"
 #include "GenericMMCraw.h"
 #include "PQSubChannel16.h"
 #include "PWSubChannel96.h"
@@ -31,7 +31,7 @@
 #include "log.h"
 #include "port.h"
 
-GenericMMCraw::GenericMMCraw(ScsiIf *scsiIf, unsigned long options)
+GenericMMCraw::GenericMMCraw(std::shared_ptr<ScsiIf> scsiIf, unsigned long options)
     : GenericMMC(scsiIf, options), PQChannelEncoder()
 {
     driverName_ = "Generic SCSI-3/MMC (raw writing) - Version 2.0";
@@ -79,7 +79,7 @@ int GenericMMCraw::multiSession(bool m)
 }
 
 // static constructor
-CdrDriver *GenericMMCraw::instance(ScsiIf *scsiIf, unsigned long options)
+CdrDriver *GenericMMCraw::instance(std::shared_ptr<ScsiIf> scsiIf, unsigned long options)
 {
     return new GenericMMCraw(scsiIf, options);
 }
@@ -432,15 +432,21 @@ int GenericMMCraw::initDao(const Toc *toc)
     }
 
     delete cdTextEncoder_;
-    cdTextEncoder_ = new CdTextEncoder(toc);
-    if (cdTextEncoder_->encode() != 0) {
-        log_message(-2, "CD-TEXT encoding failed.");
-        return 1;
-    }
+    cdTextEncoder_ = NULL;
 
-    if (cdTextEncoder_->getSubChannels(&n) == NULL || n == 0) {
-        delete cdTextEncoder_;
-        cdTextEncoder_ = NULL;
+    // Raw mode generates the lead-in itself, so CD-TEXT does not depend on
+    // drive support; only OPT_MMC_NO_CD_TEXT turns it off.
+    if (!cdtextDisabled_) {
+        cdTextEncoder_ = new CdTextSubChannelEncoder(toc);
+        if (cdTextEncoder_->encode() != 0) {
+            log_message(-2, "CD-TEXT encoding failed.");
+            return 1;
+        }
+
+        if (cdTextEncoder_->getSubChannels(&n) == NULL || n == 0) {
+            delete cdTextEncoder_;
+            cdTextEncoder_ = NULL;
+        }
     }
 
     if (setSubChannelMode() != 0)

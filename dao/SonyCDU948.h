@@ -25,16 +25,17 @@
 class Toc;
 class Track;
 
-class CdTextEncoder;
+class CdTextSubChannelEncoder;
 
 class SonyCDU948 : public SonyCDU920
 {
   public:
-    SonyCDU948(ScsiIf *scsiIf, unsigned long options);
+    SonyCDU948(std::shared_ptr<ScsiIf> scsiIf, unsigned long options);
     ~SonyCDU948();
-    static CdrDriver *instance(ScsiIf *scsiIf, unsigned long options);
+    static CdrDriver *instance(std::shared_ptr<ScsiIf> scsiIf, unsigned long options);
 
     int checkToc(const Toc *);
+    CdTextWrite cdTextWrite() const override { return CdTextWrite::ENABLED; }
 
     int multiSession(int);
     int speed(int);
@@ -43,7 +44,7 @@ class SonyCDU948 : public SonyCDU920
     int startDao();
 
   protected:
-    CdTextEncoder *cdTextEncoder_;
+    CdTextSubChannelEncoder *cdTextEncoder_;
 
     int selectSpeed();
     int setWriteParameters();

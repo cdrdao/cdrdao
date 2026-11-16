@@ -21,13 +21,15 @@
 #define __TOC_EDIT_H__
 
 #include <list>
-#include <sigc++/signal.h>
 #include <string>
+#include <gtkmm.h>
+#include <filesystem>
 
 #include "CdTextItem.h"
 #include "FormatConverter.h"
 #include "TaskManager.h"
-#include "Toc.h"
+#include "trackdb/Toc.h"
+#include "trackdb/Cddb.h"
 
 class Toc;
 class TrackData;
@@ -35,13 +37,13 @@ class TrackDataScrap;
 class SampleManager;
 class TocEditView;
 
-class TocEdit
+class TocEdit : public Glib::Object
 {
   public:
-    TocEdit(Toc *, const char *);
+    TocEdit(Toc *, const std::string&);
     ~TocEdit();
 
-    void toc(Toc *, const char *);
+    void toc(Toc *, const std::string&, bool nodata = false);
     Toc *toc() const;
 
     SampleManager *sampleManager();
@@ -49,27 +51,22 @@ class TocEdit
     unsigned long lengthSample() const;
 
     void tocDirty(bool);
-    bool tocDirty() const
-    {
-        return tocDirty_;
-    }
+    bool tocDirty() const { return tocDirty_; }
 
     void blockEdit();
     void unblockEdit();
-    bool editable() const
-    {
-        return (editBlocked_ == 0);
-    }
+    bool editable() const { return (editBlocked_ == 0); }
+    bool empty() const { return empty_; }
 
     // returns and resets update level
     unsigned long updateLevel();
 
-    void filename(const char *);
-    const char *filename() const;
+    void filename(const std::string& f);
+    const std::filesystem::path& filename() const { return filename_; }
 
     int readToc(const char *);
     int saveToc();
-    int saveAsToc(const char *);
+    int saveAsToc(const std::string&);
 
     int moveTrackMarker(int trackNr, int indexNr, long lba);
     int addTrackMarker(long lba);
@@ -104,54 +101,50 @@ class TocEdit
     void setCdTextItem(int trackNr, CdTextItem::PackType, int blockNr, const char *);
     void setCdTextGenreItem(int blockNr, int code1, int code2, const char *description);
     void setCdTextLanguage(int blockNr, int langCode);
+    void setCdTextEncoding(int blockNr, Util::Encoding enc);
 
     void setCatalogNumber(const char *);
     void setTocType(Toc::Type);
 
+    TaskManager& taskManager() { return tm_; }
+
     // Signals
-    sigc::signal0<void> signalProgressPulse;
-    sigc::signal1<void, bool> signalSpinner;
-    sigc::signal1<void, double> signalProgressFraction;
-    sigc::signal1<void, const char *> signalStatusMessage;
-    sigc::signal0<void> signalFullView;
-    sigc::signal2<void, unsigned long, unsigned long> signalSampleSelection;
-    sigc::signal1<void, bool> signalCancelEnable;
-    sigc::signal1<void, const char *> signalError;
+    sigc::signal<void()> signalProgressPulse;
+    sigc::signal<void(bool)> signalSpinner;
+    sigc::signal<void(double)> signalProgressFraction;
+    sigc::signal<void(const char *)> signalStatusMessage;
+    sigc::signal<void()> signalFullView;
+    sigc::signal<void(unsigned long, unsigned long)> signalSampleSelection;
+    sigc::signal<void(bool)> signalCancelEnable;
+    sigc::signal<void(const char *)> signalError;
 
   private:
-    Toc *toc_;
-    SampleManager *sampleManager_;
+    Toc *toc_ = nullptr;
+    SampleManager *sampleManager_ = nullptr;
     TaskManager tm_;
 
-    char *filename_;
+    std::filesystem::path filename_;
 
-    TrackDataScrap *trackDataScrap_;
+    TrackDataScrap *trackDataScrap_ = nullptr;
 
-    bool tocDirty_;
-    int editBlocked_;
-
-    unsigned long updateLevel_;
+    bool tocDirty_ = false;
+    bool empty_ = true;
+    bool nodata_ = false;
+    int editBlocked_ = false;
+    std::unique_ptr<Cddb> cddb_;
+    unsigned long updateLevel_ = 0;
 
     class QueueJob : public Task
     {
       public:
-        QueueJob(TocEdit *t, const char *o)
-        {
-            te = t;
-            op = o;
-            pos = 0;
-            end = 0;
-            len = 0;
-        }
-        ~QueueJob()
-        {
-        }
+        QueueJob(TocEdit *t, const char *o) : te(t), op(o) {}
+        ~QueueJob() {}
         std::string op;
         std::string file;
         std::string cfile;
-        long pos;
-        long end;
-        long len;
+        long pos = 0;
+        long end = 0;
+        long len = 0;
         TocEdit *te;
         FormatSupport::Status conv_err;
 
@@ -175,7 +168,6 @@ class TocEdit
     bool curAppendFile(QueueJob *);
     bool curInsertFile(QueueJob *);
     int curCreateAudioData(QueueJob *, TrackData **);
-    void curSignalConversionError(QueueJob *, FormatSupport::Status);
     void runCompletion(QueueJob *);
 
     friend class TocEditView;

@@ -59,10 +59,10 @@ FormatSupport::Status FormatFlac::convertStart(std::string from, std::string to)
     auto init_st = init(source_file);
 
     if (init_st != FLAC__STREAM_DECODER_INIT_STATUS_OK)
-        return FS_INPUT_PROBLEM;
+	throw std::runtime_error("Unable to open FLAC input file");
 
     if (!process_until_end_of_metadata())
-        return FS_INPUT_PROBLEM;
+	throw std::runtime_error("Unable to open FLAC input file");
     return FS_SUCCESS;
 }
 
@@ -70,7 +70,7 @@ FormatSupport::Status FormatFlac::convertContinue()
 {
     if (!process_single()) {
         finalize();
-        return FS_OUTPUT_PROBLEM;
+	throw std::runtime_error("FLAC processing error while reading file");
     }
 
     if (get_state() == FLAC__STREAM_DECODER_END_OF_STREAM) {
@@ -119,8 +119,7 @@ FormatSupport::Status FormatFlac::resample()
         log_message(1, "  resampling...");
         int rs_error = src_simple(&src_data, SRC_SINC_BEST_QUALITY, channels);
         if (rs_error) {
-            log_message(-2, "Resampling error: %s", src_strerror(rs_error));
-            return FS_OUTPUT_PROBLEM;
+	    throw std::runtime_error("Resampling error while processing FLAC audio");
         }
         log_message(1, "  %llu 16-bit samples", src_data.output_frames_gen);
         // Convert back to s16

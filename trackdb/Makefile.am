@@ -10,6 +10,8 @@ libtrackdb_a_SOURCES = \
 	Track.cc		\
 	util.cc			\
 	CdTextItem.cc		\
+	CdTextEncoder.cc	\
+	CdTextEncoder.h		\
 	SubTrack.cc		\
 	TrackData.cc		\
 	Cddb.h			\

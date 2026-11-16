@@ -24,7 +24,7 @@
 
 class Toc;
 class Track;
-class CdTextEncoder;
+class CdTextSubChannelEncoder;
 
 // use PQ sub-channel data for scanning
 #define OPT_MMC_USE_PQ 0x0001
@@ -57,15 +57,18 @@ class CdTextEncoder;
 // drive supports Yamaha's Force Speed feature
 #define OPT_MMC_YAMAHA_FORCE_SPEED 0x0200
 
+// never write CD-TEXT, even if the drive supports it
+#define OPT_MMC_NO_CD_TEXT 0x0400
+
 // Driver for Generic MMC units
 
 class GenericMMC : public CdrDriver
 {
   public:
-    GenericMMC(ScsiIf *scsiIf, unsigned long options);
+    GenericMMC(std::shared_ptr<ScsiIf> scsiIf, unsigned long options);
     ~GenericMMC();
 
-    static CdrDriver *instance(ScsiIf *scsiIf, unsigned long options);
+    static CdrDriver *instance(std::shared_ptr<ScsiIf> scsiIf, unsigned long options);
 
     /*! \brief See what subchannel reading modes are available
 
@@ -106,6 +109,7 @@ class GenericMMC : public CdrDriver
       \return 0 if OK, 1 if some warning, 2 on error
     */
     int checkToc(const Toc *);
+    CdTextWrite cdTextWrite() const override;
 
     /*! \brief Sets read/write speed
 
@@ -245,8 +249,9 @@ class GenericMMC : public CdrDriver
     long leadOutLen_;              // Length if lead-out
     DiskInfo diskInfo_;            // Various info about the inserted media
     DriveInfo *driveInfo_;         // Various info about the device
-    CdTextEncoder *cdTextEncoder_; // Called by GenericMMC::initDao if needed.
+    CdTextSubChannelEncoder *cdTextEncoder_; // Called by GenericMMC::initDao if needed.
     bool cdtextEnabled_;           // Write CD-TEXT subchannels
+    bool cdtextDisabled_;          // CD-TEXT turned off by OPT_MMC_NO_CD_TEXT
 
     /*! \brief Determines start and length of lead-in and length of lead-out.
 

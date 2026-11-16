@@ -17,86 +17,58 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#include <assert.h>
-#include <ctype.h>
-#include <errno.h>
-#include <stddef.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <sys/time.h>
-#include <sys/types.h>
-#include <unistd.h>
-
-#include <glibmm/i18n.h>
-#include <gtkmm.h>
+#include <cassert>
+#include <cstdlib>
+#include <filesystem>
 
 #include "CdDevice.h"
-#include "ConfigManager.h"
+#include "dao/ScsiIf.h"
+#include "dao/CdrDriver.h"
 #include "ProcessMonitor.h"
-#include "ProgressDialog.h"
-#include "TocEdit.h"
-#include "guiUpdate.h"
 #include "xcdrdao.h"
-
-#include "CdrDriver.h"
-#include "ScsiIf.h"
-#include "Toc.h"
-#include "config.h"
+#include "trackdb/log.h"
+#include "guiUpdate.h"
+#include "TocEdit.h"
+#include "ConfigManager.h"
+#include "ProgressDialog.h"
 #include "log.h"
-#include "remote.h"
-#include "util.h"
 
-#define DRIVER_IDS 13
-#define DRIVER_ID_DEFAULT 2
+#include <glibmm/i18n.h>
 
-CdDevice *CdDevice::DEVICE_LIST_ = NULL;
+#define DRIVER_DEFAULT "generic-mmc"
 
-const char *CdDevice::DRIVER_NAMES_[DRIVER_IDS] = {
-    "Undefined",    "cdd2600",      "generic-mmc",  "generic-mmc-raw", "plextor",
-    "plextor-scan", "ricoh-mp6200", "sony-cdu920",  "sony-cdu948",     "taiyo-yuden",
-    "teac-cdr55",   "toshiba",      "yamaha-cdr10x"};
+std::vector<CdDevice*> CdDevice::DEVICE_LIST = {};
 
-CdDevice::CdDevice(const char *dev, const char *vendor, const char *product)
+std::vector<std::string> CdDevice::DRIVER_NAMES = {
+	"Undefined",    "cdd2600",      "generic-mmc",  "generic-mmc-raw", "plextor",
+	"plextor-scan", "ricoh-mp6200", "sony-cdu920",  "sony-cdu948",     "taiyo-yuden",
+	"teac-cdr55",   "toshiba",      "yamaha-cdr10x"
+};
+
+std::vector<std::string> CdDevice::DEV_TYPE_NAMES = { "CD-R", "CD-RW", "CD-ROM" };
+
+std::vector<std::string> CdDevice::STATUS_NAMES = {
+    "Ready", "Recording", "Reading", "Waiting", "Blanking",
+    "Busy", "No disk", "Not available", "In Use", "Unknown" };
+
+
+
+CdDevice::CdDevice(const std::string& dev,
+                   const std::string& vendor, const std::string& product)
 {
     dev_ = dev;
     vendor_ = vendor;
     product_ = product;
-
-    driverId_ = 0;
-    driverOptions_ = 0;
-
-    deviceType_ = CD_R;
-
-    manuallyConfigured_ = false;
-
-    status_ = DEV_UNKNOWN;
-
-    exitStatus_ = 0;
-
-    progressStatusChanged_ = 0;
-    progressStatus_ = 0;
-    progressTotalTracks_ = 0;
-    progressTrack_ = 0;
-    progressTotal_ = 0;
-    progressTrackRelative_ = 0;
-    progressBufferFill_ = 0;
-    progressWriterFill_ = 0;
-
-    process_ = NULL;
-
-    scsiIf_ = NULL;
-    scsiIfInitFailed_ = 0;
-
-    next_ = NULL;
-    slaveDevice_ = NULL;
+    description_ = vendor_ + std::string(" ") + product_;
 
     autoSelectDriver();
+    createDriver();
 }
 
 CdDevice::~CdDevice()
 {
-    delete scsiIf_;
-    scsiIf_ = NULL;
+    if (cdDriver_)
+        delete cdDriver_;
 }
 
 Glib::ustring CdDevice::settingString() const
@@ -124,7 +96,7 @@ Glib::ustring CdDevice::settingString() const
 
     s += ",";
 
-    s += driverName(driverId_);
+    s += driver_;
 
     s += ",";
 
@@ -132,12 +104,6 @@ Glib::ustring CdDevice::settingString() const
     s += buf;
 
     return s;
-}
-
-void CdDevice::driverId(int id)
-{
-    if (id >= 0 && id < DRIVER_IDS)
-        driverId_ = id;
 }
 
 void CdDevice::status(Status s)
@@ -155,19 +121,24 @@ int CdDevice::autoSelectDriver()
     unsigned long options = 0;
     const char *driverName;
 
-    driverName = CdrDriver::selectDriver(1, vendor_.c_str(), product_.c_str(), &options);
+    auto detected = CdrDriver::selectDriver(1, vendor_.c_str(), product_.c_str(), &options);
 
-    if (driverName) {
-        driverId_ = driverName2Id(driverName);
+    if (detected) {
+        driver_ = detected;
         driverOptions_ = options;
     } else {
         cd_page_2a *p2a;
 
-        ScsiIf *sif = new ScsiIf(dev_.c_str());
+        auto sif = ScsiIf::create(dev_);
 
         if (sif && sif->init() == 0 && (p2a = sif->checkMmc())) {
 
-            driverId_ = driverName2Id("generic-mmc");
+            // Same fallback as the cdrdao CLI (CdrDriver::detectDriver):
+            // a generic MMC drive gets CD-TEXT writing enabled.
+            options = 0;
+            detected = CdrDriver::detectDriver(sif, &options);
+            driver_ = detected ? detected : DRIVER_DEFAULT;
+            driverOptions_ = options;
             if (p2a->cd_r_read)
                 deviceType_ = CD_ROM;
             if (p2a->cd_r_write)
@@ -175,11 +146,9 @@ int CdDevice::autoSelectDriver()
             if (p2a->cd_rw_write)
                 deviceType_ = CD_RW;
         } else {
-            driverId_ = DRIVER_ID_DEFAULT;
+            driver_ = DRIVER_DEFAULT;
             driverOptions_ = 0;
         }
-        if (sif)
-            delete sif;
     }
 
     return 1;
@@ -203,33 +172,45 @@ int CdDevice::updateStatus()
                 slaveDevice_->status(DEV_UNKNOWN);
                 slaveDevice_ = NULL;
             }
+	    signalProcessFinished.emit(this);
         }
     }
 
-    if (status_ == DEV_READY || status_ == DEV_BUSY || status_ == DEV_NO_DISK ||
-        status_ == DEV_UNKNOWN) {
-        if (scsiIf_ == NULL)
-            createScsiIf();
+    // Leave the drive alone while a cdrdao process is using it.
+    if (newStatus == DEV_RECORDING || newStatus == DEV_READING || newStatus == DEV_BLANKING)
+        return 0;
 
-        if (scsiIf_ != NULL) {
-            switch (scsiIf_->testUnitReady()) {
-            case 0:
-                newStatus = DEV_READY;
-                break;
-            case 1:
-                newStatus = DEV_BUSY;
-                break;
-            case 2:
-                newStatus = DEV_NO_DISK;
-                break;
-            case 3:
-                // Most likely a timeout error.
-                newStatus = DEV_BUSY;
-                break;
-            }
-        } else {
+    if (!cdDriver_) {
+        status_ = DEV_FAULT;
+    } else {
+        switch (cdDriver_->testUnitReady()) {
+        case 0:
+            newStatus = DEV_READY;
+            break;
+        case 1:
             newStatus = DEV_FAULT;
+            break;
+        case 2:
+            newStatus = DEV_BUSY;
+            break;
+        case 3:
+            newStatus = DEV_NO_DISC;
+            break;
+        case 4:
+            newStatus = DEV_TRAY_OPEN;
+            break;
+        case 5:
+            newStatus = DEV_SPINNING_UP;
+            break;
+        case 6:
+            newStatus = DEV_BAD_DISC;
+            break;
+        default:
+            assert(-1);
         }
+        if (status_ != newStatus)
+            log_message(1, "TEST UNIT READY, status was %d,  is now %d",
+                        status_, newStatus);
     }
 
     if (newStatus != status_) {
@@ -251,7 +232,7 @@ bool CdDevice::updateProgress(Glib::IOCondition cond, int fd)
     if (process_ == NULL)
         return false;
 
-    if (!(cond & Glib::IO_IN))
+    if ((cond & Glib::IOCondition::IO_IN) != Glib::IOCondition::IO_IN)
         return false;
 
     FD_ZERO(&fds);
@@ -335,18 +316,41 @@ bool CdDevice::ejectCd(bool load)
 {
     bool success = false;
 
-    if (!scsiIf_)
-        createScsiIf();
-
-    if (scsiIf_) {
-        CdrDriver *driver = CdrDriver::createDriver(driverName(driverId_), driverOptions_, scsiIf_);
-
-        int ret = driver->loadUnload((load ? 0 : 1));
+    if (cdDriver_) {
+        int ret = cdDriver_->loadUnload((load ? 0 : 1));
         success = (ret == 0);
-        delete (driver);
     }
 
     return success;
+}
+
+// Create or recreate Driver.
+//
+void CdDevice::createDriver()
+{
+    if (cdDriver_) {
+        delete cdDriver_;
+        cdDriver_ = nullptr;
+    }
+    if (!scsiIf_) {
+        scsiIf_ = ScsiIf::create(dev_);
+    }
+
+    if (!scsiIf_ or driver_.empty()) {
+        status(DEV_FAULT);
+	return;
+    }
+
+    cdDriver_ = CdrDriver::createDriver(driver_.c_str(), driverOptions_, scsiIf_);
+    if (!cdDriver_)
+        status(DEV_FAULT);
+}
+
+void CdDevice::releaseDevice()
+{
+    createDriver();
+    if (scsiIf_)
+        scsiIf_->release();
 }
 
 // Starts a 'cdrdao' for recording given toc. Returns false if an
@@ -355,22 +359,28 @@ bool CdDevice::recordDao(Gtk::Window &parent, TocEdit *tocEdit, int simulate, in
                          int speed, int eject, int reload, int buffer, int overburn)
 {
     std::string tocFileName;
-    const char *args[30];
-    int n = 0;
+    std::vector<std::string> args;
     char devname[30];
     char drivername[50];
     char speedbuf[20];
-    const char *s;
     char bufferbuf[20];
-    int remoteFdArgNum = 0;
 
-    if ((status_ != DEV_READY && status_ != DEV_FAULT && status_ != DEV_UNKNOWN) ||
+    if ((status_ != DEV_READY && status_ != DEV_FAULT &&
+         status_ != DEV_UNKNOWN && status_ != DEV_LOCKED) ||
         process_ != NULL)
         return false;
 
-    // Not ideal, but NO alternatives with C++14.
-    tocFileName = std::tmpnam(nullptr);
-    tocFileName += ".gcdm.toc";
+    try {
+        auto tempPath = std::filesystem::temp_directory_path();
+        std::string fileName = "cdrdao_" + std::to_string(getpid()) + "_" + 
+            std::to_string(std::time(nullptr)) + ".gcdm.toc";
+        tempPath /= fileName;
+        tocFileName = tempPath.string();
+        log_message(1, "Creating temporary TOC file \"%s\"", tocFileName.c_str());
+    } catch (...) {
+        log_message(-2, _("Failed to determine temporary directory."));
+        return false;
+    }
 
     // Write out temporary toc file containing all the converted wav
     // files (don't want to rely on cdrdao doing the mp3->wav
@@ -380,67 +390,47 @@ bool CdDevice::recordDao(Gtk::Window &parent, TocEdit *tocEdit, int simulate, in
         return false;
     }
 
-    Glib::ustring execName = configManager->getCdrdaoPath();
+    Glib::ustring execName = CONFIG_MANAGER->getCdrdaoPath();
+    int remoteFdArgNum = 3;
 
-    args[n++] = execName.c_str();
-
-    if (simulate)
-        args[n++] = "simulate";
-    else
-        args[n++] = "write";
-
-    args[n++] = "--remote";
-
-    remoteFdArgNum = n;
-    args[n++] = NULL;
-
-    args[n++] = "-v0";
+    args.assign(
+	{ execName, (simulate ? "simulate" : "write"),
+		"--remote", "", "-v0",
+		"--device", dev_ });
 
     if (multiSession)
-        args[n++] = "--multi";
+        args.push_back("--multi");
 
     if (speed > 0) {
         snprintf(speedbuf, sizeof(speedbuf), "%d", speed);
-        args[n++] = "--speed";
-        args[n++] = speedbuf;
+        args.push_back("--speed");
+        args.push_back(speedbuf);
     }
 
     if (eject)
-        args[n++] = "--eject";
+        args.push_back("--eject");
 
     if (reload)
-        args[n++] = "--reload";
+        args.push_back("--reload");
 
     if (overburn)
-        args[n++] = "--overburn";
+        args.push_back("--overburn");
 
-    args[n++] = "--device";
-    args[n++] = (char *)dev_.c_str();
-
-    if (driverId_ > 0) {
-        snprintf(drivername, sizeof(drivername), "%s:0x%lx", driverName(driverId_), driverOptions_);
-        args[n++] = "--driver";
-        args[n++] = drivername;
+    if (!driver_.empty()) {
+        snprintf(drivername, sizeof(drivername), "%s:0x%lx", driver_.c_str(), driverOptions_);
+        args.push_back("--driver");
+        args.push_back(drivername);
     }
 
     if (buffer >= 10) {
         snprintf(bufferbuf, sizeof(bufferbuf), "%i", buffer);
-        args[n++] = "--buffers";
-        args[n++] = bufferbuf;
+        args.push_back("--buffers");
+        args.push_back(bufferbuf);
     }
 
-    args[n++] = tocFileName.c_str();
+    args.push_back(tocFileName);
 
-    args[n++] = NULL;
-
-    assert(n <= 20);
-
-    PROGRESS_POOL->start(parent, this, tocEdit->filename());
-
-    // Remove the SCSI interface of this device to avoid problems with double
-    // usage of device nodes.
-    delete scsiIf_;
-    scsiIf_ = NULL;
+    releaseDevice();
 
     process_ = PROCESS_MONITOR->start(execName.c_str(), args, remoteFdArgNum);
 
@@ -448,10 +438,17 @@ bool CdDevice::recordDao(Gtk::Window &parent, TocEdit *tocEdit, int simulate, in
         status_ = DEV_RECORDING;
         action_ = A_RECORD;
 
+        std::string cmdline;
+        for (auto &c : args) {
+            cmdline += c;
+            cmdline += " ";
+        }
+        PROGRESS_POOL->start(parent, this, cmdline);
+
         if (process_->commFd() >= 0) {
             Glib::signal_io().connect(
                 bind(mem_fun(*this, &CdDevice::updateProgress), process_->commFd()),
-                process_->commFd(), Glib::IO_IN | Glib::IO_HUP);
+                process_->commFd(), Glib::IOCondition::IO_IN | Glib::IOCondition::IO_HUP);
         }
 
         return true;
@@ -493,87 +490,74 @@ void CdDevice::progress(int *status, int *totalTracks, int *track, int *trackPro
 // Starts a 'cdrdao' for reading whole cd.
 // Return: 0: OK, process succesfully launched
 //         1: error occured
-int CdDevice::extractDao(Gtk::Window &parent, const char *tocFileName, int correction,
-                         int readSubChanMode)
+int CdDevice::extractDao(Gtk::Window &parent,
+			 const std::string& tocFile, const std::string& dataFile,
+			 int correction, int readSubChanMode)
 {
-    const char *args[30];
+    std::vector<std::string> args;
     int n = 0;
     char devname[30];
     char drivername[50];
     const char *s;
     char correctionbuf[20];
-    int remoteFdArgNum = 0;
 
-    if ((status_ != DEV_READY && status_ != DEV_FAULT && status_ != DEV_UNKNOWN) ||
-        process_ != NULL)
+    if ((status_ != DEV_READY && status_ != DEV_FAULT &&
+         status_ != DEV_UNKNOWN && status_ != DEV_LOCKED) ||
+        process_ != nullptr)
         return 1;
 
-    Glib::ustring execName = configManager->getCdrdaoPath();
+    Glib::ustring execName = CONFIG_MANAGER->getCdrdaoPath();
 
-    args[n++] = execName.c_str();
+    int remoteFdArgNum = 3;
 
-    args[n++] = "read-cd";
+    snprintf(correctionbuf, sizeof(correctionbuf), "%d", correction);
 
-    args[n++] = "--remote";
-
-    remoteFdArgNum = n;
-    args[n++] = NULL;
-
-    args[n++] = "-v0";
-
-    args[n++] = "--read-raw";
+    args.assign(
+	{ execName, "read-cd", "--remote", "","-v0", "--read-raw",
+	  "--device", dev_, "--paranoia-mode", correctionbuf,
+	  "--datafile", dataFile});
 
     switch (readSubChanMode) {
     case 1:
-        args[n++] = "--read-subchan";
-        args[n++] = "rw";
+        args.push_back("--read-subchan");
+        args.push_back("rw");
         break;
-
     case 2:
-        args[n++] = "--read-subchan";
-        args[n++] = "rw_raw";
+        args.push_back("--read-subchan");
+        args.push_back("rw_raw");
         break;
     }
 
-    args[n++] = "--device";
-    args[n++] = (char *)dev_.c_str();
-
-    if (driverId_ > 0) {
-        snprintf(drivername, sizeof(drivername), "%s:0x%lx", driverName(driverId_), driverOptions_);
-        args[n++] = "--driver";
-        args[n++] = drivername;
+    if (!driver_.empty()) {
+	snprintf(drivername, sizeof(drivername), "%s:0x%lx", driver_.c_str(), driverOptions_);
+        args.push_back("--driver");
+        args.push_back(drivername);
     }
+    args.push_back(tocFile);
 
-    snprintf(correctionbuf, sizeof(correctionbuf), "%d", correction);
-    args[n++] = "--paranoia-mode";
-    args[n++] = correctionbuf;
+    releaseDevice();
 
-    args[n++] = "--datafile";
-    args[n++] = g_strdup_printf("%s.bin", tocFileName);
+    process_ = PROCESS_MONITOR->start(execName, args, remoteFdArgNum);
 
-    args[n++] = g_strdup_printf("%s.toc", tocFileName);
-
-    args[n++] = NULL;
-
-    assert(n <= 20);
-
-    PROGRESS_POOL->start(parent, this, tocFileName, false, false);
-
-    // Remove the SCSI interface of this device to avoid problems with double
-    // usage of device nodes.
-    delete scsiIf_;
-    scsiIf_ = NULL;
-
-    process_ = PROCESS_MONITOR->start(execName.c_str(), args, remoteFdArgNum);
-
-    if (process_ != NULL) {
+    if (process_) {
         status_ = DEV_READING;
         action_ = A_READ;
+
+        std::string cmdline;
+        for (auto &c : args) {
+            cmdline += c;
+            cmdline += " ";
+        }
+        PROGRESS_POOL->start(parent, this, cmdline, false, false);
 
         if (process_->commFd() >= 0) {
             Glib::signal_io().connect(
                 bind(mem_fun(*this, &CdDevice::updateProgress), process_->commFd()),
-                process_->commFd(), Glib::IO_IN | Glib::IO_PRI | Glib::IO_ERR | Glib::IO_HUP);
+                process_->commFd(),
+		Glib::IOCondition::IO_IN |
+		Glib::IOCondition::IO_PRI |
+		Glib::IOCondition::IO_ERR |
+		Glib::IOCondition::IO_HUP);
         }
         return 0;
     } else {
@@ -595,7 +579,7 @@ int CdDevice::duplicateDao(Gtk::Window &parent, int simulate, int multiSession, 
                            int eject, int reload, int buffer, int onthefly, int correction,
                            int readSubChanMode, CdDevice *readdev)
 {
-    const char *args[30];
+    std::vector<std::string> args;
     int n = 0;
     char devname[30];
     char drivername[50];
@@ -604,7 +588,6 @@ int CdDevice::duplicateDao(Gtk::Window &parent, int simulate, int multiSession, 
     char correctionbuf[20];
     const char *s;
     char bufferbuf[20];
-    int remoteFdArgNum = 0;
 
     int rdstat = readdev->status();
     if ((rdstat != DEV_READY && rdstat != DEV_UNKNOWN && rdstat != DEV_FAULT) ||
@@ -615,93 +598,76 @@ int CdDevice::duplicateDao(Gtk::Window &parent, int simulate, int multiSession, 
         process_ != NULL)
         return 1;
 
-    Glib::ustring execName = configManager->getCdrdaoPath();
-
-    args[n++] = execName.c_str();
-
-    args[n++] = "copy";
-
-    if (simulate)
-        args[n++] = "--simulate";
-
-    args[n++] = "--remote";
-
-    remoteFdArgNum = n;
-    args[n++] = NULL;
-
-    args[n++] = "-v0";
-
-    if (multiSession)
-        args[n++] = "--multi";
+    Glib::ustring execName = CONFIG_MANAGER->getCdrdaoPath();
 
     snprintf(correctionbuf, sizeof(correctionbuf), "%d", correction);
-    args[n++] = "--paranoia-mode";
-    args[n++] = correctionbuf;
+    int remoteFdArgNum = 3;
+
+    args.assign(
+	{ execName, "copy", "--remote", "", "-v0",
+	  "--paranoia-mode", correctionbuf,
+	  "--device", dev_ });
+
+    if (simulate)
+        args.push_back("--simulate");
+
+    if (multiSession)
+        args.push_back("--multi");
 
     if (speed > 0) {
         snprintf(speedbuf, sizeof(speedbuf), "%d", speed);
-        args[n++] = "--speed";
-        args[n++] = speedbuf;
+        args.push_back("--speed");
+        args.push_back(speedbuf);
     }
 
     if (eject)
-        args[n++] = "--eject";
+        args.push_back("--eject");
 
     if (reload)
-        args[n++] = "--reload";
+        args.push_back("--reload");
 
     if (onthefly)
-        args[n++] = "--on-the-fly";
+        args.push_back("--on-the-fly");
 
     switch (readSubChanMode) {
     case 1:
-        args[n++] = "--read-subchan";
-        args[n++] = "rw";
+        args.push_back("--read-subchan");
+        args.push_back("rw");
         break;
 
     case 2:
-        args[n++] = "--read-subchan";
-        args[n++] = "rw_raw";
+        args.push_back("--read-subchan");
+        args.push_back("rw_raw");
         break;
     }
 
-    args[n++] = "--device";
-    args[n++] = (char *)dev_.c_str();
-
-    if (driverId_ > 0) {
-        snprintf(drivername, sizeof(drivername), "%s:0x%lx", driverName(driverId_), driverOptions_);
-        args[n++] = "--driver";
-        args[n++] = drivername;
+    if (!driver_.empty()) {
+        snprintf(drivername, sizeof(drivername), "%s:0x%lx", driver_.c_str(), driverOptions_);
+        args.push_back("--driver");
+        args.push_back(drivername);
     }
 
     if (readdev != this) { // reader and write the same, skip source device
 
-        args[n++] = "--source-device";
-        args[n++] = (char *)readdev->dev();
+        args.push_back("--source-device");
+        args.push_back(readdev->dev());
 
-        if (readdev->driverId() > 0) {
+        if (!readdev->driver().empty()) {
             snprintf(r_drivername, sizeof(r_drivername), "%s:0x%lx",
-                     driverName(readdev->driverId()), readdev->driverOptions());
-            args[n++] = "--source-driver";
-            args[n++] = r_drivername;
+                     readdev->driver().c_str(), readdev->driverOptions());
+            args.push_back("--source-driver");
+            args.push_back(r_drivername);
         }
     }
     if (buffer >= 10) {
         snprintf(bufferbuf, sizeof(bufferbuf), "%i", buffer);
-        args[n++] = "--buffers";
-        args[n++] = bufferbuf;
+        args.push_back("--buffers");
+        args.push_back(bufferbuf);
     }
 
-    args[n++] = NULL;
-
-    assert(n <= 25);
-
-    PROGRESS_POOL->start(parent, this, _("CD to CD copy"));
-
-    // Remove the SCSI interface of this device to avoid problems with double
-    // usage of device nodes.
-    delete scsiIf_;
-    scsiIf_ = NULL;
+    releaseDevice();
+    if (readdev != this)
+        readdev->releaseDevice();
 
     process_ = PROCESS_MONITOR->start(execName.c_str(), args, remoteFdArgNum);
 
@@ -712,10 +678,17 @@ int CdDevice::duplicateDao(Gtk::Window &parent, int simulate, int multiSession, 
 
         action_ = A_DUPLICATE;
 
+        std::string cmdline;
+        for (auto &c : args) {
+            cmdline += c;
+            cmdline += " ";
+        }
+        PROGRESS_POOL->start(parent, this, cmdline);
+
         if (process_->commFd() >= 0) {
             Glib::signal_io().connect(
                 bind(mem_fun(*this, &CdDevice::updateProgress), process_->commFd()),
-                process_->commFd(), Glib::IO_IN | Glib::IO_HUP);
+                process_->commFd(), Glib::IOCondition::IO_IN | Glib::IOCondition::IO_HUP);
         }
 
         return 0;
@@ -736,7 +709,7 @@ void CdDevice::abortDaoDuplication()
 //         1: error occured
 int CdDevice::blank(Gtk::Window *parent, int fast, int speed, int eject, int reload)
 {
-    const char *args[20];
+    std::vector<std::string> args;
     int n = 0;
     char devname[30];
     char drivername[50];
@@ -748,60 +721,36 @@ int CdDevice::blank(Gtk::Window *parent, int fast, int speed, int eject, int rel
         process_ != NULL)
         return 1;
 
-    Glib::ustring execName = configManager->getCdrdaoPath();
+    Glib::ustring execName = CONFIG_MANAGER->getCdrdaoPath();
 
-    args[n++] = execName.c_str();
+    remoteFdArgNum = 3;
 
-    args[n++] = "blank";
-
-    args[n++] = "--remote";
-
-    remoteFdArgNum = n;
-    args[n++] = NULL;
-
-    args[n++] = "-v0";
-
-    args[n++] = "--blank-mode";
-
-    if (fast)
-        args[n++] = "minimal";
-    else
-        args[n++] = "full";
+    args.assign(
+	{ execName,  "blank", "--remote", "", "-v0",
+	  "--blank-mode", (fast ? "minimal" : "full"),
+	  "--device", dev_ });
 
     if (speed > 0) {
         snprintf(speedbuf, sizeof(speedbuf), "%d", speed);
-        args[n++] = "--speed";
-        args[n++] = speedbuf;
+        args.push_back("--speed");
+        args.push_back(speedbuf);
     }
 
     if (eject)
-        args[n++] = "--eject";
+        args.push_back("--eject");
 
     if (reload)
-        args[n++] = "--reload";
+        args.push_back("--reload");
 
-    args[n++] = "--device";
-    args[n++] = (char *)dev_.c_str();
-
-    if (driverId_ > 0) {
-        snprintf(drivername, sizeof(drivername), "%s:0x%lx", driverName(driverId_), driverOptions_);
-        args[n++] = "--driver";
-        args[n++] = drivername;
+    if (!driver_.empty()) {
+        snprintf(drivername, sizeof(drivername), "%s:0x%lx",
+                 driver_.c_str(),
+                 driverOptions_);
+        args.push_back("--driver");
+        args.push_back(drivername);
     }
 
-    args[n++] = NULL;
-
-    assert(n <= 20);
-
-    if (parent)
-        PROGRESS_POOL->start(*parent, this, _("Blanking CDRW"), false, false);
-    else
-        PROGRESS_POOL->start(this, _("Blanking CDRW"), false, false);
-
-    // Remove the SCSI interface of this device to avoid problems with double
-    // usage of device nodes.
-    delete scsiIf_;
-    scsiIf_ = NULL;
+    releaseDevice();
 
     process_ = PROCESS_MONITOR->start(execName.c_str(), args, remoteFdArgNum);
 
@@ -809,10 +758,17 @@ int CdDevice::blank(Gtk::Window *parent, int fast, int speed, int eject, int rel
         status_ = DEV_BLANKING;
         action_ = A_BLANK;
 
+        std::string cmdline;
+        for (auto &c : args) {
+            cmdline += c;
+            cmdline += " ";
+        }
+        PROGRESS_POOL->start(*parent, this, cmdline, false, false);
+
         if (process_->commFd() >= 0) {
             Glib::signal_io().connect(
                 bind(mem_fun(*this, &CdDevice::updateProgress), process_->commFd()),
-                process_->commFd(), Glib::IO_IN | Glib::IO_HUP);
+                process_->commFd(), Glib::IOCondition::IO_IN | Glib::IOCondition::IO_HUP);
         }
         return 0;
     } else {
@@ -827,87 +783,50 @@ void CdDevice::abortBlank()
     }
 }
 
-void CdDevice::createScsiIf()
+CdDevice::DeviceType CdDevice::devtypeName2Id(const std::string& dt)
 {
-    char buf[100];
+    int i = 0;
 
-    if (scsiIfInitFailed_)
-        return;
-
-    delete scsiIf_;
-    scsiIf_ = new ScsiIf(dev_.c_str());
-
-    if (scsiIf_->init() != 0) {
-        delete scsiIf_;
-        scsiIf_ = NULL;
-        scsiIfInitFailed_ = 1;
+    for (auto str : deviceNames()) {
+        if (str == dt)
+            return static_cast<DeviceType>(i);
+        i++;
     }
+    return CdDevice::CD_R;
 }
 
-int CdDevice::driverName2Id(const char *driverName)
+const std::string CdDevice::status2string(Status s)
 {
-    int i;
-
-    for (i = 1; i < DRIVER_IDS; i++) {
-        if (strcmp(DRIVER_NAMES_[i], driverName) == 0)
-            return i;
-    }
-
-    return 0;
-}
-
-int CdDevice::maxDriverId()
-{
-    return DRIVER_IDS - 1;
-}
-
-const char *CdDevice::driverName(int id)
-{
-    if (id >= 0 && id < DRIVER_IDS) {
-        return DRIVER_NAMES_[id];
-    } else {
-        return "Undefined";
-    }
-}
-
-const char *CdDevice::status2string(Status s)
-{
-    const char *ret = NULL;
-
     switch (s) {
     case DEV_READY:
-        ret = "Ready";
-        break;
+        return("Ready");
     case DEV_RECORDING:
-        ret = "Recording";
-        break;
+        return("Recording");
     case DEV_READING:
-        ret = "Reading";
-        break;
-    case DEV_WAITING:
-        ret = "Waiting";
-        break;
-    case DEV_BLANKING:
-        ret = "Blanking";
-        break;
+        return("Reading");
+    case DEV_SPINNING_UP:
+        return("Spinning Up");
     case DEV_BUSY:
-        ret = "Busy";
-        break;
-    case DEV_NO_DISK:
-        ret = "No disk";
-        break;
+        return("Busy");
+    case DEV_NO_DISC:
+        return("No Disc");
+    case DEV_BLANKING:
+        return("Blanking");
     case DEV_FAULT:
-        ret = "Not available";
-        break;
+        return("Not Available");
+    case DEV_LOCKED:
+        return("Already In Use");
+    case DEV_TRAY_OPEN:
+        return("Tray Open");
+    case DEV_BAD_DISC:
+        return("Incompatible Disc");
     case DEV_UNKNOWN:
-        ret = "Unknown";
-        break;
+    default:
+        return("Unknown");
     }
-
-    return ret;
 }
 
-const char *CdDevice::deviceType2string(DeviceType t)
+const std::string CdDevice::deviceType2string(DeviceType t)
 {
     const char *ret = NULL;
 
@@ -928,67 +847,34 @@ const char *CdDevice::deviceType2string(DeviceType t)
     return ret;
 }
 
-/* reads configured devices from gnome settings
- */
+// Reads configured devices from gnome settings. Only called once on
+// application startup.
+//
 void CdDevice::importSettings()
 {
-    CdDevice *dev;
-
-    std::vector<Glib::ustring> settingsStrings = configManager->getConfiguredDevices();
-    std::vector<Glib::ustring>::iterator i;
-
-    for (i = settingsStrings.begin(); i != settingsStrings.end(); ++i) {
-        if (!i->empty()) {
-            if ((dev = CdDevice::add(i->c_str())) != NULL)
-                dev->manuallyConfigured(true);
-        }
-    }
+    // Needs complete rerwite, current implementatio makes no sense as
+    // the "dev" string will change, key needs to be the name and
+    // model #.
 }
 
 /* saves manually configured devices as gnome settings
  */
 void CdDevice::exportSettings()
 {
-    CdDevice *drun;
-    int n;
-
-    std::vector<Glib::ustring> settingStrings;
-
-    for (drun = first(), n = 0; drun != NULL; drun = next(drun)) {
-
-        if (drun->manuallyConfigured()) {
-            settingStrings.push_back(drun->settingString());
-
-            n++;
-        }
-    }
-
-    try {
-        configManager->setConfiguredDevices(settingStrings);
-    } catch (const Glib::Error &e) {
-        std::cerr << e.what() << std::endl;
-    }
+    // Needs complete rerwite, current implementatio makes no sense as
+    // the "dev" string will change, key needs to be the name and
+    // model #.
 }
 
-CdDevice *CdDevice::add(const char *dev, const char *vendor, const char *product)
+CdDevice *CdDevice::add(const std::string& dev, const std::string& vendor, const std::string& product)
 {
-    CdDevice *run, *pred, *ent;
-
-    for (pred = NULL, run = DEVICE_LIST_; run != NULL; pred = run, run = run->next_) {
-        if (strcmp(run->dev(), dev) == 0)
-            return run;
+    for (auto device : DEVICE_LIST) {
+	if (device->dev() == dev)
+	    return device;
     }
 
-    ent = new CdDevice(dev, vendor, product);
-
-    if (pred != NULL) {
-        ent->next_ = pred->next_;
-        pred->next_ = ent;
-    } else {
-        ent->next_ = DEVICE_LIST_;
-        DEVICE_LIST_ = ent;
-    }
-
+    auto ent = new CdDevice(dev, vendor, product);
+    DEVICE_LIST.push_back(ent);
     return ent;
 }
 
@@ -1038,10 +924,12 @@ static char *nextToken(char *&p)
     return val;
 }
 
-static CdDevice *addImpl(char *s)
+static CdDevice *addImpl(const std::string& setting)
 {
+    char* s = (char*)alloca(setting.size() + 1);
+    strcpy(s, setting.c_str());
     char *p;
-    int driverId;
+    std::string driver;
     std::string dev;
     std::string vendor;
     std::string model;
@@ -1082,145 +970,131 @@ static CdDevice *addImpl(char *s)
 
     if ((val = nextToken(p)) == NULL)
         return NULL;
-    driverId = CdDevice::driverName2Id(val);
+    driver = val;
 
     if ((val = nextToken(p)) == NULL)
         return NULL;
     options = strtoul(val, NULL, 0);
 
-    cddev = CdDevice::add(dev.c_str(), vendor.c_str(), model.c_str());
+    cddev = CdDevice::add(dev, vendor, model);
 
-    cddev->driverId(driverId);
+    cddev->driver(driver);
     cddev->deviceType(type);
     cddev->driverOptions(options);
 
     return cddev;
 }
 
-CdDevice *CdDevice::add(const char *setting)
+CdDevice *CdDevice::add(const std::string& setting)
 {
-    char *s = strdupCC(setting);
-
-    CdDevice *dev = addImpl(s);
-
-    delete[] s;
-
+    CdDevice *dev = addImpl(setting);
     return dev;
 }
 
-CdDevice *CdDevice::find(const char *dev)
+CdDevice *CdDevice::find(const std::string devname)
 {
-    CdDevice *run;
+    for (auto dev : DEVICE_LIST)
+	if (dev->dev() == devname)
+	    return dev;
 
-    for (run = DEVICE_LIST_; run != NULL; run = run->next_) {
-        if (strcmp(run->dev(), dev) == 0)
-            return run;
-    }
-
-    return NULL;
+    return nullptr;
 }
-
-void CdDevice::scan()
+bool CdDevice::scan()
 {
+    log_message(0, "CdDevice::scan() :");
+    bool changed = false;
     int i, len;
     ScsiIf::ScanData *sdata = ScsiIf::scan(&len);
 
-    if (sdata) {
-        for (i = 0; i < len; i++)
-            CdDevice::add(sdata[i].dev.c_str(), sdata[i].vendor, sdata[i].product);
-        delete[] sdata;
+    log_message(0, "  scan() returned %d devices", len);
+
+    // Prefer the stable name, since device names are saved in settings.
+    auto name = [&](int i) { return sdata[i].id.empty() ? sdata[i].dev : sdata[i].id; };
+
+    if (len != DEVICE_LIST.size()) {
+	changed = true;
+    } else {
+	for (int i = 0; i < len; i++)
+	    if (DEVICE_LIST[i]->dev() != name(i)) {
+		changed = true;
+		break;
+	    }
     }
 
-#ifdef SCSI_ATAPI
-    sdata = ScsiIf::scan(&len, "ATA");
-    if (sdata) {
-        for (i = 0; i < len; i++)
-            CdDevice::add(sdata[i].dev.c_str(), sdata[i].vendor, sdata[i].product);
-        delete[] sdata;
-    } else {
-        // Only scan for ATAPI devices if we got nothing on the ATA
-        // interface, otherwise every device would show up twice on the
-        // list.
-        sdata = ScsiIf::scan(&len, "ATAPI");
-        if (sdata) {
-            for (i = 0; i < len; i++)
-                CdDevice::add(sdata[i].dev.c_str(), sdata[i].vendor, sdata[i].product);
-            delete[] sdata;
-        }
+    if (changed) {    
+        log_message(0, "  scan() status change");
+	CdDevice::clear();
+
+	for (i = 0; sdata && i < len; i++)
+	    CdDevice::add(name(i).c_str(), sdata[i].vendor, sdata[i].product);
     }
-#endif
+    delete[] sdata;
+
+    return changed;
 }
 
-void CdDevice::remove(const char *dev)
+bool CdDevice::updateDeviceList(const std::vector<DeviceMonitor::DeviceInfo>& devices)
 {
-    CdDevice *run, *pred;
+    bool changed = false;
 
-    for (pred = NULL, run = DEVICE_LIST_; run != NULL; pred = run, run = run->next_) {
-        if (strcmp(run->dev(), dev) == 0) {
-            if (run->status() == DEV_RECORDING || run->status() == DEV_BLANKING ||
-                run->status() == DEV_READING || run->status() == DEV_WAITING)
-                return;
-
-            if (pred != NULL)
-                pred->next_ = run->next_;
-            else
-                DEVICE_LIST_ = run->next_;
-
-            delete run;
-            return;
-        }
+    // Remove devices that are no longer present.
+    for (auto it = DEVICE_LIST.begin(); it != DEVICE_LIST.end();) {
+	bool present = false;
+	for (const auto& info : devices) {
+	    if (info.node == (*it)->dev()) {
+		present = true;
+		break;
+	    }
+	}
+	if (present) {
+	    ++it;
+	} else {
+	    delete *it;
+	    it = DEVICE_LIST.erase(it);
+	    changed = true;
+	}
     }
+
+    // Add devices that just appeared. add() is a no-op for devices already
+    // in the list, so persisting entries keep their existing object.
+    for (const auto& info : devices) {
+	if (find(info.node) == nullptr) {
+	    add(info.node, info.vendor, info.product);
+	    changed = true;
+	}
+    }
+
+    return changed;
 }
 
 void CdDevice::clear()
 {
-    CdDevice *next;
-
-    while (DEVICE_LIST_ != NULL) {
-        next = DEVICE_LIST_->next_;
-        delete DEVICE_LIST_;
-        DEVICE_LIST_ = next;
-    }
+    for (auto dev : DEVICE_LIST)
+	delete dev;
+    DEVICE_LIST.clear();
 }
 
-CdDevice *CdDevice::first()
+int CdDevice::update()
 {
-    return DEVICE_LIST_;
-}
+    log_message(1, "[update] CdDevice");
 
-CdDevice *CdDevice::next(const CdDevice *run)
-{
-    if (run != NULL)
-        return run->next_;
-    else
-        return NULL;
-}
-
-int CdDevice::count()
-{
-    CdDevice *run;
-    int cnt = 0;
-
-    for (run = DEVICE_LIST_; run != NULL; run = run->next_)
-        cnt++;
-
-    return cnt;
-}
-
-int CdDevice::updateDeviceStatus()
-{
-    int newStatus = 0;
-
-    CdDevice *run;
+     static int skipcnt = 0;
+    int status = 0;
 
     blockProcessMonitorSignals();
 
-    for (run = DEVICE_LIST_; run != NULL; run = run->next_) {
-        if (run->updateStatus())
-            newStatus = 1;
-    }
+    // if (skipcnt > 2) {
+    //     if (CdDevice::scan())
+    //         status |= UPD_CD_DEVICES;
+    //     skipcnt = 0;
+    // } else {
+    //     skipcnt++;
+    // }
+
+    for (auto dev : DEVICE_LIST)
+        if (dev->updateStatus())
+	    status |= UPD_CD_DEVICE_STATUS;
 
     unblockProcessMonitorSignals();
-
-    return newStatus;
+    return status;
 }

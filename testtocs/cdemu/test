@@ -1,0 +1,192 @@
+#!/bin/bash
+#
+# CDEmu-based unit test runner for cdrdao
+# Burns .toc files to a virtual CD-R writer and verifies the read-back TOC.
+#
+
+set -e
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# 1. Platform check: Linux only
+if [[ "$(uname -s)" != "Linux" ]]; then
+    echo "Skipping CDEmu unit tests: Linux only (detected: $(uname -s))."
+    exit 0
+fi
+
+# 2. Locate cdrdao executable
+CDRDAO="${CDRDAO:-}"
+if [[ -z "$CDRDAO" ]]; then
+    if [[ -x "$SCRIPT_DIR/../../dao/cdrdao" ]]; then
+        CDRDAO="$SCRIPT_DIR/../../dao/cdrdao"
+    elif [[ -x "./dao/cdrdao" ]]; then
+        CDRDAO="./dao/cdrdao"
+    elif command -v cdrdao >/dev/null 2>&1; then
+        CDRDAO="$(command -v cdrdao)"
+    else
+        echo "ERROR: Cannot find cdrdao executable." >&2
+        exit 1
+    fi
+fi
+
+# 3. Check CDEmu client tool
+if ! command -v cdemu >/dev/null 2>&1; then
+    echo "Skipping CDEmu unit tests: 'cdemu' command not found."
+    exit 0
+fi
+
+# 4. Check CDEmu daemon communication
+if ! cdemu status >/dev/null 2>&1; then
+    if command -v systemctl >/dev/null 2>&1; then
+        systemctl --user start cdemu-daemon >/dev/null 2>&1 || true
+    fi
+    if ! cdemu status >/dev/null 2>&1; then
+        echo "Skipping CDEmu unit tests: CDEmu daemon is not accessible."
+        exit 0
+    fi
+fi
+
+# 5. Ensure a CDEmu virtual device exists
+DEVICE_COUNT="$(cdemu status 2>/dev/null | awk '$1 ~ /^[0-9]+$/ {count++} END {print count+0}')"
+if [[ "$DEVICE_COUNT" -eq 0 ]]; then
+    echo "No CDEmu virtual device found, creating one..."
+    if ! cdemu add-device >/dev/null 2>&1; then
+        echo "ERROR: Failed to add CDEmu virtual device." >&2
+        exit 1
+    fi
+fi
+
+# Determine virtual drive and SCSI generic device mapping
+CDEMU_DEV=""
+SG_DEV=""
+for retry in {1..50}; do
+    DEV_LINE="$(cdemu device-mapping 2>/dev/null | awk '$1 ~ /^[0-9]+$/ && NF >= 3 {print $1, $3; exit}')"
+    cand_dev="$(echo "$DEV_LINE" | awk '{print $1}')"
+    cand_sg="$(echo "$DEV_LINE" | awk '{print $2}')"
+    if [[ -n "$cand_dev" && -n "$cand_sg" && -e "$cand_sg" && -r "$cand_sg" && -w "$cand_sg" ]]; then
+        CDEMU_DEV="$cand_dev"
+        SG_DEV="$cand_sg"
+        break
+    fi
+    sleep 0.1
+done
+
+if [[ -z "$CDEMU_DEV" || -z "$SG_DEV" || ! -e "$SG_DEV" ]]; then
+    echo "Skipping CDEmu unit tests: No virtual optical drive found in 'cdemu device-mapping'."
+    exit 0
+fi
+
+if [[ ! -r "$SG_DEV" || ! -w "$SG_DEV" ]]; then
+    echo "ERROR: Insufficient read/write permissions for device $SG_DEV." >&2
+    exit 1
+fi
+
+# Setup temporary scratch directory and cleanup trap
+WORK_DIR="$(mktemp -d /tmp/cdrdao_cdemu_test.XXXXXX)"
+cleanup() {
+    cdemu unload "$CDEMU_DEV" >/dev/null 2>&1 || true
+    rm -rf "$WORK_DIR"
+}
+trap cleanup EXIT INT TERM
+
+# 7. Collect .toc test files in script directory
+shopt -s nullglob
+TOC_FILES=("$SCRIPT_DIR"/*.toc)
+shopt -u nullglob
+
+if [[ ${#TOC_FILES[@]} -eq 0 ]]; then
+    echo "No .toc files found to test in $SCRIPT_DIR."
+    exit 0
+fi
+
+passed=0
+failed=0
+
+echo "Running CDEmu unit tests on device $SG_DEV (CDEmu dev $CDEMU_DEV)..."
+echo "Using cdrdao: $CDRDAO"
+echo
+
+for toc_file in "${TOC_FILES[@]}"; do
+    basename="$(basename "$toc_file" .toc)"
+    test_img="$WORK_DIR/${basename}_img.toc"
+    readback_toc="$WORK_DIR/${basename}_readback.toc"
+    write_log="$WORK_DIR/${basename}_write.log"
+    read_log="$WORK_DIR/${basename}_read.log"
+    diff_file="$WORK_DIR/${basename}.diff"
+
+    # Ensure device is blanked with a fresh image (retry loop handles unload race)
+    created=0
+    for retry in {1..30}; do
+        cdemu unload "$CDEMU_DEV" >/dev/null 2>&1 || true
+        if cdemu create-blank --writer-id WRITER-TOC --medium-type cdr80 "$CDEMU_DEV" "$test_img" >/dev/null 2>&1; then
+            created=1
+            break
+        fi
+        sleep 0.1
+    done
+
+    if [[ $created -ne 1 ]]; then
+        echo -e "\033[41mFAIL\033[00m: $basename (failed to create blank image in CDEmu)"
+        failed=$((failed + 1))
+        continue
+    fi
+
+    # Burn TOC to virtual drive
+    if ! timeout 60s "$CDRDAO" write --device "$SG_DEV" --speed 8 -n "$toc_file" </dev/null > "$write_log" 2>&1; then
+        echo -e "\033[41mFAIL\033[00m: $basename (write failed)"
+        cat "$write_log"
+        failed=$((failed + 1))
+        continue
+    fi
+
+    # Finalize/reload virtual disc
+    loaded=0
+    for retry in {1..30}; do
+        cdemu unload "$CDEMU_DEV" >/dev/null 2>&1 || true
+        if cdemu load "$CDEMU_DEV" "$test_img" >/dev/null 2>&1; then
+            loaded=1
+            break
+        fi
+        sleep 0.1
+    done
+
+    if [[ $loaded -ne 1 ]]; then
+        echo -e "\033[41mFAIL\033[00m: $basename (failed to reload burned image)"
+        failed=$((failed + 1))
+        continue
+    fi
+
+    # Reread TOC from the virtual disc
+    if ! timeout 60s "$CDRDAO" read-toc --device "$SG_DEV" "$readback_toc" </dev/null > "$read_log" 2>&1; then
+        echo -e "\033[41mFAIL\033[00m: $basename (read-toc failed)"
+        cat "$read_log"
+        failed=$((failed + 1))
+        continue
+    fi
+
+    # Determine reference TOC (prefer gold file if present)
+    if [[ -f "$SCRIPT_DIR/${basename}.toc.gold" ]]; then
+        ref_toc="$SCRIPT_DIR/${basename}.toc.gold"
+    else
+        ref_toc="$toc_file"
+    fi
+
+    # Compare obtained TOC with reference TOC
+    if diff -u "$ref_toc" "$readback_toc" > "$diff_file" 2>&1; then
+        echo -e "\033[42mPASS\033[00m: $basename"
+        passed=$((passed + 1))
+    else
+        echo -e "\033[41mFAIL\033[00m: $basename (TOC mismatch with $(basename "$ref_toc"))"
+        cp "$readback_toc" "$SCRIPT_DIR/${basename}.toc.failed"
+        failed=$((failed + 1))
+    fi
+done
+
+echo
+echo "Test summary: $passed passed, $failed failed."
+
+if [[ $failed -gt 0 ]]; then
+    exit 1
+fi
+
+exit 0

@@ -24,7 +24,7 @@ AC_ARG_WITH(flac-support,[  --with-flac-support    enable FLAC format support (d
 dnl Checks for programs.
 AC_PROG_CC
 AC_PROG_CXX
-AX_CXX_COMPILE_STDCXX([17])
+AX_CXX_COMPILE_STDCXX_17
 AC_PROG_CPP
 AC_PROG_INSTALL
 AC_PROG_RANLIB
@@ -187,9 +187,9 @@ if test "$gcdmaster" = default; then
 fi
 if test "$gcdmaster" = yes; then
   en_gcdmaster=yes
-  PKG_CHECK_MODULES(SIGCPP2, sigc++-2.0 >= 2.0.0,[],
+  PKG_CHECK_MODULES(SIGCPP2, sigc++-3.0 >= 3.0.0,[],
         [echo "Building of gcdmaster disabled"; en_gcdmaster=no])
-  PKG_CHECK_MODULES([GTKMM], [gtkmm-3.0], [],
+  PKG_CHECK_MODULES([GTKMM], [gtkmm-4.0], [],
         [echo "Building of gcdmaster disabled"; en_gcdmaster=no])
 fi
 
@@ -222,6 +222,7 @@ case "$host" in
   *-darwin*)
       scsilib_libs="-framework IOKit -framework CoreFoundation"
       scsilib_objs="ScsiIf-osx.o"
+      CPPFLAGS="$CPPFLAGS -DOS_DARWIN"
       ;;
 
   *-pc-cygwin* | *mingw*)
@@ -253,7 +254,7 @@ dnl -lc_r is automatically done by the linker
 	      ;;
   *darwin*)
             AC_DEFINE(_P1003_1B_VISIBLE,1,"")
-            LIBS="$LIBS -framework CoreServices -framework IOKit"
+            LIBS="$LIBS -framework CoreServices -framework IOKit -framework DiskArbitration -framework CoreFoundation"
             ;;
   *-openbsd*)
             CPPFLAGS="$CPPFLAGS -I/usr/local/include"
@@ -263,12 +264,40 @@ esac
 
 dnl Sound device selection for xcdrdao
 case "$host" in
-  *-linux* | *-freebsd* | *-solaris*)
+  *-linux* | *bsd* | *darwin* )
 	     sound_if_obj=SoundIF-ao.o
 	     ;;
 
   *)
      sound_if_obj=SoundIF-none.o
+     ;;
+esac
+
+dnl Platform-specific device monitor for gcdmaster. Platforms without a
+dnl native backend fall back to a no-op monitor.
+case "$host" in
+  *-linux*)
+     device_monitor_obj=DeviceMonitorLinux.o
+     ;;
+
+  *-freebsd* | *-dragonfly*)
+     device_monitor_obj=DeviceMonitorFreeBSD.o
+     ;;
+
+  *-netbsd* | *-openbsd*)
+     device_monitor_obj=DeviceMonitorNetBSD.o
+     ;;
+
+  *-darwin*)
+     device_monitor_obj=DeviceMonitorOSX.o
+     ;;
+
+  *-pc-cygwin* | *mingw*)
+     device_monitor_obj=DeviceMonitorWindows.o
+     ;;
+
+  *)
+     device_monitor_obj=DeviceMonitorNull.o
      ;;
 esac
 
@@ -343,6 +372,7 @@ AC_SUBST(scsilib_libs)
 AC_SUBST(scsilib_objs)
 AC_SUBST(dao_src)
 AC_SUBST(sound_if_obj)
+AC_SUBST(device_monitor_obj)
 AC_SUBST(thread_libs)
 AC_SUBST(mydefs)
 
@@ -362,7 +392,6 @@ AC_CONFIG_FILES([
         dao/Makefile
         utils/Makefile
         gcdmaster/Makefile
-        gcdmaster/stock/Makefile
         paranoia/Makefile
         Makefile
         specs/cdrdao.fedora.spec

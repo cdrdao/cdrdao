@@ -24,7 +24,6 @@
 #include <string.h>
 
 #include "CdTextItem.h"
-#include "PWSubChannel96.h"
 #include "Toc.h"
 #include "log.h"
 
@@ -115,9 +114,7 @@ CdTextEncoder::CdTextEncoder(const Toc *toc)
     packCount_ = 0;
     packs_ = lastPack_ = NULL;
     lastPackPos_ = 0;
-
-    subChannels_ = NULL;
-    subChannelCount_ = 0;
+    packId_ = 0;
 
     for (i = 0; i < 8; i++)
         memset(&(sizeInfo_[i]), 0, sizeof(CdTextSizeInfo));
@@ -125,7 +122,6 @@ CdTextEncoder::CdTextEncoder(const Toc *toc)
 
 CdTextEncoder::~CdTextEncoder()
 {
-    long i;
     CdTextPackEntry *pnext;
 
     toc_ = NULL;
@@ -138,16 +134,6 @@ CdTextEncoder::~CdTextEncoder()
     }
 
     lastPack_ = NULL;
-
-    if (subChannels_ != NULL) {
-        for (i = 0; i < subChannelCount_; i++) {
-            delete subChannels_[i];
-            subChannels_[i] = NULL;
-        }
-
-        delete[] subChannels_;
-        subChannels_ = NULL;
-    }
 }
 
 int CdTextEncoder::encode()
@@ -172,16 +158,19 @@ int CdTextEncoder::encode()
         }
     }
 
-    buildSubChannels();
-
     return 0;
 }
 
-const PWSubChannel96 **CdTextEncoder::getSubChannels(long *subChannelCount)
+std::vector<CdTextPack> CdTextEncoder::getPacks() const
 {
-    *subChannelCount = subChannelCount_;
+    std::vector<CdTextPack> packs;
 
-    return (const PWSubChannel96 **)subChannels_;
+    packs.reserve(packCount_);
+
+    for (const CdTextPackEntry *prun = packs_; prun != NULL; prun = prun->next_)
+        packs.push_back(prun->pack);
+
+    return packs;
 }
 
 void CdTextEncoder::buildPacks()
@@ -405,69 +394,6 @@ void CdTextEncoder::calcCrcs()
     }
 }
 
-// Builds the R-W sub-channel data for all CD-TEXT packs. The sub-channel
-// data of each sector can hold 4 CD-TEXT packs.
-void CdTextEncoder::buildSubChannels()
-{
-    long i, j;
-    CdTextPackEntry *prun;
-    unsigned char buf[72];
-
-    switch (packCount_ % 4) {
-    case 0:
-        subChannelCount_ = packCount_ / 4;
-        break;
-    case 2:
-        subChannelCount_ = packCount_ / 2;
-        break;
-    default:
-        subChannelCount_ = packCount_;
-        break;
-    }
-
-    if (subChannelCount_ == 0) {
-        subChannels_ = NULL;
-        return;
-    }
-
-    subChannels_ = new PWSubChannel96 *[subChannelCount_];
-
-    prun = packs_;
-
-    for (i = 0; i < subChannelCount_; i++) {
-        subChannels_[i] = new PWSubChannel96;
-
-        for (j = 0; j < 4; j++) {
-            memcpy(buf + j * 18, prun->packData, 18);
-
-            if ((prun = prun->next_) == NULL)
-                prun = packs_;
-        }
-
-        subChannels_[i]->setRawRWdata(buf);
-
-#if 0
-        int k;
-
-        for (j = 0; j < 6; j++) {
-            log_message(0, "%ld:%d: ", i, j);
-            for (k = 0; k < 16; k++) {
-                log_message(0, "%02x ", subChannels_[i]->data()[j * 16 + k]);
-            }
-            log_message(0, "");
-        }
-
-        unsigned char buf1[72];
-
-        subChannels_[i]->getRawRWdata(buf1);
-
-        log_message(0, "Match: %d", memcmp(buf, buf1, 72));
-#endif
-    }
-
-    assert(prun == packs_);
-}
-
 void CdTextEncoder::appendPack(CdTextPackEntry *pack)
 {
     int b;
@@ -527,9 +453,9 @@ u8 CdTextEncoder::characterCode(Util::Encoding enctype)
     case Util::Encoding::MSJIS:
         return 0x80;
     case Util::Encoding::KOREAN:
-        return 0x82;
+        return 0x81;
     case Util::Encoding::MANDARIN:
-        return 0x83;
+        return 0x82;
     default:
         return 0; // Always default to ISO-8859-1
     }

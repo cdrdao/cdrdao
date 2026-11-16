@@ -20,34 +20,35 @@
 #ifndef __RECORD_TOC_DIALOG_H
 #define __RECORD_TOC_DIALOG_H
 
+#include <gtkmm.h>
+
 class TocEdit;
 class RecordTocSource;
 class RecordCDTarget;
 
 class RecordTocDialog : public Gtk::Window
 {
-  public:
-    RecordTocDialog(TocEdit *);
-    ~RecordTocDialog();
+public:
+    RecordTocDialog(Glib::RefPtr<TocEdit> tocEdit);
 
-    void start(Gtk::Window *);
+    void start(Gtk::Window* parent);
     void update(unsigned long level);
 
-  private:
+private:
     RecordTocSource *TocSource;
     RecordCDTarget *CDTarget;
 
-    TocEdit *tocEdit_;
-    bool active_;
+    Glib::RefPtr<TocEdit> tocEdit_;
 
-    Gtk::RadioButton *simulate_rb;
-    Gtk::RadioButton *simulateBurn_rb;
-    Gtk::RadioButton *burn_rb;
+    // Updated from RadioButton to CheckButton
+    Gtk::CheckButton *simulate_cb;
+    Gtk::CheckButton *simulateBurn_cb;
+    Gtk::CheckButton *burn_cb;
 
     void stop();
     void startAction();
-
-    bool on_delete_event(GdkEventAny *);
+    void startActionConfirmed(int clicked_result);
 };
 
 #endif
+

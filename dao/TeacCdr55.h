@@ -28,9 +28,9 @@ class Track;
 class TeacCdr55 : public CdrDriver
 {
   public:
-    TeacCdr55(ScsiIf *scsiIf, unsigned long options);
+    TeacCdr55(std::shared_ptr<ScsiIf> scsiIf, unsigned long options);
     ~TeacCdr55();
-    static CdrDriver *instance(ScsiIf *scsiIf, unsigned long options);
+    static CdrDriver *instance(std::shared_ptr<ScsiIf> scsiIf, unsigned long options);
 
     unsigned long getReadCapabilities(const CdToc *, int) const
     {

@@ -31,6 +31,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <filesystem>
 
 #include "Sample.h"
 #include "log.h"
@@ -147,29 +148,55 @@ long fullRead(int fd, void *buf, long count)
     return nread;
 }
 
+
 long fullWrite(int fd, const void *buf, long count)
 {
-    long n;
-    long nwritten = 0;
-    const char *p = (const char *)buf;
+  long n;
+  long nwritten = 0;
+  const char *p = (const char *)buf;
 
+  do {
     do {
-        do {
-            n = write(fd, p, count);
-        } while (n < 0 && (errno == EAGAIN || errno == EINTR));
+      n = write(fd, p, count);
+    } while (n < 0 && (errno == EAGAIN || errno == EINTR));
 
-        if (n < 0)
-            return -1;
+    if (n < 0)
+      return -1;
 
-        if (n == 0)
-            return nwritten;
+    if (n == 0)
+      return nwritten;
 
-        count -= n;
-        nwritten += n;
-        p += n;
-    } while (count > 0);
+    count -= n;
+    nwritten += n;
+    p += n;
+  } while (count > 0);
 
-    return nwritten;
+  return nwritten;
+}
+
+long fullWrite(int fd, const std::string& buffer)
+{
+    auto ptr = buffer.data();
+    auto remaining = buffer.size();
+    ssize_t totalWritten = 0;
+
+    while (remaining > 0) {
+	auto written = ::write(fd, ptr, remaining);
+
+	if (written < 0) {
+	    if (errno == EINTR)
+		continue;
+	    return -1;
+	}
+
+	if (written == 0)
+	    return totalWritten;
+
+	ptr += written;
+	remaining -= (size_t)written;
+	totalWritten += written;
+    }
+    return totalWritten;
 }
 
 long readLong(FILE *fp)
@@ -291,6 +318,17 @@ FileExtension fileExtension(const char *fname)
     return FileExtension::UNKNOWN;
 }
 
+FileExtension fileExtension(const std::string& path)
+{
+    std::filesystem::path file_path(path);
+    auto ext = file_path.extension();
+
+    if (strlen(ext.c_str()) <= 1)
+	return FileExtension::UNKNOWN;
+
+    return fileExtension(ext.c_str());
+}
+
 string to_utf8(const u8 *input, size_t input_size, Util::Encoding enc)
 {
     const char *from_encoding = "ISO-8859-1";
@@ -304,23 +342,30 @@ string to_utf8(const u8 *input, size_t input_size, Util::Encoding enc)
     ICONV_CONST char *src = (ICONV_CONST char *)abuffer;
 
     size_t srclen = input_size;
-    size_t dstlen = input_size * 4;
+    size_t dstlen = input_size * 4 + 1;
     char *dst = (char *)alloca(dstlen);
     char *orig_dst = dst;
     auto icv = iconv_open("UTF-8", from_encoding);
-    if (!icv)
-        return string((char *)input);
-    if (iconv(icv, &src, &srclen, &dst, &dstlen) == (size_t)-1) {
-        log_message(-1, strerror(errno));
-        return string((char *)input);
+    if (icv == (iconv_t)-1)
+        return string(abuffer);
+    size_t res = iconv(icv, &src, &srclen, &dst, &dstlen);
+    iconv_close(icv);
+    if (res == (size_t)-1) {
+        log_message(-1, "CD-TEXT: Unable to convert text to UTF-8: %s", strerror(errno));
+        return string(abuffer);
     }
     *dst = 0;
     return string(orig_dst);
 }
 
-bool from_utf8(const string &input, std::vector<u8> &output, Encoding enc)
+// Converts UTF-8 'input' into the CD-TEXT encoding 'enc' and appends
+// the result, including a terminating 0, to 'output'. With
+// 'transliterate', characters that have no exact equivalent in the
+// target encoding are approximated (e.g. "€" -> "EUR") instead of
+// failing the conversion.
+bool from_utf8(const string &input, std::vector<u8> &output, Encoding enc, bool transliterate)
 {
-    const char *to_encoding;
+    std::string to_encoding;
     switch (enc) {
     case Encoding::ASCII:
         to_encoding = "ASCII";
@@ -331,6 +376,8 @@ bool from_utf8(const string &input, std::vector<u8> &output, Encoding enc)
     default:
         to_encoding = "ISO-8859-1";
     }
+    if (transliterate)
+        to_encoding += "//TRANSLIT";
 
     char *abuffer = (char *)alloca(input.size() + 1);
     strcpy(abuffer, input.c_str());
@@ -340,10 +387,12 @@ bool from_utf8(const string &input, std::vector<u8> &output, Encoding enc)
     size_t dstlen = srclen * 4;
     char *dst = (char *)alloca(dstlen);
     char *origdst = dst;
-    auto icv = iconv_open(to_encoding, "UTF-8");
-    if (!icv)
+    auto icv = iconv_open(to_encoding.c_str(), "UTF-8");
+    if (icv == (iconv_t)-1)
         return false;
-    if (iconv(icv, &src, &srclen, &dst, &dstlen) == (size_t)-1)
+    size_t res = iconv(icv, &src, &srclen, &dst, &dstlen);
+    iconv_close(icv);
+    if (res == (size_t)-1)
         return false;
 
     while (origdst < dst)
@@ -405,17 +454,18 @@ bool isValidUTF8(const char *str)
     size_t dstlen = srclen * 2;
     char *dst = (char *)alloca(dstlen);
     auto icv = iconv_open(encoding, encoding);
-    if (!icv)
+    if (icv == (iconv_t)-1)
         return true;
-    if (iconv(icv, &src, &srclen, &dst, &dstlen) == (size_t)-1)
-        return false;
-    else
-        return true;
+    size_t res = iconv(icv, &src, &srclen, &dst, &dstlen);
+    iconv_close(icv);
+    return res != (size_t)-1;
 }
 
 bool processMixedString(std::string &str, bool &is_utf8)
 {
-    is_utf8 = !isStrictAscii(str);
+    // Non-ASCII bytes that don't form valid UTF-8 are treated as raw
+    // (legacy ISO-8859-1) text, just like octal escapes.
+    is_utf8 = !isStrictAscii(str) && isValidUTF8(str.c_str());
     for (size_t i = 0; str.size() >= 4 && i < str.size() - 3; i++) {
         if (str[i] == '\\' && isdigit(str[i + 1]) && isdigit(str[i + 2]) && isdigit(str[i + 3])) {
 
@@ -429,8 +479,6 @@ bool processMixedString(std::string &str, bool &is_utf8)
     }
     return true;
 }
-
-} // namespace Util
 
 bool resolveFilename(std::string &abs, const char *file, const char *path)
 {
@@ -469,3 +517,18 @@ bool resolveFilename(std::string &abs, const char *file, const char *path)
     abs = "";
     return false;
 }
+
+// Remove leading and trailing white spaces in a string, in place.
+//
+void trimSpaces(std::string& str)
+{
+    auto first = str.find_first_not_of(" \t\n\r\f\v");
+    if (first == std::string::npos) {
+        str.clear();
+        return;
+    }
+    auto last = str.find_last_not_of(" \t\n\r\f\v");
+    str = str.substr(first, (last - first + 1));
+}
+
+} // namespace Util

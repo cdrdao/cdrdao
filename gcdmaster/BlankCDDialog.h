@@ -20,46 +20,63 @@
 #ifndef __BLANK_CD_DIALOG_H
 #define __BLANK_CD_DIALOG_H
 
-class Project;
+#include <gtkmm.h>
+#include "MessageBox.h"
+#include "gcdmaster.h"
 
-class DeviceList;
+class DeviceSelector;
 
 class BlankCDDialog : public Gtk::Window
 {
   public:
-    BlankCDDialog();
+    virtual ~BlankCDDialog() {}
 
-    void start(Gtk::Window &parent);
-    void update(unsigned long level);
+    static BlankCDDialog* create(Glib::RefPtr<Gtk::Builder> builder,
+				 Gtk::Window& parent);
+
+    void start();
+    virtual void update(unsigned long level);
 
   private:
-    DeviceList *Devices;
-    Gtk::Window *parent_;
+    BlankCDDialog();
 
-    bool active_;
-    int speed_;
+    // UI Components
+    DeviceSelector* deviceSelector_;
+    Gtk::Box vbox_{Gtk::Orientation::VERTICAL, 10};
 
-    Gtk::RadioButton *fastBlank_rb;
-    Gtk::RadioButton *fullBlank_rb;
-    Gtk::MessageDialog *moreOptionsDialog_;
-    Gtk::CheckButton *ejectButton_;
-    Gtk::CheckButton *reloadButton_;
+    bool active_ = false;
+    int speed_ = 1;
 
-    Gtk::SpinButton *speedSpinButton_;
-    Gtk::CheckButton *speedButton_;
+    // Radio buttons are now CheckButtons in gtkmm4
+    Gtk::CheckButton *fastBlank_rb;
+    Gtk::CheckButton *fullBlank_rb;
+    
+    Gtk::CheckButton *ejectButton_ = nullptr;
+    Gtk::CheckButton *reloadButton_ = nullptr;
 
+    Gtk::SpinButton *speedSpinButton_ = nullptr;
+    Gtk::CheckButton *speedButton_ = nullptr;
+
+    Glib::RefPtr<MessageBox> ejectWarningDialog;
+    Glib::RefPtr<MessageBox> reloadWarningDialog;
+
+    // Internal Logic Methods
     void stop();
     void startAction();
-    void moreOptions();
     void speedButtonChanged();
     void speedChanged();
+    
+    // New Asynchronous Warning Chain
+    void checkEjectWarningAsync(int result);
+    void checkReloadWarningAsync(int result);
+    void proceedWithBlanking();
+
+    // Helper getters
     bool getEject();
-    int checkEjectWarning(Gtk::Window *);
     bool getReload();
-    int checkReloadWarning(Gtk::Window *);
     int getSpeed();
 
-    bool on_delete_event(GdkEventAny *);
+    bool on_close_request() override;
 };
 
 #endif

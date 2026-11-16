@@ -42,13 +42,7 @@ class FormatSupport
 
     typedef enum {
         FS_SUCCESS = 0,
-        FS_IN_PROGRESS,
-        FS_WRONG_FORMAT,
-        FS_INPUT_PROBLEM,
-        FS_OUTPUT_PROBLEM,
-        FS_DISK_FULL,
-        FS_DECODE_ERROR,
-        FS_OTHER_ERROR,
+        FS_IN_PROGRESS
     } Status;
 
     static constexpr unsigned TARGET_SAMPLE_RATE = 44100;

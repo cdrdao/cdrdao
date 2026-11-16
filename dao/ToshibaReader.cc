@@ -27,7 +27,7 @@
 #include "Toc.h"
 #include "log.h"
 
-ToshibaReader::ToshibaReader(ScsiIf *scsiIf, unsigned long options)
+ToshibaReader::ToshibaReader(std::shared_ptr<ScsiIf> scsiIf, unsigned long options)
     : PlextorReader(scsiIf, options | OPT_DRV_GET_TOC_GENERIC)
 {
     driverName_ = "Toshiba CD-ROM Reader - Version 0.1";
@@ -37,7 +37,7 @@ ToshibaReader::ToshibaReader(ScsiIf *scsiIf, unsigned long options)
 }
 
 // static constructor
-CdrDriver *ToshibaReader::instance(ScsiIf *scsiIf, unsigned long options)
+CdrDriver *ToshibaReader::instance(std::shared_ptr<ScsiIf> scsiIf, unsigned long options)
 {
     return new ToshibaReader(scsiIf, options);
 }

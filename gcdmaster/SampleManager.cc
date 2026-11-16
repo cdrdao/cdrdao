@@ -58,7 +58,7 @@ class SampleManagerImpl : public sigc::trackable
     long actBlock_;
     long endBlock_;
     long burstBlock_;
-    const char *curFilename_;
+    std::string curFilename_;
     unsigned long length_;
     gfloat percent_;
     gfloat percentStep_;
@@ -140,7 +140,6 @@ SampleManagerImpl::SampleManagerImpl(unsigned long blocking) : tocReader_(NULL)
     // allocate space in chunks of 40 minutes
     chunk_ = 40 * 60 * 75 * 588 / blocking;
 
-    curFilename_ = NULL;
     length_ = 0;
     percent_ = 0.0;
     percentStep_ = 0.0;
@@ -203,7 +202,6 @@ int SampleManagerImpl::scanToc(unsigned long start, unsigned long end, bool bloc
 
     actBlock_ = start / blocking_;
     endBlock_ = end / blocking_;
-    curFilename_ = NULL;
 
     if (tocEdit_ == NULL || endBlock_ < actBlock_)
         return 1;
@@ -275,8 +273,8 @@ int SampleManagerImpl::readSamples()
     int ret;
     long burstEnd = actBlock_ + burstBlock_;
 
-    const char *cf = tocReader_.curFilename();
-    if (cf && cf != curFilename_) {
+    auto cf = tocReader_.curFilename();
+    if (cf != curFilename_) {
         std::string msg = "Scanning audio data \"";
         msg += cf;
         msg += "\"";

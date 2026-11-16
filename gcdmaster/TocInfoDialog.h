@@ -20,67 +20,56 @@
 #ifndef __TOC_INFO_DIALOG_H__
 #define __TOC_INFO_DIALOG_H__
 
-#include <gtk/gtk.h>
+#include <vector>
 #include <gtkmm.h>
-
 #include "Toc.h"
 
 class TocEdit;
 class TextEdit;
 
-class TocInfoDialog : public Gtk::Dialog
+class TocInfoDialog : public Gtk::Window
 {
-  public:
-    TocInfoDialog(Gtk::Window *parent);
-    ~TocInfoDialog();
+public:
+    TocInfoDialog(Gtk::Window* parent);
 
-    bool on_delete_event(GdkEventAny *);
-
-    void update(unsigned long, TocEdit *);
-
+    void update(unsigned long);
     void start(TocEdit *);
-    void stop();
 
-  private:
+private:
     TocEdit *tocEdit_;
-    bool active_;
+    bool importing_ = false;
 
-    Gtk::Button *applyButton_;
+    Gtk::Button *okButton_;
+    Gtk::Button *imdbButton_;
     Gtk::Label *tocLength_;
     Gtk::Label *nofTracks_;
-
     TextEdit *catalog_;
 
-    // Tree model columns:
-    class ModelColumns : public Gtk::TreeModel::ColumnRecord
-    {
-      public:
-        ModelColumns()
-        {
-            add(m_col_id);
-            add(m_col_name);
-        }
-
-        Gtk::TreeModelColumn<int> m_col_id;
-        Gtk::TreeModelColumn<Glib::ustring> m_col_name;
-    };
-
-    Gtk::ComboBoxText tocType_;
+    Gtk::DropDown tocType_;
     Toc::Type selectedTocType_;
 
-    struct BlockValue {
-        int block;
-        int value;
+    struct TrackEntry {
+        Gtk::Label *label;
+        Gtk::Entry *title;
+        Gtk::Entry *performer;
     };
 
     struct CdTextPage {
-        Gtk::ComboBoxText *language;
+        // Outer tab page + tab-label widgets (kept stable across tab
+        // insertions/removals — reparented when the tab is shown/hidden).
+        Gtk::Widget *pageWidget;
+        Gtk::Box *tabWidget;
+        Gtk::Label *tabLabel;
+
+        // Per-language controls (above inner notebook)
+        Gtk::DropDown *language;
         int selectedLanguage;
+        Gtk::DropDown *encoding;
+        Gtk::Label *encodingWarning;
 
-        Gtk::ComboBoxText *genre;
+        // Disc sub-tab
+        Gtk::DropDown *genre;
         int selectedGenre;
-
-        Gtk::Label *label;
         Gtk::Entry *title;
         Gtk::Entry *performer;
         Gtk::Entry *songwriter;
@@ -90,22 +79,54 @@ class TocInfoDialog : public Gtk::Dialog
         Gtk::Entry *catalog;
         Gtk::Entry *upcEan;
         Gtk::Entry *genreInfo;
+
+        // Tracks sub-tab
+        Gtk::Grid *tracksGrid;
+        Gtk::CheckButton *performerButton;
+        std::vector<TrackEntry> tracks;
     };
 
     CdTextPage cdTextPages_[8];
+    int trackEntries_ = 0;
 
-    void closeAction();
-    void applyAction();
+    // Notebook state: which cdTextPages_ slots are currently shown, in
+    // tab order. Slots not present are "unused" and their data is ignored.
+    Gtk::Notebook *cdTextNotebook_;
+    Gtk::Button *addBlockButton_;
+    Gtk::Box *cdTextEmptyBox_;
+    std::vector<int> visibleBlocks_;
+
+    void okAction();
+    void cancelAction();
+    void imdbAction();
+    void fillPerformerAction(int l);
+    void activatePerformerAction(int l);
 
     void createCdTextLanguageMenu(int);
     void createCdTextGenreMenu(int n);
-    Gtk::VBox *createCdTextPage(int);
+    Gtk::Widget* createCdTextPage(int);
+    Gtk::Widget* createDiscTab(int);
+    Gtk::Widget* createTracksTab(int);
+
+    void adjustTableEntries(int n);
+    void updateTabLabels();
+    void recomputeEncoding(int l);
+
+    // Block add/remove
+    void addBlockAction();
+    void removeBlock(int slot);
+    int findUnusedSlot() const;
+    int findUnusedLanguageIndex() const;
+    void resetBlockData(int slot);
+    void clearBlockInToc(TocEdit *tocEdit, int blockNr);
+    void syncTabs();
+    void updateAddButtonSensitivity();
 
     void clear();
     void clearCdText();
 
     const char *checkString(const std::string &);
-    int getCdTextLanguageIndex(int code);
+    int getCdTextLanguageIndex(int code) const;
     int getCdTextGenreIndex(int code1, int code2);
 
     void importCdText(const Toc *);

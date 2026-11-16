@@ -21,35 +21,68 @@
 #define __PREFERENCES_DIALOG_H
 
 #include <gtkmm.h>
+#include <unordered_map>
 
-class PreferencesDialog : public Gtk::Dialog
+#include "CdDevice.h"
+#include "DeviceSelector.h"
+#include "gcdmaster.h"
+
+class PreferencesDialog : public Gtk::Window
 {
-  public:
-    PreferencesDialog(BaseObjectType *cobject, const Glib::RefPtr<Gtk::Builder> &refBuilder);
+public:
+    PreferencesDialog(BaseObjectType* cobject, const Glib::RefPtr<Gtk::Builder>& builder);
     virtual ~PreferencesDialog();
 
-    void show();
+    static PreferencesDialog* create(const Glib::RefPtr<Gtk::Builder>& builder,
+                                     Gtk::Window& parent);
 
-  protected:
-    void readFromGConf();
-    bool saveToGConf();
+    void show_dialog(); // Renamed to avoid confusion with widget::show
+    void update(unsigned long level);
+
+protected:
+    void read_from_settings();
+    void save_to_settings();
+    
+    // UI Event Handlers
     void on_button_apply();
     void on_button_cancel();
     void on_button_ok();
-    void on_button_browse();
-    void on_button_browse_cancel();
-    void on_button_browse_open();
+    void on_button_reset();
+    void on_selection_changed();
+    void on_temp_dir_button_clicked();
+    void on_cdrdao_exec_button_clicked();
+    void on_options_activate();
+    void rescan_action();
 
-    Glib::RefPtr<Gtk::Builder> m_refBuilder;
+    void import_devices();
+    void export_devices();
+    void import_status();
+    void import_selected_row(CdDevice* device);
+    void export_selected_row(CdDevice* device);
+    void append_entry(CdDevice* dev);
 
-    Gtk::Button *_applyButton;
-    Gtk::Button *_cancelButton;
-    Gtk::Button *_okButton;
-    Gtk::Entry *_tempDirEntry;
-    Gtk::FileChooserDialog *_tempDirDialog;
-    Gtk::Button *_browseButton;
-    Gtk::Button *_browseCancel;
-    Gtk::Button *_browseOpen;
+    // Widgets
+    Gtk::Button* tempDirButton_ = nullptr;
+    Gtk::Button* cdrdaoExecButton_ = nullptr;
+    Gtk::Entry* driverOptionsEntry_ = nullptr;
+    Gtk::DropDown* driverMenu_ = nullptr;
+    Gtk::DropDown* devtypeMenu_ = nullptr;
+
+    std::string selectedTempPath_;
+    std::string selectedCdrdaoExec_;
+    
+    DeviceSelector* deviceSelector_;
+
+    struct DeviceData {
+        std::string driver;
+        std::string deviceType;
+        std::string options;
+    };
+    std::unordered_map<CdDevice*, struct DeviceData> dataMap_;
+    CdDevice* selectedDevice_;
 };
+
+std::optional<Glib::ustring> dropDownGet(Gtk::DropDown* dd);
+bool dropDownSet(Gtk::DropDown* dd, const Glib::ustring& val);
 
 #endif

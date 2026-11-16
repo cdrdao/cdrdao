@@ -22,47 +22,58 @@
 
 #include <gtk/gtk.h>
 #include <gtkmm.h>
+#include <memory>
 #include <string>
+#include <optional>
 
 class TocEdit;
 #include "CdDevice.h"
+#include "DeviceMonitor.h"
 
-class DeviceList : public Gtk::Frame
+class DeviceSelector : public Gtk::Frame
 {
   public:
-    DeviceList(CdDevice::DeviceType filterType);
-    ~DeviceList() {};
+    DeviceSelector(std::optional<CdDevice::DeviceType> filterType = std::nullopt);
+    ~DeviceSelector() {};
 
-    std::string selection();
+    CdDevice* selection();
     void selectOne();
-    void selectOneBut(const char *targetData);
     void appendTableEntry(CdDevice *);
     void import();
     void importStatus();
 
-  private:
-    CdDevice::DeviceType filterType_;
+    sigc::signal<void()> signalChanged;
 
-    class ListColumns : public Gtk::TreeModel::ColumnRecord
+  private:
+    void on_selection_changed(guint, guint);
+
+    // Invoked (on the main thread) when the DeviceMonitor reports that the
+    // set of available devices has changed.
+    void onDevicesChanged();
+
+    std::optional<CdDevice::DeviceType> filterType_;
+
+    std::unique_ptr<DeviceMonitor> monitor_;
+
+    class ListColumns : public Glib::Object
     {
       public:
-        ListColumns()
-        {
-            add(dev);
-            add(vendor);
-            add(model);
-            add(status);
-        };
+	CdDevice* device_;
 
-        Gtk::TreeModelColumn<std::string> dev;
-        Gtk::TreeModelColumn<std::string> vendor;
-        Gtk::TreeModelColumn<std::string> model;
-        Gtk::TreeModelColumn<std::string> status;
+	static Glib::RefPtr<ListColumns> create(CdDevice* device) {
+	    return Glib::make_refptr_for_instance<ListColumns>(
+		new ListColumns(device));
+	}
+
+    protected:
+	ListColumns(CdDevice* device)
+	    : device_(device) {
+	}
     };
 
-    Gtk::TreeView list_;
-    Glib::RefPtr<Gtk::ListStore> listModel_;
-    ListColumns listColumns_;
+    Gtk::ColumnView colView_;
+    Glib::RefPtr<Gtk::SingleSelection> selectionModel_;
+    Glib::RefPtr<Gio::ListStore<ListColumns>> listModel_;
 };
 
 #endif

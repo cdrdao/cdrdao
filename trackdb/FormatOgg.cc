@@ -19,6 +19,7 @@
 
 #include <cstring>
 #include <stdio.h>
+#include <sstream>
 
 #include "FormatOgg.h"
 #include "log.h"
@@ -54,16 +55,12 @@ void FormatOgg::convertAbort()
 
 FormatSupport::Status FormatOgg::oggInit()
 {
-    fin_ = fopen(src_file_.c_str(), "r");
-    if (!fin_) {
-        log_message(-2, "Could not open input file \"%s\": %s", src_file_.c_str(), strerror(errno));
-        return FS_INPUT_PROBLEM;
-    }
-
-    int ovret = ov_open(fin_, &vorbisFile_, NULL, 0);
-    if (ovret != 0) {
-        log_message(-2, "Could not open Ogg Vorbis file \"%s\"", src_file_.c_str());
-        return FS_WRONG_FORMAT;
+    int ovret;
+    if (!(fin_ = fopen(src_file_.c_str(), "r")) ||
+	  (ovret = ov_open(fin_, &vorbisFile_, NULL, 0)) != 0) {
+	std::ostringstream oss;
+	oss << "Could not open input file \"" << src_file_ << "\"\n";
+	throw std::runtime_error(oss.str());
     }
 
     auto ostatus = setup_wav_output(dst_file_);

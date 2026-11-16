@@ -23,19 +23,17 @@
 #include <gtk/gtk.h>
 #include <gtkmm.h>
 #include <string>
+#include <vector>
 
 class Toc;
 class TocEdit;
 class TocEditView;
 class TextEdit;
 
-class TrackInfoDialog : public Gtk::Dialog
+class TrackInfoDialog : public Gtk::Window
 {
   public:
-    TrackInfoDialog();
-    ~TrackInfoDialog();
-
-    bool on_delete_event(GdkEventAny *);
+    static Glib::RefPtr<TrackInfoDialog> create(Gtk::Window* parent);
 
     void update(unsigned long, TocEditView *);
 
@@ -43,25 +41,28 @@ class TrackInfoDialog : public Gtk::Dialog
     void stop();
 
   private:
-    TocEditView *tocEditView_;
-    int active_;
+    TrackInfoDialog(Gtk::Window* parent);
+    
+    TocEditView *tocEditView_ = nullptr;
+    bool active_ = false;
+    int selectedTrack_ = 0;
+    Gtk::Window* parent_;
 
-    int selectedTrack_;
+    Gtk::Button okButton_;
+    Gtk::Button cancelButton_;
 
-    Gtk::Button *applyButton_;
+    Gtk::Label trackNr_;
+    Gtk::Label pregapLen_;
+    Gtk::Label trackStart_;
+    Gtk::Label trackEnd_;
+    Gtk::Label trackLen_;
+    Gtk::Label indexMarks_;
 
-    Gtk::Label *trackNr_;
-    Gtk::Label *pregapLen_;
-    Gtk::Label *trackStart_;
-    Gtk::Label *trackEnd_;
-    Gtk::Label *trackLen_;
-    Gtk::Label *indexMarks_;
+    Gtk::CheckButton copyFlag_;
+    Gtk::CheckButton preEmphasisFlag_;
 
-    Gtk::CheckButton *copyFlag_;
-    Gtk::CheckButton *preEmphasisFlag_;
-
-    Gtk::RadioButton *twoChannelAudio_;
-    Gtk::RadioButton *fourChannelAudio_;
+    Gtk::ToggleButton twoChannelAudio_;
+    Gtk::ToggleButton fourChannelAudio_;
 
     TextEdit *isrcCodeCountry_;
     TextEdit *isrcCodeOwner_;
@@ -69,31 +70,42 @@ class TrackInfoDialog : public Gtk::Dialog
     TextEdit *isrcCodeSerial_;
 
     struct CdTextPage {
-        Gtk::Label *label;
-        Gtk::Entry *title;
-        Gtk::Entry *performer;
-        Gtk::Entry *songwriter;
-        Gtk::Entry *composer;
-        Gtk::Entry *arranger;
-        Gtk::Entry *message;
-        Gtk::Entry *isrc;
+        Gtk::Label label;
+        Gtk::Entry title;
+        Gtk::Entry performer;
+        Gtk::Entry songwriter;
+        Gtk::Entry composer;
+        Gtk::Entry arranger;
+        Gtk::Entry message;
+        Gtk::Entry isrc;
+        Gtk::Box pageBox{Gtk::Orientation::VERTICAL};
     };
 
     CdTextPage cdTextPages_[8];
 
-    void closeAction();
-    void applyAction();
+    // CD-TEXT blocks that have a language defined, shown as notebook tabs
+    // in block order. Languages are added/removed in the CD-Text dialog.
+    Gtk::Notebook cdTextNotebook_;
+    Gtk::Label noCdTextLabel_;
+    std::vector<int> visibleBlocks_;
 
-    Gtk::VBox *createCdTextPage(int);
+    void cancelAction();
+    void okAction();
+
+    void setupCdTextPage(int);
 
     void clear();
     void clearCdText();
+    void syncCdTextTabs(const Toc *);
 
     const char *checkString(const std::string &);
     void importCdText(const Toc *, int);
     void importData(const Toc *, int);
-    void exportCdText(TocEdit *, int);
-    void exportData(TocEdit *, int);
+    void exportCdText(Glib::RefPtr<TocEdit>, int);
+    void exportData(Glib::RefPtr<TocEdit>, int);
+
+    Gtk::Box mainVBox_  {Gtk::Orientation::VERTICAL};
+    Gtk::Box contentBox_{Gtk::Orientation::VERTICAL};
 };
 
 #endif

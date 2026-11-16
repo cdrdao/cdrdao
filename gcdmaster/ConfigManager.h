@@ -30,6 +30,7 @@ class ConfigManager
     virtual ~ConfigManager();
 
     Glib::ustring getCdrdaoPath() const;
+    void setCdrdaoPath(const Glib::ustring &dir) const;
 
     Glib::ustring getTempDir() const;
     void setTempDir(const Glib::ustring &dir) const;

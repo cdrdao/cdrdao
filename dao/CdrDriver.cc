@@ -19,6 +19,7 @@
 
 #include <config.h>
 
+#include <algorithm>
 #include <assert.h>
 #include <ctype.h>
 #include <errno.h>
@@ -62,7 +63,7 @@
 
 using namespace std;
 
-typedef CdrDriver *(*CdrDriverConstructor)(ScsiIf *, unsigned long);
+typedef CdrDriver *(*CdrDriverConstructor)(std::shared_ptr<ScsiIf>, unsigned long);
 
 struct DriverSelectTable {
     const char *driverId;
@@ -814,7 +815,8 @@ const char *CdrDriver::selectDriver(int readWrite, const char *vendor, const cha
     return NULL;
 }
 
-CdrDriver *CdrDriver::createDriver(const char *driverId, unsigned long options, ScsiIf *scsiIf)
+CdrDriver *CdrDriver::createDriver(const char *driverId, unsigned long options,
+                                   std::shared_ptr<ScsiIf> scsiIf)
 {
     DriverTable *run = DRIVERS;
 
@@ -828,7 +830,7 @@ CdrDriver *CdrDriver::createDriver(const char *driverId, unsigned long options, 
     return NULL;
 }
 
-const char *CdrDriver::detectDriver(ScsiIf *scsiIf, unsigned long *options)
+const char *CdrDriver::detectDriver(std::shared_ptr<ScsiIf> scsiIf, unsigned long *options)
 {
     if (scsiIf->checkMmc()) {
         *options |= OPT_MMC_CD_TEXT;
@@ -848,49 +850,18 @@ void CdrDriver::printDriverIds()
     }
 }
 
-CdrDriver::CdrDriver(ScsiIf *scsiIf, unsigned long options)
+CdrDriver::CdrDriver(std::shared_ptr<ScsiIf> scsiIf, unsigned long options)
+    : scsiIf_(scsiIf)
 {
     size16 byteOrderTest = 1;
     char *byteOrderTestP = (char *)&byteOrderTest;
 
     options_ = options;
-    scsiIf_ = scsiIf;
-    toc_ = NULL;
 
     if (*byteOrderTestP == 1)
         hostByteOrder_ = 0; // little endian
     else
         hostByteOrder_ = 1; // big endian
-
-    enableBufferUnderRunProtection_ = 1;
-    enableWriteSpeedControl_ = 1;
-
-    readCapabilities_ = 0; // reading capabilities are determined dynamically
-
-    audioDataByteOrder_ = 0; // default to little endian
-
-    fastTocReading_ = false;
-    rawDataReading_ = false;
-    mode2Mixed_ = true;
-    subChanReadMode_ = TrackData::SUBCHAN_NONE;
-    taoSource_ = 0;
-    taoSourceAdjust_ = 2; // usually we have 2 unreadable sectors between tracks
-    // written in TAO mode
-    padFirstPregap_ = 1;
-    onTheFly_ = 0;
-    onTheFlyFd_ = -1;
-    multiSession_ = false;
-    encodingMode_ = 0;
-    force_ = false;
-    remote_ = 0;
-    remoteFd_ = -1;
-
-    blockLength_ = 0;
-    blocksPerWrite_ = 0;
-    zeroBuffer_ = NULL;
-
-    userCapacity_ = 0;
-    fullBurn_ = false;
 
     scsiMaxDataLen_ = scsiIf_->maxDataLen();
 
@@ -1037,6 +1008,8 @@ int CdrDriver::sendCmd(const unsigned char *cmd, int cmdLen, const unsigned char
 //         2: not ready
 //         3: not ready, no disk in drive
 //         4: not ready, tray out
+//         5: spinning up
+//         6: incompatible disk
 
 int CdrDriver::testUnitReady(int ignoreUnitAttention) const
 {
@@ -1054,10 +1027,25 @@ int CdrDriver::testUnitReady(int ignoreUnitAttention) const
         sense = scsiIf_->getSense(senseLen);
 
         int code = sense[2] & 0x0f;
+        int asc = (sense[12] << 8) + sense[13];
 
         if (code == 0x02) {
-            // not ready
-            return 2;
+            switch (asc) {
+            case 0x3000: // INCOMPATIBLE MEDIUM INSTALLED
+            case 0x3a00: // MEDIUM NOT PRESENT (no disc in drive)
+            case 0x3a01: // MEDIUM NOT PRESENT, tray closed
+                return 3;
+            case 0x3a02: // MEDIUM NOT PRESENT, tray open
+                return 4;
+            case 0x0401: // NOT READY, becoming ready (spinning up)
+                return 5;
+                return 6;
+            case 0x0402: // NOT READY, need START UNIT command
+                startStopUnit(1);
+                return testUnitReady(ignoreUnitAttention);
+            default:
+                return 2;
+            }
         } else if (code != 0x06) {
             scsiIf_->printError();
             return 1;
@@ -1085,7 +1073,7 @@ int CdrDriver::mult2Speed(int mult)
     return mult * 177;
 }
 
-// start unit ('startStop' == 1) or stop unit ('startStop' == 0)
+// starts unit ('startStop' == 1) or stop unit ('startStop' == 0)
 // return: 0: OK
 //         1: scsi command failed
 
@@ -2123,7 +2111,7 @@ int CdrDriver::checkSubChanReadCaps(TrackData::Mode mode, unsigned long caps)
 // session: session that should be analyzed
 // audioFilename: name of audio file that is placed into TOC
 // Return: newly allocated 'Toc' object or 'NULL' on error
-Toc *CdrDriver::readDiskToc(int session, const char *dataFilename)
+Toc *CdrDriver::readDiskToc(int session, const char* dataFilename)
 {
     int nofTracks = 0;
     int i, j;
@@ -2133,9 +2121,8 @@ Toc *CdrDriver::readDiskToc(int session, const char *dataFilename)
     char isrcCode[13];
     unsigned char trackCtl; // control nibbles of track
     int ctlCheckOk;
-    char *fname;
-    char *extension = NULL;
-    char *p;
+    std::string fname;
+    std::string extension;
     TrackInfo *trackInfos;
 
     if (cdToc == NULL) {
@@ -2157,14 +2144,16 @@ Toc *CdrDriver::readDiskToc(int session, const char *dataFilename)
 
     readCapabilities_ = getReadCapabilities(cdToc, nofTracks);
 
-    fname = strdupCC(dataFilename);
-    if ((p = strrchr(fname, '.')) != NULL) {
-        extension = strdupCC(p);
-        *p = 0;
+    if (dataFilename) {
+	fname = dataFilename;
+	auto found = fname.find_last_of(".");
+	if (found != string::npos) {
+	    extension = fname.substr(found);
+            fname.erase(found);
+        }
     }
 
     trackInfos = new TrackInfo[nofTracks + 1];
-    memset(trackInfos, 0, (nofTracks + 1) * sizeof(TrackInfo));
 
     for (i = 0; i < nofTracks; i++) {
         TrackData::Mode trackMode;
@@ -2196,10 +2185,9 @@ Toc *CdrDriver::readDiskToc(int session, const char *dataFilename)
 
         if (!checkSubChanReadCaps(trackMode, readCapabilities_)) {
             log_message(-2, "This drive does not support %s sub-channel reading.",
-                        TrackData::subChannelMode2String(subChanReadMode_));
+                        TrackData::subChannelMode2String(subChanReadMode_).c_str());
             delete[] cdToc;
             delete[] trackInfos;
-            delete[] fname;
             return NULL;
         }
 
@@ -2211,7 +2199,9 @@ Toc *CdrDriver::readDiskToc(int session, const char *dataFilename)
         trackInfos[i].fill = 0;
         trackInfos[i].indexCnt = 0;
         trackInfos[i].isrcCode[0] = 0;
-        trackInfos[i].filename = buildDataFileName(i, cdToc, nofTracks, fname, extension);
+	if (!fname.empty())
+	    trackInfos[i].filename = buildDataFileName(i, cdToc, nofTracks,
+						       fname.c_str(), extension.c_str());
         trackInfos[i].bytesWritten = 0;
     }
 
@@ -2227,7 +2217,6 @@ Toc *CdrDriver::readDiskToc(int session, const char *dataFilename)
     trackInfos[nofTracks].fill = 0;
     trackInfos[nofTracks].indexCnt = 0;
     trackInfos[nofTracks].isrcCode[0] = 0;
-    trackInfos[nofTracks].filename = NULL;
     trackInfos[nofTracks].bytesWritten = 0;
 
     long pregap = 0;
@@ -2266,7 +2255,7 @@ Toc *CdrDriver::readDiskToc(int session, const char *dataFilename)
         Msf trackLength(elba - slba);
 
         log_message(1, "Analyzing track %02d (%s): start %s, ", i + 1,
-                    TrackData::mode2String(trackInfos[i].mode), Msf(cdToc[i].start).str());
+                    TrackData::mode2String(trackInfos[i].mode).c_str(), Msf(cdToc[i].start).str());
         log_message(1, "length %s...", trackLength.str());
 
         if (pregap > 0) {
@@ -2281,9 +2270,18 @@ Toc *CdrDriver::readDiskToc(int session, const char *dataFilename)
         if (!fastTocReading_) {
             // Find index increments and pre-gap of next track
             if (trackInfos[i].mode == TrackData::AUDIO) {
-                analyzeTrack(TrackData::AUDIO, i + 1, slba, elba, indexIncrements,
-                             &indexIncrementCnt, i < nofTracks - 1 ? &pregap : 0, isrcCode,
-                             &trackCtl);
+                if (analyzeTrack(TrackData::AUDIO, i + 1, slba, elba, indexIncrements,
+                                 &indexIncrementCnt, i < nofTracks - 1 ? &pregap : 0, isrcCode,
+                                 &trackCtl) != 0) {
+                    log_message(-1, "Analysis of track %d failed - pre-gap, index marks and "
+                                    "ISRC code of track may be incomplete.",
+                                i + 1);
+                }
+                if (pregap < 0 || pregap >= elba - slba) {
+                    log_message(-1, "Ignoring invalid pre-gap length %ld of track %d.", pregap,
+                                i + 2);
+                    pregap = 0;
+                }
                 if (defaultPregap != 0)
                     pregap = defaultPregap;
             }
@@ -2356,11 +2354,6 @@ Toc *CdrDriver::readDiskToc(int session, const char *dataFilename)
 
     delete[] cdToc;
     delete[] trackInfos;
-
-    delete[] fname;
-    if (extension != NULL)
-        delete[] extension;
-
     return toc;
 }
 
@@ -2455,6 +2448,13 @@ long CdrDriver::findIndex(int track, int index, long trackStart, long trackEnd)
     return 0;
 }
 
+// Maximum distance in blocks between the absolute time of a Q sub-channel
+// and the position it was read from. Q sub-channels further away are bogus.
+#define MAX_Q_POSITION_DEVIATION 20
+
+// Number of identical ISRC codes that must be found before it is accepted.
+#define MIN_ISRC_MATCHES 3
+
 int CdrDriver::analyzeTrackScan(TrackData::Mode, int trackNr, long startLba, long endLba,
                                 Msf *index, int *indexCnt, long *pregap, char *isrcCode,
                                 unsigned char *ctl)
@@ -2464,10 +2464,20 @@ int CdrDriver::analyzeTrackScan(TrackData::Mode, int trackNr, long startLba, lon
     int actIndex = 1;
     long length;
     long crcErrCnt = 0;
+    long posErrCnt = 0;
     long timeCnt = 0;
     int ctlSet = 0;
     int isrcCodeFound = 0;
+    char isrcCandidate[13] = "";
+    int isrcMatches = 0;
     long trackStartLba = startLba;
+
+    auto logErrors = [&]() {
+        if (crcErrCnt != 0)
+            log_message(2, "Found %ld Q sub-channels with CRC errors.", crcErrCnt);
+        if (posErrCnt != 0)
+            log_message(2, "Ignored %ld Q sub-channels with inconsistent position.", posErrCnt);
+    };
 
     *isrcCode = 0;
 
@@ -2501,6 +2511,14 @@ int CdrDriver::analyzeTrackScan(TrackData::Mode, int trackNr, long startLba, lon
                     Msf time(chan->min(), chan->sec(), chan->frame());     // track rel time
                     Msf atime(chan->amin(), chan->asec(), chan->aframe()); // abs time
 
+                    // Some drives return Q sub-channels with valid looking fields but
+                    // zeroed or stale times; reject them (issue #85)
+                    if (labs(atime.lba() - 150 - (startLba + i)) > MAX_Q_POSITION_DEVIATION) {
+                        posErrCnt++;
+                        timeCnt++;
+                        continue;
+                    }
+
                     if (timeCnt > 74) {
                         log_message(1, "%s\r", time.str());
                         timeCnt = 0;
@@ -2530,17 +2548,29 @@ int CdrDriver::analyzeTrackScan(TrackData::Mode, int trackNr, long startLba, lon
                                 // atime starts at 02:00, so subtract it
                                 *pregap = endLba - (atime.lba() - 150);
                             }
-                            if (crcErrCnt != 0)
-                                log_message(2, "Found %ld Q sub-channels with CRC errors.",
-                                            crcErrCnt);
+                            logErrors();
 
                             return 0;
                         }
                     }
                 } else if (chan->type() == SubChannel::QMODE3) {
+                    // Q sub-channels carrying the ISRC have no time information that
+                    // could be verified, so only accept an ISRC code once it was
+                    // read several times
                     if (!isrcCodeFound && startLba > trackStartLba) {
-                        strcpy(isrcCode, chan->isrc());
-                        isrcCodeFound = 1;
+                        const char *isrc = chan->isrc();
+
+                        if (strcmp(isrc, isrcCandidate) == 0) {
+                            isrcMatches++;
+                        } else {
+                            strcpy(isrcCandidate, isrc);
+                            isrcMatches = 1;
+                        }
+
+                        if (isrcMatches >= MIN_ISRC_MATCHES) {
+                            strcpy(isrcCode, isrcCandidate);
+                            isrcCodeFound = 1;
+                        }
                     }
                 }
             } else {
@@ -2568,8 +2598,7 @@ int CdrDriver::analyzeTrackScan(TrackData::Mode, int trackNr, long startLba, lon
         startLba += n;
     }
 
-    if (crcErrCnt != 0)
-        log_message(2, "Found %ld Q sub-channels with CRC errors.", crcErrCnt);
+    logErrors();
 
     return 0;
 }
@@ -3287,7 +3316,7 @@ Toc *CdrDriver::readDisk(int session, const char *dataFilename)
 
         if (!checkSubChanReadCaps(trackMode, readCapabilities_)) {
             log_message(-2, "This drive does not support %s sub-channel reading.",
-                        TrackData::subChannelMode2String(subChanReadMode_));
+                        TrackData::subChannelMode2String(subChanReadMode_).c_str());
             goto fail;
         }
 
@@ -3314,7 +3343,6 @@ Toc *CdrDriver::readDisk(int session, const char *dataFilename)
     trackInfos[nofTracks].pregap = 0;
     trackInfos[nofTracks].indexCnt = 0;
     trackInfos[nofTracks].isrcCode[0] = 0;
-    trackInfos[nofTracks].filename = NULL;
     trackInfos[nofTracks].bytesWritten = 0;
 
     if (onTheFly_) {
@@ -3366,9 +3394,10 @@ Toc *CdrDriver::readDisk(int session, const char *dataFilename)
             }
 
             log_message(1, "Copying data track %d (%s): start %s, ", trs + 1,
-                        TrackData::mode2String(trackInfos[trs].mode), Msf(cdToc[trs].start).str());
+                        TrackData::mode2String(trackInfos[trs].mode).c_str(),
+                        Msf(cdToc[trs].start).str());
             log_message(1, "length %s to \"%s\"...", Msf(elba - slba).str(),
-                        trackInfos[trs].filename);
+                        trackInfos[trs].filename.c_str());
 
             if (readDataTrack(&info, fp, slba, elba, &trackInfos[trs]) != 0)
                 goto fail;
@@ -3416,7 +3445,7 @@ Toc *CdrDriver::readDisk(int session, const char *dataFilename)
 
             log_message(1, "Copying audio tracks %d-%d: start %s, ", trs + 1, tre, Msf(slba).str());
             log_message(1, "length %s to \"%s\"...", Msf(elba - slba).str(),
-                        trackInfos[trs].filename);
+                        trackInfos[trs].filename.c_str());
 
             if (readAudioRange(&info, fp, slba, elba, trs, tre - 1, trackInfos) != 0)
                 goto fail;
@@ -4001,6 +4030,69 @@ int CdrDriver::sendBlankCdProgressMsg(int totalProgress)
     return 0;
 }
 
+void CdrDriver::audioReadInit(ReadDiskInfo *info, TrackInfo *trackInfo, long startLba,
+                              int startTrack, int endTrack)
+{
+    audioReadInfo_ = info;
+    audioReadTrackInfo_ = trackInfo;
+    audioReadStartTrack_ = startTrack;
+    audioReadEndTrack_ = endTrack;
+    audioReadLastLba_ = audioReadActLba_ = startLba + 149;
+    audioReadActTrack_ = startTrack;
+    audioReadActIndex_ = 1;
+    audioReadCrcCount_ = 0;
+    audioReadError_ = 0;
+    audioReadProgress_ = 0;
+    audioReadIsrc_.assign(endTrack + 1, IsrcCandidate());
+}
+
+// Q sub-channels carrying the ISRC have no time information that could be
+// verified, so only accept an ISRC code once it was read from several
+// distinct sectors. Paranoia may read a sector several times, these reads
+// only count once.
+void CdrDriver::audioReadIsrcFound(int track, long lba, const char *isrc)
+{
+    IsrcCandidate &cand = audioReadIsrc_[track];
+
+    if (audioReadTrackInfo_[track].isrcCode[0] != 0)
+        return;
+
+    if (strcmp(cand.code, isrc) != 0) {
+        strcpy(cand.code, isrc);
+        cand.lbas.clear();
+    }
+
+    if (std::find(cand.lbas.begin(), cand.lbas.end(), lba) != cand.lbas.end())
+        return;
+
+    cand.lbas.push_back(lba);
+
+    if (cand.lbas.size() >= MIN_ISRC_MATCHES) {
+        log_message(2, "Found ISRC code.");
+        strcpy(audioReadTrackInfo_[track].isrcCode, cand.code);
+    }
+}
+
+int CdrDriver::qMode1Track(SubChannel **chans, long startLba, long len, long i, int dir)
+{
+    for (long k = i + dir; k >= 0 && k < len; k += dir) {
+        SubChannel *chan = chans[k];
+
+        if (chan->type() != SubChannel::QMODE1DATA || !chan->checkCrc() ||
+            !chan->checkConsistency())
+            continue;
+
+        Msf atime(chan->amin(), chan->asec(), chan->aframe());
+
+        if (labs(atime.lba() - 150 - (startLba + k)) > MAX_Q_POSITION_DEVIATION)
+            continue;
+
+        return chan->trackNr() - 1;
+    }
+
+    return -1;
+}
+
 long CdrDriver::audioRead(TrackData::SubChannelMode sm, int byteOrder, Sample *buffer,
                           long startLba, long len)
 {
@@ -4132,10 +4224,18 @@ long CdrDriver::audioRead(TrackData::SubChannelMode sm, int byteOrder, Sample *b
                     audioReadActTrack_ = t;
                 }
             } else if (chan->type() == SubChannel::QMODE3) {
-                if (audioReadTrackInfo_[audioReadActTrack_].isrcCode[0] == 0) {
-                    log_message(2, "Found ISRC code.");
-                    strcpy(audioReadTrackInfo_[audioReadActTrack_].isrcCode, chan->isrc());
-                }
+                // Q mode 3 carries neither track number nor position. Neither
+                // audioReadActTrack_ (paranoia re-reads sectors behind it) nor the
+                // index 1 track boundaries (a pre-gap carries the ISRC of the
+                // track it belongs to) can be used to attribute it. Take the track
+                // number of the closest Q mode 1 sub-channels read in this same
+                // call, on both sides, and only accept the ISRC if they agree.
+                int before = qMode1Track(chans, startLba, len, i, -1);
+                int after = qMode1Track(chans, startLba, len, i, 1);
+
+                if (before >= 0 && before == after && before >= audioReadStartTrack_ &&
+                    before <= audioReadEndTrack_)
+                    audioReadIsrcFound(before, startLba + i, chan->isrc());
             }
         } else {
             audioReadCrcCount_++;
@@ -4161,16 +4261,7 @@ int CdrDriver::readAudioRangeStream(ReadDiskInfo *info, int fd, long start, long
 
     buf = new unsigned char[blocking * blockLen];
 
-    audioReadInfo_ = info;
-    audioReadTrackInfo_ = trackInfo;
-    audioReadStartTrack_ = startTrack;
-    audioReadEndTrack_ = endTrack;
-    audioReadLastLba_ = audioReadActLba_ = startLba + 149;
-    audioReadActTrack_ = startTrack;
-    audioReadActIndex_ = 1;
-    audioReadCrcCount_ = 0;
-    audioReadError_ = 0;
-    audioReadProgress_ = 0;
+    audioReadInit(info, trackInfo, startLba, startTrack, endTrack);
 
     len = endLba - startLba + 1;
 
@@ -4249,16 +4340,7 @@ int CdrDriver::readAudioRangeParanoia(ReadDiskInfo *info, int fd, long start, lo
     paranoia_set_range(paranoia_, startLba, endLba);
     paranoia_modeset(paranoia_, paranoiaMode_);
 
-    audioReadInfo_ = info;
-    audioReadTrackInfo_ = trackInfo;
-    audioReadStartTrack_ = startTrack;
-    audioReadEndTrack_ = endTrack;
-    audioReadLastLba_ = audioReadActLba_ = startLba + 149;
-    audioReadActTrack_ = startTrack;
-    audioReadActIndex_ = 1;
-    audioReadCrcCount_ = 0;
-    audioReadError_ = 0;
-    audioReadProgress_ = 0;
+    audioReadInit(info, trackInfo, startLba, startTrack, endTrack);
 
     len = endLba - startLba + 1;
 

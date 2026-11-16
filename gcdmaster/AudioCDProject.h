@@ -28,13 +28,17 @@ class Sample;
 class SoundIF;
 class AudioCDView;
 class TocInfoDialog;
-class CdTextDialog;
+class CddbWindow;
 class TocEdit;
+class RecordTocDialog;
+class AudioCDRead;
+class Cddb;
 
-#include "Project.h"
 #include "Toc.h"
+#include "gcdmaster.h"
+#include "CddbWindow.h"
 
-class AudioCDProject : public Project
+class AudioCDProject : public GCDWindow
 {
   public:
     enum PlayStatus {
@@ -43,13 +47,19 @@ class AudioCDProject : public Project
         STOPPED
     };
 
-    AudioCDProject(int number, const char *name, TocEdit *tocEdit, Gtk::Window *parent);
-    ~AudioCDProject();
+    static AudioCDProject* create(Glib::RefPtr<Gtk::Builder> builder,
+				  const Glib::ustring& path);
 
-    void add_menus(Glib::RefPtr<Gtk::UIManager> m_refUIManager);
-    void configureAppBar(Gtk::Statusbar *s, Gtk::ProgressBar *p, Gtk::Button *b);
+    virtual ~AudioCDProject();
+    // Only meant to be called by the builder get_widget_derived().
+    AudioCDProject(BaseObjectType* cobject, const Glib::RefPtr<Gtk::Builder>& builder);
 
-    bool closeProject();
+    bool on_close_request() override;
+    void saveProject();
+    void saveAsProject();
+    void recordToc2CD();
+    void tocRead();
+    void CDRead();
 
     unsigned long playPosition();
 
@@ -60,16 +70,21 @@ class AudioCDProject : public Project
     bool appendFiles(std::list<std::string> &);
     bool insertFiles(std::list<std::string> &);
 
-    PlayStatus playStatus()
-    {
-        return playStatus_;
-    }
+    PlayStatus playStatus() { return playStatus_;  }
+
+    Glib::RefPtr<TocEdit> tocEdit() { return tocEdit_; }
+
+    void statusMessage(const char *fmt, ...);
+
+    void loadNewToc(const std::string& path, bool anonymous = false);
 
     // Controls for app bar
     void cancelEnable(bool);
-    sigc::signal0<void> signalCancelClicked;
+    sigc::signal<void()> signalCancelClicked;
 
   protected:
+    void setup(int number, const Glib::ustring& path);
+
     Gtk::Button *buttonPlay_;
     Gtk::Button *buttonStop_;
     Gtk::Button *buttonPause_;
@@ -77,27 +92,33 @@ class AudioCDProject : public Project
     virtual void on_play_clicked();
     virtual void on_stop_clicked();
     virtual void on_pause_clicked();
-    virtual void on_select_clicked();
-    virtual void on_zoom_clicked();
     virtual void on_zoom_in_clicked();
     virtual void on_zoom_out_clicked();
     virtual void on_zoom_fit_clicked();
     virtual void on_cancel_clicked();
 
     virtual void status(const char *msg);
-    virtual void errorDialog(const char *msg);
+    virtual void errorDialog(const Glib::ustring& msg);
     virtual void progress(double val);
     virtual void spin(bool);
     virtual void fullView();
     virtual void sampleSelect(unsigned long, unsigned long);
+    virtual void saveAsDone(Glib::RefPtr<Gtk::FileDialog>, const Glib::RefPtr<Gio::AsyncResult>&);
+
+    virtual void updateWindowTitle();
 
     void playStart();
     void playStart(unsigned long start, unsigned long end);
     void playPause();
     void playStop();
 
+    Glib::RefPtr<TocEdit> tocEdit_;
+
   private:
     TocReader tocReader;
+    Glib::RefPtr<Gtk::Builder> builder_;
+    int projectNumber_;
+    bool new_ = false;
 
     SoundIF *soundInterface_;
     unsigned long playLength_; // remaining play length
@@ -108,17 +129,27 @@ class AudioCDProject : public Project
 
     bool playCallback();
 
-    Gtk::HBox hbox_;
+    Glib::RefPtr<Gio::SimpleAction> play_action_, pause_action_, stop_action_;
+    Glib::RefPtr<Gio::SimpleAction> toc_read_action_, cd_read_action_;
+    Glib::RefPtr<Gio::SimpleAction> save_action_, save_as_action_;
+
     AudioCDView *audioCDView_;
-    TocInfoDialog *tocInfoDialog_;
-    CdTextDialog *cdTextDialog_;
-    Glib::RefPtr<Gtk::ActionGroup> m_refActionGroup;
-    Glib::RefPtr<Gtk::ToggleAction> selectToggle_;
-    Glib::RefPtr<Gtk::ToggleAction> zoomToggle_;
-    void recordToc2CD();
+    Glib::RefPtr<RecordTocDialog> recordTocDialog_;
+    Glib::RefPtr<TocInfoDialog> tocInfoDialog_;
+    Glib::RefPtr<CddbWindow> cddbWindow_;
+    Glib::RefPtr<Gtk::ToggleButton> selectToggle_;
+    Glib::RefPtr<Gtk::ToggleButton> zoomToggle_;
+    Glib::RefPtr<AudioCDRead> cdReader_;
     void projectInfo();
-    void cdTextDialog();
-    void update(unsigned long level);
+    void cddbQuery();
+    void cddbQuery1(Cddb*, CddbWindow::Error);
+    void cddbQuery2(Cddb*, CddbWindow::Error);
+    virtual void update(unsigned long level) override;
+
+    Glib::RefPtr<Gtk::Label> headerBarTitle_;
+    Glib::RefPtr<Gtk::Label> statusbar_;
+    Glib::RefPtr<Gtk::ProgressBar> progressbar_;
+    Glib::RefPtr<Gtk::Button> stopButton_;
 
     enum PlayStatus playStatus_;
 };

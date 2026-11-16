@@ -63,10 +63,6 @@ SoundIF::~SoundIF()
     impl_ = NULL;
 }
 
-// Initializes sound interface.
-// return: 0: OK
-//         1: sounde device not found
-//         2: cannot setup sound device
 int SoundIF::init()
 {
     if (impl_->openDevice() != 0)
@@ -81,9 +77,6 @@ int SoundIF::init()
     return 0;
 }
 
-// Acquires sound device for playing.
-// return 0: OK
-//        1: error occured
 int SoundIF::start()
 {
     if (impl_->dspFd_ >= 0)
@@ -100,9 +93,6 @@ int SoundIF::start()
     return 0;
 }
 
-// Playes given sample buffer.
-// return: 0: OK
-//         1: error occured
 int SoundIF::play(Sample *sbuf, long nofSamples)
 {
     if (impl_->dspFd_ < 0)
@@ -144,7 +134,6 @@ unsigned long SoundIF::getDelay()
     return 0;
 }
 
-// Finishs playing, sound device is released.
 void SoundIF::end()
 {
     impl_->closeDevice();

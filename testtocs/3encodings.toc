@@ -7,7 +7,7 @@ CD_TEXT {
     2: 105
   }
   LANGUAGE 0 {
-    ENCODING_ISO_8859_1
+    ENCODING_ASCII
     TITLE "The Water"
     PERFORMER "Jeanne Cherhal"
   }
@@ -42,8 +42,8 @@ CD_TEXT {
     PERFORMER "白人のフランス人女性"
   }
 }
+SILENCE 01:00:00
 
-SILENCE 1:0:0
 
 // Track 2
 TRACK AUDIO
@@ -65,5 +65,5 @@ CD_TEXT {
     PERFORMER "白人のフランス人女性"
   }
 }
+SILENCE 01:00:00
 
-SILENCE 1:0:0

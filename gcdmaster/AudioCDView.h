@@ -23,43 +23,37 @@
 #include <gtk/gtk.h>
 #include <gtkmm.h>
 
-#include "AddFileDialog.h"
-#include "GenericView.h"
-#include <list>
-
 class SampleDisplay;
-class Project;
 class TrackInfoDialog;
 class AddFileDialog;
 class AddSilenceDialog;
 class Track;
+class TocEditView;
 
 enum {
     TARGET_URI_LIST,
 };
 
-class AudioCDView : public GenericView
+class AudioCDView : public Gtk::Box
 {
   public:
     AudioCDView(AudioCDProject *project);
-    ~AudioCDView();
-    void add_menus(Glib::RefPtr<Gtk::UIManager> m_refUIManager);
-    sigc::signal0<void> add_view;
 
+    sigc::signal<void()> add_view;
+
+    virtual TocEditView *tocEditView() const { return tocEditView_; }
     void update(unsigned long level = 0);
 
-    enum Mode {
-        ZOOM,
-        SELECT
-    };
-    void setMode(Mode);
+    enum Mode { ZOOM, SELECT };
+    void mode(Mode m) { mode_ = m; }
+    Mode mode() { return mode_; }
 
     void zoomIn();
     void zoomx2();
     void zoomOut();
     void fullView();
 
-    sigc::signal1<void, unsigned long> signal_tocModified;
+    sigc::signal<void(unsigned long)> signal_tocModified;
 
   protected:
     static const char *sample2string(unsigned long sample);
@@ -67,12 +61,13 @@ class AudioCDView : public GenericView
 
   private:
     AudioCDProject *project_;
+    TocEditView* tocEditView_;
 
-    Glib::RefPtr<Gtk::ActionGroup> m_refActionGroup;
+    Glib::RefPtr<TrackInfoDialog> trackInfoDialog_;
+    Glib::RefPtr<AddFileDialog> addFileDialog_;
+    Glib::RefPtr<AddSilenceDialog> addSilenceDialog_;
 
-    TrackInfoDialog *trackInfoDialog_;
-    AddFileDialog addFileDialog_;
-    AddSilenceDialog *addSilenceDialog_;
+    Glib::RefPtr<Gio::SimpleAction> trackInfoAction_;
 
     Mode mode_;
     SampleDisplay *sampleDisplay_;
@@ -81,40 +76,37 @@ class AudioCDView : public GenericView
     Gtk::Label *cursorPos_;
     Gtk::Entry *selectionStartPos_;
     Gtk::Entry *selectionEndPos_;
+    Gtk::Scrollbar *scrollBar_;
 
+    void setup_actions();
+    void tocBlockedMsg();
     void markerSetCallback(unsigned long);
     void cursorMovedCallback(unsigned long);
     void selectionSetCallback(unsigned long, unsigned long);
     void selectAll();
     void selectionClearedCallback();
-    void trackMarkSelectedCallback(const Track *, int trackNr, int indexNr);
+    void trackMarkSelectedCallback(int trackNr, int indexNr);
     void trackMarkMovedCallback(const Track *, int trackNr, int indexNr, unsigned long sample);
-    void viewModifiedCallback(unsigned long, unsigned long);
-    int snapSampleToBlock(unsigned long sample, long *block);
+    int  snapSampleToBlock(unsigned long sample, long *block);
 
     void trackInfo();
     void cutTrackData();
     void pasteTrackData();
-
     void addTrackMark();
     void addIndexMark();
     void addPregap();
     void removeTrackMark();
-
     void appendSilence();
     void insertSilence();
-
     void appendTrack();
     void appendFile();
     void insertFile();
-
-    int getMarker(unsigned long *sample);
+    int  getMarker(unsigned long *sample);
     void markerSet();
 
     void selectionSet();
 
-    void drag_data_received_cb(const Glib::RefPtr<Gdk::DragContext> &context, int x, int y,
-                               const Gtk::SelectionData &selection_data, guint info, guint time);
+    bool on_drop(const Glib::ValueBase& value, double x, double y);
 };
 
 #endif

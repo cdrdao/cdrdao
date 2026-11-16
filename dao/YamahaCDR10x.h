@@ -34,9 +34,9 @@ class Track;
 class YamahaCDR10x : public CdrDriver
 {
   public:
-    YamahaCDR10x(ScsiIf *scsiIf, unsigned long options);
+    YamahaCDR10x(std::shared_ptr<ScsiIf> scsiIf, unsigned long options);
     ~YamahaCDR10x();
-    static CdrDriver *instance(ScsiIf *scsiIf, unsigned long options);
+    static CdrDriver *instance(std::shared_ptr<ScsiIf> scsiIf, unsigned long options);
 
     unsigned long getReadCapabilities(const CdToc *, int) const
     {

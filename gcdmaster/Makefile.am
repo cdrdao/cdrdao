@@ -1,101 +1,97 @@
-SUBDIRS = stock
-
 bin_PROGRAMS = gcdmaster
 
 gcdmaster_SOURCES = \
-	AddFileDialog.cc 	\
-	AddSilenceDialog.cc 	\
+	AddFileDialog.h		\
+	AddFileDialog.cc	\
+	AddSilenceDialog.h	\
+	AddSilenceDialog.cc	\
+	AudioCDProject.h	\
 	AudioCDProject.cc 	\
-	AudioCDView.cc 		\
-	BlankCDDialog.cc 	\
-	CdDevice.cc 		\
-	CdTextDialog.cc 	\
+	AudioCDRead.h		\
+	AudioCDRead.cc		\
+	AudioCDView.h		\
+	AudioCDView.cc		\
+	BlankCDDialog.cc	\
+	CddbWindow.h		\
+	CddbWindow.cc		\
+	CdDevice.h		\
+	CdDevice.cc		\
+	DeviceMonitor.h		\
+	DeviceMonitor.cc	\
+	CdrdaoDirect.h		\
+	CdrdaoDirect.cc		\
 	ConfigManager.cc	\
-	DeviceConfDialog.cc 	\
-	DeviceList.cc 		\
-	DumpCDProject.cc 	\
-	DuplicateCDProject.cc 	\
+	DeviceSelector.h	\
+	DeviceSelector.cc	\
 	gcdmaster.cc 		\
-	GenericView.cc 		\
+	main.cc			\
 	guiUpdate.cc 		\
-	Icons.cc		\
+	MessageBox.h		\
 	MessageBox.cc 		\
 	PreferencesDialog.cc	\
-	ProcessMonitor.cc 	\
-	ProgressDialog.cc 	\
-	Project.cc 		\
-	ProjectChooser.cc 	\
-	RecordCDSource.cc 	\
-	RecordCDTarget.cc 	\
-	RecordHDTarget.cc 	\
-	RecordTocDialog.cc 	\
-	RecordTocSource.cc 	\
-	SampleDisplay.cc 	\
-	SampleManager.cc 	\
-	Settings.cc 		\
-	TaskManager.cc		\
-	TextEdit.cc 		\
-	TocEdit.cc 		\
-	TocEditView.cc 		\
-	TocInfoDialog.cc 	\
-	TrackDataScrap.cc 	\
-	TrackInfoDialog.cc 	\
-	TrackManager.cc 	\
-	xcdrdao.cc		\
-	AddFileDialog.h		\
-	DumpCDProject.h		\
-	ProjectChooser.h	\
-	SoundIF.h		\
-	AddSilenceDialog.h	\
-	DuplicateCDProject.h	\
-	Project.h		\
-	TextEdit.h		\
-	gcdmaster.h		\
+	ProcessMonitor.cc	\
+	ProgressDialog.cc	\
 	RecordCDSource.h	\
-	TocEdit.h		\
-	AudioCDProject.h	\
+	RecordCDSource.cc	\
 	RecordCDTarget.h	\
+	RecordCDTarget.cc	\
+	RecordTocDialog.h	\
+	RecordTocDialog.cc	\
+	RecordTocSource.h	\
+	RecordTocSource.cc	\
+	SampleDisplay.h		\
+	SampleDisplay.cc	\
+	SampleManager.h		\
+	SampleManager.cc	\
+	Settings.h		\
+	Settings.cc 		\
+	SoundIF.h		\
+	TaskManager.h		\
+	TaskManager.cc		\
+	TextEdit.h		\
+	TextEdit.cc		\
+	TocEdit.h		\
+	TocEdit.cc 		\
 	TocEditView.h		\
-	AudioCDView.h		\
-	GenericView.h		\
-	RecordHDTarget.h	\
+	TocEditView.cc 		\
 	TocInfoDialog.h		\
+	TocInfoDialog.cc	\
+	TrackDataScrap.h	\
+	TrackDataScrap.cc	\
+	TrackInfoDialog.h	\
+	TrackInfoDialog.cc	\
+	TrackManager.h		\
+	TrackManager.cc		\
+	gcdmaster.h		\
+	GenericView.h		\
 	BlankCDDialog.h		\
 	guiUpdate.h		\
-	RecordTocDialog.h	\
-	TrackDataScrap.h	\
-	CdDevice.h		\
-	Icons.h			\
-	RecordTocSource.h	\
-	TrackInfoDialog.h	\
-	CdTextDialog.h		\
-	MessageBox.h		\
-	SampleDisplay.h		\
-	TrackManager.h		\
-	TaskManager.h		\
-	DeviceConfDialog.h	\
 	ProcessMonitor.h	\
-	SampleManager.h		\
 	xcdrdao.h		\
-	DeviceList.h		\
 	ProgressDialog.h	\
 	ConfigManager.h		\
-	PreferencesDialog.h	\
+	PreferencesDialog.h
 	Settings.h
 
 EXTRA_gcdmaster_SOURCES =	\
 	SoundIF-ao.cc 		\
 	SoundIF-linux.cc 	\
 	SoundIF-none.cc 	\
-	SoundIF-solaris.cc
+	SoundIF-solaris.cc	\
+	DeviceMonitorLinux.cc	\
+	DeviceMonitorFreeBSD.cc	\
+	DeviceMonitorNetBSD.cc	\
+	DeviceMonitorOSX.cc	\
+	DeviceMonitorWindows.cc	\
+	DeviceMonitorNull.cc
 
-gladedir = $(datadir)/gcdmaster/glade
-glade_DATA = 			\
-	glade/Preferences.glade	\
-	glade/ProjectChooser.glade
+nodist_gcdmaster_SOURCES = resources.cc
+
+BUILT_SOURCES = resources.cc resources.h
 
 gcdmaster_LDADD =					\
 	@sound_if_obj@					\
+	@device_monitor_obj@				\
 	$(top_builddir)/dao/libdao.a			\
 	$(top_builddir)/paranoia/libcdda_paranoia.a	\
 	$(top_builddir)/trackdb/libtrackdb.a		\
@@ -125,13 +121,13 @@ gcdmaster_DEPENDENCIES = \
 	$(top_builddir)/dao/libdao.a			\
 	$(top_builddir)/paranoia/libcdda_paranoia.a	\
 	$(top_builddir)/trackdb/libtrackdb.a		\
-	@sound_if_obj@
+	@sound_if_obj@					\
+	@device_monitor_obj@
 
 AM_CPPFLAGS =					\
 	-I$(srcdir)/../trackdb			\
 	-I$(srcdir)/../paranoia			\
-	-I$(srcdir)/../dao			\
-	-DCDRDAO_GLADEDIR=\""$(gladedir)"\"
+	-I$(srcdir)/../dao
 
 man1_MANS = gcdmaster.man
 
@@ -153,14 +149,29 @@ icon_DATA = gcdmaster.png gcdmaster-doc.png
 gsettings_SCHEMAS = org.gnome.gcdmaster.gschema.xml
 @GSETTINGS_RULES@
 
+resources.cc: ui/gresource.xml
+	glib-compile-resources \
+		--target=$@ \
+		--sourcedir=ui \
+		--generate-source \
+		$<
+resources.h: ui/gresource.xml
+	glib-compile-resources \
+		--target=$@ \
+		--sourcedir=ui \
+		--generate-header \
+		$<
+
+CLEANFILES = resources.cc resources.h
+
 EXTRA_DIST = \
 	$(man1_MANS)	\
-	$(glade_DATA)	\
 	$(mimeinfo_DATA)\
 	$(desktop_DATA)	\
 	$(icon_DATA)	\
 	$(freedesktop_DATA)	\
 	$(appreg_DATA)	\
+	gresource.xml \
 	org.gnome.gcdmaster.gschema.xml \
+	$(RESOURCE_DEPS) \
 	BUGS TASKS
-

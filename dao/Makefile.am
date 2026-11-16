@@ -29,14 +29,14 @@ libdao_a_SOURCES = \
 	SonyCDU920.cc		\
 	SonyCDU948.cc		\
 	ToshibaReader.cc	\
-	CdTextEncoder.cc	\
+	CdTextSubChannelEncoder.cc	\
 	Settings.cc		\
 	CDD2600Base.h		\
 	CDD2600.h		\
 	cdda_interface.h	\
 	cdrdao.h		\
 	CdrDriver.h		\
-	CdTextEncoder.h		\
+	CdTextSubChannelEncoder.h	\
 	dao.h			\
 	data.h			\
 	GenericMMC.h		\
@@ -50,6 +50,7 @@ libdao_a_SOURCES = \
 	remote.h		\
 	RicohMP6200.h		\
 	ScsiIf.h		\
+	ScsiIf-common.cc	\
 	Settings.h		\
 	sg_err.h		\
 	SonyCDU920.h		\
@@ -63,7 +64,6 @@ libdao_a_SOURCES = \
 EXTRA_libdao_a_SOURCES = 	\
 	decodeSense.cc		\
 	sg_err.cc		\
-	ScsiIf-common.cc	\
 	ScsiIf-linux.cc		\
 	ScsiIf-freebsd-cam.cc	\
 	ScsiIf-netbsd.cc	\

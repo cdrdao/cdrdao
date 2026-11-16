@@ -1,0 +1,5 @@
+// simplest cue sheet
+
+TRACK AUDIO
+NO COPY // so that all CTL flags are 0
+SILENCE 1:0:0

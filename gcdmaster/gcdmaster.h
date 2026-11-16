@@ -27,62 +27,60 @@
 
 class ProjectChooser;
 class BlankCDDialog;
-#include "BlankCDDialog.h"
-#include "Project.h"
+class BlankCDDialog;
+class TocEdit;
+class PreferencesDialog;
 
-class GCDMaster : public Gtk::ApplicationWindow
+// This is the "top-level" application, acting as a singleton
+
+class GCDWindow : public Gtk::ApplicationWindow
+{
+public:
+    GCDWindow();
+    GCDWindow(BaseObjectType* cobject);
+
+    virtual void update(unsigned long level) = 0;
+};
+
+class GCDMaster : public Gtk::Application
 {
   public:
-    GCDMaster();
+    static Glib::RefPtr<GCDMaster> create();
 
-    bool closeProject();
-    void closeChooser();
-    bool on_delete_event(GdkEventAny *e);
-    bool openNewProject(const std::string &);
-    void openProject();
-    void newChooserWindow();
-    void newAudioCDProject2();
-    void newAudioCDProject(const char *name, TocEdit *tocEdit, const char *tracks = NULL);
-    void newDuplicateCDProject();
-    void newDumpCDProject();
-
+    void openNewProject(const Glib::ustring path);
+    void newEmptyProject();
     void update(unsigned long level);
 
-    void configureDevices();
-    void configurePreferences();
-    void blankCDRW();
-
-    void registerStockIcons();
-
-    static void appClose();
-
-    static std::list<GCDMaster *> apps;
-
   private:
-    Project *project_;
-    ProjectChooser *chooser_;
-    gint project_number;
+    GCDMaster();
 
-    BlankCDDialog blankCDDialog_;
+    Glib::RefPtr<Gtk::Builder> builder_;
 
-    Gtk::Box box_;
-    Gtk::Notebook notebook_;
-    Gtk::HBox *container_;
+    void on_startup() override;
+    void on_activate() override;
+    void on_action_quit();
+    void on_action_preferences();
+    void on_action_about();
+    void on_action_blank_cdrw();
+    void on_action_close();
+    void on_action_open();
+    void on_action_open_finish(const Glib::RefPtr<Gio::AsyncResult>&);
+    void on_open(const type_vec_files& files, const Glib::ustring& hint) override;
+    void speedChanged();
+    void speedButtonChanged();
 
-    Glib::RefPtr<Gtk::UIManager> m_refUIManager;
-    Glib::RefPtr<Gtk::ActionGroup> m_refActionGroup;
+    // Windows
+    Gtk::AboutDialog about_;
+    Glib::RefPtr<Gtk::FileDialog> openFileChooser_;
+    Glib::RefPtr<Gtk::FileFilter> openFilter_;
+    Glib::RefPtr<Gtk::FileFilter> allFilter_;
+    BlankCDDialog* blanker_ = nullptr;
+    PreferencesDialog* preferences_ = nullptr;
 
-    Gtk::Statusbar *statusbar_;
-    Gtk::ProgressBar *progressbar_;
-    Gtk::Spinner *spinner_;
-    Gtk::Button *progressButton_;
-    Gtk::AboutDialog *about_;
+    sigc::connection updateSignal_;
 
-    Gtk::FileChooserDialog *readFileSelector_;
-    void createMenus();
-    void createStatusbar();
-    void aboutDialog();
-    void on_about_ok(int);
+    int argc;
+    char** argv;
 };
 
 #endif

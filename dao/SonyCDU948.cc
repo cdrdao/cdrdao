@@ -25,11 +25,11 @@
 #include "PWSubChannel96.h"
 #include "SonyCDU948.h"
 
-#include "CdTextEncoder.h"
+#include "CdTextSubChannelEncoder.h"
 #include "Toc.h"
 #include "log.h"
 
-SonyCDU948::SonyCDU948(ScsiIf *scsiIf, unsigned long options) : SonyCDU920(scsiIf, options)
+SonyCDU948::SonyCDU948(std::shared_ptr<ScsiIf> scsiIf, unsigned long options) : SonyCDU920(scsiIf, options)
 {
     driverName_ = "Sony CDU948 - Version 0.1 (data) (alpha)";
 
@@ -45,7 +45,7 @@ SonyCDU948::~SonyCDU948()
 }
 
 // static constructor
-CdrDriver *SonyCDU948::instance(ScsiIf *scsiIf, unsigned long options)
+CdrDriver *SonyCDU948::instance(std::shared_ptr<ScsiIf> scsiIf, unsigned long options)
 {
     return new SonyCDU948(scsiIf, options);
 }
@@ -153,7 +153,7 @@ int SonyCDU948::initDao(const Toc *toc)
     long n;
 
     delete cdTextEncoder_;
-    cdTextEncoder_ = new CdTextEncoder(toc);
+    cdTextEncoder_ = new CdTextSubChannelEncoder(toc);
     if (cdTextEncoder_->encode() != 0) {
         log_message(-2, "CD-TEXT encoding failed.");
         return 1;

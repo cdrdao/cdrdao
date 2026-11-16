@@ -334,8 +334,9 @@ static int writer(const Toc *toc, CdrDriver *cdr, BufferHeader *header, long lba
 
         if (buf.trackNr > 0) {
             log_message(1, "Writing track %02d (mode %s/%s %s)...", buf.trackNr,
-                        TrackData::mode2String(buf.trackMode), TrackData::mode2String(dataMode),
-                        TrackData::subChannelMode2String(subChanMode));
+                        TrackData::mode2String(buf.trackMode).c_str(),
+                        TrackData::mode2String(dataMode).c_str(),
+                        TrackData::subChannelMode2String(subChanMode).c_str());
 
             actTrackNr = buf.trackNr;
         }
@@ -636,6 +637,25 @@ int writeDiskAtOnce(const Toc *toc, CdrDriver *cdr, int nofBuffers, int swap, in
 
     if (!testMode) {
         const DiskInfo *di;
+
+        if (toc->hasCdText()) {
+            switch (cdr->cdTextWrite()) {
+            case CdrDriver::CdTextWrite::UNSUPPORTED:
+                log_message(-1, "TOC contains CD-TEXT data, but driver '%s' (options 0x%04lx) "
+                                "does not support writing CD-TEXT for this drive.",
+                            cdr->driverName(), cdr->options());
+                log_message(-1, "CD-TEXT will NOT be written. For generic-mmc drivers, use driver "
+                                "option 0x10 (e.g. --driver generic-mmc:0x10) to force it.");
+                break;
+            case CdrDriver::CdTextWrite::DISABLED:
+                log_message(-1, "TOC contains CD-TEXT data, but CD-TEXT writing is disabled "
+                                "by driver option 0x%04lx.", cdr->options());
+                log_message(-1, "CD-TEXT will NOT be written.");
+                break;
+            case CdrDriver::CdTextWrite::ENABLED:
+                break;
+            }
+        }
 
         if (cdr->initDao(toc) != 0) {
             err = 1;

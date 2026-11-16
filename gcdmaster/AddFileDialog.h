@@ -24,7 +24,7 @@
 
 class AudioCDProject;
 
-class AddFileDialog : public Gtk::FileChooserDialog
+class AddFileDialog : public Gtk::FileDialog
 {
   public:
     enum Mode {
@@ -33,24 +33,20 @@ class AddFileDialog : public Gtk::FileChooserDialog
         M_INSERT_FILE
     };
 
-    AddFileDialog(AudioCDProject *);
+    static Glib::RefPtr<AddFileDialog> create(AudioCDProject* project);
 
-    void start();
-    void stop();
-
-    void mode(Mode);
-    void update(unsigned long level)
-    {
-    }
-
-    bool on_delete_event(GdkEventAny *);
+    void start(Mode);
 
   private:
-    AudioCDProject *project_;
-    bool active_;
-    Mode mode_;
+    AddFileDialog(AudioCDProject *);
 
-    bool applyAction();
+    void on_file_dialog_finish(const Glib::RefPtr<Gio::AsyncResult>& result);
+    bool applyAction(const std::vector<Glib::RefPtr<Gio::File>>& files);
+    void mode(Mode);
+
+    AudioCDProject *project_;
+    Mode mode_;
+    Glib::RefPtr<Gio::ListStore<Gtk::FileFilter>> filters_;
 };
 
 #endif

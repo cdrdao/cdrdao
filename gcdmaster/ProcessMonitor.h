@@ -42,6 +42,9 @@
 #ifndef __PROCESS_MONITOR_H__
 #define __PROCESS_MONITOR_H__
 
+#include <vector>
+#include <string>
+
 class Process
 {
   public:
@@ -74,7 +77,7 @@ class ProcessMonitor
 
     int statusChanged();
 
-    Process *start(const char *, const char **args, int pipeFdArgNum);
+    Process *start(const std::string&, std::vector<std::string>& args, int pipeFdArgNum);
     void stop(Process *);
 
     void remove(Process *);

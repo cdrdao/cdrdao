@@ -25,44 +25,29 @@
 
 class TocEdit;
 class CdDevice;
-class DeviceList;
+class DeviceSelector;
 
-class RecordCDTarget : public Gtk::VBox
+class RecordCDTarget : public Gtk::Box
 {
   public:
     RecordCDTarget(Gtk::Window *);
-    ~RecordCDTarget();
-
-    void start();
-    void stop();
 
     void update(unsigned long level);
 
-    DeviceList *getDeviceList()
-    {
-        return DEVICES;
-    }
+    DeviceSelector *deviceSelector() { return devices_; }
     int getMultisession();
     int getCopies();
     int getSpeed();
     bool getEject();
     bool getOverburn();
-    int checkEjectWarning(Gtk::Window *);
     bool getReload();
-    int checkReloadWarning(Gtk::Window *);
     int getBuffer();
 
-    void cancelAction();
-
   private:
-    int active_;
-
-    DeviceList *DEVICES;
-
-    int speed_;
-
+    DeviceSelector *devices_;
+    int speed_ = 1;
     Gtk::Window *parent_;
-    Gtk::MessageDialog *moreOptionsDialog_;
+    Gtk::Window* moreOptions_ = nullptr;
 
     Gtk::CheckButton *closeSessionButton_;
     Gtk::CheckButton *ejectButton_;
@@ -79,7 +64,6 @@ class RecordCDTarget : public Gtk::VBox
     void updateBufferRAMLabel();
 
     void moreOptions();
-
     void speedButtonChanged();
     void speedChanged();
 };

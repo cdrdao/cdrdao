@@ -109,6 +109,8 @@ class Toc
     void addCdTextItem(int trackNr, CdTextItem *);
     void removeCdTextItem(int trackNr, CdTextItem::PackType, int blockNr);
     int existCdTextBlock(int blockNr) const;
+    // True if the global or any track CD-TEXT block holds a non-empty item.
+    bool hasCdText() const;
     const CdTextItem *getCdTextItem(int trackNr, int blockNr, CdTextItem::PackType) const;
     int nofCdTextItems()
     {
@@ -258,7 +260,7 @@ class TocReader
     long readSamples(Sample *buf, long len);
     void closeData();
 
-    const char *curFilename();
+    const std::string curFilename();
 
   private:
     const Toc *toc_;

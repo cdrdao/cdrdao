@@ -20,15 +20,16 @@
 #ifndef __CD_DEVICE_H__
 #define __CD_DEVICE_H__
 
-#include <gdk/gdk.h>
-#include <sigc++/trackable.h>
+#include <gtkmm.h>
 #include <string>
+#include <vector>
 
-#include "Project.h"
+#include "DeviceMonitor.h"
 
 class TocEdit;
 class Process;
 class ScsiIf;
+class CdrDriver;
 
 class CdDevice : public sigc::trackable
 {
@@ -37,11 +38,14 @@ class CdDevice : public sigc::trackable
         DEV_READY,
         DEV_RECORDING,
         DEV_READING,
-        DEV_WAITING,
+        DEV_SPINNING_UP,
         DEV_BUSY,
-        DEV_NO_DISK,
+        DEV_NO_DISC,
         DEV_BLANKING,
         DEV_FAULT,
+        DEV_LOCKED,
+        DEV_TRAY_OPEN,
+        DEV_BAD_DISC,
         DEV_UNKNOWN
     };
     enum DeviceType {
@@ -58,80 +62,54 @@ class CdDevice : public sigc::trackable
         A_NONE
     };
 
-    CdDevice(const char *dev, const char *vendor, const char *product);
+    CdDevice(const std::string& dev, const std::string& vendor, const std::string& product);
     ~CdDevice();
 
     Glib::ustring settingString() const;
 
-    const char *dev() const
-    {
-        return dev_.c_str();
-    }
-    const char *vendor() const
-    {
-        return vendor_.c_str();
-    }
-    const char *product() const
-    {
-        return product_.c_str();
-    }
+    const std::string& dev() const { return dev_; }
+    const std::string& vendor() const { return vendor_; }
+    const std::string& product() const { return product_; }
+    const std::string& description() const { return description_; }
 
-    Status status() const
-    {
-        return status_;
-    }
-    Process *process() const
-    {
-        return process_;
-    }
+    Status status() const { return status_; }
+    Process *process() const { return process_; }
 
     int exitStatus() const;
 
     void status(Status);
     int updateStatus();
 
-    Action action() const
-    {
-        return action_;
-    }
+    Action action() const { return action_; }
 
     bool updateProgress(Glib::IOCondition, int fd);
 
     int autoSelectDriver();
 
-    int driverId() const
-    {
-        return driverId_;
-    }
-    void driverId(int);
+    const std::string& driver() const { return driver_; }
+    void driver(const std::string& d) { driver_ = d; }
 
     DeviceType deviceType() const;
+    std::string deviceTypeName() const { return CdDevice::deviceType2string(deviceType()); }
     void deviceType(DeviceType);
+    void deviceType(const std::string& t) { deviceType(CdDevice::devtypeName2Id(t)); }
 
     unsigned long driverOptions() const;
     void driverOptions(unsigned long);
 
-    bool manuallyConfigured() const
-    {
-        return manuallyConfigured_;
-    }
-    void manuallyConfigured(bool b)
-    {
-        manuallyConfigured_ = b;
-    }
+    bool manuallyConfigured() const { return manuallyConfigured_; }
+    void manuallyConfigured(bool b) { manuallyConfigured_ = b; }
 
     bool ejectCd(bool load = false);
-    bool loadCd()
-    {
-        return ejectCd(true);
-    }
+    bool loadCd() { return ejectCd(true); }
 
     bool recordDao(Gtk::Window &parent, TocEdit *, int simulate, int multiSession, int speed,
                    int eject, int reload, int buffer, int overburn);
     void abortDaoRecording();
 
-    int extractDao(Gtk::Window &parent, const char *tocFileName, int correction,
-                   int readSubChanMode);
+    int extractDao(Gtk::Window &parent,
+		   const std::string& tocFile, const std::string& dataFile,
+		   int correction,int readSubChanMode);
     void abortDaoReading();
 
     int duplicateDao(Gtk::Window &parent, int simulate, int multiSession, int speed, int eject,
@@ -146,79 +124,83 @@ class CdDevice : public sigc::trackable
     void progress(int *status, int *totalTracks, int *track, int *trackProgress, int *totalProgress,
                   int *bufferFill, int *writerFill) const;
 
-    static int maxDriverId();
-    static const char *driverName(int id);
-    static int driverName2Id(const char *);
+    CdrDriver* cdDriver() { return cdDriver_; }
 
-    static const char *status2string(Status);
-    static const char *deviceType2string(DeviceType);
+    sigc::signal<void(CdDevice*)> signalProcessFinished;
+
+    // Static methods
+    //
+    
+    static DeviceType devtypeName2Id(const std::string&);
+
+    static const std::string status2string(Status);
+    static const std::string deviceType2string(DeviceType);
 
     static void importSettings();
     static void exportSettings();
 
-    static CdDevice *add(const char *scsidev, const char *vendor, const char *product);
+    static CdDevice *add(const std::string& scsidev, const std::string& vendor, const std::string& product);
+    static CdDevice *add(const std::string& setting);
+    static CdDevice *find(const std::string dev);
+    static bool scan();
 
-    static CdDevice *add(const char *setting);
-
-    static CdDevice *find(const char *dev);
-
-    static void scan();
-
-    static void remove(const char *dev);
+    // Reconcile DEVICE_LIST with the set of devices reported by a
+    // DeviceMonitor. New devices are added, devices that have disappeared
+    // are removed; entries that persist keep their existing CdDevice
+    // object (and thus their status and any running process). Returns true
+    // if the list was modified.
+    static bool updateDeviceList(const std::vector<DeviceMonitor::DeviceInfo>& devices);
 
     static void clear();
+    static int update();
 
-    static CdDevice *first();
-    static CdDevice *next(const CdDevice *);
-
-    static int updateDeviceStatus();
-
-    /* not used anymore since Gtk::Main::input signal will call
-     * CdDevice::updateProgress directly.
-
-     static int updateDeviceProgress();
-    */
-
-    static int count();
+    static std::vector<CdDevice*>&   deviceList()  { return DEVICE_LIST; }
+    static std::vector<std::string>& driverNames() { return DRIVER_NAMES; }
+    static std::vector<std::string>  deviceNames() { return DEV_TYPE_NAMES; }
 
   private:
     std::string dev_; // SCSI device
     std::string vendor_;
     std::string product_;
+    std::string description_;
 
-    DeviceType deviceType_;
+    DeviceType deviceType_ = CD_R;
 
-    int driverId_;
-    unsigned long driverOptions_;
+    std::string driver_;
+    unsigned long driverOptions_ = 0;
+    bool manuallyConfigured_ = false;
 
-    bool manuallyConfigured_;
-
-    ScsiIf *scsiIf_;
-    int scsiIfInitFailed_;
-    Status status_;
+    std::shared_ptr<ScsiIf> scsiIf_;
+    CdrDriver* cdDriver_ = nullptr;
+    Status status_ = DEV_UNKNOWN;
 
     enum Action action_;
 
-    int exitStatus_;
+    int exitStatus_ = 0;
 
-    int progressStatusChanged_;
-    int progressStatus_;
-    int progressTotalTracks_;
-    int progressTrack_;
-    int progressTotal_;
-    int progressTrackRelative_;
-    int progressBufferFill_;
-    int progressWriterFill_;
+    int progressStatusChanged_ = 0;
+    int progressStatus_ = 0;
+    int progressTotalTracks_ = 0;
+    int progressTrack_ = 0;
+    int progressTotal_ = 0;
+    int progressTrackRelative_ = 0;
+    int progressBufferFill_ = 0;
+    int progressWriterFill_ = 0;
 
-    Process *process_;
+    Process *process_ = nullptr;
 
-    CdDevice *next_;
-    CdDevice *slaveDevice_; // slave device (used when copying etc.)
+    // slave device (used when copying etc.)
+    CdDevice *slaveDevice_ = nullptr;
 
-    void createScsiIf();
+    void createDriver();
+    // Recreates the driver and closes the drive, so that a cdrdao child
+    // process can open it.
+    void releaseDevice();
 
-    static const char *DRIVER_NAMES_[];
-    static CdDevice *DEVICE_LIST_;
+    static std::vector<std::string> DRIVER_NAMES;
+    static std::vector<CdDevice*> DEVICE_LIST;
+    static std::vector<std::string> DEV_TYPE_NAMES;
+    static std::vector<std::string> STATUS_NAMES;
 };
 
 #endif

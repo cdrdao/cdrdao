@@ -17,35 +17,44 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
- * $Log: CdTextEncoder.h,v $
- * Revision 1.1  2000/02/05 01:34:49  llanero
- * Initial revision
- *
- * Revision 1.1  1999/06/13 19:31:15  mueller
- * Initial revision
- *
- */
-
 #ifndef __CD_TEXT_ENCODER_H__
 #define __CD_TEXT_ENCODER_H__
 
-#include "CdTextContainer.h"
+#include <vector>
+
 #include "CdTextItem.h"
-#include "CdrDriver.h"
+#include "util.h"
 
-class CdTextItem;
-class PWSubChannel96;
+class Toc;
 
+// One 18 byte CD-TEXT pack as stored in the lead-in R-W sub-channel, and
+// as returned by the READ TOC/PMA/ATIP (format 5) MMC command.
+struct CdTextPack {
+    unsigned char packType;
+    unsigned char trackNumber;
+    unsigned char sequenceNumber;
+    unsigned char blockCharacter;
+    unsigned char data[12];
+    unsigned char crc0;
+    unsigned char crc1;
+};
+
+static_assert(sizeof(CdTextPack) == 18, "CdTextPack must be 18 bytes");
+
+// Builds the CD-TEXT packs (including SIZE_INFO packs and CRCs) for the
+// CD-TEXT data of a Toc.
 class CdTextEncoder
 {
   public:
     CdTextEncoder(const Toc *);
-    ~CdTextEncoder();
+    virtual ~CdTextEncoder();
 
-    int encode();
+    // Builds the packs. Returns 0 on success.
+    virtual int encode();
 
-    const PWSubChannel96 **getSubChannels(long *subChannelCount);
+    // Packs built by encode(), in lead-in order.
+    std::vector<CdTextPack> getPacks() const;
+    long packCount() const { return packCount_; }
 
     static u8 characterCode(Util::Encoding);
 
@@ -71,9 +80,6 @@ class CdTextEncoder
 
     long packId_;
 
-    PWSubChannel96 **subChannels_;
-    long subChannelCount_;
-
     static unsigned short CRCTAB_[256];
 
     void appendPack(CdTextPackEntry *);
@@ -82,7 +88,6 @@ class CdTextEncoder
     void buildPacks(int blockNr, CdTextItem::PackType type);
     void buildSizeInfoPacks();
     void calcCrcs();
-    void buildSubChannels();
 
     void encodeCdTextItem(int, int, const CdTextItem *);
 };

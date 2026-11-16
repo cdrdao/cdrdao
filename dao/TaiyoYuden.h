@@ -31,10 +31,10 @@
 class TaiyoYuden : public PlextorReader, private CDD2600Base
 {
   public:
-    TaiyoYuden(ScsiIf *scsiIf, unsigned long options);
+    TaiyoYuden(std::shared_ptr<ScsiIf> scsiIf, unsigned long options);
     ~TaiyoYuden();
 
-    static CdrDriver *instance(ScsiIf *scsiIf, unsigned long options);
+    static CdrDriver *instance(std::shared_ptr<ScsiIf> scsiIf, unsigned long options);
 
     // takes little endian samples
     int bigEndianSamples() const

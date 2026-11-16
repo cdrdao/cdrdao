@@ -1,6 +1,6 @@
 /*  cdrdao - write audio CD-Rs in disc-at-once mode
  *
- *  Copyright (C) 2000  Andreas Mueller <mueller@daneb.ping.de>
+ *  Copyright (C) 1998-2001 Andreas Mueller <mueller@daneb.ping.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -17,39 +17,31 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#ifndef __DUPLICATECDPROJECT_H__
-#define __DUPLICATECDPROJECT_H__
+#ifndef __CD_TEXT_SUB_CHANNEL_ENCODER_H__
+#define __CD_TEXT_SUB_CHANNEL_ENCODER_H__
 
-#include "Project.h"
+#include "CdTextEncoder.h"
 
-class RecordCDSource;
-class RecordCDTarget;
+class PWSubChannel96;
 
-class DuplicateCDProject : public Project
+// Extends CdTextEncoder with the R-W sub-channel data needed to write the
+// CD-TEXT packs into the lead-in.
+class CdTextSubChannelEncoder : public CdTextEncoder
 {
   public:
-    DuplicateCDProject(Gtk::Window *parent);
-    ~DuplicateCDProject();
-    bool closeProject();
+    CdTextSubChannelEncoder(const Toc *);
+    ~CdTextSubChannelEncoder() override;
 
-  protected:
-    virtual void createToolbar() {};
+    int encode() override;
+
+    const PWSubChannel96 **getSubChannels(long *subChannelCount);
 
   private:
-    RecordCDSource *CDSource;
-    RecordCDTarget *CDTarget;
+    PWSubChannel96 **subChannels_;
+    long subChannelCount_;
 
-    Gtk::RadioButton *simulate_rb;
-    Gtk::RadioButton *simulateBurn_rb;
-    Gtk::RadioButton *burn_rb;
-
-    void start();
-    void recordToc2CD()
-    {
-    }
-    void projectInfo()
-    {
-    }
-    void update(unsigned long level);
+    void freeSubChannels();
+    void buildSubChannels();
 };
+
 #endif

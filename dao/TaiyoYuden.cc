@@ -32,7 +32,7 @@
 #include "Toc.h"
 #include "log.h"
 
-TaiyoYuden::TaiyoYuden(ScsiIf *scsiIf, unsigned long options)
+TaiyoYuden::TaiyoYuden(std::shared_ptr<ScsiIf> scsiIf, unsigned long options)
     : PlextorReader(scsiIf, options), CDD2600Base(this)
 {
     driverName_ = "Taiyo-Yuden - Version 0.1(alpha)";
@@ -52,7 +52,7 @@ TaiyoYuden::~TaiyoYuden()
 }
 
 // static constructor
-CdrDriver *TaiyoYuden::instance(ScsiIf *scsiIf, unsigned long options)
+CdrDriver *TaiyoYuden::instance(std::shared_ptr<ScsiIf> scsiIf, unsigned long options)
 {
     return new TaiyoYuden(scsiIf, options);
 }

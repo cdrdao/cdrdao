@@ -1024,9 +1024,11 @@ void Cdrdao::showToc(Toc *toc, DaoCommandLine &options)
 
     if (options.verbose > 2) {
         for (const auto &item : toc->globalCdTextItems()) {
-	    std::cout << "          ";
-            item.print(std::cout, filePrintParams);
-	    std::cout << "\n";
+            if (!item.empty()) {
+                std::cout << "          ";
+                item.print(std::cout, filePrintParams);
+                std::cout << "\n";
+            }
         }
     }
 
@@ -1036,10 +1038,10 @@ void Cdrdao::showToc(Toc *toc, DaoCommandLine &options)
         if (tcount > 1)
             printf("\n");
 
-        printf("TRACK %2d  Mode %s", tcount, TrackData::mode2String(t->type()));
+        printf("TRACK %2d  Mode %s", tcount, TrackData::mode2String(t->type()).c_str());
 
         if (t->subChannelType() != TrackData::SUBCHAN_NONE)
-            printf(" %s", TrackData::subChannelMode2String(t->subChannelType()));
+            printf(" %s", TrackData::subChannelMode2String(t->subChannelType()).c_str());
 
         printf(":\n");
 
@@ -1073,9 +1075,11 @@ void Cdrdao::showToc(Toc *toc, DaoCommandLine &options)
 
         if (options.verbose > 2) {
             for (const auto &item : t->getCdTextItems()) {
-		std::cout << "          ";
-                item.print(std::cout, filePrintParams);
-		std::cout << "\n";
+                if (!item.empty()) {
+                    std::cout << "          ";
+                    item.print(std::cout, filePrintParams);
+                    std::cout << "\n";
+                }
             }
         }
 
@@ -1358,11 +1362,10 @@ int Cdrdao::readCddb(const DaoCommandLine &opts, Toc *toc, bool showEntry)
     int err = 0;
     char *p;
     const char *sep = " ,";
-    char *user = NULL;
-    char *host = NULL;
+    std::string user;
+    std::string host;
     struct passwd *pwent;
-    Cddb::QueryResults *qres, *qrun, *qsel;
-    Cddb::CddbEntry *dbEntry;
+    int resultIdx;
 
     Cddb cddb(toc);
 
@@ -1375,111 +1378,106 @@ int Cdrdao::readCddb(const DaoCommandLine &opts, Toc *toc, bool showEntry)
         cddb.appendServer(p.c_str());
 
     if ((pwent = getpwuid(getuid())) != NULL && pwent->pw_name != NULL) {
-        user = strdupCC(pwent->pw_name);
+        user = pwent->pw_name;
     } else {
-        user = strdupCC("unknown");
+        user = "unknown";
     }
 
     {
         struct utsname sinfo;
         if (uname(&sinfo) == 0) {
-            host = strdupCC(sinfo.nodename);
+            host = sinfo.nodename;
         } else {
-            host = strdupCC("unknown");
+            host = "unknown";
         }
     }
 
     if (cddb.connectDb(user, host, "cdrdao", VERSION) != 0) {
         log_message(-2, "Cannot connect to any CDDB server.");
-        err = 2;
-        goto fail;
+        return 2;
     }
 
-    if (cddb.queryDb(&qres) != 0) {
+    if (cddb.queryDb() != 0) {
         log_message(-2, "Querying of CDDB server failed.");
-        err = 2;
-        goto fail;
+        return 2;
     }
 
-    if (qres == NULL) {
+    auto results = cddb.queryResults();
+
+    if (results.size() == 0) {
         log_message(1, "No CDDB record found for this toc-file.");
-        err = 1;
-        goto fail;
+        return 1;
     }
 
-    if (qres->next != NULL || !(qres->exactMatch)) {
-        int qcount;
+    resultIdx = -1;
 
-        if (qres->next == NULL)
+    if (results.size() > 1 || !results[0].exactMatch) {
+
+        if (results.size() == 1)
             log_message(0, "Found following inexact match:");
         else
             log_message(0, "Found following inexact matches:");
 
         log_message(0, "\n    DISKID   CATEGORY     TITLE\n");
 
-        for (qrun = qres, qcount = 0; qrun != NULL; qrun = qrun->next, qcount++) {
-            log_message(0, "%2d. %-8s %-12s %s", qcount + 1, qrun->diskId, qrun->category,
-                        qrun->title);
+        {
+            int idx = 0;
+            for (auto const& qrun : results)
+                log_message(0, "%2d. %-8s %-12s %s", idx++ + 1,
+                            qrun.diskId.c_str(),
+                            qrun.category.c_str(),
+                            qrun.title.c_str());
         }
 
         log_message(0, "\n");
-
-        qsel = NULL;
 
         while (1) {
             char buf[20];
             int sel;
 
-            log_message(0, "Select match, 0 for none [0-%d]?", qcount);
+            log_message(0, "Select match, 0 for none [0-%d]?", results.size());
 
             if (fgets(buf, 20, stdin) == NULL)
                 break;
 
-            for (p = buf; *p != 0 && isspace(*p); p++)
-                ;
+            for (p = buf; *p != 0 && isspace(*p); p++);
 
             if (*p != 0 && isdigit(*p)) {
                 sel = atoi(p);
 
                 if (sel == 0) {
                     break;
-                } else if (sel > 0 && sel <= qcount) {
-                    sel--;
-                    for (qsel = qres, qcount = 0; qsel != NULL && qcount != sel;
-                         qsel = qsel->next, qcount++)
-                        ;
-
+                } else if (sel > 0 && sel <= results.size()) {
+                    resultIdx = sel - 1;
                     break;
                 }
             }
         }
 
-        if (qsel == NULL) {
+        if (resultIdx < 0) {
             log_message(0, "No match selected.");
-            err = 1;
-            goto fail;
+            return 1;
         }
     } else {
-        qsel = qres;
+        resultIdx = 0;
     }
 
-    log_message(1, "Reading CDDB record for: %s-%s-%s", qsel->diskId, qsel->category, qsel->title);
+    auto qsel = results[resultIdx];
 
-    if (cddb.readDb(qsel->category, qsel->diskId, &dbEntry) != 0) {
+    log_message(1, "Reading CDDB record for: %s-%s-%s",
+                qsel.diskId.c_str(), qsel.category.c_str(), qsel.title.c_str());
+
+    auto dbEntry = cddb.readDb(qsel.category, qsel.diskId);
+    if (!dbEntry) {
         log_message(-2, "Reading of CDDB record failed.");
-        err = 2;
-        goto fail;
+        return 2;
     }
 
     if (showEntry)
         cddb.printDbEntry();
 
     if (!cddb.addAsCdText(toc))
-        err = 1;
-
-fail:
-    delete[] user;
-    delete[] host;
+        return 1;
 
     return err;
 }
@@ -1490,10 +1488,18 @@ void Cdrdao::scanBus()
     ScsiIf::ScanData *sdata = ScsiIf::scan(&len);
 
     if (sdata) {
+        bool anyInUse = false;
         for (i = 0; i < len; i++) {
-            log_message(0, "%s : %s, %s, %s", sdata[i].dev.c_str(), sdata[i].vendor,
-                        sdata[i].product, sdata[i].revision);
+            log_message(0, "%s : %s, %s, %s%s", sdata[i].dev.c_str(), sdata[i].vendor.c_str(),
+                        sdata[i].product.c_str(), sdata[i].revision.c_str(),
+                        sdata[i].inUse ? "  (in use)" : "");
+            if (!sdata[i].id.empty() && sdata[i].id != sdata[i].dev)
+                log_message(3, "    also: %s", sdata[i].id.c_str());
+            anyInUse = anyInUse || sdata[i].inUse;
         }
+        if (anyInUse)
+            log_message(0, "Devices marked 'in use' are held by another process, e.g. because "
+                           "a disc in them is mounted.");
         delete[] sdata;
     }
 
@@ -1769,9 +1775,7 @@ int Cdrdao::copyCdOnTheFly(DaoCommandLine &opts, CdrDriver *src, CdrDriver *dst)
          * ASPI layer which is required for the child process
          */
 
-        delete src->scsiIf();
-
-        src->scsiIf(new ScsiIf(opts.sourceScsiDevice));
+        src->scsiIf = ScsiIf::create(opts.sourceScsiDevice);
 
         if (src->scsiIf()->init() != 0) {
             log_message(-2, "Re-init of SCSI interace failed.");
@@ -1884,7 +1888,8 @@ void Cdrdao::printVersion()
 
 
 // Selects driver for device of 'scsiIf'.
-CdrDriver *Cdrdao::selectDriver(DaoCommand cmd, ScsiIf *scsiIf, const std::string &driverId)
+CdrDriver *Cdrdao::selectDriver(DaoCommand cmd, std::shared_ptr<ScsiIf> scsiIf,
+                                const std::string &driverId)
 {
     unsigned long options = 0;
     CdrDriver *ret = NULL;
@@ -1911,15 +1916,18 @@ CdrDriver *Cdrdao::selectDriver(DaoCommand cmd, ScsiIf *scsiIf, const std::strin
 
         // for reading commands try to select a special read driver first:
         if (cmd == READ_TOC || cmd == READ_CD)
-            id = CdrDriver::selectDriver(0, scsiIf->vendor(), scsiIf->product(), &options);
+            id = CdrDriver::selectDriver(0, scsiIf->vendor().c_str(),
+                                         scsiIf->product().c_str(), &options);
 
         // try to select a write driver
         if (id == NULL)
-            id = CdrDriver::selectDriver(1, scsiIf->vendor(), scsiIf->product(), &options);
+            id = CdrDriver::selectDriver(1, scsiIf->vendor().c_str(),
+                                         scsiIf->product().c_str(), &options);
         // if no driver is selected, yet, try to select a read driver for
         // disc-info
         if (id == NULL && (cmd == DISK_INFO || cmd == MSINFO || cmd == DISCID))
-            id = CdrDriver::selectDriver(0, scsiIf->vendor(), scsiIf->product(), &options);
+            id = CdrDriver::selectDriver(0, scsiIf->vendor().c_str(),
+                                         scsiIf->product().c_str(), &options);
         // Still no driver, try to autodetect one
         if (id == NULL)
             id = CdrDriver::detectDriver(scsiIf, &options);
@@ -1928,8 +1936,8 @@ CdrDriver *Cdrdao::selectDriver(DaoCommand cmd, ScsiIf *scsiIf, const std::strin
             ret = CdrDriver::createDriver(id, options, scsiIf);
         } else {
             log_message(0, "");
-            log_message(-2, "No driver found for '%s %s', available drivers:\n", scsiIf->vendor(),
-                        scsiIf->product());
+            log_message(-2, "No driver found for '%s %s', available drivers:\n",
+                        scsiIf->vendor().c_str(), scsiIf->product().c_str());
             CdrDriver::printDriverIds();
 
             log_message(0, "\nFor all recent recorder models either the 'generic-mmc' or");
@@ -1955,15 +1963,17 @@ std::string Cdrdao::getDefaultDevice(DaoDeviceType req)
 
     if (sdata) {
         for (i = 0; i < len; i++) {
+            if (sdata[i].inUse)
+                continue;
 
-            ScsiIf testif(sdata[i].dev.c_str());
+            auto testif = ScsiIf::create(sdata[i].dev);
 
-            if (testif.init() != 0) {
+            if (!testif || testif->init() != 0) {
                 continue;
             }
             cd_page_2a *p2a;
 
-            if (!(p2a = testif.checkMmc()))
+            if (!(p2a = testif->checkMmc()))
                 continue;
 
             if (req == NEED_CDR_R && !p2a->cd_r_read)
@@ -1988,7 +1998,6 @@ CdrDriver *Cdrdao::setupDevice(DaoCommand cmd, const std::string &scsiDevice,
 			       int initDevice, int checkReady, int checkEmpty, int readingSpeed,
 			       bool remote, bool reload)
 {
-    ScsiIf *scsiIf = NULL;
     CdrDriver *cdr = NULL;
     DiskInfo *di = NULL;
     int inquiryFailed = 0;
@@ -1996,13 +2005,17 @@ CdrDriver *Cdrdao::setupDevice(DaoCommand cmd, const std::string &scsiDevice,
     int initTries = 2;
     int ret = 0;
 
-    scsiIf = new ScsiIf(scsiDevice.c_str());
+    auto scsiIf = ScsiIf::create(scsiDevice);
+
+    if (!scsiIf) {
+        log_message(-2, "Cannot open SCSI device '%s'.", scsiDevice.c_str());
+        return NULL;
+    }
 
     switch (scsiIf->init()) {
     case 1:
-        log_message(-2, "Please use option '--device device'"
-                        ", e.g. --device /dev/cdrom");
-        delete scsiIf;
+        log_message(-2, "Run 'cdrdao scanbus' to list devices, and select one with "
+                        "'--device device'.");
         return NULL;
         break;
     case 2:
@@ -2010,18 +2023,17 @@ CdrDriver *Cdrdao::setupDevice(DaoCommand cmd, const std::string &scsiDevice,
         break;
     }
 
-    log_message(2, "%s: %s %s\tRev: %s", scsiDevice.c_str(), scsiIf->vendor(), scsiIf->product(),
-                scsiIf->revision());
+    log_message(2, "%s: %s %s\tRev: %s", scsiDevice.c_str(),
+                scsiIf->vendor().c_str(), scsiIf->product().c_str(),
+                scsiIf->revision().c_str());
 
     if (inquiryFailed && driverId.empty()) {
         log_message(-2, "Inquiry failed and no driver id is specified.");
         log_message(-2, "Please use option --driver to specify a driver id.");
-        delete scsiIf;
         return NULL;
     }
 
     if ((cdr = selectDriver(cmd, scsiIf, driverId)) == NULL) {
-        delete scsiIf;
         return NULL;
     }
 
@@ -2050,7 +2062,6 @@ CdrDriver *Cdrdao::setupDevice(DaoCommand cmd, const std::string &scsiDevice,
                     break;
                 if (ret == 1) {
                     delete cdr;
-                    delete scsiIf;
                     return NULL;
                 }
                 log_message(-1, "Unit not ready, still trying...");
@@ -2059,7 +2070,6 @@ CdrDriver *Cdrdao::setupDevice(DaoCommand cmd, const std::string &scsiDevice,
             if (ret != 0) {
                 log_message(-2, "Unit not ready, giving up.");
                 delete cdr;
-                delete scsiIf;
                 return NULL;
             }
 
@@ -2076,7 +2086,6 @@ CdrDriver *Cdrdao::setupDevice(DaoCommand cmd, const std::string &scsiDevice,
             if ((di = cdr->diskInfo()) == NULL) {
                 log_message(-2, "Cannot get disk information.");
                 delete cdr;
-                delete scsiIf;
                 return NULL;
             }
 
@@ -2091,7 +2100,6 @@ CdrDriver *Cdrdao::setupDevice(DaoCommand cmd, const std::string &scsiDevice,
 
                 if (cdr->loadUnload(1) != 0) {
                     delete cdr;
-                    delete scsiIf;
                     return NULL;
                 }
 
@@ -2101,7 +2109,6 @@ CdrDriver *Cdrdao::setupDevice(DaoCommand cmd, const std::string &scsiDevice,
                 if (cdr->loadUnload(0) != 0) {
                     log_message(-2, "Cannot load tray.");
                     delete cdr;
-                    delete scsiIf;
                     return NULL;
                 }
 

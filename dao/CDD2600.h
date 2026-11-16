@@ -28,10 +28,10 @@ class Track;
 class CDD2600 : public CdrDriver, private CDD2600Base
 {
   public:
-    CDD2600(ScsiIf *scsiIf, unsigned long options);
+    CDD2600(std::shared_ptr<ScsiIf> scsiIf, unsigned long options);
     ~CDD2600();
 
-    static CdrDriver *instance(ScsiIf *scsiIf, unsigned long options);
+    static CdrDriver *instance(std::shared_ptr<ScsiIf> scsiIf, unsigned long options);
 
     unsigned long getReadCapabilities(const CdToc *, int) const
     {
