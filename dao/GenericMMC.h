@@ -95,10 +95,7 @@ class GenericMMC : public CdrDriver
     /*! \brief MMC compatible drives take little endian samples
       \return 0
     */
-    int bigEndianSamples() const
-    {
-        return 0;
-    }
+    int bigEndianSamples() const { return 0; }
 
     /*! \brief Sanity checking of the TOC
 
@@ -243,15 +240,15 @@ class GenericMMC : public CdrDriver
     int subChannelEncodingMode(TrackData::SubChannelMode) const;
 
   protected:
-    int scsiTimeout_;              // Timeout for commands on the target
-    Msf leadInStart_;              // Start of lead-in
-    long leadInLen_;               // Length of lead-in
-    long leadOutLen_;              // Length if lead-out
-    DiskInfo diskInfo_;            // Various info about the inserted media
-    DriveInfo *driveInfo_;         // Various info about the device
+    int scsiTimeout_;                        // Timeout for commands on the target
+    Msf leadInStart_;                        // Start of lead-in
+    long leadInLen_;                         // Length of lead-in
+    long leadOutLen_;                        // Length if lead-out
+    DiskInfo diskInfo_;                      // Various info about the inserted media
+    DriveInfo *driveInfo_;                   // Various info about the device
     CdTextSubChannelEncoder *cdTextEncoder_; // Called by GenericMMC::initDao if needed.
-    bool cdtextEnabled_;           // Write CD-TEXT subchannels
-    bool cdtextDisabled_;          // CD-TEXT turned off by OPT_MMC_NO_CD_TEXT
+    bool cdtextEnabled_;                     // Write CD-TEXT subchannels
+    bool cdtextDisabled_;                    // CD-TEXT turned off by OPT_MMC_NO_CD_TEXT
 
     /*! \brief Determines start and length of lead-in and length of lead-out.
 

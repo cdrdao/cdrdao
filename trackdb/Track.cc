@@ -557,7 +557,7 @@ void Track::collectFiles(std::set<std::string> &set)
     }
 }
 
-void Track::markFileConversion(const std::string& src, const std::string& dst)
+void Track::markFileConversion(const std::string &src, const std::string &dst)
 {
     SubTrack *st;
     for (st = subTracks_; st != NULL; st = st->next_) {
@@ -567,7 +567,7 @@ void Track::markFileConversion(const std::string& src, const std::string& dst)
     }
 }
 
-bool Track::resolveFilename(const std::string& path)
+bool Track::resolveFilename(const std::string &path)
 {
     SubTrack *st;
     for (st = subTracks_; st != NULL; st = st->next_) {

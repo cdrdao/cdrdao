@@ -38,43 +38,22 @@ class Track
     Track(const Track &);
     ~Track();
 
-    TrackData::Mode type() const
-    {
-        return type_;
-    }
-    TrackData::SubChannelMode subChannelType() const
-    {
-        return subChannelType_;
-    }
+    TrackData::Mode type() const { return type_; }
+    TrackData::SubChannelMode subChannelType() const { return subChannelType_; }
 
-    int audioCutMode() const
-    {
-        return audioCutMode_;
-    }
+    int audioCutMode() const { return audioCutMode_; }
 
-    Msf length() const
-    {
-        return length_;
-    }
+    Msf length() const { return length_; }
 
-    Msf start() const
-    {
-        return start_;
-    }
+    Msf start() const { return start_; }
     int start(Msf);
 
-    Msf end() const
-    {
-        return end_;
-    }
+    Msf end() const { return end_; }
     int end(Msf);
 
     int isPadded() const;
 
-    int nofSubTracks() const
-    {
-        return nofSubTracks_;
-    }
+    int nofSubTracks() const { return nofSubTracks_; }
 
     // return first/last sub-track
     const SubTrack *firstSubTrack() const;
@@ -82,10 +61,7 @@ class Track
 
     int append(const SubTrack &);
 
-    int nofIndices() const
-    {
-        return nofIndices_;
-    }
+    int nofIndices() const { return nofIndices_; }
 
     int appendIndex(const Msf &);
     int addIndex(const Msf &index);
@@ -110,83 +86,44 @@ class Track
 
     int check(int trackNr) const;
 
-    int isrcValid() const
-    {
-        return isrcValid_;
-    }
+    int isrcValid() const { return isrcValid_; }
 
     // set ISRC code from given string
     int isrc(const char *); // sets ISRC code
     const char *isrc() const;
 
-    char isrcCountry(int i) const
-    {
-        return isrcCountry_[i];
-    } // ASCII
-    char isrcOwner(int i) const
-    {
-        return isrcOwner_[i];
-    } // ASCII
-    char isrcYear(int i) const
-    {
-        return isrcYear_[i];
-    } // BCD
-    char isrcSerial(int i) const
-    {
-        return isrcSerial_[i];
-    } // BCD
+    char isrcCountry(int i) const { return isrcCountry_[i]; } // ASCII
+    char isrcOwner(int i) const { return isrcOwner_[i]; } // ASCII
+    char isrcYear(int i) const { return isrcYear_[i]; } // BCD
+    char isrcSerial(int i) const { return isrcSerial_[i]; } // BCD
 
     // return/set COPY flag (1: copy permitted, 0: copy not permitted)
-    int copyPermitted() const
-    {
-        return flags_.copy;
-    }
-    void copyPermitted(int c)
-    {
-        flags_.copy = c != 0 ? 1 : 0;
-    }
+    int copyPermitted() const { return flags_.copy; }
+    void copyPermitted(int c) { flags_.copy = c != 0 ? 1 : 0; }
 
     // return/set PRE-EMPHASIS flag (1: audio with pre-emphasis,
     // 0: audio without pre-emphasis
-    int preEmphasis() const
-    {
-        return flags_.preEmphasis;
-    }
-    void preEmphasis(int p)
-    {
-        flags_.preEmphasis = p != 0 ? 1 : 0;
-    }
+    int preEmphasis() const { return flags_.preEmphasis; }
+    void preEmphasis(int p) { flags_.preEmphasis = p != 0 ? 1 : 0; }
 
     // return/set audio type (0: two channel audio, 1: four channel audio)
-    int audioType() const
-    {
-        return flags_.audioType;
-    }
-    void audioType(int t)
-    {
-        flags_.audioType = t != 0 ? 1 : 0;
-    }
+    int audioType() const { return flags_.audioType; }
+    void audioType(int t) { flags_.audioType = t != 0 ? 1 : 0; }
 
     void addCdTextItem(CdTextItem *);
     void removeCdTextItem(CdTextItem::PackType, int blockNr);
-    int existCdTextBlock(int n) const
-    {
-        return cdtext_.existBlock(n);
-    }
+    int existCdTextBlock(int n) const { return cdtext_.existBlock(n); }
     const CdTextItem *getCdTextItem(int blockNr, CdTextItem::PackType t) const
     {
         return cdtext_.getPack(blockNr, t);
     }
-    const CdTextContainer &getCdTextItems() const
-    {
-        return cdtext_;
-    }
+    const CdTextContainer &getCdTextItems() const { return cdtext_; }
 
     void print(std::ostream &, PrintParams &) const;
 
     void collectFiles(std::set<std::string> &set);
-    void markFileConversion(const std::string& src, const std::string& dst);
-    bool resolveFilename(const std::string& path);
+    void markFileConversion(const std::string &src, const std::string &dst);
+    bool resolveFilename(const std::string &path);
     bool recomputeLength();
 
   private:

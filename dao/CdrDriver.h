@@ -73,14 +73,14 @@ struct DiskInfo {
     unsigned int cdrw : 1;   // 1 if disk is a CD-RW
 
     // ATIP fields (CD-R/RW only, see MMC READ TOC/PMA/ATIP format 0100b)
-    int atipCdrw;           // disc type: 1 = CD-RW, 0 = CD-R
-    int atipSubType;        // disc sub-type
-    int atipRefSpeed;       // reference speed code
-    int atipWritePower;     // indicative target writing power code
-    int atipUnrestricted;   // URU bit
-    unsigned char a1[3];    // A1 values
-    unsigned char a2[3];    // A2 values
-    unsigned char a3[3];    // A3 values
+    int atipCdrw;         // disc type: 1 = CD-RW, 0 = CD-R
+    int atipSubType;      // disc sub-type
+    int atipRefSpeed;     // reference speed code
+    int atipWritePower;   // indicative target writing power code
+    int atipUnrestricted; // URU bit
+    unsigned char a1[3];  // A1 values
+    unsigned char a2[3];  // A2 values
+    unsigned char a3[3];  // A3 values
 
     // Write speeds supported by the drive for the inserted medium, in kB/s
     // (1000 bytes/s), from GET PERFORMANCE
@@ -135,9 +135,11 @@ struct CdRawToc {
 };
 
 struct TrackInfo {
-    TrackInfo() :
-	trackNr(0), ctl(0), mode(TrackData::AUDIO),
-	start(0), pregap(0), fill(0), indexCnt(0), bytesWritten(0) {}
+    TrackInfo()
+        : trackNr(0), ctl(0), mode(TrackData::AUDIO), start(0), pregap(0), fill(0), indexCnt(0),
+          bytesWritten(0)
+    {
+    }
     int trackNr;          // track number
     unsigned char ctl;    // flags
     TrackData::Mode mode; // track data mode
@@ -187,10 +189,11 @@ class CdrDriver
     virtual bool rspeed(int);
     // sets/return buffer under run protection setting (if supported by
     // the drive: 1 = enabled, 0 = disbaled
-    virtual int bufferUnderRunProtection() const {
-        return enableBufferUnderRunProtection_; }
-    virtual void bufferUnderRunProtection(int s) {
-        enableBufferUnderRunProtection_ = s != 0 ? 1 : 0; }
+    virtual int bufferUnderRunProtection() const { return enableBufferUnderRunProtection_; }
+    virtual void bufferUnderRunProtection(int s)
+    {
+        enableBufferUnderRunProtection_ = s != 0 ? 1 : 0;
+    }
     // sets/return writing speed control setting (if supported by
     // the drive: 1 = enabled, 0 = disbaled
     virtual int writeSpeedControl() const { return enableWriteSpeedControl_; }
@@ -308,24 +311,18 @@ class CdrDriver
     // 0: raw audio mode, all sectors must be encoded as audio sectors
     // 1: no encoding for MODE1 and MODE2 sectors, MODE2_FORM1 and MODE2_FORM2
     //    are extended by sub header and zero EDC/ECC data
-    int encodingMode() const
-    {
-        return encodingMode_;
-    }
+    int encodingMode() const { return encodingMode_; }
 
     // disk read commands
 
     // analyzes the CD structure (Q sub-channels) of the inserted CD
-    virtual Toc *readDiskToc(int session, const char * fn = nullptr);
+    virtual Toc *readDiskToc(int session, const char *fn = nullptr);
 
     // analyzes the CD structure and reads data
     virtual Toc *readDisk(int session, const char *);
 
     // returns information about inserted medium
-    virtual DiskInfo *diskInfo()
-    {
-        return 0;
-    }
+    virtual DiskInfo *diskInfo() { return 0; }
 
     // returns CDTEXT information
     std::vector<CdTextItem *> generateCdTextItems();
@@ -396,10 +393,10 @@ class CdrDriver
 
     unsigned long readCapabilities_ = 0;
 
-    int blockLength_ = 0;         // length of data block for 'writeData' command
-    long blocksPerWrite_ = 0;     // number of blocks that can be written with a
-                                  // single SCSI WRITE command
-    char *zeroBuffer_ = nullptr;  // zeroed buffer for writing zeros
+    int blockLength_ = 0;        // length of data block for 'writeData' command
+    long blocksPerWrite_ = 0;    // number of blocks that can be written with a
+                                 // single SCSI WRITE command
+    char *zeroBuffer_ = nullptr; // zeroed buffer for writing zeros
 
     int enableBufferUnderRunProtection_ = 1;
     int enableWriteSpeedControl_ = 1;
@@ -413,14 +410,14 @@ class CdrDriver
     int mode2Mixed_ = true;
     TrackData::SubChannelMode subChanReadMode_ = TrackData::SUBCHAN_NONE;
     int padFirstPregap_ = 1;  // used by 'read-toc': defines if the first audio
-                          // track's pre-gap is padded with zeros in the toc-file
-                          // or if it is taken from the data file
-    int onTheFly_ = 0;    // 1 if operating in on-the-fly mode
-    int onTheFlyFd_ = -1; // file descriptor for on the fly data
-    bool force_ = false;  // force flag to allow certain operations
-    int remote_ = 0;      // 1 for remote mode, else 0
-    int remoteFd_ = -1;   // file descriptor for remote messages
-    bool taoSource_ = 0;  // 1 to indicate a TAO writting source CD for read-cd/read-toc
+                              // track's pre-gap is padded with zeros in the toc-file
+                              // or if it is taken from the data file
+    int onTheFly_ = 0;        // 1 if operating in on-the-fly mode
+    int onTheFlyFd_ = -1;     // file descriptor for on the fly data
+    bool force_ = false;      // force flag to allow certain operations
+    int remote_ = 0;          // 1 for remote mode, else 0
+    int remoteFd_ = -1;       // file descriptor for remote messages
+    bool taoSource_ = 0;      // 1 to indicate a TAO writting source CD for read-cd/read-toc
     int taoSourceAdjust_ = 2; // number of unreadable sectors between
                               // two tracks, usually we have two
     const Toc *toc_ = nullptr;
@@ -623,7 +620,6 @@ class CdrDriver
     static int qMode1Track(SubChannel **chans, long startLba, long len, long i, int dir);
 
   public:
-
     // Interface for Monty's paranoia library:
   protected:
     // Extracts audio data for given track range with the help of
@@ -635,7 +631,7 @@ class CdrDriver
     // dynamic data
     void *paranoia_ = nullptr;                    // paranoia structure
     struct cdrom_drive *paranoiaDrive_ = nullptr; // paranoia device
-    int paranoiaMode_          ;                  // paranoia mode
+    int paranoiaMode_;                            // paranoia mode
     ReadDiskInfo *audioReadInfo_;
     TrackInfo *audioReadTrackInfo_;
     int audioReadStartTrack_;

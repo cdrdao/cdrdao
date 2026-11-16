@@ -34,9 +34,9 @@ class PreferencesDialog;
 
 class GCDWindow : public Gtk::ApplicationWindow
 {
-public:
+  public:
     GCDWindow();
-    GCDWindow(BaseObjectType* cobject);
+    GCDWindow(BaseObjectType *cobject);
 
     virtual void update(unsigned long level) = 0;
 };
@@ -63,8 +63,8 @@ class GCDMaster : public Gtk::Application
     void on_action_blank_cdrw();
     void on_action_close();
     void on_action_open();
-    void on_action_open_finish(const Glib::RefPtr<Gio::AsyncResult>&);
-    void on_open(const type_vec_files& files, const Glib::ustring& hint) override;
+    void on_action_open_finish(const Glib::RefPtr<Gio::AsyncResult> &);
+    void on_open(const type_vec_files &files, const Glib::ustring &hint) override;
     void speedChanged();
     void speedButtonChanged();
 
@@ -73,13 +73,13 @@ class GCDMaster : public Gtk::Application
     Glib::RefPtr<Gtk::FileDialog> openFileChooser_;
     Glib::RefPtr<Gtk::FileFilter> openFilter_;
     Glib::RefPtr<Gtk::FileFilter> allFilter_;
-    BlankCDDialog* blanker_ = nullptr;
-    PreferencesDialog* preferences_ = nullptr;
+    BlankCDDialog *blanker_ = nullptr;
+    PreferencesDialog *preferences_ = nullptr;
 
     sigc::connection updateSignal_;
 
     int argc;
-    char** argv;
+    char **argv;
 };
 
 #endif

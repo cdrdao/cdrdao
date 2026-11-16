@@ -61,12 +61,12 @@ class DeviceMonitor : public sigc::trackable
         std::string product;
         std::string revision;
 
-        bool operator==(const DeviceInfo& o) const
+        bool operator==(const DeviceInfo &o) const
         {
-            return node == o.node && vendor == o.vendor &&
-                   product == o.product && revision == o.revision;
+            return node == o.node && vendor == o.vendor && product == o.product &&
+                   revision == o.revision;
         }
-        bool operator!=(const DeviceInfo& o) const { return !(*this == o); }
+        bool operator!=(const DeviceInfo &o) const { return !(*this == o); }
     };
 
     // Create the monitor implementation for the current platform. The
@@ -92,7 +92,7 @@ class DeviceMonitor : public sigc::trackable
     std::vector<DeviceInfo> devices() const;
 
     // Emitted on the main thread whenever the device list changes.
-    sigc::signal<void()>& signal_changed() { return signalChanged_; }
+    sigc::signal<void()> &signal_changed() { return signalChanged_; }
 
   protected:
     DeviceMonitor();

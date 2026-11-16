@@ -26,16 +26,16 @@
 
 class SoundIFao : public SoundIF
 {
-public:
+  public:
     SoundIFao();
     ~SoundIFao();
 
     int start();
-    int play(Sample*, long);
+    int play(Sample *, long);
     unsigned long getDelay();
     void end();
 
-private:
+  private:
     int driverId;
     ao_device *device;
     ao_sample_format format;
@@ -97,7 +97,7 @@ void SoundIFao::end()
     device = NULL;
 }
 
-SoundIF* SoundIF::create()
+SoundIF *SoundIF::create()
 {
     return new SoundIFao;
 }

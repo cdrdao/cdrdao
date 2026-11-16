@@ -29,20 +29,20 @@
 
 class PreferencesDialog : public Gtk::Window
 {
-public:
-    PreferencesDialog(BaseObjectType* cobject, const Glib::RefPtr<Gtk::Builder>& builder);
+  public:
+    PreferencesDialog(BaseObjectType *cobject, const Glib::RefPtr<Gtk::Builder> &builder);
     virtual ~PreferencesDialog();
 
-    static PreferencesDialog* create(const Glib::RefPtr<Gtk::Builder>& builder,
-                                     Gtk::Window& parent);
+    static PreferencesDialog *create(const Glib::RefPtr<Gtk::Builder> &builder,
+                                     Gtk::Window &parent);
 
     void show_dialog(); // Renamed to avoid confusion with widget::show
     void update(unsigned long level);
 
-protected:
+  protected:
     void read_from_settings();
     void save_to_settings();
-    
+
     // UI Event Handlers
     void on_button_apply();
     void on_button_cancel();
@@ -57,32 +57,32 @@ protected:
     void import_devices();
     void export_devices();
     void import_status();
-    void import_selected_row(CdDevice* device);
-    void export_selected_row(CdDevice* device);
-    void append_entry(CdDevice* dev);
+    void import_selected_row(CdDevice *device);
+    void export_selected_row(CdDevice *device);
+    void append_entry(CdDevice *dev);
 
     // Widgets
-    Gtk::Button* tempDirButton_ = nullptr;
-    Gtk::Button* cdrdaoExecButton_ = nullptr;
-    Gtk::Entry* driverOptionsEntry_ = nullptr;
-    Gtk::DropDown* driverMenu_ = nullptr;
-    Gtk::DropDown* devtypeMenu_ = nullptr;
+    Gtk::Button *tempDirButton_ = nullptr;
+    Gtk::Button *cdrdaoExecButton_ = nullptr;
+    Gtk::Entry *driverOptionsEntry_ = nullptr;
+    Gtk::DropDown *driverMenu_ = nullptr;
+    Gtk::DropDown *devtypeMenu_ = nullptr;
 
     std::string selectedTempPath_;
     std::string selectedCdrdaoExec_;
-    
-    DeviceSelector* deviceSelector_;
+
+    DeviceSelector *deviceSelector_;
 
     struct DeviceData {
         std::string driver;
         std::string deviceType;
         std::string options;
     };
-    std::unordered_map<CdDevice*, struct DeviceData> dataMap_;
-    CdDevice* selectedDevice_;
+    std::unordered_map<CdDevice *, struct DeviceData> dataMap_;
+    CdDevice *selectedDevice_;
 };
 
-std::optional<Glib::ustring> dropDownGet(Gtk::DropDown* dd);
-bool dropDownSet(Gtk::DropDown* dd, const Glib::ustring& val);
+std::optional<Glib::ustring> dropDownGet(Gtk::DropDown *dd);
+bool dropDownSet(Gtk::DropDown *dd, const Glib::ustring &val);
 
 #endif

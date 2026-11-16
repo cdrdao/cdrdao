@@ -33,15 +33,15 @@ class AddFileDialog : public Gtk::FileDialog
         M_INSERT_FILE
     };
 
-    static Glib::RefPtr<AddFileDialog> create(AudioCDProject* project);
+    static Glib::RefPtr<AddFileDialog> create(AudioCDProject *project);
 
     void start(Mode);
 
   private:
     AddFileDialog(AudioCDProject *);
 
-    void on_file_dialog_finish(const Glib::RefPtr<Gio::AsyncResult>& result);
-    bool applyAction(const std::vector<Glib::RefPtr<Gio::File>>& files);
+    void on_file_dialog_finish(const Glib::RefPtr<Gio::AsyncResult> &result);
+    bool applyAction(const std::vector<Glib::RefPtr<Gio::File>> &files);
     void mode(Mode);
 
     AudioCDProject *project_;

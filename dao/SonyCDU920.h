@@ -32,10 +32,7 @@ class SonyCDU920 : public CdrDriver
     ~SonyCDU920();
     static CdrDriver *instance(std::shared_ptr<ScsiIf> scsiIf, unsigned long options);
 
-    unsigned long getReadCapabilities(const CdToc *, int) const
-    {
-        return 0;
-    }
+    unsigned long getReadCapabilities(const CdToc *, int) const { return 0; }
 
     int bigEndianSamples() const;
 

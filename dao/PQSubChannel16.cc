@@ -31,9 +31,7 @@ PQSubChannel16::PQSubChannel16()
     type_ = QMODE1DATA;
 }
 
-PQSubChannel16::~PQSubChannel16()
-{
-}
+PQSubChannel16::~PQSubChannel16() {}
 
 SubChannel *PQSubChannel16::makeSubChannel(Type t)
 {

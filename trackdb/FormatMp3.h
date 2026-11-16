@@ -35,10 +35,7 @@ class FormatMp3 : public FormatSupport
     Status convertContinue();
     void convertAbort();
 
-    TrackData::FileType format()
-    {
-        return TrackData::WAVE;
-    }
+    TrackData::FileType format() { return TrackData::WAVE; }
 
   protected:
     struct audio_dither {

@@ -60,11 +60,10 @@
 #include <IOKit/scsi/SCSITaskLib.h>
 #include <IOKit/storage/IOStorageDeviceCharacteristics.h>
 
-
 class ScsiIfOsx : public ScsiIf
 {
   public:
-    ScsiIfOsx(const std::string& dev);
+    ScsiIfOsx(const std::string &dev);
     ~ScsiIfOsx() override;
 
     virtual int init() override;
@@ -269,9 +268,9 @@ void ScsiIfOsx::readCharacteristics()
 std::string ScsiIfOsx::mediaBsdName() const
 {
     // The whole-disc media object is the first BSD node below the drive.
-    CFTypeRef prop = IORegistryEntrySearchCFProperty(object_, kIOServicePlane, CFSTR("BSD Name"),
-                                                     kCFAllocatorDefault,
-                                                     kIORegistryIterateRecursively);
+    CFTypeRef prop =
+        IORegistryEntrySearchCFProperty(object_, kIOServicePlane, CFSTR("BSD Name"),
+                                        kCFAllocatorDefault, kIORegistryIterateRecursively);
     if (!prop)
         return "";
     std::string name;
@@ -286,34 +285,34 @@ std::string ScsiIfOsx::mediaBsdName() const
 
 class DeviceManager
 {
-public:
+  public:
     DeviceManager() {};
 
     void scan();
 
-    std::shared_ptr<ScsiIfOsx> find(const std::string& dev);
+    std::shared_ptr<ScsiIfOsx> find(const std::string &dev);
 
     // Drives sorted by number.
     std::vector<std::shared_ptr<ScsiIfOsx>> sorted() const;
 
     // The serial number if no other drive has the same one, else "".
-    std::string uniqueSerial(const ScsiIfOsx& sif) const;
+    std::string uniqueSerial(const ScsiIfOsx &sif) const;
 
     // Keyed by full IOService-plane path.
     std::map<std::string, std::shared_ptr<ScsiIfOsx>> devmap;
 };
 
-DeviceManager* DM = new DeviceManager();
+DeviceManager *DM = new DeviceManager();
 
 // Serializes access to DM: gcdmaster scans from its device monitor thread
 // while the main thread may be creating interfaces.
 static std::mutex DMmutex;
 
-std::string DeviceManager::uniqueSerial(const ScsiIfOsx& sif) const
+std::string DeviceManager::uniqueSerial(const ScsiIfOsx &sif) const
 {
     if (sif.serial_.empty())
         return "";
-    for (auto const& [path, other] : devmap) {
+    for (auto const &[path, other] : devmap) {
         if (other.get() != &sif && other->serial_ == sif.serial_)
             return "";
     }
@@ -323,20 +322,20 @@ std::string DeviceManager::uniqueSerial(const ScsiIfOsx& sif) const
 std::vector<std::shared_ptr<ScsiIfOsx>> DeviceManager::sorted() const
 {
     std::vector<std::shared_ptr<ScsiIfOsx>> list;
-    for (auto const& [path, sif] : devmap)
+    for (auto const &[path, sif] : devmap)
         list.push_back(sif);
     std::sort(list.begin(), list.end(),
-              [](const auto& a, const auto& b) { return a->num_ < b->num_; });
+              [](const auto &a, const auto &b) { return a->num_ < b->num_; });
     return list;
 }
 
-std::shared_ptr<ScsiIfOsx> DeviceManager::find(const std::string& dev)
+std::shared_ptr<ScsiIfOsx> DeviceManager::find(const std::string &dev)
 {
     auto it = devmap.find(dev);
     if (it != devmap.end())
         return it->second;
 
-    for (auto const& [path, sif] : devmap) {
+    for (auto const &[path, sif] : devmap) {
         if (sif->dev_ == dev)
             return sif;
         if (!sif->serial_.empty() && uniqueSerial(*sif) == dev)
@@ -412,7 +411,7 @@ void DeviceManager::scan()
 
     // Forget drives that are gone, so their numbers become free.
     std::set<std::string> present;
-    for (auto const& f : found)
+    for (auto const &f : found)
         present.insert(f.path);
     for (auto it = devmap.begin(); it != devmap.end();) {
         if (present.count(it->first) == 0)
@@ -423,9 +422,9 @@ void DeviceManager::scan()
 
     // Number new drives in attach order.
     std::sort(found.begin(), found.end(),
-              [](const Found& a, const Found& b) { return a.entryId < b.entryId; });
+              [](const Found &a, const Found &b) { return a.entryId < b.entryId; });
 
-    for (auto const& f : found) {
+    for (auto const &f : found) {
         auto it = devmap.find(f.path);
         if (it != devmap.end()) {
             IOObjectRelease(f.object);
@@ -434,7 +433,7 @@ void DeviceManager::scan()
         }
 
         std::set<int> used;
-        for (auto const& [path, sif] : devmap)
+        for (auto const &[path, sif] : devmap)
             used.insert(sif->num_);
         int num = 1;
         while (used.count(num))
@@ -455,7 +454,7 @@ void DeviceManager::scan()
     }
 }
 
-ScsiIfOsx::ScsiIfOsx(const std::string& dev)
+ScsiIfOsx::ScsiIfOsx(const std::string &dev)
 {
     dev_ = dev;
     maxDataLen_ = 64 * 1024;
@@ -468,8 +467,9 @@ int ScsiIfOsx::init()
                     product_.c_str(), error_.c_str());
         auto bsd = mediaBsdName();
         if (!bsd.empty())
-            log_message(-2, "If the disc is mounted, unmount it first with "
-                            "'diskutil unmountDisk %s'.",
+            log_message(-2,
+                        "If the disc is mounted, unmount it first with "
+                        "'diskutil unmountDisk %s'.",
                         bsd.c_str());
         return 1;
     }
@@ -501,7 +501,7 @@ std::string ScsiIfOsx::serialNumber()
     unsigned char result[0xfc];
 
     // INQUIRY, Unit Serial Number VPD page
-    unsigned char inq[6] = { 0x12 /* INQUIRY */, 0x01 /* EVPD */, 0x80, 0, sizeof(result), 0 };
+    unsigned char inq[6] = {0x12 /* INQUIRY */, 0x01 /* EVPD */, 0x80, 0, sizeof(result), 0};
     memset(result, 0, sizeof(result));
     if (sendCmd(inq, 6, NULL, 0, result, sizeof(result), 0) == 0 && result[1] == 0x80) {
         int len = std::min<int>(result[3], sizeof(result) - 4);
@@ -512,8 +512,8 @@ std::string ScsiIfOsx::serialNumber()
 
     // GET CONFIGURATION, Logical Unit Serial Number feature (RT=2: only
     // the requested feature)
-    unsigned char cfg[10] = { 0x46 /* GET CONFIGURATION */, 0x02, 0x01, 0x08, 0, 0, 0, 0,
-                              sizeof(result), 0 };
+    unsigned char cfg[10] = {
+        0x46 /* GET CONFIGURATION */, 0x02, 0x01, 0x08, 0, 0, 0, 0, sizeof(result), 0};
     memset(result, 0, sizeof(result));
     if (sendCmd(cfg, 10, NULL, 0, result, sizeof(result), 0) == 0) {
         // 8-byte feature header, then the feature descriptor
@@ -544,7 +544,7 @@ int ScsiIfOsx::sendCmd(const unsigned char *cmd, int cmdLen, const unsigned char
 
     error_.clear();
 
-    auto ERROR=[&](const std::string msg) {
+    auto ERROR = [&](const std::string msg) {
         error_ = "sendCmd: " + msg;
         if (showMessage)
             printError();
@@ -727,7 +727,7 @@ ScsiIf::ScanData *ScsiIf::scan(int *len, char *)
     log_message(3, "Scan: %d devices found", *len);
 
     int i = 0;
-    for (auto const& sif : list) {
+    for (auto const &sif : list) {
         scanData[i].dev = sif->dev_;
         scanData[i].vendor = sif->vendor_;
         scanData[i].product = sif->product_;
@@ -740,7 +740,7 @@ ScsiIf::ScanData *ScsiIf::scan(int *len, char *)
     return scanData;
 }
 
-std::shared_ptr<ScsiIf> ScsiIf::create(const std::string& dev)
+std::shared_ptr<ScsiIf> ScsiIf::create(const std::string &dev)
 {
     std::lock_guard<std::mutex> lock(DMmutex);
 
@@ -758,12 +758,12 @@ std::shared_ptr<ScsiIf> ScsiIf::create(const std::string& dev)
     if (!sif) {
         log_message(-2, "Unknown SCSI device %s", dev.c_str());
         // A drive that is in use can't be found by serial number.
-        for (auto const& d : DM->sorted()) {
+        for (auto const &d : DM->sorted()) {
             if (d->inUse_ && d->serial_.empty())
-                log_message(-2, "Device %s (%s %s) is in use by another process; "
-                                "if it is %s, close that process first.",
-                            d->dev_.c_str(), d->vendor_.c_str(), d->product_.c_str(),
-                            dev.c_str());
+                log_message(-2,
+                            "Device %s (%s %s) is in use by another process; "
+                            "if it is %s, close that process first.",
+                            d->dev_.c_str(), d->vendor_.c_str(), d->product_.c_str(), dev.c_str());
         }
         return nullptr;
     }

@@ -39,7 +39,7 @@ class Toc;
 class Cddb
 {
   public:
-    static constexpr const char* default_server{"gnudb.gnudb.org:80:/~cddb/cddb.cgi"};
+    static constexpr const char *default_server{"gnudb.gnudb.org:80:/~cddb/cddb.cgi"};
 
     struct QueryResults {
         std::string category;
@@ -53,12 +53,10 @@ class Cddb
         std::string diskArtist;
         std::string diskExt;
         int ntracks;
-	std::vector<std::string> trackTitles;
-	std::vector<std::string> trackExt;
+        std::vector<std::string> trackTitles;
+        std::vector<std::string> trackExt;
 
-	CddbEntry(int n) : ntracks(n),
-			   trackTitles(n, std::string()),
-			   trackExt(n, std::string()) {}
+        CddbEntry(int n) : ntracks(n), trackTitles(n, std::string()), trackExt(n, std::string()) {}
     };
 
     Cddb(Toc *t) : toc_(t) { appendServer(default_server); };
@@ -69,29 +67,29 @@ class Cddb
 
     void timeout(int);
 
-    int connectDb(const std::string& userName, const std::string& hostName,
-		  const std::string& clientName, const std::string& version);
+    int connectDb(const std::string &userName, const std::string &hostName,
+                  const std::string &clientName, const std::string &version);
 
     int queryDb();
-    
-    const std::vector<QueryResults>& queryResults() { return queryResults_; }
-    const std::optional<CddbEntry>&  dbEntry() { return cddbEntry_; }
 
-    std::optional<CddbEntry>& readDb(const std::string& category, const std::string& diskId);
+    const std::vector<QueryResults> &queryResults() { return queryResults_; }
+    const std::optional<CddbEntry> &dbEntry() { return cddbEntry_; }
+
+    std::optional<CddbEntry> &readDb(const std::string &category, const std::string &diskId);
 
     int addAsCdText(Toc *toc);
 
     void printDbQuery();
     void printDbEntry();
 
-    static std::string& convertEscapeSequences(std::string& s);
+    static std::string &convertEscapeSequences(std::string &s);
 
   private:
     struct ServerList {
-	std::string server;
+        std::string server;
         unsigned short port;
-	std::string httpCgiBin;
-	std::string httpProxyServer;
+        std::string httpCgiBin;
+        std::string httpProxyServer;
         unsigned short httpProxyPort;
     };
 
@@ -111,20 +109,20 @@ class Cddb
 
     std::string httpCmd_;
     std::string httpData_;
-    
+
     std::vector<QueryResults> queryResults_;
     std::optional<CddbEntry> cddbEntry_;
 
-    static CdTextItem *createItem(CdTextItem::PackType, const std::string& );
+    static CdTextItem *createItem(CdTextItem::PackType, const std::string &);
 
     bool openConnection();
-    bool openSingleConnection(ServerList*);
+    bool openSingleConnection(ServerList *);
     void closeConnection();
-    void setupHttpData(const std::string& userName, const std::string& hostName,
-                       const std::string& clientName, const std::string& version);
+    void setupHttpData(const std::string &userName, const std::string &hostName,
+                       const std::string &clientName, const std::string &version);
 
-    void appendQueryResult(const std::string& category, const std::string& diskId,
-			   const std::string& title, bool exactMatch);
+    void appendQueryResult(const std::string &category, const std::string &diskId,
+                           const std::string &title, bool exactMatch);
     bool parseQueryResult(std::string_view line, bool exact);
 
     std::optional<std::string> readLine();
@@ -134,7 +132,7 @@ class Cddb
     int readDbEntry(int);
     void shutdown();
     bool getCode(std::string_view, int code[3]);
-    int createLocalCddbFile(const std::string& category, const std::string& diskId);
+    int createLocalCddbFile(const std::string &category, const std::string &diskId);
 };
 
 #endif

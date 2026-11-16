@@ -30,24 +30,24 @@ class RecordCDSource;
 class AudioCDRead : public Gtk::Window
 {
   public:
-    static Glib::RefPtr<AudioCDRead> create(Gtk::Window* parent);
+    static Glib::RefPtr<AudioCDRead> create(Gtk::Window *parent);
 
     void update(unsigned long level);
     void start();
 
   private:
-    AudioCDRead(Gtk::Window* parent);
+    AudioCDRead(Gtk::Window *parent);
 
     void on_datafile_button_clicked();
     void on_device_selected();
     void execute();
 
-    RecordCDSource* CDSource_;
-    Gtk::Button* datafileButton_;
-    Gtk::Button* startButton_;
+    RecordCDSource *CDSource_;
+    Gtk::Button *datafileButton_;
+    Gtk::Button *startButton_;
     std::filesystem::path datafilePath_;
-    DeviceSelector* deviceSelector_;
-    Gtk::Window* parent_;
+    DeviceSelector *deviceSelector_;
+    Gtk::Window *parent_;
     sigc::connection conn_;
 };
 

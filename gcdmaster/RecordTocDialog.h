@@ -28,13 +28,13 @@ class RecordCDTarget;
 
 class RecordTocDialog : public Gtk::Window
 {
-public:
+  public:
     RecordTocDialog(Glib::RefPtr<TocEdit> tocEdit);
 
-    void start(Gtk::Window* parent);
+    void start(Gtk::Window *parent);
     void update(unsigned long level);
 
-private:
+  private:
     RecordTocSource *TocSource;
     RecordCDTarget *CDTarget;
 
@@ -51,4 +51,3 @@ private:
 };
 
 #endif
-

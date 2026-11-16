@@ -38,8 +38,7 @@
 #include "TrackInfoDialog.h"
 #include "log.h"
 
-AudioCDView::AudioCDView(AudioCDProject *project)
-    : Gtk::Box(Gtk::Orientation::VERTICAL)
+AudioCDView::AudioCDView(AudioCDProject *project) : Gtk::Box(Gtk::Orientation::VERTICAL)
 {
     project_ = project;
     set_margin_top(4);
@@ -67,8 +66,8 @@ AudioCDView::AudioCDView(AudioCDProject *project)
     sampleDisplay_->set_margin_bottom(5);
     append(*sampleDisplay_);
 
-    scrollBar_ = Gtk::make_managed<Gtk::Scrollbar>(
-        sampleDisplay_->get_adjustment(), Gtk::Orientation::HORIZONTAL);
+    scrollBar_ = Gtk::make_managed<Gtk::Scrollbar>(sampleDisplay_->get_adjustment(),
+                                                   Gtk::Orientation::HORIZONTAL);
     append(*scrollBar_);
 
     auto selectionInfoBox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
@@ -112,7 +111,6 @@ AudioCDView::AudioCDView(AudioCDProject *project)
     selectionInfoBox->set_margin_bottom(2);
     append(*selectionInfoBox);
 
-    
     mode(SELECT);
 
     sampleDisplay_->markerSet.connect(sigc::mem_fun(*this, &AudioCDView::markerSetCallback));
@@ -133,7 +131,7 @@ void AudioCDView::setup_actions()
 {
 
     trackInfoAction_ =
-	project_->add_action("track-info", sigc::mem_fun(*this, &AudioCDView::trackInfo));
+        project_->add_action("track-info", sigc::mem_fun(*this, &AudioCDView::trackInfo));
     project_->add_action("cut", sigc::mem_fun(*this, &AudioCDView::cutTrackData));
     project_->add_action("paste", sigc::mem_fun(*this, &AudioCDView::pasteTrackData));
     project_->add_action("select-all", sigc::mem_fun(*this, &AudioCDView::selectAll));
@@ -159,9 +157,9 @@ void AudioCDView::update(unsigned long level)
         int trackNr, indexNr;
 
         if (tocEditView_->trackSelection(&trackNr) && tocEditView_->indexSelection(&indexNr)) {
-	    trackInfoAction_->set_enabled(true);
+            trackInfoAction_->set_enabled(true);
         } else {
-	    trackInfoAction_->set_enabled(false);
+            trackInfoAction_->set_enabled(false);
         }
     }
 
@@ -224,9 +222,9 @@ void AudioCDView::update(unsigned long level)
     addSilenceDialog_->update(level, tocEditView_);
 
     if (!tocEditView_ || tocEditView_->isSampleViewFull() || project_->tocEdit()->empty())
-	scrollBar_->hide();
+        scrollBar_->hide();
     else
-	scrollBar_->show();
+        scrollBar_->show();
 }
 
 void AudioCDView::zoomIn()
@@ -373,8 +371,7 @@ void AudioCDView::selectionSet()
     update(UPD_SAMPLE_SEL);
 }
 
-
-bool AudioCDView::on_drop(const Glib::ValueBase& value, double, double)
+bool AudioCDView::on_drop(const Glib::ValueBase &value, double, double)
 {
     if (project_->playStatus() != AudioCDProject::STOPPED)
         return false;
@@ -389,7 +386,8 @@ bool AudioCDView::on_drop(const Glib::ValueBase& value, double, double)
         while ((n = list.find("\r\n", idx)) != std::string::npos) {
             std::string sub = list.substr(idx, n - idx);
             idx = n + 22;
-            if (sub.empty()) continue;
+            if (sub.empty())
+                continue;
 
             std::string fn;
             try {
@@ -398,7 +396,8 @@ bool AudioCDView::on_drop(const Glib::ValueBase& value, double, double)
                 continue;
             }
 
-            if (fn.empty()) continue;
+            if (fn.empty())
+                continue;
 
             auto type = Util::fileExtension(fn.c_str());
             if (type == Util::FileExtension::WAV || type == Util::FileExtension::M3U
@@ -411,7 +410,7 @@ bool AudioCDView::on_drop(const Glib::ValueBase& value, double, double)
 #ifdef HAVE_FLAC_SUPPORT
                 || type == Util::FileExtension::FLAC
 #endif
-                ) {
+            ) {
                 project_->appendTrack(fn.c_str());
             }
         }
@@ -427,15 +426,13 @@ void AudioCDView::trackInfo()
     if (tocEditView_->trackSelection(&track)) {
         trackInfoDialog_->start(tocEditView_);
     } else {
-        MessageBox::message(*project_,_("Please select a track first"));
+        MessageBox::message(*project_, _("Please select a track first"));
     }
 }
 
 void AudioCDView::tocBlockedMsg()
 {
-    MessageBox::message(*project_,
-                        "Cannot perform operation",
-                        { "Project is in read-only state." });
+    MessageBox::message(*project_, "Cannot perform operation", {"Project is in read-only state."});
 }
 
 void AudioCDView::cutTrackData()

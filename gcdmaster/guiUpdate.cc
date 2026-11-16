@@ -41,7 +41,7 @@ bool guiUpdatePeriodic()
 {
     auto val = CdDevice::update();
     if (val)
-	guiUpdate(val);
+        guiUpdate(val);
 
     return true;
 }

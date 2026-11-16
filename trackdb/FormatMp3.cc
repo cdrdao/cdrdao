@@ -73,19 +73,18 @@ FormatSupport::Status FormatMp3::madInit()
 {
     struct stat st;
 
-    if (stat(src_file_.c_str(), &st) != 0 ||
-	!(mapped_fd_ = open(src_file_.c_str(), O_RDONLY))) {
-	std::ostringstream oss;
-	oss << "Could not open input file \"" << src_file_ << "\": " << strerror(errno) << "\n";
-	throw std::runtime_error(oss.str());
+    if (stat(src_file_.c_str(), &st) != 0 || !(mapped_fd_ = open(src_file_.c_str(), O_RDONLY))) {
+        std::ostringstream oss;
+        oss << "Could not open input file \"" << src_file_ << "\": " << strerror(errno) << "\n";
+        throw std::runtime_error(oss.str());
     }
 
     length_ = st.st_size;
     start_ = mmap(0, st.st_size, PROT_READ, MAP_SHARED, mapped_fd_, 0);
     if (start_ == MAP_FAILED) {
-	std::ostringstream oss;
-	oss << "Could not read input file \"" << src_file_ << "\": " << strerror(errno) << "\n";
-	throw std::runtime_error(oss.str());
+        std::ostringstream oss;
+        oss << "Could not read input file \"" << src_file_ << "\": " << strerror(errno) << "\n";
+        throw std::runtime_error(oss.str());
     }
 
     auto ostatus = setup_wav_output(dst_file_);
@@ -109,15 +108,15 @@ FormatSupport::Status FormatMp3::madDecodeFrame()
     if (mad_frame_decode(&frame_, &stream_) == -1) {
 
         if (stream_.error != MAD_ERROR_BUFLEN && stream_.error != MAD_ERROR_LOSTSYNC) {
-	    oss << "Could not decode MP3 file \"" << src_file_ << "\": "
-		<< mad_stream_errorstr(&stream_) << "\n";
+            oss << "Could not decode MP3 file \"" << src_file_
+                << "\": " << mad_stream_errorstr(&stream_) << "\n";
         }
 
         if (stream_.error == MAD_ERROR_BUFLEN)
             return FS_SUCCESS;
 
         if (!MAD_RECOVERABLE(stream_.error))
-	    throw std::runtime_error(oss.str());
+            throw std::runtime_error(oss.str());
     }
 
     mad_synth_frame(&synth_, &frame_);
@@ -228,7 +227,7 @@ FormatSupport::Status FormatMp3::madOutput()
         }
 
         if (write_wav_output(buffer_, pcm->length * 4) != FS_SUCCESS) {
-	    throw std::runtime_error("Unable to convert file, no available disk space.");
+            throw std::runtime_error("Unable to convert file, no available disk space.");
         }
 
     } else {
@@ -251,7 +250,7 @@ FormatSupport::Status FormatMp3::madOutput()
         }
 
         if (write_wav_output(buffer_, pcm->length * 4) != FS_SUCCESS) {
-	    throw std::runtime_error("Unable to convert file, no available disk space.");
+            throw std::runtime_error("Unable to convert file, no available disk space.");
         }
     }
 

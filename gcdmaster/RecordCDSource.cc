@@ -59,32 +59,32 @@ RecordCDSource::RecordCDSource(Gtk::Window *parent)
         grid->set_column_spacing(10);
         grid->set_margin(5);
 
-	auto correctionList = Gtk::StringList::create({});
-	for (int i = 0; i <= MAX_CORRECTION_ID; i++) {
-	    correctionList->append(CORRECTION_TABLE[i].name);
-	}
-	correctionMenu_ = Gtk::make_managed<Gtk::DropDown>();
-	correctionMenu_->set_model(correctionList);
-	correctionMenu_->property_selected().signal_changed().connect(
-	    sigc::mem_fun(*this, &RecordCDSource::setCorrection));
+        auto correctionList = Gtk::StringList::create({});
+        for (int i = 0; i <= MAX_CORRECTION_ID; i++) {
+            correctionList->append(CORRECTION_TABLE[i].name);
+        }
+        correctionMenu_ = Gtk::make_managed<Gtk::DropDown>();
+        correctionMenu_->set_model(correctionList);
+        correctionMenu_->property_selected().signal_changed().connect(
+            sigc::mem_fun(*this, &RecordCDSource::setCorrection));
 
-	auto *label = Gtk::make_managed<Gtk::Label>(_("Audio Correction Method:"));
-	grid->attach(*label, 0, 0);
-	grid->attach(*correctionMenu_, 0, 1);
+        auto *label = Gtk::make_managed<Gtk::Label>(_("Audio Correction Method:"));
+        grid->attach(*label, 0, 0);
+        grid->attach(*correctionMenu_, 0, 1);
 
-	auto subChanReadModeList = Gtk::StringList::create({});
-	for (int i = 0; i <= MAX_SUBCHAN_READ_MODE_ID; i++) {
-	    subChanReadModeList->append(SUBCHAN_READ_MODE_TABLE[i].name);
-	}
-	subChanReadModeMenu_ = Gtk::make_managed<Gtk::DropDown>();
-	subChanReadModeMenu_->set_model(subChanReadModeList);
-	subChanReadModeMenu_->property_selected().signal_changed().connect(
-	    sigc::mem_fun(*this, &RecordCDSource::setSubChanReadMode));
+        auto subChanReadModeList = Gtk::StringList::create({});
+        for (int i = 0; i <= MAX_SUBCHAN_READ_MODE_ID; i++) {
+            subChanReadModeList->append(SUBCHAN_READ_MODE_TABLE[i].name);
+        }
+        subChanReadModeMenu_ = Gtk::make_managed<Gtk::DropDown>();
+        subChanReadModeMenu_->set_model(subChanReadModeList);
+        subChanReadModeMenu_->property_selected().signal_changed().connect(
+            sigc::mem_fun(*this, &RecordCDSource::setSubChanReadMode));
 
-	label = Gtk::make_managed<Gtk::Label>(_("Sub-Channel Reading Mode:"));
-	grid->attach(*label, 1, 0);
-	grid->attach(*subChanReadModeMenu_, 1, 1);
-	vbox->append(*grid);
+        label = Gtk::make_managed<Gtk::Label>(_("Sub-Channel Reading Mode:"));
+        grid->attach(*label, 1, 0);
+        grid->attach(*subChanReadModeMenu_, 1, 1);
+        vbox->append(*grid);
     }
     set_child(*vbox);
 }
@@ -99,8 +99,6 @@ void RecordCDSource::moreOptions()
         auto *top_vbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL);
         top_vbox->set_margin(5);
         moreOptions_->set_child(*top_vbox);
-
-
     }
     moreOptions_->present();
 }
@@ -108,8 +106,7 @@ void RecordCDSource::moreOptions()
 void RecordCDSource::setCorrection()
 {
     auto selected = correctionMenu_->get_selected();
-    if (selected != GTK_INVALID_LIST_POSITION &&
-	selected >= 0 && selected <= MAX_CORRECTION_ID)
+    if (selected != GTK_INVALID_LIST_POSITION && selected >= 0 && selected <= MAX_CORRECTION_ID)
         correction_ = selected;
 }
 

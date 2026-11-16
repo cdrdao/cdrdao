@@ -34,7 +34,7 @@ class ProgressDialog : public Gtk::Window
     virtual ~ProgressDialog();
 
     void update(unsigned long);
-    void start(CdDevice *, const std::string& tocFileName);
+    void start(CdDevice *, const std::string &tocFileName);
     void stop();
 
     void needBufferProgress(bool visible);
@@ -100,10 +100,10 @@ class ProgressDialogPool
 
     void update(unsigned long);
 
-    ProgressDialog *start(CdDevice *, const std::string& tocFileName,
-			  bool showBuffer = true, bool showTrack = true);
-    ProgressDialog *start(Gtk::Window &parent_window, CdDevice *, const std::string& tocFileName,
-			  bool showBuffer = true, bool showTrack = true);
+    ProgressDialog *start(CdDevice *, const std::string &tocFileName, bool showBuffer = true,
+                          bool showTrack = true);
+    ProgressDialog *start(Gtk::Window &parent_window, CdDevice *, const std::string &tocFileName,
+                          bool showBuffer = true, bool showTrack = true);
     void stop(ProgressDialog *);
 
   private:

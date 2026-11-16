@@ -27,7 +27,7 @@ class SoundIF
   public:
     // Initializes sound interface.  Returnn null ptr ifsounde device
     // not found or cannot setup sound device.
-    static SoundIF* create();
+    static SoundIF *create();
 
     // Acquires sound device for playing.
     // return 0: OK
@@ -35,7 +35,7 @@ class SoundIF
     virtual int start() = 0;
 
     // Playes given sample buffer (44.1khz, 2 channels)
-     // return: 0: OK
+    // return: 0: OK
     //         1: error occured
     virtual int play(Sample *, long) = 0;
 

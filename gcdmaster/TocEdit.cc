@@ -39,7 +39,7 @@
 #include "SampleManager.h"
 #include "guiUpdate.h"
 
-TocEdit::TocEdit(Toc *t, const std::string& filename)
+TocEdit::TocEdit(Toc *t, const std::string &filename)
 {
     toc(t, filename);
 
@@ -60,7 +60,7 @@ TocEdit::~TocEdit()
         delete trackDataScrap_;
 }
 
-void TocEdit::toc(Toc *t, const std::string& filename = "unnamed.toc", bool nodata)
+void TocEdit::toc(Toc *t, const std::string &filename = "unnamed.toc", bool nodata)
 {
     if (toc_)
         delete toc_;
@@ -91,8 +91,8 @@ void TocEdit::toc(Toc *t, const std::string& filename = "unnamed.toc", bool noda
             queueConversion((*i).c_str());
 
         // Second, queue for toc scan.
-	if (!nodata_)
-	    queueScan(0, -1);
+        if (!nodata_)
+            queueScan(0, -1);
     }
 
     updateLevel_ = UPD_ALL;
@@ -148,7 +148,7 @@ unsigned long TocEdit::lengthSample() const
     return toc_->length().samples();
 }
 
-void TocEdit::filename(const std::string& fname)
+void TocEdit::filename(const std::string &fname)
 {
     if (!fname.empty()) {
         filename_ = fname;
@@ -192,7 +192,7 @@ int TocEdit::saveToc()
     return ret;
 }
 
-int TocEdit::saveAsToc(const std::string& fname)
+int TocEdit::saveAsToc(const std::string &fname)
 {
     int ret;
 
@@ -314,7 +314,7 @@ bool TocEdit::curScan(QueueJob *job)
         return true;
 
     if (ret == 2) {
-	signalError("Unable to open or read from input audio files");
+        signalError("Unable to open or read from input audio files");
         return false;
     }
 
@@ -448,7 +448,7 @@ void TocEdit::queueScan(long start, long end)
     addJobToThreadQueue(job);
 }
 
-void TocEdit::addJobToThreadQueue(QueueJob* job)
+void TocEdit::addJobToThreadQueue(QueueJob *job)
 {
     tm_.addJob(job);
     showOutstanding();
@@ -516,9 +516,9 @@ void TocEdit::QueueJob::completed()
 {
     // Runs in the main thread.
     if (exception.empty())
-	te->runCompletion(this);
+        te->runCompletion(this);
     else
-	te->signalError(exception.c_str());
+        te->signalError(exception.c_str());
     delete this;
 }
 

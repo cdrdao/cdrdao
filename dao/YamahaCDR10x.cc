@@ -35,7 +35,8 @@
 #include "log.h"
 #include "port.h"
 
-YamahaCDR10x::YamahaCDR10x(std::shared_ptr<ScsiIf> scsiIf, unsigned long options) : CdrDriver(scsiIf, options)
+YamahaCDR10x::YamahaCDR10x(std::shared_ptr<ScsiIf> scsiIf, unsigned long options)
+    : CdrDriver(scsiIf, options)
 {
     int i;
 

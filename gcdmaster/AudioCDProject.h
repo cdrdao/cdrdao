@@ -47,12 +47,11 @@ class AudioCDProject : public GCDWindow
         STOPPED
     };
 
-    static AudioCDProject* create(Glib::RefPtr<Gtk::Builder> builder,
-				  const Glib::ustring& path);
+    static AudioCDProject *create(Glib::RefPtr<Gtk::Builder> builder, const Glib::ustring &path);
 
     virtual ~AudioCDProject();
     // Only meant to be called by the builder get_widget_derived().
-    AudioCDProject(BaseObjectType* cobject, const Glib::RefPtr<Gtk::Builder>& builder);
+    AudioCDProject(BaseObjectType *cobject, const Glib::RefPtr<Gtk::Builder> &builder);
 
     bool on_close_request() override;
     void saveProject();
@@ -70,20 +69,20 @@ class AudioCDProject : public GCDWindow
     bool appendFiles(std::list<std::string> &);
     bool insertFiles(std::list<std::string> &);
 
-    PlayStatus playStatus() { return playStatus_;  }
+    PlayStatus playStatus() { return playStatus_; }
 
     Glib::RefPtr<TocEdit> tocEdit() { return tocEdit_; }
 
     void statusMessage(const char *fmt, ...);
 
-    void loadNewToc(const std::string& path, bool anonymous = false);
+    void loadNewToc(const std::string &path, bool anonymous = false);
 
     // Controls for app bar
     void cancelEnable(bool);
     sigc::signal<void()> signalCancelClicked;
 
   protected:
-    void setup(int number, const Glib::ustring& path);
+    void setup(int number, const Glib::ustring &path);
 
     Gtk::Button *buttonPlay_;
     Gtk::Button *buttonStop_;
@@ -98,12 +97,12 @@ class AudioCDProject : public GCDWindow
     virtual void on_cancel_clicked();
 
     virtual void status(const char *msg);
-    virtual void errorDialog(const Glib::ustring& msg);
+    virtual void errorDialog(const Glib::ustring &msg);
     virtual void progress(double val);
     virtual void spin(bool);
     virtual void fullView();
     virtual void sampleSelect(unsigned long, unsigned long);
-    virtual void saveAsDone(Glib::RefPtr<Gtk::FileDialog>, const Glib::RefPtr<Gio::AsyncResult>&);
+    virtual void saveAsDone(Glib::RefPtr<Gtk::FileDialog>, const Glib::RefPtr<Gio::AsyncResult> &);
 
     virtual void updateWindowTitle();
 
@@ -142,8 +141,8 @@ class AudioCDProject : public GCDWindow
     Glib::RefPtr<AudioCDRead> cdReader_;
     void projectInfo();
     void cddbQuery();
-    void cddbQuery1(Cddb*, CddbWindow::Error);
-    void cddbQuery2(Cddb*, CddbWindow::Error);
+    void cddbQuery1(Cddb *, CddbWindow::Error);
+    void cddbQuery2(Cddb *, CddbWindow::Error);
     virtual void update(unsigned long level) override;
 
     Glib::RefPtr<Gtk::Label> headerBarTitle_;

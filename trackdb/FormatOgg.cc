@@ -57,10 +57,10 @@ FormatSupport::Status FormatOgg::oggInit()
 {
     int ovret;
     if (!(fin_ = fopen(src_file_.c_str(), "r")) ||
-	  (ovret = ov_open(fin_, &vorbisFile_, NULL, 0)) != 0) {
-	std::ostringstream oss;
-	oss << "Could not open input file \"" << src_file_ << "\"\n";
-	throw std::runtime_error(oss.str());
+        (ovret = ov_open(fin_, &vorbisFile_, NULL, 0)) != 0) {
+        std::ostringstream oss;
+        oss << "Could not open input file \"" << src_file_ << "\"\n";
+        throw std::runtime_error(oss.str());
     }
 
     auto ostatus = setup_wav_output(dst_file_);

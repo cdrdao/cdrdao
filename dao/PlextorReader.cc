@@ -251,9 +251,7 @@ int PlextorReader::finishDao()
     return 1;
 }
 
-void PlextorReader::abortDao()
-{
-}
+void PlextorReader::abortDao() {}
 
 // tries to read catalog number from disk and adds it to 'toc'
 // return: 1 if valid catalog number was found, else 0

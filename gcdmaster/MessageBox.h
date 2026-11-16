@@ -28,13 +28,12 @@ class MessageBox
   public:
     virtual ~MessageBox() {}
 
-    static Glib::RefPtr<MessageBox>
-    create(Gtk::Window& p, const Glib::ustring title,
-                        const std::vector<Glib::ustring> buttons,
-                        int defaultButton, int cancelButton,
-                        const std::vector<Glib::ustring> extra_lines = {});
+    static Glib::RefPtr<MessageBox> create(Gtk::Window &p, const Glib::ustring title,
+                                           const std::vector<Glib::ustring> buttons,
+                                           int defaultButton, int cancelButton,
+                                           const std::vector<Glib::ustring> extra_lines = {});
 
-    static void message(Gtk::Window& p, const Glib::ustring title,
+    static void message(Gtk::Window &p, const Glib::ustring title,
                         const std::vector<Glib::ustring> extra_lines = {});
 
     virtual void choose();
@@ -42,51 +41,47 @@ class MessageBox
 
   protected:
     Glib::RefPtr<Gtk::AlertDialog> dialog;
-    Gtk::Window& parentWindow;
+    Gtk::Window &parentWindow;
 
     struct PtrHolder {
         PtrHolder(Glib::RefPtr<MessageBox> b) : box(b) {}
         Glib::RefPtr<MessageBox> box;
-    }* holder = NULL;
+    } *holder = NULL;
 
-private:
-    MessageBox(Gtk::Window&);
+  private:
+    MessageBox(Gtk::Window &);
 
-    void init(const Glib::ustring title,
-              const std::vector<Glib::ustring> buttons,
+    void init(const Glib::ustring title, const std::vector<Glib::ustring> buttons,
               int defaultButton, int cancelButton,
               const std::vector<Glib::ustring> extra_lines = {});
-
 };
 
 class Ask2Box
 {
   public:
-    static Glib::RefPtr<MessageBox>
-    create(Gtk::Window& p, const Glib::ustring title, int defaultButton,
-           const std::vector<Glib::ustring> extra_lines = {});
+    static Glib::RefPtr<MessageBox> create(Gtk::Window &p, const Glib::ustring title,
+                                           int defaultButton,
+                                           const std::vector<Glib::ustring> extra_lines = {});
 };
 
 class Ask3Box
 {
   public:
-    static Glib::RefPtr<MessageBox>
-    create(Gtk::Window& p, const Glib::ustring title, int defaultButton,
-           const std::vector<Glib::ustring> extra_lines = {});
+    static Glib::RefPtr<MessageBox> create(Gtk::Window &p, const Glib::ustring title,
+                                           int defaultButton,
+                                           const std::vector<Glib::ustring> extra_lines = {});
 
-    static void message(Gtk::Window& p, const Glib::ustring title,
-                        int defaultButton,
+    static void message(Gtk::Window &p, const Glib::ustring title, int defaultButton,
                         const std::vector<Glib::ustring> extra_lines = {});
 };
 
 class ErrorBox
 {
   public:
-    static Glib::RefPtr<MessageBox>
-    create(Gtk::Window& p, const Glib::ustring title,
-           const std::vector<Glib::ustring> extra_lines = {});
+    static Glib::RefPtr<MessageBox> create(Gtk::Window &p, const Glib::ustring title,
+                                           const std::vector<Glib::ustring> extra_lines = {});
 
-    static void message(Gtk::Window& p, const Glib::ustring msg,
+    static void message(Gtk::Window &p, const Glib::ustring msg,
                         const std::vector<Glib::ustring> extra_lines = {});
 };
 

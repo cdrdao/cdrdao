@@ -62,15 +62,15 @@ class CdDevice : public sigc::trackable
         A_NONE
     };
 
-    CdDevice(const std::string& dev, const std::string& vendor, const std::string& product);
+    CdDevice(const std::string &dev, const std::string &vendor, const std::string &product);
     ~CdDevice();
 
     Glib::ustring settingString() const;
 
-    const std::string& dev() const { return dev_; }
-    const std::string& vendor() const { return vendor_; }
-    const std::string& product() const { return product_; }
-    const std::string& description() const { return description_; }
+    const std::string &dev() const { return dev_; }
+    const std::string &vendor() const { return vendor_; }
+    const std::string &product() const { return product_; }
+    const std::string &description() const { return description_; }
 
     Status status() const { return status_; }
     Process *process() const { return process_; }
@@ -86,13 +86,13 @@ class CdDevice : public sigc::trackable
 
     int autoSelectDriver();
 
-    const std::string& driver() const { return driver_; }
-    void driver(const std::string& d) { driver_ = d; }
+    const std::string &driver() const { return driver_; }
+    void driver(const std::string &d) { driver_ = d; }
 
     DeviceType deviceType() const;
     std::string deviceTypeName() const { return CdDevice::deviceType2string(deviceType()); }
     void deviceType(DeviceType);
-    void deviceType(const std::string& t) { deviceType(CdDevice::devtypeName2Id(t)); }
+    void deviceType(const std::string &t) { deviceType(CdDevice::devtypeName2Id(t)); }
 
     unsigned long driverOptions() const;
     void driverOptions(unsigned long);
@@ -107,9 +107,8 @@ class CdDevice : public sigc::trackable
                    int eject, int reload, int buffer, int overburn);
     void abortDaoRecording();
 
-    int extractDao(Gtk::Window &parent,
-		   const std::string& tocFile, const std::string& dataFile,
-		   int correction,int readSubChanMode);
+    int extractDao(Gtk::Window &parent, const std::string &tocFile, const std::string &dataFile,
+                   int correction, int readSubChanMode);
     void abortDaoReading();
 
     int duplicateDao(Gtk::Window &parent, int simulate, int multiSession, int speed, int eject,
@@ -124,14 +123,14 @@ class CdDevice : public sigc::trackable
     void progress(int *status, int *totalTracks, int *track, int *trackProgress, int *totalProgress,
                   int *bufferFill, int *writerFill) const;
 
-    CdrDriver* cdDriver() { return cdDriver_; }
+    CdrDriver *cdDriver() { return cdDriver_; }
 
-    sigc::signal<void(CdDevice*)> signalProcessFinished;
+    sigc::signal<void(CdDevice *)> signalProcessFinished;
 
     // Static methods
     //
-    
-    static DeviceType devtypeName2Id(const std::string&);
+
+    static DeviceType devtypeName2Id(const std::string &);
 
     static const std::string status2string(Status);
     static const std::string deviceType2string(DeviceType);
@@ -139,8 +138,9 @@ class CdDevice : public sigc::trackable
     static void importSettings();
     static void exportSettings();
 
-    static CdDevice *add(const std::string& scsidev, const std::string& vendor, const std::string& product);
-    static CdDevice *add(const std::string& setting);
+    static CdDevice *add(const std::string &scsidev, const std::string &vendor,
+                         const std::string &product);
+    static CdDevice *add(const std::string &setting);
     static CdDevice *find(const std::string dev);
     static bool scan();
 
@@ -149,14 +149,14 @@ class CdDevice : public sigc::trackable
     // are removed; entries that persist keep their existing CdDevice
     // object (and thus their status and any running process). Returns true
     // if the list was modified.
-    static bool updateDeviceList(const std::vector<DeviceMonitor::DeviceInfo>& devices);
+    static bool updateDeviceList(const std::vector<DeviceMonitor::DeviceInfo> &devices);
 
     static void clear();
     static int update();
 
-    static std::vector<CdDevice*>&   deviceList()  { return DEVICE_LIST; }
-    static std::vector<std::string>& driverNames() { return DRIVER_NAMES; }
-    static std::vector<std::string>  deviceNames() { return DEV_TYPE_NAMES; }
+    static std::vector<CdDevice *> &deviceList() { return DEVICE_LIST; }
+    static std::vector<std::string> &driverNames() { return DRIVER_NAMES; }
+    static std::vector<std::string> deviceNames() { return DEV_TYPE_NAMES; }
 
   private:
     std::string dev_; // SCSI device
@@ -171,7 +171,7 @@ class CdDevice : public sigc::trackable
     bool manuallyConfigured_ = false;
 
     std::shared_ptr<ScsiIf> scsiIf_;
-    CdrDriver* cdDriver_ = nullptr;
+    CdrDriver *cdDriver_ = nullptr;
     Status status_ = DEV_UNKNOWN;
 
     enum Action action_;
@@ -198,7 +198,7 @@ class CdDevice : public sigc::trackable
     void releaseDevice();
 
     static std::vector<std::string> DRIVER_NAMES;
-    static std::vector<CdDevice*> DEVICE_LIST;
+    static std::vector<CdDevice *> DEVICE_LIST;
     static std::vector<std::string> DEV_TYPE_NAMES;
     static std::vector<std::string> STATUS_NAMES;
 };

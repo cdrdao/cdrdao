@@ -38,10 +38,7 @@ class PlextorReaderScan : public PlextorReader
 
     Toc *readDisk(int session, const char *);
 
-    unsigned long getReadCapabilites(const CdToc *, int) const
-    {
-        return 0;
-    }
+    unsigned long getReadCapabilites(const CdToc *, int) const { return 0; }
 
   protected:
     int analyzeTrack(TrackData::Mode, int trackNr, long startLba, long endLba, Msf *index,

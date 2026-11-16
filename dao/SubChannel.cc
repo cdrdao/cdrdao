@@ -76,9 +76,7 @@ SubChannel::SubChannel()
     crcValid_ = 1; // CRC is usually valid
 }
 
-SubChannel::~SubChannel()
-{
-}
+SubChannel::~SubChannel() {}
 
 void SubChannel::crcInvalid()
 {

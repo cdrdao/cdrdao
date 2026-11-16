@@ -83,8 +83,7 @@ typedef enum {
 // main commands, including some of the basic processing steps
 // required, almost as a simplified state machine.
 
-struct cmdStruct
-{
+struct cmdStruct {
     // The command code, which is also the index into the array
     DaoCommand cmd;
     // The command-line string for this command
@@ -104,7 +103,7 @@ struct cmdStruct
 
 struct DaoCommandLine {
     std::optional<DaoCommand> command;
-    cmdStruct  commandInfo;
+    cmdStruct commandInfo;
 
     const char *progName;
     std::optional<std::string> tocFile;
@@ -165,7 +164,7 @@ struct DaoCommandLine {
 
 class Cdrdao
 {
-public:
+  public:
     Cdrdao(std::optional<DaoCommandLine> options = std::nullopt);
 
     static void printVersion();
@@ -188,11 +187,11 @@ public:
     CdrDriver *selectDriver(DaoCommand, std::shared_ptr<ScsiIf>, const std::string &);
     std::string getDefaultDevice(DaoDeviceType req);
     CdrDriver *setupDevice(DaoCommand, const std::string &dev, const std::string &driver,
-			   int initDevice, int checkReady, int checkEmpty, int readingSpeed,
-			   bool remote, bool reload);
+                           int initDevice, int checkReady, int checkEmpty, int readingSpeed,
+                           bool remote, bool reload);
 
     PrintParams errPrintParams, filePrintParams;
-    int MAX_RETRY=10;
+    int MAX_RETRY = 10;
 };
 
 #endif

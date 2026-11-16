@@ -63,9 +63,7 @@ void PWSubChannel96::init(unsigned char *buf)
     }
 }
 
-PWSubChannel96::~PWSubChannel96()
-{
-}
+PWSubChannel96::~PWSubChannel96() {}
 
 SubChannel *PWSubChannel96::makeSubChannel(Type t)
 {

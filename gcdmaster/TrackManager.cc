@@ -147,8 +147,8 @@ const TrackManager::Entry *TrackManager::pick(gint x, gint *stopXMin, gint *stop
     }
 
     for (run = entries_, pred = NULL; run != NULL; pred = run->ent, run = run->next) {
-        if (run->ent->indexNr != 1 && run->ent->extend == 0 && 
-            x >= run->ent->xpos && x < run->ent->xpos + trackMarkerWidth_) {
+        if (run->ent->indexNr != 1 && run->ent->extend == 0 && x >= run->ent->xpos &&
+            x < run->ent->xpos + trackMarkerWidth_) {
 
             if (stopXMin != NULL)
                 *stopXMin = pred != NULL ? pred->xpos : 0;
@@ -163,7 +163,7 @@ const TrackManager::Entry *TrackManager::pick(gint x, gint *stopXMin, gint *stop
     return NULL;
 }
 
-const TrackManager::Entry* TrackManager::pickRange(gint x)
+const TrackManager::Entry *TrackManager::pickRange(gint x)
 {
     EntryList *run = entries_;
     Entry *pred = nullptr;

@@ -45,9 +45,7 @@ CDD2600::CDD2600(std::shared_ptr<ScsiIf> scsiIf, unsigned long options)
     memset(&diskInfo_, 0, sizeof(DiskInfo));
 }
 
-CDD2600::~CDD2600()
-{
-}
+CDD2600::~CDD2600() {}
 
 // static constructor
 CdrDriver *CDD2600::instance(std::shared_ptr<ScsiIf> scsiIf, unsigned long options)

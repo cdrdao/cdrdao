@@ -46,7 +46,7 @@ FormatSupport::Status FormatSupport::setup_wav_output(const std::string &wav_fil
 
     ao_dev_ = ao_open_file(ao_driver_id("wav"), wav_file.c_str(), 1, &ao_format_, nullptr);
     if (!ao_dev_) {
-	throw std::runtime_error("Unable to create WAV output file");
+        throw std::runtime_error("Unable to create WAV output file");
     }
     return FS_SUCCESS;
 }
@@ -55,7 +55,7 @@ FormatSupport::Status FormatSupport::write_wav_output(char *samples, u32 num_byt
 {
     assert(ao_dev_);
     if (ao_play(ao_dev_, samples, num_bytes) == 0)
-	throw std::runtime_error("Unable to save WAV output");
+        throw std::runtime_error("Unable to save WAV output");
 
     return FS_SUCCESS;
 }

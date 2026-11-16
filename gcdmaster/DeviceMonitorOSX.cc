@@ -83,15 +83,13 @@ class OSXDeviceMonitor : public DeviceMonitor
         if (port_) {
             CFRunLoopAddSource(runLoop, IONotificationPortGetRunLoopSource(port_),
                                kCFRunLoopDefaultMode);
-            if (IOServiceAddMatchingNotification(port_, kIOFirstMatchNotification,
-                                                 authoringDeviceMatch(),
-                                                 &OSXDeviceMonitor::ioChanged, this,
-                                                 &addedIter_) == KERN_SUCCESS)
+            if (IOServiceAddMatchingNotification(
+                    port_, kIOFirstMatchNotification, authoringDeviceMatch(),
+                    &OSXDeviceMonitor::ioChanged, this, &addedIter_) == KERN_SUCCESS)
                 drain(addedIter_);
-            if (IOServiceAddMatchingNotification(port_, kIOTerminatedNotification,
-                                                 authoringDeviceMatch(),
-                                                 &OSXDeviceMonitor::ioChanged, this,
-                                                 &removedIter_) == KERN_SUCCESS)
+            if (IOServiceAddMatchingNotification(
+                    port_, kIOTerminatedNotification, authoringDeviceMatch(),
+                    &OSXDeviceMonitor::ioChanged, this, &removedIter_) == KERN_SUCCESS)
                 drain(removedIter_);
         }
 
@@ -114,7 +112,7 @@ class OSXDeviceMonitor : public DeviceMonitor
         }
 
         if (session_) {
-            DAUnregisterCallback(session_, (void*)&OSXDeviceMonitor::diskDisappeared, this);
+            DAUnregisterCallback(session_, (void *)&OSXDeviceMonitor::diskDisappeared, this);
             DASessionUnscheduleFromRunLoop(session_, runLoop, kCFRunLoopDefaultMode);
             CFRelease(session_);
             session_ = nullptr;
@@ -136,15 +134,15 @@ class OSXDeviceMonitor : public DeviceMonitor
     }
 
   private:
-    static void ioChanged(void* context, io_iterator_t it)
+    static void ioChanged(void *context, io_iterator_t it)
     {
         drain(it);
-        static_cast<OSXDeviceMonitor*>(context)->rescanPending_ = true;
+        static_cast<OSXDeviceMonitor *>(context)->rescanPending_ = true;
     }
 
-    static void diskDisappeared(DADiskRef, void* context)
+    static void diskDisappeared(DADiskRef, void *context)
     {
-        static_cast<OSXDeviceMonitor*>(context)->rescanPending_ = true;
+        static_cast<OSXDeviceMonitor *>(context)->rescanPending_ = true;
     }
 
     // Rebuild the device list from a fresh SCSI scan. Callbacks only flag
@@ -153,7 +151,7 @@ class OSXDeviceMonitor : public DeviceMonitor
     void rescan()
     {
         int len = 0;
-        ScsiIf::ScanData* sdata = ScsiIf::scan(&len);
+        ScsiIf::ScanData *sdata = ScsiIf::scan(&len);
 
         std::vector<DeviceInfo> devices;
         for (int i = 0; sdata && i < len; i++) {

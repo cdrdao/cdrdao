@@ -39,10 +39,7 @@
 class SoundIFImpl
 {
   public:
-    SoundIFImpl()
-    {
-        dspFd_ = -1;
-    }
+    SoundIFImpl() { dspFd_ = -1; }
 
     int setupDevice();
     int openDevice();

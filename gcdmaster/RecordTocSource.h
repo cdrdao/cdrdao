@@ -33,7 +33,7 @@ class RecordTocSource : public Gtk::Box
 
     void update(unsigned long level);
     void set(Glib::RefPtr<TocEdit>);
-    
+
   private:
     Glib::RefPtr<TocEdit> tocEdit_;
     bool active_ = false;

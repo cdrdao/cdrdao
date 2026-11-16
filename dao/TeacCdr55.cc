@@ -28,7 +28,8 @@
 #include "Toc.h"
 #include "log.h"
 
-TeacCdr55::TeacCdr55(std::shared_ptr<ScsiIf> scsiIf, unsigned long options) : CdrDriver(scsiIf, options)
+TeacCdr55::TeacCdr55(std::shared_ptr<ScsiIf> scsiIf, unsigned long options)
+    : CdrDriver(scsiIf, options)
 {
     int i;
     driverName_ = "Teac CD-R50/55 - Version 0.1 (data)";

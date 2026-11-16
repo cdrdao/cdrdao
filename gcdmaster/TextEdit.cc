@@ -34,9 +34,7 @@ TextEdit::TextEdit(const char *sample) : Gtk::Entry()
         setSize(sample);
 }
 
-TextEdit::~TextEdit()
-{
-}
+TextEdit::~TextEdit() {}
 
 void TextEdit::upperCase(int f)
 {

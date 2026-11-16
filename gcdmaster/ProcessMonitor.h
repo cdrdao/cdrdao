@@ -77,7 +77,7 @@ class ProcessMonitor
 
     int statusChanged();
 
-    Process *start(const std::string&, std::vector<std::string>& args, int pipeFdArgNum);
+    Process *start(const std::string &, std::vector<std::string> &args, int pipeFdArgNum);
     void stop(Process *);
 
     void remove(Process *);

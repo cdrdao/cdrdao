@@ -24,7 +24,7 @@
 
 #include "SoundIF.h"
 
-SoundIF* SoundIF::create()
+SoundIF *SoundIF::create()
 {
     return nullptr;
 }

@@ -480,7 +480,8 @@ int main(int argc, char **argv)
     if (convertedBinFile) {
         message(1, "Converting bin file...");
         if (convertBin(toc, binFileName.c_str(), convertedBinFile, byteSwapBinAudio)) {
-            message(1, "Error converting bin file '%s' to '%s'", binFileName.c_str(), convertedBinFile);
+            message(1, "Error converting bin file '%s' to '%s'", binFileName.c_str(),
+                    convertedBinFile);
             message(1, "");
         } else {
             message(1, "Converted bin file '%s' to '%s'", binFileName.c_str(), convertedBinFile);

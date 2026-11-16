@@ -34,13 +34,12 @@
 
 #include "Sample.h"
 
-Glib::RefPtr<AddSilenceDialog> AddSilenceDialog::create(Gtk::Window* parent)
+Glib::RefPtr<AddSilenceDialog> AddSilenceDialog::create(Gtk::Window *parent)
 {
     return Glib::make_refptr_for_instance(new AddSilenceDialog(parent));
 }
 
-AddSilenceDialog::AddSilenceDialog(Gtk::Window* parent) :
-    parent_(parent)
+AddSilenceDialog::AddSilenceDialog(Gtk::Window *parent) : parent_(parent)
 {
     set_hide_on_close(true);
 
@@ -53,7 +52,7 @@ AddSilenceDialog::AddSilenceDialog(Gtk::Window* parent) :
     grid->set_column_spacing(5);
     grid->set_margin(10);
 
-    auto add_row = [&](const std::string& label_text, Gtk::Widget& entry, int row) {
+    auto add_row = [&](const std::string &label_text, Gtk::Widget &entry, int row) {
         auto label = Gtk::make_managed<Gtk::Label>(label_text);
         label->set_halign(Gtk::Align::START);
         grid->attach(*label, 0, row, 1, 1);
@@ -69,7 +68,7 @@ AddSilenceDialog::AddSilenceDialog(Gtk::Window* parent) :
     auto frame = Gtk::make_managed<Gtk::Frame>(_(" Length of Silence "));
     frame->set_child(*grid);
     main_vbox->append(*frame);
-    
+
     auto bbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL, 6);
     bbox->set_halign(Gtk::Align::END);
     bbox->set_margin_top(10);
@@ -98,7 +97,7 @@ void AddSilenceDialog::mode(Mode m)
     }
 }
 
-void AddSilenceDialog::start(Mode m,TocEditView *view)
+void AddSilenceDialog::start(Mode m, TocEditView *view)
 {
     mode(m);
     active_ = true;
@@ -156,7 +155,7 @@ void AddSilenceDialog::applyAction()
         return;
 
     unsigned long length = 0;
-    auto parse = [&](Gtk::Entry& e) {
+    auto parse = [&](Gtk::Entry &e) {
         auto t = e.get_text();
         return t.empty() ? 0 : std::atol(t.c_str());
     };
@@ -165,7 +164,6 @@ void AddSilenceDialog::applyAction()
     length += parse(seconds_) * 75 * SAMPLES_PER_BLOCK;
     length += parse(frames_) * SAMPLES_PER_BLOCK;
     length += parse(samples_);
-
 
     if (length > 0) {
         unsigned long pos;
@@ -176,7 +174,7 @@ void AddSilenceDialog::applyAction()
             signal_tocModified.emit(UPD_TOC_DATA | UPD_TRACK_DATA | UPD_SAMPLE_SEL);
             signal_fullView.emit();
             signal_tocModified.emit(UPD_SAMPLES);
-        } else if (mode_ ==  M_INSERT && tocEditView_->sampleMarker(&pos)) {
+        } else if (mode_ == M_INSERT && tocEditView_->sampleMarker(&pos)) {
             if (tocEdit->insertSilence(length, pos) == 0) {
                 tocEditView_->sampleSelect(pos, pos + length - 1);
                 update(UPD_TOC_DATA | UPD_TRACK_DATA, tocEditView_);

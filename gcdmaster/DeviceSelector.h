@@ -36,7 +36,7 @@ class DeviceSelector : public Gtk::Frame
     DeviceSelector(std::optional<CdDevice::DeviceType> filterType = std::nullopt);
     ~DeviceSelector() {};
 
-    CdDevice* selection();
+    CdDevice *selection();
     void selectOne();
     void appendTableEntry(CdDevice *);
     void import();
@@ -58,17 +58,15 @@ class DeviceSelector : public Gtk::Frame
     class ListColumns : public Glib::Object
     {
       public:
-	CdDevice* device_;
+        CdDevice *device_;
 
-	static Glib::RefPtr<ListColumns> create(CdDevice* device) {
-	    return Glib::make_refptr_for_instance<ListColumns>(
-		new ListColumns(device));
-	}
+        static Glib::RefPtr<ListColumns> create(CdDevice *device)
+        {
+            return Glib::make_refptr_for_instance<ListColumns>(new ListColumns(device));
+        }
 
-    protected:
-	ListColumns(CdDevice* device)
-	    : device_(device) {
-	}
+      protected:
+        ListColumns(CdDevice *device) : device_(device) {}
     };
 
     Gtk::ColumnView colView_;

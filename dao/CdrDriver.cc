@@ -850,8 +850,7 @@ void CdrDriver::printDriverIds()
     }
 }
 
-CdrDriver::CdrDriver(std::shared_ptr<ScsiIf> scsiIf, unsigned long options)
-    : scsiIf_(scsiIf)
+CdrDriver::CdrDriver(std::shared_ptr<ScsiIf> scsiIf, unsigned long options) : scsiIf_(scsiIf)
 {
     size16 byteOrderTest = 1;
     char *byteOrderTestP = (char *)&byteOrderTest;
@@ -2111,7 +2110,7 @@ int CdrDriver::checkSubChanReadCaps(TrackData::Mode mode, unsigned long caps)
 // session: session that should be analyzed
 // audioFilename: name of audio file that is placed into TOC
 // Return: newly allocated 'Toc' object or 'NULL' on error
-Toc *CdrDriver::readDiskToc(int session, const char* dataFilename)
+Toc *CdrDriver::readDiskToc(int session, const char *dataFilename)
 {
     int nofTracks = 0;
     int i, j;
@@ -2145,10 +2144,10 @@ Toc *CdrDriver::readDiskToc(int session, const char* dataFilename)
     readCapabilities_ = getReadCapabilities(cdToc, nofTracks);
 
     if (dataFilename) {
-	fname = dataFilename;
-	auto found = fname.find_last_of(".");
-	if (found != string::npos) {
-	    extension = fname.substr(found);
+        fname = dataFilename;
+        auto found = fname.find_last_of(".");
+        if (found != string::npos) {
+            extension = fname.substr(found);
             fname.erase(found);
         }
     }
@@ -2199,9 +2198,9 @@ Toc *CdrDriver::readDiskToc(int session, const char* dataFilename)
         trackInfos[i].fill = 0;
         trackInfos[i].indexCnt = 0;
         trackInfos[i].isrcCode[0] = 0;
-	if (!fname.empty())
-	    trackInfos[i].filename = buildDataFileName(i, cdToc, nofTracks,
-						       fname.c_str(), extension.c_str());
+        if (!fname.empty())
+            trackInfos[i].filename =
+                buildDataFileName(i, cdToc, nofTracks, fname.c_str(), extension.c_str());
         trackInfos[i].bytesWritten = 0;
     }
 
@@ -2273,8 +2272,9 @@ Toc *CdrDriver::readDiskToc(int session, const char* dataFilename)
                 if (analyzeTrack(TrackData::AUDIO, i + 1, slba, elba, indexIncrements,
                                  &indexIncrementCnt, i < nofTracks - 1 ? &pregap : 0, isrcCode,
                                  &trackCtl) != 0) {
-                    log_message(-1, "Analysis of track %d failed - pre-gap, index marks and "
-                                    "ISRC code of track may be incomplete.",
+                    log_message(-1,
+                                "Analysis of track %d failed - pre-gap, index marks and "
+                                "ISRC code of track may be incomplete.",
                                 i + 1);
                 }
                 if (pregap < 0 || pregap >= elba - slba) {
@@ -4385,9 +4385,7 @@ long cdda_read(cdrom_drive *d, void *buffer, long beginsector, long sectors)
                           beginsector, sectors);
 }
 
-void CdrDriver::paranoiaCallback(long, int)
-{
-}
+void CdrDriver::paranoiaCallback(long, int) {}
 
 std::ostream &operator<<(std::ostream &os, const CdTextPack &pack)
 {

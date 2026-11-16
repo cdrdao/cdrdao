@@ -1617,8 +1617,9 @@ DiskInfo *GenericMMC::diskInfo()
 
     // Recording speeds supported by the drive for the inserted medium.
     // Expressed as CD speed factors, so only meaningful for CD media.
-    if (cdMedium && getWriteSpeeds(diskInfo_.writeSpeeds, DiskInfo::MAX_WRITE_SPEEDS,
-                                   &diskInfo_.writeSpeedCnt) == 0 &&
+    if (cdMedium &&
+        getWriteSpeeds(diskInfo_.writeSpeeds, DiskInfo::MAX_WRITE_SPEEDS,
+                       &diskInfo_.writeSpeedCnt) == 0 &&
         diskInfo_.writeSpeedCnt > 0) {
         int low = diskInfo_.writeSpeeds[0];
         int high = low;

@@ -26,7 +26,7 @@
 
 int ScsiIf::inquiry()
 {
-    unsigned char cmd[6] = { 0x12 /* INQUIRY */, 0, 0, 0, 0x2c, 0};
+    unsigned char cmd[6] = {0x12 /* INQUIRY */, 0, 0, 0, 0x2c, 0};
     unsigned char result[0x2c];
     int i;
 

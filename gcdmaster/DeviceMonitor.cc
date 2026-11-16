@@ -81,7 +81,7 @@ void DeviceMonitor::publish(std::vector<DeviceInfo> devices)
     // Normalize ordering so that a mere reordering by the backend does not
     // register as a change.
     std::sort(devices.begin(), devices.end(),
-              [](const DeviceInfo& a, const DeviceInfo& b) { return a.node < b.node; });
+              [](const DeviceInfo &a, const DeviceInfo &b) { return a.node < b.node; });
 
     {
         std::lock_guard<std::mutex> lock(devicesMutex_);
@@ -103,7 +103,7 @@ bool DeviceMonitor::sleep(int ms)
 
 bool DeviceMonitor::stopRequested() const
 {
-    std::lock_guard<std::mutex> lock(const_cast<std::mutex&>(stopMutex_));
+    std::lock_guard<std::mutex> lock(const_cast<std::mutex &>(stopMutex_));
     return stop_;
 }
 

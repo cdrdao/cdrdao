@@ -86,11 +86,10 @@ void Cddb::localCddbDirectory(const std::string &dir)
     }
 }
 
-void Cddb::appendQueryResult(const std::string& category, const std::string& diskId,
-                             const std::string& title, bool exactMatch)
+void Cddb::appendQueryResult(const std::string &category, const std::string &diskId,
+                             const std::string &title, bool exactMatch)
 {
-    queryResults_.emplace(queryResults_.end(),
-                          QueryResults{category, diskId, title, exactMatch});
+    queryResults_.emplace(queryResults_.end(), QueryResults{category, diskId, title, exactMatch});
 }
 
 /* NOTE: gnudb is deprecating the HTTP method.
@@ -149,7 +148,7 @@ void Cddb::appendServer(std::string_view name)
         }
     }
 
-    for (auto const& s : serverList_) {
+    for (auto const &s : serverList_) {
         if (s.server == name)
             return;
     }
@@ -162,9 +161,8 @@ void Cddb::appendServer(std::string_view name)
         }
     }
 
-    serverList_.emplace(serverList_.end(),
-                        ServerList{std::string{name}, portNr, httpCgiBin,
-                            httpProxyServer, httpProxyPortNr});
+    serverList_.emplace(serverList_.end(), ServerList{std::string{name}, portNr, httpCgiBin,
+                                                      httpProxyServer, httpProxyPortNr});
 }
 
 /* Tries to connect to a CDDB server. If no server was previously connected
@@ -174,7 +172,7 @@ void Cddb::appendServer(std::string_view name)
  *         1: could not connect to any server
  */
 
-bool Cddb::openSingleConnection(ServerList* sl)
+bool Cddb::openSingleConnection(ServerList *sl)
 {
     struct sockaddr_in sockAddr;
     struct hostent *hostEnt;
@@ -190,8 +188,8 @@ bool Cddb::openSingleConnection(ServerList* sl)
             log_message(1, "CDDB: Connecting to http://%s:%u%s via proxy %s:%u ...",
                         sl->server.c_str(), sl->port, sl->httpCgiBin.c_str(), server.c_str(), port);
         } else {
-            log_message(1, "CDDB: Connecting to http://%s:%u%s ...",
-                        server.c_str(), port,sl->httpCgiBin.c_str());
+            log_message(1, "CDDB: Connecting to http://%s:%u%s ...", server.c_str(), port,
+                        sl->httpCgiBin.c_str());
         }
     } else {
         log_message(1, "CDDB: Connecting to cddbp://%s:%u ...", server.c_str(), port);
@@ -235,7 +233,8 @@ bool Cddb::openSingleConnection(ServerList* sl)
         return true;
     } else {
         alarm(0);
-        log_message(-1, "CDDB: Failed to connect to '%s:%u: %s", server.c_str(), port, strerror(errno));
+        log_message(-1, "CDDB: Failed to connect to '%s:%u: %s", server.c_str(), port,
+                    strerror(errno));
         closeConnection();
         return false;
     }
@@ -273,9 +272,9 @@ bool Cddb::openConnection()
     bool success = false;
 
     if (selectedServer_)
-        success =  openSingleConnection(selectedServer_);
+        success = openSingleConnection(selectedServer_);
     else {
-        for (auto& srv : serverList_) {
+        for (auto &srv : serverList_) {
             if ((success = openSingleConnection(&srv)))
                 break;
         }
@@ -312,15 +311,13 @@ void Cddb::closeConnection()
 /* Create some strings that are used for all communications via the http
  * protocol.
  */
-void Cddb::setupHttpData(const std::string& userName, const std::string& hostName,
-                         const std::string& clientName, const std::string& version)
+void Cddb::setupHttpData(const std::string &userName, const std::string &hostName,
+                         const std::string &clientName, const std::string &version)
 {
     httpCmd_ = "&hello=";
     httpCmd_ += userName + "+" + hostName + "+" + clientName + "+" + version + "&proto=6";
-    httpData_ =
-        "User-Agent: " + clientName + "/" + version + "\r\n" +
-        "Accept: text/plain\r\n" +
-        "Keep-Alive: timeout=60, max=200\r\n";
+    httpData_ = "User-Agent: " + clientName + "/" + version + "\r\n" + "Accept: text/plain\r\n" +
+                "Keep-Alive: timeout=60, max=200\r\n";
 }
 
 /* Tries to connect to a server of the internal server list and performs the
@@ -330,8 +327,8 @@ void Cddb::setupHttpData(const std::string& userName, const std::string& hostNam
  *         2: handshake failed
  */
 
-int Cddb::connectDb(const std::string& userName, const std::string& hostName,
-                    const std::string& clientName, const std::string& version)
+int Cddb::connectDb(const std::string &userName, const std::string &hostName,
+                    const std::string &clientName, const std::string &version)
 {
     int code[3];
     std::string response;
@@ -345,7 +342,7 @@ int Cddb::connectDb(const std::string& userName, const std::string& hostName,
 
     if (selectedServer_->httpCgiBin.empty())
         return 1;
-    
+
     setupHttpData(userName, hostName, clientName, version);
     return 0;
 }
@@ -490,7 +487,7 @@ int Cddb::queryDb()
  * Return: 0: OK
  *         1: communication error or could not retrieve CDDB entry
  */
-std::optional<Cddb::CddbEntry>& Cddb::readDb(const std::string& category, const std::string& diskId)
+std::optional<Cddb::CddbEntry> &Cddb::readDb(const std::string &category, const std::string &diskId)
 {
     int code[3];
     int localRecordFd = -1;
@@ -573,7 +570,7 @@ static std::string cdTextFilter(std::string_view s)
     std::string ret;
 
     for (auto c : s) {
-        if (c == '\n' ||  c == '\t')
+        if (c == '\n' || c == '\t')
             c = ' ';
         ret.push_back(c);
     }
@@ -619,24 +616,23 @@ int Cddb::addAsCdText(Toc *toc)
     toc->cdTextLanguage(0, 9);
 
     if (haveTitle) {
-        item =
-            createItem(CdTextItem::PackType::TITLE,
-                       cddbEntry_->diskTitle.empty() ? "" :
-                       cdTextFilter(cddbEntry_->diskTitle.c_str()));
+        item = createItem(
+            CdTextItem::PackType::TITLE,
+            cddbEntry_->diskTitle.empty() ? "" : cdTextFilter(cddbEntry_->diskTitle.c_str()));
         toc->addCdTextItem(0, item);
     }
 
     if (havePerformer) {
-        item = createItem(CdTextItem::PackType::PERFORMER,
-                          cddbEntry_->diskArtist.empty() ? "" :
-                          cdTextFilter(cddbEntry_->diskArtist.c_str()));
+        item = createItem(
+            CdTextItem::PackType::PERFORMER,
+            cddbEntry_->diskArtist.empty() ? "" : cdTextFilter(cddbEntry_->diskArtist.c_str()));
         toc->addCdTextItem(0, item);
     }
 
     if (haveMessage) {
         item = createItem(CdTextItem::PackType::MESSAGE,
-                          cddbEntry_->diskExt.empty() ? "" :
-                          cdTextFilter(cddbEntry_->diskExt.c_str()));
+                          cddbEntry_->diskExt.empty() ? ""
+                                                      : cdTextFilter(cddbEntry_->diskExt.c_str()));
         toc->addCdTextItem(0, item);
     }
 
@@ -681,14 +677,17 @@ std::optional<std::string> Cddb::readLine()
         if (nl != std::string::npos) {
             line = readBuffer_.substr(0, nl);
             readBuffer_.erase(0, nl + 1);
-            if (!line.empty() && line.back() == '\r') line.pop_back();
+            if (!line.empty() && line.back() == '\r')
+                line.pop_back();
             break;
         }
         if (readEof_) {
-            if (readBuffer_.empty()) return std::nullopt;
+            if (readBuffer_.empty())
+                return std::nullopt;
             line = std::move(readBuffer_);
             readBuffer_.clear();
-            if (!line.empty() && line.back() == '\r') line.pop_back();
+            if (!line.empty() && line.back() == '\r')
+                line.pop_back();
             break;
         }
         fd_set fds;
@@ -741,7 +740,7 @@ std::optional<std::string> Cddb::readLine()
 bool Cddb::getCode(std::string_view line, int code[3])
 {
     if (line.size() <= 3)
-	return 0;
+        return 0;
     if (isdigit(line[0]) && isdigit(line[1]) && isdigit(line[2]) && isspace(line[3])) {
         code[0] = line[0] - '0';
         code[1] = line[1] - '0';
@@ -789,9 +788,7 @@ int Cddb::sendCommand(const std::vector<std::string> &args)
         ss << "Host: " << selectedServer_->server << "\r\n";
         ss << httpData_ << "\r\n";
     } else {
-        ss << "GET " << selectedServer_->httpCgiBin << "?cmd=" << cmd
-           << httpCmd_
-           << " HTTP/1.0\r\n"
+        ss << "GET " << selectedServer_->httpCgiBin << "?cmd=" << cmd << httpCmd_ << " HTTP/1.0\r\n"
            << "Host: " << selectedServer_->server << "\r\n"
            << httpData_ << "\r\n";
     }
@@ -852,17 +849,28 @@ std::string Cddb::calcCddbId()
     return buf;
 }
 
-std::string& Cddb::convertEscapeSequences(std::string& s)
+std::string &Cddb::convertEscapeSequences(std::string &s)
 {
     std::string result;
     result.reserve(s.size());
     for (size_t i = 0; i < s.size(); ++i) {
         if (s[i] == '\\' && i + 1 < s.size()) {
             switch (s[i + 1]) {
-            case 'n':  result += '\n'; ++i; break;
-            case 't':  result += '\t'; ++i; break;
-            case '\\': result += '\\'; ++i; break;
-            default:   result += s[i]; break;
+            case 'n':
+                result += '\n';
+                ++i;
+                break;
+            case 't':
+                result += '\t';
+                ++i;
+                break;
+            case '\\':
+                result += '\\';
+                ++i;
+                break;
+            default:
+                result += s[i];
+                break;
             }
         } else {
             result += s[i];
@@ -882,7 +890,8 @@ bool Cddb::parseQueryResult(std::string_view line, bool exactMatch)
     size_t componentIndex = 0;
 
     for (char c : line) {
-        if (c == '\n') break;
+        if (c == '\n')
+            break;
 
         if (componentIndex < 2 && (c == ' ' || c == '\t')) {
             if (!result[componentIndex].empty()) {
@@ -898,10 +907,8 @@ bool Cddb::parseQueryResult(std::string_view line, bool exactMatch)
         return false;
     }
 
-    appendQueryResult(convertEscapeSequences(result[0]),
-                      convertEscapeSequences(result[1]),
-                      convertEscapeSequences(result[2]),
-                      exactMatch);
+    appendQueryResult(convertEscapeSequences(result[0]), convertEscapeSequences(result[1]),
+                      convertEscapeSequences(result[2]), exactMatch);
     return true;
 }
 
@@ -936,13 +943,13 @@ int Cddb::readDbEntry(int localRecordFd)
         auto equal = resp->find('=');
         if (equal != std::string::npos) {
             std::string key = resp->substr(0, equal);
-            std::string value = resp->substr(equal+1);
+            std::string value = resp->substr(equal + 1);
 
             if (key == "DTITLE") {
                 cddbEntry_->diskArtist = value;
             } else if (key == "EXTD") {
                 cddbEntry_->diskExt = value;
-            } else if (key.substr(0,6) == "TTITLE") {
+            } else if (key.substr(0, 6) == "TTITLE") {
                 try {
                     auto trackNr = std::stoi(key.substr(6));
                     if (trackNr >= 0 && trackNr < ntracks) {
@@ -950,7 +957,7 @@ int Cddb::readDbEntry(int localRecordFd)
                     }
                 } catch (...) {
                 }
-            } else if (key.substr(0,4) == "EXTT") {
+            } else if (key.substr(0, 4) == "EXTT") {
                 try {
                     auto trackNr = std::stoi(key.substr(4));
                     if (trackNr >= 0 && trackNr < ntracks) {
@@ -964,7 +971,7 @@ int Cddb::readDbEntry(int localRecordFd)
 
     auto found = cddbEntry_->diskArtist.find('/');
     if (found != std::string::npos) {
-        cddbEntry_->diskTitle = cddbEntry_->diskArtist.substr(found+1);
+        cddbEntry_->diskTitle = cddbEntry_->diskArtist.substr(found + 1);
         cddbEntry_->diskArtist = cddbEntry_->diskArtist.substr(0, found);
     } else {
         cddbEntry_->diskTitle = cddbEntry_->diskArtist;
@@ -975,7 +982,7 @@ int Cddb::readDbEntry(int localRecordFd)
     return 0;
 }
 
-int Cddb::createLocalCddbFile(const std::string& category, const std::string& diskId)
+int Cddb::createLocalCddbFile(const std::string &category, const std::string &diskId)
 {
     std::string categoryDir;
     std::string recordFile;
@@ -1046,7 +1053,7 @@ fail:
     return fd;
 }
 
-CdTextItem *Cddb::createItem(CdTextItem::PackType ptype, const std::string& text)
+CdTextItem *Cddb::createItem(CdTextItem::PackType ptype, const std::string &text)
 {
     auto item = new CdTextItem(ptype, 0);
     item->setText(text.c_str());

@@ -75,41 +75,23 @@ class PlextorReader : public CdrDriver
     virtual ~PlextorReader();
     static CdrDriver *instance(std::shared_ptr<ScsiIf> scsiIf, unsigned long options);
 
-    unsigned long getReadCapabilities(const CdToc *, int) const
-    {
-        return 0;
-    }
+    unsigned long getReadCapabilities(const CdToc *, int) const { return 0; }
 
     // not used for readers
-    int bigEndianSamples() const
-    {
-        return 0;
-    }
+    int bigEndianSamples() const { return 0; }
 
     int speed(int);
 
-    int loadUnload(int) const
-    {
-        return 0;
-    }
+    int loadUnload(int) const { return 0; }
 
     int initDao(const Toc *);
     int startDao();
     int finishDao();
     void abortDao();
 
-    inline int ReadErrorsSlowDown()
-    {
-        return slow_down_on_read_errors;
-    }
-    inline int VibrationsSlowDown()
-    {
-        return slow_down_on_vibrations;
-    }
-    inline int WaitMaxSpeed()
-    {
-        return transfer_data_before_max_speed;
-    }
+    inline int ReadErrorsSlowDown() { return slow_down_on_read_errors; }
+    inline int VibrationsSlowDown() { return slow_down_on_vibrations; }
+    inline int WaitMaxSpeed() { return transfer_data_before_max_speed; }
     /*! \brief Controls wheter drive slows down when a read error occurs
 
       Special plextor feature;

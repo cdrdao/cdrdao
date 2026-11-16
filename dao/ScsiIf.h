@@ -52,11 +52,11 @@ class ScsiIf
     virtual ~ScsiIf() {}
 
     // Create a SCSI interface based on its opaque string device representation.
-    static std::shared_ptr<ScsiIf> create(const std::string& dev);
-    
-    const std::string& vendor() const   { return vendor_; }
-    const std::string& product() const  { return product_; }
-    const std::string& revision() const { return revision_; }
+    static std::shared_ptr<ScsiIf> create(const std::string &dev);
+
+    const std::string &vendor() const { return vendor_; }
+    const std::string &product() const { return product_; }
+    const std::string &revision() const { return revision_; }
 
     virtual int init() = 0;
 
@@ -125,13 +125,13 @@ class ScsiIf
     virtual int inquiry();
 
     struct ScanData {
-        std::string dev;      // name to pass to create() / --device
+        std::string dev; // name to pass to create() / --device
         std::string vendor;
         std::string product;
         std::string revision;
-        std::string id;       // if set, a name for the same device that
-                              // stays the same across runs (e.g. serial)
-        bool inUse = false;   // found, but opened by another process
+        std::string id;     // if set, a name for the same device that
+                            // stays the same across runs (e.g. serial)
+        bool inUse = false; // found, but opened by another process
     };
 
     // Scans for all SCSI devices and returns a newly allocated

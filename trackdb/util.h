@@ -42,7 +42,7 @@ char *strdupvCC(const char *s1, ...);
 
 long fullRead(int fd, void *buf, long count);
 long fullWrite(int fd, const void *buf, long count);
-long fullWrite(int fd, const std::string& buffer);
+long fullWrite(int fd, const std::string &buffer);
 long readLong(FILE *fp);
 short readShort(FILE *fp);
 
@@ -68,7 +68,7 @@ enum class FileExtension {
 };
 
 FileExtension fileExtension(const char *fname);
-FileExtension fileExtension(const std::string& path);
+FileExtension fileExtension(const std::string &path);
 
 enum class Encoding {
     UNSET,
@@ -90,15 +90,13 @@ const char *encodingToString(Encoding);
 bool isStrictAscii(const char *ptr);
 bool isValidUTF8(const char *ptr);
 bool processMixedString(std::string &str, bool &is_utf8);
-void trimSpaces(std::string& s);
+void trimSpaces(std::string &s);
 bool resolveFilename(std::string &dest, const char *file, const char *path);
 
 } // namespace Util
 
 struct PrintParams {
-    PrintParams() : conversions(false), to_file(false), no_utf8(false)
-    {
-    }
+    PrintParams() : conversions(false), to_file(false), no_utf8(false) {}
     bool conversions;
     bool to_file;
     bool no_utf8;

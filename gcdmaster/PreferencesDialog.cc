@@ -30,11 +30,12 @@
 #include "MessageBox.h"
 #include "trackdb/TempFileManager.h"
 
-PreferencesDialog* PreferencesDialog::create(const Glib::RefPtr<Gtk::Builder>& builder,
-                                             Gtk::Window& parent)
+PreferencesDialog *PreferencesDialog::create(const Glib::RefPtr<Gtk::Builder> &builder,
+                                             Gtk::Window &parent)
 {
     builder->add_from_resource("/org/gnome/gcdmaster/preferences.ui");
-    auto window = Gtk::Builder::get_widget_derived<PreferencesDialog>(builder, "preferences-window");
+    auto window =
+        Gtk::Builder::get_widget_derived<PreferencesDialog>(builder, "preferences-window");
     if (!window)
         throw std::runtime_error("preferences_window resource error");
     window->set_transient_for(parent);
@@ -42,9 +43,9 @@ PreferencesDialog* PreferencesDialog::create(const Glib::RefPtr<Gtk::Builder>& b
     return window;
 }
 
-PreferencesDialog::PreferencesDialog(BaseObjectType* cobject,
-                                     const Glib::RefPtr<Gtk::Builder>& builder) :
-    Gtk::Window(cobject)
+PreferencesDialog::PreferencesDialog(BaseObjectType *cobject,
+                                     const Glib::RefPtr<Gtk::Builder> &builder)
+    : Gtk::Window(cobject)
 {
     set_modal(true);
     set_hide_on_close(true);
@@ -54,7 +55,7 @@ PreferencesDialog::PreferencesDialog(BaseObjectType* cobject,
     auto okButton = builder->get_widget<Gtk::Button>("ok-button");
     auto cancelButton = builder->get_widget<Gtk::Button>("cancel-button");
     auto resetButton = builder->get_widget<Gtk::Button>("reset-button");
-    
+
     tempDirButton_ = builder->get_widget<Gtk::Button>("temp-directory-button");
     tempDirButton_->signal_clicked().connect(
         sigc::mem_fun(*this, &PreferencesDialog::on_temp_dir_button_clicked));
@@ -65,7 +66,7 @@ PreferencesDialog::PreferencesDialog(BaseObjectType* cobject,
 
     driverOptionsEntry_ = builder->get_widget<Gtk::Entry>("driver-options");
     driverOptionsEntry_->signal_activate().connect(
-	sigc::mem_fun(*this, &PreferencesDialog::on_options_activate));
+        sigc::mem_fun(*this, &PreferencesDialog::on_options_activate));
     driverMenu_ = builder->get_widget<Gtk::DropDown>("driver-list");
     devtypeMenu_ = builder->get_widget<Gtk::DropDown>("device-type-list");
 
@@ -73,13 +74,17 @@ PreferencesDialog::PreferencesDialog(BaseObjectType* cobject,
         throw std::runtime_error("Unable to create all GUI widgets from builder file");
     }
 
-    applyButton->signal_clicked().connect(sigc::mem_fun(*this, &PreferencesDialog::on_button_apply));
-    cancelButton->signal_clicked().connect(sigc::mem_fun(*this, &PreferencesDialog::on_button_cancel));
+    applyButton->signal_clicked().connect(
+        sigc::mem_fun(*this, &PreferencesDialog::on_button_apply));
+    cancelButton->signal_clicked().connect(
+        sigc::mem_fun(*this, &PreferencesDialog::on_button_cancel));
     okButton->signal_clicked().connect(sigc::mem_fun(*this, &PreferencesDialog::on_button_ok));
-    resetButton->signal_clicked().connect(sigc::mem_fun(*this, &PreferencesDialog::on_button_reset));
+    resetButton->signal_clicked().connect(
+        sigc::mem_fun(*this, &PreferencesDialog::on_button_reset));
 
     if (auto rescanBtn = builder->get_widget<Gtk::Button>("rescan-button")) {
-        rescanBtn->signal_clicked().connect(sigc::mem_fun(*this, &PreferencesDialog::rescan_action));
+        rescanBtn->signal_clicked().connect(
+            sigc::mem_fun(*this, &PreferencesDialog::rescan_action));
     }
 
     auto deviceBox = builder->get_widget<Gtk::Box>("device-box");
@@ -88,11 +93,10 @@ PreferencesDialog::PreferencesDialog(BaseObjectType* cobject,
         sigc::mem_fun(*this, &PreferencesDialog::on_selection_changed));
     deviceBox->prepend(*deviceSelector_);
 
-
     // Populate Driver dropdown
     if (driverMenu_) {
         auto list = Gtk::StringList::create({});
-        for (const auto& str : CdDevice::driverNames())
+        for (const auto &str : CdDevice::driverNames())
             list->append(str);
         driverMenu_->set_model(list);
     }
@@ -100,7 +104,7 @@ PreferencesDialog::PreferencesDialog(BaseObjectType* cobject,
     // Populate Device type dropdown
     if (devtypeMenu_) {
         auto list = Gtk::StringList::create({});
-        for (const auto& str : CdDevice::deviceNames())
+        for (const auto &str : CdDevice::deviceNames())
             list->append(str);
         devtypeMenu_->set_model(list);
     }
@@ -120,43 +124,42 @@ void PreferencesDialog::show_dialog()
 void PreferencesDialog::read_from_settings()
 {
     selectedTempPath_ = CONFIG_MANAGER->getTempDir();
-    tempDirButton_->set_label(selectedTempPath_.empty()
-			      ? _("Select Folder...")
-			      : selectedTempPath_);
+    tempDirButton_->set_label(selectedTempPath_.empty() ? _("Select Folder...")
+                                                        : selectedTempPath_);
 
     selectedCdrdaoExec_ = CONFIG_MANAGER->getCdrdaoPath();
-    cdrdaoExecButton_->set_label(selectedCdrdaoExec_.empty()
-				 ? _("Select Executable...")
-				 : selectedCdrdaoExec_);
+    cdrdaoExecButton_->set_label(selectedCdrdaoExec_.empty() ? _("Select Executable...")
+                                                             : selectedCdrdaoExec_);
 }
 
 void PreferencesDialog::save_to_settings()
 {
     if (!selectedTempPath_.empty()) {
-	if (!tempFileManager.setTempDirectory(selectedTempPath_.c_str())) {
-	    ErrorBox::message(*this, _("The directory you entered cannot be used..."));
-	    read_from_settings();
-	} else {
-	    try {
-		CONFIG_MANAGER->setTempDir(selectedTempPath_);
-	    } catch (const Glib::Error& error) {
-		std::cerr << error.what() << std::endl;
-	    }
-	}
+        if (!tempFileManager.setTempDirectory(selectedTempPath_.c_str())) {
+            ErrorBox::message(*this, _("The directory you entered cannot be used..."));
+            read_from_settings();
+        } else {
+            try {
+                CONFIG_MANAGER->setTempDir(selectedTempPath_);
+            } catch (const Glib::Error &error) {
+                std::cerr << error.what() << std::endl;
+            }
+        }
     }
     if (!selectedCdrdaoExec_.empty()) {
-	try {
-	    CONFIG_MANAGER->setCdrdaoPath(selectedCdrdaoExec_);
-	} catch (const Glib::Error& error) {
-	    std::cerr << error.what() << std::endl;
-	}
+        try {
+            CONFIG_MANAGER->setCdrdaoPath(selectedCdrdaoExec_);
+        } catch (const Glib::Error &error) {
+            std::cerr << error.what() << std::endl;
+        }
     }
 }
 
 void PreferencesDialog::update(unsigned long level)
 {
     log_message(1, "[update %x] PreferencesDialog", level);
-    if (!is_visible()) return;
+    if (!is_visible())
+        return;
 
     if (level & UPD_CD_DEVICES)
         import_devices();
@@ -206,11 +209,11 @@ void PreferencesDialog::on_selection_changed()
     }
 }
 
-void PreferencesDialog::append_entry(CdDevice* dev)
+void PreferencesDialog::append_entry(CdDevice *dev)
 {
     std::stringstream tohex;
     tohex << "0x" << std::hex << dev->driverOptions();
-    
+
     DeviceData data{dev->driver(), dev->deviceTypeName(), tohex.str()};
     dataMap_[dev] = data;
 }
@@ -230,12 +233,12 @@ void PreferencesDialog::export_devices()
             auto data = dataMap_[dev];
             dev->driver(data.driver);
             dev->deviceType(CdDevice::devtypeName2Id(data.deviceType));
-	    try {
-		dev->driverOptions(data.options.empty() ? 0 : std::stoul(data.options, nullptr, 0));
-	    } catch (...) {
-		ErrorBox::message(*this, _("Could not parse hex options value. Setting to 0."));
-		dev->driverOptions(0);
-	    }
+            try {
+                dev->driverOptions(data.options.empty() ? 0 : std::stoul(data.options, nullptr, 0));
+            } catch (...) {
+                ErrorBox::message(*this, _("Could not parse hex options value. Setting to 0."));
+                dev->driverOptions(0);
+            }
             dev->manuallyConfigured(true);
         }
     }
@@ -246,7 +249,7 @@ void PreferencesDialog::import_status()
     deviceSelector_->importStatus();
 }
 
-void PreferencesDialog::export_selected_row(CdDevice* device)
+void PreferencesDialog::export_selected_row(CdDevice *device)
 {
     if (!device)
         return;
@@ -257,11 +260,11 @@ void PreferencesDialog::export_selected_row(CdDevice* device)
     dataMap_[device] = data;
 }
 
-void PreferencesDialog::import_selected_row(CdDevice* device)
+void PreferencesDialog::import_selected_row(CdDevice *device)
 {
     if (device) {
         auto data = dataMap_[device];
-    
+
         driverMenu_->set_sensitive(true);
         dropDownSet(driverMenu_, data.driver);
         devtypeMenu_->set_sensitive(true);
@@ -287,12 +290,12 @@ void PreferencesDialog::on_options_activate()
     auto hexvalue = 0;
 
     if (!val.empty()) {
-	try {
-	    hexvalue = std::stoul(val, nullptr, 16);
-	} catch (...) {
-	    log_message(0, "nope");
-	    ErrorBox::message(*this, _("Please enter a hexadecimal value"));
-	}
+        try {
+            hexvalue = std::stoul(val, nullptr, 16);
+        } catch (...) {
+            log_message(0, "nope");
+            ErrorBox::message(*this, _("Please enter a hexadecimal value"));
+        }
     }
     std::stringstream tohex;
     tohex << "0x" << std::hex << hexvalue;
@@ -309,15 +312,15 @@ void PreferencesDialog::on_temp_dir_button_clicked()
         dialog->set_initial_folder(Gio::File::create_for_path(selectedTempPath_));
     }
 
-    dialog->select_folder([this, dialog](const Glib::RefPtr<Gio::AsyncResult>& result) {
-	try {
-	    auto folder = dialog->select_folder_finish(result);
-	    if (folder) {
-		selectedTempPath_ = folder->get_path();
-		tempDirButton_->set_label(selectedTempPath_);
+    dialog->select_folder([this, dialog](const Glib::RefPtr<Gio::AsyncResult> &result) {
+        try {
+            auto folder = dialog->select_folder_finish(result);
+            if (folder) {
+                selectedTempPath_ = folder->get_path();
+                tempDirButton_->set_label(selectedTempPath_);
             }
-	} catch (...) {
-	}
+        } catch (...) {
+        }
     });
 }
 
@@ -328,21 +331,21 @@ void PreferencesDialog::on_cdrdao_exec_button_clicked()
     dialog->set_title(_("Select cdrdao Executable"));
 
     if (!selectedCdrdaoExec_.empty())
-	dialog->set_initial_file(Gio::File::create_for_path(selectedCdrdaoExec_));
+        dialog->set_initial_file(Gio::File::create_for_path(selectedCdrdaoExec_));
 
-    dialog->open([this, dialog](const Glib::RefPtr<Gio::AsyncResult>& result) {
-	try {
-	    auto file = dialog->open_finish(result);
-	    if (file) {
-		this->selectedCdrdaoExec_ = file->get_path();
-		cdrdaoExecButton_->set_label(file->get_path());
-	    }
-	} catch (...) {
-	}
+    dialog->open([this, dialog](const Glib::RefPtr<Gio::AsyncResult> &result) {
+        try {
+            auto file = dialog->open_finish(result);
+            if (file) {
+                this->selectedCdrdaoExec_ = file->get_path();
+                cdrdaoExecButton_->set_label(file->get_path());
+            }
+        } catch (...) {
+        }
     });
 }
 
-std::optional<Glib::ustring> dropDownGet(Gtk::DropDown* dd)
+std::optional<Glib::ustring> dropDownGet(Gtk::DropDown *dd)
 {
     auto obj = dd->get_selected_item();
     if (obj) {
@@ -353,7 +356,7 @@ std::optional<Glib::ustring> dropDownGet(Gtk::DropDown* dd)
     return std::nullopt;
 }
 
-bool dropDownSet(Gtk::DropDown* dd, const Glib::ustring& val)
+bool dropDownSet(Gtk::DropDown *dd, const Glib::ustring &val)
 {
     auto model = dd->get_model();
     int i = 0;

@@ -53,7 +53,7 @@ constexpr int POLL_INTERVAL_MS = 2000;
 
 // Issue a SCSI INQUIRY on an open raw device and extract the trimmed
 // vendor/product/revision strings. Returns false on failure.
-bool inquiry(int fd, std::string& vendor, std::string& product, std::string& revision)
+bool inquiry(int fd, std::string &vendor, std::string &product, std::string &revision)
 {
     char buf[44];
     struct scsireq screq = {/* flags */ SCCMD_READ,
@@ -100,14 +100,14 @@ class NetBSDDeviceMonitor : public DeviceMonitor
     {
         std::vector<DeviceInfo> result;
 
-        DIR* dirp = opendir("/dev");
+        DIR *dirp = opendir("/dev");
         if (!dirp)
             return result;
 
         // Raw CD-ROM nodes end with the raw-partition letter, e.g. rcd0c.
         const char rawPart = 'a' + getrawpartition();
 
-        struct dirent* dp;
+        struct dirent *dp;
         while ((dp = readdir(dirp)) != NULL) {
             int l = strlen(dp->d_name);
             if (l <= 3 || strncmp(dp->d_name, "rcd", 3) != 0 ||

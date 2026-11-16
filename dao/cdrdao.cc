@@ -20,31 +20,29 @@
 #include "Settings.h"
 #include "port.h"
 
-std::vector<cmdStruct> cmdInfo = {
-    {BLANK, "blank", NEED_CDRW_W, 0, 0, 1, 0},
-    {CDTEXT, "cdtext", NEED_CDR_R, 0, 0, 0, 0},
-    {COPY_CD, "copy", NEED_CDR_W, 0, 0, 1, 0},
-    {DISCID, "discid", NEED_CDR_R, 0, 0, 1, 0},
-    {DISCID, "disc-id", NEED_CDR_R, 0, 0, 1, 0},
-    {DISK_INFO, "disc-info", NEED_CDR_R, 0, 0, 1, 0},
-    {DISK_INFO, "disk-info", NEED_CDR_R, 0, 0, 1, 0},
-    {EJECT, "eject", NEED_CDR_R, 0, 0, 0, 0},
-    {DRIVE_INFO, "drive-info", NEED_CDR_R, 0, 0, 1, 0},
-    {MSINFO, "msinfo", NEED_CDR_R, 0, 0, 1, 0},
-    {READ_CD, "read-cd", NEED_CDR_R, 1, 0, 1, 0},
-    {READ_CDDB, "read-cddb", NO_DEVICE, 1, 1, 0, 0},
-    {READ_TEST, "read-test", NO_DEVICE, 1, 1, 1, 0},
-    {READ_TOC, "read-toc", NEED_CDR_R, 0, 0, 1, 1},
-    {SIMULATE, "simulate", NEED_CDR_W, 1, 1, 1, 0},
-    {SHOW_DATA, "show-data", NO_DEVICE, 1, 1, 1, 0},
-    {SHOW_TOC, "show-toc", NO_DEVICE, 1, 1, 0, 0},
-    {SCAN_BUS, "scanbus", NO_DEVICE, 0, 0, 1, 0},
-    {TOC_INFO, "toc-info", NO_DEVICE, 1, 1, 1, 0},
-    {TOC_SIZE, "toc-size", NO_DEVICE, 1, 1, 1, 0},
-    {UNLOCK, "unlock", NEED_CDR_R, 0, 0, 1, 0},
-    {SHOW_VERSION, "version", NO_DEVICE, 0, 0, 0, 0},
-    {WRITE, "write", NEED_CDR_W, 1, 1, 1, 0}
-};
+std::vector<cmdStruct> cmdInfo = {{BLANK, "blank", NEED_CDRW_W, 0, 0, 1, 0},
+                                  {CDTEXT, "cdtext", NEED_CDR_R, 0, 0, 0, 0},
+                                  {COPY_CD, "copy", NEED_CDR_W, 0, 0, 1, 0},
+                                  {DISCID, "discid", NEED_CDR_R, 0, 0, 1, 0},
+                                  {DISCID, "disc-id", NEED_CDR_R, 0, 0, 1, 0},
+                                  {DISK_INFO, "disc-info", NEED_CDR_R, 0, 0, 1, 0},
+                                  {DISK_INFO, "disk-info", NEED_CDR_R, 0, 0, 1, 0},
+                                  {EJECT, "eject", NEED_CDR_R, 0, 0, 0, 0},
+                                  {DRIVE_INFO, "drive-info", NEED_CDR_R, 0, 0, 1, 0},
+                                  {MSINFO, "msinfo", NEED_CDR_R, 0, 0, 1, 0},
+                                  {READ_CD, "read-cd", NEED_CDR_R, 1, 0, 1, 0},
+                                  {READ_CDDB, "read-cddb", NO_DEVICE, 1, 1, 0, 0},
+                                  {READ_TEST, "read-test", NO_DEVICE, 1, 1, 1, 0},
+                                  {READ_TOC, "read-toc", NEED_CDR_R, 0, 0, 1, 1},
+                                  {SIMULATE, "simulate", NEED_CDR_W, 1, 1, 1, 0},
+                                  {SHOW_DATA, "show-data", NO_DEVICE, 1, 1, 1, 0},
+                                  {SHOW_TOC, "show-toc", NO_DEVICE, 1, 1, 0, 0},
+                                  {SCAN_BUS, "scanbus", NO_DEVICE, 0, 0, 1, 0},
+                                  {TOC_INFO, "toc-info", NO_DEVICE, 1, 1, 1, 0},
+                                  {TOC_SIZE, "toc-size", NO_DEVICE, 1, 1, 1, 0},
+                                  {UNLOCK, "unlock", NEED_CDR_R, 0, 0, 1, 0},
+                                  {SHOW_VERSION, "version", NO_DEVICE, 0, 0, 0, 0},
+                                  {WRITE, "write", NEED_CDR_W, 1, 1, 1, 0}};
 
 DaoCommandLine::DaoCommandLine()
     : eject(false), swap(false), multiSession(false), fastToc(false), pause(false), readRaw(false),
@@ -85,31 +83,31 @@ void DaoCommandLine::printUsage()
     if (!command.has_value()) {
         log_message(0, "\nUsage: %s <command> [options] [toc-file]", progName);
         log_message(0, "command:\n"
-		    "  show-toc   - prints out toc and exits\n"
-		    "  toc-info   - prints out short toc-file summary\n"
-		    "  toc-size   - prints total number of blocks for toc\n"
-		    "  read-toc   - create toc file from audio CD\n"
-		    "  read-cd    - create toc and rip audio data from CD\n"
-		    "  read-cddb  - contact CDDB server and add data as CD-TEXT to toc-file\n"
-		    "  show-data  - prints out audio data and exits\n"
-		    "  read-test  - reads all audio files and exits\n"
-		    "  disc-info  - shows information about inserted medium\n"
-		    "  disc-id    - prints out CDDB information\n"
-		    "  msinfo     - shows multi session info, output is suited for scripts\n"
-		    "  drive-info - shows drive information\n"
-		    "  cdtext     - shows CD CD-TEXT content\n"
-		    "  unlock     - unlock drive after failed writing\n"
-		    "  blank      - blank a CD-RW\n"
-		    "  scanbus    - scan for devices\n"
-		    "  simulate   - shortcut for 'write --simulate'\n"
-		    "  write      - writes CD\n"
-		    "  copy       - copies CD\n");
+                       "  show-toc   - prints out toc and exits\n"
+                       "  toc-info   - prints out short toc-file summary\n"
+                       "  toc-size   - prints total number of blocks for toc\n"
+                       "  read-toc   - create toc file from audio CD\n"
+                       "  read-cd    - create toc and rip audio data from CD\n"
+                       "  read-cddb  - contact CDDB server and add data as CD-TEXT to toc-file\n"
+                       "  show-data  - prints out audio data and exits\n"
+                       "  read-test  - reads all audio files and exits\n"
+                       "  disc-info  - shows information about inserted medium\n"
+                       "  disc-id    - prints out CDDB information\n"
+                       "  msinfo     - shows multi session info, output is suited for scripts\n"
+                       "  drive-info - shows drive information\n"
+                       "  cdtext     - shows CD CD-TEXT content\n"
+                       "  unlock     - unlock drive after failed writing\n"
+                       "  blank      - blank a CD-RW\n"
+                       "  scanbus    - scan for devices\n"
+                       "  simulate   - shortcut for 'write --simulate'\n"
+                       "  write      - writes CD\n"
+                       "  copy       - copies CD\n");
 
         log_message(0,
                     "\n Try '%s <command> -h' to get a list of available "
                     "options\n",
                     progName);
-	return;
+        return;
     }
 
     switch (command.value()) {
@@ -470,7 +468,7 @@ void DaoCommandLine::importSettings(Settings *settings)
     }
 
     if (cmd == READ_CDDB || cmd == COPY_CD || cmd == READ_TOC || cmd == READ_CD || cmd == DISCID) {
-	std::vector<std::string> sl;
+        std::vector<std::string> sl;
         settings->getStrings(Settings::setCddbServerList, sl);
         if (sl.size())
             cddbServerList = sl;
@@ -584,11 +582,11 @@ int DaoCommandLine::parseCmdLine(int argc, char **argv, Settings *settings)
         return 1;
     }
 
-    for (const auto& cmd : cmdInfo) {
+    for (const auto &cmd : cmdInfo) {
         if (cmd.str == *argv) {
             commandInfo = cmd;
-	    command = cmd.cmd;
-	    matched = true;
+            command = cmd.cmd;
+            matched = true;
             break;
         }
     }
@@ -822,8 +820,8 @@ int DaoCommandLine::parseCmdLine(int argc, char **argv, Settings *settings)
                         cddbServerList.clear();
                     }
                     {
-			std::string parsed;
-			std::stringstream iss(argv[1]);
+                        std::string parsed;
+                        std::stringstream iss(argv[1]);
                         while (getline(iss, parsed, ' '))
                             cddbServerList.push_back(parsed);
                     }
@@ -922,12 +920,12 @@ int DaoCommandLine::parseCmdLine(int argc, char **argv, Settings *settings)
     }
 
     if (commandInfo.optionalTocFile) {
-	if (argc > 1) {
-	    log_message(-2, "Expecting only one toc-file.");
-	    return 1;
-	} else if (argc == 1) {
-	    tocFile = *argv;
-	}
+        if (argc > 1) {
+            log_message(-2, "Expecting only one toc-file.");
+            return 1;
+        } else if (argc == 1) {
+            tocFile = *argv;
+        }
     } else if (commandInfo.needTocFile) {
         if (argc < 1) {
             log_message(-2, "Missing toc-file.");
@@ -965,11 +963,11 @@ void DaoCommandLine::commitSettings(Settings *settings, const char *settingsPath
 Cdrdao::Cdrdao(std::optional<DaoCommandLine> options)
 {
     if (options.has_value()) {
-	errPrintParams.no_utf8 = options->no_utf8;
-	filePrintParams.no_utf8 = options->no_utf8;
+        errPrintParams.no_utf8 = options->no_utf8;
+        filePrintParams.no_utf8 = options->no_utf8;
     } else {
-	errPrintParams.no_utf8 = false;
-	filePrintParams.no_utf8 = false;
+        errPrintParams.no_utf8 = false;
+        filePrintParams.no_utf8 = false;
     }
 }
 
@@ -1147,7 +1145,7 @@ void Cdrdao::showCDText(CdrDriver *cdr, DaoCommandLine &options)
 
     for (const auto &item : toc->globalCdTextItems()) {
         item.print(std::cout, filePrintParams);
-	std::cout << "\n";
+        std::cout << "\n";
     }
 
     // for (const auto i : items) {
@@ -1422,11 +1420,9 @@ int Cdrdao::readCddb(const DaoCommandLine &opts, Toc *toc, bool showEntry)
 
         {
             int idx = 0;
-            for (auto const& qrun : results)
-                log_message(0, "%2d. %-8s %-12s %s", idx++ + 1,
-                            qrun.diskId.c_str(),
-                            qrun.category.c_str(),
-                            qrun.title.c_str());
+            for (auto const &qrun : results)
+                log_message(0, "%2d. %-8s %-12s %s", idx++ + 1, qrun.diskId.c_str(),
+                            qrun.category.c_str(), qrun.title.c_str());
         }
 
         log_message(0, "\n");
@@ -1440,7 +1436,8 @@ int Cdrdao::readCddb(const DaoCommandLine &opts, Toc *toc, bool showEntry)
             if (fgets(buf, 20, stdin) == NULL)
                 break;
 
-            for (p = buf; *p != 0 && isspace(*p); p++);
+            for (p = buf; *p != 0 && isspace(*p); p++)
+                ;
 
             if (*p != 0 && isdigit(*p)) {
                 sel = atoi(p);
@@ -1464,8 +1461,8 @@ int Cdrdao::readCddb(const DaoCommandLine &opts, Toc *toc, bool showEntry)
 
     auto qsel = results[resultIdx];
 
-    log_message(1, "Reading CDDB record for: %s-%s-%s",
-                qsel.diskId.c_str(), qsel.category.c_str(), qsel.title.c_str());
+    log_message(1, "Reading CDDB record for: %s-%s-%s", qsel.diskId.c_str(), qsel.category.c_str(),
+                qsel.title.c_str());
 
     auto dbEntry = cddb.readDb(qsel.category, qsel.diskId);
     if (!dbEntry) {
@@ -1885,8 +1882,6 @@ void Cdrdao::printVersion()
     }
 }
 
-
-
 // Selects driver for device of 'scsiIf'.
 CdrDriver *Cdrdao::selectDriver(DaoCommand cmd, std::shared_ptr<ScsiIf> scsiIf,
                                 const std::string &driverId)
@@ -1916,18 +1911,18 @@ CdrDriver *Cdrdao::selectDriver(DaoCommand cmd, std::shared_ptr<ScsiIf> scsiIf,
 
         // for reading commands try to select a special read driver first:
         if (cmd == READ_TOC || cmd == READ_CD)
-            id = CdrDriver::selectDriver(0, scsiIf->vendor().c_str(),
-                                         scsiIf->product().c_str(), &options);
+            id = CdrDriver::selectDriver(0, scsiIf->vendor().c_str(), scsiIf->product().c_str(),
+                                         &options);
 
         // try to select a write driver
         if (id == NULL)
-            id = CdrDriver::selectDriver(1, scsiIf->vendor().c_str(),
-                                         scsiIf->product().c_str(), &options);
+            id = CdrDriver::selectDriver(1, scsiIf->vendor().c_str(), scsiIf->product().c_str(),
+                                         &options);
         // if no driver is selected, yet, try to select a read driver for
         // disc-info
         if (id == NULL && (cmd == DISK_INFO || cmd == MSINFO || cmd == DISCID))
-            id = CdrDriver::selectDriver(0, scsiIf->vendor().c_str(),
-                                         scsiIf->product().c_str(), &options);
+            id = CdrDriver::selectDriver(0, scsiIf->vendor().c_str(), scsiIf->product().c_str(),
+                                         &options);
         // Still no driver, try to autodetect one
         if (id == NULL)
             id = CdrDriver::detectDriver(scsiIf, &options);
@@ -1994,9 +1989,8 @@ std::string Cdrdao::getDefaultDevice(DaoDeviceType req)
 }
 
 CdrDriver *Cdrdao::setupDevice(DaoCommand cmd, const std::string &scsiDevice,
-			       const std::string &driverId,
-			       int initDevice, int checkReady, int checkEmpty, int readingSpeed,
-			       bool remote, bool reload)
+                               const std::string &driverId, int initDevice, int checkReady,
+                               int checkEmpty, int readingSpeed, bool remote, bool reload)
 {
     CdrDriver *cdr = NULL;
     DiskInfo *di = NULL;
@@ -2023,9 +2017,8 @@ CdrDriver *Cdrdao::setupDevice(DaoCommand cmd, const std::string &scsiDevice,
         break;
     }
 
-    log_message(2, "%s: %s %s\tRev: %s", scsiDevice.c_str(),
-                scsiIf->vendor().c_str(), scsiIf->product().c_str(),
-                scsiIf->revision().c_str());
+    log_message(2, "%s: %s %s\tRev: %s", scsiDevice.c_str(), scsiIf->vendor().c_str(),
+                scsiIf->product().c_str(), scsiIf->revision().c_str());
 
     if (inquiryFailed && driverId.empty()) {
         log_message(-2, "Inquiry failed and no driver id is specified.");

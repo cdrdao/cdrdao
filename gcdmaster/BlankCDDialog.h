@@ -31,8 +31,7 @@ class BlankCDDialog : public Gtk::Window
   public:
     virtual ~BlankCDDialog() {}
 
-    static BlankCDDialog* create(Glib::RefPtr<Gtk::Builder> builder,
-				 Gtk::Window& parent);
+    static BlankCDDialog *create(Glib::RefPtr<Gtk::Builder> builder, Gtk::Window &parent);
 
     void start();
     virtual void update(unsigned long level);
@@ -41,7 +40,7 @@ class BlankCDDialog : public Gtk::Window
     BlankCDDialog();
 
     // UI Components
-    DeviceSelector* deviceSelector_;
+    DeviceSelector *deviceSelector_;
     Gtk::Box vbox_{Gtk::Orientation::VERTICAL, 10};
 
     bool active_ = false;
@@ -50,7 +49,7 @@ class BlankCDDialog : public Gtk::Window
     // Radio buttons are now CheckButtons in gtkmm4
     Gtk::CheckButton *fastBlank_rb;
     Gtk::CheckButton *fullBlank_rb;
-    
+
     Gtk::CheckButton *ejectButton_ = nullptr;
     Gtk::CheckButton *reloadButton_ = nullptr;
 
@@ -65,7 +64,7 @@ class BlankCDDialog : public Gtk::Window
     void startAction();
     void speedButtonChanged();
     void speedChanged();
-    
+
     // New Asynchronous Warning Chain
     void checkEjectWarningAsync(int result);
     void checkReloadWarningAsync(int result);

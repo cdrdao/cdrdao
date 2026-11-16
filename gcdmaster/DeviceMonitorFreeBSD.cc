@@ -54,7 +54,7 @@ constexpr int POLL_INTERVAL_MS = 2000;
 constexpr int MATCH_BATCH = 100;
 
 // Copy a space/NUL-padded fixed-width INQUIRY field into a trimmed string.
-std::string fixedField(const char* p, size_t n)
+std::string fixedField(const char *p, size_t n)
 {
     while (n > 0 && (p[n - 1] == ' ' || p[n - 1] == '\0'))
         n--;
@@ -80,8 +80,8 @@ class FreeBSDDeviceMonitor : public DeviceMonitor
         if (fd < 0)
             return result;
 
-        auto* matches =
-            (struct dev_match_result*)calloc(MATCH_BATCH, sizeof(struct dev_match_result));
+        auto *matches =
+            (struct dev_match_result *)calloc(MATCH_BATCH, sizeof(struct dev_match_result));
         if (!matches) {
             close(fd);
             return result;
@@ -109,17 +109,17 @@ class FreeBSDDeviceMonitor : public DeviceMonitor
                 break;
 
             for (u_int i = 0; i < ccb.cdm.num_matches; i++) {
-                const struct dev_match_result& m = ccb.cdm.matches[i];
+                const struct dev_match_result &m = ccb.cdm.matches[i];
 
                 if (m.type == DEV_MATCH_DEVICE) {
-                    const struct scsi_inquiry_data& inq = m.result.device_result.inq_data;
+                    const struct scsi_inquiry_data &inq = m.result.device_result.inq_data;
                     vendor = fixedField(inq.vendor, sizeof(inq.vendor));
                     product = fixedField(inq.product, sizeof(inq.product));
                     revision = fixedField(inq.revision, sizeof(inq.revision));
                     haveDevice = true;
 
                 } else if (m.type == DEV_MATCH_PERIPH && haveDevice) {
-                    const struct periph_match_result& p = m.result.periph_result;
+                    const struct periph_match_result &p = m.result.periph_result;
 
                     // The "cd" peripheral driver attaches only to CD-ROMs.
                     if (strcmp(p.periph_name, "cd") != 0)
@@ -129,8 +129,8 @@ class FreeBSDDeviceMonitor : public DeviceMonitor
                         continue;
 
                     DeviceInfo info;
-                    info.node = "/dev/" + std::string(p.periph_name) +
-                                std::to_string(p.unit_number);
+                    info.node =
+                        "/dev/" + std::string(p.periph_name) + std::to_string(p.unit_number);
                     info.vendor = vendor;
                     info.product = product;
                     info.revision = revision;

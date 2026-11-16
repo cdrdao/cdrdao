@@ -28,8 +28,7 @@
 #include "xcdrdao.h"
 #include "log.h"
 
-BlankCDDialog* BlankCDDialog::create(Glib::RefPtr<Gtk::Builder> builder,
-				     Gtk::Window& parent)
+BlankCDDialog *BlankCDDialog::create(Glib::RefPtr<Gtk::Builder> builder, Gtk::Window &parent)
 {
     auto win = new BlankCDDialog();
     win->set_transient_for(parent);
@@ -44,8 +43,8 @@ BlankCDDialog::BlankCDDialog()
     vbox_.set_margin(10);
     set_child(vbox_);
     {
-	auto *headerbar = Gtk::make_managed<Gtk::HeaderBar>();
-	set_titlebar(*headerbar);
+        auto *headerbar = Gtk::make_managed<Gtk::HeaderBar>();
+        set_titlebar(*headerbar);
     }
     // Device List
     deviceSelector_ = Gtk::make_managed<DeviceSelector>(CdDevice::CD_RW);
@@ -61,7 +60,7 @@ BlankCDDialog::BlankCDDialog()
 
     // 1. Create the first button (the "master" of the group)
     fastBlank_rb = Gtk::make_managed<Gtk::CheckButton>(_("Fast Blank - does not erase contents"));
-    
+
     // 2. Create the second button and join the group of the first
     fullBlank_rb = Gtk::make_managed<Gtk::CheckButton>(_("Full Blank - erases contents, slower"));
     fullBlank_rb->set_group(*fastBlank_rb);
@@ -73,31 +72,34 @@ BlankCDDialog::BlankCDDialog()
 
     auto *moreExpander = Gtk::make_managed<Gtk::Expander>(Glib::ustring("  ") + _("More Options"));
     {
-	auto *innerVbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL, 5);
-	innerVbox->set_margin(10);
+        auto *innerVbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL, 5);
+        innerVbox->set_margin(10);
 
-	ejectButton_ = Gtk::make_managed<Gtk::CheckButton>(_("Eject the CD after blanking"));
-	innerVbox->append(*ejectButton_);
+        ejectButton_ = Gtk::make_managed<Gtk::CheckButton>(_("Eject the CD after blanking"));
+        innerVbox->append(*ejectButton_);
 
-	reloadButton_ = Gtk::make_managed<Gtk::CheckButton>(_("Reload the CD after writing, if necessary"));
-	innerVbox->append(*reloadButton_);
+        reloadButton_ =
+            Gtk::make_managed<Gtk::CheckButton>(_("Reload the CD after writing, if necessary"));
+        innerVbox->append(*reloadButton_);
 
-	auto *speedHbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL, 10);
-	speedHbox->append(*Gtk::make_managed<Gtk::Label>(_("Speed: ")));
+        auto *speedHbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL, 10);
+        speedHbox->append(*Gtk::make_managed<Gtk::Label>(_("Speed: ")));
 
-	auto adjustment = Gtk::Adjustment::create(1, 1, 20);
-	speedSpinButton_ = Gtk::make_managed<Gtk::SpinButton>(adjustment);
-	speedSpinButton_->set_sensitive(false);
-	adjustment->signal_value_changed().connect(sigc::mem_fun(*this, &BlankCDDialog::speedChanged));
-	speedHbox->append(*speedSpinButton_);
+        auto adjustment = Gtk::Adjustment::create(1, 1, 20);
+        speedSpinButton_ = Gtk::make_managed<Gtk::SpinButton>(adjustment);
+        speedSpinButton_->set_sensitive(false);
+        adjustment->signal_value_changed().connect(
+            sigc::mem_fun(*this, &BlankCDDialog::speedChanged));
+        speedHbox->append(*speedSpinButton_);
 
-	speedButton_ = Gtk::make_managed<Gtk::CheckButton>(_("Use max."));
-	speedButton_->set_active(true);
-	speedButton_->signal_toggled().connect(sigc::mem_fun(*this, &BlankCDDialog::speedButtonChanged));
-	speedHbox->append(*speedButton_);
+        speedButton_ = Gtk::make_managed<Gtk::CheckButton>(_("Use max."));
+        speedButton_->set_active(true);
+        speedButton_->signal_toggled().connect(
+            sigc::mem_fun(*this, &BlankCDDialog::speedButtonChanged));
+        speedHbox->append(*speedButton_);
 
-	innerVbox->append(*speedHbox);
-	moreExpander->set_child(*innerVbox);
+        innerVbox->append(*speedHbox);
+        moreExpander->set_child(*innerVbox);
     }
     frameBox->append(*moreExpander);
     vbox_.append(*blankOptionsFrame);
@@ -105,26 +107,26 @@ BlankCDDialog::BlankCDDialog()
     // Action Buttons
     auto *hbox2 = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL, 20);
     {
-	hbox2->set_margin(10);
-	hbox2->set_spacing(10);
-	hbox2->set_halign(Gtk::Align::CENTER);
+        hbox2->set_margin(10);
+        hbox2->set_spacing(10);
+        hbox2->set_halign(Gtk::Align::CENTER);
 
-	auto *startBtn = Gtk::make_managed<Gtk::Button>();
-	auto *startBox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL, 5);
-	startBox->set_margin_start(10);
-	startBox->set_margin_end(10);
-	auto *startPixmap = Gtk::make_managed<Gtk::Image>();
-	startPixmap->set_from_resource("/org/gnome/gcdmaster/gcdmaster");
-	startPixmap->set_pixel_size(48);
-	startBox->append(*startPixmap);
-	startBox->append(*Gtk::make_managed<Gtk::Label>(_("Start")));
-	startBtn->set_child(*startBox);
-	startBtn->signal_clicked().connect(sigc::mem_fun(*this, &BlankCDDialog::startAction));
-	hbox2->append(*startBtn);
+        auto *startBtn = Gtk::make_managed<Gtk::Button>();
+        auto *startBox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL, 5);
+        startBox->set_margin_start(10);
+        startBox->set_margin_end(10);
+        auto *startPixmap = Gtk::make_managed<Gtk::Image>();
+        startPixmap->set_from_resource("/org/gnome/gcdmaster/gcdmaster");
+        startPixmap->set_pixel_size(48);
+        startBox->append(*startPixmap);
+        startBox->append(*Gtk::make_managed<Gtk::Label>(_("Start")));
+        startBtn->set_child(*startBox);
+        startBtn->signal_clicked().connect(sigc::mem_fun(*this, &BlankCDDialog::startAction));
+        hbox2->append(*startBtn);
 
-	auto *cancelBut = Gtk::make_managed<Gtk::Button>(_("Cancel"), true);
-	cancelBut->signal_clicked().connect(sigc::mem_fun(*this, &BlankCDDialog::stop));
-	hbox2->append(*cancelBut);
+        auto *cancelBut = Gtk::make_managed<Gtk::Button>(_("Cancel"), true);
+        cancelBut->signal_clicked().connect(sigc::mem_fun(*this, &BlankCDDialog::stop));
+        hbox2->append(*cancelBut);
     }
     vbox_.append(*hbox2);
 }
@@ -159,7 +161,7 @@ bool BlankCDDialog::getEject()
 void BlankCDDialog::startAction()
 {
     if (deviceSelector_->selection() == nullptr) {
-	MessageBox::message(*this, _("Please select at least one recorder device"));
+        MessageBox::message(*this, _("Please select at least one recorder device"));
         return;
     }
 
@@ -203,33 +205,25 @@ void BlankCDDialog::speedChanged()
 
     new_speed = speedSpinButton_->get_value_as_int();
 
-    if ((new_speed % 2) == 1)
-    {
-	if (new_speed > 2)
-	{
-	    if (new_speed > speed_)
-	    {
-		new_speed = new_speed + 1;
-	    }
-	    else
-	    {
-		new_speed = new_speed - 1;
-	    }
-	}
-	speedSpinButton_->set_value(new_speed);
+    if ((new_speed % 2) == 1) {
+        if (new_speed > 2) {
+            if (new_speed > speed_) {
+                new_speed = new_speed + 1;
+            } else {
+                new_speed = new_speed - 1;
+            }
+        }
+        speedSpinButton_->set_value(new_speed);
     }
     speed_ = new_speed;
 }
 
 void BlankCDDialog::speedButtonChanged()
 {
-    if (speedButton_->get_active())
-    {
-	speedSpinButton_->set_sensitive(false);
-    }
-    else
-    {
-	speedSpinButton_->set_sensitive(true);
+    if (speedButton_->get_active()) {
+        speedSpinButton_->set_sensitive(false);
+    } else {
+        speedSpinButton_->set_sensitive(true);
     }
 }
 
@@ -238,17 +232,16 @@ void BlankCDDialog::update(unsigned long level)
     log_message(1, "[update %x] BlankCDWindow\n", level);
 
     if (!active_)
-	return;
+        return;
 
     set_title("Blank CD Rewritable");
 
     if (level & UPD_CD_DEVICES) {
-	deviceSelector_->import();
+        deviceSelector_->import();
     }
-    
+
     if (level & UPD_CD_DEVICE_STATUS) {
-	deviceSelector_->importStatus();
-	deviceSelector_->selectOne();
+        deviceSelector_->importStatus();
+        deviceSelector_->selectOne();
     }
 }
-

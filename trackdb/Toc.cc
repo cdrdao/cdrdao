@@ -261,7 +261,8 @@ const char *Toc::catalog() const
 }
 
 // writes contents in TOC file syntax
-namespace {
+namespace
+{
 // TOC output must be parseable by the TOC parser regardless of the
 // stream's state: force the classic "C" locale (no thousands separators
 // from e.g. the GUI's user locale) and default formatting, and restore

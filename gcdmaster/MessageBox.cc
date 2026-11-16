@@ -23,16 +23,14 @@
 
 #include "MessageBox.h"
 
-MessageBox::MessageBox(Gtk::Window& p)
-    : parentWindow(p)
+MessageBox::MessageBox(Gtk::Window &p) : parentWindow(p)
 {
     dialog = Gtk::AlertDialog::create();
 }
 
-void MessageBox::init(const Glib::ustring title,
-                          const std::vector<Glib::ustring> buttons,
-                          int defaultButton, int cancelButton,
-                          const std::vector<Glib::ustring> extra_lines)
+void MessageBox::init(const Glib::ustring title, const std::vector<Glib::ustring> buttons,
+                      int defaultButton, int cancelButton,
+                      const std::vector<Glib::ustring> extra_lines)
 {
     dialog->set_message(title);
     dialog->set_modal();
@@ -53,21 +51,19 @@ void MessageBox::init(const Glib::ustring title,
 
 void MessageBox::choose()
 {
-    dialog->choose(parentWindow,
-                   [this](const Glib::RefPtr<Gio::AsyncResult>& result) {
-                       this->dialogDone.emit(this->dialog->choose_finish(result));
-                       if (this->holder) {
-                           delete holder;
-                           holder = nullptr;
-                       }
-                   });
+    dialog->choose(parentWindow, [this](const Glib::RefPtr<Gio::AsyncResult> &result) {
+        this->dialogDone.emit(this->dialog->choose_finish(result));
+        if (this->holder) {
+            delete holder;
+            holder = nullptr;
+        }
+    });
 }
 
-Glib::RefPtr<MessageBox>
-MessageBox::create(Gtk::Window& p,const Glib::ustring title,
-                   const std::vector<Glib::ustring> buttons,
-                   int defaultButton, int cancelButton,
-                   const std::vector<Glib::ustring> extra_lines)
+Glib::RefPtr<MessageBox> MessageBox::create(Gtk::Window &p, const Glib::ustring title,
+                                            const std::vector<Glib::ustring> buttons,
+                                            int defaultButton, int cancelButton,
+                                            const std::vector<Glib::ustring> extra_lines)
 {
     Glib::RefPtr<MessageBox> mb(new MessageBox(p));
     mb->init(title, buttons, defaultButton, cancelButton, extra_lines);
@@ -75,36 +71,34 @@ MessageBox::create(Gtk::Window& p,const Glib::ustring title,
     return mb;
 }
 
-void MessageBox::message(Gtk::Window& p, const Glib::ustring title,
-                        const std::vector<Glib::ustring> extra_lines)
+void MessageBox::message(Gtk::Window &p, const Glib::ustring title,
+                         const std::vector<Glib::ustring> extra_lines)
 {
-    auto mb = MessageBox::create(p, title, { "Ok" }, 1, -1, extra_lines);
+    auto mb = MessageBox::create(p, title, {"Ok"}, 1, -1, extra_lines);
     mb->choose();
 }
 
-
-Glib::RefPtr<MessageBox>
-Ask2Box::create(Gtk::Window& p, const Glib::ustring title, int defaultButton,
-                const std::vector<Glib::ustring> extra_lines)
+Glib::RefPtr<MessageBox> Ask2Box::create(Gtk::Window &p, const Glib::ustring title,
+                                         int defaultButton,
+                                         const std::vector<Glib::ustring> extra_lines)
 {
-    return MessageBox::create(p, title, { "Yes", "No" }, defaultButton, -1, extra_lines);
+    return MessageBox::create(p, title, {"Yes", "No"}, defaultButton, -1, extra_lines);
 }
 
-Glib::RefPtr<MessageBox>
-Ask3Box::create(Gtk::Window& p, const Glib::ustring title, int defaultButton,
-                const std::vector<Glib::ustring> extra_lines)
+Glib::RefPtr<MessageBox> Ask3Box::create(Gtk::Window &p, const Glib::ustring title,
+                                         int defaultButton,
+                                         const std::vector<Glib::ustring> extra_lines)
 {
-    return MessageBox::create(p, title, { "Yes", "No", "Cancel" }, defaultButton, 2, extra_lines);
+    return MessageBox::create(p, title, {"Yes", "No", "Cancel"}, defaultButton, 2, extra_lines);
 }
 
-Glib::RefPtr<MessageBox>
-ErrorBox::create(Gtk::Window& p, const Glib::ustring message,
-                 const std::vector<Glib::ustring> extra_lines)
+Glib::RefPtr<MessageBox> ErrorBox::create(Gtk::Window &p, const Glib::ustring message,
+                                          const std::vector<Glib::ustring> extra_lines)
 {
-    return MessageBox::create(p, "Error: " + message, { "Ok" }, 0, -1, extra_lines);
+    return MessageBox::create(p, "Error: " + message, {"Ok"}, 0, -1, extra_lines);
 }
 
-void ErrorBox::message(Gtk::Window& parent, const Glib::ustring msg,
+void ErrorBox::message(Gtk::Window &parent, const Glib::ustring msg,
                        const std::vector<Glib::ustring> extra_lines)
 {
     auto box = ErrorBox::create(parent, msg, extra_lines);

@@ -46,28 +46,13 @@ class Msf
     Msf(long lba);
     Msf();
 
-    int min() const
-    {
-        return min_;
-    }
-    int sec() const
-    {
-        return sec_;
-    }
-    int frac() const
-    {
-        return frac_;
-    }
+    int min() const { return min_; }
+    int sec() const { return sec_; }
+    int frac() const { return frac_; }
 
-    long lba() const
-    {
-        return lba_;
-    }
+    long lba() const { return lba_; }
 
-    unsigned long samples() const
-    {
-        return lba_ * SAMPLES_PER_BLOCK;
-    }
+    unsigned long samples() const { return lba_ * SAMPLES_PER_BLOCK; }
 
     const char *str() const;
 };

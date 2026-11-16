@@ -29,13 +29,13 @@ class TextEdit;
 
 class TocInfoDialog : public Gtk::Window
 {
-public:
-    TocInfoDialog(Gtk::Window* parent);
+  public:
+    TocInfoDialog(Gtk::Window *parent);
 
     void update(unsigned long);
     void start(TocEdit *);
 
-private:
+  private:
     TocEdit *tocEdit_;
     bool importing_ = false;
 
@@ -104,9 +104,9 @@ private:
 
     void createCdTextLanguageMenu(int);
     void createCdTextGenreMenu(int n);
-    Gtk::Widget* createCdTextPage(int);
-    Gtk::Widget* createDiscTab(int);
-    Gtk::Widget* createTracksTab(int);
+    Gtk::Widget *createCdTextPage(int);
+    Gtk::Widget *createDiscTab(int);
+    Gtk::Widget *createTracksTab(int);
 
     void adjustTableEntries(int n);
     void updateTabLabels();

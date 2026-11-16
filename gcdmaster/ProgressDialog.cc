@@ -38,8 +38,7 @@
 #include <cstdio>
 #include "CdDevice.h"
 
-ProgressDialog::ProgressDialog(ProgressDialogPool *father)
-    : poolFather_(father)
+ProgressDialog::ProgressDialog(ProgressDialogPool *father) : poolFather_(father)
 {
     set_title(_("Progress"));
     set_default_size(600, -1);
@@ -51,34 +50,31 @@ ProgressDialog::ProgressDialog(ProgressDialogPool *father)
 
     // Project Info
     {
-	auto label = Gtk::make_managed<Gtk::Label>(_("cdrdao command: "));
-	label->set_halign(Gtk::Align::START);
-	main_vbox->append(*label);
-	auto css = Gtk::CssProvider::create();
-	css->load_from_data(
-	    ".small-console { font-size: smaller; } "
-	    "textview {"
-	    "  background-color: #1e1e1e;"
-	    "  color: #eeeeee;"
-	    "}"
-	    "textview text {"
-	    "  background-color: #1e1e1e;"
-	    "}"
-	    );
-	Gtk::StyleContext::add_provider_for_display(
-	    Gdk::Display::get_default(), css,
-	    GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
-	command_ = Gtk::make_managed<Gtk::TextView>();
-	command_->set_editable(false);
-	command_->set_cursor_visible(false);
-	command_->set_monospace(true);
-	command_->set_wrap_mode(Gtk::WrapMode::WORD_CHAR);
-	command_->set_margin_start(10);
-	command_->set_margin_end(10);
-	command_->set_margin_bottom(10);
-	command_->add_css_class("small-console");
-	command_->set_vexpand(true);
-	main_vbox->append(*command_);
+        auto label = Gtk::make_managed<Gtk::Label>(_("cdrdao command: "));
+        label->set_halign(Gtk::Align::START);
+        main_vbox->append(*label);
+        auto css = Gtk::CssProvider::create();
+        css->load_from_data(".small-console { font-size: smaller; } "
+                            "textview {"
+                            "  background-color: #1e1e1e;"
+                            "  color: #eeeeee;"
+                            "}"
+                            "textview text {"
+                            "  background-color: #1e1e1e;"
+                            "}");
+        Gtk::StyleContext::add_provider_for_display(Gdk::Display::get_default(), css,
+                                                    GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+        command_ = Gtk::make_managed<Gtk::TextView>();
+        command_->set_editable(false);
+        command_->set_cursor_visible(false);
+        command_->set_monospace(true);
+        command_->set_wrap_mode(Gtk::WrapMode::WORD_CHAR);
+        command_->set_margin_start(10);
+        command_->set_margin_end(10);
+        command_->set_margin_bottom(10);
+        command_->add_css_class("small-console");
+        command_->set_vexpand(true);
+        main_vbox->append(*command_);
     }
     statusMsg_ = Gtk::make_managed<Gtk::Label>();
     statusMsg_->set_halign(Gtk::Align::START);
@@ -89,7 +85,7 @@ ProgressDialog::ProgressDialog(ProgressDialogPool *father)
     time_hbox->append(*Gtk::make_managed<Gtk::Label>(_("Elapsed Time: ")));
     currentTime_ = Gtk::make_managed<Gtk::Label>("0:00:00");
     time_hbox->append(*currentTime_);
-    
+
     auto remaining_label = Gtk::make_managed<Gtk::Label>(_("Remaining Time: "));
     remaining_label->set_margin_start(10);
     time_hbox->append(*remaining_label);
@@ -152,9 +148,10 @@ ProgressDialog::ProgressDialog(ProgressDialogPool *father)
 
 void ProgressDialog::start(CdDevice *device, const std::string &tocFileName)
 {
-    if (!device) return;
+    if (!device)
+        return;
     if (active_) {
-        present(); 
+        present();
         return;
     }
 
@@ -162,8 +159,8 @@ void ProgressDialog::start(CdDevice *device, const std::string &tocFileName)
     device_ = device;
     clear();
 
-    timeout_connection_ = Glib::signal_timeout().connect(
-        sigc::mem_fun(*this, &ProgressDialog::on_timeout), 1000);
+    timeout_connection_ =
+        Glib::signal_timeout().connect(sigc::mem_fun(*this, &ProgressDialog::on_timeout), 1000);
 
     statusMsg_->set_text(_("Initializing..."));
     command_->get_buffer()->set_text("$ " + tocFileName);
@@ -199,7 +196,8 @@ bool ProgressDialog::on_timeout()
 
         double total_est = (double)elapsed / (actTotalProgress_ / 1000.0);
         long time_remain = (long)(total_est + 0.5) - elapsed;
-        if (time_remain < 0) time_remain = 0;
+        if (time_remain < 0)
+            time_remain = 0;
 
         hours = time_remain / 3600;
         mins = (time_remain % 3600) / 60;
@@ -209,7 +207,7 @@ bool ProgressDialog::on_timeout()
         remainingTime_->set_text(buf);
     }
 
-    return !finished_; 
+    return !finished_;
 }
 
 bool ProgressDialog::on_close_request()
@@ -242,9 +240,7 @@ void ProgressDialog::stop()
     }
 }
 
-ProgressDialog::~ProgressDialog()
-{
-}
+ProgressDialog::~ProgressDialog() {}
 
 void ProgressDialog::ejectAction()
 {
@@ -265,53 +261,53 @@ void ProgressDialog::closeAction()
     case CdDevice::A_RECORD: {
         auto msg = Ask2Box::create(*this, _("Abort Recording"), 1, {_("Abort recording process?")});
 
-	msg->dialogDone.connect([this](int result) {
-	    if (result == 0 && this->device_ != NULL) {
-		this->cancelButton_->set_sensitive(false);
-		this->ejectButton_->set_sensitive(true);
-		this->device_->abortDaoRecording();
-	    }
+        msg->dialogDone.connect([this](int result) {
+            if (result == 0 && this->device_ != NULL) {
+                this->cancelButton_->set_sensitive(false);
+                this->ejectButton_->set_sensitive(true);
+                this->device_->abortDaoRecording();
+            }
         });
-	msg->choose();
+        msg->choose();
     } break;
 
     case CdDevice::A_READ: {
         auto msg = Ask2Box::create(*this, _("Abort Reading"), 1, {_("Abort reading process?")});
 
-	msg->dialogDone.connect([this](int result) {
-	    if (result == 0 && this->device_ != NULL) {
-		this->cancelButton_->set_sensitive(false);
-		this->ejectButton_->set_sensitive(true);
-		this->device_->abortDaoReading();
-	    }
-	});
-	msg->choose();
+        msg->dialogDone.connect([this](int result) {
+            if (result == 0 && this->device_ != NULL) {
+                this->cancelButton_->set_sensitive(false);
+                this->ejectButton_->set_sensitive(true);
+                this->device_->abortDaoReading();
+            }
+        });
+        msg->choose();
     } break;
 
     case CdDevice::A_DUPLICATE: {
         auto msg = Ask2Box::create(*this, _("Abort Process"), 1, {_("Abort duplicating process?")});
 
-	msg->dialogDone.connect([this](int result) {
-	    if (result == 0 && this->device_ != NULL) {
-		this->cancelButton_->set_sensitive(false);
-		this->ejectButton_->set_sensitive(true);
-		this->device_->abortDaoDuplication();
-	    }
-	});
-	msg->choose();
+        msg->dialogDone.connect([this](int result) {
+            if (result == 0 && this->device_ != NULL) {
+                this->cancelButton_->set_sensitive(false);
+                this->ejectButton_->set_sensitive(true);
+                this->device_->abortDaoDuplication();
+            }
+        });
+        msg->choose();
     } break;
 
     case CdDevice::A_BLANK: {
         auto msg = Ask2Box::create(*this, _("Abort Process"), 1, {_("Abort blanking process?")});
 
-	msg->dialogDone.connect([this](int result) {
-	    if (result == 0 && this->device_ != NULL) {
-		this->cancelButton_->set_sensitive(false);
-		this->ejectButton_->set_sensitive(true);
-		this->device_->abortBlank();
-        }
-	});
-	msg->choose();
+        msg->dialogDone.connect([this](int result) {
+            if (result == 0 && this->device_ != NULL) {
+                this->cancelButton_->set_sensitive(false);
+                this->ejectButton_->set_sensitive(true);
+                this->device_->abortBlank();
+            }
+        });
+        msg->choose();
     } break;
     default:
         break;
@@ -581,9 +577,7 @@ ProgressDialogPool::ProgressDialogPool()
     pool_ = NULL;
 }
 
-ProgressDialogPool::~ProgressDialogPool()
-{
-}
+ProgressDialogPool::~ProgressDialogPool() {}
 
 void ProgressDialogPool::update(unsigned long status)
 {
@@ -593,7 +587,7 @@ void ProgressDialogPool::update(unsigned long status)
         run->update(status);
 }
 
-ProgressDialog *ProgressDialogPool::start(CdDevice *device, const std::string& tocFileName,
+ProgressDialog *ProgressDialogPool::start(CdDevice *device, const std::string &tocFileName,
                                           bool showBuffer, bool showTrack)
 {
     ProgressDialog *dialog;
@@ -617,7 +611,8 @@ ProgressDialog *ProgressDialogPool::start(CdDevice *device, const std::string& t
 }
 
 ProgressDialog *ProgressDialogPool::start(Gtk::Window &parent, CdDevice *device,
-                                          const std::string& tocFileName, bool showBuffer, bool showTrack)
+                                          const std::string &tocFileName, bool showBuffer,
+                                          bool showTrack)
 {
     ProgressDialog *dialog = start(device, tocFileName, showBuffer, showTrack);
     dialog->set_transient_for(parent);

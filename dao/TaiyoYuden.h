@@ -37,10 +37,7 @@ class TaiyoYuden : public PlextorReader, private CDD2600Base
     static CdrDriver *instance(std::shared_ptr<ScsiIf> scsiIf, unsigned long options);
 
     // takes little endian samples
-    int bigEndianSamples() const
-    {
-        return 0;
-    }
+    int bigEndianSamples() const { return 0; }
 
     int speed(int);
 

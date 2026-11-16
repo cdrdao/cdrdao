@@ -30,9 +30,7 @@
 class FormatSupportManager
 {
   public:
-    virtual ~FormatSupportManager()
-    {
-    }
+    virtual ~FormatSupportManager() {}
 
     // Acts as virtual constructor. Returns a new converter if this
     // converter understands the given file extension.

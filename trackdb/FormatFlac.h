@@ -37,10 +37,7 @@ class FormatFlac : public FormatSupport, FLAC::Decoder::File
     Status convertContinue();
     void convertAbort();
 
-    TrackData::FileType format()
-    {
-        return TrackData::WAVE;
-    }
+    TrackData::FileType format() { return TrackData::WAVE; }
 
     FLAC__StreamDecoderWriteStatus write_callback(const ::FLAC__Frame *frame,
                                                   const FLAC__int32 *const buffer[]);

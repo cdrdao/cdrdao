@@ -44,7 +44,10 @@ class AudioCDView : public Gtk::Box
     virtual TocEditView *tocEditView() const { return tocEditView_; }
     void update(unsigned long level = 0);
 
-    enum Mode { ZOOM, SELECT };
+    enum Mode {
+        ZOOM,
+        SELECT
+    };
     void mode(Mode m) { mode_ = m; }
     Mode mode() { return mode_; }
 
@@ -61,7 +64,7 @@ class AudioCDView : public Gtk::Box
 
   private:
     AudioCDProject *project_;
-    TocEditView* tocEditView_;
+    TocEditView *tocEditView_;
 
     Glib::RefPtr<TrackInfoDialog> trackInfoDialog_;
     Glib::RefPtr<AddFileDialog> addFileDialog_;
@@ -87,7 +90,7 @@ class AudioCDView : public Gtk::Box
     void selectionClearedCallback();
     void trackMarkSelectedCallback(int trackNr, int indexNr);
     void trackMarkMovedCallback(const Track *, int trackNr, int indexNr, unsigned long sample);
-    int  snapSampleToBlock(unsigned long sample, long *block);
+    int snapSampleToBlock(unsigned long sample, long *block);
 
     void trackInfo();
     void cutTrackData();
@@ -101,12 +104,12 @@ class AudioCDView : public Gtk::Box
     void appendTrack();
     void appendFile();
     void insertFile();
-    int  getMarker(unsigned long *sample);
+    int getMarker(unsigned long *sample);
     void markerSet();
 
     void selectionSet();
 
-    bool on_drop(const Glib::ValueBase& value, double x, double y);
+    bool on_drop(const Glib::ValueBase &value, double x, double y);
 };
 
 #endif

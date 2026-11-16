@@ -25,7 +25,6 @@
 #include <gtkmm.h>
 #include <glibmm/i18n.h>
 
-
 #include "MessageBox.h"
 #include "RecordCDTarget.h"
 #include "xcdrdao.h"
@@ -38,8 +37,7 @@
 
 #include "util.h"
 
-RecordCDTarget::RecordCDTarget(Gtk::Window *parent)
-    : Gtk::Box(Gtk::Orientation::VERTICAL)
+RecordCDTarget::RecordCDTarget(Gtk::Window *parent) : Gtk::Box(Gtk::Orientation::VERTICAL)
 {
     parent_ = parent;
     moreOptions_ = nullptr;
@@ -56,7 +54,7 @@ RecordCDTarget::RecordCDTarget(Gtk::Window *parent)
     vbox->set_spacing(5);
     recordOptionsFrame->set_child(*vbox);
 
-auto hboxSpeed = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
+    auto hboxSpeed = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
     auto labelSpeed = Gtk::make_managed<Gtk::Label>("Speed: ");
     hboxSpeed->append(*labelSpeed);
 
@@ -64,14 +62,16 @@ auto hboxSpeed = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
     speedSpinButton_ = Gtk::make_managed<Gtk::SpinButton>(adjustmentSpeed);
     speedSpinButton_->set_digits(0);
     speedSpinButton_->set_sensitive(false);
-    adjustmentSpeed->signal_value_changed().connect(sigc::mem_fun(*this, &RecordCDTarget::speedChanged));
-    
+    adjustmentSpeed->signal_value_changed().connect(
+        sigc::mem_fun(*this, &RecordCDTarget::speedChanged));
+
     speedSpinButton_->set_margin_start(10);
     hboxSpeed->append(*speedSpinButton_);
 
     speedButton_ = Gtk::make_managed<Gtk::CheckButton>("Use max.");
     speedButton_->set_active(true);
-    speedButton_->signal_toggled().connect(sigc::mem_fun(*this, &RecordCDTarget::speedButtonChanged));
+    speedButton_->signal_toggled().connect(
+        sigc::mem_fun(*this, &RecordCDTarget::speedButtonChanged));
     hboxSpeed->append(*speedButton_);
     vbox->append(*hboxSpeed);
 
@@ -90,10 +90,10 @@ auto hboxSpeed = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
     // More Options Button
     auto moreOptionsButton = Gtk::make_managed<Gtk::Button>();
     auto moreOptionsBox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
-    
+
     auto moreOptionsIcon = Gtk::make_managed<Gtk::Image>("emblem-system-symbolic");
     auto moreOptionsLabel = Gtk::make_managed<Gtk::Label>("More Options");
-    
+
     moreOptionsBox->set_spacing(4);
     moreOptionsBox->append(*moreOptionsIcon);
     moreOptionsBox->append(*moreOptionsLabel);
@@ -123,7 +123,7 @@ void RecordCDTarget::moreOptions()
         auto *frame = Gtk::make_managed<Gtk::Frame>(" More Target Options ");
         frame->set_margin(5);
         top_vbox->append(*frame);
-        
+
         auto vbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL);
         vbox->set_margin(10);
         vbox->set_spacing(5);
@@ -152,7 +152,7 @@ void RecordCDTarget::moreOptions()
 
         auto labelSec = Gtk::make_managed<Gtk::Label>(_(" audio seconds "));
         hboxBuffer->append(*labelSec);
-        
+
         bufferRAMLabel_ = Gtk::make_managed<Gtk::Label>(_("= 1.72 Mb buffer."));
         hboxBuffer->append(*bufferRAMLabel_);
         adjBuffer->signal_value_changed().connect(
@@ -165,11 +165,8 @@ void RecordCDTarget::moreOptions()
         bbox->set_halign(Gtk::Align::CENTER);
         auto closeButton = Gtk::make_managed<Gtk::Button>("Close");
         bbox->append(*closeButton);
-        closeButton->signal_clicked().connect([this]() {
-            this->moreOptions_->hide();
-        });
+        closeButton->signal_clicked().connect([this]() { this->moreOptions_->hide(); });
         vbox->append(*bbox);
-            
     }
 
     moreOptions_->present();
@@ -240,8 +237,7 @@ void RecordCDTarget::updateBufferRAMLabel()
 {
     char label[32];
 
-    snprintf(label, sizeof(label), "= %0.2f Mb buffer.",
-             bufferSpinButton_->get_value() * 0.171875);
+    snprintf(label, sizeof(label), "= %0.2f Mb buffer.", bufferSpinButton_->get_value() * 0.171875);
     bufferRAMLabel_->set_text(label);
 }
 

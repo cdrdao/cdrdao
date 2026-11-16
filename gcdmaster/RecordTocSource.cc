@@ -36,8 +36,7 @@
 #include "util.h"
 
 RecordTocSource::RecordTocSource(Glib::RefPtr<TocEdit> tocEdit)
-    : Gtk::Box(Gtk::Orientation::VERTICAL),
-      tocEdit_(tocEdit)
+    : Gtk::Box(Gtk::Orientation::VERTICAL), tocEdit_(tocEdit)
 {
     // device settings
     auto *infoFrame = Gtk::make_managed<Gtk::Frame>(_(" Project Information "));
@@ -88,9 +87,7 @@ void RecordTocSource::update(unsigned long level)
 
             {
                 char buf[50];
-                snprintf(buf, sizeof(buf), "%d:%02d:%02d",
-                         toc->length().min(),
-                         toc->length().sec(),
+                snprintf(buf, sizeof(buf), "%d:%02d:%02d", toc->length().min(), toc->length().sec(),
                          toc->length().frac());
                 tocLengthLabel_.set_text(buf);
             }

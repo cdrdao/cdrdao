@@ -33,14 +33,8 @@ class TempFileManager
     virtual ~TempFileManager();
 
     bool setTempDirectory(const char *path);
-    void setKeepTemps(bool b)
-    {
-        keepTemps_ = b;
-    }
-    void setPrefix(const char *prefix)
-    {
-        prefix_ = prefix;
-    }
+    void setKeepTemps(bool b) { keepTemps_ = b; }
+    void setPrefix(const char *prefix) { prefix_ = prefix; }
 
     // Create a new temporary file, associated with given 'key'. The
     // given name string is set to the temporaty file. Returns false

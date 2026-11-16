@@ -52,17 +52,9 @@ static const class Gf8_Q_Coeffs_Results_01
 
   public:
     Gf8_Q_Coeffs_Results_01();
-    ~Gf8_Q_Coeffs_Results_01()
-    {
-    }
-    const u_int16_t *operator[](int i) const
-    {
-        return &table[i][0];
-    }
-    operator const u_int16_t *() const
-    {
-        return &table[0][0];
-    }
+    ~Gf8_Q_Coeffs_Results_01() {}
+    const u_int16_t *operator[](int i) const { return &table[i][0]; }
+    operator const u_int16_t *() const { return &table[0][0]; }
 } CF8_Q_COEFFS_RESULTS_01;
 
 static const class CrcTable
@@ -72,17 +64,9 @@ static const class CrcTable
 
   public:
     CrcTable();
-    ~CrcTable()
-    {
-    }
-    u_int32_t operator[](int i) const
-    {
-        return table[i];
-    }
-    operator const u_int32_t *() const
-    {
-        return table;
-    }
+    ~CrcTable() {}
+    u_int32_t operator[](int i) const { return table[i]; }
+    operator const u_int32_t *() const { return table; }
 } CRCTABLE;
 
 static const class ScrambleTable
@@ -92,17 +76,9 @@ static const class ScrambleTable
 
   public:
     ScrambleTable();
-    ~ScrambleTable()
-    {
-    }
-    u_int8_t operator[](int i) const
-    {
-        return table[i];
-    }
-    operator const u_int8_t *() const
-    {
-        return table;
-    }
+    ~ScrambleTable() {}
+    u_int8_t operator[](int i) const { return table[i]; }
+    operator const u_int8_t *() const { return table; }
 } SCRAMBLE_TABLE;
 
 /* Creates the logarithm and inverse logarithm table that is required

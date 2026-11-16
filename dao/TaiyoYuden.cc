@@ -47,9 +47,7 @@ TaiyoYuden::TaiyoYuden(std::shared_ptr<ScsiIf> scsiIf, unsigned long options)
     memset(&diskInfo_, 0, sizeof(DiskInfo));
 }
 
-TaiyoYuden::~TaiyoYuden()
-{
-}
+TaiyoYuden::~TaiyoYuden() {}
 
 // static constructor
 CdrDriver *TaiyoYuden::instance(std::shared_ptr<ScsiIf> scsiIf, unsigned long options)

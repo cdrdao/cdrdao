@@ -148,53 +148,52 @@ long fullRead(int fd, void *buf, long count)
     return nread;
 }
 
-
 long fullWrite(int fd, const void *buf, long count)
 {
-  long n;
-  long nwritten = 0;
-  const char *p = (const char *)buf;
+    long n;
+    long nwritten = 0;
+    const char *p = (const char *)buf;
 
-  do {
     do {
-      n = write(fd, p, count);
-    } while (n < 0 && (errno == EAGAIN || errno == EINTR));
+        do {
+            n = write(fd, p, count);
+        } while (n < 0 && (errno == EAGAIN || errno == EINTR));
 
-    if (n < 0)
-      return -1;
+        if (n < 0)
+            return -1;
 
-    if (n == 0)
-      return nwritten;
+        if (n == 0)
+            return nwritten;
 
-    count -= n;
-    nwritten += n;
-    p += n;
-  } while (count > 0);
+        count -= n;
+        nwritten += n;
+        p += n;
+    } while (count > 0);
 
-  return nwritten;
+    return nwritten;
 }
 
-long fullWrite(int fd, const std::string& buffer)
+long fullWrite(int fd, const std::string &buffer)
 {
     auto ptr = buffer.data();
     auto remaining = buffer.size();
     ssize_t totalWritten = 0;
 
     while (remaining > 0) {
-	auto written = ::write(fd, ptr, remaining);
+        auto written = ::write(fd, ptr, remaining);
 
-	if (written < 0) {
-	    if (errno == EINTR)
-		continue;
-	    return -1;
-	}
+        if (written < 0) {
+            if (errno == EINTR)
+                continue;
+            return -1;
+        }
 
-	if (written == 0)
-	    return totalWritten;
+        if (written == 0)
+            return totalWritten;
 
-	ptr += written;
-	remaining -= (size_t)written;
-	totalWritten += written;
+        ptr += written;
+        remaining -= (size_t)written;
+        totalWritten += written;
     }
     return totalWritten;
 }
@@ -318,13 +317,13 @@ FileExtension fileExtension(const char *fname)
     return FileExtension::UNKNOWN;
 }
 
-FileExtension fileExtension(const std::string& path)
+FileExtension fileExtension(const std::string &path)
 {
     std::filesystem::path file_path(path);
     auto ext = file_path.extension();
 
     if (strlen(ext.c_str()) <= 1)
-	return FileExtension::UNKNOWN;
+        return FileExtension::UNKNOWN;
 
     return fileExtension(ext.c_str());
 }
@@ -520,7 +519,7 @@ bool resolveFilename(std::string &abs, const char *file, const char *path)
 
 // Remove leading and trailing white spaces in a string, in place.
 //
-void trimSpaces(std::string& str)
+void trimSpaces(std::string &str)
 {
     auto first = str.find_first_not_of(" \t\n\r\f\v");
     if (first == std::string::npos) {

@@ -26,18 +26,12 @@ class TrackDataList
 {
   public:
     TrackDataList();
-    ~TrackDataList()
-    {
-        clear();
-    }
+    ~TrackDataList() { clear(); }
 
     void append(TrackData *);
     void clear();
 
-    long count() const
-    {
-        return count_;
-    }
+    long count() const { return count_; }
 
     unsigned long length() const;
 

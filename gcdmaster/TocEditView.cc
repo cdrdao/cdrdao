@@ -24,10 +24,7 @@
 #include "TocEdit.h"
 #include "guiUpdate.h"
 
-TocEditView::TocEditView(Glib::RefPtr<TocEdit> t)
-    : tocEdit_(t)
-{
-}
+TocEditView::TocEditView(Glib::RefPtr<TocEdit> t) : tocEdit_(t) {}
 
 Glib::RefPtr<TocEdit> TocEditView::tocEdit() const
 {
@@ -128,8 +125,8 @@ void TocEditView::sampleViewFull()
 
 bool TocEditView::isSampleViewFull()
 {
-    return (sampleViewMin_ == 0 &&
-            sampleViewMax_ == -1 || sampleViewMax_ == tocEdit_->lengthSample() - 1);
+    return (sampleViewMin_ == 0 && sampleViewMax_ == -1 ||
+            sampleViewMax_ == tocEdit_->lengthSample() - 1);
 }
 
 void TocEditView::sampleViewUpdate()

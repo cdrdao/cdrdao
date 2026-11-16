@@ -38,17 +38,11 @@ class YamahaCDR10x : public CdrDriver
     ~YamahaCDR10x();
     static CdrDriver *instance(std::shared_ptr<ScsiIf> scsiIf, unsigned long options);
 
-    unsigned long getReadCapabilities(const CdToc *, int) const
-    {
-        return 0;
-    }
+    unsigned long getReadCapabilities(const CdToc *, int) const { return 0; }
 
     // FIXME: We say we're little endian, incurring work for the host
     // The drive has endian flags, but I don't want to experiment
-    int bigEndianSamples() const
-    {
-        return 0;
-    }
+    int bigEndianSamples() const { return 0; }
 
     int multiSession(int);
     int speed(int);

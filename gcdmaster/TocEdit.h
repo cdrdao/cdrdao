@@ -40,10 +40,10 @@ class TocEditView;
 class TocEdit : public Glib::Object
 {
   public:
-    TocEdit(Toc *, const std::string&);
+    TocEdit(Toc *, const std::string &);
     ~TocEdit();
 
-    void toc(Toc *, const std::string&, bool nodata = false);
+    void toc(Toc *, const std::string &, bool nodata = false);
     Toc *toc() const;
 
     SampleManager *sampleManager();
@@ -61,12 +61,12 @@ class TocEdit : public Glib::Object
     // returns and resets update level
     unsigned long updateLevel();
 
-    void filename(const std::string& f);
-    const std::filesystem::path& filename() const { return filename_; }
+    void filename(const std::string &f);
+    const std::filesystem::path &filename() const { return filename_; }
 
     int readToc(const char *);
     int saveToc();
-    int saveAsToc(const std::string&);
+    int saveAsToc(const std::string &);
 
     int moveTrackMarker(int trackNr, int indexNr, long lba);
     int addTrackMarker(long lba);
@@ -106,7 +106,7 @@ class TocEdit : public Glib::Object
     void setCatalogNumber(const char *);
     void setTocType(Toc::Type);
 
-    TaskManager& taskManager() { return tm_; }
+    TaskManager &taskManager() { return tm_; }
 
     // Signals
     sigc::signal<void()> signalProgressPulse;
@@ -160,7 +160,7 @@ class TocEdit : public Glib::Object
     void taskQueueStarted();
     void taskQueueDone();
 
-    void addJobToThreadQueue(QueueJob*);
+    void addJobToThreadQueue(QueueJob *);
     void threadQueueStatus(Task *, const std::string &);
 
     bool curScan(QueueJob *);

@@ -35,18 +35,9 @@ class SubTrack : public TrackData
     SubTrack(const SubTrack &);
     ~SubTrack();
 
-    Type type() const
-    {
-        return type_;
-    }
-    unsigned long start() const
-    {
-        return start_;
-    }
-    void start(unsigned long s)
-    {
-        start_ = s;
-    }
+    Type type() const { return type_; }
+    unsigned long start() const { return start_; }
+    void start(unsigned long s) { start_ = s; }
 
   private:
     unsigned long start_; // start postion (samples) within containing track

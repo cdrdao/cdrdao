@@ -17,7 +17,6 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-
 #include "TocInfoDialog.h"
 #include "config.h"
 #include <algorithm>
@@ -91,7 +90,8 @@ static const char *TOC_TYPE_CD_ROM = "CD-ROM";
 static const char *TOC_TYPE_CD_ROM_XA = "CD-ROM-XA";
 static const char *TOC_TYPE_CD_I = "CD-I";
 
-namespace {
+namespace
+{
 
 // Audio CD ("Red Book") supported text encodings; dropdown-index order.
 constexpr Util::Encoding kEncodings[] = {
@@ -113,7 +113,7 @@ int encodingToIndex(Util::Encoding enc)
 
 } // namespace
 
-TocInfoDialog::TocInfoDialog(Gtk::Window* parent)
+TocInfoDialog::TocInfoDialog(Gtk::Window *parent)
 {
     set_title(_("Project Info"));
     set_modal(true);
@@ -195,8 +195,7 @@ TocInfoDialog::TocInfoDialog(Gtk::Window* parent)
     addBlockButton_ = Gtk::make_managed<Gtk::Button>();
     addBlockButton_->set_icon_name("list-add-symbolic");
     addBlockButton_->set_tooltip_text(_("Add language block"));
-    addBlockButton_->signal_clicked().connect(
-        sigc::mem_fun(*this, &TocInfoDialog::addBlockAction));
+    addBlockButton_->signal_clicked().connect(sigc::mem_fun(*this, &TocInfoDialog::addBlockAction));
     cdTextNotebook_->set_action_widget(addBlockButton_, Gtk::PackType::END);
 
     // Gtk::Notebook hides its tab header (and thus its action widgets) when
@@ -236,7 +235,7 @@ TocInfoDialog::TocInfoDialog(Gtk::Window* parent)
     bbox->append(*imdbButton_);
     {
         auto cb = Gtk::make_managed<Gtk::Button>("Clear");
-        cb->signal_clicked().connect([this](){ this->clear(); });
+        cb->signal_clicked().connect([this]() { this->clear(); });
         bbox->append(*cb);
     }
     auto cancelButton = Gtk::make_managed<Gtk::Button>(_("Cancel"));
@@ -253,9 +252,9 @@ TocInfoDialog::TocInfoDialog(Gtk::Window* parent)
     set_default_size(650, 600);
 }
 
-Gtk::Widget* TocInfoDialog::createCdTextPage(int n)
+Gtk::Widget *TocInfoDialog::createCdTextPage(int n)
 {
-    auto& page = cdTextPages_[n];
+    auto &page = cdTextPages_[n];
 
     // Composite tab label: language-name label + close button.
     page.tabLabel = Gtk::make_managed<Gtk::Label>(std::to_string(n));
@@ -323,9 +322,9 @@ Gtk::Widget* TocInfoDialog::createCdTextPage(int n)
     return vbox;
 }
 
-Gtk::Widget* TocInfoDialog::createDiscTab(int n)
+Gtk::Widget *TocInfoDialog::createDiscTab(int n)
 {
-    auto& page = cdTextPages_[n];
+    auto &page = cdTextPages_[n];
 
     auto grid = Gtk::make_managed<Gtk::Grid>();
     grid->set_row_spacing(5);
@@ -343,7 +342,7 @@ Gtk::Widget* TocInfoDialog::createDiscTab(int n)
     page.genreInfo = Gtk::make_managed<Gtk::Entry>();
 
     int row = 0;
-    auto add_row = [&](const std::string& labelText, Gtk::Widget& widget) {
+    auto add_row = [&](const std::string &labelText, Gtk::Widget &widget) {
         auto lbl = Gtk::make_managed<Gtk::Label>(labelText);
         lbl->set_halign(Gtk::Align::END);
         grid->attach(*lbl, 0, row);
@@ -379,9 +378,9 @@ Gtk::Widget* TocInfoDialog::createDiscTab(int n)
     return grid;
 }
 
-Gtk::Widget* TocInfoDialog::createTracksTab(int n)
+Gtk::Widget *TocInfoDialog::createTracksTab(int n)
 {
-    auto& page = cdTextPages_[n];
+    auto &page = cdTextPages_[n];
 
     auto vbox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL, 5);
     vbox->set_margin(5);
@@ -390,8 +389,7 @@ Gtk::Widget* TocInfoDialog::createTracksTab(int n)
     auto controls = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL, 10);
     page.performerButton = Gtk::make_managed<Gtk::CheckButton>(_("Enable Performer Entries"));
     page.performerButton->set_active(false);
-    page.performerButton->signal_toggled().connect(
-        [this, n] { activatePerformerAction(n); });
+    page.performerButton->signal_toggled().connect([this, n] { activatePerformerAction(n); });
     controls->append(*(page.performerButton));
 
     auto fillButton = Gtk::make_managed<Gtk::Button>(_("Fill Performer"));
@@ -420,10 +418,11 @@ Gtk::Widget* TocInfoDialog::createTracksTab(int n)
 
 void TocInfoDialog::adjustTableEntries(int n)
 {
-    if (trackEntries_ == n) return;
+    if (trackEntries_ == n)
+        return;
 
     for (int l = 0; l < 8; l++) {
-        auto& page = cdTextPages_[l];
+        auto &page = cdTextPages_[l];
 
         if (n < trackEntries_) {
             for (int i = n; i < trackEntries_; i++) {
@@ -449,8 +448,7 @@ void TocInfoDialog::adjustTableEntries(int n)
                 page.tracksGrid->attach(*(page.tracks[i].performer), 1, i + 1);
                 page.tracksGrid->attach(*(page.tracks[i].title), 2, i + 1);
 
-                page.tracks[i].title->signal_changed().connect(
-                    [this, l] { recomputeEncoding(l); });
+                page.tracks[i].title->signal_changed().connect([this, l] { recomputeEncoding(l); });
                 page.tracks[i].performer->signal_changed().connect(
                     [this, l] { recomputeEncoding(l); });
             }
@@ -463,12 +461,11 @@ void TocInfoDialog::updateTabLabels()
 {
     // Labels reflect the language currently selected in each visible tab.
     for (int slot : visibleBlocks_) {
-        auto& page = cdTextPages_[slot];
+        auto &page = cdTextPages_[slot];
         int langIdx = page.selectedLanguage;
         if (langIdx < 0 || langIdx >= MAX_CD_TEXT_LANGUAGE_CODES)
             langIdx = 1;
-        const char *s =
-            CdTextContainer::languageName(CD_TEXT_LANGUAGE_CODES[langIdx].code);
+        const char *s = CdTextContainer::languageName(CD_TEXT_LANGUAGE_CODES[langIdx].code);
         if (page.tabLabel->get_label() != s)
             page.tabLabel->set_label(s);
     }
@@ -477,8 +474,7 @@ void TocInfoDialog::updateTabLabels()
 int TocInfoDialog::findUnusedSlot() const
 {
     for (int i = 0; i < 8; i++) {
-        if (std::find(visibleBlocks_.begin(), visibleBlocks_.end(), i) ==
-            visibleBlocks_.end())
+        if (std::find(visibleBlocks_.begin(), visibleBlocks_.end(), i) == visibleBlocks_.end())
             return i;
     }
     return -1;
@@ -513,7 +509,7 @@ int TocInfoDialog::findUnusedLanguageIndex() const
 
 void TocInfoDialog::resetBlockData(int slot)
 {
-    auto& page = cdTextPages_[slot];
+    auto &page = cdTextPages_[slot];
     bool wasImporting = importing_;
     importing_ = true;
 
@@ -534,7 +530,7 @@ void TocInfoDialog::resetBlockData(int slot)
     page.encodingWarning->set_visible(false);
 
     page.performerButton->set_active(false);
-    for (auto& t : page.tracks) {
+    for (auto &t : page.tracks) {
         t.title->set_text("");
         t.performer->set_text("");
         t.performer->set_sensitive(false);
@@ -561,8 +557,7 @@ void TocInfoDialog::syncTabs()
         cdTextNotebook_->remove_page(0);
 
     for (int slot : visibleBlocks_) {
-        cdTextNotebook_->append_page(*cdTextPages_[slot].pageWidget,
-                                     *cdTextPages_[slot].tabWidget);
+        cdTextNotebook_->append_page(*cdTextPages_[slot].pageWidget, *cdTextPages_[slot].tabWidget);
     }
     updateAddButtonSensitivity();
     updateTabLabels();
@@ -577,7 +572,7 @@ void TocInfoDialog::addBlockAction()
     if (slot < 0)
         return;
 
-    auto& page = cdTextPages_[slot];
+    auto &page = cdTextPages_[slot];
     resetBlockData(slot);
 
     // Make entries editable — a prior `clearCdText` may have left them
@@ -732,11 +727,11 @@ void TocInfoDialog::fillPerformerAction(int l)
 {
     if (l < 0 || l >= 8)
         return;
-    auto& page = cdTextPages_[l];
+    auto &page = cdTextPages_[l];
     const char *s = checkString(page.performer->get_text());
     if (!s)
         return;
-    for (auto& t : page.tracks)
+    for (auto &t : page.tracks)
         t.performer->set_text(s);
 }
 
@@ -745,7 +740,7 @@ void TocInfoDialog::activatePerformerAction(int l)
     if (l < 0 || l >= 8)
         return;
     bool val = cdTextPages_[l].performerButton->get_active();
-    for (auto& t : cdTextPages_[l].tracks)
+    for (auto &t : cdTextPages_[l].tracks)
         t.performer->set_sensitive(val);
 }
 
@@ -754,7 +749,7 @@ void TocInfoDialog::recomputeEncoding(int l)
     if (importing_ || l < 0 || l >= 8)
         return;
 
-    auto& page = cdTextPages_[l];
+    auto &page = cdTextPages_[l];
 
     // Concatenate every text field for this language; if the blob fits
     // an encoding, every individual field does too.
@@ -772,7 +767,7 @@ void TocInfoDialog::recomputeEncoding(int l)
     append(page.catalog);
     append(page.upcEan);
     append(page.genreInfo);
-    for (auto& t : page.tracks) {
+    for (auto &t : page.tracks) {
         append(t.title);
         append(t.performer);
     }
@@ -801,10 +796,9 @@ void TocInfoDialog::recomputeEncoding(int l)
 
     bool anyFits = fits[0] || fits[1] || fits[2];
     if (!anyFits) {
-        page.encodingWarning->set_markup(
-            Glib::ustring("<span color=\"red\">") +
-            Glib::Markup::escape_text(_("Text cannot be encoded")) +
-            "</span>");
+        page.encodingWarning->set_markup(Glib::ustring("<span color=\"red\">") +
+                                         Glib::Markup::escape_text(_("Text cannot be encoded")) +
+                                         "</span>");
         page.encodingWarning->set_visible(true);
     } else {
         page.encodingWarning->set_visible(false);
@@ -844,7 +838,7 @@ void TocInfoDialog::clearCdText()
 {
     importing_ = true;
     for (int l = 0; l < 8; l++) {
-        auto& page = cdTextPages_[l];
+        auto &page = cdTextPages_[l];
 
         page.title->set_text("");
         page.title->set_editable(false);
@@ -991,7 +985,7 @@ void TocInfoDialog::importCdText(const Toc *toc)
     }
 
     for (int l : visibleBlocks_) {
-        auto& page = cdTextPages_[l];
+        auto &page = cdTextPages_[l];
 
         if ((item = toc->getCdTextItem(0, l, CdTextItem::PackType::TITLE)) != NULL)
             page.title->set_text(item->getText());
@@ -1043,8 +1037,7 @@ void TocInfoDialog::importCdText(const Toc *toc)
 
         if ((item = toc->getCdTextItem(0, l, CdTextItem::PackType::GENRE)) != NULL) {
             if (item->dataLen() >= 2) {
-                page.selectedGenre =
-                    getCdTextGenreIndex(item->data()[0], item->data()[1]);
+                page.selectedGenre = getCdTextGenreIndex(item->data()[0], item->data()[1]);
             } else {
                 page.selectedGenre = 0; // Unknown
             }
@@ -1198,7 +1191,7 @@ void TocInfoDialog::exportCdText(TocEdit *tocEdit)
     // contiguous starting at 0.
     for (int p = 0; p < (int)visibleBlocks_.size(); p++) {
         int slot = visibleBlocks_[p];
-        auto& page = cdTextPages_[slot];
+        auto &page = cdTextPages_[slot];
         int l = p;
 
         applyPack(l, CdTextItem::PackType::TITLE, page.title);
@@ -1248,8 +1241,7 @@ void TocInfoDialog::exportCdText(TocEdit *tocEdit)
             int trackNr = i + 1;
 
             const char *tText = checkString(page.tracks[i].title->get_text());
-            const CdTextItem *tItem =
-                toc->getCdTextItem(trackNr, l, CdTextItem::PackType::TITLE);
+            const CdTextItem *tItem = toc->getCdTextItem(trackNr, l, CdTextItem::PackType::TITLE);
             if (tText != NULL) {
                 CdTextItem tmp(CdTextItem::PackType::TITLE, l);
                 tmp.setText(tText);
@@ -1289,10 +1281,10 @@ void TocInfoDialog::clearBlockInToc(TocEdit *tocEdit, int blockNr)
     const Toc *toc = tocEdit->toc();
 
     static const CdTextItem::PackType discPacks[] = {
-        CdTextItem::PackType::TITLE,       CdTextItem::PackType::PERFORMER,
-        CdTextItem::PackType::SONGWRITER,  CdTextItem::PackType::COMPOSER,
-        CdTextItem::PackType::ARRANGER,    CdTextItem::PackType::MESSAGE,
-        CdTextItem::PackType::DISK_ID,     CdTextItem::PackType::UPCEAN_ISRC,
+        CdTextItem::PackType::TITLE,      CdTextItem::PackType::PERFORMER,
+        CdTextItem::PackType::SONGWRITER, CdTextItem::PackType::COMPOSER,
+        CdTextItem::PackType::ARRANGER,   CdTextItem::PackType::MESSAGE,
+        CdTextItem::PackType::DISK_ID,    CdTextItem::PackType::UPCEAN_ISRC,
     };
     for (auto t : discPacks) {
         if (toc->getCdTextItem(0, blockNr, t))
@@ -1337,10 +1329,8 @@ void TocInfoDialog::imdbAction()
     }
 
     // We skip the choice and go with the first one.
-    for (const auto& res : results) {
-        log_message(0, "%d %s %s %s", res.exactMatch,
-                    res.category.c_str(),
-                    res.diskId.c_str(),
+    for (const auto &res : results) {
+        log_message(0, "%d %s %s %s", res.exactMatch, res.category.c_str(), res.diskId.c_str(),
                     res.title.c_str());
     }
 
@@ -1361,7 +1351,7 @@ void TocInfoDialog::imdbAction()
     int pos = cdTextNotebook_->get_current_page();
     if (pos < 0 || pos >= (int)visibleBlocks_.size())
         pos = 0;
-    auto& page = cdTextPages_[visibleBlocks_[pos]];
+    auto &page = cdTextPages_[visibleBlocks_[pos]];
 
     page.title->set_text(dbentry->diskTitle);
     page.performer->set_text(dbentry->diskArtist);

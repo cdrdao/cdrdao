@@ -41,7 +41,7 @@ namespace
 // Interval between drive scans, in milliseconds.
 constexpr int POLL_INTERVAL_MS = 2000;
 
-std::string trim(const std::string& s)
+std::string trim(const std::string &s)
 {
     auto begin = s.find_first_not_of(" \t\r\n");
     if (begin == std::string::npos)
@@ -52,13 +52,13 @@ std::string trim(const std::string& s)
 
 // Read vendor/model/revision for the drive with the given letter from its
 // storage device descriptor. Returns false if the drive cannot be queried.
-bool queryDevice(char letter, DeviceMonitor::DeviceInfo& info)
+bool queryDevice(char letter, DeviceMonitor::DeviceInfo &info)
 {
     std::string path = std::string("\\\\.\\") + letter + ":";
 
     // No access rights are needed for a metadata query.
-    HANDLE h = CreateFileA(path.c_str(), 0, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL,
-                           OPEN_EXISTING, 0, NULL);
+    HANDLE h = CreateFileA(path.c_str(), 0, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING,
+                           0, NULL);
     if (h == INVALID_HANDLE_VALUE)
         return false;
 
@@ -74,13 +74,13 @@ bool queryDevice(char letter, DeviceMonitor::DeviceInfo& info)
     if (!ok)
         return false;
 
-    auto desc = reinterpret_cast<const STORAGE_DEVICE_DESCRIPTOR*>(buffer);
+    auto desc = reinterpret_cast<const STORAGE_DEVICE_DESCRIPTOR *>(buffer);
 
     // Offsets are byte positions into the returned buffer, or 0 if absent.
     auto field = [&](DWORD offset) -> std::string {
         if (offset == 0 || offset >= returned)
             return std::string();
-        return trim(reinterpret_cast<const char*>(buffer) + offset);
+        return trim(reinterpret_cast<const char *>(buffer) + offset);
     };
 
     info.vendor = field(desc->VendorIdOffset);

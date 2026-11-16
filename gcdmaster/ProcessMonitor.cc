@@ -105,8 +105,8 @@ int ProcessMonitor::statusChanged()
  * Return: newly allocated 'Process' object or NULL on error
  */
 
-Process *ProcessMonitor::start(const std::string& prg, std::vector<std::string>& args,
-			       int pipeFdArgNum)
+Process *ProcessMonitor::start(const std::string &prg, std::vector<std::string> &args,
+                               int pipeFdArgNum)
 {
     int pid;
     Process *p;
@@ -124,7 +124,7 @@ Process *ProcessMonitor::start(const std::string& prg, std::vector<std::string>&
     }
 
     log_message(0, "Starting: ");
-    for (auto &s : args) 
+    for (auto &s : args)
         log_message(0, "%s ", s.c_str());
     log_message(0, "");
 
@@ -141,15 +141,15 @@ Process *ProcessMonitor::start(const std::string& prg, std::vector<std::string>&
         // close reading end of pipe
         close(pipeFds[0]);
 
-	{
-	    const char** cargs = new const char*[args.size() + 1];
-	    int idx = 0;
-	    for (auto& it : args)
-		cargs[idx++] = it.c_str();
-	    cargs[idx] = nullptr;
-	    execvp(prg.c_str(), (char *const *)cargs);
-	    delete[] cargs;
-	}
+        {
+            const char **cargs = new const char *[args.size() + 1];
+            int idx = 0;
+            for (auto &it : args)
+                cargs[idx++] = it.c_str();
+            cargs[idx] = nullptr;
+            execvp(prg.c_str(), (char *const *)cargs);
+            delete[] cargs;
+        }
 
         log_message(-2, "Cannot execute '%s': %s", prg.c_str(), strerror(errno));
         _exit(255);

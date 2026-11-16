@@ -37,9 +37,9 @@
 #include "log.h"
 #include "TempFileManager.h"
 
-ProcessMonitor*     PROCESS_MONITOR = NULL;
-ProgressDialogPool* PROGRESS_POOL = NULL;
-ConfigManager*      CONFIG_MANAGER = NULL;
+ProcessMonitor *PROCESS_MONITOR = NULL;
+ProgressDialogPool *PROGRESS_POOL = NULL;
+ConfigManager *CONFIG_MANAGER = NULL;
 Glib::RefPtr<GCDMaster> GCDMASTER;
 
 static int VERBOSE = 0;
@@ -69,14 +69,13 @@ static RETSIGTYPE signalHandler(int sig)
         PROCESS_MONITOR->handleSigChld();
 }
 
-
-int main(int argc, char* argv[])
+int main(int argc, char *argv[])
 {
     auto ll = getenv("LOG_LEVEL");
     log_set_verbose(ll ? atoi(ll) : 0);
 
     GCDMASTER = GCDMaster::create();
-   
+
     // create configuration manager
     CONFIG_MANAGER = new ConfigManager();
 

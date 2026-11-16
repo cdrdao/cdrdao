@@ -34,10 +34,7 @@ class CdTextContainer
     CdTextContainer();
     CdTextContainer(const CdTextContainer &) = default;
 
-    long count() const
-    {
-        return items_.size();
-    }
+    long count() const { return items_.size(); }
 
     void add(CdTextItem *);
 
@@ -70,38 +67,21 @@ class CdTextContainer
         using pointer = std::vector<std::shared_ptr<CdTextItem>>::const_iterator;
         using reference = CdTextItem &;
 
-        Iterator(pointer item) : m_ptr(item)
-        {
-        }
-        friend bool operator==(const Iterator &a, const Iterator &b)
-        {
-            return a.m_ptr == b.m_ptr;
-        }
-        friend bool operator!=(const Iterator &a, const Iterator &b)
-        {
-            return a.m_ptr != b.m_ptr;
-        }
+        Iterator(pointer item) : m_ptr(item) {}
+        friend bool operator==(const Iterator &a, const Iterator &b) { return a.m_ptr == b.m_ptr; }
+        friend bool operator!=(const Iterator &a, const Iterator &b) { return a.m_ptr != b.m_ptr; }
         Iterator &operator++()
         {
             m_ptr++;
             return *this;
         }
-        reference operator*() const
-        {
-            return *(*m_ptr);
-        }
+        reference operator*() const { return *(*m_ptr); }
 
         pointer m_ptr;
     };
 
-    Iterator begin() const
-    {
-        return Iterator(items_.begin());
-    }
-    Iterator end() const
-    {
-        return Iterator(items_.end());
-    }
+    Iterator begin() const { return Iterator(items_.begin()); }
+    Iterator end() const { return Iterator(items_.end()); }
 
   private:
     std::vector<std::shared_ptr<CdTextItem>> items_;

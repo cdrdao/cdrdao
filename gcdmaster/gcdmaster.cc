@@ -30,15 +30,14 @@
 #include "gcdmaster.h"
 #include "guiUpdate.h"
 #include "util.h"
-#include "log.h" 
+#include "log.h"
 
 GCDWindow::GCDWindow()
 {
     set_icon_name("gcdmaster");
 }
 
-GCDWindow::GCDWindow(BaseObjectType* cobject)
-    : Gtk::ApplicationWindow(cobject)
+GCDWindow::GCDWindow(BaseObjectType *cobject) : Gtk::ApplicationWindow(cobject)
 {
     set_icon_name("gcdmaster");
 }
@@ -54,7 +53,7 @@ GCDMaster::GCDMaster()
     builder_ = Gtk::Builder::create();
 }
 
-void GCDMaster::on_open(const type_vec_files& files, const Glib::ustring& hint)
+void GCDMaster::on_open(const type_vec_files &files, const Glib::ustring &hint)
 {
     for (auto file : files)
         openNewProject(file->get_path());
@@ -62,19 +61,19 @@ void GCDMaster::on_open(const type_vec_files& files, const Glib::ustring& hint)
 
 void GCDMaster::openNewProject(const Glib::ustring path = "")
 {
-   try {
-       auto project = dynamic_cast<AudioCDProject*>(get_active_window());
-       if (path.empty() || !project || project->tocEdit()->tocDirty()) {
-	   auto new_win = AudioCDProject::create(builder_, path);
-	   add_window(*new_win);
-	   new_win->present();
-	   guiUpdate(UPD_ALL);
-       } else {
-	   if (!path.empty())
-	       project->loadNewToc(path);
-       }
-    } catch (std::exception& e) {
-       std::cerr << "Failed: " << e.what() << "\n";
+    try {
+        auto project = dynamic_cast<AudioCDProject *>(get_active_window());
+        if (path.empty() || !project || project->tocEdit()->tocDirty()) {
+            auto new_win = AudioCDProject::create(builder_, path);
+            add_window(*new_win);
+            new_win->present();
+            guiUpdate(UPD_ALL);
+        } else {
+            if (!path.empty())
+                project->loadNewToc(path);
+        }
+    } catch (std::exception &e) {
+        std::cerr << "Failed: " << e.what() << "\n";
     }
 }
 
@@ -87,15 +86,15 @@ void GCDMaster::update(unsigned long level)
 {
     log_message(1, "[update %x] GCDMaster", level);
     for (auto window : get_windows()) {
-        auto w = dynamic_cast<GCDWindow*>(window);
+        auto w = dynamic_cast<GCDWindow *>(window);
         if (w)
             w->update(level);
     }
     if (preferences_)
-	preferences_->update(level);
+        preferences_->update(level);
 
     if (blanker_)
-	blanker_->update(level);
+        blanker_->update(level);
 }
 
 void GCDMaster::on_startup()
@@ -104,19 +103,13 @@ void GCDMaster::on_startup()
     Gtk::Application::on_startup();
 
     // Add actions
-    add_action("preferences",
-               sigc::mem_fun(*this, &GCDMaster::on_action_preferences));
+    add_action("preferences", sigc::mem_fun(*this, &GCDMaster::on_action_preferences));
     add_action("quit", sigc::mem_fun(*this, &GCDMaster::on_action_quit));
-    add_action("new",
-               sigc::mem_fun(*this, &GCDMaster::newEmptyProject));
-    add_action("about",
-               sigc::mem_fun(*this, &GCDMaster::on_action_about));
-    add_action("blank-cdrw",
-               sigc::mem_fun(*this, &GCDMaster::on_action_blank_cdrw));
-    add_action("open",
-               sigc::mem_fun(*this, &GCDMaster::on_action_open));
-    add_action("close",
-               sigc::mem_fun(*this, &GCDMaster::on_action_close));
+    add_action("new", sigc::mem_fun(*this, &GCDMaster::newEmptyProject));
+    add_action("about", sigc::mem_fun(*this, &GCDMaster::on_action_about));
+    add_action("blank-cdrw", sigc::mem_fun(*this, &GCDMaster::on_action_blank_cdrw));
+    add_action("open", sigc::mem_fun(*this, &GCDMaster::on_action_open));
+    add_action("close", sigc::mem_fun(*this, &GCDMaster::on_action_close));
 
     // You'd think the whole point of using <Primary> would be that it
     // matches to the right main modifier for each OS, i.e. Command on MacOS. But
@@ -184,20 +177,17 @@ void GCDMaster::on_action_open()
 {
     auto windows = get_windows();
     if (windows.empty())
-	return;
+        return;
 
-    openFileChooser_->open(sigc::mem_fun(
-			       *this, &GCDMaster::on_action_open_finish));
+    openFileChooser_->open(sigc::mem_fun(*this, &GCDMaster::on_action_open_finish));
 }
 
-void GCDMaster::on_action_open_finish(const Glib::RefPtr<Gio::AsyncResult>& result)
+void GCDMaster::on_action_open_finish(const Glib::RefPtr<Gio::AsyncResult> &result)
 {
     try {
-	auto file = openFileChooser_->open_finish(result);
-	openNewProject(file->get_path());
-    }
-    catch (...)
-    {
+        auto file = openFileChooser_->open_finish(result);
+        openNewProject(file->get_path());
+    } catch (...) {
     }
 }
 
@@ -206,8 +196,8 @@ void GCDMaster::on_action_quit()
     updateSignal_.disconnect();
     log_message(0, "GCDMaster::on_action_quit, closing %d window(s)", get_windows().size());
     for (auto window : get_windows()) {
-	log_message(0, "Closing window %s", window->get_title().c_str());
-	remove_window(*window);
+        log_message(0, "Closing window %s", window->get_title().c_str());
+        remove_window(*window);
     }
     log_message(0, "All windows closed.");
     quit();
@@ -220,16 +210,15 @@ void GCDMaster::on_action_preferences()
         return;
     }
     try {
-        preferences_ = PreferencesDialog::create(builder_,
-                                                 *get_active_window());
+        preferences_ = PreferencesDialog::create(builder_, *get_active_window());
         add_window(*preferences_);
         preferences_->present();
-        preferences_->signal_hide().connect([this](){
+        preferences_->signal_hide().connect([this]() {
             this->remove_window(*preferences_);
-            delete(preferences_);
-            this->preferences_ = nullptr; });
-    } catch (const std::exception& ex)
-    {
+            delete (preferences_);
+            this->preferences_ = nullptr;
+        });
+    } catch (const std::exception &ex) {
         std::cerr << "Preferences: " << ex.what() << "\n";
     }
 }
@@ -249,19 +238,19 @@ void GCDMaster::on_action_about()
 void GCDMaster::on_action_blank_cdrw()
 {
     if (blanker_) {
-	blanker_->present();
-	return;
+        blanker_->present();
+        return;
     }
 
     try {
         blanker_ = BlankCDDialog::create(builder_, *get_active_window());
         blanker_->start();
         blanker_->present();
-        blanker_->signal_hide().connect([this](){
-	    delete(blanker_);
-	    this->blanker_ = nullptr; });
-    } catch (const std::exception& ex)
-    {
+        blanker_->signal_hide().connect([this]() {
+            delete (blanker_);
+            this->blanker_ = nullptr;
+        });
+    } catch (const std::exception &ex) {
         std::cerr << "Blank CD/RW: " << ex.what() << "\n";
     }
 }

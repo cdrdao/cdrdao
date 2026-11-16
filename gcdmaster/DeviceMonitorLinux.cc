@@ -39,7 +39,7 @@ namespace
 {
 
 // Root of the kernel SCSI device tree.
-const char* SYSFS_SCSI_DEVICES = "/sys/bus/scsi/devices";
+const char *SYSFS_SCSI_DEVICES = "/sys/bus/scsi/devices";
 
 // SCSI peripheral device type for CD/DVD drives.
 constexpr int SCSI_TYPE_ROM = 5;
@@ -49,7 +49,7 @@ constexpr int POLL_INTERVAL_MS = 2000;
 
 // Read a single-line sysfs attribute and strip leading/trailing
 // whitespace (sysfs strings are space-padded and newline-terminated).
-std::string readAttr(const fs::path& path)
+std::string readAttr(const fs::path &path)
 {
     std::ifstream f(path);
     if (!f)
@@ -67,20 +67,20 @@ std::string readAttr(const fs::path& path)
 
 // Resolve the block device node (e.g. "/dev/sr0") backing the SCSI device
 // rooted at 'devDir'. Returns an empty string if none can be determined.
-std::string resolveNode(const fs::path& devDir)
+std::string resolveNode(const fs::path &devDir)
 {
     std::error_code ec;
 
     // Modern kernels: <devDir>/block/<name>
     fs::path blockDir = devDir / "block";
     if (fs::is_directory(blockDir, ec)) {
-        for (const auto& entry : fs::directory_iterator(blockDir, ec)) {
+        for (const auto &entry : fs::directory_iterator(blockDir, ec)) {
             return "/dev/" + entry.path().filename().string();
         }
     }
 
     // Older kernels: <devDir>/block:<name>
-    for (const auto& entry : fs::directory_iterator(devDir, ec)) {
+    for (const auto &entry : fs::directory_iterator(devDir, ec)) {
         const std::string name = entry.path().filename().string();
         if (name.rfind("block:", 0) == 0)
             return "/dev/" + name.substr(6);
@@ -109,7 +109,7 @@ class LinuxDeviceMonitor : public DeviceMonitor
         if (ec)
             return result;
 
-        for (const auto& entry : it) {
+        for (const auto &entry : it) {
             const fs::path devDir = entry.path();
 
             if (readAttr(devDir / "type") != std::to_string(SCSI_TYPE_ROM))

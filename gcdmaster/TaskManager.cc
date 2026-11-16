@@ -130,7 +130,7 @@ void TaskManager::addJob(Task *job)
     if (tasks.empty() && completionQueue.empty()) {
         num_added = 0;
         num_completed = 0;
-	active = true;
+        active = true;
         signalQueueStarted();
     }
     tasks.push(job);
@@ -146,9 +146,9 @@ void TaskManager::runJob(Task *job)
     assert(std::this_thread::get_id() != main_thread_id);
     Glib::signal_idle().connect_once([this, job]() { this->signalJobStarted(job); });
     try {
-	job->run();
-    } catch (std::exception& e) {
-	job->exception = e.what();
+        job->run();
+    } catch (std::exception &e) {
+        job->exception = e.what();
     }
     Glib::signal_idle().connect_once([this, job]() { this->jobDone(job); });
 }
@@ -160,12 +160,11 @@ void TaskManager::jobDone(Task *job)
     job->done = true;
 
     while (!tasks.empty() && tasks.front()->done) {
-	if (completionQueue.empty()) {
-	    Glib::signal_idle().connect(sigc::mem_fun(*this,
-						      &TaskManager::completionThread));
-	}
-	completionQueue.push(tasks.front());
-	tasks.pop();
+        if (completionQueue.empty()) {
+            Glib::signal_idle().connect(sigc::mem_fun(*this, &TaskManager::completionThread));
+        }
+        completionQueue.push(tasks.front());
+        tasks.pop();
     }
 }
 
@@ -180,20 +179,20 @@ double TaskManager::completion()
 bool TaskManager::completionThread()
 {
     assert(std::this_thread::get_id() == main_thread_id);
-    Task* t = completionQueue.front();
+    Task *t = completionQueue.front();
     t->completed();
     completionQueue.pop();
     num_completed++;
 
     if (completionQueue.empty()) {
-	if (num_completed == num_added) {
-	    signalQueueEmptied();
-	    num_completed = 0;
-	    num_added = 0;
-	    active = false;
-	}
-	return false;
+        if (num_completed == num_added) {
+            signalQueueEmptied();
+            num_completed = 0;
+            num_added = 0;
+            active = false;
+        }
+        return false;
     } else {
-	return true;
+        return true;
     }
 }

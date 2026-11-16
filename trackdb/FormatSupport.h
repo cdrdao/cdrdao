@@ -36,9 +36,7 @@
 class FormatSupport
 {
   public:
-    virtual ~FormatSupport()
-    {
-    }
+    virtual ~FormatSupport() {}
 
     typedef enum {
         FS_SUCCESS = 0,

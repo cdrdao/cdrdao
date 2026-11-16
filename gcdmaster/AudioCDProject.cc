@@ -44,8 +44,8 @@
 #include "xcdrdao.h"
 #include "CddbWindow.h"
 
-AudioCDProject* AudioCDProject::create(Glib::RefPtr<Gtk::Builder> builder,
-				       const Glib::ustring& path)
+AudioCDProject *AudioCDProject::create(Glib::RefPtr<Gtk::Builder> builder,
+                                       const Glib::ustring &path)
 {
     static int nextNumber = 0;
     builder->add_from_resource("/org/gnome/gcdmaster/window.ui");
@@ -54,18 +54,17 @@ AudioCDProject* AudioCDProject::create(Glib::RefPtr<Gtk::Builder> builder,
 
     auto cssProvider = Gtk::CssProvider::create();
     cssProvider->load_from_resource("/org/gnome/gcdmaster/gcdmaster.css");
-    
+
     auto window = Gtk::Builder::get_widget_derived<AudioCDProject>(builder, "app_window");
     if (!window)
-	throw std::runtime_error("app_window resource error");
+        throw std::runtime_error("app_window resource error");
 
     window->setup(nextNumber++, path);
     return window;
 }
 
-AudioCDProject::AudioCDProject(BaseObjectType* cobject,
- 			      const Glib::RefPtr<Gtk::Builder>& builder) :
-    GCDWindow(cobject), builder_(builder)
+AudioCDProject::AudioCDProject(BaseObjectType *cobject, const Glib::RefPtr<Gtk::Builder> &builder)
+    : GCDWindow(cobject), builder_(builder)
 {
     // Add actions
     save_action_ = add_action("save", sigc::mem_fun(*this, &AudioCDProject::saveProject));
@@ -75,12 +74,9 @@ AudioCDProject::AudioCDProject(BaseObjectType* cobject,
     toc_read_action_ = add_action("toc-read", sigc::mem_fun(*this, &AudioCDProject::tocRead));
     cd_read_action_ = add_action("cd-read", sigc::mem_fun(*this, &AudioCDProject::CDRead));
     add_action("record", sigc::mem_fun(*this, &AudioCDProject::recordToc2CD));
-    play_action_ =
-        add_action("play", sigc::mem_fun(*this, &AudioCDProject::on_play_clicked));
-    stop_action_ =
-        add_action("stop", sigc::mem_fun(*this, &AudioCDProject::on_stop_clicked));
-    pause_action_ =
-        add_action("pause", sigc::mem_fun(*this, &AudioCDProject::on_pause_clicked));
+    play_action_ = add_action("play", sigc::mem_fun(*this, &AudioCDProject::on_play_clicked));
+    stop_action_ = add_action("stop", sigc::mem_fun(*this, &AudioCDProject::on_stop_clicked));
+    pause_action_ = add_action("pause", sigc::mem_fun(*this, &AudioCDProject::on_pause_clicked));
 
     add_action("zoom-in", sigc::mem_fun(*this, &AudioCDProject::on_zoom_in_clicked));
     add_action("zoom-out", sigc::mem_fun(*this, &AudioCDProject::on_zoom_out_clicked));
@@ -91,7 +87,7 @@ AudioCDProject::AudioCDProject(BaseObjectType* cobject,
     // added BEFORE the UI is loaded, which is impossible since we're
     // using get_widget_derived().
     auto action = Gio::SimpleAction::create_radio_string("drag-mode", "select");
-    action->signal_change_state().connect([action, this](const Glib::VariantBase& state) {
+    action->signal_change_state().connect([action, this](const Glib::VariantBase &state) {
         auto str_state = Glib::VariantBase::cast_dynamic<Glib::Variant<Glib::ustring>>(state);
         if (str_state.get() == "select")
             this->audioCDView_->mode(AudioCDView::SELECT);
@@ -123,15 +119,15 @@ AudioCDProject::AudioCDProject(BaseObjectType* cobject,
     app_menu_button->set_menu_model(app_menu);
 
     {
-	// Window menus
-	auto gears = builder->get_object<Gtk::MenuButton>("gears");
-	auto wmenu = builder->get_object<Gio::MenuModel>("audiocd-menu");
-	auto disc_ops = builder->get_object<Gtk::MenuButton>("disc-ops");
-	auto disc_ops_menu = builder->get_object<Gio::MenuModel>("disc-ops-menu");
-	if (!(gears && wmenu && disc_ops && disc_ops_menu))
-	    throw std::runtime_error("Missing UI resources");
-	gears->set_menu_model(wmenu);
-	disc_ops->set_menu_model(disc_ops_menu);
+        // Window menus
+        auto gears = builder->get_object<Gtk::MenuButton>("gears");
+        auto wmenu = builder->get_object<Gio::MenuModel>("audiocd-menu");
+        auto disc_ops = builder->get_object<Gtk::MenuButton>("disc-ops");
+        auto disc_ops_menu = builder->get_object<Gio::MenuModel>("disc-ops-menu");
+        if (!(gears && wmenu && disc_ops && disc_ops_menu))
+            throw std::runtime_error("Missing UI resources");
+        gears->set_menu_model(wmenu);
+        disc_ops->set_menu_model(disc_ops_menu);
     }
 
     headerBarTitle_ = builder->get_object<Gtk::Label>("header-bar-title");
@@ -151,62 +147,61 @@ AudioCDProject::AudioCDProject(BaseObjectType* cobject,
     // Setup widgets on status bar.
     progressbar_ = builder_->get_object<Gtk::ProgressBar>("progress-bar");
     progressbar_->set_pulse_step(0.01);
-    
+
     statusbar_ = builder_->get_object<Gtk::Label>("status-bar-label");
 
     stopButton_ = builder_->get_object<Gtk::Button>("gtk-stop");
-    stopButton_->signal_clicked().connect(
-        sigc::mem_fun(*this, &AudioCDProject::on_cancel_clicked));
+    stopButton_->signal_clicked().connect(sigc::mem_fun(*this, &AudioCDProject::on_cancel_clicked));
 
     soundInterface_ = SoundIF::create();
     if (!soundInterface_) {
-        play_action_ ->set_enabled(false);
+        play_action_->set_enabled(false);
         pause_action_->set_enabled(false);
-        stop_action_ ->set_enabled(false);
+        stop_action_->set_enabled(false);
     }
 }
 
-void AudioCDProject::loadNewToc(const std::string& tocfile, bool anonymous)
+void AudioCDProject::loadNewToc(const std::string &tocfile, bool anonymous)
 {
-     if (tocEdit_->readToc(tocfile.c_str()) != 0) {
-	errorDialog("Unable to parse audio CD TOC content");
-	return;
+    if (tocEdit_->readToc(tocfile.c_str()) != 0) {
+        errorDialog("Unable to parse audio CD TOC content");
+        return;
     }
-     if (anonymous) {
-	 std::ostringstream oss;
-	 oss << "unnamed-" << projectNumber_ << ".toc";
-	 tocEdit_->filename(oss.str().c_str());
-	 new_ = true;
-	 tocEdit_->tocDirty(true);
-     }
+    if (anonymous) {
+        std::ostringstream oss;
+        oss << "unnamed-" << projectNumber_ << ".toc";
+        tocEdit_->filename(oss.str().c_str());
+        new_ = true;
+        tocEdit_->tocDirty(true);
+    }
     updateWindowTitle();
     guiUpdate(UPD_ALL);
     fullView();
 }
 
-void AudioCDProject::setup(int number, const Glib::ustring& path)
+void AudioCDProject::setup(int number, const Glib::ustring &path)
 {
     projectNumber_ = number;
     if (path.empty()) {
         tocEdit_ = Glib::make_refptr_for_instance<TocEdit>(new TocEdit(nullptr, ""));
-	set_size_request(600, 200);
+        set_size_request(600, 200);
         std::ostringstream oss;
         oss << "unnamed-" << projectNumber_ << ".toc";
         tocEdit_->filename(oss.str().c_str());
         new_ = true;
     } else {
-	auto ext = Util::fileExtension(path);
- 
-	switch (ext) {
-	case Util::FileExtension::TOC:
-	case Util::FileExtension::CUE:
-	    tocEdit_ = Glib::make_refptr_for_instance<TocEdit>(new TocEdit(nullptr, ""));
-	    if (tocEdit_->readToc(path.c_str()) != 0)
-		throw std::runtime_error("Could not parse TOC file");
-	    break;
-	default:
-	    throw std::runtime_error("Unrecognized format");
-	}
+        auto ext = Util::fileExtension(path);
+
+        switch (ext) {
+        case Util::FileExtension::TOC:
+        case Util::FileExtension::CUE:
+            tocEdit_ = Glib::make_refptr_for_instance<TocEdit>(new TocEdit(nullptr, ""));
+            if (tocEdit_->readToc(path.c_str()) != 0)
+                throw std::runtime_error("Could not parse TOC file");
+            break;
+        default:
+            throw std::runtime_error("Unrecognized format");
+        }
     }
 
     if (tocEdit_) {
@@ -215,14 +210,14 @@ void AudioCDProject::setup(int number, const Glib::ustring& path)
         tocEdit_->signalProgressFraction.connect(sigc::mem_fun(*this, &AudioCDProject::progress));
         tocEdit_->signalSpinner.connect(sigc::mem_fun(*this, &AudioCDProject::spin));
         tocEdit_->signalFullView.connect(sigc::mem_fun(*this, &AudioCDProject::fullView));
-        tocEdit_->signalSampleSelection.connect(sigc::mem_fun(*this, &AudioCDProject::sampleSelect));
+        tocEdit_->signalSampleSelection.connect(
+            sigc::mem_fun(*this, &AudioCDProject::sampleSelect));
         tocEdit_->signalCancelEnable.connect(sigc::mem_fun(*this, &AudioCDProject::cancelEnable));
         tocEdit_->signalError.connect(sigc::mem_fun(*this, &AudioCDProject::errorDialog));
 
         tocEdit_->signalProgressPulse.connect(
             sigc::mem_fun(*progressbar_, &Gtk::ProgressBar::pulse));
-        signalCancelClicked.connect(sigc::mem_fun(*tocEdit_,
-                                                  &TocEdit::queueAbort));
+        signalCancelClicked.connect(sigc::mem_fun(*tocEdit_, &TocEdit::queueAbort));
 
         if (tocEdit_->isQueueActive())
             cancelEnable(true);
@@ -230,10 +225,9 @@ void AudioCDProject::setup(int number, const Glib::ustring& path)
 
     audioCDView_ = Gtk::make_managed<AudioCDView>(this);
     audioCDView_->set_expand(true);
-    audioCDView_->signal_tocModified.connect(
-        sigc::mem_fun(*this, &AudioCDProject::update));
+    audioCDView_->signal_tocModified.connect(sigc::mem_fun(*this, &AudioCDProject::update));
 
-    auto vbox = dynamic_cast<Gtk::Box*>(get_first_child());
+    auto vbox = dynamic_cast<Gtk::Box *>(get_first_child());
     auto audio_toolbar = builder_->get_object<Gtk::Box>("audio-toolbar");
     vbox->insert_child_after(*audioCDView_, *audio_toolbar);
     audioCDView_->tocEditView()->sampleViewFull();
@@ -245,7 +239,7 @@ void AudioCDProject::setup(int number, const Glib::ustring& path)
 AudioCDProject::~AudioCDProject()
 {
     if (playBuffer_)
-	delete playBuffer_;
+        delete playBuffer_;
 }
 
 void AudioCDProject::updateWindowTitle()
@@ -258,7 +252,7 @@ void AudioCDProject::updateWindowTitle()
     set_title(s);
     s += " - Gnome CD Master";
     if (headerBarTitle_)
-	headerBarTitle_->set_label(s);
+        headerBarTitle_->set_label(s);
 }
 
 void AudioCDProject::status(const char *msg)
@@ -266,7 +260,7 @@ void AudioCDProject::status(const char *msg)
     statusMessage(msg);
 }
 
-void AudioCDProject::errorDialog(const Glib::ustring& msg)
+void AudioCDProject::errorDialog(const Glib::ustring &msg)
 {
     ErrorBox::message(*this, msg);
 }
@@ -312,8 +306,7 @@ bool AudioCDProject::on_close_request()
         message += tocEdit_->filename().string();
         message += " not saved.";
 
-        auto box = Ask2Box::create(*this, message, 1,
-                                   { _("Are you sure you want to close it ?") });
+        auto box = Ask2Box::create(*this, message, 1, {_("Are you sure you want to close it ?")});
 
         box->dialogDone.connect([this](int result) {
             if (result != 0)
@@ -322,14 +315,14 @@ bool AudioCDProject::on_close_request()
             if (tocEdit_ && tocEdit_->isQueueActive()) {
                 tocEdit_->queueAbort();
             }
-            
+
             if (playStatus_ == PLAYING || playStatus_ == PAUSED) {
                 playStop();
             }
-	    this->set_visible(false);
+            this->set_visible(false);
         });
-	box->choose();
-	return true;
+        box->choose();
+        return true;
     }
     return false;
 }
@@ -345,7 +338,7 @@ void AudioCDProject::saveProject()
         statusMessage(_("Project saved to \"%s\"."), tocEdit_->filename().c_str());
         guiUpdate(UPD_TOC_DIRTY);
     } else {
-	Glib::ustring s(_("Cannot save toc to \""));
+        Glib::ustring s(_("Cannot save toc to \""));
         s += tocEdit_->filename().string();
         s += "\":";
 
@@ -362,24 +355,23 @@ void AudioCDProject::saveAsProject()
 }
 
 void AudioCDProject::saveAsDone(Glib::RefPtr<Gtk::FileDialog> dialog,
-				const Glib::RefPtr<Gio::AsyncResult>& result)
+                                const Glib::RefPtr<Gio::AsyncResult> &result)
 {
     try {
-	auto file = dialog->save_finish(result);
-	if (file) {
-	    if (tocEdit_->saveAsToc(file->get_path()) == 0) {
-		statusMessage(_("Project saved to \"%s\"."),
-			      tocEdit_->filename().c_str());
-		updateWindowTitle();
-		guiUpdate(UPD_TOC_DIRTY);
-		new_ = false;
-	    } else {
-		std::string m(_("Cannot save toc to \""));
-		m += tocEdit_->filename();
-		m += "\":";
-		errorDialog(m);
-	    }
-	}
+        auto file = dialog->save_finish(result);
+        if (file) {
+            if (tocEdit_->saveAsToc(file->get_path()) == 0) {
+                statusMessage(_("Project saved to \"%s\"."), tocEdit_->filename().c_str());
+                updateWindowTitle();
+                guiUpdate(UPD_TOC_DIRTY);
+                new_ = false;
+            } else {
+                std::string m(_("Cannot save toc to \""));
+                m += tocEdit_->filename();
+                m += "\":";
+                errorDialog(m);
+            }
+        }
     } catch (...) {
     }
 }
@@ -387,8 +379,8 @@ void AudioCDProject::saveAsDone(Glib::RefPtr<Gtk::FileDialog> dialog,
 void AudioCDProject::recordToc2CD()
 {
     if (!recordTocDialog_)
-        recordTocDialog_ = Glib::make_refptr_for_instance<RecordTocDialog>(
-            new RecordTocDialog(tocEdit_));
+        recordTocDialog_ =
+            Glib::make_refptr_for_instance<RecordTocDialog>(new RecordTocDialog(tocEdit_));
 
     recordTocDialog_->start(this);
     recordTocDialog_->present();
@@ -397,37 +389,37 @@ void AudioCDProject::recordToc2CD()
 void AudioCDProject::tocRead()
 {
     if (tocEdit_->tocDirty()) {
-	MessageBox::message(*this, _("Save your project first"),
-			   {_("This will replace your current project.")});
-	return;
+        MessageBox::message(*this, _("Save your project first"),
+                            {_("This will replace your current project.")});
+        return;
     }
     try {
-	auto task = new FastTocRead();
-	task->signalDone.connect([this, task](Toc* toc) {
-	    if (toc) {
-		this->tocEdit_->toc(toc, "", true);
-	    } else {
-		this->errorDialog(_("Unable to extra disc TOC"));
-	    }
-	    delete(task);
-	    guiUpdate(UPD_ALL);
-	    this->fullView();
-	});
-	tocEdit_->taskManager().addJob(task);
+        auto task = new FastTocRead();
+        task->signalDone.connect([this, task](Toc *toc) {
+            if (toc) {
+                this->tocEdit_->toc(toc, "", true);
+            } else {
+                this->errorDialog(_("Unable to extra disc TOC"));
+            }
+            delete (task);
+            guiUpdate(UPD_ALL);
+            this->fullView();
+        });
+        tocEdit_->taskManager().addJob(task);
     } catch (...) {
-	MessageBox::message(*this, _("Insert an audio CD first."));
+        MessageBox::message(*this, _("Insert an audio CD first."));
     }
 }
 
 void AudioCDProject::CDRead()
 {
     if (tocEdit_->tocDirty()) {
-	MessageBox::message(*this, _("Save your project first"),
-			   {_("This will replace your current project.")});
-	return;
+        MessageBox::message(*this, _("Save your project first"),
+                            {_("This will replace your current project.")});
+        return;
     }
     if (!cdReader_)
-	cdReader_ = AudioCDRead::create(this);
+        cdReader_ = AudioCDRead::create(this);
 
     cdReader_->present();
 }
@@ -435,8 +427,7 @@ void AudioCDProject::CDRead()
 void AudioCDProject::projectInfo()
 {
     if (!tocInfoDialog_)
-        tocInfoDialog_ = Glib::make_refptr_for_instance<TocInfoDialog>(
-            new TocInfoDialog(this));
+        tocInfoDialog_ = Glib::make_refptr_for_instance<TocInfoDialog>(new TocInfoDialog(this));
 
     tocInfoDialog_->start(tocEdit_.get());
     tocInfoDialog_->present();
@@ -446,63 +437,56 @@ void AudioCDProject::cddbQuery()
 {
     spin(true);
     if (!cddbWindow_) {
-	cddbWindow_ = CddbWindow::create(tocEdit_);
-	cddbWindow_->signalQueryDone.connect(sigc::mem_fun(*this,
-						   &AudioCDProject::cddbQuery1));
-	cddbWindow_->signalReadDone.connect(sigc::mem_fun(*this,
-						   &AudioCDProject::cddbQuery2));
+        cddbWindow_ = CddbWindow::create(tocEdit_);
+        cddbWindow_->signalQueryDone.connect(sigc::mem_fun(*this, &AudioCDProject::cddbQuery1));
+        cddbWindow_->signalReadDone.connect(sigc::mem_fun(*this, &AudioCDProject::cddbQuery2));
     }
     cddbWindow_->setTocEdit(tocEdit_);
     cddbWindow_->doQuery();
 }
 
-void AudioCDProject::cddbQuery1(Cddb* cddb, CddbWindow::Error err)
+void AudioCDProject::cddbQuery1(Cddb *cddb, CddbWindow::Error err)
 {
     if (err != CddbWindow::OK) {
-	spin(false);
-	if (err == CddbWindow::CONNERR) {
-	    ErrorBox::message(*this, _("Unable to connect to CDDB server."));
-	} else if (err == CddbWindow::QUERYERR) {
-	    ErrorBox::message(*this, _("An error occured while talking to CDDB server."));
-	}
-	statusMessage("");
-	return;
+        spin(false);
+        if (err == CddbWindow::CONNERR) {
+            ErrorBox::message(*this, _("Unable to connect to CDDB server."));
+        } else if (err == CddbWindow::QUERYERR) {
+            ErrorBox::message(*this, _("An error occured while talking to CDDB server."));
+        }
+        statusMessage("");
+        return;
     }
 
     auto rc = cddb->queryResults().size();
-    
+
     log_message(0, "CDDB Query done with %d results, err=%d", rc, err);
 
     if (rc > 0) {
-	statusMessage("Downloading CDDB data for %s...",
-		      cddb->queryResults()[0].title.c_str());
-	cddbWindow_->getEntry(cddb->queryResults()[0].category,
-			      cddb->queryResults()[0].diskId);
+        statusMessage("Downloading CDDB data for %s...", cddb->queryResults()[0].title.c_str());
+        cddbWindow_->getEntry(cddb->queryResults()[0].category, cddb->queryResults()[0].diskId);
     } else {
-	statusMessage("CDDB query yielded %d possible match%s.",
-		      rc, (rc > 1 ? "es" : ""));
-	spin(false);
+        statusMessage("CDDB query yielded %d possible match%s.", rc, (rc > 1 ? "es" : ""));
+        spin(false);
     }
 }
 
-void AudioCDProject::cddbQuery2(Cddb* cddb, CddbWindow::Error err)
+void AudioCDProject::cddbQuery2(Cddb *cddb, CddbWindow::Error err)
 {
     spin(false);
 
     if (err == CddbWindow::READERR) {
-	ErrorBox::message(*this,
-			  _("An error occured while downloading data from the CDDB server."));
-	return;
+        ErrorBox::message(*this,
+                          _("An error occured while downloading data from the CDDB server."));
+        return;
     }
 
     assert(cddb->dbEntry().has_value());
 
     statusMessage("Data found for \"%s / %s\". CD-TEXT updated.",
-		  cddb->dbEntry()->diskArtist.c_str(),
-		  cddb->dbEntry()->diskTitle.c_str());
+                  cddb->dbEntry()->diskArtist.c_str(), cddb->dbEntry()->diskTitle.c_str());
 
-    log_message(0, "CDDB Read done: has result? %d, err=%d",
-		cddb->dbEntry().has_value(), err);
+    log_message(0, "CDDB Read done: has result? %d, err=%d", cddb->dbEntry().has_value(), err);
 }
 
 void AudioCDProject::update(unsigned long level)
@@ -525,7 +509,7 @@ void AudioCDProject::update(unsigned long level)
         recordTocDialog_->update(level);
 
     if (cdReader_)
-	cdReader_->update(level);
+        cdReader_->update(level);
 
     if (soundInterface_) {
         if (level & UPD_PLAY_STATUS) {
@@ -535,9 +519,9 @@ void AudioCDProject::update(unsigned long level)
                 {true, true, true},  // Paused
                 {true, false, false} // Stopped
             };
-            play_action_ ->set_enabled(sensitivity[playStatus_][0]);
+            play_action_->set_enabled(sensitivity[playStatus_][0]);
             pause_action_->set_enabled(sensitivity[playStatus_][1]);
-            stop_action_ ->set_enabled(sensitivity[playStatus_][2]);
+            stop_action_->set_enabled(sensitivity[playStatus_][2]);
         }
         if (level & UPD_EDITABLE_STATE) {
             play_action_->set_enabled(tocEdit_->editable());
@@ -565,7 +549,7 @@ void AudioCDProject::playStart()
     if (audioCDView_->tocEditView()) {
         if (!audioCDView_->tocEditView()->sampleSelection(&start, &end))
             audioCDView_->tocEditView()->sampleView(&start, &end);
-        
+
         playStart(start, end);
     }
 }
@@ -748,7 +732,7 @@ bool AudioCDProject::appendTrack(const char *file)
                 tocEdit_->queueAppendTrack((*i).c_str());
             }
         } else {
-	    Glib::ustring msg = "Could not read M3U file \"";
+            Glib::ustring msg = "Could not read M3U file \"";
             msg += file;
             msg += "\"";
             errorDialog(msg);
@@ -814,4 +798,3 @@ void AudioCDProject::statusMessage(const char *fmt, ...)
 
     va_end(args);
 }
-

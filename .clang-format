@@ -4,3 +4,5 @@ BraceWrapping:
     BeforeElse: false
 BreakBeforeBraces: Linux
 UseTab: Never
+AllowShortFunctionsOnASingleLine: Inline
+SortIncludes: Never

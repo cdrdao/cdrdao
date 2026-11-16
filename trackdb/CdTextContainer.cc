@@ -37,9 +37,7 @@ static LanguageCode LANGUAGE_CODES[] = {
 
 static int NOF_LANGUAGE_CODES = sizeof(LANGUAGE_CODES) / sizeof(LanguageCode);
 
-CdTextContainer::CdTextContainer() : languages(8, -1), encodings(8, Util::Encoding::UNSET)
-{
-}
+CdTextContainer::CdTextContainer() : languages(8, -1), encodings(8, Util::Encoding::UNSET) {}
 
 void CdTextContainer::print(int isTrack, std::ostream &out, PrintParams &params) const
 {

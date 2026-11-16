@@ -47,8 +47,8 @@ class RecordCDSource : public Gtk::Frame
     Gtk::Window *parent_;
     Gtk::Window *moreOptions_ = nullptr;
 
-    Gtk::DropDown*    correctionMenu_;
-    Gtk::DropDown*    subChanReadModeMenu_;
+    Gtk::DropDown *correctionMenu_;
+    Gtk::DropDown *subChanReadModeMenu_;
     Gtk::CheckButton *continueOnErrorButton_;
     Gtk::CheckButton *ignoreIncorrectTOCButton_;
 

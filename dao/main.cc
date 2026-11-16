@@ -93,7 +93,7 @@ int main(int argc, char **argv)
     // Parse command line command and options.
     if (options.parseCmdLine(argc - 1, argv + 1, settings) != 0) {
         log_set_verbose(2);
-	Cdrdao::printVersion();
+        Cdrdao::printVersion();
         options.printUsage();
         exit(1);
     }
@@ -105,7 +105,7 @@ int main(int argc, char **argv)
 
     // Just show version ? We're done.
     if (options.command == SHOW_VERSION) {
-	Cdrdao::printVersion();
+        Cdrdao::printVersion();
         goto fail;
     }
 
@@ -162,13 +162,13 @@ int main(int argc, char **argv)
         }
 
         cdr = cdrdao.setupDevice(*options.command, options.scsiDevice, options.driverId,
-                          /* init device? */
-                          (options.command == UNLOCK) ? 0 : 1,
-                          /* check for ready status? */
-                          (options.command == DRIVE_INFO) ? 0 : 1,
-                          /* reset status of medium if not empty? */
-                          (options.command == SIMULATE || options.command == WRITE) ? 1 : 0,
-                          options.readingSpeed, options.remoteMode, options.reload);
+                                 /* init device? */
+                                 (options.command == UNLOCK) ? 0 : 1,
+                                 /* check for ready status? */
+                                 (options.command == DRIVE_INFO) ? 0 : 1,
+                                 /* reset status of medium if not empty? */
+                                 (options.command == SIMULATE || options.command == WRITE) ? 1 : 0,
+                                 options.readingSpeed, options.remoteMode, options.reload);
 
         if (cdr == NULL) {
             log_message(-2, "Cannot setup device %s.", options.scsiDevice.c_str());
@@ -213,8 +213,8 @@ int main(int argc, char **argv)
     if (options.command == COPY_CD) {
         if (options.sourceScsiDevice != NULL && options.scsiDevice != options.sourceScsiDevice) {
             delSrcDevice = 1;
-            srcCdr = cdrdao.setupDevice(READ_CD, options.sourceScsiDevice, options.sourceDriverId, 1, 1, 0,
-                                 options.readingSpeed, false, false);
+            srcCdr = cdrdao.setupDevice(READ_CD, options.sourceScsiDevice, options.sourceDriverId,
+                                        1, 1, 0, options.readingSpeed, false, false);
 
             if (srcCdr == NULL) {
                 log_message(-2, "Cannot setup source device %s.", options.sourceScsiDevice);
@@ -372,13 +372,14 @@ int main(int argc, char **argv)
         }
         log_message(1, "Reading toc data...");
 
-	if (options.tocFile.has_value()) {
-	    if (access(options.tocFile->c_str(), R_OK) == 0) {
-		log_message(-2, "File \"%s\" exists, will not overwrite.", options.tocFile->c_str());
-		exitCode = 1;
-		goto fail;
-	    }
-	}
+        if (options.tocFile.has_value()) {
+            if (access(options.tocFile->c_str(), R_OK) == 0) {
+                log_message(-2, "File \"%s\" exists, will not overwrite.",
+                            options.tocFile->c_str());
+                exitCode = 1;
+                goto fail;
+            }
+        }
 
         cdr->subChanReadMode(options.readSubchanMode);
         cdr->rawDataReading(options.readRaw);
@@ -406,7 +407,7 @@ int main(int argc, char **argv)
             }
 
             if (options.tocFile.has_value()) {
-		std::ofstream out(*options.tocFile);
+                std::ofstream out(*options.tocFile);
                 if (!out) {
                     log_message(-2, "Cannot open \"%s\" for writing: %s", options.tocFile->c_str(),
                                 strerror(errno));
@@ -416,7 +417,7 @@ int main(int argc, char **argv)
                 toc->print(out, cdrdao.filePrintParams);
             } else {
                 toc->print(std::cout, cdrdao.filePrintParams);
-	    }
+            }
 
             log_message(1, "Reading of toc data finished successfully.");
         }
@@ -465,7 +466,7 @@ int main(int argc, char **argv)
         }
 
         {
-	    std::ofstream out(*options.tocFile);
+            std::ofstream out(*options.tocFile);
             if (!out) {
                 log_message(-2, "Cannot open \"%s\" for writing: %s", options.tocFile->c_str(),
                             strerror(errno));

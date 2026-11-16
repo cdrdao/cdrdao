@@ -32,16 +32,10 @@ class TeacCdr55 : public CdrDriver
     ~TeacCdr55();
     static CdrDriver *instance(std::shared_ptr<ScsiIf> scsiIf, unsigned long options);
 
-    unsigned long getReadCapabilities(const CdToc *, int) const
-    {
-        return 0;
-    }
+    unsigned long getReadCapabilities(const CdToc *, int) const { return 0; }
 
     // MMC compatible drives take little endian samples
-    int bigEndianSamples() const
-    {
-        return 0;
-    }
+    int bigEndianSamples() const { return 0; }
 
     int speed(int);
 

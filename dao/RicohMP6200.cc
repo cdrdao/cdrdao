@@ -40,9 +40,7 @@ RicohMP6200::RicohMP6200(std::shared_ptr<ScsiIf> scsiIf, unsigned long options)
     encodingMode_ = 0;
 }
 
-RicohMP6200::~RicohMP6200()
-{
-}
+RicohMP6200::~RicohMP6200() {}
 
 // static constructor
 CdrDriver *RicohMP6200::instance(std::shared_ptr<ScsiIf> scsiIf, unsigned long options)

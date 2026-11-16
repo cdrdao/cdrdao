@@ -47,7 +47,7 @@ class RecordCDTarget : public Gtk::Box
     DeviceSelector *devices_;
     int speed_ = 1;
     Gtk::Window *parent_;
-    Gtk::Window* moreOptions_ = nullptr;
+    Gtk::Window *moreOptions_ = nullptr;
 
     Gtk::CheckButton *closeSessionButton_;
     Gtk::CheckButton *ejectButton_;

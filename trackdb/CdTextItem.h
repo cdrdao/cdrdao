@@ -62,47 +62,20 @@ class CdTextItem
     void setTextFromToc(const char *text);
     void setGenre(u8 genreCode1, u8 genreCode2, const char *description);
 
-    DataType dataType() const
-    {
-        return dataType_;
-    }
-    PackType packType() const
-    {
-        return packType_;
-    }
+    DataType dataType() const { return dataType_; }
+    PackType packType() const { return packType_; }
 
-    int blockNr() const
-    {
-        return blockNr_;
-    }
+    int blockNr() const { return blockNr_; }
 
-    bool isTrackPack() const
-    {
-        return trackNr_ > 0;
-    }
-    void trackNr(int t)
-    {
-        trackNr_ = t;
-    }
-    int trackNr() const
-    {
-        return trackNr_;
-    }
+    bool isTrackPack() const { return trackNr_ > 0; }
+    void trackNr(int t) { trackNr_ = t; }
+    int trackNr() const { return trackNr_; }
 
     void encoding(Util::Encoding e);
-    Util::Encoding encoding() const
-    {
-        return encoding_;
-    }
+    Util::Encoding encoding() const { return encoding_; }
 
-    const u8 *data() const
-    {
-        return data_.data();
-    }
-    size_t dataLen() const
-    {
-        return data_.size();
-    }
+    const u8 *data() const { return data_.data(); }
+    size_t dataLen() const { return data_.size(); }
     bool empty() const
     {
         if (dataType_ == DataType::BINARY)
@@ -111,10 +84,7 @@ class CdTextItem
             return u8text.empty();
     }
 
-    const std::string &getText() const
-    {
-        return u8text;
-    }
+    const std::string &getText() const { return u8text; }
 
     void print(std::ostream &, PrintParams &params) const;
 

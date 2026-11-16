@@ -33,16 +33,10 @@ class CDD2600 : public CdrDriver, private CDD2600Base
 
     static CdrDriver *instance(std::shared_ptr<ScsiIf> scsiIf, unsigned long options);
 
-    unsigned long getReadCapabilities(const CdToc *, int) const
-    {
-        return 0;
-    }
+    unsigned long getReadCapabilities(const CdToc *, int) const { return 0; }
 
     // CDD2600 takes big endian samples
-    int bigEndianSamples() const
-    {
-        return 1;
-    }
+    int bigEndianSamples() const { return 1; }
 
     int speed(int);
 

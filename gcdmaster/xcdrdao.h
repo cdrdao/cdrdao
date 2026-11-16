@@ -32,9 +32,9 @@
 // Warning: those may be shared by multiple open project windows.
 //
 
-extern class ProcessMonitor     *PROCESS_MONITOR;
+extern class ProcessMonitor *PROCESS_MONITOR;
 extern class ProgressDialogPool *PROGRESS_POOL;
-extern class ConfigManager      *CONFIG_MANAGER;
+extern class ConfigManager *CONFIG_MANAGER;
 extern Glib::RefPtr<GCDMaster> GCDMASTER;
 
 void blockProcessMonitorSignals();

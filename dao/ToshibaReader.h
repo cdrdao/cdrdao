@@ -31,10 +31,7 @@ class ToshibaReader : public PlextorReader
     ToshibaReader(std::shared_ptr<ScsiIf> scsiIf, unsigned long options);
     static CdrDriver *instance(std::shared_ptr<ScsiIf> scsiIf, unsigned long options);
 
-    unsigned long getReadCapabilites(const CdToc *, int) const
-    {
-        return 0;
-    }
+    unsigned long getReadCapabilites(const CdToc *, int) const { return 0; }
 
   protected:
     int readSubChannels(TrackData::SubChannelMode, long lba, long len, SubChannel ***, Sample *);

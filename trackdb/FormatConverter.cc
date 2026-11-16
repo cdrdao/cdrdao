@@ -190,7 +190,7 @@ FormatSupport::Status FormatConverter::convert(Toc *toc)
 
         const char *dst = convert((*i).c_str(), &err);
         if (!dst && err != FormatSupport::FS_SUCCESS)
-	    throw std::runtime_error("File conversion error");
+            throw std::runtime_error("File conversion error");
 
         if (dst)
             toc->markFileConversion((*i).c_str(), dst);

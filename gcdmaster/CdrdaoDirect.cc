@@ -6,27 +6,26 @@
 #include "trackdb/Toc.h"
 #include "CdDevice.h"
 
-FastTocRead::FastTocRead(CdDevice* dev)
-    : dev_(dev)
+FastTocRead::FastTocRead(CdDevice *dev) : dev_(dev)
 {
     if (!dev_) {
-	for (auto* dev : CdDevice::deviceList()) {
-	    if (dev->updateStatus() != 0)
-		continue;
-	    if (dev->status() != CdDevice::DEV_READY)
-		continue;
-	    dev_ = dev;
-	    break;
-	}
+        for (auto *dev : CdDevice::deviceList()) {
+            if (dev->updateStatus() != 0)
+                continue;
+            if (dev->status() != CdDevice::DEV_READY)
+                continue;
+            dev_ = dev;
+            break;
+        }
     }
     if (!dev_)
-	throw std::runtime_error("No Available Disks to read");
+        throw std::runtime_error("No Available Disks to read");
 }
 
 FastTocRead::~FastTocRead()
 {
     if (driver_)
-	delete driver_;
+        delete driver_;
 }
 
 void FastTocRead::run()

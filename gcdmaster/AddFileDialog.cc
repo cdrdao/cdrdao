@@ -35,13 +35,12 @@
 #include "util.h"
 #include "xcdrdao.h"
 
-Glib::RefPtr<AddFileDialog> AddFileDialog::create(AudioCDProject* project)
+Glib::RefPtr<AddFileDialog> AddFileDialog::create(AudioCDProject *project)
 {
     return Glib::make_refptr_for_instance<AddFileDialog>(new AddFileDialog(project));
 }
 
-AddFileDialog::AddFileDialog(AudioCDProject *project) :
-    project_(project)
+AddFileDialog::AddFileDialog(AudioCDProject *project) : project_(project)
 {
     set_modal(true);
     mode(M_APPEND_TRACK);
@@ -92,30 +91,26 @@ void AddFileDialog::mode(Mode m)
 void AddFileDialog::start(Mode m)
 {
     mode(m);
-    open_multiple(*project_,
-                  sigc::mem_fun(*this,
-                                &AddFileDialog::on_file_dialog_finish));
+    open_multiple(*project_, sigc::mem_fun(*this, &AddFileDialog::on_file_dialog_finish));
 }
 
-void AddFileDialog::on_file_dialog_finish(const Glib::RefPtr<Gio::AsyncResult>& result)
+void AddFileDialog::on_file_dialog_finish(const Glib::RefPtr<Gio::AsyncResult> &result)
 {
     try {
         auto files_list = open_multiple_finish(result);
-	applyAction(files_list);
-    }
-    catch (const Gtk::DialogError& e) {
+        applyAction(files_list);
+    } catch (const Gtk::DialogError &e) {
         // User cancelled or error occurred
-    }
-    catch (const Glib::Error& e) {
+    } catch (const Glib::Error &e) {
         // Handle other errors
     }
 }
 
-bool AddFileDialog::applyAction(const std::vector<Glib::RefPtr<Gio::File>>& selected_files)
+bool AddFileDialog::applyAction(const std::vector<Glib::RefPtr<Gio::File>> &selected_files)
 {
     std::list<std::string> files_to_process;
 
-    for (const auto& file : selected_files) {
+    for (const auto &file : selected_files) {
         std::string path = file->get_path();
         const char *s = stripCwd(path.c_str());
 

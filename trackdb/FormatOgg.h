@@ -35,10 +35,7 @@ class FormatOgg : public FormatSupport
     Status convertContinue();
     void convertAbort();
 
-    TrackData::FileType format()
-    {
-        return TrackData::WAVE;
-    }
+    TrackData::FileType format() { return TrackData::WAVE; }
 
   protected:
     virtual Status oggInit();

@@ -78,8 +78,8 @@ class TrackData
     };
 
     // creates an audio mode file entry
-    TrackData(const std::string& filename, long offset, unsigned long start, unsigned long length);
-    TrackData(const std::string& filename, unsigned long start, unsigned long length);
+    TrackData(const std::string &filename, long offset, unsigned long start, unsigned long length);
+    TrackData(const std::string &filename, unsigned long start, unsigned long length);
 
     // creates a zero audio entry
     TrackData(unsigned long length);
@@ -88,10 +88,10 @@ class TrackData
     TrackData(Mode, SubChannelMode, unsigned long length);
 
     // creates a file entry with given mode
-    TrackData(Mode, SubChannelMode, const std::string& filename, long offset, unsigned long length);
+    TrackData(Mode, SubChannelMode, const std::string &filename, long offset, unsigned long length);
 
     // create a fifo entry with given mode
-    TrackData(Mode, SubChannelMode, const std::string& filename, unsigned long length);
+    TrackData(Mode, SubChannelMode, const std::string &filename, unsigned long length);
 
     // copy constructor
     TrackData(const TrackData &);
@@ -113,19 +113,19 @@ class TrackData
     int determineLength();
     int check(int trackNr) const;
 
-    void effectiveFilename(const std::string&);
+    void effectiveFilename(const std::string &);
 
     void split(unsigned long, TrackData **part1, TrackData **part2);
     TrackData *merge(const TrackData *) const;
 
     void print(std::ostream &, PrintParams &) const;
 
-    static int checkAudioFile(const std::string& fn, unsigned long *length);
-    static int waveLength(const std::string& filename, long offset, long *hdrlen,
+    static int checkAudioFile(const std::string &fn, unsigned long *length);
+    static int waveLength(const std::string &filename, long offset, long *hdrlen,
                           unsigned long *datalen = 0);
-    static int audioDataLength(const std::string& fname, long offset, unsigned long *length);
-    static FileType audioFileType(const std::string& filename);
-    static int dataFileLength(const std::string& fname, long offset, unsigned long *length);
+    static int audioDataLength(const std::string &fname, long offset, unsigned long *length);
+    static FileType audioFileType(const std::string &filename);
+    static int dataFileLength(const std::string &fname, long offset, unsigned long *length);
 
     static unsigned long dataBlockSize(Mode, SubChannelMode);
     static unsigned long subChannelSize(SubChannelMode);
@@ -159,8 +159,8 @@ class TrackData
 
     friend class TrackDataReader;
 
-    void init(const std::string& filename, long offset, unsigned long start, unsigned long length);
-    void init(Mode, SubChannelMode, const std::string& filename, long offset, unsigned long length);
+    void init(const std::string &filename, long offset, unsigned long start, unsigned long length);
+    void init(Mode, SubChannelMode, const std::string &filename, long offset, unsigned long length);
     void init(unsigned long length);
     void init(Mode, SubChannelMode, unsigned long length);
 };
@@ -178,10 +178,7 @@ class TrackDataReader
     long readData(Sample *buffer, long len);
     int seekSample(unsigned long sample);
 
-    const TrackData *trackData() const
-    {
-        return trackData_;
-    }
+    const TrackData *trackData() const { return trackData_; }
 
     // returns number of bytes/samples that are left for reading
     unsigned long readLeft() const;

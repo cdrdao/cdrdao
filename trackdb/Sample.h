@@ -38,14 +38,8 @@ struct Sample {
     unsigned char msbRight;
     unsigned char lsbRight;
 
-    short left() const
-    {
-        return (msbLeft << 8) | lsbLeft;
-    }
-    short right() const
-    {
-        return (msbRight << 8) | lsbRight;
-    }
+    short left() const { return (msbLeft << 8) | lsbLeft; }
+    short right() const { return (msbRight << 8) | lsbRight; }
 
     void left(short d)
     {

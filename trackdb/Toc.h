@@ -49,24 +49,12 @@ class Toc
     void tocType(Type);
     Type tocType() const;
 
-    void firstTrackNo(int i)
-    {
-        firstTrackNo_ = i;
-    }
-    int firstTrackNo() const
-    {
-        return firstTrackNo_;
-    }
+    void firstTrackNo(int i) { firstTrackNo_ = i; }
+    int firstTrackNo() const { return firstTrackNo_; }
 
-    int nofTracks() const
-    {
-        return nofTracks_;
-    }
+    int nofTracks() const { return nofTracks_; }
 
-    Msf length() const
-    {
-        return length_;
-    }
+    Msf length() const { return length_; }
 
     // returns mode that should be used for lead-in and gap
     TrackData::Mode leadInMode() const;
@@ -94,16 +82,10 @@ class Toc
     static Toc *read(const std::string &);
     int write(const std::string &, bool conversions = false) const;
 
-    int catalogValid() const
-    {
-        return catalogValid_;
-    }
+    int catalogValid() const { return catalogValid_; }
 
     int catalog(const char *); // sets catalog number
-    char catalog(int i) const
-    {
-        return catalog_[i];
-    } // BCD
+    char catalog(int i) const { return catalog_[i]; } // BCD
     const char *catalog() const;
 
     void addCdTextItem(int trackNr, CdTextItem *);
@@ -112,14 +94,8 @@ class Toc
     // True if the global or any track CD-TEXT block holds a non-empty item.
     bool hasCdText() const;
     const CdTextItem *getCdTextItem(int trackNr, int blockNr, CdTextItem::PackType) const;
-    int nofCdTextItems()
-    {
-        return cdtext_.count();
-    }
-    CdTextContainer &globalCdTextItems()
-    {
-        return cdtext_;
-    }
+    int nofCdTextItems() { return cdtext_.count(); }
+    CdTextContainer &globalCdTextItems() { return cdtext_; }
     void cdTextLanguage(int blockNr, int lang);
     int cdTextLanguage(int blockNr) const;
 
@@ -176,17 +152,9 @@ class Toc
         using pointer = TrackEntry *;
         using reference = Track &;
 
-        Iterator(pointer item) : m_ptr(item)
-        {
-        }
-        friend bool operator==(const Iterator &a, const Iterator &b)
-        {
-            return a.m_ptr == b.m_ptr;
-        }
-        friend bool operator!=(const Iterator &a, const Iterator &b)
-        {
-            return a.m_ptr != b.m_ptr;
-        }
+        Iterator(pointer item) : m_ptr(item) {}
+        friend bool operator==(const Iterator &a, const Iterator &b) { return a.m_ptr == b.m_ptr; }
+        friend bool operator!=(const Iterator &a, const Iterator &b) { return a.m_ptr != b.m_ptr; }
         Iterator &operator++()
         {
             m_ptr = m_ptr->next;
@@ -197,22 +165,13 @@ class Toc
             m_ptr = m_ptr->pred;
             return *this;
         }
-        reference operator*() const
-        {
-            return *(m_ptr->track);
-        }
+        reference operator*() const { return *(m_ptr->track); }
 
         pointer m_ptr;
     };
 
-    Iterator begin()
-    {
-        return Iterator(tracks_);
-    }
-    Iterator end()
-    {
-        return Iterator(lastTrack_);
-    }
+    Iterator begin() { return Iterator(tracks_); }
+    Iterator end() { return Iterator(lastTrack_); }
 
   private:
     friend class TocImpl;

@@ -30,8 +30,7 @@
 #include "guiUpdate.h"
 #include "log.h"
 
-RecordTocDialog::RecordTocDialog(Glib::RefPtr<TocEdit> tocEdit)
-    : tocEdit_(tocEdit)
+RecordTocDialog::RecordTocDialog(Glib::RefPtr<TocEdit> tocEdit) : tocEdit_(tocEdit)
 {
     set_title(_("Record CD"));
 
@@ -46,14 +45,14 @@ RecordTocDialog::RecordTocDialog(Glib::RefPtr<TocEdit> tocEdit)
 
     TocSource = Gtk::make_managed<RecordTocSource>(tocEdit_);
     CDTarget = Gtk::make_managed<RecordCDTarget>(this);
-    
+
     hbox_top->append(*TocSource);
     hbox_top->append(*CDTarget);
     CDTarget->set_expand(true);
 
     auto hbox_bottom = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL, 10);
     auto frameBox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL);
-    
+
     // Initialize CheckButtons
     simulate_cb = Gtk::make_managed<Gtk::CheckButton>(_("Simulate"));
     simulateBurn_cb = Gtk::make_managed<Gtk::CheckButton>(_("Simulate and Burn"));
@@ -87,7 +86,7 @@ RecordTocDialog::RecordTocDialog(Glib::RefPtr<TocEdit> tocEdit)
     pixmap->set_from_resource("/org/gnome/gcdmaster/gcdmaster");
     pixmap->set_pixel_size(48);
     auto startLabel = Gtk::make_managed<Gtk::Label>(_("Start"));
-    
+
     startBox->append(*pixmap);
     startBox->append(*startLabel);
     startButton->set_child(*startBox);
@@ -138,16 +137,15 @@ void RecordTocDialog::startAction()
         return;
 
     if (!CDTarget->deviceSelector()->selection()) {
-        MessageBox::message(*this,_("Please select at least one recorder device"));
+        MessageBox::message(*this, _("Please select at least one recorder device"));
         return;
     }
 
     Toc *toc = tocEdit_->toc();
 
     if (toc->nofTracks() == 0 || toc->length().lba() < 300) {
-        MessageBox::message(*this,
-                           _("Current toc contains no tracks or length "
-                             "of at least one track is < 4 seconds"));
+        MessageBox::message(*this, _("Current toc contains no tracks or length "
+                                     "of at least one track is < 4 seconds"));
         return;
     }
 
@@ -160,25 +158,22 @@ void RecordTocDialog::startAction()
 
     if (check_result == 1) {
         // Warning
-        auto ask = Ask2Box::create(*this, 
-                                   _("CD-TEXT Inconsistency"),
-                                   0,
-                                   { _("Inconsistencies were detected in the defined "
-                                       "CD-TEXT data"),
-                                     _("which may produce undefined results. See the console"),
-                                     _("output for more details."), "",
-                                     _("Do you want to proceed anyway?") });
-        ask->dialogDone.connect(sigc::mem_fun(*this,
-                                              &RecordTocDialog::startActionConfirmed));
-	ask->choose();
+        auto ask = Ask2Box::create(*this, _("CD-TEXT Inconsistency"), 0,
+                                   {_("Inconsistencies were detected in the defined "
+                                      "CD-TEXT data"),
+                                    _("which may produce undefined results. See the console"),
+                                    _("output for more details."), "",
+                                    _("Do you want to proceed anyway?")});
+        ask->dialogDone.connect(sigc::mem_fun(*this, &RecordTocDialog::startActionConfirmed));
+        ask->choose();
         return;
     }
-    
+
     // Error case
     MessageBox::message(*this, _("CD-TEXT Error"),
-                        { _("The defined CD-TEXT data is erroneous or "
-                            "incomplete."),
-                          _("See the console output for more details.") });
+                        {_("The defined CD-TEXT data is erroneous or "
+                           "incomplete."),
+                         _("See the console output for more details.")});
 }
 
 void RecordTocDialog::startActionConfirmed(int clicked_button)
@@ -187,45 +182,44 @@ void RecordTocDialog::startActionConfirmed(int clicked_button)
         return;
 
     {
-	int simulate = 0;
-	if (simulate_cb->get_active())
-	    simulate = 1;
-	else if (simulateBurn_cb->get_active())
-	    simulate = 2;
+        int simulate = 0;
+        if (simulate_cb->get_active())
+            simulate = 1;
+        else if (simulateBurn_cb->get_active())
+            simulate = 2;
 
-	int multiSession = CDTarget->getMultisession();
-	int burnSpeed = CDTarget->getSpeed();
-	int overburn = CDTarget->getOverburn();
-	int buffer = CDTarget->getBuffer();
-	int eject = CDTarget->getEject();
-	int reload = CDTarget->getReload();
+        int multiSession = CDTarget->getMultisession();
+        int burnSpeed = CDTarget->getSpeed();
+        int overburn = CDTarget->getOverburn();
+        int buffer = CDTarget->getBuffer();
+        int eject = CDTarget->getEject();
+        int reload = CDTarget->getReload();
 
-	auto selector = CDTarget->deviceSelector();
-	if (!selector->selection()) {
-	    MessageBox::message(*this, _("Please select a writer device"));
-	    return;
-	}
+        auto selector = CDTarget->deviceSelector();
+        if (!selector->selection()) {
+            MessageBox::message(*this, _("Please select a writer device"));
+            return;
+        }
 
-	auto writeDevice = selector->selection();
+        auto writeDevice = selector->selection();
 
-	// The progress window must not be a child of this dialog: it is
-	// hidden below while the (modal) progress window is up, and on macOS
-	// hiding a window that has a visible transient child leaves it on
-	// screen but unresponsive. Attach it to our own parent instead.
-	Gtk::Window *progressParent = get_transient_for();
-	if (!progressParent)
-	    progressParent = this;
+        // The progress window must not be a child of this dialog: it is
+        // hidden below while the (modal) progress window is up, and on macOS
+        // hiding a window that has a visible transient child leaves it on
+        // screen but unresponsive. Attach it to our own parent instead.
+        Gtk::Window *progressParent = get_transient_for();
+        if (!progressParent)
+            progressParent = this;
 
-	// Leave this dialog up if recording could not be started, so the
-	// error alert stays attached to a visible window.
-	if (!writeDevice->recordDao(*progressParent, tocEdit_.get(),
-				    simulate, multiSession, burnSpeed, eject,
-				    reload, buffer, overburn)) {
-	    ErrorBox::message(*this, _("Cannot start disk-at-once recording"));
-	    return;
-	}
+        // Leave this dialog up if recording could not be started, so the
+        // error alert stays attached to a visible window.
+        if (!writeDevice->recordDao(*progressParent, tocEdit_.get(), simulate, multiSession,
+                                    burnSpeed, eject, reload, buffer, overburn)) {
+            ErrorBox::message(*this, _("Cannot start disk-at-once recording"));
+            return;
+        }
 
-	guiUpdate(UPD_CD_DEVICE_STATUS);
+        guiUpdate(UPD_CD_DEVICE_STATUS);
     }
     stop();
 }

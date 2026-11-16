@@ -35,22 +35,16 @@
 #include "Track.h"
 #include "guiUpdate.h"
 
-Glib::RefPtr<TrackInfoDialog> TrackInfoDialog::create(Gtk::Window* parent)
+Glib::RefPtr<TrackInfoDialog> TrackInfoDialog::create(Gtk::Window *parent)
 {
     return Glib::make_refptr_for_instance<TrackInfoDialog>(new TrackInfoDialog(parent));
 }
 
-
-TrackInfoDialog::TrackInfoDialog(Gtk::Window* parent)
-    : mainVBox_(Gtk::Orientation::VERTICAL, 10),
-      contentBox_(Gtk::Orientation::VERTICAL, 10),
-      copyFlag_(_("Copy")),
-      preEmphasisFlag_(_("Pre Emphasis")),
-      twoChannelAudio_(_("Two Channel Audio")),
-      fourChannelAudio_(_("Four Channel Audio")),
-      okButton_(_("OK")),
-      cancelButton_(_("Cancel")),
-      parent_(parent)
+TrackInfoDialog::TrackInfoDialog(Gtk::Window *parent)
+    : mainVBox_(Gtk::Orientation::VERTICAL, 10), contentBox_(Gtk::Orientation::VERTICAL, 10),
+      copyFlag_(_("Copy")), preEmphasisFlag_(_("Pre Emphasis")),
+      twoChannelAudio_(_("Two Channel Audio")), fourChannelAudio_(_("Four Channel Audio")),
+      okButton_(_("OK")), cancelButton_(_("Cancel")), parent_(parent)
 {
     set_title(_("Track Info"));
     set_default_size(400, -1);
@@ -63,7 +57,7 @@ TrackInfoDialog::TrackInfoDialog(Gtk::Window* parent)
 
     isrcCodeCountry_ = Gtk::make_managed<TextEdit>("XX");
     isrcCodeCountry_->set_max_length(2);
-    
+
     isrcCodeOwner_ = Gtk::make_managed<TextEdit>("XXX");
     isrcCodeOwner_->set_max_length(3);
 
@@ -90,7 +84,7 @@ TrackInfoDialog::TrackInfoDialog(Gtk::Window* parent)
     summaryGrid->set_column_spacing(10);
     summaryGrid->set_margin(10);
 
-    auto add_row = [&](const std::string& labelText, Gtk::Widget& widget, int row) {
+    auto add_row = [&](const std::string &labelText, Gtk::Widget &widget, int row) {
         auto l = Gtk::make_managed<Gtk::Label>(labelText);
         l->set_halign(Gtk::Align::END);
         summaryGrid->attach(*l, 0, row);
@@ -112,7 +106,7 @@ TrackInfoDialog::TrackInfoDialog(Gtk::Window* parent)
     subVBox->set_margin(10);
     subVBox->append(copyFlag_);
     subVBox->append(preEmphasisFlag_);
-    
+
     // Grouping Radios in GTK4
     fourChannelAudio_.set_group(twoChannelAudio_);
     subVBox->append(twoChannelAudio_);
@@ -152,7 +146,7 @@ TrackInfoDialog::TrackInfoDialog(Gtk::Window* parent)
     auto actionBox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL, 10);
     actionBox->set_halign(Gtk::Align::END);
     actionBox->set_margin(10);
-    
+
     okButton_.add_css_class("suggested-action");
     okButton_.signal_clicked().connect(sigc::mem_fun(*this, &TrackInfoDialog::okAction));
 
@@ -180,13 +174,13 @@ TrackInfoDialog::TrackInfoDialog(Gtk::Window* parent)
 void TrackInfoDialog::setupCdTextPage(int n)
 {
     cdTextPages_[n].label.set_text(std::to_string(n));
-    
+
     auto grid = Gtk::make_managed<Gtk::Grid>();
     grid->set_row_spacing(5);
     grid->set_column_spacing(10);
     grid->set_margin(10);
 
-    auto add_entry = [&](const std::string& labelText, Gtk::Entry& entry, int row) {
+    auto add_entry = [&](const std::string &labelText, Gtk::Entry &entry, int row) {
         auto l = Gtk::make_managed<Gtk::Label>(labelText);
         l->set_halign(Gtk::Align::END);
         grid->attach(*l, 0, row);

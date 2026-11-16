@@ -69,22 +69,21 @@ typedef unsigned char uchar;
 
 class ScsiIfLinux : public ScsiIf
 {
-public:
-    ScsiIfLinux(const std::string& dev);
+  public:
+    ScsiIfLinux(const std::string &dev);
     virtual ~ScsiIfLinux() override;
 
     int init() override;
     int timeout(int) override;
     void printError() override;
-    int sendCmd(const uchar *, int, const uchar *, int,
-                uchar *, int, int) override;
+    int sendCmd(const uchar *, int, const uchar *, int, uchar *, int, int) override;
     const uchar *getSense(int &len) const override;
 
     std::string filename_; // user provided device name
     int fd_ = -1;
     bool readOnlyMode;
 
-private:
+  private:
     int openScsiDevAsSg(const char *devname);
     int adjustReservedBuffer(int requestedSize);
 
@@ -97,8 +96,7 @@ private:
     int timeout_ms;
 };
 
-ScsiIfLinux::ScsiIfLinux(const std::string& dev)
-    : filename_(dev)
+ScsiIfLinux::ScsiIfLinux(const std::string &dev) : filename_(dev)
 {
     sense_buffer_length = SG_MAX_SENSE;
     timeout_ms = CDRDAO_DEFAULT_TIMEOUT;
@@ -129,7 +127,7 @@ int ScsiIfLinux::init()
             }
             readOnlyMode = true;
             log_message(-1, "No permission to write to SCSI device."
-                        "Only read commands are supported.");
+                            "Only read commands are supported.");
         } else {
             goto failed;
         }
@@ -152,7 +150,7 @@ int ScsiIfLinux::init()
 
     return 0;
 
- failed:
+failed:
     log_message(-2, "Unable to open SCSI device %s: %s.", filename_, strerror(errno));
     return 1;
 }
@@ -201,8 +199,8 @@ int ScsiIfLinux::sendCmd(const uchar *cmd, int cmdLen, const uchar *dataOut, int
         io_hdr.dxfer_direction = SG_DXFER_FROM_DEV;
     }
 
-    log_message(5, "%s: Initiating SCSI command %s%s", filename_.c_str(),
-                sg_strcommand(cmd[0]), sg_strcmdopts(cmd));
+    log_message(5, "%s: Initiating SCSI command %s%s", filename_.c_str(), sg_strcommand(cmd[0]),
+                sg_strcmdopts(cmd));
 
     if (ioctl(fd_, SG_IO, &io_hdr) < 0) {
         int errnosave = errno;
@@ -376,12 +374,12 @@ ScsiIf::ScanData *ScsiIf::scan(int *len, char *scsi_dev_path)
     }
 
     delete[] sdata;
- fail:
+fail:
     *len = 0;
     return NULL;
 }
 
-std::shared_ptr<ScsiIf> ScsiIf::create(const std::string& dev)
+std::shared_ptr<ScsiIf> ScsiIf::create(const std::string &dev)
 {
     return std::make_shared<ScsiIfLinux>(dev);
 }
