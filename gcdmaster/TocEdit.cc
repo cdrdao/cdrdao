@@ -743,10 +743,7 @@ void TocEdit::setCdTextItem(int trackNr, CdTextItem::PackType type, int blockNr,
         return;
 
     if (s != NULL) {
-        CdTextItem *item = new CdTextItem(type, blockNr);
-        item->setText(s);
-
-        toc_->addCdTextItem(trackNr, item);
+        toc_->addCdTextItem(trackNr, CdTextItem::fromUtf8(type, blockNr, s));
     } else {
         toc_->removeCdTextItem(trackNr, type, blockNr);
     }
@@ -767,10 +764,8 @@ void TocEdit::setCdTextGenreItem(int blockNr, int code1, int code2, const char *
     if (code1 < 0 || code2 < 0) {
         toc_->removeCdTextItem(0, CdTextItem::PackType::GENRE, blockNr);
     } else {
-        CdTextItem *item = new CdTextItem(CdTextItem::PackType::GENRE, blockNr);
-        item->setGenre((u8)code1, (u8)code2, description);
-
-        toc_->addCdTextItem(0, item);
+        toc_->addCdTextItem(
+            0, std::make_unique<CdTextGenreItem>(blockNr, (u8)code1, (u8)code2, description));
     }
 
     tocDirty(true);

@@ -96,11 +96,11 @@ void CdTextContainer::print(int isTrack, std::ostream &out, PrintParams &params)
     }
 }
 
-void CdTextContainer::add(CdTextItem *item)
+void CdTextContainer::add(std::unique_ptr<CdTextItem> item)
 {
     remove(item->packType(), item->blockNr());
 
-    items_.emplace_back(item);
+    items_.emplace_back(std::move(item));
 
     std::sort(items_.begin(), items_.end(),
               [](std::shared_ptr<CdTextItem> a, std::shared_ptr<CdTextItem> b) {
@@ -174,8 +174,9 @@ void CdTextContainer::enforceEncoding(CdTextContainer *global)
         for (int i = 0; i < encodings.size(); i++) {
             if (encodings[i] == Util::Encoding::UNSET) {
                 const CdTextItem *size_info = getPack(i, CdTextItem::PackType::SIZE_INFO);
-                if (size_info != NULL && size_info->dataLen() > 0) {
-                    encodings[i] = Util::characterCodeToEncoding(size_info->data()[0]);
+                auto data = size_info ? size_info->packData() : std::vector<u8>();
+                if (!data.empty()) {
+                    encodings[i] = Util::characterCodeToEncoding(data[0]);
                 } else {
                     encodings[i] = Util::Encoding::LATIN;
                 }

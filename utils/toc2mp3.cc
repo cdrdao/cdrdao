@@ -584,7 +584,7 @@ int main(int argc, char **argv)
     }
 
     if ((cdTextItem = toc->getCdTextItem(0, cdTextLanguage, CdTextItem::PackType::TITLE)) != NULL) {
-        album = (const char *)cdTextItem->data();
+        album = cdTextItem->getText();
         clean_string(album);
         if (album.empty())
             album = tocfileBaseName;
@@ -594,7 +594,7 @@ int main(int argc, char **argv)
 
     if ((cdTextItem = toc->getCdTextItem(0, cdTextLanguage, CdTextItem::PackType::PERFORMER)) !=
         NULL) {
-        albumPerformer = (const char *)cdTextItem->data();
+        albumPerformer = cdTextItem->getText();
         clean_string(albumPerformer);
     } else {
         albumPerformer = "";
@@ -643,7 +643,7 @@ int main(int argc, char **argv)
             // Retrieve CD-TEXT data for track title and performer
             if ((cdTextItem = toc->getCdTextItem(trackNr, cdTextLanguage,
                                                  CdTextItem::PackType::TITLE)) != NULL) {
-                title = (const char *)cdTextItem->data();
+                title = cdTextItem->getText();
                 clean_string(title);
             } else {
                 title = "";
@@ -651,7 +651,7 @@ int main(int argc, char **argv)
 
             if ((cdTextItem = toc->getCdTextItem(trackNr, cdTextLanguage,
                                                  CdTextItem::PackType::PERFORMER)) != NULL) {
-                performer = (const char *)cdTextItem->data();
+                performer = cdTextItem->getText();
                 clean_string(performer);
             } else {
                 performer = "";

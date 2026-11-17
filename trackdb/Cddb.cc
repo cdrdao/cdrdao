@@ -588,7 +588,7 @@ int Cddb::addAsCdText(Toc *toc)
     int haveTitle = 0;
     int haveMessage = 0;
     int trun;
-    CdTextItem *item;
+    std::unique_ptr<CdTextItem> item;
 
     if (!cddbEntry_)
         return 0;
@@ -619,21 +619,21 @@ int Cddb::addAsCdText(Toc *toc)
         item = createItem(
             CdTextItem::PackType::TITLE,
             cddbEntry_->diskTitle.empty() ? "" : cdTextFilter(cddbEntry_->diskTitle.c_str()));
-        toc->addCdTextItem(0, item);
+        toc->addCdTextItem(0, std::move(item));
     }
 
     if (havePerformer) {
         item = createItem(
             CdTextItem::PackType::PERFORMER,
             cddbEntry_->diskArtist.empty() ? "" : cdTextFilter(cddbEntry_->diskArtist.c_str()));
-        toc->addCdTextItem(0, item);
+        toc->addCdTextItem(0, std::move(item));
     }
 
     if (haveMessage) {
         item = createItem(CdTextItem::PackType::MESSAGE,
                           cddbEntry_->diskExt.empty() ? ""
                                                       : cdTextFilter(cddbEntry_->diskExt.c_str()));
-        toc->addCdTextItem(0, item);
+        toc->addCdTextItem(0, std::move(item));
     }
 
     for (trun = 0; trun < toc->nofTracks(); trun++) {
@@ -644,20 +644,20 @@ int Cddb::addAsCdText(Toc *toc)
                               (trun < cddbEntry_->ntracks && !cddbEntry_->trackTitles[trun].empty())
                                   ? cdTextFilter(cddbEntry_->trackTitles[trun])
                                   : "");
-            toc->addCdTextItem(trun + 1, item);
+            toc->addCdTextItem(trun + 1, std::move(item));
         }
         if (havePerformer) {
             item = createItem(
                 CdTextItem::PackType::PERFORMER,
                 cddbEntry_->diskArtist.empty() ? "" : cdTextFilter(cddbEntry_->diskArtist));
-            toc->addCdTextItem(trun + 1, item);
+            toc->addCdTextItem(trun + 1, std::move(item));
         }
         if (haveMessage) {
             item = createItem(CdTextItem::PackType::MESSAGE,
                               (trun < cddbEntry_->ntracks && !cddbEntry_->trackExt[trun].empty())
                                   ? cdTextFilter(cddbEntry_->trackExt[trun])
                                   : "");
-            toc->addCdTextItem(trun + 1, item);
+            toc->addCdTextItem(trun + 1, std::move(item));
         }
     }
 
@@ -1053,9 +1053,7 @@ fail:
     return fd;
 }
 
-CdTextItem *Cddb::createItem(CdTextItem::PackType ptype, const std::string &text)
+std::unique_ptr<CdTextItem> Cddb::createItem(CdTextItem::PackType ptype, const std::string &text)
 {
-    auto item = new CdTextItem(ptype, 0);
-    item->setText(text.c_str());
-    return item;
+    return CdTextItem::fromUtf8(ptype, 0, text);
 }

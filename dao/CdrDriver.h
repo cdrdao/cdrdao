@@ -325,7 +325,7 @@ class CdrDriver
     virtual DiskInfo *diskInfo() { return 0; }
 
     // returns CDTEXT information
-    std::vector<CdTextItem *> generateCdTextItems();
+    std::vector<std::unique_ptr<CdTextItem>> generateCdTextItems();
 
     // Returns block size depending on given sector mode and 'encodingMode_'
     // that must be used to send data to the recorder.

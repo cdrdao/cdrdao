@@ -84,11 +84,11 @@ class Toc
 
     int catalogValid() const { return catalogValid_; }
 
-    int catalog(const char *); // sets catalog number
+    int catalog(const char *);                        // sets catalog number
     char catalog(int i) const { return catalog_[i]; } // BCD
     const char *catalog() const;
 
-    void addCdTextItem(int trackNr, CdTextItem *);
+    void addCdTextItem(int trackNr, std::unique_ptr<CdTextItem>);
     void removeCdTextItem(int trackNr, CdTextItem::PackType, int blockNr);
     int existCdTextBlock(int blockNr) const;
     // True if the global or any track CD-TEXT block holds a non-empty item.

@@ -93,9 +93,9 @@ class Track
     const char *isrc() const;
 
     char isrcCountry(int i) const { return isrcCountry_[i]; } // ASCII
-    char isrcOwner(int i) const { return isrcOwner_[i]; } // ASCII
-    char isrcYear(int i) const { return isrcYear_[i]; } // BCD
-    char isrcSerial(int i) const { return isrcSerial_[i]; } // BCD
+    char isrcOwner(int i) const { return isrcOwner_[i]; }     // ASCII
+    char isrcYear(int i) const { return isrcYear_[i]; }       // BCD
+    char isrcSerial(int i) const { return isrcSerial_[i]; }   // BCD
 
     // return/set COPY flag (1: copy permitted, 0: copy not permitted)
     int copyPermitted() const { return flags_.copy; }
@@ -110,7 +110,7 @@ class Track
     int audioType() const { return flags_.audioType; }
     void audioType(int t) { flags_.audioType = t != 0 ? 1 : 0; }
 
-    void addCdTextItem(CdTextItem *);
+    void addCdTextItem(std::unique_ptr<CdTextItem>);
     void removeCdTextItem(CdTextItem::PackType, int blockNr);
     int existCdTextBlock(int n) const { return cdtext_.existBlock(n); }
     const CdTextItem *getCdTextItem(int blockNr, CdTextItem::PackType t) const

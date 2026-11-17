@@ -1339,11 +1339,11 @@ void Track::encodeZeroData(int encMode, TrackData::Mode mode, TrackData::SubChan
     }
 }
 
-void Track::addCdTextItem(CdTextItem *item)
+void Track::addCdTextItem(std::unique_ptr<CdTextItem> item)
 {
     assert(item->isTrackPack());
 
-    cdtext_.add(item);
+    cdtext_.add(std::move(item));
 }
 
 void Track::removeCdTextItem(CdTextItem::PackType type, int blockNr)

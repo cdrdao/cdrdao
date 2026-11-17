@@ -1035,26 +1035,15 @@ void TocInfoDialog::importCdText(const Toc *toc)
             page.upcEan->set_text("");
         page.upcEan->set_editable(true);
 
-        if ((item = toc->getCdTextItem(0, l, CdTextItem::PackType::GENRE)) != NULL) {
-            if (item->dataLen() >= 2) {
-                page.selectedGenre = getCdTextGenreIndex(item->data()[0], item->data()[1]);
-            } else {
+        auto genre = dynamic_cast<const CdTextGenreItem *>(
+            toc->getCdTextItem(0, l, CdTextItem::PackType::GENRE));
+        if (genre) {
+            if (genre->hasCodes())
+                page.selectedGenre = getCdTextGenreIndex(genre->code1(), genre->code2());
+            else
                 page.selectedGenre = 0; // Unknown
-            }
 
-            if (item->dataLen() > 2) {
-                // Carefully handle the case that the terminating 0 is missing.
-                int len = item->dataLen() - 2 + 1;
-                char *s = new char[len];
-                memcpy(s, item->data() + 2, len - 1);
-                s[len - 1] = 0;
-
-                page.genreInfo->set_text(s);
-
-                delete[] s;
-            } else {
-                page.genreInfo->set_text("");
-            }
+            page.genreInfo->set_text(genre->description());
         } else {
             page.selectedGenre = 1; // not used
             page.genreInfo->set_text("");
@@ -1161,16 +1150,15 @@ void TocInfoDialog::exportCdText(TocEdit *tocEdit)
     const Toc *toc = tocEdit->toc();
 
     const CdTextItem *item;
-    CdTextItem *newItem;
+    std::unique_ptr<CdTextItem> newItem;
 
     // Write the disc-level CD-TEXT pack or clear it when the field is empty.
     auto applyPack = [&](int block, CdTextItem::PackType type, Gtk::Entry *entry) {
         const char *text = checkString(entry->get_text());
         if (text != NULL) {
-            newItem = new CdTextItem(type, block);
-            newItem->setText(text);
+            newItem = CdTextItem::fromUtf8(type, block, text);
         } else {
-            newItem = NULL;
+            newItem.reset();
         }
 
         if ((item = toc->getCdTextItem(0, block, type)) != NULL) {
@@ -1181,8 +1169,6 @@ void TocInfoDialog::exportCdText(TocEdit *tocEdit)
         } else if (newItem != NULL) {
             tocEdit->setCdTextItem(0, type, block, text);
         }
-
-        delete newItem;
     };
 
     // For each tab position p, write the associated slot's data into
@@ -1210,10 +1196,9 @@ void TocInfoDialog::exportCdText(TocEdit *tocEdit)
             s = checkString(page.genreInfo->get_text());
 
             if (page.selectedGenre > 1) {
-                newItem = new CdTextItem(CdTextItem::PackType::GENRE, l);
-                newItem->setGenre(code1, code2, s);
+                newItem = std::make_unique<CdTextGenreItem>(l, code1, code2, s);
             } else
-                newItem = NULL;
+                newItem.reset();
 
             if ((item = toc->getCdTextItem(0, l, CdTextItem::PackType::GENRE)) != NULL) {
                 if (newItem == NULL)
@@ -1223,8 +1208,6 @@ void TocInfoDialog::exportCdText(TocEdit *tocEdit)
             } else if (newItem != NULL) {
                 tocEdit->setCdTextGenreItem(l, code1, code2, s);
             }
-
-            delete newItem;
         }
 
         // Language
@@ -1243,8 +1226,7 @@ void TocInfoDialog::exportCdText(TocEdit *tocEdit)
             const char *tText = checkString(page.tracks[i].title->get_text());
             const CdTextItem *tItem = toc->getCdTextItem(trackNr, l, CdTextItem::PackType::TITLE);
             if (tText != NULL) {
-                CdTextItem tmp(CdTextItem::PackType::TITLE, l);
-                tmp.setText(tText);
+                CdTextUtf8Item tmp(CdTextItem::PackType::TITLE, l, tText);
                 if (!tItem || tmp != *tItem)
                     tocEdit->setCdTextItem(trackNr, CdTextItem::PackType::TITLE, l, tText);
             } else if (tItem) {
@@ -1255,8 +1237,7 @@ void TocInfoDialog::exportCdText(TocEdit *tocEdit)
             const CdTextItem *pItem =
                 toc->getCdTextItem(trackNr, l, CdTextItem::PackType::PERFORMER);
             if (pText != NULL) {
-                CdTextItem tmp(CdTextItem::PackType::PERFORMER, l);
-                tmp.setText(pText);
+                CdTextUtf8Item tmp(CdTextItem::PackType::PERFORMER, l, pText);
                 if (!pItem || tmp != *pItem)
                     tocEdit->setCdTextItem(trackNr, CdTextItem::PackType::PERFORMER, l, pText);
             } else if (pItem) {

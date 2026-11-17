@@ -36,7 +36,7 @@ class CdTextContainer
 
     long count() const { return items_.size(); }
 
-    void add(CdTextItem *);
+    void add(std::unique_ptr<CdTextItem>);
 
     void remove(CdTextItem::PackType, int blockNr);
 

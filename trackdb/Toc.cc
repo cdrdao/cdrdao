@@ -896,7 +896,7 @@ const char *Toc::tocType2String(Type t)
     return ret;
 }
 
-void Toc::addCdTextItem(int trackNr, CdTextItem *item)
+void Toc::addCdTextItem(int trackNr, std::unique_ptr<CdTextItem> item)
 {
     assert(trackNr >= 0 && trackNr <= 99);
 
@@ -904,7 +904,7 @@ void Toc::addCdTextItem(int trackNr, CdTextItem *item)
         item->encoding(cdtext_.encoding(item->blockNr()));
 
     if (trackNr == 0) {
-        cdtext_.add(item);
+        cdtext_.add(std::move(item));
     } else {
         item->trackNr(trackNr);
         TrackEntry *track = findTrackByNumber(trackNr);
@@ -914,7 +914,7 @@ void Toc::addCdTextItem(int trackNr, CdTextItem *item)
             return;
         }
 
-        track->track->addCdTextItem(item);
+        track->track->addCdTextItem(std::move(item));
     }
 }
 

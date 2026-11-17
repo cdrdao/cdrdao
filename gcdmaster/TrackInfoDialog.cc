@@ -557,15 +557,14 @@ void TrackInfoDialog::exportCdText(Glib::RefPtr<TocEdit> tocEdit, int trackNr)
     const Toc *toc = tocEdit->toc();
 
     const CdTextItem *item;
-    CdTextItem *newItem;
+    std::unique_ptr<CdTextItem> newItem;
 
     for (int l : visibleBlocks_) {
         // Title
         if ((s = checkString(cdTextPages_[l].title.get_text())) != NULL) {
-            newItem = new CdTextItem(CdTextItem::PackType::TITLE, l);
-            newItem->setText(s);
+            newItem = CdTextItem::fromUtf8(CdTextItem::PackType::TITLE, l, s);
         } else
-            newItem = NULL;
+            newItem.reset();
 
         if ((item = toc->getCdTextItem(trackNr, l, CdTextItem::PackType::TITLE)) != NULL) {
             if (newItem == NULL)
@@ -576,14 +575,11 @@ void TrackInfoDialog::exportCdText(Glib::RefPtr<TocEdit> tocEdit, int trackNr)
             tocEdit->setCdTextItem(trackNr, CdTextItem::PackType::TITLE, l, s);
         }
 
-        delete newItem;
-
         // Performer
         if ((s = checkString(cdTextPages_[l].performer.get_text())) != NULL) {
-            newItem = new CdTextItem(CdTextItem::PackType::PERFORMER, l);
-            newItem->setText(s);
+            newItem = CdTextItem::fromUtf8(CdTextItem::PackType::PERFORMER, l, s);
         } else
-            newItem = NULL;
+            newItem.reset();
 
         if ((item = toc->getCdTextItem(trackNr, l, CdTextItem::PackType::PERFORMER)) != NULL) {
             if (newItem == NULL)
@@ -594,14 +590,11 @@ void TrackInfoDialog::exportCdText(Glib::RefPtr<TocEdit> tocEdit, int trackNr)
             tocEdit->setCdTextItem(trackNr, CdTextItem::PackType::PERFORMER, l, s);
         }
 
-        delete newItem;
-
         // Songwriter
         if ((s = checkString(cdTextPages_[l].songwriter.get_text())) != NULL) {
-            newItem = new CdTextItem(CdTextItem::PackType::SONGWRITER, l);
-            newItem->setText(s);
+            newItem = CdTextItem::fromUtf8(CdTextItem::PackType::SONGWRITER, l, s);
         } else
-            newItem = NULL;
+            newItem.reset();
 
         if ((item = toc->getCdTextItem(trackNr, l, CdTextItem::PackType::SONGWRITER)) != NULL) {
             if (newItem == NULL)
@@ -612,14 +605,11 @@ void TrackInfoDialog::exportCdText(Glib::RefPtr<TocEdit> tocEdit, int trackNr)
             tocEdit->setCdTextItem(trackNr, CdTextItem::PackType::SONGWRITER, l, s);
         }
 
-        delete newItem;
-
         // Composer
         if ((s = checkString(cdTextPages_[l].composer.get_text())) != NULL) {
-            newItem = new CdTextItem(CdTextItem::PackType::COMPOSER, l);
-            newItem->setText(s);
+            newItem = CdTextItem::fromUtf8(CdTextItem::PackType::COMPOSER, l, s);
         } else
-            newItem = NULL;
+            newItem.reset();
 
         if ((item = toc->getCdTextItem(trackNr, l, CdTextItem::PackType::COMPOSER)) != NULL) {
             if (newItem == NULL)
@@ -630,14 +620,11 @@ void TrackInfoDialog::exportCdText(Glib::RefPtr<TocEdit> tocEdit, int trackNr)
             tocEdit->setCdTextItem(trackNr, CdTextItem::PackType::COMPOSER, l, s);
         }
 
-        delete newItem;
-
         // Arranger
         if ((s = checkString(cdTextPages_[l].arranger.get_text())) != NULL) {
-            newItem = new CdTextItem(CdTextItem::PackType::ARRANGER, l);
-            newItem->setText(s);
+            newItem = CdTextItem::fromUtf8(CdTextItem::PackType::ARRANGER, l, s);
         } else
-            newItem = NULL;
+            newItem.reset();
 
         if ((item = toc->getCdTextItem(trackNr, l, CdTextItem::PackType::ARRANGER)) != NULL) {
             if (newItem == NULL)
@@ -648,14 +635,11 @@ void TrackInfoDialog::exportCdText(Glib::RefPtr<TocEdit> tocEdit, int trackNr)
             tocEdit->setCdTextItem(trackNr, CdTextItem::PackType::ARRANGER, l, s);
         }
 
-        delete newItem;
-
         // Message
         if ((s = checkString(cdTextPages_[l].message.get_text())) != NULL) {
-            newItem = new CdTextItem(CdTextItem::PackType::MESSAGE, l);
-            newItem->setText(s);
+            newItem = CdTextItem::fromUtf8(CdTextItem::PackType::MESSAGE, l, s);
         } else
-            newItem = NULL;
+            newItem.reset();
 
         if ((item = toc->getCdTextItem(trackNr, l, CdTextItem::PackType::MESSAGE)) != NULL) {
             if (newItem == NULL)
@@ -666,14 +650,11 @@ void TrackInfoDialog::exportCdText(Glib::RefPtr<TocEdit> tocEdit, int trackNr)
             tocEdit->setCdTextItem(trackNr, CdTextItem::PackType::MESSAGE, l, s);
         }
 
-        delete newItem;
-
         // Isrc
         if ((s = checkString(cdTextPages_[l].isrc.get_text())) != NULL) {
-            newItem = new CdTextItem(CdTextItem::PackType::UPCEAN_ISRC, l);
-            newItem->setText(s);
+            newItem = CdTextItem::fromUtf8(CdTextItem::PackType::UPCEAN_ISRC, l, s);
         } else
-            newItem = NULL;
+            newItem.reset();
 
         if ((item = toc->getCdTextItem(trackNr, l, CdTextItem::PackType::UPCEAN_ISRC)) != NULL) {
             if (newItem == NULL)
@@ -683,7 +664,5 @@ void TrackInfoDialog::exportCdText(Glib::RefPtr<TocEdit> tocEdit, int trackNr)
         } else if (newItem != NULL) {
             tocEdit->setCdTextItem(trackNr, CdTextItem::PackType::UPCEAN_ISRC, l, s);
         }
-
-        delete newItem;
     }
 }

@@ -2985,7 +2985,7 @@ CdTextPack *CdrDriver::readCdTextPacks(int *nofPacks)
     return packs;
 }
 
-vector<CdTextItem *> processPacks(CdTextPack *packs, int nofPacks)
+vector<unique_ptr<CdTextItem>> processPacks(CdTextPack *packs, int nofPacks)
 {
     int pos = 0;
     unsigned char lastType;
@@ -2994,7 +2994,7 @@ vector<CdTextItem *> processPacks(CdTextPack *packs, int nofPacks)
     int actTrack = 0;
     unsigned char buf[256 * 12];
 
-    vector<CdTextItem *> items;
+    vector<unique_ptr<CdTextItem>> items;
 
     if (nofPacks == 0)
         return items;
@@ -3035,11 +3035,11 @@ vector<CdTextItem *> processPacks(CdTextPack *packs, int nofPacks)
                             pos = i + 1;
                     }
                     {
-                        auto item = new CdTextItem(packType, lastBlockNumber);
-                        item->setData(buf, pos);
+                        auto item = CdTextItem::create(packType, lastBlockNumber,
+                                                       vector<u8>(buf, buf + pos));
                         if (packType != CdTextItem::PackType::SIZE_INFO)
                             item->trackNr(lastTrackNumber);
-                        items.push_back(item);
+                        items.push_back(std::move(item));
                     }
                 }
             } else {
@@ -3081,10 +3081,10 @@ vector<CdTextItem *> processPacks(CdTextPack *packs, int nofPacks)
                         // string is finished
                         buf[pos] = 0;
                         {
-                            auto item = new CdTextItem(packType, blockNumber);
-                            item->setRawText((u8 *)buf, pos + 1);
+                            auto item = CdTextItem::create(packType, blockNumber,
+                                                           vector<u8>(buf, buf + pos + 1));
                             item->trackNr(trackNumber);
-                            items.push_back(item);
+                            items.push_back(std::move(item));
                         }
                         pos = 0;
                         trackNumber++;
@@ -3125,11 +3125,11 @@ vector<CdTextItem *> processPacks(CdTextPack *packs, int nofPacks)
             }
 
             {
-                auto item = new CdTextItem(packType, lastBlockNumber);
-                item->setData(buf, pos);
+                auto item =
+                    CdTextItem::create(packType, lastBlockNumber, vector<u8>(buf, buf + pos));
                 if (packType != CdTextItem::PackType::SIZE_INFO)
                     item->trackNr(lastTrackNumber);
-                items.push_back(item);
+                items.push_back(std::move(item));
             }
         }
     }
@@ -3137,7 +3137,7 @@ vector<CdTextItem *> processPacks(CdTextPack *packs, int nofPacks)
     return items;
 }
 
-vector<CdTextItem *> CdrDriver::generateCdTextItems()
+vector<unique_ptr<CdTextItem>> CdrDriver::generateCdTextItems()
 {
     int nofPacks = 0;
     CdTextPack *packs = readCdTextPacks(&nofPacks);
@@ -3163,10 +3163,10 @@ int CdrDriver::readCdTextData(Toc *toc)
     // First pass, collect SIZE_INFO information
     for (auto &item : items) {
         if (item->packType() == CdTextItem::PackType::SIZE_INFO) {
-            const unsigned char *data = item->data();
+            const vector<u8> data = item->packData();
 
             // Update language mapping
-            if (!languagesSet && item->dataLen() >= 36) {
+            if (!languagesSet && data.size() >= 36) {
                 for (int i = 0; i < 8; i++) {
                     if (data[28 + i] > 0)
                         toc->cdTextLanguage(i, data[28 + i]);
@@ -3176,7 +3176,7 @@ int CdrDriver::readCdTextData(Toc *toc)
                 languagesSet = true;
             }
             // Collect encodings
-            if (item->dataLen() >= 1) {
+            if (!data.empty()) {
                 if (item->blockNr() >= 0 && item->blockNr() <= 8)
                     encodings[item->blockNr()] = Util::characterCodeToEncoding(data[0]);
             }
@@ -3184,9 +3184,9 @@ int CdrDriver::readCdTextData(Toc *toc)
     }
 
     for (auto &item : items) {
-        if (item->dataType() == CdTextItem::DataType::SBCC)
-            item->encoding(encodings[item->blockNr()]);
-        toc->addCdTextItem(item->trackNr(), item);
+        int trackNr = item->trackNr();
+        item->encoding(encodings[item->blockNr()]);
+        toc->addCdTextItem(trackNr, std::move(item));
     }
 
     if (!languagesSet) {

@@ -113,7 +113,7 @@ class Cddb
     std::vector<QueryResults> queryResults_;
     std::optional<CddbEntry> cddbEntry_;
 
-    static CdTextItem *createItem(CdTextItem::PackType, const std::string &);
+    static std::unique_ptr<CdTextItem> createItem(CdTextItem::PackType, const std::string &);
 
     bool openConnection();
     bool openSingleConnection(ServerList *);

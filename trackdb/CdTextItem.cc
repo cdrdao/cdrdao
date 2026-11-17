@@ -18,153 +18,107 @@
  */
 
 #include <assert.h>
-#include <ctype.h>
 #include <iomanip>
 #include <stdio.h>
 #include <string.h>
 
-#include "CdTextContainer.h"
 #include "CdTextItem.h"
 #include "log.h"
 #include "util.h"
 
+namespace
+{
+
+// Converts UTF-8 'text' into the CD-TEXT encoding 'enc', including the
+// terminating 0. Characters with no exact equivalent are approximated;
+// 'warn' logs when that happens or when the conversion fails.
+std::vector<u8> encodeUtf8(const std::string &text, Util::Encoding enc, bool warn)
+{
+    std::vector<u8> out;
+    if (Util::from_utf8(text, out, enc))
+        return out;
+
+    out.clear();
+    if (Util::from_utf8(text, out, enc, true)) {
+        if (warn)
+            log_message(-1, "CD-TEXT: \"%s\" cannot be represented exactly in %s, approximating.",
+                        text.c_str(), Util::encodingToString(enc));
+        return out;
+    }
+
+    if (warn)
+        log_message(-2, "CD-TEXT: Unable to encode \"%s\" into %s.", text.c_str(),
+                    Util::encodingToString(enc));
+    out.assign(1, 0);
+    return out;
+}
+
+void printChar(std::ostream &out, unsigned char c, bool ascii_only)
+{
+    if (c == '"')
+        out << "\\\"";
+    else if (c == '\\')
+        out << "\\\\";
+    else if (ascii_only && (c < 32 || c >= 127))
+        out << "\\" << std::oct << std::setfill('0') << std::setw(3) << (unsigned int)c << std::dec
+            << std::setfill(' ');
+    else
+        out << c;
+}
+
+std::vector<u8> stringBytes(const std::string &s)
+{
+    std::vector<u8> bytes(s.begin(), s.end());
+    bytes.push_back(0);
+    return bytes;
+}
+
+} // namespace
+
+// ---------------------------------------------------------------------------
+// CdTextItem
+
 CdTextItem::CdTextItem(PackType packType, int blockNr)
+    : packType_(packType), blockNr_(blockNr), trackNr_(0)
 {
     assert(blockNr >= 0 && blockNr <= 7);
-    packType_ = packType;
-    blockNr_ = blockNr;
-    trackNr_ = 0;
-    encoding_ = Util::Encoding::UNSET;
 }
 
-void CdTextItem::setData(const u8 *buffer, size_t buffer_len)
+std::unique_ptr<CdTextItem> CdTextItem::create(PackType type, int blockNr, const std::string &text,
+                                               bool isUtf8)
 {
-    data_.resize(buffer_len);
-    memcpy(data_.data(), buffer, buffer_len);
-    dataType_ = DataType::BINARY;
+    if (isBinaryPack(type))
+        return create(type, blockNr, stringBytes(text));
+
+    if (isUtf8)
+        return std::make_unique<CdTextUtf8Item>(type, blockNr, text);
+
+    return std::make_unique<CdTextEncodedItem>(type, blockNr, stringBytes(text));
 }
 
-void CdTextItem::setRawText(const u8 *buffer, size_t buffer_len)
+std::unique_ptr<CdTextItem> CdTextItem::create(PackType type, int blockNr, std::vector<u8> data)
 {
-    setData(buffer, buffer_len);
-    u8text.clear();
-    dataType_ = DataType::SBCC;
-    updateEncoding();
-}
+    if (type == PackType::GENRE)
+        return std::make_unique<CdTextGenreItem>(blockNr, std::move(data));
 
-void CdTextItem::setRawText(const std::string &str)
-{
-    data_.resize(str.size() + 1);
-    auto writer = data_.begin();
-    for (const auto c : str)
-        *writer++ = c;
-    *writer++ = '\0';
-    u8text.clear();
-    dataType_ = DataType::SBCC;
-    updateEncoding();
-}
+    if (isBinaryPack(type))
+        return std::make_unique<CdTextBinaryItem>(type, blockNr, std::move(data));
 
-void CdTextItem::setText(const char *utf8_text)
-{
-    u8text = utf8_text;
-    data_.clear();
-    dataType_ = DataType::SBCC;
-    updateEncoding();
-}
-
-void CdTextItem::setTextFromToc(const char *text)
-{
-    if (Util::isValidUTF8(text))
-        setText(text);
-    else
-        setRawText((u8 *)text, strlen(text));
-}
-
-void CdTextItem::setGenre(u8 genreCode1, u8 genreCode2, const char *description)
-{
-    dataType_ = DataType::BINARY;
-
-    data_.push_back(genreCode1);
-    data_.push_back(genreCode2);
-
-    if (description) {
-        const char *ptr = description;
-        while (*ptr)
-            data_.push_back(*ptr++);
-        data_.push_back(0);
-    }
+    return std::make_unique<CdTextEncodedItem>(type, blockNr, std::move(data));
 }
 
 void CdTextItem::print(std::ostream &out, PrintParams &params) const
 {
-    char buf[20];
     out << packType2String(isTrackPack(), packType_);
-
-    auto printchar = [&](unsigned char c, bool ascii_only) {
-        if (c == '"')
-            out << "\\\"";
-        else if (c == '\\')
-            out << "\\\\";
-        else if (ascii_only && (c < 32 || c >= 127))
-            out << "\\" << std::oct << std::setfill('0') << std::setw(3) << (unsigned int)c
-                << std::dec << std::setfill(' ');
-        else
-            out << c;
-    };
-
-    if (dataType() == DataType::SBCC) {
-        out << " \"";
-        if (params.no_utf8 || u8text.empty()) {
-            for (auto c : data_) {
-                if (c == '\0')
-                    break;
-                printchar(c, true);
-            }
-        } else {
-            for (auto c : u8text)
-                printchar(c, false);
-        }
-        out << "\"";
-    } else {
-        long i = 0;
-
-        out << " {";
-        for (auto c : data_) {
-            if (i == 0) {
-                snprintf(buf, sizeof(buf), "%2d", c);
-                out << buf;
-            } else {
-                if (i % 12 == 0)
-                    out << ",\n               ";
-                else
-                    out << ", ";
-
-                snprintf(buf, sizeof(buf), "%2d", c);
-                out << buf;
-            }
-            i++;
-        }
-
-        out << "}";
-    }
+    printValue(out, params);
 }
 
-int CdTextItem::operator==(const CdTextItem &obj)
+bool CdTextItem::operator==(const CdTextItem &obj) const
 {
-    if (packType_ != obj.packType_ || blockNr_ != obj.blockNr_ || dataType_ != obj.dataType_)
-        return 0;
+    if (packType_ != obj.packType_ || blockNr_ != obj.blockNr_ || isBinary() != obj.isBinary())
+        return false;
 
-    // The UTF-8 text is authoritative when both sides have it; the
-    // encoded data may not have been generated yet on one of them.
-    if (dataType_ == DataType::SBCC && !u8text.empty() && !obj.u8text.empty())
-        return u8text == obj.u8text;
-
-    return data_ == obj.data_ && u8text == obj.u8text;
-}
-
-int CdTextItem::operator!=(const CdTextItem &obj)
-{
-    return (*this == obj) ? 0 : 1;
+    return sameContent(obj);
 }
 
 const char *CdTextItem::packType2String(int isTrack, PackType packType)
@@ -286,59 +240,173 @@ CdTextItem::PackType CdTextItem::int2PackType(int i)
     return t;
 }
 
-int CdTextItem::isBinaryPack(PackType type)
+bool CdTextItem::isBinaryPack(PackType type)
 {
-    int ret;
-
     switch (type) {
     case PackType::TOC_INFO1:
     case PackType::TOC_INFO2:
     case PackType::SIZE_INFO:
     case PackType::GENRE:
-        ret = 1;
-        break;
-
+        return true;
     default:
-        ret = 0;
-        break;
+        return false;
     }
-
-    return ret;
 }
 
-void CdTextItem::encoding(Util::Encoding e)
+// ---------------------------------------------------------------------------
+// CdTextBinaryItem
+
+CdTextBinaryItem::CdTextBinaryItem(PackType packType, int blockNr, std::vector<u8> data)
+    : CdTextItem(packType, blockNr), data_(std::move(data))
 {
-    bool changed = (e != encoding_);
+}
+
+void CdTextBinaryItem::printValue(std::ostream &out, const PrintParams &) const
+{
+    char buf[20];
+    long i = 0;
+
+    out << " {";
+    for (auto c : data_) {
+        if (i > 0) {
+            if (i % 12 == 0)
+                out << ",\n               ";
+            else
+                out << ", ";
+        }
+        snprintf(buf, sizeof(buf), "%2d", c);
+        out << buf;
+        i++;
+    }
+    out << "}";
+}
+
+bool CdTextBinaryItem::sameContent(const CdTextItem &obj) const
+{
+    return data_ == static_cast<const CdTextBinaryItem &>(obj).data_;
+}
+
+// ---------------------------------------------------------------------------
+// CdTextGenreItem
+
+CdTextGenreItem::CdTextGenreItem(int blockNr, std::vector<u8> data)
+    : CdTextBinaryItem(PackType::GENRE, blockNr, std::move(data))
+{
+}
+
+static std::vector<u8> genreData(u8 code1, u8 code2, const char *description)
+{
+    std::vector<u8> data{code1, code2};
+    if (description) {
+        while (*description)
+            data.push_back(*description++);
+        data.push_back(0);
+    }
+    return data;
+}
+
+CdTextGenreItem::CdTextGenreItem(int blockNr, u8 code1, u8 code2, const char *description)
+    : CdTextBinaryItem(PackType::GENRE, blockNr, genreData(code1, code2, description))
+{
+}
+
+std::string CdTextGenreItem::description() const
+{
+    if (data().size() <= 2)
+        return {};
+
+    // The terminating 0 may be missing.
+    auto begin = data().begin() + 2;
+    auto end = begin;
+    while (end != data().end() && *end != 0)
+        end++;
+    return std::string(begin, end);
+}
+
+// ---------------------------------------------------------------------------
+// CdTextTextItem
+
+void CdTextTextItem::printValue(std::ostream &out, const PrintParams &params) const
+{
+    out << " \"";
+    if (!params.no_utf8 && hasText()) {
+        for (auto c : getText())
+            printChar(out, c, false);
+    } else {
+        for (auto c : packData()) {
+            if (c == '\0')
+                break;
+            printChar(out, c, true);
+        }
+    }
+    out << "\"";
+}
+
+bool CdTextTextItem::sameContent(const CdTextItem &obj) const
+{
+    auto &other = static_cast<const CdTextTextItem &>(obj);
+
+    // The UTF-8 text is authoritative when both sides have it; the
+    // encoding may not have been set yet on one of them.
+    if (hasText() && other.hasText())
+        return getText() == other.getText();
+
+    return packData() == other.packData();
+}
+
+// ---------------------------------------------------------------------------
+// CdTextUtf8Item
+
+CdTextUtf8Item::CdTextUtf8Item(PackType packType, int blockNr, std::string text)
+    : CdTextTextItem(packType, blockNr), text_(std::move(text))
+{
+}
+
+std::vector<u8> CdTextUtf8Item::packData() const
+{
+    if (encoding_ == Util::Encoding::UNSET)
+        return {};
+
+    return encodeUtf8(text_, encoding_, false);
+}
+
+void CdTextUtf8Item::encoding(Util::Encoding e)
+{
+    // Encode once to report text that does not fit the new encoding.
+    if (e != encoding_ && e != Util::Encoding::UNSET)
+        encodeUtf8(text_, e, true);
+
     encoding_ = e;
-
-    updateEncoding(changed);
 }
 
-// Keeps the UTF-8 text and the encoded data in sync. The UTF-8 text,
-// when present, is the reference: the encoded data is (re)generated
-// from it when missing or when the encoding changed. Otherwise the
-// UTF-8 text is decoded from the raw data.
-void CdTextItem::updateEncoding(bool reencode)
+// ---------------------------------------------------------------------------
+// CdTextEncodedItem
+
+CdTextEncodedItem::CdTextEncodedItem(PackType packType, int blockNr, std::vector<u8> data)
+    : CdTextTextItem(packType, blockNr), data_(std::move(data))
 {
-    if (encoding_ == Util::Encoding::UNSET || dataType_ != DataType::SBCC)
+}
+
+std::string CdTextEncodedItem::getText() const
+{
+    if (!hasText() || data_.empty())
+        return {};
+
+    return Util::to_utf8(data_.data(), data_.size(), encoding_);
+}
+
+void CdTextEncodedItem::encoding(Util::Encoding e)
+{
+    if (e == encoding_)
         return;
 
-    if (!u8text.empty() && (data_.empty() || reencode)) {
-        data_.clear();
-        if (Util::from_utf8(u8text, data_, encoding_))
-            return;
-
-        data_.clear();
-        if (Util::from_utf8(u8text, data_, encoding_, true)) {
-            log_message(-1, "CD-TEXT: \"%s\" cannot be represented exactly in %s, approximating.",
-                        u8text.c_str(), Util::encodingToString(encoding_));
-        } else {
-            log_message(-2, "CD-TEXT: Unable to encode \"%s\" into %s.", u8text.c_str(),
-                        Util::encodingToString(encoding_));
-            data_.clear();
-            data_.push_back(0);
-        }
-    } else if (u8text.empty() && !data_.empty()) {
-        u8text = Util::to_utf8(data(), dataLen(), encoding_);
+    // Switching from one known encoding to another: transcode, so that
+    // the text is kept. Otherwise the bytes are simply (re)interpreted.
+    if (encoding_ != Util::Encoding::UNSET && e != Util::Encoding::UNSET) {
+        std::string text = getText();
+        if (!text.empty())
+            data_ = encodeUtf8(text, e, true);
     }
+
+    encoding_ = e;
 }

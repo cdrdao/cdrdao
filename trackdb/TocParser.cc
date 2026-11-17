@@ -231,8 +231,7 @@ struct Token {
 };
 
 // Thrown after a lexical or syntax error has been reported.
-struct ParseAbort {
-};
+struct ParseAbort {};
 
 class Lexer
 {
@@ -460,7 +459,7 @@ class TocParser
     bool tocType(Toc::Type &t);
     bool packType(CdTextItem::PackType &t, int &lineNr);
     std::vector<unsigned char> binaryData();
-    CdTextItem *cdTextItem(int blockNr, int &lineNr);
+    std::unique_ptr<CdTextItem> cdTextItem(int blockNr, int &lineNr);
     void cdTextBlock(CdTextContainer &container, bool isTrack);
     void cdTextLanguageMap(CdTextContainer &container);
     void cdTextTrack(CdTextContainer &container);
@@ -1089,7 +1088,7 @@ std::vector<unsigned char> TocParser::binaryData()
     return buf;
 }
 
-CdTextItem *TocParser::cdTextItem(int blockNr, int &lineNr)
+std::unique_ptr<CdTextItem> TocParser::cdTextItem(int blockNr, int &lineNr)
 {
     CdTextItem::PackType type;
 
@@ -1099,20 +1098,11 @@ CdTextItem *TocParser::cdTextItem(int blockNr, int &lineNr)
     if (is(T::String)) {
         bool is_utf8 = false;
         std::string s = stringEmpty(is_utf8);
-        auto item = new CdTextItem(type, blockNr);
-        if (is_utf8)
-            item->setText(s.c_str());
-        else
-            item->setRawText(s);
-        return item;
+        return CdTextItem::create(type, blockNr, s, is_utf8);
     }
 
-    if (is(T::LBrace)) {
-        std::vector<unsigned char> data = binaryData();
-        auto item = new CdTextItem(type, blockNr);
-        item->setData(data.data(), data.size());
-        return item;
-    }
+    if (is(T::LBrace))
+        return CdTextItem::create(type, blockNr, binaryData());
 
     syntaxError("string or \"{\"");
 }
@@ -1157,14 +1147,14 @@ void TocParser::cdTextBlock(CdTextContainer &container, bool isTrack)
     }
 
     while (!is(T::RBrace)) {
-        std::unique_ptr<CdTextItem> item(cdTextItem(blockNr, lineNr));
+        std::unique_ptr<CdTextItem> item = cdTextItem(blockNr, lineNr);
         int type = (int)item->packType();
 
         if (isTrack && ((type > 0x86 && type <= 0x89) || type == 0x8f)) {
             log_message(-2, "%s:%d: Invalid CD-TEXT item for a track.", filename_, lineNr);
             error_ = 1;
         } else {
-            container.add(item.release());
+            container.add(std::move(item));
         }
     }
 

@@ -22,17 +22,30 @@
 
 #include "util.h"
 #include <iostream>
+#include <memory>
+#include <string>
 #include <vector>
 
+// A single CD-TEXT item (one pack type, for one language block, for
+// the disc or for one track).
+//
+// The hierarchy separates the binary packs from the text packs:
+//
+//   CdTextItem             abstract base: pack type, block, track
+//   +- CdTextBinaryItem    raw bytes (TOC_INFO1/2, SIZE_INFO, ...)
+//   |  +- CdTextGenreItem  GENRE: two genre codes + optional description
+//   +- CdTextTextItem      abstract text item, with a CD-TEXT encoding
+//      +- CdTextUtf8Item     text known as UTF-8 (TOC file, GUI, CDDB);
+//      |                     the bytes to burn are derived from it
+//      +- CdTextEncodedItem  text known only as bytes in a CD-TEXT
+//                            encoding (read from disc, non-UTF-8 TOC
+//                            string); the UTF-8 text is derived from it
+//
+// Each item stores exactly one representation of its content. Use the
+// create() factories to get the right subclass for a pack type.
 class CdTextItem
 {
   public:
-    enum class DataType {
-        SBCC,
-        DBCC,
-        BINARY
-    };
-
     enum class PackType {
         TITLE = 0x80,
         PERFORMER = 0x81,
@@ -52,75 +65,159 @@ class CdTextItem
         SIZE_INFO = 0x8f
     };
 
-    CdTextItem(PackType packType, int blockNr);
-    CdTextItem(const CdTextItem &) = default;
+    virtual ~CdTextItem() = default;
 
-    void setData(const u8 *buffer, size_t buffer_len);
-    void setRawText(const u8 *buffer, size_t buffer_len);
-    void setRawText(const std::string &buffer);
-    void setText(const char *utf8_text);
-    void setTextFromToc(const char *text);
-    void setGenre(u8 genreCode1, u8 genreCode2, const char *description);
+    // Factory for a string value (TOC file string, GUI entry, CDDB).
+    // 'isUtf8' tells whether 'text' is UTF-8 or bytes already in the
+    // block's CD-TEXT encoding. For a binary pack type, the string bytes
+    // (plus a terminating 0) become the binary content.
+    static std::unique_ptr<CdTextItem> create(PackType, int blockNr, const std::string &text,
+                                              bool isUtf8);
 
-    DataType dataType() const { return dataType_; }
+    // Factory for a byte value (TOC file "{ ... }" list, packs read from
+    // disc). For a text pack type, the bytes are text in the block's
+    // CD-TEXT encoding.
+    static std::unique_ptr<CdTextItem> create(PackType, int blockNr, std::vector<u8> data);
+
+    static std::unique_ptr<CdTextItem> fromUtf8(PackType type, int blockNr, const std::string &text)
+    {
+        return create(type, blockNr, text, true);
+    }
+
     PackType packType() const { return packType_; }
-
     int blockNr() const { return blockNr_; }
 
     bool isTrackPack() const { return trackNr_ > 0; }
     void trackNr(int t) { trackNr_ = t; }
     int trackNr() const { return trackNr_; }
 
-    void encoding(Util::Encoding e);
-    Util::Encoding encoding() const { return encoding_; }
+    virtual bool isBinary() const = 0;
 
-    const u8 *data() const { return data_.data(); }
-    size_t dataLen() const { return data_.size(); }
-    bool empty() const
-    {
-        if (dataType_ == DataType::BINARY)
-            return data_.size() == 0;
-        else
-            return u8text.empty();
-    }
+    // The bytes that go into the CD-TEXT packs.
+    virtual std::vector<u8> packData() const = 0;
 
-    const std::string &getText() const { return u8text; }
+    virtual bool empty() const = 0;
+
+    // UTF-8 text content. Empty for binary items, and for encoded text
+    // items whose encoding is not known yet.
+    virtual std::string getText() const { return {}; }
+
+    // Sets the CD-TEXT encoding of the item's language block. Ignored
+    // by binary items.
+    virtual void encoding(Util::Encoding) {}
 
     void print(std::ostream &, PrintParams &params) const;
 
-    int operator==(const CdTextItem &);
-    int operator!=(const CdTextItem &);
+    bool operator==(const CdTextItem &) const;
+    bool operator!=(const CdTextItem &obj) const { return !(*this == obj); }
 
     static const char *packType2String(int isTrack, PackType packType);
 
     static PackType int2PackType(int);
-    static int isBinaryPack(PackType);
+    static bool isBinaryPack(PackType);
+
+  protected:
+    CdTextItem(PackType packType, int blockNr);
+    CdTextItem(const CdTextItem &) = default;
+    CdTextItem &operator=(const CdTextItem &) = delete;
+
+    // Prints the value part (after the pack type name).
+    virtual void printValue(std::ostream &, const PrintParams &) const = 0;
+
+    // Compares content with an item of the same kind (binary or text).
+    virtual bool sameContent(const CdTextItem &) const = 0;
 
   private:
-    DataType dataType_;
     PackType packType_;
     int blockNr_; // 0 ... 7
-    Util::Encoding encoding_;
 
-    // We potentially keep two copies of the CD-TEXT: the data_ vector
-    // represents what will actulally be burned onto the CD, and can
-    // be either binary data or text data, encoded using one of the
-    // officially supported CD encodings (i.e. not UTF-8). The u8text
-    // string, is set, represents the desired textual encoding and
-    // comes from either the TOC file or from the gcdmaster dialog
-    // boxes. That UTF-8 string will get translated into ASCII or
-    // ISO-8859-1 as best as possible.
-
-    // Raw binary content, or pre-encoded text content
-    std::vector<u8> data_;
-
-    // UTF-8 text content.
-    std::string u8text;
-
-    // Info fields only, ignored during burn
+    // Info field only, ignored during burn
     int trackNr_;
+};
 
-    void updateEncoding(bool reencode = false);
+class CdTextBinaryItem : public CdTextItem
+{
+  public:
+    CdTextBinaryItem(PackType packType, int blockNr, std::vector<u8> data);
+
+    const std::vector<u8> &data() const { return data_; }
+
+    bool isBinary() const override { return true; }
+    std::vector<u8> packData() const override { return data_; }
+    bool empty() const override { return data_.empty(); }
+
+  protected:
+    void printValue(std::ostream &, const PrintParams &) const override;
+    bool sameContent(const CdTextItem &) const override;
+
+  private:
+    std::vector<u8> data_;
+};
+
+class CdTextGenreItem : public CdTextBinaryItem
+{
+  public:
+    CdTextGenreItem(int blockNr, std::vector<u8> data);
+    CdTextGenreItem(int blockNr, u8 code1, u8 code2, const char *description);
+
+    bool hasCodes() const { return data().size() >= 2; }
+    u8 code1() const { return hasCodes() ? data()[0] : 0; }
+    u8 code2() const { return hasCodes() ? data()[1] : 0; }
+    std::string description() const;
+
+    bool empty() const override { return !hasCodes(); }
+};
+
+class CdTextTextItem : public CdTextItem
+{
+  public:
+    bool isBinary() const override { return false; }
+
+    Util::Encoding encoding() const { return encoding_; }
+    using CdTextItem::encoding;
+
+    // True if the UTF-8 text is available (see getText()).
+    virtual bool hasText() const = 0;
+
+  protected:
+    CdTextTextItem(PackType packType, int blockNr) : CdTextItem(packType, blockNr) {}
+
+    void printValue(std::ostream &, const PrintParams &) const override;
+    bool sameContent(const CdTextItem &) const override;
+
+    Util::Encoding encoding_ = Util::Encoding::UNSET;
+};
+
+class CdTextUtf8Item final : public CdTextTextItem
+{
+  public:
+    CdTextUtf8Item(PackType packType, int blockNr, std::string text);
+
+    std::vector<u8> packData() const override;
+    bool empty() const override { return text_.empty(); }
+    std::string getText() const override { return text_; }
+    bool hasText() const override { return true; }
+    void encoding(Util::Encoding e) override;
+    using CdTextTextItem::encoding;
+
+  private:
+    std::string text_;
+};
+
+class CdTextEncodedItem final : public CdTextTextItem
+{
+  public:
+    CdTextEncodedItem(PackType packType, int blockNr, std::vector<u8> data);
+
+    std::vector<u8> packData() const override { return data_; }
+    bool empty() const override { return data_.empty() || data_[0] == 0; }
+    std::string getText() const override;
+    bool hasText() const override { return encoding_ != Util::Encoding::UNSET; }
+    void encoding(Util::Encoding e) override;
+    using CdTextTextItem::encoding;
+
+  private:
+    std::vector<u8> data_;
 };
 
 #endif

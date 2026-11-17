@@ -225,7 +225,7 @@ void CdTextEncoder::buildPacks(int blockNr, CdTextItem::PackType type)
                 // Special handling for UPC/EAN field. If this field is not defined
                 // but ISRC codes are defined for the tracks an pack with an empty
                 // string is created.
-                CdTextItem upcEan(CdTextItem::PackType::UPCEAN_ISRC, blockNr);
+                CdTextEncodedItem upcEan(CdTextItem::PackType::UPCEAN_ISRC, blockNr, {});
                 encodeCdTextItem(0, blockNr, &upcEan);
             }
 
@@ -244,8 +244,9 @@ void CdTextEncoder::buildPacks(int blockNr, CdTextItem::PackType type)
 // used if the pack type and language are matching.
 void CdTextEncoder::encodeCdTextItem(int trackNr, int blockNr, const CdTextItem *item)
 {
-    long dataLen = item->dataLen();
-    const unsigned char *data = item->data();
+    const std::vector<u8> bytes = item->packData();
+    long dataLen = bytes.size();
+    const unsigned char *data = bytes.data();
     long pos, n;
     CdTextPackEntry *pack = NULL;
     int first = 1;
@@ -320,7 +321,6 @@ void CdTextEncoder::encodeCdTextItem(int trackNr, int blockNr, const CdTextItem 
 // CD-TEXT packs.
 void CdTextEncoder::buildSizeInfoPacks()
 {
-    CdTextItem *sizeInfoItem;
     int i;
     int b;
 
@@ -362,12 +362,11 @@ void CdTextEncoder::buildSizeInfoPacks()
             // ' - 3' because we've already adjusted the pack count
             packId_ = sizeInfo_[b].lastSequenceNumber[b] - 3 + 1;
 
-            sizeInfoItem = new CdTextItem(CdTextItem::PackType::SIZE_INFO, b);
-            sizeInfoItem->setData((u8 *)&(sizeInfo_[b]), sizeof(CdTextSizeInfo));
+            const u8 *raw = (const u8 *)&(sizeInfo_[b]);
+            CdTextBinaryItem sizeInfoItem(CdTextItem::PackType::SIZE_INFO, b,
+                                          std::vector<u8>(raw, raw + sizeof(CdTextSizeInfo)));
 
-            encodeCdTextItem(0, b, sizeInfoItem);
-
-            delete sizeInfoItem;
+            encodeCdTextItem(0, b, &sizeInfoItem);
         }
     }
 }
