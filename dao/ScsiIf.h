@@ -106,9 +106,17 @@ class ScsiIf
     virtual int timeout(int) = 0;
 
     // Closes the device so that another process can open it. It is
-    // reopened by the next command. Does nothing on platforms that don't
-    // keep the device open exclusively.
+    // reopened by the next command (once init() has succeeded). Does
+    // nothing on platforms that don't support reopening.
     virtual void release() {}
+
+    // Whether init() (and later reopens) should claim the device for
+    // exclusive use. Defaults to true, which is what a writer wants. A
+    // monitoring client (gcdmaster) turns it off so that it never gets in
+    // the way of other programs, such as a cdrdao child process or an
+    // automounter. Must be called before init(). Only honored on
+    // platforms where opening a device can be shared.
+    void setExclusive(bool e) { exclusiveOpen_ = e; }
 
     // Check for mmc capability. Return whether the driver/drive can
     // read and write CD-R and CD-RW disks.
@@ -145,7 +153,8 @@ class ScsiIf
     std::string product_;
     std::string revision_;
 
-    int maxDataLen_;
+    int maxDataLen_ = 0;
+    bool exclusiveOpen_ = true;
 };
 
 #endif

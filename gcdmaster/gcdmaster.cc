@@ -24,6 +24,7 @@
 
 #include "xcdrdao.h"
 #include "AudioCDProject.h"
+#include "CdDevice.h"
 #include "BlankCDDialog.h"
 #include "PreferencesDialog.h"
 #include "TocEdit.h"
@@ -101,6 +102,10 @@ void GCDMaster::on_startup()
 {
     // Call the base class implementation
     Gtk::Application::on_startup();
+
+    // Start watching for CD drives. The device list fills in
+    // asynchronously, and follows drives being plugged in or removed.
+    CdDevice::startMonitor();
 
     // Add actions
     add_action("preferences", sigc::mem_fun(*this, &GCDMaster::on_action_preferences));
@@ -194,6 +199,7 @@ void GCDMaster::on_action_open_finish(const Glib::RefPtr<Gio::AsyncResult> &resu
 void GCDMaster::on_action_quit()
 {
     updateSignal_.disconnect();
+    CdDevice::stopMonitor();
     log_message(0, "GCDMaster::on_action_quit, closing %d window(s)", get_windows().size());
     for (auto window : get_windows()) {
         log_message(0, "Closing window %s", window->get_title().c_str());

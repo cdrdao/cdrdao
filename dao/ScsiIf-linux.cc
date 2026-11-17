@@ -35,6 +35,7 @@
 #include <unistd.h>
 #include <string>
 #include <fstream>
+#include <mutex>
 
 #include "ScsiIf.h"
 #include "log.h"
@@ -78,14 +79,26 @@ class ScsiIfLinux : public ScsiIf
     void printError() override;
     int sendCmd(const uchar *, int, const uchar *, int, uchar *, int, int) override;
     const uchar *getSense(int &len) const override;
+    void release() override;
 
     std::string filename_; // user provided device name
     int fd_ = -1;
-    bool readOnlyMode;
+    bool readOnlyMode = false;
 
   private:
-    int openScsiDevAsSg(const char *devname);
+    // Opens the device node and configures the SG layer. Returns 0 on
+    // success. When 'quiet' is set, failures are only logged at debug
+    // level (used for transparent reopens after release()). Must be
+    // called with mutex_ held.
+    int openDevice(bool quiet);
     int adjustReservedBuffer(int requestedSize);
+
+    // Protects fd_ so that release() from one thread cannot close the
+    // device in the middle of a command issued from another.
+    std::mutex mutex_;
+    // Set once init() has succeeded; allows sendCmd() to reopen the
+    // device after a release().
+    bool initialized_ = false;
 
     uchar sense_buffer[SG_MAX_SENSE];
     uchar sense_buffer_length;
@@ -104,33 +117,30 @@ ScsiIfLinux::ScsiIfLinux(const std::string &dev) : filename_(dev)
 
 ScsiIfLinux::~ScsiIfLinux()
 {
-    if (fd_ >= 0)
-        close(fd_);
+    release();
 }
 
-// Opens and flushes scsi device.
-
-int ScsiIfLinux::init()
+// Opens the device node. See declaration.
+int ScsiIfLinux::openDevice(bool quiet)
 {
-    int flags;
     int sg_version = 0;
+    int flags = O_NONBLOCK | O_CLOEXEC | (exclusiveOpen_ ? O_EXCL : 0);
 
-    fd_ = open(filename_.c_str(), O_RDWR | O_NONBLOCK | O_EXCL);
+    fd_ = open(filename_.c_str(), O_RDWR | flags);
 
-    if (fd_ < 0) {
-
-        if (errno == EACCES) {
-            fd_ = open(filename_.c_str(), O_RDONLY | O_NONBLOCK);
-
-            if (fd_ < 0) {
-                goto failed;
-            }
+    if (fd_ < 0 && errno == EACCES) {
+        fd_ = open(filename_.c_str(), O_RDONLY | flags);
+        if (fd_ >= 0 && !readOnlyMode) {
             readOnlyMode = true;
             log_message(-1, "No permission to write to SCSI device."
                             "Only read commands are supported.");
-        } else {
-            goto failed;
         }
+    }
+
+    if (fd_ < 0) {
+        log_message(quiet ? 3 : -2, "Unable to open SCSI device %s: %s.", filename_.c_str(),
+                    strerror(errno));
+        return 1;
     }
 
     if (ioctl(fd_, SG_GET_VERSION_NUM, &sg_version) == 0) {
@@ -138,21 +148,45 @@ int ScsiIfLinux::init()
                     (sg_version / 100) % 100, sg_version % 100);
         if (sg_version < 30000) {
             log_message(-2, "SG interface under 3.0 not supported.");
+            close(fd_);
+            fd_ = -1;
             return 1;
         }
     }
 
+    // The reserved buffer size is a per-file-descriptor setting, so it
+    // is reapplied on every open.
     maxDataLen_ = adjustReservedBuffer(64 * 1024);
+
+    return 0;
+}
+
+// Opens and flushes scsi device.
+
+int ScsiIfLinux::init()
+{
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        if (fd_ < 0 && openDevice(false) != 0)
+            return 1;
+        initialized_ = true;
+    }
 
     if (inquiry() != 0) {
         return 2;
     }
 
     return 0;
+}
 
-failed:
-    log_message(-2, "Unable to open SCSI device %s: %s.", filename_, strerror(errno));
-    return 1;
+void ScsiIfLinux::release()
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+
+    if (fd_ >= 0) {
+        close(fd_);
+        fd_ = -1;
+    }
 }
 
 // Sets given timeout value in seconds and returns old timeout. Return
@@ -201,6 +235,20 @@ int ScsiIfLinux::sendCmd(const uchar *cmd, int cmdLen, const uchar *dataOut, int
 
     log_message(5, "%s: Initiating SCSI command %s%s", filename_.c_str(), sg_strcommand(cmd[0]),
                 sg_strcmdopts(cmd));
+
+    // Held for the whole command so that release() on another thread
+    // can't close the device under it.
+    std::lock_guard<std::mutex> lock(mutex_);
+
+    // Reopen transparently after a release().
+    if (fd_ < 0) {
+        if (!initialized_) {
+            log_message(-2, "%s: SCSI command sent before init().", filename_.c_str());
+            return 1;
+        }
+        if (openDevice(true) != 0)
+            return 1;
+    }
 
     if (ioctl(fd_, SG_IO, &io_hdr) < 0) {
         int errnosave = errno;

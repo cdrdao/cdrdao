@@ -118,6 +118,7 @@ PreferencesDialog::~PreferencesDialog() {}
 void PreferencesDialog::show_dialog()
 {
     read_from_settings();
+    import_devices();
     this->set_visible(true);
 }
 
@@ -190,8 +191,10 @@ void PreferencesDialog::on_button_ok()
 
 void PreferencesDialog::on_button_reset()
 {
+    // Re-identification runs in the background; import_devices() is
+    // called again through update(UPD_CD_DEVICES) when each probe is done.
     for (auto dev : CdDevice::deviceList())
-        dev->autoSelectDriver();
+        dev->probe(true);
     import_devices();
     save_to_settings();
     guiUpdate(UPD_CD_DEVICES);
@@ -263,6 +266,8 @@ void PreferencesDialog::export_selected_row(CdDevice *device)
 void PreferencesDialog::import_selected_row(CdDevice *device)
 {
     if (device) {
+        if (dataMap_.find(device) == dataMap_.end())
+            append_entry(device);
         auto data = dataMap_[device];
 
         driverMenu_->set_sensitive(true);
@@ -280,8 +285,9 @@ void PreferencesDialog::import_selected_row(CdDevice *device)
 
 void PreferencesDialog::rescan_action()
 {
-    CdDevice::scan();
-    guiUpdate(UPD_CD_DEVICES);
+    // The device list is refreshed asynchronously, which triggers
+    // update(UPD_CD_DEVICES) if anything changed.
+    CdDevice::rescan();
 }
 
 void PreferencesDialog::on_options_activate()

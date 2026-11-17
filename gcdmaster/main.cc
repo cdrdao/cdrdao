@@ -88,8 +88,8 @@ int main(int argc, char *argv[])
 
     installSignalHandler(SIGPIPE, SIG_IGN);
 
-    // Setup devices configuration.
-    CdDevice::scan();
+    // Devices are discovered by the DeviceMonitor started in
+    // GCDMaster::on_startup().
     {
         auto tmpdir = CONFIG_MANAGER->getTempDir();
         if (!tmpdir.empty())

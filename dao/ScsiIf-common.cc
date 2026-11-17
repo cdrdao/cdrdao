@@ -55,7 +55,9 @@ cd_page_2a *ScsiIf::checkMmc()
     static const int MODE_PAGE_HEADER_SIZE = 8;
     static const int MODE_CD_CAP_PAGE = 0x2a;
 
-    static unsigned char mode[MODE_MAX_SIZE];
+    // The result points into this buffer. It is per-thread so that
+    // devices can be probed concurrently from worker threads.
+    static thread_local unsigned char mode[MODE_MAX_SIZE];
     memset(mode, 0, sizeof(mode));
 
     // First, read header of mode page 0x2A, to figure out its exact

@@ -28,7 +28,6 @@
 
 class TocEdit;
 #include "CdDevice.h"
-#include "DeviceMonitor.h"
 
 class DeviceSelector : public Gtk::Frame
 {
@@ -37,28 +36,36 @@ class DeviceSelector : public Gtk::Frame
     ~DeviceSelector() {};
 
     CdDevice *selection();
+    // Selects the first device if none is selected.
     void selectOne();
     void appendTableEntry(CdDevice *);
+    // Rebuilds the list from CdDevice::deviceList(), keeping the current
+    // selection if that device is still listed. The selector does this by
+    // itself whenever the device list changes; calling it is only needed
+    // after changing device settings.
     void import();
+    // Refreshes the displayed status of all devices.
     void importStatus();
 
     sigc::signal<void()> signalChanged;
 
   private:
     void on_selection_changed(guint, guint);
-
-    // Invoked (on the main thread) when the DeviceMonitor reports that the
-    // set of available devices has changed.
-    void onDevicesChanged();
+    void onStatusChanged(CdDevice *);
 
     std::optional<CdDevice::DeviceType> filterType_;
 
-    std::unique_ptr<DeviceMonitor> monitor_;
+    // Set while import() rebuilds the model, to suppress the intermediate
+    // selection changes.
+    bool importing_ = false;
 
     class ListColumns : public Glib::Object
     {
       public:
         CdDevice *device_;
+        // The status label currently bound to this row, if any, so the
+        // status can be updated in place without rebuilding the model.
+        Gtk::Label *statusLabel_ = nullptr;
 
         static Glib::RefPtr<ListColumns> create(CdDevice *device)
         {

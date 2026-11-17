@@ -63,7 +63,7 @@ for retry in {1..50}; do
     DEV_LINE="$(cdemu device-mapping 2>/dev/null | awk '$1 ~ /^[0-9]+$/ && NF >= 3 {print $1, $3; exit}')"
     cand_dev="$(echo "$DEV_LINE" | awk '{print $1}')"
     cand_sg="$(echo "$DEV_LINE" | awk '{print $2}')"
-    if [[ -n "$cand_dev" && -n "$cand_sg" && -e "$cand_sg" && -r "$cand_sg" && -w "$cand_sg" ]]; then
+    if [[ -n "$cand_dev" && -n "$cand_sg" && -e "$cand_sg" ]]; then
         CDEMU_DEV="$cand_dev"
         SG_DEV="$cand_sg"
         break
@@ -77,7 +77,11 @@ if [[ -z "$CDEMU_DEV" || -z "$SG_DEV" || ! -e "$SG_DEV" ]]; then
 fi
 
 if [[ ! -r "$SG_DEV" || ! -w "$SG_DEV" ]]; then
-    echo "ERROR: Insufficient read/write permissions for device $SG_DEV." >&2
+    echo "ERROR: Insufficient read/write permissions for device $SG_DEV:" >&2
+    ls -l "$SG_DEV" >&2
+    sg_group="$(stat -c %G "$SG_DEV")"
+    echo "Add yourself to the '$sg_group' group (sudo usermod -aG $sg_group \$USER) and log in again," >&2
+    echo "or run from a local seat session where udev 'uaccess' grants access." >&2
     exit 1
 fi
 

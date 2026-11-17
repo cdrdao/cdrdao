@@ -126,9 +126,6 @@ void RecordTocDialog::update(unsigned long level)
 
     TocSource->update(level);
     CDTarget->update(level);
-
-    if (level & UPD_CD_DEVICE_STATUS)
-        CDTarget->deviceSelector()->selectOne();
 }
 
 void RecordTocDialog::startAction()

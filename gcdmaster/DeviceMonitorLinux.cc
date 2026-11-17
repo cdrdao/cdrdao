@@ -24,14 +24,32 @@
 // by the kernel at /sys/bus/scsi/devices (this covers ATAPI, USB and real
 // SCSI drives, all of which the kernel presents as SCSI). Each device of
 // peripheral type "ROM" (5) that exposes vendor/model identification is
-// reported. Plug/unplug is detected by re-scanning the tree on a fixed
-// interval; the poll runs in the worker thread so the cost is hidden from
-// the GUI.
+// reported.
+//
+// Plug/unplug is detected by listening to kernel uevents on a
+// NETLINK_KOBJECT_UEVENT socket (the same source udev uses, readable by
+// unprivileged processes), and rescanning sysfs whenever a block or SCSI
+// device event arrives. This reacts within milliseconds without any
+// dependency on libudev. Kernel media change events are forwarded as
+// well. A slow periodic rescan remains as a safety net, and is used
+// exclusively if the netlink socket cannot be opened.
 
 #include "DeviceMonitor.h"
 
+#include <chrono>
+#include <cstring>
 #include <filesystem>
 #include <fstream>
+#include <optional>
+
+#include <errno.h>
+#include <linux/netlink.h>
+#include <poll.h>
+#include <sys/eventfd.h>
+#include <sys/socket.h>
+#include <unistd.h>
+
+#include "log.h"
 
 namespace fs = std::filesystem;
 
@@ -44,8 +62,90 @@ const char *SYSFS_SCSI_DEVICES = "/sys/bus/scsi/devices";
 // SCSI peripheral device type for CD/DVD drives.
 constexpr int SCSI_TYPE_ROM = 5;
 
-// Interval between device tree scans, in milliseconds.
+// Interval between device tree scans when uevents are unavailable, in
+// milliseconds.
 constexpr int POLL_INTERVAL_MS = 2000;
+
+// Safety-net rescan interval when uevents are available.
+constexpr int FALLBACK_INTERVAL_MS = 30000;
+
+// Delay of the follow-up rescan after a uevent. Removal events are sent
+// before the sysfs entries disappear, and a SCSI device's block node
+// shows up in a later event than the device itself, so the tree is
+// scanned again once things have settled.
+constexpr int SETTLE_DELAY_MS = 500;
+
+// Opens a socket receiving kernel uevents, or returns -1.
+int openUeventSocket()
+{
+    int fd = socket(AF_NETLINK, SOCK_DGRAM | SOCK_CLOEXEC | SOCK_NONBLOCK, NETLINK_KOBJECT_UEVENT);
+    if (fd < 0) {
+        log_message(1, "DeviceMonitor: cannot open uevent socket: %s", strerror(errno));
+        return -1;
+    }
+
+    struct sockaddr_nl addr;
+    memset(&addr, 0, sizeof(addr));
+    addr.nl_family = AF_NETLINK;
+    addr.nl_groups = 1; // kernel events (udev's own events are group 2)
+
+    if (bind(fd, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
+        log_message(1, "DeviceMonitor: cannot bind uevent socket: %s", strerror(errno));
+        close(fd);
+        return -1;
+    }
+
+    return fd;
+}
+
+// What a batch of uevents asks for.
+struct UeventResult {
+    bool rescan = false;
+    bool mediaChange = false;
+};
+
+// Reads all pending uevents from 'fd'. A kernel uevent is a datagram of
+// NUL-separated strings: "ACTION@DEVPATH" followed by "KEY=VALUE" pairs.
+UeventResult drainUevents(int fd)
+{
+    UeventResult result;
+    char buf[8192];
+
+    while (true) {
+        struct sockaddr_nl from;
+        socklen_t fromLen = sizeof(from);
+        ssize_t len =
+            recvfrom(fd, buf, sizeof(buf) - 1, 0, (struct sockaddr *)&from, &fromLen);
+        if (len < 0) {
+            // ENOBUFS means events were dropped: rescan to be safe.
+            if (errno == ENOBUFS)
+                result.rescan = true;
+            if (errno == EINTR || errno == ENOBUFS)
+                continue;
+            break; // EAGAIN: drained
+        }
+        // Only trust messages from the kernel itself.
+        if (fromLen != sizeof(from) || from.nl_pid != 0)
+            continue;
+        buf[len] = 0;
+
+        bool relevant = false, mediaChange = false;
+        for (char *p = buf; p < buf + len; p += strlen(p) + 1) {
+            if (strcmp(p, "SUBSYSTEM=block") == 0 || strcmp(p, "SUBSYSTEM=scsi") == 0)
+                relevant = true;
+            else if (strcmp(p, "DISK_MEDIA_CHANGE=1") == 0 ||
+                     strcmp(p, "SDEV_MEDIA_CHANGE=1") == 0)
+                mediaChange = true;
+        }
+        if (relevant) {
+            result.rescan = true;
+            if (mediaChange)
+                result.mediaChange = true;
+        }
+    }
+
+    return result;
+}
 
 // Read a single-line sysfs attribute and strip leading/trailing
 // whitespace (sysfs strings are space-padded and newline-terminated).
@@ -91,15 +191,93 @@ std::string resolveNode(const fs::path &devDir)
 
 class LinuxDeviceMonitor : public DeviceMonitor
 {
+  public:
+    LinuxDeviceMonitor() { wakeFd_ = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK); }
+
+    ~LinuxDeviceMonitor() override
+    {
+        // The worker polls wakeFd_, so it must be stopped before the fd
+        // is closed.
+        stop();
+        if (wakeFd_ >= 0)
+            close(wakeFd_);
+    }
+
   protected:
+    void wakeup() override
+    {
+        if (wakeFd_ >= 0) {
+            uint64_t one = 1;
+            [[maybe_unused]] auto r = write(wakeFd_, &one, sizeof(one));
+        }
+    }
+
     void scanLoop() override
     {
-        do {
-            publish(enumerate());
-        } while (!sleep(POLL_INTERVAL_MS));
+        int ueventFd = (wakeFd_ >= 0) ? openUeventSocket() : -1;
+
+        if (ueventFd < 0) {
+            // No uevents: plain periodic polling.
+            do {
+                publish(enumerate());
+            } while (!sleep(POLL_INTERVAL_MS));
+            return;
+        }
+
+        using Clock = std::chrono::steady_clock;
+        std::optional<Clock::time_point> settleAt;
+
+        // Initial scan.
+        publish(enumerate());
+
+        while (!stopRequested()) {
+            int timeoutMs = FALLBACK_INTERVAL_MS;
+            if (settleAt) {
+                auto left = std::chrono::duration_cast<std::chrono::milliseconds>(
+                                *settleAt - Clock::now())
+                                .count();
+                timeoutMs = left > 0 ? (int)left : 0;
+            }
+
+            struct pollfd fds[2] = {{ueventFd, POLLIN, 0}, {wakeFd_, POLLIN, 0}};
+            int n = ::poll(fds, 2, timeoutMs);
+            if (n < 0 && errno != EINTR)
+                break;
+            if (stopRequested())
+                break;
+
+            bool rescan = (n == 0); // timeout: settle or safety-net rescan
+            if (n == 0)
+                settleAt.reset();
+
+            if (fds[1].revents & POLLIN) {
+                uint64_t v;
+                [[maybe_unused]] auto r = read(wakeFd_, &v, sizeof(v));
+            }
+            if (takeRescanRequest())
+                rescan = true;
+
+            if (fds[0].revents & POLLIN) {
+                auto events = drainUevents(ueventFd);
+                if (events.rescan) {
+                    rescan = true;
+                    settleAt = Clock::now() + std::chrono::milliseconds(SETTLE_DELAY_MS);
+                }
+                if (events.mediaChange)
+                    notifyMediaChange();
+            }
+
+            if (rescan)
+                publish(enumerate());
+        }
+
+        close(ueventFd);
     }
 
   private:
+    // Written by wakeup() to interrupt the worker's poll().
+    int wakeFd_ = -1;
+
     std::vector<DeviceInfo> enumerate()
     {
         std::vector<DeviceInfo> result;

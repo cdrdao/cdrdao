@@ -25,7 +25,7 @@
 // drive stays listed whether or not it holds a disc. Whenever a drive is
 // attached or detached, the device list is rebuilt with ScsiIf::scan().
 // Drives are reported by their stable name (serial number, or IOService
-// path), the same name CdDevice::scan() uses.
+// path), the same name the cdrdao CLI uses for --device.
 //
 // A drive whose disc is mounted is listed but flagged as in use, and its
 // serial number can't be read until it is free. A Disk Arbitration
@@ -105,7 +105,7 @@ class OSXDeviceMonitor : public DeviceMonitor
 
         while (!stopRequested()) {
             CFRunLoopRunInMode(kCFRunLoopDefaultMode, RUNLOOP_INTERVAL_S, false);
-            if (rescanPending_) {
+            if (takeRescanRequest() || rescanPending_) {
                 rescanPending_ = false;
                 rescan();
             }

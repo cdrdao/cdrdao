@@ -83,7 +83,9 @@ class DeviceMonitor : public sigc::trackable
     void start();
 
     // Stop the worker thread and block until it has finished. Safe to
-    // call multiple times and from the destructor.
+    // call multiple times. Backends whose wakeup() uses their own members
+    // must call it from their destructor, since by the time the base
+    // destructor runs those members are gone.
     void stop();
 
     // Return a snapshot of the currently available devices. Thread-safe:
@@ -91,8 +93,17 @@ class DeviceMonitor : public sigc::trackable
     // signal_changed() handler.
     std::vector<DeviceInfo> devices() const;
 
+    // Ask the worker to rescan as soon as possible, rather than waiting
+    // for the next platform event or poll. Thread-safe.
+    void requestRescan();
+
     // Emitted on the main thread whenever the device list changes.
     sigc::signal<void()> &signal_changed() { return signalChanged_; }
+
+    // Emitted on the main thread when the backend learns that the medium
+    // in some drive may have changed (inserted, ejected). Listeners should
+    // refresh drive status. Not all backends can detect this.
+    sigc::signal<void()> &signal_media_changed() { return signalMediaChanged_; }
 
   protected:
     DeviceMonitor();
@@ -108,13 +119,26 @@ class DeviceMonitor : public sigc::trackable
     // scheduled on the main thread. Called from the worker thread.
     void publish(std::vector<DeviceInfo> devices);
 
-    // Sleep for up to 'ms' milliseconds, returning early if stop() is
-    // requested. Returns true if the monitor should stop. Called from the
-    // worker thread.
+    // Report a possible medium change; schedules signal_media_changed()
+    // on the main thread. Called from the worker thread.
+    void notifyMediaChange();
+
+    // Sleep for up to 'ms' milliseconds, returning early if stop() or
+    // requestRescan() is called. Returns true if the monitor should stop.
+    // Called from the worker thread.
     bool sleep(int ms);
 
     // Whether stop() has been requested. Called from the worker thread.
     bool stopRequested() const;
+
+    // Returns true, and clears the request, if requestRescan() was called
+    // since the last call. Called from the worker thread.
+    bool takeRescanRequest();
+
+    // Hook called (from any thread) after stop() or requestRescan() set
+    // their flag. Backends that block in something other than sleep(),
+    // e.g. poll() on a file descriptor, override it to interrupt the wait.
+    virtual void wakeup() {}
 
   private:
     void workerEntry();
@@ -123,14 +147,20 @@ class DeviceMonitor : public sigc::trackable
     mutable std::mutex devicesMutex_;
     std::vector<DeviceInfo> devices_;
 
+    // Pending notifications for the main thread, under devicesMutex_.
+    bool changedPending_ = false;
+    bool mediaChangedPending_ = false;
+
     std::mutex stopMutex_;
     std::condition_variable stopCond_;
     bool stop_;
+    bool rescan_ = false;
     bool running_;
 
     std::thread thread_;
     Glib::Dispatcher dispatcher_;
     sigc::signal<void()> signalChanged_;
+    sigc::signal<void()> signalMediaChanged_;
 };
 
 #endif

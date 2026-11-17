@@ -58,6 +58,7 @@ void DeviceMonitor::stop()
         stop_ = true;
     }
     stopCond_.notify_all();
+    wakeup();
 
     if (thread_.joinable())
         thread_.join();
@@ -88,16 +89,45 @@ void DeviceMonitor::publish(std::vector<DeviceInfo> devices)
         if (devices == devices_)
             return;
         devices_ = std::move(devices);
+        changedPending_ = true;
     }
 
     // Wake the main thread; onDispatch() will emit signal_changed() there.
     dispatcher_.emit();
 }
 
+void DeviceMonitor::notifyMediaChange()
+{
+    {
+        std::lock_guard<std::mutex> lock(devicesMutex_);
+        mediaChangedPending_ = true;
+    }
+    dispatcher_.emit();
+}
+
+void DeviceMonitor::requestRescan()
+{
+    {
+        std::lock_guard<std::mutex> lock(stopMutex_);
+        rescan_ = true;
+    }
+    stopCond_.notify_all();
+    wakeup();
+}
+
+bool DeviceMonitor::takeRescanRequest()
+{
+    std::lock_guard<std::mutex> lock(stopMutex_);
+    bool r = rescan_;
+    rescan_ = false;
+    return r;
+}
+
 bool DeviceMonitor::sleep(int ms)
 {
     std::unique_lock<std::mutex> lock(stopMutex_);
-    stopCond_.wait_for(lock, std::chrono::milliseconds(ms), [this] { return stop_; });
+    stopCond_.wait_for(lock, std::chrono::milliseconds(ms), [this] { return stop_ || rescan_; });
+    rescan_ = false;
     return stop_;
 }
 
@@ -109,5 +139,18 @@ bool DeviceMonitor::stopRequested() const
 
 void DeviceMonitor::onDispatch()
 {
-    signalChanged_.emit();
+    bool changed, mediaChanged;
+    {
+        std::lock_guard<std::mutex> lock(devicesMutex_);
+        changed = changedPending_;
+        mediaChanged = mediaChangedPending_;
+        changedPending_ = mediaChangedPending_ = false;
+    }
+
+    // Several emit() calls may be coalesced into one dispatch, and a
+    // dispatch may find nothing pending if an earlier one handled it.
+    if (changed)
+        signalChanged_.emit();
+    if (mediaChanged)
+        signalMediaChanged_.emit();
 }

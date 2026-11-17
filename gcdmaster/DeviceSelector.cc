@@ -68,8 +68,14 @@ DeviceSelector::DeviceSelector(std::optional<CdDevice::DeviceType> filterType)
         if (!it)
             return;
         auto label = dynamic_cast<Gtk::Label *>(list_item->get_child());
+        it->statusLabel_ = label;
         if (label)
             label->set_text(CdDevice::status2string(it->device_->status()));
+    };
+    auto unbind_status = [](const Glib::RefPtr<Gtk::ListItem> &list_item) {
+        auto it = std::dynamic_pointer_cast<ListColumns>(list_item->get_item());
+        if (it)
+            it->statusLabel_ = nullptr;
     };
 
     { // Description column
@@ -84,6 +90,7 @@ DeviceSelector::DeviceSelector(std::optional<CdDevice::DeviceType> filterType)
         auto factory = Gtk::SignalListItemFactory::create();
         factory->signal_setup().connect(setup_empty);
         factory->signal_bind().connect(bind_status);
+        factory->signal_unbind().connect(unbind_status);
         auto cvc = Gtk::ColumnViewColumn::create(_("Status"), factory);
         cvc->set_expand(true);
         colView_.append_column(cvc);
@@ -118,25 +125,30 @@ DeviceSelector::DeviceSelector(std::optional<CdDevice::DeviceType> filterType)
         set_label(_(" Available Devices: "));
     }
 
-    // Watch for devices being plugged in or removed. The monitor scans in
-    // its own thread and notifies us on the main thread; onDevicesChanged()
-    // then refreshes the shared device list and our view.
-    monitor_ = DeviceMonitor::create();
-    monitor_->signal_changed().connect(sigc::mem_fun(*this, &DeviceSelector::onDevicesChanged));
-    monitor_->start();
-}
+    // Follow devices being plugged in or removed, and their status. The
+    // application-wide DeviceMonitor keeps CdDevice::deviceList() up to
+    // date; these signals are emitted on the main thread. The connections
+    // are dropped automatically when this widget is destroyed.
+    CdDevice::signalListChanged().connect(sigc::mem_fun(*this, &DeviceSelector::import));
+    CdDevice::signalStatusChanged().connect(
+        sigc::mem_fun(*this, &DeviceSelector::onStatusChanged));
 
-void DeviceSelector::onDevicesChanged()
-{
-    if (CdDevice::updateDeviceList(monitor_->devices())) {
-        import();
-        selectOne();
-    }
+    import();
 }
 
 void DeviceSelector::on_selection_changed(guint, guint)
 {
-    this->signalChanged.emit();
+    if (!importing_)
+        this->signalChanged.emit();
+}
+
+void DeviceSelector::onStatusChanged(CdDevice *device)
+{
+    for (guint i = 0; i < listModel_->get_n_items(); i++) {
+        auto item = listModel_->get_item(i);
+        if (item && item->device_ == device && item->statusLabel_)
+            item->statusLabel_->set_text(CdDevice::status2string(device->status()));
+    }
 }
 
 CdDevice *DeviceSelector::selection()
@@ -158,6 +170,9 @@ void DeviceSelector::appendTableEntry(CdDevice *device)
 
 void DeviceSelector::import()
 {
+    CdDevice *previous = selection();
+
+    importing_ = true;
     listModel_->remove_all();
 
     for (auto drun : CdDevice::deviceList()) {
@@ -180,23 +195,36 @@ void DeviceSelector::import()
                 break;
             }
         }
-        if (match && !drun->driver().empty())
+        // Devices still being identified have no driver yet.
+        if (match && drun->probed() && !drun->driver().empty())
             appendTableEntry(drun);
     }
+
+    // Keep the user's choice; otherwise autoselect picked the first one.
+    for (guint i = 0; previous && i < listModel_->get_n_items(); i++) {
+        if (listModel_->get_item(i)->device_ == previous) {
+            selectionModel_->set_selected(i);
+            break;
+        }
+    }
+    importing_ = false;
+
     this->signalChanged.emit();
 }
 
 void DeviceSelector::importStatus()
 {
-    // Changing a single value is particularly difficult with the
-    // incredibly complicated MVC pattern of gtk4. So instead we
-    // rebuild it all.
-    import();
+    for (guint i = 0; i < listModel_->get_n_items(); i++) {
+        auto item = listModel_->get_item(i);
+        if (item && item->statusLabel_)
+            item->statusLabel_->set_text(CdDevice::status2string(item->device_->status()));
+    }
 }
 
 void DeviceSelector::selectOne()
 {
-    if (listModel_->get_n_items() > 0)
+    if (listModel_->get_n_items() > 0 &&
+        selectionModel_->get_selected() == GTK_INVALID_LIST_POSITION)
         selectionModel_->set_selected(0);
     this->signalChanged.emit();
 }

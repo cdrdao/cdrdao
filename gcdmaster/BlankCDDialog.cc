@@ -240,8 +240,6 @@ void BlankCDDialog::update(unsigned long level)
         deviceSelector_->import();
     }
 
-    if (level & UPD_CD_DEVICE_STATUS) {
+    if (level & UPD_CD_DEVICE_STATUS)
         deviceSelector_->importStatus();
-        deviceSelector_->selectOne();
-    }
 }

@@ -1001,59 +1001,116 @@ int CdrDriver::sendCmd(const unsigned char *cmd, int cmdLen, const unsigned char
     return scsiIf_->sendCmd(cmd, cmdLen, dataOut, dataOutLen, dataIn, dataInLen, showErrorMsg);
 }
 
-// checks if unit is ready
-// return: 0: OK
-//         1: scsi command failed
-//         2: not ready
-//         3: not ready, no disk in drive
-//         4: not ready, tray out
-//         5: spinning up
-//         6: incompatible disk
-
-int CdrDriver::testUnitReady(int ignoreUnitAttention) const
+// Extracts sense key, ASC and ASCQ from fixed or descriptor format sense
+// data. Returns false if the sense data is too short or not recognized.
+static bool decodeSense(const unsigned char *sense, int len, int &key, int &asc, int &ascq)
 {
+    if (!sense || len < 1)
+        return false;
+
+    switch (sense[0] & 0x7f) {
+    case 0x70: // fixed format, current / deferred
+    case 0x71:
+        if (len < 14)
+            return false;
+        key = sense[2] & 0x0f;
+        asc = sense[12];
+        ascq = sense[13];
+        return true;
+    case 0x72: // descriptor format, current / deferred
+    case 0x73:
+        if (len < 4)
+            return false;
+        key = sense[1] & 0x0f;
+        asc = sense[2];
+        ascq = sense[3];
+        return true;
+    default:
+        return false;
+    }
+}
+
+int CdrDriver::unitReady(ScsiIf &scsiIf, bool showErrors)
+{
+    // A unit attention is reported once and then cleared by the drive;
+    // several can be queued (e.g. power on + medium changed).
+    static const int MAX_ATTEMPTS = 4;
     unsigned char cmd[6];
-    const unsigned char *sense;
-    int senseLen;
 
-    memset(cmd, 0, 6);
+    memset(cmd, 0, 6); // TEST UNIT READY
 
-    switch (scsiIf_->sendCmd(cmd, 6, NULL, 0, NULL, 0, 0)) {
-    case 1:
-        return 1;
+    for (int attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+        switch (scsiIf.sendCmd(cmd, 6, NULL, 0, NULL, 0, 0)) {
+        case 0:
+            return TUR_READY;
+        case 1:
+            return TUR_ERROR;
+        default:
+            break;
+        }
 
-    case 2:
-        sense = scsiIf_->getSense(senseLen);
+        int senseLen, key, asc, ascq;
+        const unsigned char *sense = scsiIf.getSense(senseLen);
 
-        int code = sense[2] & 0x0f;
-        int asc = (sense[12] << 8) + sense[13];
+        if (!decodeSense(sense, senseLen, key, asc, ascq)) {
+            if (showErrors)
+                scsiIf.printError();
+            return TUR_ERROR;
+        }
 
-        if (code == 0x02) {
-            switch (asc) {
-            case 0x3000: // INCOMPATIBLE MEDIUM INSTALLED
-            case 0x3a00: // MEDIUM NOT PRESENT (no disc in drive)
-            case 0x3a01: // MEDIUM NOT PRESENT, tray closed
-                return 3;
-            case 0x3a02: // MEDIUM NOT PRESENT, tray open
-                return 4;
-            case 0x0401: // NOT READY, becoming ready (spinning up)
-                return 5;
-                return 6;
-            case 0x0402: // NOT READY, need START UNIT command
-                startStopUnit(1);
-                return testUnitReady(ignoreUnitAttention);
-            default:
-                return 2;
+        switch (key) {
+        case 0x00: // NO SENSE
+        case 0x01: // RECOVERED ERROR
+            return TUR_READY;
+
+        case 0x06: // UNIT ATTENTION
+            continue;
+
+        case 0x02: // NOT READY
+        case 0x03: // MEDIUM ERROR
+            if (asc == 0x3a) { // MEDIUM NOT PRESENT
+                return ascq == 0x02 ? TUR_TRAY_OPEN : TUR_NO_DISC;
             }
-        } else if (code != 0x06) {
-            scsiIf_->printError();
-            return 1;
-        } else {
-            return 0;
+            if (asc == 0x30) // INCOMPATIBLE MEDIUM / CANNOT READ MEDIUM
+                return TUR_BAD_DISC;
+            if (asc == 0x04) { // LOGICAL UNIT NOT READY
+                if (ascq == 0x01)
+                    return TUR_BECOMING_READY;
+                if (ascq == 0x02)
+                    return TUR_STOPPED;
+            }
+            if (key == 0x03)
+                return TUR_BAD_DISC;
+            return TUR_NOT_READY;
+
+        default:
+            if (showErrors)
+                scsiIf.printError();
+            return TUR_ERROR;
         }
     }
 
-    return 0;
+    return TUR_UNIT_ATTENTION;
+}
+
+// Return: one of the UnitReadyStatus codes, except TUR_STOPPED (the unit
+// is started and tested again) and TUR_UNIT_ATTENTION (reported as ready
+// if 'ignoreUnitAttention' is set, as not ready otherwise).
+int CdrDriver::testUnitReady(int ignoreUnitAttention) const
+{
+    int ret = unitReady(*scsiIf_, true);
+
+    if (ret == TUR_STOPPED) {
+        startStopUnit(1);
+        ret = unitReady(*scsiIf_, true);
+        if (ret == TUR_STOPPED)
+            ret = TUR_NOT_READY;
+    }
+
+    if (ret == TUR_UNIT_ATTENTION)
+        ret = ignoreUnitAttention ? TUR_READY : TUR_NOT_READY;
+
+    return ret;
 }
 
 bool CdrDriver::rspeed(int a)

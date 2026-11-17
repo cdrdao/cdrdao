@@ -251,6 +251,28 @@ class CdrDriver
     // Return byte order of host (0: little endian, 1: big endian)
     int hostByteOrder() const { return hostByteOrder_; }
 
+    // Result codes of unitReady(). testUnitReady() returns the same codes
+    // except TUR_STOPPED and TUR_UNIT_ATTENTION, which it resolves itself.
+    enum UnitReadyStatus {
+        TUR_READY = 0,          // medium present and ready
+        TUR_ERROR = 1,          // command failed, drive not usable
+        TUR_NOT_READY = 2,      // busy or not ready for another reason
+        TUR_NO_DISC = 3,        // no medium, tray closed
+        TUR_TRAY_OPEN = 4,      // no medium, tray open
+        TUR_BECOMING_READY = 5, // spinning up / loading
+        TUR_BAD_DISC = 6,       // incompatible or unreadable medium
+        TUR_STOPPED = 7,        // medium present, needs START UNIT
+        TUR_UNIT_ATTENTION = 8  // unit attention kept being reported
+    };
+
+    // Sends TEST UNIT READY through 'scsiIf' and decodes the result into
+    // an UnitReadyStatus. Unit attention conditions (e.g. "medium may have
+    // changed") are retried, since the drive clears them once reported.
+    // Has no side effects on the drive, so it is suitable for status
+    // polling, and it only uses 'scsiIf', so it can run without a driver
+    // object. Unexpected errors are printed only if 'showErrors' is set.
+    static int unitReady(ScsiIf &scsiIf, bool showErrors);
+
     // general commands
     virtual int testUnitReady(int ignoreAttention = true) const;
     virtual int startStopUnit(int) const;
