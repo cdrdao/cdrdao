@@ -90,12 +90,12 @@ class GenericMMC : public CdrDriver
       \return Binary OR of the capabilities.
       \sa CDR_READ_CAP_DATA_PW_RAW and similar.
     */
-    unsigned long getReadCapabilities(const CdToc *, int) const;
+    unsigned long getReadCapabilities(const CdToc *, int) const override;
 
     /*! \brief MMC compatible drives take little endian samples
       \return 0
     */
-    int bigEndianSamples() const { return 0; }
+    int bigEndianSamples() const override { return 0; }
 
     /*! \brief Sanity checking of the TOC
 
@@ -105,7 +105,7 @@ class GenericMMC : public CdrDriver
 
       \return 0 if OK, 1 if some warning, 2 on error
     */
-    int checkToc(const Toc *);
+    int checkToc(const Toc *) override;
     CdTextWrite cdTextWrite() const override;
 
     /*! \brief Sets read/write speed
@@ -116,7 +116,7 @@ class GenericMMC : public CdrDriver
       \param int Read speed as multiplier.
       \return 0 on success, 1 if SCSI command error
     */
-    int speed(int);
+    int speed(int) override;
 
     /*! \brief Returns current write speed
 
@@ -124,10 +124,10 @@ class GenericMMC : public CdrDriver
       mode page 0x2A. Information is extracted from this structure.
       \return Write speed (as multiplier) or 0 if SCSI error occurred.
     */
-    int speed();
+    int speed() override;
 
-    bool rspeed(int);
-    int rspeed();
+    bool rspeed(int) override;
+    int rspeed() override;
 
     /*! \brief Gathers various info about inserted disk.
 
@@ -139,7 +139,7 @@ class GenericMMC : public CdrDriver
       - Reads ATIP data (READ TOC 0x43, parameter 4)
       \return Pointer to protected attribute GenericMMC::diskInfo_
     */
-    DiskInfo *diskInfo();
+    DiskInfo *diskInfo() override;
 
     /*! \brief Loads or ejects tray
 
@@ -147,7 +147,7 @@ class GenericMMC : public CdrDriver
       \param int 0 to load tray, 1 to eject
       \return 0 on success, 1 on error
     */
-    int loadUnload(int) const;
+    int loadUnload(int) const override;
 
     /*! \brief Blanks a CDRW
 
@@ -159,7 +159,7 @@ class GenericMMC : public CdrDriver
       \param BlankingMode Either BLANK_FULL or BLANK_MINIMAL
       \return 0 on success or 1 on error
     */
-    int blankDisk(BlankingMode);
+    int blankDisk(BlankingMode) override;
 
     /*! \brief Initializes internal stuff before a write session.
 
@@ -174,7 +174,7 @@ class GenericMMC : public CdrDriver
       \param Toc* TOC of the disk you want to write
       \return 0 on success, 1 on error
     */
-    int initDao(const Toc *);
+    int initDao(const Toc *) override;
 
     /*! \brief Begins write process
 
@@ -183,7 +183,7 @@ class GenericMMC : public CdrDriver
       is always -150. First 150 sectors are zeroed.
       \return 0 on success, 1 on error
     */
-    int startDao();
+    int startDao() override;
 
     /*! \brief Finishes a writing
 
@@ -193,13 +193,13 @@ class GenericMMC : public CdrDriver
       Then the CD-TEXT encoder and the zero buffer are deleted.
       \return 0 on success, 1 on error
     */
-    int finishDao();
+    int finishDao() override;
 
     /*! \brief Aborts a writing
 
       Flush device cache and delete CD-TEXT encoder.
     */
-    void abortDao();
+    void abortDao() override;
 
     /*! \brief Writes data to target
 
@@ -213,7 +213,8 @@ class GenericMMC : public CdrDriver
       \param len Number of blocks to write
       \return 0 if OK, 1 if WRITE command failed
     */
-    int writeData(TrackData::Mode, TrackData::SubChannelMode, long &lba, const char *buf, long len);
+    int writeData(TrackData::Mode, TrackData::SubChannelMode, long &lba, const char *buf,
+                  long len) override;
 
     /*! \brief Gets useful parameters about the device.
 
@@ -227,7 +228,7 @@ class GenericMMC : public CdrDriver
       \param showErrorMsg If true print out errors
       \return Pointer to the protected variable driveInfo_
     */
-    const DriveInfo *driveInfo(bool showErrorMsg);
+    const DriveInfo *driveInfo(bool showErrorMsg) override;
 
     /*!
       Returns 0 or 1 depending on the SubChannelMode parameter.
@@ -237,7 +238,7 @@ class GenericMMC : public CdrDriver
       \param SubChannelMode One of TrackData::SubChannelMode
       \return 0 or 1 (see above)
     */
-    int subChannelEncodingMode(TrackData::SubChannelMode) const;
+    int subChannelEncodingMode(TrackData::SubChannelMode) const override;
 
   protected:
     int scsiTimeout_;                        // Timeout for commands on the target
@@ -292,7 +293,7 @@ class GenericMMC : public CdrDriver
       \param endLba End subchannel scan here
       \return 1 if valid MCN found, else 0
     */
-    int readCatalog(Toc *, long startLba, long endLba);
+    int readCatalog(Toc *, long startLba, long endLba) override;
     /*! \brief Reads media ISRC
 
       Uses READ SUBCHANNEL 0x42 with parameter 0x03. Track is specified
@@ -302,7 +303,7 @@ class GenericMMC : public CdrDriver
       \param char* Pre-allocated buffer to store ISRC (12 bytes)
       \return Always 0
     */
-    int readIsrc(int, char *);
+    int readIsrc(int, char *) override;
 
     /*! \brief Sets read/write speed
 
@@ -351,7 +352,7 @@ class GenericMMC : public CdrDriver
       \todo This documentation needs to be updated
       \return 0 on success, 1 on SCSI command error.
     */
-    bool readBufferCapacity(long *capacity, long *available);
+    bool readBufferCapacity(long *capacity, long *available) override;
 
     /*! \brief Creates cue sheet for current toc
 
@@ -395,11 +396,12 @@ class GenericMMC : public CdrDriver
     int writeCdTextLeadIn();
 
     int analyzeTrack(TrackData::Mode, int trackNr, long startLba, long endLba, Msf *index,
-                     int *indexCnt, long *pregap, char *isrcCode, unsigned char *ctl);
+                     int *indexCnt, long *pregap, char *isrcCode, unsigned char *ctl) override;
 
-    int getTrackIndex(long lba, int *trackNr, int *indexNr, unsigned char *ctl);
+    int getTrackIndex(long lba, int *trackNr, int *indexNr, unsigned char *ctl) override;
 
-    int readSubChannels(TrackData::SubChannelMode, long lba, long len, SubChannel ***, Sample *);
+    int readSubChannels(TrackData::SubChannelMode, long lba, long len, SubChannel ***,
+                        Sample *) override;
 
     /*!
       \brief retrieve mode of the track that starts at the specified trackStartLba.
@@ -409,15 +411,15 @@ class GenericMMC : public CdrDriver
       CdrDriver::determineSectorMode to identify track mode.
       \return TrackData::Mode
     */
-    TrackData::Mode getTrackMode(int, long trackStartLba);
+    TrackData::Mode getTrackMode(int, long trackStartLba) override;
 
-    CdRawToc *getRawToc(int sessionNr, int *len);
+    CdRawToc *getRawToc(int sessionNr, int *len) override;
 
     long readTrackData(TrackData::Mode, TrackData::SubChannelMode, long lba, long len,
-                       unsigned char *buf);
+                       unsigned char *buf) override;
 
     int readAudioRange(ReadDiskInfo *, int fd, long start, long end, int startTrack, int endTrack,
-                       TrackInfo *);
+                       TrackInfo *) override;
 
     int readCdTest(long lba, long len, int subChanMode) const;
 

@@ -34,20 +34,20 @@ class SonyCDU948 : public SonyCDU920
     ~SonyCDU948();
     static CdrDriver *instance(std::shared_ptr<ScsiIf> scsiIf, unsigned long options);
 
-    int checkToc(const Toc *);
+    int checkToc(const Toc *) override;
     CdTextWrite cdTextWrite() const override { return CdTextWrite::ENABLED; }
 
     int multiSession(int);
-    int speed(int);
+    int speed(int) override;
 
-    int initDao(const Toc *);
-    int startDao();
+    int initDao(const Toc *) override;
+    int startDao() override;
 
   protected:
     CdTextSubChannelEncoder *cdTextEncoder_;
 
-    int selectSpeed();
-    int setWriteParameters();
+    int selectSpeed() override;
+    int setWriteParameters() override;
 
     int writeCdTextLeadIn();
 };
