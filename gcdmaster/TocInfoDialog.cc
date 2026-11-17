@@ -235,7 +235,7 @@ TocInfoDialog::TocInfoDialog(Gtk::Window *parent)
     bbox->append(*imdbButton_);
     {
         auto cb = Gtk::make_managed<Gtk::Button>("Clear");
-        cb->signal_clicked().connect([this]() { this->clear(); });
+        cb->signal_clicked().connect(sigc::mem_fun(*this, &TocInfoDialog::clearAction));
         bbox->append(*cb);
     }
     auto cancelButton = Gtk::make_managed<Gtk::Button>(_("Cancel"));
@@ -603,6 +603,14 @@ void TocInfoDialog::addBlockAction()
     int pos = cdTextNotebook_->page_num(*page.pageWidget);
     if (pos >= 0)
         cdTextNotebook_->set_current_page(pos);
+}
+
+void TocInfoDialog::clearAction()
+{
+    // Drop all CD-TEXT language blocks. Unlike clear(), keep the per-track
+    // rows and the TOC info: they reflect the TOC, not user-entered data.
+    while (!visibleBlocks_.empty())
+        removeBlock(visibleBlocks_.back());
 }
 
 void TocInfoDialog::removeBlock(int slot)

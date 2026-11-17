@@ -99,6 +99,7 @@ class TocInfoDialog : public Gtk::Window
     void okAction();
     void cancelAction();
     void imdbAction();
+    void clearAction();
     void fillPerformerAction(int l);
     void activatePerformerAction(int l);
 
