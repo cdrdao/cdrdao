@@ -23,8 +23,7 @@
 
 #include "Cue2Toc.h"
 #include "Toc.h"
-
-extern Toc *parseToc(const char *, const char *);
+#include "TocParser.h"
 
 Toc *parseCue(FILE *fp, const char *filename)
 {

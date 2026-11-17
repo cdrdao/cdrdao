@@ -1,10 +1,3 @@
-TocLexer.dlg
-TocLexerBase.cpp
-TocLexerBase.h
-TocParser.cpp
-TocParserGram.cpp
-TocParserGram.h
-TocParserTokens.h
 Makefile
 Makefile.in
 .deps

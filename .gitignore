@@ -14,5 +14,3 @@ aclocal.m4
 *.a
 *~
 specs/cdrdao.fedora.spec
-pccts/antlr/antlr
-pccts/dlg/dlg

@@ -175,7 +175,7 @@ class Toc
 
   private:
     friend class TocImpl;
-    friend class TocParserGram;
+    friend class TocParser;
     friend class TocReader;
     friend class TrackIterator;
 

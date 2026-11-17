@@ -37,6 +37,7 @@
 #include "Toc.h"
 #include "TrackDataList.h"
 #include "log.h"
+#include "TocParser.h"
 #include "util.h"
 
 using std::string;
@@ -46,8 +47,6 @@ extern "C" {
 extern int strcasecmp(const char *, const char *);
 }
 #endif
-
-extern Toc *parseToc(FILE *fp, const char *filename);
 
 Toc::Toc() : length_(0)
 {

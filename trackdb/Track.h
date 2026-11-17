@@ -127,7 +127,7 @@ class Track
     bool recomputeLength();
 
   private:
-    friend class TocParserGram;
+    friend class TocParser;
     friend class Toc;
     friend class TrackReader;
     friend class SubTrackIterator;

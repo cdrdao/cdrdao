@@ -11,7 +11,6 @@ SUBDIRS = trackdb utils paranoia dao $(MAYBE_GCDMASTER)
 DIST_SUBDIRS = trackdb utils paranoia dao gcdmaster
 
 EXTRA_DIST =		\
-	pccts/h/*.h	\
 	AUTHORS		\
 	ChangeLog	\
 	COPYING		\

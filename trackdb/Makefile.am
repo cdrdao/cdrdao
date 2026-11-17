@@ -26,7 +26,6 @@ libtrackdb_a_SOURCES = \
 	TrackDataList.h		\
 	Track.h			\
 	util.h			\
-	TocParser.g		\
 	TempFileManager.cc	\
 	FormatConverter.cc	\
 	TempFileManager.h	\
@@ -37,19 +36,11 @@ libtrackdb_a_SOURCES = \
 	CueParser.cc		\
 	log.h			\
 	log.cc			\
-	TocParser.cpp		\
-	TocParserGram.cpp	\
-	TocLexerBase.cpp	\
-	TocLexerBase.h		\
-	TocParserGram.h		\
-	TocParserTokens.h	\
-	AParser.cpp		\
-	DLexerBase.cpp		\
-	ATokenBuffer.cpp
+	TocParser.cc		\
+	TocParser.h
 
 
 AM_CXXFLAGS = @AO_CFLAGS@
-AM_CPPFLAGS = -I$(top_builddir)/pccts/h
 
 if COND_AO
 libtrackdb_a_SOURCES += FormatSupport.cc FormatSupport.h
