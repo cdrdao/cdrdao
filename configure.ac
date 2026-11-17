@@ -383,10 +383,6 @@ AM_CONDITIONAL([COND_OGG], [test "$with_ogg_support" = yes])
 AM_CONDITIONAL([COND_FLAC], [test "$with_flac_support" = yes])
 AM_CONDITIONAL([COND_AO], [test "$have_ao" = yes])
 
-if test "$en_gcdmaster" = yes; then
-GLIB_GSETTINGS
-fi
-
 AC_CONFIG_FILES([
         trackdb/Makefile
         dao/Makefile

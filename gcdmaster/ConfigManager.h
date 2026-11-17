@@ -20,8 +20,20 @@
 #ifndef __CONFIG_MANAGER_H
 #define __CONFIG_MANAGER_H
 
-#include <giomm/settings.h>
+#include <glibmm/keyfile.h>
+#include <glibmm/ustring.h>
 #include <string>
+#include <vector>
+
+// Persistent application settings, stored as a GKeyFile (INI-style)
+// in the per-user configuration directory returned by
+// Glib::get_user_config_dir():
+//
+//   Linux/FreeBSD/macOS: $XDG_CONFIG_HOME/gcdmaster/gcdmaster.conf
+//                        (defaults to ~/.config/gcdmaster/gcdmaster.conf)
+//   Windows:             %LOCALAPPDATA%\gcdmaster\gcdmaster.conf
+//
+// Every setter writes the file immediately.
 
 class ConfigManager
 {
@@ -30,10 +42,10 @@ class ConfigManager
     virtual ~ConfigManager();
 
     Glib::ustring getCdrdaoPath() const;
-    void setCdrdaoPath(const Glib::ustring &dir) const;
+    void setCdrdaoPath(const Glib::ustring &path);
 
     Glib::ustring getTempDir() const;
-    void setTempDir(const Glib::ustring &dir) const;
+    void setTempDir(const Glib::ustring &dir);
 
     bool getEjectWarning() const;
     void setEjectWarning(bool value);
@@ -45,10 +57,17 @@ class ConfigManager
     void setReloadWarning(bool value);
 
     void setConfiguredDevices(const std::vector<Glib::ustring> &strings);
-    std::vector<Glib::ustring> getConfiguredDevices(void) const;
+    std::vector<Glib::ustring> getConfiguredDevices() const;
+
+    const std::string &filename() const { return filename_; }
 
   protected:
-    Glib::RefPtr<Gio::Settings> settings_;
+    Glib::ustring getString(const char *key, const Glib::ustring &def) const;
+    bool getBoolean(const char *key, bool def) const;
+    void save();
+
+    Glib::RefPtr<Glib::KeyFile> keyFile_;
+    std::string filename_;
 };
 
 #endif

@@ -144,9 +144,6 @@ appreg_DATA = gcdmaster.applications
 icondir = $(datadir)/pixmaps
 icon_DATA = gcdmaster.png gcdmaster-doc.png
 
-gsettings_SCHEMAS = org.gnome.gcdmaster.gschema.xml
-@GSETTINGS_RULES@
-
 RESOURCE_DEPS = \
 	ui/app_menu.ui		\
 	ui/gears_audio_menu.ui	\
@@ -188,6 +185,5 @@ EXTRA_DIST = \
 	$(freedesktop_DATA)	\
 	$(appreg_DATA)	\
 	ui/gresource.xml \
-	org.gnome.gcdmaster.gschema.xml \
 	$(RESOURCE_DEPS) \
 	BUGS TASKS

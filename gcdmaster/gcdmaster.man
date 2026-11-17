@@ -555,8 +555,8 @@ certain device combinations if multiple devices are recording.
 cdrdao:
 executed for recording
 .TP
-$HOME/.gnome/GnomeCDMaster:
-stores settings permanently
+$XDG_CONFIG_HOME/gcdmaster/gcdmaster.conf (default ~/.config/gcdmaster/gcdmaster.conf):
+stores settings permanently (GKeyFile/INI format)
 
 .SH AUTHOR
 Andreas Mueller mueller@daneb.ping.de

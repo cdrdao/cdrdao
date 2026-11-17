@@ -18,21 +18,19 @@ be specified with a text file. Audio data may be in WAVE or raw
 format.
 
 %package -n gcdmaster
-Summary:        The Gnome2/GTK2 GUI front-end to cdrdao
+Summary:        The GTK GUI front-end to cdrdao
 Group:          Applications/Multimedia
 Requires:       %{name} = %{epoch}:%{version}-%{release}
-BuildRequires:	gtkmm30-devel
-BuildRequires:  libsigc++20-devel >= 0:1.2
+BuildRequires:  gtkmm4.0-devel
+BuildRequires:  libsigc++30-devel >= 0:3.0
 BuildRequires:  libvorbis-devel >= 0:1.0
 BuildRequires:  libao-devel >= 0:0.8
 BuildRequires:  libmad-devel
-BuildRequires: GConf2
-Requires(pre): GConf2
-Requires(post): GConf2
-Requires(preun): GConf2
+BuildRequires:  flac-devel
+BuildRequires:  libsamplerate-devel
 
 %description -n gcdmaster
-Gcdmaster is a GNOME2 GUI front-end to cdrdao that makes it easy to
+Gcdmaster is a GTK GUI front-end to cdrdao that makes it easy to
 visualize and manipulate audio information before burning it onto
 CD. Its features include: cut/copy/paste of sound samples, track marks
 edition and silence insertion.
@@ -42,13 +40,12 @@ edition and silence insertion.
 
 
 %build
-%configure --disable-schemas-compile
+%configure
 make %{?_smp_mflags}
 
 
 %install
 rm -rf $RPM_BUILD_ROOT
-export GCONF_DISABLE_MAKEFILE_SCHEMA_INSTALL=1
 make install DESTDIR=$RPM_BUILD_ROOT
  
 find $RPM_BUILD_ROOT -type f -name "*.la" -exec rm -f {} ';'
@@ -57,18 +54,9 @@ find $RPM_BUILD_ROOT -type f -name "*.la" -exec rm -f {} ';'
 %clean
 rm -rf $RPM_BUILD_ROOT
 
-%pre
-%gconf_schema_prepare org.gnome.gcdmaster
-
-%post
-%gconf_schema_upgrade org.gnome.gcdmaster
-
-%preun
-%gconf_schema_remove org.gnome.gcdmaster
-
 %files
 %defattr(-, root, root, -)
-%doc AUTHORS COPYING CREDITS ChangeLog INSTALL README NEWS README.PlexDAE README.Win32
+%doc AUTHORS COPYING CREDITS ChangeLog INSTALL NEWS README.PlexDAE
 %{_bindir}/cdrdao
 %{_datadir}/cdrdao
 %{_bindir}/toc2*
@@ -79,12 +67,10 @@ rm -rf $RPM_BUILD_ROOT
 %files -n gcdmaster
 %defattr(-, root, root, -)
 %{_bindir}/gcdmaster
-%{_datadir}/gcdmaster
 %{_datadir}/mime-info/gcdmaster*
 %{_datadir}/mime/packages/gcdmaster.xml
 %{_datadir}/applications/gcdmaster.desktop
 %{_datadir}/application-registry/gcdmaster.applications
-%{_datadir}/glib-2.0/schemas/org.gnome.gcdmaster.gschema.xml
 %{_datadir}/pixmaps/gcdmaster*
 %{_mandir}/man1/gcdmaster*
 %{_mandir}/man1/toc2*
