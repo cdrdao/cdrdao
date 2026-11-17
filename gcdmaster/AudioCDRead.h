@@ -41,6 +41,7 @@ class AudioCDRead : public Gtk::Window
     void on_datafile_button_clicked();
     void on_device_selected();
     void execute();
+    void executeConfirmed();
 
     RecordCDSource *CDSource_;
     Gtk::Button *datafileButton_;

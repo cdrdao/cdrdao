@@ -1093,6 +1093,92 @@ int CdrDriver::unitReady(ScsiIf &scsiIf, bool showErrors)
     return TUR_UNIT_ATTENTION;
 }
 
+int CdrDriver::readProfile(ScsiIf &scsiIf)
+{
+    unsigned char cmd[10];
+    unsigned char header[8];
+
+    memset(cmd, 0, 10);
+    memset(header, 0, 8);
+
+    cmd[0] = 0x46; // GET CONFIGURATION
+    cmd[1] = 0x01; // current features only
+    cmd[8] = 8;    // allocation length: header only
+
+    if (scsiIf.sendCmd(cmd, 10, NULL, 0, header, 8, 0) != 0)
+        return -1;
+
+    int profile = (header[6] << 8) | header[7];
+    log_message(4, "readProfile: 0x%04x", profile);
+
+    return profile;
+}
+
+void CdrDriver::mediumInfo(ScsiIf &scsiIf, MediumInfo *info)
+{
+    *info = MediumInfo();
+
+    info->profile = readProfile(scsiIf);
+
+    // READ DISC INFORMATION: disc status and erasable bit
+    {
+        unsigned char cmd[10];
+        unsigned char data[34];
+
+        memset(cmd, 0, 10);
+        memset(data, 0, sizeof(data));
+
+        cmd[0] = 0x51; // READ DISC INFORMATION
+        cmd[8] = sizeof(data);
+
+        if (scsiIf.sendCmd(cmd, 10, NULL, 0, data, sizeof(data), 0) == 0) {
+            info->discStatus = data[2] & 0x03;
+            info->erasable = (data[2] & 0x10) != 0;
+        }
+    }
+
+    // A blank disc has no TOC, and the track types only matter for CDs.
+    bool cd = info->profile <= 0 || (info->profile >= 0x08 && info->profile <= 0x0a);
+    if (info->discStatus == 0 || !cd)
+        return;
+
+    // READ TOC format 0000b: the control field of each track tells data
+    // tracks from audio tracks.
+    {
+        const int maxTracks = 100; // 99 tracks + lead-out
+        unsigned char cmd[10];
+        unsigned char data[4 + maxTracks * 8];
+
+        memset(cmd, 0, 10);
+        memset(data, 0, sizeof(data));
+
+        cmd[0] = 0x43; // READ TOC
+        cmd[6] = 1;    // starting track
+        cmd[7] = sizeof(data) >> 8;
+        cmd[8] = sizeof(data) & 0xff;
+
+        if (scsiIf.sendCmd(cmd, 10, NULL, 0, data, sizeof(data), 0) != 0)
+            return;
+
+        int len = ((data[0] << 8) | data[1]) + 2;
+        int n = std::min((len - 4) / 8, maxTracks);
+
+        for (int i = 0; i < n; i++) {
+            const unsigned char *d = data + 4 + i * 8;
+            if (d[2] == 0xaa) // lead-out
+                continue;
+            if (d[1] & 0x04)
+                info->dataTracks++;
+            else
+                info->audioTracks++;
+        }
+    }
+
+    log_message(4, "mediumInfo: profile 0x%04x, status %d, erasable %d, %d audio, %d data",
+                info->profile, info->discStatus, info->erasable, info->audioTracks,
+                info->dataTracks);
+}
+
 // Return: one of the UnitReadyStatus codes, except TUR_STOPPED (the unit
 // is started and tested again) and TUR_UNIT_ATTENTION (reported as ready
 // if 'ignoreUnitAttention' is set, as not ready otherwise).

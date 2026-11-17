@@ -47,6 +47,7 @@ class RecordTocDialog : public Gtk::Window
 
     void stop();
     void startAction();
+    void checkCdText();
     void startActionConfirmed(int clicked_result);
 };
 

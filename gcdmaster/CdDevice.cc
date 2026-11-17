@@ -65,6 +65,39 @@ constexpr int IO_HANDOFF_TIMEOUT_MS = 3000;
 // doesn't spin up the drive, so this can be short.
 constexpr int STATUS_POLL_INTERVAL_MS = 1000;
 
+// How many polls in a row try to identify a medium that comes out as
+// unknown (e.g. the disc was still spinning up), before giving up until
+// it is changed.
+constexpr int MEDIUM_MAX_ATTEMPTS = 3;
+
+CdDevice::Medium classifyMedium(const MediumInfo &info)
+{
+    int p = info.profile;
+
+    if (p >= 0x10 && p <= 0x2f)
+        return CdDevice::MEDIUM_DVD;
+    if (p >= 0x40 && p <= 0x4f)
+        return CdDevice::MEDIUM_BD;
+    // Anything else that isn't a CD profile (HD DVD, magneto-optical, ...)
+    if (p > 0 && (p < 0x08 || p > 0x0a))
+        return CdDevice::MEDIUM_UNKNOWN;
+
+    if (info.discStatus == 0) {
+        if (p == 0x0a || info.erasable)
+            return CdDevice::MEDIUM_BLANK_CDRW;
+        return CdDevice::MEDIUM_BLANK_CDR;
+    }
+
+    if (info.audioTracks > 0 && info.dataTracks > 0)
+        return CdDevice::MEDIUM_MIXED_CD;
+    if (info.audioTracks > 0)
+        return CdDevice::MEDIUM_AUDIO_CD;
+    if (info.dataTracks > 0)
+        return CdDevice::MEDIUM_DATA_CD;
+
+    return CdDevice::MEDIUM_UNKNOWN;
+}
+
 std::unique_ptr<DeviceMonitor> MONITOR;
 sigc::connection STATUS_TIMER;
 
@@ -209,11 +242,15 @@ class DeviceProbeTask : public Task
     CdDevice::DeviceType type_ = CdDevice::CD_R;
 };
 
-// Sends TEST UNIT READY to a drive.
+// Sends TEST UNIT READY to a drive and, if 'identify' is set and the
+// drive is ready, identifies the medium.
 class DeviceStatusTask : public Task
 {
   public:
-    DeviceStatusTask(CdDevice *dev) : dev_(dev), sif_(dev->scsiIf_) {}
+    DeviceStatusTask(CdDevice *dev, bool identify)
+        : dev_(dev), sif_(dev->scsiIf_), identify_(identify)
+    {
+    }
 
     void run() override
     {
@@ -227,6 +264,15 @@ class DeviceStatusTask : public Task
 
         int oldTimeout = sif_->timeout(STATUS_TIMEOUT_S);
         int ret = CdrDriver::unitReady(*sif_, false);
+
+        if (identify_ && (ret == CdrDriver::TUR_READY || ret == CdrDriver::TUR_STOPPED)) {
+            MediumInfo info;
+            CdrDriver::mediumInfo(*sif_, &info);
+            medium_ = classifyMedium(info);
+            discStatus_ = info.discStatus;
+            erasable_ = info.erasable;
+        }
+
         sif_->timeout(oldTimeout);
         sif_->release();
 
@@ -264,8 +310,23 @@ class DeviceStatusTask : public Task
 
         // Discard the result if the drive went away or a cdrdao process
         // took it over in the meantime.
-        if (!skipped_ && dev_->present_ && !dev_->busy())
-            dev_->setStatus(status_);
+        if (!skipped_ && dev_->present_ && !dev_->busy()) {
+            if (status_ != CdDevice::DEV_READY) {
+                dev_->setStatus(status_);
+            } else if (identify_) {
+                if (medium_ == CdDevice::MEDIUM_UNKNOWN &&
+                    ++dev_->mediumAttempts_ < MEDIUM_MAX_ATTEMPTS) {
+                    // Try again at the next poll.
+                } else {
+                    dev_->mediumStale_ = false;
+                }
+                dev_->mediumDiscStatus_ = discStatus_;
+                dev_->mediumErasable_ = erasable_;
+                dev_->setStatus(status_, medium_);
+            } else {
+                dev_->setStatus(status_, dev_->medium_);
+            }
+        }
 
         dev_->runDeferredProbe();
         delete this;
@@ -274,8 +335,12 @@ class DeviceStatusTask : public Task
   private:
     CdDevice *dev_;
     std::shared_ptr<ScsiIf> sif_;
+    bool identify_;
     bool skipped_ = false;
     CdDevice::Status status_ = CdDevice::DEV_UNKNOWN;
+    CdDevice::Medium medium_ = CdDevice::MEDIUM_NONE;
+    int discStatus_ = -1;
+    bool erasable_ = false;
 };
 
 std::vector<std::string> CdDevice::DRIVER_NAMES = {
@@ -353,13 +418,84 @@ void CdDevice::status(Status s)
 
 void CdDevice::setStatus(Status s)
 {
-    if (s == status_)
+    setStatus(s, s == DEV_READY ? medium_ : MEDIUM_NONE);
+}
+
+void CdDevice::setStatus(Status s, Medium m)
+{
+    if (s != DEV_READY) {
+        m = MEDIUM_NONE;
+        // Whatever is in the drive once it is ready again must be
+        // identified anew.
+        mediumStale_ = true;
+        mediumAttempts_ = 0;
+        mediumDiscStatus_ = -1;
+        mediumErasable_ = false;
+    }
+
+    if (s == status_ && m == medium_)
         return;
 
-    log_message(1, "%s: status %s -> %s", dev_.c_str(), status2string(status_).c_str(),
-                status2string(s).c_str());
+    log_message(1, "%s: status %s -> %s", dev_.c_str(), statusText().c_str(),
+                (s == DEV_READY && m != MEDIUM_NONE ? medium2string(m) : status2string(s)).c_str());
     status_ = s;
+    medium_ = m;
     signalStatusChanged().emit(this);
+}
+
+Glib::ustring CdDevice::mediumProblem(Action action) const
+{
+    if (status_ != DEV_READY || medium_ == MEDIUM_NONE || medium_ == MEDIUM_UNKNOWN)
+        return "";
+
+    bool notCd = medium_ == MEDIUM_DVD || medium_ == MEDIUM_BD;
+    bool blank = medium_ == MEDIUM_BLANK_CDR || medium_ == MEDIUM_BLANK_CDRW;
+    auto notCdText = [&] {
+        return Glib::ustring::compose(_("The disc in %1 is a %2, not a CD."), description_,
+                                      medium2string(medium_));
+    };
+
+    switch (action) {
+    case A_RECORD:
+        if (notCd)
+            return notCdText();
+        // A written disc can only be recorded to if it is appendable.
+        if (!blank && mediumDiscStatus_ >= 2) {
+            if (mediumErasable_)
+                return Glib::ustring::compose(
+                    _("The CD-RW in %1 is not blank. It must be blanked first."), description_);
+            return Glib::ustring::compose(
+                _("The disc in %1 has already been written and is closed."), description_);
+        }
+        break;
+    case A_BLANK:
+        if (notCd)
+            return notCdText();
+        if (medium_ == MEDIUM_BLANK_CDRW)
+            return Glib::ustring::compose(_("The CD-RW in %1 is already blank."), description_);
+        if (medium_ == MEDIUM_BLANK_CDR || (mediumDiscStatus_ >= 0 && !mediumErasable_))
+            return Glib::ustring::compose(
+                _("The disc in %1 is not rewritable, so it cannot be blanked."), description_);
+        break;
+    case A_READ:
+        if (notCd)
+            return notCdText();
+        if (blank)
+            return Glib::ustring::compose(_("The disc in %1 is blank."), description_);
+        if (medium_ == MEDIUM_DATA_CD)
+            return Glib::ustring::compose(_("The disc in %1 has no audio tracks."), description_);
+        break;
+    default:
+        break;
+    }
+    return "";
+}
+
+std::string CdDevice::statusText() const
+{
+    if (status_ == DEV_READY && medium_ != MEDIUM_NONE)
+        return medium2string(medium_);
+    return status2string(status_);
 }
 
 int CdDevice::exitStatus() const
@@ -407,7 +543,7 @@ void CdDevice::pollStatus()
         return;
 
     ioPending_ = true;
-    deviceTasks()->addJob(new DeviceStatusTask(this));
+    deviceTasks()->addJob(new DeviceStatusTask(this, mediumStale_ || status_ != DEV_READY));
 }
 
 bool CdDevice::checkProcess()
@@ -1068,6 +1204,31 @@ const std::string CdDevice::status2string(Status s)
     }
 }
 
+const std::string CdDevice::medium2string(Medium m)
+{
+    switch (m) {
+    case MEDIUM_BLANK_CDR:
+        return _("Blank CD-R");
+    case MEDIUM_BLANK_CDRW:
+        return _("Blank CD-RW");
+    case MEDIUM_AUDIO_CD:
+        return _("Audio CD");
+    case MEDIUM_DATA_CD:
+        return _("Data CD");
+    case MEDIUM_MIXED_CD:
+        return _("Mixed CD");
+    case MEDIUM_DVD:
+        return _("DVD");
+    case MEDIUM_BD:
+        return _("Blu-ray");
+    case MEDIUM_UNKNOWN:
+        return _("Unknown Disc");
+    case MEDIUM_NONE:
+    default:
+        return "";
+    }
+}
+
 const std::string CdDevice::deviceType2string(DeviceType t)
 {
     const char *ret = NULL;
@@ -1305,8 +1466,11 @@ void CdDevice::startMonitor()
         }
     });
     MONITOR->signal_media_changed().connect([] {
-        for (auto dev : DEVICE_LIST)
+        for (auto dev : DEVICE_LIST) {
+            dev->mediumStale_ = true;
+            dev->mediumAttempts_ = 0;
             dev->pollStatus();
+        }
     });
     MONITOR->start();
 

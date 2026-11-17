@@ -24,6 +24,7 @@
 #include <gtkmm.h>
 #include <memory>
 #include <string>
+#include <functional>
 #include <optional>
 
 class TocEdit;
@@ -38,6 +39,9 @@ class DeviceSelector : public Gtk::Frame
     CdDevice *selection();
     // Selects the first device if none is selected.
     void selectOne();
+    // Selects the first listed device for which 'pred' is true, unless the
+    // selected one already satisfies it. Returns false if none does.
+    bool selectFirst(const std::function<bool(const CdDevice *)> &pred);
     void appendTableEntry(CdDevice *);
     // Rebuilds the list from CdDevice::deviceList(), keeping the current
     // selection if that device is still listed. The selector does this by

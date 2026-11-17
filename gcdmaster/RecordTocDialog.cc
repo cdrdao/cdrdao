@@ -146,6 +146,23 @@ void RecordTocDialog::startAction()
         return;
     }
 
+    auto problem = CDTarget->deviceSelector()->selection()->mediumProblem(CdDevice::A_RECORD);
+    if (!problem.empty()) {
+        auto ask = Ask2Box::create(*this, problem, 1, {_("Do you want to record anyway?")});
+        ask->dialogDone.connect([this](int button) {
+            if (button == 0)
+                checkCdText();
+        });
+        ask->choose();
+        return;
+    }
+
+    checkCdText();
+}
+
+void RecordTocDialog::checkCdText()
+{
+    Toc *toc = tocEdit_->toc();
     auto check_result = toc->checkCdTextData();
 
     if (check_result == 0) {

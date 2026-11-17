@@ -70,7 +70,7 @@ DeviceSelector::DeviceSelector(std::optional<CdDevice::DeviceType> filterType)
         auto label = dynamic_cast<Gtk::Label *>(list_item->get_child());
         it->statusLabel_ = label;
         if (label)
-            label->set_text(CdDevice::status2string(it->device_->status()));
+            label->set_text(it->device_->statusText());
     };
     auto unbind_status = [](const Glib::RefPtr<Gtk::ListItem> &list_item) {
         auto it = std::dynamic_pointer_cast<ListColumns>(list_item->get_item());
@@ -147,7 +147,7 @@ void DeviceSelector::onStatusChanged(CdDevice *device)
     for (guint i = 0; i < listModel_->get_n_items(); i++) {
         auto item = listModel_->get_item(i);
         if (item && item->device_ == device && item->statusLabel_)
-            item->statusLabel_->set_text(CdDevice::status2string(device->status()));
+            item->statusLabel_->set_text(device->statusText());
     }
 }
 
@@ -217,8 +217,23 @@ void DeviceSelector::importStatus()
     for (guint i = 0; i < listModel_->get_n_items(); i++) {
         auto item = listModel_->get_item(i);
         if (item && item->statusLabel_)
-            item->statusLabel_->set_text(CdDevice::status2string(item->device_->status()));
+            item->statusLabel_->set_text(item->device_->statusText());
     }
+}
+
+bool DeviceSelector::selectFirst(const std::function<bool(const CdDevice *)> &pred)
+{
+    CdDevice *current = selection();
+    if (current && pred(current))
+        return true;
+
+    for (guint i = 0; i < listModel_->get_n_items(); i++) {
+        if (pred(listModel_->get_item(i)->device_)) {
+            selectionModel_->set_selected(i);
+            return true;
+        }
+    }
+    return false;
 }
 
 void DeviceSelector::selectOne()

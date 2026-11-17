@@ -50,6 +50,18 @@ class CdDevice : public sigc::trackable
         DEV_BAD_DISC,
         DEV_UNKNOWN
     };
+    // The medium in a ready drive, see medium().
+    enum Medium {
+        MEDIUM_NONE,    // not identified (yet), or drive not ready
+        MEDIUM_UNKNOWN, // a disc that could not be identified
+        MEDIUM_BLANK_CDR,
+        MEDIUM_BLANK_CDRW,
+        MEDIUM_AUDIO_CD,
+        MEDIUM_DATA_CD,
+        MEDIUM_MIXED_CD,
+        MEDIUM_DVD,
+        MEDIUM_BD
+    };
     enum DeviceType {
         CD_R,
         CD_RW,
@@ -75,16 +87,36 @@ class CdDevice : public sigc::trackable
     const std::string &description() const { return description_; }
 
     Status status() const { return status_; }
+
+    // The medium in the drive. Only meaningful while status() is
+    // DEV_READY; MEDIUM_NONE otherwise.
+    Medium medium() const { return medium_; }
+
+    // Why the medium in the drive is unsuitable for 'action' (A_RECORD,
+    // A_READ or A_BLANK), as a sentence for the user; empty if it looks
+    // suitable or is not known.
+    Glib::ustring mediumProblem(Action action) const;
+
+    // Whether the drive holds a disc with audio tracks.
+    bool hasAudioDisc() const
+    {
+        return status_ == DEV_READY && (medium_ == MEDIUM_AUDIO_CD || medium_ == MEDIUM_MIXED_CD);
+    }
+
+    // Text for the status column of the device lists: the medium while
+    // the drive is ready, the status otherwise.
+    std::string statusText() const;
     Process *process() const { return process_; }
 
     int exitStatus() const;
 
     void status(Status);
 
-    // Schedules an asynchronous TEST UNIT READY on a worker thread. The
-    // result is applied on the main thread, which emits
-    // signalStatusChanged() and guiUpdate(UPD_CD_DEVICE_STATUS) if the
-    // status changed. Does nothing while the drive is used by a cdrdao
+    // Schedules an asynchronous TEST UNIT READY on a worker thread,
+    // followed by the identification of the medium if the drive became
+    // ready or the medium may have changed. The result is applied on the
+    // main thread, which emits signalStatusChanged() if the status or
+    // the medium changed. Does nothing while the drive is used by a cdrdao
     // process or another I/O on it is pending.
     void pollStatus();
 
@@ -166,6 +198,7 @@ class CdDevice : public sigc::trackable
     static DeviceType devtypeName2Id(const std::string &);
 
     static const std::string status2string(Status);
+    static const std::string medium2string(Medium);
     static const std::string deviceType2string(DeviceType);
 
     static void importSettings();
@@ -226,6 +259,16 @@ class CdDevice : public sigc::trackable
     std::shared_ptr<ScsiIf> scsiIf_;
     CdrDriver *cdDriver_ = nullptr;
     Status status_ = DEV_UNKNOWN;
+    Medium medium_ = MEDIUM_NONE;
+    // Details of medium_: READ DISC INFORMATION disc status (-1 unknown,
+    // 0 blank, 1 appendable, 2 complete) and erasable bit.
+    int mediumDiscStatus_ = -1;
+    bool mediumErasable_ = false;
+    // The medium must be identified at the next poll that finds the drive
+    // ready (e.g. the system reported a media change).
+    bool mediumStale_ = true;
+    // Identification attempts that gave MEDIUM_UNKNOWN; see pollStatus().
+    int mediumAttempts_ = 0;
 
     bool present_ = true;
     bool probed_ = false;
@@ -275,8 +318,10 @@ class CdDevice : public sigc::trackable
     // not be started), allowing in-process I/O again.
     void reclaimDevice();
 
-    // Sets status_, emitting signalStatusChanged() if it changed.
+    // Sets status_ (and medium_, which is reset unless the drive is
+    // ready), emitting signalStatusChanged() if either changed.
     void setStatus(Status s);
+    void setStatus(Status s, Medium m);
 
     // Reaps the cdrdao child process if it has exited. Returns true if
     // the status changed.

@@ -62,6 +62,7 @@ class BlankCDDialog : public Gtk::Window
     // Internal Logic Methods
     void stop();
     void startAction();
+    void startActionConfirmed();
     void speedButtonChanged();
     void speedChanged();
 

@@ -165,6 +165,26 @@ void BlankCDDialog::startAction()
         return;
     }
 
+    auto problem = deviceSelector_->selection()->mediumProblem(CdDevice::A_BLANK);
+    if (!problem.empty()) {
+        auto ask = Ask2Box::create(*this, problem, 1, {_("Do you want to blank anyway?")});
+        ask->dialogDone.connect([this](int button) {
+            if (button == 0)
+                startActionConfirmed();
+        });
+        ask->choose();
+        return;
+    }
+
+    startActionConfirmed();
+}
+
+void BlankCDDialog::startActionConfirmed()
+{
+    // The selection may have changed while the confirmation was up.
+    if (deviceSelector_->selection() == nullptr)
+        return;
+
     int fast = fastBlank_rb->get_active() ? 1 : 0;
     int burnSpeed = getSpeed();
     int eject = getEject();

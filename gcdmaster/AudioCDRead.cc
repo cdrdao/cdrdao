@@ -80,6 +80,9 @@ AudioCDRead::AudioCDRead(Gtk::Window *parent) : parent_(parent)
 
     deviceSelector_->selectOne();
     set_child(*vbox);
+
+    // Each time the dialog is shown, preselect a drive holding an audio CD.
+    signal_show().connect([this] { deviceSelector_->selectFirst(&CdDevice::hasAudioDisc); });
 }
 
 void AudioCDRead::on_datafile_button_clicked()
@@ -111,14 +114,33 @@ void AudioCDRead::on_device_selected()
 
 void AudioCDRead::execute()
 {
-    CdDevice *device;
-    std::string tocfile;
-
-    device = deviceSelector_->selection();
+    CdDevice *device = deviceSelector_->selection();
     if (!device) {
         MessageBox::message(*parent_, _("Please select a reader device first."));
         return;
     }
+
+    auto problem = device->mediumProblem(CdDevice::A_READ);
+    if (!problem.empty()) {
+        auto ask = Ask2Box::create(*this, problem, 1, {_("Do you want to read it anyway?")});
+        ask->dialogDone.connect([this](int button) {
+            if (button == 0)
+                executeConfirmed();
+        });
+        ask->choose();
+        return;
+    }
+
+    executeConfirmed();
+}
+
+void AudioCDRead::executeConfirmed()
+{
+    std::string tocfile;
+
+    CdDevice *device = deviceSelector_->selection();
+    if (!device)
+        return;
     tempFileManager.getTempFile(tocfile, "gcdmaster_temporary", "toc");
     log_message(0, "Creating %s", tocfile.c_str());
     std::filesystem::remove(tocfile);

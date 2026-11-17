@@ -102,6 +102,16 @@ struct DiskInfo {
     } valid;
 };
 
+// Identification of the inserted medium, see CdrDriver::mediumInfo().
+struct MediumInfo {
+    int profile = -1;    // current MMC profile, 0 if none, -1 if unknown
+    int discStatus = -1; // READ DISC INFORMATION disc status: 0 blank,
+                         // 1 appendable, 2 complete, 3 other; -1 if unknown
+    bool erasable = false;
+    int audioTracks = 0; // from READ TOC; both 0 if the TOC is unavailable
+    int dataTracks = 0;
+};
+
 struct DriveInfo {
     int maxReadSpeed;
     int currentReadSpeed;
@@ -272,6 +282,17 @@ class CdrDriver
     // polling, and it only uses 'scsiIf', so it can run without a driver
     // object. Unexpected errors are printed only if 'showErrors' is set.
     static int unitReady(ScsiIf &scsiIf, bool showErrors);
+
+    // Returns the current MMC profile (GET CONFIGURATION header): 0 if
+    // the drive reports none, -1 if the command failed (e.g. pre-MMC2
+    // drive). Only uses 'scsiIf', like unitReady().
+    static int readProfile(ScsiIf &scsiIf);
+
+    // Identifies the medium in a ready drive with GET CONFIGURATION, READ
+    // DISC INFORMATION and READ TOC. Commands the drive doesn't support
+    // leave their fields of 'info' unknown. Has no side effects on the
+    // drive and only uses 'scsiIf', like unitReady().
+    static void mediumInfo(ScsiIf &scsiIf, MediumInfo *info);
 
     // general commands
     virtual int testUnitReady(int ignoreAttention = true) const;

@@ -1931,23 +1931,7 @@ int GenericMMC::readSubChannels(TrackData::SubChannelMode sm, long lba, long len
 //         (e.g. pre-MMC2 drive).
 int GenericMMC::currentProfile()
 {
-    u8 cmd[10];
-    u8 header[8];
-
-    memset(cmd, 0, 10);
-    memset(header, 0, 8);
-
-    cmd[0] = 0x46; // GET CONFIGURATION
-    cmd[1] = 0x01; // current features only
-    cmd[8] = 8;    // allocation length: header only
-
-    if (sendCmd(cmd, 10, NULL, 0, header, 8, 0) != 0)
-        return -1;
-
-    int profile = (header[6] << 8) | header[7];
-    log_message(4, "currentProfile: 0x%04x", profile);
-
-    return profile;
+    return readProfile(*scsiIf_);
 }
 
 // Retrieves the write speeds supported for the inserted medium with

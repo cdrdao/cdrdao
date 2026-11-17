@@ -10,12 +10,22 @@ FastTocRead::FastTocRead(CdDevice *dev) : dev_(dev)
 {
     if (!dev_) {
         // Use the cached status (kept current by background polling)
-        // rather than querying drives from the GUI thread.
+        // rather than querying drives from the GUI thread. Prefer a drive
+        // known to hold an audio CD, then one whose disc could not be
+        // identified.
         for (auto *dev : CdDevice::deviceList()) {
-            if (dev->busy() || dev->status() != CdDevice::DEV_READY)
+            if (!dev->busy() && dev->hasAudioDisc()) {
+                dev_ = dev;
+                break;
+            }
+        }
+        for (auto *dev : CdDevice::deviceList()) {
+            if (dev_)
+                break;
+            if (dev->busy() || dev->status() != CdDevice::DEV_READY ||
+                !dev->mediumProblem(CdDevice::A_READ).empty())
                 continue;
             dev_ = dev;
-            break;
         }
     }
     if (!dev_)
