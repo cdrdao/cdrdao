@@ -20,6 +20,7 @@
 #include <stdarg.h>
 #include <stddef.h>
 #include <gtkmm.h>
+#include <utility>
 
 #include "MessageBox.h"
 
@@ -53,10 +54,10 @@ void MessageBox::choose()
 {
     dialog->choose(parentWindow, [this](const Glib::RefPtr<Gio::AsyncResult> &result) {
         this->dialogDone.emit(this->dialog->choose_finish(result));
-        if (this->holder) {
-            delete holder;
-            holder = nullptr;
-        }
+        // Deleting the holder may drop the last reference to this box, so
+        // detach it first and touch no member afterwards.
+        auto *h = std::exchange(this->holder, nullptr);
+        delete h;
     });
 }
 

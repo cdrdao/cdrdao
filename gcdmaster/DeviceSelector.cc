@@ -105,6 +105,13 @@ DeviceSelector::DeviceSelector(std::optional<CdDevice::DeviceType> filterType)
         auto scrWindow = Gtk::make_managed<Gtk::ScrolledWindow>();
         scrWindow->set_child(colView_);
         scrWindow->add_css_class("device-view");
+        // A ScrolledWindow has no natural height of its own, so in a dialog
+        // without a fixed size (e.g. Blank CD-RW) the list would collapse
+        // to nothing. Size it to its rows, within reasonable bounds.
+        scrWindow->set_propagate_natural_height(true);
+        scrWindow->set_min_content_height(80);
+        scrWindow->set_max_content_height(250);
+        scrWindow->set_vexpand(true);
         listVBox->append(*scrWindow);
     }
     set_child(*listVBox);
