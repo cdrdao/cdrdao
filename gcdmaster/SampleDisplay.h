@@ -128,8 +128,8 @@ class SampleDisplay : public Gtk::DrawingArea
     Gdk::RGBA white_{"white"};
     Gdk::RGBA black_{"black"};
 
-    bool draw_me_;
-    bool draw_samples_;
+    bool draw_me_ = false;
+    bool draw_samples_ = false;
 
     gint width_ = 0;
     gint height_ = 0;
