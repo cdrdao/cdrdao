@@ -1867,7 +1867,7 @@ fail:
 
 void Cdrdao::printVersion()
 {
-    log_message(2, "Cdrdao version %s - (C) Andreas Mueller <andreas@daneb.de>", VERSION);
+    log_message(2, "Cdrdao version %s - (C) 1998-2026 The Cdrdao Team", VERSION);
 
     std::list<std::string> elist;
     int num = formatConverter.supportedExtensions(elist);
