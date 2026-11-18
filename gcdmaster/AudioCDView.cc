@@ -20,7 +20,6 @@
 #include <glibmm/convert.h>
 #include <glibmm/i18n.h>
 #include <gtkmm.h>
-#include <iostream>
 
 #include "MessageBox.h"
 #include "SampleDisplay.h"
@@ -199,23 +198,10 @@ void AudioCDView::update(unsigned long level)
     }
 
     if (level & UPD_PLAY_STATUS) {
-        switch (project_->playStatus()) {
-        case AudioCDProject::PLAYING:
-            sampleDisplay_->setCursor(1, project_->playPosition() - project_->getDelay());
-            // FIXME: What about using a separate cursor for playing?
-            cursorPos_->set_text(sample2string(project_->playPosition() - project_->getDelay()));
-            break;
-        case AudioCDProject::PAUSED:
-            sampleDisplay_->setCursor(1, project_->playPosition() - project_->getDelay());
-            // FIXME: What about using a separate cursor for playing?
-            cursorPos_->set_text(sample2string(project_->playPosition() - project_->getDelay()));
-            break;
-        case AudioCDProject::STOPPED:
-            sampleDisplay_->setCursor(0, 0);
-            break;
-        default:
-            std::cerr << "invalid play status" << std::endl;
-        }
+        bool playing = project_->playStatus() == AudioCDProject::PLAYING;
+        bool stopped = project_->playStatus() == AudioCDProject::STOPPED;
+        sampleDisplay_->setPointerLocked(playing);
+        sampleDisplay_->setEditingLocked(!stopped);
     }
 
     trackInfoDialog_->update(level, tocEditView_);
@@ -316,7 +302,21 @@ void AudioCDView::trackMarkSelectedCallback(int trackNr, int indexNr)
 void AudioCDView::markerSetCallback(unsigned long sample)
 {
     tocEditView_->sampleMarker(sample);
+    // A click also parks the playhead here. While audio is actually playing the
+    // playhead belongs to playback, so the press is ignored upstream.
+    if (project_->playStatus() != AudioCDProject::PLAYING)
+        setAudioMarker(sample);
     update(UPD_SAMPLE_MARKER);
+}
+
+void AudioCDView::setAudioMarker(unsigned long sample)
+{
+    sampleDisplay_->setAudioMarker(sample);
+}
+
+bool AudioCDView::getAudioMarker(unsigned long *sample) const
+{
+    return sampleDisplay_->getAudioMarker(sample);
 }
 
 // Called when the user makes a selection on the SampleDisplay

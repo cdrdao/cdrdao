@@ -535,23 +535,58 @@ void AudioCDProject::update(unsigned long level)
 
 void AudioCDProject::playStart()
 {
-    unsigned long start, end;
+    if (playStatus_ == PLAYING || audioCDView_ == nullptr || audioCDView_->tocEditView() == nullptr)
+        return;
 
-    // If we're in paused mode, resume playing.
-    if (playStatus_ == PAUSED) {
+    TocEditView *view = audioCDView_->tocEditView();
+    unsigned long viewStart, viewEnd;
+    view->sampleView(&viewStart, &viewEnd);
+    if (viewEnd < viewStart)
+        return;
+
+    // Resume from the audio marker when it sits in the visible view. Otherwise
+    // park it on the left edge and start there.
+    unsigned long marker = 0;
+    bool inView = audioCDView_->getAudioMarker(&marker) && marker >= viewStart && marker <= viewEnd;
+
+    if (playStatus_ == PAUSED && inView && playbackSampleValid_ && marker == playbackSample_) {
         playStatus_ = PLAYING;
+        guiUpdate(UPD_PLAY_STATUS);
         Glib::signal_idle().connect(sigc::mem_fun(*this, &AudioCDProject::playCallback));
         return;
-    } else if (playStatus_ == PLAYING) {
+    }
+
+    unsigned long start = inView ? marker : viewStart;
+    audioCDView_->setAudioMarker(start);
+    playbackSample_ = start;
+    playbackSampleValid_ = true;
+
+    if (playStatus_ == PAUSED) {
+        // The playhead was moved, or scrolled out of view. Drop the paused
+        // device buffer and seek the reader that's already open.
+        soundInterface_->end();
+        bool started = soundInterface_->start() == 0;
+        if (!started || tocReader.seekSample(start) != 0) {
+            if (started)
+                soundInterface_->end();
+            tocReader.init(NULL);
+            playStatus_ = STOPPED;
+            playbackSampleValid_ = false;
+            tocEdit_->unblockEdit();
+            guiUpdate(UPD_PLAY_STATUS | UPD_EDITABLE_STATE);
+            return;
+        }
+
+        playLength_ = viewEnd - start + 1;
+        playPosition_ = start;
+        playAbort_ = false;
+        playStatus_ = PLAYING;
+        guiUpdate(UPD_PLAY_STATUS);
+        Glib::signal_idle().connect(sigc::mem_fun(*this, &AudioCDProject::playCallback));
         return;
     }
 
-    if (audioCDView_->tocEditView()) {
-        if (!audioCDView_->tocEditView()->sampleSelection(&start, &end))
-            audioCDView_->tocEditView()->sampleView(&start, &end);
-
-        playStart(start, end);
-    }
+    playStart(start, viewEnd);
 }
 
 void AudioCDProject::playStart(unsigned long start, unsigned long end)
@@ -607,10 +642,10 @@ void AudioCDProject::playStart(unsigned long start, unsigned long end)
 void AudioCDProject::playPause()
 {
     if (playStatus_ == PAUSED) {
-        playStatus_ = PLAYING;
-        Glib::signal_idle().connect(sigc::mem_fun(*this, &AudioCDProject::playCallback));
+        playStart();
     } else if (playStatus_ == PLAYING) {
         playStatus_ = PAUSED;
+        guiUpdate(UPD_PLAY_STATUS);
     }
 }
 
@@ -656,10 +691,28 @@ bool AudioCDProject::playCallback()
 
     unsigned long delay = soundInterface_->getDelay();
 
-    if (delay <= playPosition_)
+    if (delay <= playPosition_) {
+        unsigned long shown = playPosition_ - delay;
+        // The delay estimate sits behind the reader. Don't walk the playhead
+        // backwards over the position we just started from.
+        if (!playbackSampleValid_ || shown > playbackSample_) {
+            playbackSample_ = shown;
+            playbackSampleValid_ = true;
+            if (audioCDView_)
+                audioCDView_->setAudioMarker(shown);
+        }
         level |= UPD_PLAY_STATUS;
+    }
 
     if (len == 0 || playAbort_) {
+        // The range is used up. Park the playhead just past the end so the
+        // next play sees it outside the view and starts at the left edge.
+        // A user stop keeps the audible position and will resume there.
+        if (len == 0 && !playAbort_ && audioCDView_) {
+            playbackSample_ = playPosition_;
+            playbackSampleValid_ = true;
+            audioCDView_->setAudioMarker(playPosition_);
+        }
         soundInterface_->end();
         tocReader.init(NULL);
         playStatus_ = STOPPED;

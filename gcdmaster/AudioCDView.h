@@ -56,6 +56,9 @@ class AudioCDView : public Gtk::Box
     void zoomOut();
     void fullView();
 
+    void setAudioMarker(unsigned long sample);
+    bool getAudioMarker(unsigned long *sample) const;
+
     sigc::signal<void(unsigned long)> signal_tocModified;
 
   protected:

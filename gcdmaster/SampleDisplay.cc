@@ -174,6 +174,7 @@ void SampleDisplay::setTocEdit(Glib::RefPtr<TocEdit> t)
     Toc *toc = tocEdit_->toc();
 
     markerSet_ = false;
+    clearAudioMarker();
     selectionSet_ = false;
     regionSet_ = false;
 
@@ -326,19 +327,51 @@ int SampleDisplay::getRegion(unsigned long *start, unsigned long *end)
     return 0;
 }
 
-void SampleDisplay::setCursor(int ctrl, unsigned long sample)
+void SampleDisplay::setAudioMarker(unsigned long sample)
 {
-    if (ctrl == 0) {
-        cursorControlExtern_ = false;
-    } else {
-        cursorControlExtern_ = true;
+    if (audioMarkerSet_ && audioMarkerSample_ == sample)
+        return;
 
-        gint x = sample2pixel(sample);
-        if (x >= 0)
-            set_cursor(x);
-        else
-            unset_cursor();
-    }
+    audioMarkerSample_ = sample;
+    audioMarkerSet_ = true;
+    queue_draw();
+}
+
+void SampleDisplay::clearAudioMarker()
+{
+    if (!audioMarkerSet_)
+        return;
+
+    audioMarkerSet_ = false;
+    queue_draw();
+}
+
+bool SampleDisplay::getAudioMarker(unsigned long *sample) const
+{
+    if (!audioMarkerSet_)
+        return false;
+
+    *sample = audioMarkerSample_;
+    return true;
+}
+
+void SampleDisplay::setPointerLocked(bool locked)
+{
+    if (pointerLocked_ == locked)
+        return;
+
+    pointerLocked_ = locked;
+    if (!locked)
+        return;
+
+    drag_timeout.disconnect();
+    dragMode_ = DRAG_NONE;
+    drag_enabled = false;
+}
+
+void SampleDisplay::setEditingLocked(bool locked)
+{
+    editingLocked_ = locked;
 }
 
 void SampleDisplay::scrollTo()
@@ -489,6 +522,7 @@ void SampleDisplay::on_draw_callback(const Cairo::RefPtr<Cairo::Context> &cr, in
         d.drawRectangle(selection_drag_x_, 0, selection_drag_w_, h - 1);
     }
     draw_marker(d);
+    draw_audio_marker(d);
     draw_cursor(d);
 }
 
@@ -499,8 +533,8 @@ void SampleDisplay::on_pressed(int n_press, double x, double y)
 
     dragMode_ = DRAG_NONE;
 
-    // e.g. if audio is playing
-    if (cursorControlExtern_)
+    // Playback owns the playhead; don't let a press drag it or start a selection.
+    if (pointerLocked_)
         return;
 
     drag_timeout = Glib::signal_timeout().connect(
@@ -516,6 +550,8 @@ void SampleDisplay::on_pressed(int n_press, double x, double y)
         if (iy > trackLineY_) {
             dragMode_ = DRAG_SAMPLE_MARKER;
             dragStart_ = dragEnd_ = ix;
+        } else if (editingLocked_) {
+            drag_timeout.disconnect();
         } else {
             if ((pickedTrackMarker_ = trackManager_->pick(ix - sampleStartX_ + 4, &dragStopMin_,
                                                           &dragStopMax_)) != NULL) {
@@ -552,7 +588,7 @@ void SampleDisplay::on_released(int n_press, double x, double y)
 
     drag_timeout.disconnect();
 
-    if (cursorControlExtern_)
+    if (pointerLocked_)
         return;
 
     if (ix < sampleStartX_) {
@@ -616,13 +652,14 @@ void SampleDisplay::on_released(int n_press, double x, double y)
     drag_enabled = false;
 }
 
-void SampleDisplay::on_motion(double x, double y)
+void SampleDisplay::on_motion(double x, double)
 {
     gint ix = (gint)x;
-    gint iy = (gint)y;
 
-    if (cursorControlExtern_)
+    if (pointerLocked_) {
+        set_cursor(ix);
         return;
+    }
 
     if (drag_enabled && dragMode_ == DRAG_SAMPLE_MARKER) {
         gint dw = 0;
@@ -657,17 +694,11 @@ void SampleDisplay::on_motion(double x, double y)
 
 void SampleDisplay::on_enter(double x, double y)
 {
-    if (cursorControlExtern_)
-        return;
-
     set_cursor((gint)x);
 }
 
 void SampleDisplay::on_leave()
 {
-    if (cursorControlExtern_)
-        return;
-
     unset_cursor();
 }
 
@@ -685,6 +716,23 @@ void SampleDisplay::draw_marker(Drawer &d)
             d.drawLine(markerX_, trackLineY_, markerX_, height_ - 1);
         }
     }
+}
+
+void SampleDisplay::draw_audio_marker(Drawer &d)
+{
+    if (!audioMarkerSet_)
+        return;
+
+    gint x = sample2pixel(audioMarkerSample_);
+    if (x < 0)
+        return;
+
+    // Keep the red edit marker visible when a click parks both on the same sample.
+    if (markerSet_ && markerX_ == x && x < sampleEndX_)
+        x += 1;
+
+    d.setColor(audioMarkerColor_);
+    d.drawLine(x, trackLineY_, x, height_ - 1);
 }
 
 void SampleDisplay::setMarker(unsigned long sample)
@@ -954,11 +1002,11 @@ void SampleDisplay::drawSamples()
 
 void SampleDisplay::draw_cursor(Drawer &d)
 {
-    if (!cursorDrawn_) {
-        cursorDrawn_ = true;
-        d.setColor(cursorColor_);
-        d.drawLine(cursorX_, trackLineY_, cursorX_, height_ - 1);
-    }
+    if (!hoverMarkerSet_)
+        return;
+
+    d.setColor(cursorColor_);
+    d.drawLine(cursorX_, trackLineY_, cursorX_, height_ - 1);
 }
 
 void SampleDisplay::set_cursor(gint x)
@@ -966,28 +1014,23 @@ void SampleDisplay::set_cursor(gint x)
     if (x < sampleStartX_ || x > sampleEndX_)
         return;
 
-    if (cursorDrawn_ && cursorX_ != x) {
-        queue_draw();
-    }
-
-    if (!cursorDrawn_ || cursorX_ != x) {
-        cursorDrawn_ = false;
-        cursorX_ = x;
-        queue_draw();
-    }
-
+    bool moved = !hoverMarkerSet_ || cursorX_ != x;
+    hoverMarkerSet_ = true;
     cursorX_ = x;
+    if (!moved)
+        return;
 
-    if (cursorControlExtern_ == false)
-        cursorMoved.emit(pixel2sample(x));
+    queue_draw();
+    cursorMoved.emit(pixel2sample(x));
 }
 
 void SampleDisplay::unset_cursor()
 {
-    if (cursorDrawn_) {
-        queue_draw();
-        cursorDrawn_ = false;
-    }
+    if (!hoverMarkerSet_)
+        return;
+
+    hoverMarkerSet_ = false;
+    queue_draw();
 }
 
 void SampleDisplay::drawTimeTick(Drawer &d, gint x, gint y, unsigned long sample)

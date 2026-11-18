@@ -123,6 +123,10 @@ class AudioCDProject : public GCDWindow
     unsigned long playLength_; // remaining play length
     unsigned long playBurst_;
     unsigned long playPosition_;
+    // Sample last written to the audio marker by playback itself. A click
+    // moves the marker without updating this, so resume can tell them apart.
+    unsigned long playbackSample_ = 0;
+    bool playbackSampleValid_ = false;
     Sample *playBuffer_;
     bool playAbort_;
 

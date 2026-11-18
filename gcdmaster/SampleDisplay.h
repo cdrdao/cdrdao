@@ -45,7 +45,13 @@ class SampleDisplay : public Gtk::DrawingArea
     void clearRegion();
     Glib::RefPtr<Gtk::Adjustment> get_adjustment() { return adjustment_; }
     void updateTrackMarks();
-    void setCursor(int, unsigned long);
+    void setAudioMarker(unsigned long sample);
+    void clearAudioMarker();
+    bool getAudioMarker(unsigned long *sample) const;
+    // Button presses are ignored while audio is playing, so the playhead is not
+    // dragged out from under playback. Track-mark edits stay disabled until stopped.
+    void setPointerLocked(bool locked);
+    void setEditingLocked(bool locked);
 
     void updateToc(unsigned long, unsigned long);
 
@@ -124,6 +130,7 @@ class SampleDisplay : public Gtk::DrawingArea
     Gdk::RGBA middleLineColor_{"red3"};
     Gdk::RGBA cursorColor_{"gold2"};
     Gdk::RGBA markerColor_{"red"};
+    Gdk::RGBA audioMarkerColor_{"orange"};
     Gdk::RGBA selectionBackgroundColor_{"#ffc0e0"};
     Gdk::RGBA white_{"white"};
     Gdk::RGBA black_{"black"};
@@ -158,13 +165,17 @@ class SampleDisplay : public Gtk::DrawingArea
     unsigned long maxSample_ = 0;
     unsigned long resolution_ = 0;
 
-    bool cursorDrawn_ = false;
+    bool hoverMarkerSet_ = false;
     gint cursorX_ = 0;
-    bool cursorControlExtern_ = false;
+    bool pointerLocked_ = false;
+    bool editingLocked_ = false;
 
     bool markerSet_ = false;
     gint markerX_;
     unsigned long markerSample_;
+
+    bool audioMarkerSet_ = false;
+    unsigned long audioMarkerSample_ = 0;
 
     bool selectionSet_ = false;
     unsigned long selectionStartSample_;
@@ -203,6 +214,7 @@ class SampleDisplay : public Gtk::DrawingArea
     unsigned long pixel2sample(gint x);
     gint sample2pixel(unsigned long);
     void draw_marker(Drawer &);
+    void draw_audio_marker(Drawer &);
     void removeMarker();
     void drawTimeTick(Drawer &, gint x, gint y, unsigned long sample);
     void drawTimeLine(Drawer &);
