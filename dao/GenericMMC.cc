@@ -2455,6 +2455,12 @@ int GenericMMC::readAudioRange(ReadDiskInfo *rinfo, int fd, long start, long end
         }
     }
 
+    // Set the reading speed (maximum unless --rspeed was given) right
+    // before extraction. Some drives lower their speed during the slow
+    // single sector reads of the sub-channel capability tests and the
+    // analysis above, and only speed up again when told to.
+    selectSpeed();
+
     if (subChanReadMode_ == TrackData::SUBCHAN_NONE) {
         return CdrDriver::readAudioRangeParanoia(rinfo, fd, start, end, startTrack, endTrack, info);
     } else {
