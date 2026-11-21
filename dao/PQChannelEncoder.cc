@@ -296,6 +296,16 @@ void PQChannelEncoder::encode(long lba, unsigned char *out, long blocks)
     for (i = 0; i < blocks; i++, lba++) {
         chan = encodeSubChannel(lba);
         memcpy(out, chan->data(), clen);
+
+        if (clen == PQ_SUBCHANNEL_LEN) {
+            // PQSubChannel16 keeps the Q CRC in the non-inverted form that
+            // drives return when reading. On the disc, the Red Book stores
+            // it inverted, so invert it here for writing. (PWSubChannel96
+            // already stores it inverted.)
+            out[10] ^= 0xff;
+            out[11] ^= 0xff;
+        }
+
         out += clen;
     }
 }
@@ -319,7 +329,12 @@ const SubChannel *PQChannelEncoder::encodeSubChannel(long lba)
         // lead-in sector
         chan = toc_[actTocEnt_];
 
-        Msf m(trlba_);
+        // The Q time in the lead-in is the ATIP time (e.g. 97:15:00 up to
+        // 99:59:74), so it runs on into 00:00:00 at the start of the
+        // pre-gap. Counting from 00:00:00 instead makes drives that land in
+        // the lead-in while seeking to track 1 think they are already inside
+        // the program area, and they keep seeking (issue #81).
+        Msf m(abslba_ + 450150);
         chan->min(m.min());
         chan->sec(m.sec());
         chan->frame(m.frac());
