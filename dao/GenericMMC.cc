@@ -69,12 +69,10 @@ GenericMMC::GenericMMC(std::shared_ptr<ScsiIf> scsiIf, unsigned long options)
 
     memset(&diskInfo_, 0, sizeof(DiskInfo));
 
-    for (i = 0; i < maxScannedSubChannels_; i++) {
-        if (options_ & OPT_MMC_USE_PQ)
-            scannedSubChannels_[i] = new PQSubChannel16;
-        else
-            scannedSubChannels_[i] = new PWSubChannel96;
-    }
+    // The sub-channel objects are allocated by 'readSubChannels()' once the
+    // sub-channel format returned by the drive is known.
+    for (i = 0; i < maxScannedSubChannels_; i++)
+        scannedSubChannels_[i] = NULL;
 
     cdtextEnabled_ = (options_ & OPT_MMC_CD_TEXT);
 
@@ -106,10 +104,7 @@ GenericMMC::~GenericMMC()
 {
     int i;
 
-    for (i = 0; i < maxScannedSubChannels_; i++) {
-        delete scannedSubChannels_[i];
-        scannedSubChannels_[i] = NULL;
-    }
+    freeScannedSubChannels();
 
     delete cdTextEncoder_;
     cdTextEncoder_ = NULL;
@@ -1749,6 +1744,34 @@ int GenericMMC::analyzeTrack(TrackData::Mode mode, int trackNr, long startLba, l
     return ret;
 }
 
+void GenericMMC::freeScannedSubChannels()
+{
+    for (long i = 0; i < maxScannedSubChannels_; i++) {
+        delete scannedSubChannels_[i];
+        scannedSubChannels_[i] = NULL;
+    }
+    scannedSubChanType_ = ScannedSubChanType::NONE;
+}
+
+// (Re)allocates the scanned sub-channel objects if they are not already of
+// the requested type. The read capabilities, and therefore the sub-channel
+// format, may change from one disc to the next.
+void GenericMMC::allocScannedSubChannels(ScannedSubChanType type)
+{
+    if (type == scannedSubChanType_)
+        return;
+
+    freeScannedSubChannels();
+
+    for (long i = 0; i < maxScannedSubChannels_; i++) {
+        if (type == ScannedSubChanType::PQ16)
+            scannedSubChannels_[i] = new PQSubChannel16;
+        else
+            scannedSubChannels_[i] = new PWSubChannel96;
+    }
+    scannedSubChanType_ = type;
+}
+
 int GenericMMC::readSubChannels(TrackData::SubChannelMode sm, long lba, long len,
                                 SubChannel ***chans, Sample *audioData)
 {
@@ -1809,12 +1832,17 @@ int GenericMMC::readSubChannels(TrackData::SubChannelMode sm, long lba, long len
         cmd[10] = 0x01;
 
         // Raw P-W data also carries the Q channel, so decode it for the
-        // pre-gap, index and ISRC detection. The scanned sub-channel objects
-        // are only able to decode it if they are PWSubChannel96 objects.
-        if ((options_ & OPT_MMC_USE_PQ) == 0)
-            subChanMode = CDR_READ_CAP_AUDIO_PW_RAW;
+        // pre-gap, index and ISRC detection.
+        subChanMode = CDR_READ_CAP_AUDIO_PW_RAW;
         break;
     }
+
+    // Make sure the scanned sub-channel objects match the format of the data
+    // that is about to be decoded.
+    if (subChanMode == CDR_READ_CAP_AUDIO_PW_RAW)
+        allocScannedSubChannels(ScannedSubChanType::PW96);
+    else if (subChanMode != 0)
+        allocScannedSubChannels(ScannedSubChanType::PQ16);
 
     while (1) {
         if (sendCmd(cmd, 12, NULL, 0, transferBuffer_, len * blockLen, retries == 0 ? 1 : 0) != 0) {

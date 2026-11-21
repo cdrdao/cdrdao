@@ -251,6 +251,15 @@ class GenericMMC : public CdrDriver
     bool cdtextEnabled_;                     // Write CD-TEXT subchannels
     bool cdtextDisabled_;                    // CD-TEXT turned off by OPT_MMC_NO_CD_TEXT
 
+    // Type of the objects currently held in 'scannedSubChannels_'. They are
+    // created lazily by 'readSubChannels()' once the sub-channel read mode is
+    // known (i.e. after the read capabilities have been probed).
+    enum class ScannedSubChanType { NONE, PQ16, PW96 };
+    ScannedSubChanType scannedSubChanType_ = ScannedSubChanType::NONE;
+
+    void allocScannedSubChannels(ScannedSubChanType);
+    void freeScannedSubChannels();
+
     /*! \brief Determines start and length of lead-in and length of lead-out.
 
       Uses READ DISK INFORMATION cmd 0x51.
