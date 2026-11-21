@@ -898,7 +898,10 @@ const char *Toc::tocType2String(Type t)
 
 void Toc::addCdTextItem(int trackNr, std::unique_ptr<CdTextItem> item)
 {
-    assert(trackNr >= 0 && trackNr <= 99);
+    if (trackNr < 0 || trackNr > 99) {
+        log_message(-2, "addCdTextItem: Invalid track number %d.", trackNr);
+        return;
+    }
 
     if (cdtext_.encoding(item->blockNr()) != Util::Encoding::UNSET)
         item->encoding(cdtext_.encoding(item->blockNr()));

@@ -3133,7 +3133,6 @@ vector<unique_ptr<CdTextItem>> processPacks(CdTextPack *packs, int nofPacks)
     int pos = 0;
     unsigned char lastType;
     int lastBlockNumber;
-    int lastTrackNumber;
     int actTrack = 0;
     unsigned char buf[256 * 12];
 
@@ -3144,7 +3143,6 @@ vector<unique_ptr<CdTextItem>> processPacks(CdTextPack *packs, int nofPacks)
 
     lastType = packs[0].packType;
     lastBlockNumber = (packs[0].blockCharacter >> 4) & 0x07;
-    lastTrackNumber = packs[0].trackNumber;
 
     while (nofPacks--) {
         CdTextPack &p = *packs++;
@@ -3178,11 +3176,11 @@ vector<unique_ptr<CdTextItem>> processPacks(CdTextPack *packs, int nofPacks)
                             pos = i + 1;
                     }
                     {
-                        auto item = CdTextItem::create(packType, lastBlockNumber,
-                                                       vector<u8>(buf, buf + pos));
-                        if (packType != CdTextItem::PackType::SIZE_INFO)
-                            item->trackNr(lastTrackNumber);
-                        items.push_back(std::move(item));
+                        // Binary packs (TOC info, genre, size info) are
+                        // disc-level: keep track number 0 whatever the
+                        // pack's track field holds.
+                        items.push_back(CdTextItem::create(packType, lastBlockNumber,
+                                                           vector<u8>(buf, buf + pos)));
                     }
                 }
             } else {
@@ -3192,7 +3190,6 @@ vector<unique_ptr<CdTextItem>> processPacks(CdTextPack *packs, int nofPacks)
 
             lastType = p.packType;
             lastBlockNumber = blockNumber;
-            lastTrackNumber = trackNumber;
             pos = 0;
             actTrack = 0;
         }
@@ -3268,11 +3265,9 @@ vector<unique_ptr<CdTextItem>> processPacks(CdTextPack *packs, int nofPacks)
             }
 
             {
-                auto item =
-                    CdTextItem::create(packType, lastBlockNumber, vector<u8>(buf, buf + pos));
-                if (packType != CdTextItem::PackType::SIZE_INFO)
-                    item->trackNr(lastTrackNumber);
-                items.push_back(std::move(item));
+                // Binary packs are disc-level (track number 0).
+                items.push_back(
+                    CdTextItem::create(packType, lastBlockNumber, vector<u8>(buf, buf + pos)));
             }
         }
     }
@@ -3326,11 +3321,26 @@ int CdrDriver::readCdTextData(Toc *toc)
         }
     }
 
+    int nofSkipped = 0;
     for (auto &item : items) {
         int trackNr = item->trackNr();
+
+        // Track numbers come straight from the disc; ignore items that
+        // refer to a track that does not exist.
+        if (trackNr != 0 && toc->getTrack(trackNr) == NULL) {
+            log_message(3, "CD-TEXT: ignoring %s item for non-existent track %d.",
+                        CdTextItem::packType2String(1, item->packType()), trackNr);
+            nofSkipped++;
+            continue;
+        }
+
         item->encoding(encodings[item->blockNr()]);
         toc->addCdTextItem(trackNr, std::move(item));
     }
+
+    if (nofSkipped > 0)
+        log_message(-1, "CD-TEXT: ignored %d item(s) referring to non-existent tracks.",
+                    nofSkipped);
 
     if (!languagesSet) {
         log_message(-1, "Cannot determine language mapping from CD-TEXT data.");
