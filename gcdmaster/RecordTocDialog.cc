@@ -116,7 +116,7 @@ void RecordTocDialog::stop()
 
 void RecordTocDialog::update(unsigned long level)
 {
-    log_message(1, "[update %x] RecordTocDialog", level);
+    log_message(1, "[update %lx] RecordTocDialog", level);
 
     std::string title;
     title += _("Record project ");

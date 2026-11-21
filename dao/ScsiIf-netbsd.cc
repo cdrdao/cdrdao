@@ -216,10 +216,10 @@ void ScsiIf::printError()
         p += snprintf(p, s + sizeof(s) - p, ", BUF=%p", impl_->screq_.databuf);
         p += snprintf(p, s + sizeof(s) - p, ", LEN=%lu", impl_->screq_.datalen);
         p += snprintf(p, s + sizeof(s) - p, ", TO=%lu", impl_->screq_.timeout);
-        log_message(-2, s);
+        log_message(-2, "%s", s);
     }
     if (impl_->error_ != NULL) {
-        log_message(-2, impl_->error_);
+        log_message(-2, "%s", impl_->error_);
     } else
         switch (impl_->screq_.retsts) {
         case SCCMD_OK:

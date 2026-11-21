@@ -70,7 +70,7 @@ void RecordTocSource::set(Glib::RefPtr<TocEdit> tocEdit)
 
 void RecordTocSource::update(unsigned long level)
 {
-    log_message(1, "[update %x] RecordTocSource", level);
+    log_message(1, "[update %lx] RecordTocSource", level);
 
     if (tocEdit_ == NULL) {
         projectLabel_.set_text("");

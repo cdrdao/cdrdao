@@ -392,7 +392,8 @@ void DaoCommandLine::printUsage()
         break;
 
     default:
-        log_message(0, "Sorry, no help available for command %d :-(\n", command);
+        log_message(0, "Sorry, no help available for command %d :-(\n",
+                    static_cast<int>(*command));
         break;
     }
 }
@@ -1431,7 +1432,7 @@ int Cdrdao::readCddb(const DaoCommandLine &opts, Toc *toc, bool showEntry)
             char buf[20];
             int sel;
 
-            log_message(0, "Select match, 0 for none [0-%d]?", results.size());
+            log_message(0, "Select match, 0 for none [0-%zu]?", results.size());
 
             if (fgets(buf, 20, stdin) == NULL)
                 break;
@@ -1878,7 +1879,7 @@ void Cdrdao::printVersion()
             msg += " ";
             msg += i;
         }
-        log_message(3, msg.c_str());
+        log_message(3, "%s", msg.c_str());
     }
 }
 

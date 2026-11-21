@@ -33,7 +33,7 @@ void log_init();
 //   -10 and less : fatal error, call will exit the calling thread.
 //
 // Levels >= 0 are controlled by the verbosity set below.
-void log_message(int level, const char *fmt, ...);
+void log_message(int level, const char *fmt, ...) __attribute__((format(printf, 2, 3)));
 
 // Set logging verbosity. Only levels <= set level will be output.
 void log_set_verbose(int level);

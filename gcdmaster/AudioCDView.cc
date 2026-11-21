@@ -147,7 +147,7 @@ void AudioCDView::setup_actions()
 
 void AudioCDView::update(unsigned long level)
 {
-    log_message(1, "[update %x] AudioCDView", level);
+    log_message(1, "[update %lx] AudioCDView", level);
     if (level & (UPD_TOC_DIRTY | UPD_TOC_DATA)) {
         cursorPos_->set_text("");
     }

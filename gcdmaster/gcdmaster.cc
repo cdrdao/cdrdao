@@ -85,7 +85,7 @@ void GCDMaster::newEmptyProject()
 
 void GCDMaster::update(unsigned long level)
 {
-    log_message(1, "[update %x] GCDMaster", level);
+    log_message(1, "[update %lx] GCDMaster", level);
     for (auto window : get_windows()) {
         auto w = dynamic_cast<GCDWindow *>(window);
         if (w)
@@ -200,7 +200,7 @@ void GCDMaster::on_action_quit()
 {
     updateSignal_.disconnect();
     CdDevice::stopMonitor();
-    log_message(0, "GCDMaster::on_action_quit, closing %d window(s)", get_windows().size());
+    log_message(0, "GCDMaster::on_action_quit, closing %zu window(s)", get_windows().size());
     for (auto window : get_windows()) {
         log_message(0, "Closing window %s", window->get_title().c_str());
         remove_window(*window);

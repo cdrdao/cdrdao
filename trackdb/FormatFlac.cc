@@ -119,7 +119,7 @@ FormatSupport::Status FormatFlac::resample()
         if (rs_error) {
             throw std::runtime_error("Resampling error while processing FLAC audio");
         }
-        log_message(1, "  %llu 16-bit samples", src_data.output_frames_gen);
+        log_message(1, "  %ld 16-bit samples", src_data.output_frames_gen);
         // Convert back to s16
         src_samples.clear();
         size_t num_samples = channels * src_data.output_frames_gen;
@@ -202,9 +202,10 @@ void FormatFlac::metadata_callback(const ::FLAC__StreamMetadata *metadata)
         channels = metadata->data.stream_info.channels;
         src_samples.reserve(metadata->data.stream_info.total_samples);
         need_resampling = (sample_rate != TARGET_SAMPLE_RATE);
-        log_message(1, "Reading FLAC file %s, %lu Hz, %u bps", source_file.c_str(), sample_rate,
+        log_message(1, "Reading FLAC file %s, %u Hz, %u bps", source_file.c_str(), sample_rate,
                     bits_per_sample);
-        log_message(1, "  %llu total samples", metadata->data.stream_info.total_samples);
+        log_message(1, "  %llu total samples",
+                    (unsigned long long)metadata->data.stream_info.total_samples);
     }
 }
 

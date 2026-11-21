@@ -305,7 +305,7 @@ int SampleManagerImpl::readSamples()
             rightNegSamples_[actBlock_] = rnegsum;
             rightPosSamples_[actBlock_] = rpossum;
         } else {
-            log_message(-2, "Cannot read audio data: %ld - %ld.", n, ret);
+            log_message(-2, "Cannot read audio data: %ld - %d.", n, ret);
             tocReader_.closeData();
             return -1;
         }

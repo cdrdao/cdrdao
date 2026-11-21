@@ -679,7 +679,7 @@ int PlextorReader::readAudioRangePlextor(ReadDiskInfo *rinfo, int fd, long start
 
     nab = lab - fab;
 
-    log_message(1, "Reading CDDA tracks in range [%lu,%lu].", fat + 1, lat + 1);
+    log_message(1, "Reading CDDA tracks in range [%d,%d].", fat + 1, lat + 1);
 
     cat = fat + 1;
 
@@ -793,7 +793,7 @@ int PlextorReader::readAudioRangePlextor(ReadDiskInfo *rinfo, int fd, long start
 
                         // first track start?
                         if ((chan.trackNr() == 1) && (chan.indexNr() == 1)) {
-                            log_message(1, "Found track number %02d at %s (block %d).",
+                            log_message(1, "Found track number %02d at %s (block %ld).",
                                         chan.trackNr(), qAbsTime.str(), cab);
                             if ((qAbsTime.lba() - 150) != info[0].start) {
                                 log_message(2, "TOC SAYS TRACK STARTS AT %s!",
@@ -886,7 +886,7 @@ int PlextorReader::readAudioRangePlextor(ReadDiskInfo *rinfo, int fd, long start
                     // write this block's audio data
                     block = repairBlock;
                     // fwrite(repairBlock,1,AUDIO_BLOCK_LEN,fd);
-                    log_message(1, "block %6ld written with %4ld erroneous bytes in it!", cab,
+                    log_message(1, "block %6ld written with %4d erroneous bytes in it!", cab,
                                 repairErrors);
                 } else {
                     log_message(1, "PROGRAM BUG!!!! BUG #1! ENTERED ILLEGAL STATE\n");
@@ -999,9 +999,9 @@ int PlextorReader::readAudioRangePlextor(ReadDiskInfo *rinfo, int fd, long start
 #endif
                 }
                 if (cabRetries == 0) {
-                    log_message(1, "\nblock %6ld has %3ld error samples\r", cab, repairErrors);
+                    log_message(1, "\nblock %6ld has %3d error samples\r", cab, repairErrors);
                 } else {
-                    log_message(1, "block %6ld has %3ld error samples left after %3ld retries\r",
+                    log_message(1, "block %6ld has %3d error samples left after %3lu retries\r",
                                 cab, repairErrors, cabRetries);
                 }
                 // increase number of retries

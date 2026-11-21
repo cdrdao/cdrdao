@@ -249,7 +249,7 @@ void BlankCDDialog::speedButtonChanged()
 
 void BlankCDDialog::update(unsigned long level)
 {
-    log_message(1, "[update %x] BlankCDWindow\n", level);
+    log_message(1, "[update %lx] BlankCDWindow\n", level);
 
     if (!active_)
         return;

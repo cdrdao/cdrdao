@@ -460,7 +460,7 @@ void AudioCDProject::cddbQuery1(Cddb *cddb, CddbWindow::Error err)
 
     auto rc = cddb->queryResults().size();
 
-    log_message(0, "CDDB Query done with %d results, err=%d", rc, err);
+    log_message(0, "CDDB Query done with %zu results, err=%d", rc, err);
 
     if (rc > 0) {
         statusMessage("Downloading CDDB data for %s...", cddb->queryResults()[0].title.c_str());
@@ -491,7 +491,7 @@ void AudioCDProject::cddbQuery2(Cddb *cddb, CddbWindow::Error err)
 
 void AudioCDProject::update(unsigned long level)
 {
-    log_message(1, "[update %x] AudioCDProject", level);
+    log_message(1, "[update %lx] AudioCDProject", level);
     // FIXME: Here we should update the menus and the icons
     //        this is, enabled/disabled.
 

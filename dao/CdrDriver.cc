@@ -1843,7 +1843,7 @@ CdToc *CdrDriver::getToc(int sessionNr, int *cdTocLen)
 
     if (options_ & OPT_DRV_RAW_TOC_BCD) {
         if (isBcd == 0) {
-            log_message(-2, "The driver option 0x%lx indicates that the raw TOC data",
+            log_message(-2, "The driver option 0x%x indicates that the raw TOC data",
                         OPT_DRV_RAW_TOC_BCD);
             log_message(-2, "contains BCD values but a non BCD value was found.");
             log_message(-2, "Please adjust the driver options.");
@@ -1919,7 +1919,7 @@ CdToc *CdrDriver::getToc(int sessionNr, int *cdTocLen)
                     log_message(
                         -1,
                         "Using TOC data retrieved with generic method (no multi session support).");
-                    log_message(-1, "Use driver option 0x%lx to suppress this message.",
+                    log_message(-1, "Use driver option 0x%x to suppress this message.",
                                 OPT_DRV_GET_TOC_GENERIC);
 
                     delete[] rawToc;
@@ -2004,7 +2004,7 @@ CdToc *CdrDriver::getToc(int sessionNr, int *cdTocLen)
                 log_message(-1, "Your drive probably does not support raw toc reading.");
                 log_message(
                     -1, "Using TOC data retrieved with generic method (no multi session support).");
-                log_message(-1, "Use driver option 0x%lx to suppress this message.",
+                log_message(-1, "Use driver option 0x%x to suppress this message.",
                             OPT_DRV_GET_TOC_GENERIC);
 
                 delete[] rawToc;
@@ -2036,7 +2036,7 @@ CdToc *CdrDriver::getToc(int sessionNr, int *cdTocLen)
             log_message(-1, "Could not determine if raw toc data is BCD or HEX. Please report!");
             log_message(-1,
                         "Using TOC data retrieved with generic method (no multi session support).");
-            log_message(-1, "Use driver option 0x%lx or 0x%lx to assume BCD or HEX data.",
+            log_message(-1, "Use driver option 0x%x or 0x%x to assume BCD or HEX data.",
                         OPT_DRV_RAW_TOC_BCD, OPT_DRV_RAW_TOC_HEX);
 
             delete[] rawToc;
@@ -2059,7 +2059,7 @@ CdToc *CdrDriver::getToc(int sessionNr, int *cdTocLen)
         log_message(-1, "Found bogus toc data (0 or > 99 tracks). Please report!");
         log_message(-1, "Your drive probably does not support raw toc reading.");
         log_message(-1, "Using TOC data retrieved with generic method (no multi session support).");
-        log_message(-1, "Use driver option 0x%lx to suppress this message.",
+        log_message(-1, "Use driver option 0x%x to suppress this message.",
                     OPT_DRV_GET_TOC_GENERIC);
 
         delete[] rawToc;
@@ -2091,7 +2091,7 @@ CdToc *CdrDriver::getToc(int sessionNr, int *cdTocLen)
                 log_message(-1, "Your drive probably does not support raw toc reading.");
                 log_message(
                     -1, "Using TOC data retrieved with generic method (no multi session support).");
-                log_message(-1, "Use driver option 0x%lx to suppress this message.",
+                log_message(-1, "Use driver option 0x%x to suppress this message.",
                             OPT_DRV_GET_TOC_GENERIC);
 
                 delete[] cdToc;
@@ -2136,7 +2136,7 @@ CdToc *CdrDriver::getToc(int sessionNr, int *cdTocLen)
         log_message(-1, "Found bogus toc data (no lead-out pointer for session). Please report!");
         log_message(-1, "Your drive probably does not support raw toc reading.");
         log_message(-1, "Using TOC data retrieved with generic method (no multi session support).");
-        log_message(-1, "Use driver option 0x%lx to suppress this message.",
+        log_message(-1, "Use driver option 0x%x to suppress this message.",
                     OPT_DRV_GET_TOC_GENERIC);
 
         delete[] cdToc;

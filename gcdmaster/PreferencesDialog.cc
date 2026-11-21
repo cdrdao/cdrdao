@@ -158,7 +158,7 @@ void PreferencesDialog::save_to_settings()
 
 void PreferencesDialog::update(unsigned long level)
 {
-    log_message(1, "[update %x] PreferencesDialog", level);
+    log_message(1, "[update %lx] PreferencesDialog", level);
     if (!is_visible())
         return;
 

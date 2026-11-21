@@ -455,7 +455,7 @@ int GenericMMCraw::initDao(const Toc *toc)
     blockLength_ = AUDIO_BLOCK_LEN + subChannel_->dataLength();
     blocksPerWrite_ = scsiIf_->maxDataLen() / blockLength_;
     assert(blocksPerWrite_ > 0);
-    log_message(4, "Block length: %ld", blockLength_);
+    log_message(4, "Block length: %d", blockLength_);
 
     long cueSheetLen;
     u8 *cueSheet = createCueSheet(0, &cueSheetLen);

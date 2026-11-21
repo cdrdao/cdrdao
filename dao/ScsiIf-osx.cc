@@ -707,7 +707,7 @@ void ScsiIfOsx::printError()
             break;
         }
     if (s)
-        log_message(-2, s);
+        log_message(-2, "%s", s);
 }
 
 ScsiIf::ScanData *ScsiIf::scan(int *len, char *)
