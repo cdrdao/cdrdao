@@ -71,6 +71,7 @@ class PQSubChannel16 : public SubChannel
     long dataLength() const; // returns number of sub channel bytes
 
     void pChannel(int); // sets P channel bit
+    int pChannel() const; // returns P channel bit (byte 15, bit 7)
 
     void ctl(int);             // sets control flags
     unsigned char ctl() const; // return control nibbles in bits 0-3

@@ -2615,6 +2615,20 @@ int CdrDriver::analyzeTrackScan(TrackData::Mode, int trackNr, long startLba, lon
     int isrcMatches = 0;
     long trackStartLba = startLba;
 
+    // State used to locate the pre-gap start of the next track when the
+    // frame(s) right before its first index 0 Q frame carry no position
+    // (MCN/ISRC frames, CRC errors): the P channel flags pause frames, so it
+    // tells on which side of the boundary such frames are.
+    int lastPosP = -1;     // P flag of the last positioned frame of this track, -1: none
+    long unknownPRun = 0; // trailing frames since then without usable position but P flag set
+
+    auto unknownPosition = [&](const SubChannel *c) {
+        if (c->pChannel())
+            unknownPRun++;
+        else
+            unknownPRun = 0;
+    };
+
     auto logErrors = [&]() {
         if (crcErrCnt != 0)
             log_message(2, "Found %ld Q sub-channels with CRC errors.", crcErrCnt);
@@ -2648,7 +2662,9 @@ int CdrDriver::analyzeTrackScan(TrackData::Mode, int trackNr, long startLba, lon
             SubChannel *chan = subChannels[i];
             // chan->print();
 
-            if (chan->checkCrc() && chan->checkConsistency()) {
+            bool qValid = chan->checkCrc() && chan->checkConsistency();
+
+            if (qValid) {
                 if (chan->type() == SubChannel::QMODE1DATA) {
                     int t = chan->trackNr();
                     Msf time(chan->min(), chan->sec(), chan->frame());     // track rel time
@@ -2659,6 +2675,7 @@ int CdrDriver::analyzeTrackScan(TrackData::Mode, int trackNr, long startLba, lon
                     if (labs(atime.lba() - 150 - (startLba + i)) > MAX_Q_POSITION_DEVIATION) {
                         posErrCnt++;
                         timeCnt++;
+                        unknownPosition(chan);
                         continue;
                     }
 
@@ -2690,12 +2707,26 @@ int CdrDriver::analyzeTrackScan(TrackData::Mode, int trackNr, long startLba, lon
                                 // http://sourceforge.net/tracker/?func=detail&aid=604751&group_id=2171&atid=102171
                                 // atime starts at 02:00, so subtract it
                                 *pregap = endLba - (atime.lba() - 150);
+
+                                // The pre-gap may start before this frame if the frames
+                                // preceding it carry no position. Only trust the P flag if
+                                // it actually changes from this track to the pre-gap.
+                                if (unknownPRun > 0 && lastPosP == 0 && chan->pChannel()) {
+                                    log_message(3,
+                                                "Pre-gap of track %d starts %ld frame(s) before "
+                                                "its first index 0 Q frame (P channel).",
+                                                trackNr + 1, unknownPRun);
+                                    *pregap += unknownPRun;
+                                }
                             }
                             logErrors();
 
                             return 0;
                         }
                     }
+
+                    lastPosP = (t == trackNr) ? chan->pChannel() : -1;
+                    unknownPRun = 0;
                 } else if (chan->type() == SubChannel::QMODE3) {
                     // Q sub-channels carrying the ISRC have no time information that
                     // could be verified, so only accept an ISRC code once it was
@@ -2733,6 +2764,9 @@ int CdrDriver::analyzeTrackScan(TrackData::Mode, int trackNr, long startLba, lon
               chan->print ();
 #endif
             }
+
+            if (!qValid || chan->type() != SubChannel::QMODE1DATA)
+                unknownPosition(chan);
 
             timeCnt++;
         }

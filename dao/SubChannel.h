@@ -50,7 +50,8 @@ class SubChannel
 
     virtual long dataLength() const = 0; // returns number of sub channel bytes
 
-    virtual void pChannel(int) = 0; // sets P channel bit
+    virtual void pChannel(int) = 0;      // sets P channel bit
+    virtual int pChannel() const = 0;    // returns P channel bit (1: pause/pre-gap)
 
     virtual void ctl(int) = 0;             // sets control flags
     virtual unsigned char ctl() const = 0; // return control nibbles in bits 0-3

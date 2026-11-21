@@ -208,6 +208,18 @@ void PWSubChannel96::pChannel(int f)
     }
 }
 
+int PWSubChannel96::pChannel() const
+{
+    int cnt = 0;
+
+    for (int i = 0; i < 96; i++) {
+        if (data_[i] & 0x80)
+            cnt++;
+    }
+
+    return cnt >= 48 ? 1 : 0;
+}
+
 // returns Q type
 SubChannel::Type PWSubChannel96::type() const
 {

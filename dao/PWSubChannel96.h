@@ -77,6 +77,7 @@ class PWSubChannel96 : public SubChannel
     long dataLength() const; // returns number of sub channel bytes
 
     void pChannel(int); // sets P channel bit
+    int pChannel() const; // returns P channel bit (majority of the 96 bits)
 
     void ctl(int);             // sets control flags
     unsigned char ctl() const; // return control nibbles in bits 0-3

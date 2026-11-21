@@ -185,6 +185,11 @@ void PQSubChannel16::pChannel(int f)
     data_[15] = f != 0 ? 0x80 : 0;
 }
 
+int PQSubChannel16::pChannel() const
+{
+    return (data_[15] & 0x80) != 0 ? 1 : 0;
+}
+
 // function for setting various Q sub channel fields
 
 void PQSubChannel16::ctl(int c)
