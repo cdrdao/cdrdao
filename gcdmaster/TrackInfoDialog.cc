@@ -57,15 +57,19 @@ TrackInfoDialog::TrackInfoDialog(Gtk::Window *parent)
 
     isrcCodeCountry_ = Gtk::make_managed<TextEdit>("XX");
     isrcCodeCountry_->set_max_length(2);
+    isrcCodeCountry_->set_width_chars(2);
 
     isrcCodeOwner_ = Gtk::make_managed<TextEdit>("XXX");
     isrcCodeOwner_->set_max_length(3);
+    isrcCodeOwner_->set_width_chars(3);
 
     isrcCodeYear_ = Gtk::make_managed<TextEdit>("00");
     isrcCodeYear_->set_max_length(2);
+    isrcCodeYear_->set_width_chars(2);
 
     isrcCodeSerial_ = Gtk::make_managed<TextEdit>("00000");
     isrcCodeSerial_->set_max_length(5);
+    isrcCodeSerial_->set_width_chars(5);
 
     // Top Header: Track Number
     auto trackHeaderBox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL, 5);
