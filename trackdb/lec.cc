@@ -20,6 +20,7 @@
 #include <config.h>
 
 #include <assert.h>
+#include <cstdint>
 #include <sys/types.h>
 
 #include "lec.h"

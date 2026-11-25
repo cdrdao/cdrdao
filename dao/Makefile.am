@@ -116,6 +116,7 @@ install-data-hook:
 	mv cdrdao.drivers drivers
 
 AM_CPPFLAGS =						\
+	-I$(top_srcdir)					\
 	-I$(srcdir)/../trackdb				\
 	-I$(srcdir)/../paranoia
 

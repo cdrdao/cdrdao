@@ -26,7 +26,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <sys/types.h>
+#ifndef USE_POSIX_THREADS
 #include <sys/wait.h>
+#endif
 #include <unistd.h>
 
 #ifdef linux
@@ -99,7 +101,11 @@ static void releaseSharedMemory(long nofSegments, ShmSegment *shmSegments);
 
 static RETSIGTYPE terminationRequest(int sig)
 {
-    if (sig == SIGQUIT || sig == SIGTERM)
+    if (
+#ifdef SIGQUIT
+        sig == SIGQUIT ||
+#endif
+        sig == SIGTERM)
         TERMINATE = 1;
 
 #if 0
@@ -146,6 +152,7 @@ static int waitForChild(int noHang, int *status)
 // Blocks all signals that are handled by this module.
 static void blockSignals()
 {
+#ifndef _WIN32
     sigset_t set;
 
     sigemptyset(&set);
@@ -162,11 +169,13 @@ static void blockSignals()
 #else
     sigprocmask(SIG_BLOCK, &set, NULL);
 #endif
+#endif
 }
 
 // Blocks all signals that are handled by this module.
 static void unblockSignals()
 {
+#ifndef _WIN32
     sigset_t set;
 
     sigemptyset(&set);
@@ -182,6 +191,7 @@ static void unblockSignals()
 
 #else
     sigprocmask(SIG_UNBLOCK, &set, NULL);
+#endif
 #endif
 }
 
@@ -629,10 +639,18 @@ int writeDiskAtOnce(const Toc *toc, CdrDriver *cdr, int nofBuffers, int swap, in
     TERMINATE = 0;
 
     installSignalHandler(SIGINT, SIG_IGN);
+#ifdef SIGPIPE
     installSignalHandler(SIGPIPE, SIG_IGN);
+#endif
+#ifdef SIGALRM
     installSignalHandler(SIGALRM, SIG_IGN);
+#endif
+#ifdef SIGCHLD
     installSignalHandler(SIGCHLD, terminationRequest);
+#endif
+#ifdef SIGQUIT
     installSignalHandler(SIGQUIT, terminationRequest);
+#endif
     installSignalHandler(SIGTERM, terminationRequest);
 
     if (!testMode) {
@@ -791,10 +809,18 @@ fail:
     releaseSharedMemory(nofShmSegments, shmSegments);
 
     installSignalHandler(SIGINT, SIG_DFL);
+#ifdef SIGPIPE
     installSignalHandler(SIGPIPE, SIG_DFL);
+#endif
+#ifdef SIGALRM
     installSignalHandler(SIGALRM, SIG_DFL);
+#endif
+#ifdef SIGCHLD
     installSignalHandler(SIGCHLD, SIG_DFL);
+#endif
+#ifdef SIGQUIT
     installSignalHandler(SIGQUIT, SIG_DFL);
+#endif
     installSignalHandler(SIGTERM, SIG_DFL);
 
     return err;

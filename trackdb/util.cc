@@ -320,9 +320,9 @@ FileExtension fileExtension(const char *fname)
 FileExtension fileExtension(const std::string &path)
 {
     std::filesystem::path file_path(path);
-    auto ext = file_path.extension();
+    std::string ext = file_path.extension().string();
 
-    if (strlen(ext.c_str()) <= 1)
+    if (ext.size() <= 1)
         return FileExtension::UNKNOWN;
 
     return fileExtension(ext.c_str());

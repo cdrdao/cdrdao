@@ -74,8 +74,8 @@ esac
 AC_CHECK_TYPE(u_int8_t, unsigned char)
 AC_CHECK_TYPE(int16_t,,AC_DEFINE_UNQUOTED(int16_t,$SIZE16,""))
 AC_CHECK_TYPE(int32_t,,AC_DEFINE_UNQUOTED(int32_t,$SIZE32,""))
-AC_CHECK_TYPE(u_int16_t,,AC_DEFINE_UNQUOTED(u_int16_t,$SIZE16,""))
-AC_CHECK_TYPE(u_int32_t,,AC_DEFINE_UNQUOTED(u_int32_t,$SIZE32,""))
+AC_CHECK_TYPE(u_int16_t,,AC_DEFINE_UNQUOTED(u_int16_t,unsigned $SIZE16,""))
+AC_CHECK_TYPE(u_int32_t,,AC_DEFINE_UNQUOTED(u_int32_t,unsigned $SIZE32,""))
 
 if test -z "$SIZE16"; then
 	AC_MSG_ERROR(No 16 bit type found on this platform!)
@@ -183,7 +183,14 @@ AC_PATH_LAME(3.100, [utiltools="$utiltools toc2mp3" en_toc2mp3=yes],
 dnl Determine whether we're building the gcdaster GUI front-end
 en_gcdmaster=no
 if test "$gcdmaster" = default; then
-  gcdmaster=yes
+  case "$host" in
+    *mingw* | *-pc-cygwin*)
+      gcdmaster=no
+      ;;
+    *)
+      gcdmaster=yes
+      ;;
+  esac
 fi
 if test "$gcdmaster" = yes; then
   en_gcdmaster=yes
@@ -259,6 +266,9 @@ dnl -lc_r is automatically done by the linker
   *-openbsd*)
             CPPFLAGS="$CPPFLAGS -I/usr/local/include"
             LDFLAGS="$LDFLAGS -L/usr/local/lib"
+            ;;
+  *mingw*)
+            LIBS="$LIBS -lws2_32"
             ;;
 esac
 

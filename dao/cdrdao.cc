@@ -2,10 +2,17 @@
 #include <cstring>
 #include <unistd.h>
 #include <sys/types.h>
+#ifdef _WIN32
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <windows.h>
+#else
 #include <sys/utsname.h>
 #include <sys/wait.h>
-#include <signal.h>
 #include <pwd.h>
+#endif
+#include <signal.h>
 #include <sstream>
 #include <vector>
 #include <cassert>
@@ -392,8 +399,7 @@ void DaoCommandLine::printUsage()
         break;
 
     default:
-        log_message(0, "Sorry, no help available for command %d :-(\n",
-                    static_cast<int>(*command));
+        log_message(0, "Sorry, no help available for command %d :-(\n", static_cast<int>(*command));
         break;
     }
 }
@@ -1363,7 +1369,6 @@ int Cdrdao::readCddb(const DaoCommandLine &opts, Toc *toc, bool showEntry)
     const char *sep = " ,";
     std::string user;
     std::string host;
-    struct passwd *pwent;
     int resultIdx;
 
     Cddb cddb(toc);
@@ -1376,6 +1381,24 @@ int Cdrdao::readCddb(const DaoCommandLine &opts, Toc *toc, bool showEntry)
     for (const auto &p : opts.cddbServerList)
         cddb.appendServer(p.c_str());
 
+#ifdef _WIN32
+    {
+        char ubuf[256];
+        DWORD ulen = sizeof(ubuf);
+        if (GetUserNameA(ubuf, &ulen) && ubuf[0] != '\0')
+            user = ubuf;
+        else
+            user = "unknown";
+
+        char hbuf[MAX_COMPUTERNAME_LENGTH + 1];
+        DWORD hlen = sizeof(hbuf);
+        if (GetComputerNameA(hbuf, &hlen) && hbuf[0] != '\0')
+            host = hbuf;
+        else
+            host = "unknown";
+    }
+#else
+    struct passwd *pwent;
     if ((pwent = getpwuid(getuid())) != NULL && pwent->pw_name != NULL) {
         user = pwent->pw_name;
     } else {
@@ -1390,6 +1413,7 @@ int Cdrdao::readCddb(const DaoCommandLine &opts, Toc *toc, bool showEntry)
             host = "unknown";
         }
     }
+#endif
 
     if (cddb.connectDb(user, host, "cdrdao", VERSION) != 0) {
         log_message(-2, "Cannot connect to any CDDB server.");
@@ -1686,6 +1710,13 @@ int Cdrdao::copyCd(DaoCommandLine &opts, CdrDriver *src, CdrDriver *dst)
 
 int Cdrdao::copyCdOnTheFly(DaoCommandLine &opts, CdrDriver *src, CdrDriver *dst)
 {
+#ifdef _WIN32
+    (void)opts;
+    (void)src;
+    (void)dst;
+    log_message(-2, "On-the-fly CD copying is not supported on Windows.");
+    return 1;
+#else
     Toc *toc = NULL;
     int pipeFds[2];
     pid_t pid = -1;
@@ -1864,6 +1895,7 @@ fail:
         close(pipeFds[1]);
 
     return ret;
+#endif
 }
 
 void Cdrdao::printVersion()

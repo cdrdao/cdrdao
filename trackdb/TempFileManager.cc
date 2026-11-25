@@ -20,6 +20,7 @@
 #include "TempFileManager.h"
 #include "log.h"
 
+#include <cstdlib>
 #include <cstring>
 #include <fcntl.h>
 #include <stdio.h>
@@ -27,11 +28,29 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#ifndef S_IRGRP
+#define S_IRGRP 0
+#endif
+#ifndef S_IROTH
+#define S_IROTH 0
+#endif
+
 #define DEFAULT_TEMP_PATH "/tmp/"
 
 TempFileManager::TempFileManager()
 {
+#ifdef _WIN32
+    const char *tmp = getenv("TEMP");
+    if (!tmp || !*tmp)
+        tmp = getenv("TMP");
+    if (!tmp || !*tmp)
+        tmp = ".";
+    path_ = tmp;
+    if (path_.back() != '/' && path_.back() != '\\')
+        path_ += '\\';
+#else
     path_ = DEFAULT_TEMP_PATH;
+#endif
     keepTemps_ = false;
     prefix_ = "cdrdao.";
 }
@@ -67,7 +86,7 @@ bool TempFileManager::setTempDirectory(const char *path)
 
     path_ = path;
 
-    if (path[path_.size() - 1] != '/')
+    if (!path_.empty() && path_.back() != '/' && path_.back() != '\\')
         path_ += '/';
 
     return true;
@@ -80,11 +99,11 @@ bool TempFileManager::getTempFile(std::string &tempname, const char *key, const 
         return true;
     }
 
-    const char *shortname = strrchr(key, '/');
-    if (shortname)
-        shortname++;
-    else
-        shortname = key;
+    const char *shortname = key;
+    for (const char *p = key; *p != '\0'; ++p) {
+        if (*p == '/' || *p == '\\' || *p == ':')
+            shortname = p + 1;
+    }
 
     std::string fname = path_;
     fname += prefix_;

@@ -37,7 +37,10 @@
 
 #endif
 
-#ifdef __CYGWIN__
+#if defined(__CYGWIN__) || defined(_WIN32)
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
 #include <windows.h>
 #endif
 
@@ -123,6 +126,10 @@ void mSleep(long milliSeconds)
 // it is called.
 void installSignalHandler(int sig, SignalHandler handler)
 {
+#ifdef _WIN32
+    if (signal(sig, handler) == SIG_ERR)
+        log_message(-2, "Cannot install signal handler: %s", strerror(errno));
+#else
     struct sigaction action;
 
     memset(&action, 0, sizeof(action));
@@ -137,11 +144,15 @@ void installSignalHandler(int sig, SignalHandler handler)
 
     if (sigaction(sig, &action, NULL) != 0)
         log_message(-2, "Cannot install signal handler: %s", strerror(errno));
+#endif
 }
 
 // Blocks specified signal.
 void blockSignal(int sig)
 {
+#ifdef _WIN32
+    (void)sig;
+#else
     sigset_t set;
 
     sigemptyset(&set);
@@ -156,11 +167,15 @@ void blockSignal(int sig)
 #else
     sigprocmask(SIG_BLOCK, &set, NULL);
 #endif
+#endif
 }
 
 // Unblocks specified signal.
 void unblockSignal(int sig)
 {
+#ifdef _WIN32
+    (void)sig;
+#else
     sigset_t set;
 
     sigemptyset(&set);
@@ -175,6 +190,7 @@ void unblockSignal(int sig)
 #else
     sigprocmask(SIG_UNBLOCK, &set, NULL);
 #endif
+#endif
 }
 
 /* Sets real time scheduling.
@@ -186,7 +202,7 @@ void unblockSignal(int sig)
  */
 int setRealTimeScheduling(int priority)
 {
-#if defined(__CYGWIN__)
+#if defined(__CYGWIN__) || defined(_WIN32)
     if (!SetPriorityClass(GetCurrentProcess(), REALTIME_PRIORITY_CLASS)) {
         log_message(-1, "Cannot set real time priority class.");
         return 3;
@@ -292,6 +308,9 @@ int setRealTimeScheduling(int priority)
 
 bool giveUpRootPrivileges()
 {
+#ifdef _WIN32
+    return true;
+#else
     if (geteuid() != getuid()) {
 #if defined(HAVE_SETREUID)
         if (setreuid((uid_t)-1, getuid()) != 0)
@@ -323,4 +342,5 @@ bool giveUpRootPrivileges()
     }
 
     return true;
+#endif
 }

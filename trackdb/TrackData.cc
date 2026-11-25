@@ -29,6 +29,10 @@
 #include <unistd.h>
 #include <filesystem>
 
+#ifndef O_BINARY
+#define O_BINARY 0
+#endif
+
 #include "Msf.h"
 #include "TrackData.h"
 #include "log.h"
@@ -600,7 +604,7 @@ int TrackData::checkAudioFile(const std::string &fn, unsigned long *length)
         return 1;
     }
 
-    if ((fd = open(fn.c_str(), O_RDONLY)) < 0)
+    if ((fd = open(fn.c_str(), O_RDONLY | O_BINARY)) < 0)
         return 1;
 
     ret = fstat(fd, &buf);
@@ -643,12 +647,7 @@ int TrackData::waveLength(const std::string &filename, long offset, long *hdrlen
     short waveBits;
     struct stat sbuf;
 
-#ifdef __CYGWIN__
-    if ((fp = fopen(filename.c_str(), "rb")) == NULL)
-#else
-    if ((fp = fopen(filename.c_str(), "r")) == NULL)
-#endif
-    {
+    if ((fp = fopen(filename.c_str(), "rb")) == NULL) {
         log_message(-2, "Cannot open audio file \"%s\" for reading: %s", filename.c_str(),
                     strerror(errno));
         return 1;
@@ -828,7 +827,7 @@ int TrackData::audioDataLength(const std::string &fname, long offset, unsigned l
 
     *length = 0;
 
-    if ((fd = open(fname.c_str(), O_RDONLY)) < 0)
+    if ((fd = open(fname.c_str(), O_RDONLY | O_BINARY)) < 0)
         return 1;
 
     ret = fstat(fd, &buf);
@@ -869,7 +868,7 @@ int TrackData::dataFileLength(const std::string &fname, long offset, unsigned lo
     int ret;
     *length = 0;
 
-    if ((fd = open(fname.c_str(), O_RDONLY)) < 0)
+    if ((fd = open(fname.c_str(), O_RDONLY | O_BINARY)) < 0)
         return 1;
 
     ret = fstat(fd, &buf);
@@ -1071,12 +1070,7 @@ int TrackDataReader::openData()
                 return 1;
             }
 
-#ifdef __CYGWIN__
-            if ((fd_ = open(trackData_->filename_.c_str(), O_RDONLY | O_BINARY)) < 0)
-#else
-            if ((fd_ = open(trackData_->filename_.c_str(), O_RDONLY)) < 0)
-#endif
-            {
+            if ((fd_ = open(trackData_->filename_.c_str(), O_RDONLY | O_BINARY)) < 0) {
                 log_message(-2, "Cannot open audio file \"%s\": %s", trackData_->filename_.c_str(),
                             strerror(errno));
                 return 1;
@@ -1103,12 +1097,7 @@ int TrackDataReader::openData()
             // data mode
             headerLength_ = 0;
 
-#ifdef __CYGWIN__
-            if ((fd_ = open(trackData_->filename_.c_str(), O_RDONLY | O_BINARY)) < 0)
-#else
-            if ((fd_ = open(trackData_->filename_.c_str(), O_RDONLY)) < 0)
-#endif
-            {
+            if ((fd_ = open(trackData_->filename_.c_str(), O_RDONLY | O_BINARY)) < 0) {
                 log_message(-2, "Cannot open data file \"%s\": %s", trackData_->filename_.c_str(),
                             strerror(errno));
                 return 1;
@@ -1124,12 +1113,7 @@ int TrackDataReader::openData()
             }
         }
     } else if (trackData_->type_ == TrackData::FIFO) {
-#ifdef __CYGWIN__
-        if ((fd_ = open(trackData_->filename_.c_str(), O_RDONLY | O_BINARY)) < 0)
-#else
-        if ((fd_ = open(trackData_->filename_.c_str(), O_RDONLY)) < 0)
-#endif
-        {
+        if ((fd_ = open(trackData_->filename_.c_str(), O_RDONLY | O_BINARY)) < 0) {
             log_message(-2, "Cannot open FIFO \"%s\": %s", trackData_->filename_.c_str(),
                         strerror(errno));
             return 1;

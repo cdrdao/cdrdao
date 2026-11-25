@@ -19,19 +19,29 @@
 
 #include <config.h>
 
+#ifdef _WIN32
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#include <direct.h>
+#include <io.h>
+#else
 #include <arpa/inet.h>
+#include <netdb.h>
+#include <netinet/in.h>
+#include <sys/socket.h>
+#endif
 #include <assert.h>
 #include <ctype.h>
 #include <errno.h>
 #include <fcntl.h>
-#include <netdb.h>
-#include <netinet/in.h>
 #include <signal.h>
 #include <sstream>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/types.h>
@@ -51,9 +61,18 @@
 #define CDDB_DEFAULT_PORT_CDDBP 8880
 #define CDDB_DEFAULT_PORT_HTTP 80
 
-static int getCode(const char *line, int code[3]);
 static unsigned int cddbSum(unsigned int n);
 
+#ifdef _WIN32
+static bool ensureWinsockInitialized()
+{
+    static bool initialized = []() {
+        WSADATA wsaData;
+        return WSAStartup(MAKEWORD(2, 2), &wsaData) == 0;
+    }();
+    return initialized;
+}
+#else
 static RETSIGTYPE alarmHandler(int sig)
 {
     log_message(0, "ALARM");
@@ -61,6 +80,7 @@ static RETSIGTYPE alarmHandler(int sig)
     return 0;
 #endif
 }
+#endif
 
 Cddb::~Cddb()
 {
@@ -75,10 +95,14 @@ void Cddb::timeout(int t)
 
 void Cddb::localCddbDirectory(const std::string &dir)
 {
-    const char *homeDir = nullptr;
+    const char *homeDir = getenv("HOME");
+#ifdef _WIN32
+    if (homeDir == nullptr)
+        homeDir = getenv("USERPROFILE");
+#endif
 
     // replace ~/ by the path to the home directory as indicated by $HOME
-    if (dir[0] == '~' && dir[1] == '/' && (homeDir = getenv("HOME")) != nullptr) {
+    if (dir.size() >= 2 && dir[0] == '~' && dir[1] == '/' && homeDir != nullptr) {
         localCddbDirectory_ = homeDir;
         localCddbDirectory_ += dir.substr(1);
     } else {
@@ -177,6 +201,15 @@ bool Cddb::openSingleConnection(ServerList *sl)
     struct sockaddr_in sockAddr;
     struct hostent *hostEnt;
 
+#ifdef _WIN32
+    if (!ensureWinsockInitialized()) {
+        log_message(-2, "CDDB: WSAStartup failed.");
+        return false;
+    }
+#endif
+
+    memset(&sockAddr, 0, sizeof(sockAddr));
+
     auto server = sl->server;
     auto port = sl->port;
 
@@ -198,10 +231,13 @@ bool Cddb::openSingleConnection(ServerList *sl)
 #ifdef HAVE_INET_ATON
     if (!inet_aton(server.c_str(), &sockAddr.sin_addr)) {
 #else
-    if ((inetAddr = (long)inet_addr(server.c_str())) == -1) {
+    unsigned long inetAddr = inet_addr(server.c_str());
+    if (inetAddr == INADDR_NONE) {
 #endif
         if ((hostEnt = gethostbyname(server.c_str())) == NULL || hostEnt->h_addrtype != AF_INET) {
+#ifndef _WIN32
             alarm(0);
+#endif
             log_message(-1, "CDDB: Cannot resolve hostname '%s' - skipping.", server.c_str());
             return false;
         } else {
@@ -210,12 +246,73 @@ bool Cddb::openSingleConnection(ServerList *sl)
     }
 #ifndef HAVE_INET_ATON
     else {
-        memcpy((char *)&sockAddr.sin_addr, (char *)&inetAddr, sizeof(inetAddr));
+        sockAddr.sin_addr.s_addr = inetAddr;
     }
 #endif
 
     log_message(4, "CDDB: Hostname: %s -> IP: %s", server.c_str(), inet_ntoa(sockAddr.sin_addr));
 
+#ifdef _WIN32
+    SOCKET s = socket(AF_INET, SOCK_STREAM, 0);
+    if (s == INVALID_SOCKET) {
+        log_message(-2, "CDDB: Cannot create socket: WSA error %d", WSAGetLastError());
+        return false;
+    }
+    fd_ = (intptr_t)s;
+
+    sockAddr.sin_family = AF_INET;
+    sockAddr.sin_port = htons(port);
+
+    u_long nonBlocking = 1;
+    ioctlsocket(s, FIONBIO, &nonBlocking);
+
+    bool connectedOk = false;
+    int connErr = 0;
+    if (connect(s, (struct sockaddr *)&sockAddr, sizeof(sockAddr)) == 0) {
+        connectedOk = true;
+    } else {
+        connErr = WSAGetLastError();
+        if (connErr == WSAEWOULDBLOCK || connErr == WSAEINPROGRESS) {
+            fd_set wfds, efds;
+            FD_ZERO(&wfds);
+            FD_ZERO(&efds);
+            FD_SET(s, &wfds);
+            FD_SET(s, &efds);
+            timeval tv;
+            tv.tv_sec = timeout_;
+            tv.tv_usec = 0;
+            int sel = ::select(0, nullptr, &wfds, &efds, &tv);
+            if (sel > 0) {
+                int soErr = 0;
+                int soLen = sizeof(soErr);
+                if (getsockopt(s, SOL_SOCKET, SO_ERROR, (char *)&soErr, &soLen) == 0 &&
+                    soErr == 0 && FD_ISSET(s, &wfds)) {
+                    connectedOk = true;
+                } else {
+                    connErr = soErr ? soErr : WSAGetLastError();
+                }
+            } else if (sel == 0) {
+                connErr = WSAETIMEDOUT;
+            } else {
+                connErr = WSAGetLastError();
+            }
+        }
+    }
+
+    nonBlocking = 0;
+    ioctlsocket(s, FIONBIO, &nonBlocking);
+
+    if (connectedOk) {
+        log_message(1, "CDDB: Ok.");
+        selectedServer_ = sl;
+        return true;
+    } else {
+        log_message(-1, "CDDB: Failed to connect to '%s:%u: WSA error %d", server.c_str(), port,
+                    connErr);
+        closeConnection();
+        return false;
+    }
+#else
     if ((fd_ = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
         log_message(-2, "CDDB: Cannot create socket: %s", strerror(errno));
         return false;
@@ -226,7 +323,7 @@ bool Cddb::openSingleConnection(ServerList *sl)
 
     alarm(timeout_);
 
-    if (connect(fd_, (struct sockaddr *)&sockAddr, sizeof(sockAddr)) == 0) {
+    if (connect((int)fd_, (struct sockaddr *)&sockAddr, sizeof(sockAddr)) == 0) {
         alarm(0);
         log_message(1, "CDDB: Ok.");
         selectedServer_ = sl;
@@ -238,6 +335,7 @@ bool Cddb::openSingleConnection(ServerList *sl)
         closeConnection();
         return false;
     }
+#endif
 }
 
 //
@@ -245,14 +343,12 @@ bool Cddb::openSingleConnection(ServerList *sl)
 //
 bool Cddb::openConnection()
 {
+    if (fd_ != -1) // already connected
+        return true;
+
+#ifndef _WIN32
     struct sigaction newAlarmHandler;
     struct sigaction oldAlarmHandler;
-#ifndef HAVE_INET_ATON
-    long inetAddr;
-#endif
-
-    if (fd_ >= 0) // already connected
-        return true;
 
     memset(&newAlarmHandler, 0, sizeof(newAlarmHandler));
     sigemptyset(&(newAlarmHandler.sa_mask));
@@ -268,6 +364,7 @@ bool Cddb::openConnection()
         return false;
     }
     alarm(0);
+#endif
 
     bool success = false;
 
@@ -282,13 +379,15 @@ bool Cddb::openConnection()
 
     if (!success) {
         connected_ = 0;
+#ifndef _WIN32
         alarm(0);
         if (sigaction(SIGALRM, &oldAlarmHandler, NULL) != 0) {
             log_message(-1, "CDDB: Cannot restore alarm signal handler: %s", strerror(errno));
         }
+#endif
     }
 
-    if (fd_ < 0)
+    if (fd_ == -1)
         return false;
 
     return true;
@@ -299,8 +398,12 @@ bool Cddb::openConnection()
 
 void Cddb::closeConnection()
 {
-    if (fd_ >= 0) {
-        close(fd_);
+    if (fd_ != -1) {
+#ifdef _WIN32
+        closesocket((SOCKET)fd_);
+#else
+        close((int)fd_);
+#endif
         fd_ = -1;
         connected_ = 0;
     }
@@ -541,7 +644,7 @@ void Cddb::shutdown()
 {
     int code[3];
 
-    if (fd_ < 0)
+    if (fd_ == -1)
         return;
 
     if (!connected_) {
@@ -692,28 +795,51 @@ std::optional<std::string> Cddb::readLine()
         }
         fd_set fds;
         FD_ZERO(&fds);
-        FD_SET(fd_, &fds);
+#ifdef _WIN32
+        FD_SET((SOCKET)fd_, &fds);
+#else
+        FD_SET((int)fd_, &fds);
+#endif
         timeval tv;
         tv.tv_sec = timeout_;
         tv.tv_usec = 0;
 
-        auto ret = ::select(fd_ + 1, &fds, nullptr, nullptr, &tv);
+#ifdef _WIN32
+        auto ret = ::select(0, &fds, nullptr, nullptr, &tv);
+        if (ret == SOCKET_ERROR) {
+            int wsaErr = WSAGetLastError();
+            if (wsaErr == WSAEINTR)
+                continue;
+            log_message(-2, "CDDB: Error while waiting for data: WSA error %d", wsaErr);
+            return std::nullopt;
+        }
+#else
+        auto ret = ::select((int)fd_ + 1, &fds, nullptr, nullptr, &tv);
         if (ret < 0) {
             if (errno == EINTR)
                 continue;
             log_message(-2, "CDDB: Error while waiting for data: %s", strerror(errno));
             return std::nullopt;
         }
+#endif
         if (ret == 0) {
             log_message(-2, "CDDB: Timeout while reading data.");
             return std::nullopt;
         }
 
-        auto n = ::read(fd_, read_buf_.data(), read_buf_.size());
+#ifdef _WIN32
+        auto n = ::recv((SOCKET)fd_, read_buf_.data(), (int)read_buf_.size(), 0);
+        if (n == SOCKET_ERROR) {
+            log_message(-2, "CDDB: Error while reading data: WSA error %d", WSAGetLastError());
+            return std::nullopt;
+        }
+#else
+        auto n = ::read((int)fd_, read_buf_.data(), read_buf_.size());
         if (n < 0) {
             log_message(-2, "CDDB: Error while reading data: %s", strerror(errno));
             return std::nullopt;
         }
+#endif
 
         if (n == 0) {
             readEof_ = true;
@@ -796,13 +922,24 @@ int Cddb::sendCommand(const std::vector<std::string> &args)
     cmd = ss.str();
     log_message(4, "CDDB: Sending command '%s'...", cmd.c_str());
 
-    auto ret = ::write(fd_, cmd.c_str(), cmd.size());
+#ifdef _WIN32
+    auto ret = ::send((SOCKET)fd_, cmd.c_str(), (int)cmd.size(), 0);
 
-    if (ret != cmd.size()) {
+    if (ret == SOCKET_ERROR || (size_t)ret != cmd.size()) {
+        log_message(-2, "CDDB: Failed to send command '%s': WSA error %d", cmd.c_str(),
+                    WSAGetLastError());
+        err = 1;
+        goto fail;
+    }
+#else
+    auto ret = ::write((int)fd_, cmd.c_str(), cmd.size());
+
+    if (ret != (ssize_t)cmd.size()) {
         log_message(-2, "CDDB: Failed to send command '%s': %s", cmd.c_str(), strerror(errno));
         err = 1;
         goto fail;
     }
+#endif
 
     log_message(4, "CDDB: Ok.");
 
@@ -1015,7 +1152,11 @@ int Cddb::createLocalCddbFile(const std::string &category, const std::string &di
     ret = stat(categoryDir.c_str(), &sbuf);
 
     if (ret != 0 && errno == ENOENT) {
+#ifdef _WIN32
+        if (_mkdir(categoryDir.c_str()) != 0) {
+#else
         if (mkdir(categoryDir.c_str(), 0777) != 0) {
+#endif
             log_message(-2, "CDDB: Cannot create directory \"%s\": %s", categoryDir.c_str(),
                         strerror(errno));
             goto fail;

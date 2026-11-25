@@ -23,6 +23,7 @@
 #include <mad.h>
 #include <stdlib.h>
 #include <string>
+#include <vector>
 
 #include "FormatConverter.h"
 
@@ -59,9 +60,13 @@ class FormatMp3 : public FormatSupport
     // 1152 because that's what mad has as a max; *4 because there are 4
     // distinct bytes per sample (in 2 channel case).
     char buffer_[1152 * 4];
-    int mapped_fd_;
-    void *start_;
-    unsigned length_;
+#ifdef _WIN32
+    std::vector<unsigned char> file_buf_;
+#else
+    int mapped_fd_ = -1;
+#endif
+    void *start_ = nullptr;
+    unsigned length_ = 0;
 
     struct audio_dither dither_;
     struct mad_stream stream_;

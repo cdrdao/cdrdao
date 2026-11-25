@@ -25,7 +25,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#ifdef _WIN32
+#include <fstream>
+#else
 #include <sys/mman.h>
+#endif
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -71,9 +75,39 @@ void FormatMp3::convertAbort()
 
 FormatSupport::Status FormatMp3::madInit()
 {
+#ifdef _WIN32
+    std::ifstream in(src_file_, std::ios::binary | std::ios::ate);
+    if (!in) {
+        std::ostringstream oss;
+        oss << "Could not open input file \"" << src_file_ << "\": " << strerror(errno) << "\n";
+        throw std::runtime_error(oss.str());
+    }
+
+    auto sz = in.tellg();
+    if (sz < 0) {
+        std::ostringstream oss;
+        oss << "Could not read input file \"" << src_file_ << "\"\n";
+        throw std::runtime_error(oss.str());
+    }
+
+    file_buf_.resize(static_cast<size_t>(sz));
+    if (sz > 0) {
+        in.seekg(0, std::ios::beg);
+        if (!in.read(reinterpret_cast<char *>(file_buf_.data()), sz)) {
+            file_buf_.clear();
+            std::ostringstream oss;
+            oss << "Could not read input file \"" << src_file_ << "\"\n";
+            throw std::runtime_error(oss.str());
+        }
+    }
+
+    static unsigned char empty_buf = 0;
+    start_ = file_buf_.empty() ? &empty_buf : file_buf_.data();
+    length_ = static_cast<unsigned>(file_buf_.size());
+#else
     struct stat st;
 
-    if (stat(src_file_.c_str(), &st) != 0 || !(mapped_fd_ = open(src_file_.c_str(), O_RDONLY))) {
+    if (stat(src_file_.c_str(), &st) != 0 || (mapped_fd_ = open(src_file_.c_str(), O_RDONLY)) < 0) {
         std::ostringstream oss;
         oss << "Could not open input file \"" << src_file_ << "\": " << strerror(errno) << "\n";
         throw std::runtime_error(oss.str());
@@ -82,10 +116,13 @@ FormatSupport::Status FormatMp3::madInit()
     length_ = st.st_size;
     start_ = mmap(0, st.st_size, PROT_READ, MAP_SHARED, mapped_fd_, 0);
     if (start_ == MAP_FAILED) {
+        close(mapped_fd_);
+        mapped_fd_ = -1;
         std::ostringstream oss;
         oss << "Could not read input file \"" << src_file_ << "\": " << strerror(errno) << "\n";
         throw std::runtime_error(oss.str());
     }
+#endif
 
     auto ostatus = setup_wav_output(dst_file_);
     if (ostatus != FS_SUCCESS)
@@ -130,8 +167,15 @@ void FormatMp3::madExit()
     mad_frame_finish(&frame_);
     mad_stream_finish(&stream_);
 
+#ifdef _WIN32
+    file_buf_.clear();
+    file_buf_.shrink_to_fit();
+    start_ = nullptr;
+    length_ = 0;
+#else
     munmap(start_, length_);
     close(mapped_fd_);
+#endif
     close_wav_output();
 }
 

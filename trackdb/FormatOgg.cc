@@ -56,7 +56,7 @@ void FormatOgg::convertAbort()
 FormatSupport::Status FormatOgg::oggInit()
 {
     int ovret;
-    if (!(fin_ = fopen(src_file_.c_str(), "r")) ||
+    if (!(fin_ = fopen(src_file_.c_str(), "rb")) ||
         (ovret = ov_open(fin_, &vorbisFile_, NULL, 0)) != 0) {
         std::ostringstream oss;
         oss << "Could not open input file \"" << src_file_ << "\"\n";

@@ -20,14 +20,21 @@
 #include "config.h"
 
 #include <assert.h>
+#include <ctype.h>
 #include <errno.h>
 #include <fcntl.h>
-#include <ntddscsi.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
+#include <memory>
 #include <string>
+#include <vector>
+
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
 #include <windows.h>
+#include <ntddscsi.h>
 
 #include "ScsiIf.h"
 #include "log.h"
@@ -40,93 +47,82 @@ typedef struct {
     UCHAR ucSenseBuf[32];
 } SCSI_PASS_THROUGH_DIRECT_WITH_BUFFER;
 
-typedef struct _SCSI_INQUIRY_DEVICE {
-    UCHAR Type;
-    UCHAR TypeModifier;
-    UCHAR Version;
-    UCHAR Format;
-    UCHAR AddLength; // n-4
-    UCHAR Reserved[2];
-    UCHAR Flags;
-    char VendorId[8];
-    char ProductId[16];
-    char ProductRevLevel[4];
-    char ProductRevDate[8];
-} SCSI_INQUIRY_DEVICE;
-
-//
-// SCSI CDB operation codes
-//
-
-#define SCSIOP_INQUIRY 0x12
-#define SCSIOP_MODE_SELECT 0x15
-#define SCSIOP_MODE_SENSE 0x1A
-
-class ScsiIfImpl
+class ScsiIfNt : public ScsiIf
 {
   public:
-    std::string dev_;
+    explicit ScsiIfNt(const std::string &dev);
+    ~ScsiIfNt() override;
 
-    HANDLE hCD;
-    SCSI_PASS_THROUGH_DIRECT_WITH_BUFFER sb;
+    int init() override;
+    int timeout(int) override;
+    int sendCmd(const u8 *cmd, int cmdLen, const u8 *dataOut, int dataOutLen, u8 *dataIn,
+                int dataInLen, int showMessage = 1) override;
+    const u8 *getSense(int &len) const override;
+    void printError() override;
+    void release() override;
 
-    unsigned char senseBuffer_[32];
+  private:
+    bool openHandle();
 
-    int timeout_;
+    std::string devicePath_;
+    HANDLE hCD_ = INVALID_HANDLE_VALUE;
+    SCSI_PASS_THROUGH_DIRECT_WITH_BUFFER sb_{};
+    int lastSenseLen_ = 0;
+    int timeout_ = 30;
+    bool initialized_ = false;
 };
 
-ScsiIf::ScsiIf(const char *dev)
+ScsiIfNt::ScsiIfNt(const std::string &dev)
 {
-    impl_ = new ScsiIfImpl;
-
-    impl_->dev_ = "\\\\.\\";
-    impl_->dev_.append({dev[0]});
-    impl_->dev_.append(":");
-    impl_->timeout_ = 30;
-    impl_->hCD = INVALID_HANDLE_VALUE;
-
-    vendor_[0] = 0;
-    product_[0] = 0;
-    revision_[0] = 0;
+    dev_ = dev;
+    if (dev.rfind("\\\\.\\", 0) == 0) {
+        devicePath_ = dev;
+    } else if (!dev.empty() && isalpha(static_cast<unsigned char>(dev[0]))) {
+        devicePath_ =
+            "\\\\.\\" +
+            std::string(1, static_cast<char>(toupper(static_cast<unsigned char>(dev[0])))) + ":";
+    } else {
+        devicePath_ = dev;
+    }
 }
 
-ScsiIf::~ScsiIf()
+ScsiIfNt::~ScsiIfNt()
 {
-    if (impl_->hCD != INVALID_HANDLE_VALUE)
-        CloseHandle(impl_->hCD);
+    release();
+}
 
-    delete impl_;
+bool ScsiIfNt::openHandle()
+{
+    int i = 0;
+    while (i++ < 3 && hCD_ == INVALID_HANDLE_VALUE) {
+        hCD_ = CreateFileA(devicePath_.c_str(), GENERIC_READ | GENERIC_WRITE,
+                           FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
+    }
+    return hCD_ != INVALID_HANDLE_VALUE;
 }
 
 // opens scsi device
 // return: 0: OK
 //         1: device could not be opened
 //         2: inquiry failed
-
-int ScsiIf::init()
+int ScsiIfNt::init()
 {
-    int i = 0;
-    DWORD ol;
+    DWORD ol = 0;
+    IO_SCSI_CAPABILITIES ca{};
 
-    SCSI_ADDRESS sa;
-    IO_SCSI_CAPABILITIES ca;
-
-    while (i++ < 3 && (impl_->hCD == INVALID_HANDLE_VALUE)) {
-        impl_->hCD = CreateFile(impl_->dev_.c_str(), GENERIC_READ | GENERIC_WRITE,
-                                FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
-    }
-
-    if (impl_->hCD == INVALID_HANDLE_VALUE) {
+    if (!openHandle()) {
         return 1;
     }
 
-    if (DeviceIoControl(impl_->hCD, IOCTL_SCSI_GET_CAPABILITIES, NULL, 0, &ca,
+    if (DeviceIoControl(hCD_, IOCTL_SCSI_GET_CAPABILITIES, NULL, 0, &ca,
                         sizeof(IO_SCSI_CAPABILITIES), &ol, NULL)) {
-        maxDataLen_ = ca.MaximumTransferLength;
+        maxDataLen_ = static_cast<int>(ca.MaximumTransferLength);
     } else {
         // Pick sensible default, most drives won't honor the GET_CAP
         maxDataLen_ = 64 * 1024;
     }
+
+    initialized_ = true;
 
     if (inquiry() != 0)
         return 2;
@@ -134,13 +130,20 @@ int ScsiIf::init()
     return 0;
 }
 
+void ScsiIfNt::release()
+{
+    if (hCD_ != INVALID_HANDLE_VALUE) {
+        CloseHandle(hCD_);
+        hCD_ = INVALID_HANDLE_VALUE;
+    }
+}
+
 // Sets given timeout value in seconds and returns old timeout.
 // return: old timeout
-
-int ScsiIf::timeout(int t)
+int ScsiIfNt::timeout(int t)
 {
-    int old = impl_->timeout_;
-    impl_->timeout_ = t;
+    int old = timeout_;
+    timeout_ = t;
     return old;
 }
 
@@ -148,144 +151,124 @@ int ScsiIf::timeout(int t)
 // return 0: OK
 //        1: scsi command failed (os level, no sense data available)
 //        2: scsi command failed (sense data available)
-
-int ScsiIf::sendCmd(const u8 *cmd, int cmdLen, const u8 *dataOut, int dataOutLen, u8 *dataIn,
-                    int dataInLen, int showMessage)
+int ScsiIfNt::sendCmd(const u8 *cmd, int cmdLen, const u8 *dataOut, int dataOutLen, u8 *dataIn,
+                      int dataInLen, int showMessage)
 {
-    int i = 10;
+    assert(cmdLen >= 0 && static_cast<size_t>(cmdLen) <= sizeof(sb_.sptd.Cdb));
 
-    DWORD er, il, ol;
-
-    ZeroMemory(&impl_->sb, sizeof(SCSI_PASS_THROUGH_DIRECT_WITH_BUFFER));
-
-    impl_->sb.sptd.Length = sizeof(SCSI_PASS_THROUGH_DIRECT);
-    impl_->sb.sptd.PathId = 0;
-    impl_->sb.sptd.TargetId = 0; // impl_->scsi_id_;
-    impl_->sb.sptd.Lun = 0;      // impl_->lun_;
-    impl_->sb.sptd.CdbLength = cmdLen;
-    impl_->sb.sptd.SenseInfoLength = 32;
-    impl_->sb.sptd.TimeOutValue = impl_->timeout_;
-    impl_->sb.sptd.SenseInfoOffset = offsetof(SCSI_PASS_THROUGH_DIRECT_WITH_BUFFER, ucSenseBuf);
-    memcpy(impl_->sb.sptd.Cdb, cmd, cmdLen);
-
-    if (dataOut && dataOutLen) {
-        impl_->sb.sptd.DataIn = SCSI_IOCTL_DATA_OUT;
-        impl_->sb.sptd.DataBuffer = (void *)dataOut;
-        impl_->sb.sptd.DataTransferLength = dataOutLen;
-    } else {
-        impl_->sb.sptd.DataIn = SCSI_IOCTL_DATA_IN;
-        impl_->sb.sptd.DataBuffer = dataIn;
-        impl_->sb.sptd.DataTransferLength = dataInLen;
+    if (hCD_ == INVALID_HANDLE_VALUE) {
+        if (!initialized_ || !openHandle()) {
+            if (showMessage)
+                log_message(-2, "SCSI device %s is not open", devicePath_.c_str());
+            return 1;
+        }
     }
 
-    il = sizeof(SCSI_PASS_THROUGH_DIRECT_WITH_BUFFER);
+    DWORD il = sizeof(SCSI_PASS_THROUGH_DIRECT_WITH_BUFFER);
+    DWORD ol = 0;
 
-    auto result = DeviceIoControl(impl_->hCD, IOCTL_SCSI_PASS_THROUGH_DIRECT, &impl_->sb, il,
-                                  &impl_->sb, il, &ol, NULL);
+    ZeroMemory(&sb_, sizeof(SCSI_PASS_THROUGH_DIRECT_WITH_BUFFER));
+
+    sb_.sptd.Length = sizeof(SCSI_PASS_THROUGH_DIRECT);
+    sb_.sptd.PathId = 0;
+    sb_.sptd.TargetId = 0;
+    sb_.sptd.Lun = 0;
+    sb_.sptd.CdbLength = static_cast<UCHAR>(cmdLen);
+    sb_.sptd.SenseInfoLength = sizeof(sb_.ucSenseBuf);
+    sb_.sptd.TimeOutValue = timeout_;
+    sb_.sptd.SenseInfoOffset = offsetof(SCSI_PASS_THROUGH_DIRECT_WITH_BUFFER, ucSenseBuf);
+    memcpy(sb_.sptd.Cdb, cmd, cmdLen);
+
+    if (dataOut && dataOutLen > 0) {
+        sb_.sptd.DataIn = SCSI_IOCTL_DATA_OUT;
+        sb_.sptd.DataBuffer = const_cast<u8 *>(dataOut);
+        sb_.sptd.DataTransferLength = dataOutLen;
+    } else if (dataIn && dataInLen > 0) {
+        sb_.sptd.DataIn = SCSI_IOCTL_DATA_IN;
+        sb_.sptd.DataBuffer = dataIn;
+        sb_.sptd.DataTransferLength = dataInLen;
+    } else {
+        sb_.sptd.DataIn = SCSI_IOCTL_DATA_UNSPECIFIED;
+        sb_.sptd.DataBuffer = NULL;
+        sb_.sptd.DataTransferLength = 0;
+    }
+
+    BOOL result =
+        DeviceIoControl(hCD_, IOCTL_SCSI_PASS_THROUGH_DIRECT, &sb_, il, &sb_, il, &ol, NULL);
 
     if (!result) {
-        log_message(-2, "DeviceIoControl failed: %lu\n", GetLastError());
+        if (showMessage)
+            log_message(-2, "DeviceIoControl failed: %lu", GetLastError());
         return 1;
     }
 
-    if (impl_->sb.sptd.ScsiStatus != 0)
+    lastSenseLen_ = sb_.sptd.SenseInfoLength;
+    if (lastSenseLen_ > static_cast<int>(sizeof(sb_.ucSenseBuf)))
+        lastSenseLen_ = static_cast<int>(sizeof(sb_.ucSenseBuf));
+
+    if (sb_.sptd.ScsiStatus != 0) {
+        if (showMessage)
+            printError();
         return 2;
-
-    return 0;
-}
-
-const unsigned char *ScsiIf::getSense(int &len) const
-{
-    len = 32;
-    return impl_->sb.ucSenseBuf;
-}
-
-void ScsiIf::printError()
-{
-    decodeSense(impl_->sb.ucSenseBuf, 32);
-}
-
-int ScsiIf::inquiry()
-{
-    unsigned char cmd[6];
-    int i;
-
-    SCSI_INQUIRY_DEVICE NTinqbuf;
-
-    ZeroMemory(&NTinqbuf, sizeof(SCSI_INQUIRY_DEVICE));
-
-    cmd[0] = 0x12; // INQUIRY
-    cmd[1] = cmd[2] = cmd[3] = 0;
-    cmd[4] = sizeof(NTinqbuf);
-    cmd[5] = 0;
-
-    if (sendCmd(cmd, 6, NULL, 0, (unsigned char *)&NTinqbuf, sizeof(NTinqbuf), 1) != 0) {
-        log_message(-2, "Inquiry command failed on '%s'", impl_->dev_.c_str());
-        return 1;
-    }
-
-    strncpy(vendor_, (char *)(NTinqbuf.VendorId), 8);
-    vendor_[8] = 0;
-
-    strncpy(product_, (char *)(NTinqbuf.ProductId), 16);
-    product_[16] = 0;
-
-    strncpy(revision_, (char *)(NTinqbuf.ProductRevLevel), 4);
-    revision_[4] = 0;
-
-    for (i = 7; i >= 0 && vendor_[i] == ' '; i--) {
-        vendor_[i] = 0;
-    }
-
-    for (i = 15; i >= 0 && product_[i] == ' '; i--) {
-        product_[i] = 0;
-    }
-
-    for (i = 3; i >= 0 && revision_[i] == ' '; i--) {
-        revision_[i] = 0;
     }
 
     return 0;
 }
 
-#include "ScsiIf-common.cc"
+const u8 *ScsiIfNt::getSense(int &len) const
+{
+    len = lastSenseLen_;
+    return sb_.ucSenseBuf;
+}
+
+void ScsiIfNt::printError()
+{
+    decodeSense(sb_.ucSenseBuf, lastSenseLen_);
+}
+
+std::shared_ptr<ScsiIf> ScsiIf::create(const std::string &dev)
+{
+    return std::make_shared<ScsiIfNt>(dev);
+}
 
 ScsiIf::ScanData *ScsiIf::scan(int *len, char *scsi_dev_path)
 {
-    ScanData *sdata = NULL;
+    (void)scsi_dev_path;
+    *len = 0;
 
     DWORD drive_mask = GetLogicalDrives();
-    std::vector<std::string> matches;
-
     if (drive_mask == 0) {
         log_message(0, "Error: Could not retrieve logical drives");
         return NULL;
     }
 
+    std::vector<std::string> matches;
     for (int i = 0; i < 26; i++) {
-        if (drive_mask & (1 << i)) {
+        if (drive_mask & (1U << i)) {
             std::string path;
-            path.append({(char)('A' + i)});
-            path.append(":\\");
-            UINT drive_type = GetDriveType(path.c_str());
+            path += static_cast<char>('A' + i);
+            path += ":\\";
+            UINT drive_type = GetDriveTypeA(path.c_str());
             if (drive_type == DRIVE_CDROM) {
                 matches.push_back(path);
             }
         }
     }
 
-    if (matches.size() > 0) {
-        *len = matches.size();
-        sdata = new ScanData[matches.size()];
+    if (matches.empty()) {
+        return NULL;
+    }
 
-        for (int i = 0; i < matches.size(); i++) {
-            ScsiIf sif(matches[i].c_str());
-            sif.init();
-            sdata[i].dev = matches[i];
-            strcpy(sdata[i].vendor, sif.vendor());
-            strcpy(sdata[i].product, sif.product());
-            strcpy(sdata[i].revision, sif.revision());
-        }
+    *len = static_cast<int>(matches.size());
+    ScanData *sdata = new ScanData[matches.size()];
+
+    for (size_t i = 0; i < matches.size(); i++) {
+        auto sif = ScsiIf::create(matches[i]);
+        sif->init();
+        sdata[i].dev = matches[i];
+        sdata[i].vendor = sif->vendor();
+        sdata[i].product = sif->product();
+        sdata[i].revision = sif->revision();
     }
 
     return sdata;

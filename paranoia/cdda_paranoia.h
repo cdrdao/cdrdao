@@ -7,6 +7,8 @@
 #ifndef _CDROM_PARANOIA_
 #define _CDROM_PARANOIA_
 
+#include <stdint.h>
+
 #define CD_FRAMEWORDS (CD_FRAMESIZE_RAW/2)
 
 #define PARANOIA_CB_READ           0

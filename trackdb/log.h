@@ -20,6 +20,18 @@
 #ifndef __LOG_H__
 #define __LOG_H__
 
+#ifdef __MINGW32__
+#include <stdio.h>
+#endif
+
+#if defined(__MINGW_PRINTF_FORMAT)
+#define CDRDAO_PRINTF_FORMAT __MINGW_PRINTF_FORMAT
+#elif defined(__MINGW32__) && defined(__USE_MINGW_ANSI_STDIO) && __USE_MINGW_ANSI_STDIO
+#define CDRDAO_PRINTF_FORMAT gnu_printf
+#else
+#define CDRDAO_PRINTF_FORMAT printf
+#endif
+
 // Initialize log code. Must be called first.
 void log_init();
 
@@ -33,7 +45,8 @@ void log_init();
 //   -10 and less : fatal error, call will exit the calling thread.
 //
 // Levels >= 0 are controlled by the verbosity set below.
-void log_message(int level, const char *fmt, ...) __attribute__((format(printf, 2, 3)));
+void log_message(int level, const char *fmt, ...)
+    __attribute__((format(CDRDAO_PRINTF_FORMAT, 2, 3)));
 
 // Set logging verbosity. Only levels <= set level will be output.
 void log_set_verbose(int level);

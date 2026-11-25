@@ -117,13 +117,13 @@ int convertBin(Toc *toc, const char *oldBin, char *newBin, int byteSwap)
     TrackIterator titr(toc);
     FILE *in, *out;
 
-    in = fopen(oldBin, "r");
+    in = fopen(oldBin, "rb");
     if (!in) {
         message(-2, "Failed to open input bin file %s", oldBin);
         return 1;
     }
 
-    out = fopen(newBin, "w+");
+    out = fopen(newBin, "w+b");
     if (!out) {
         message(-2, "Failed to open output bin file %s", newBin);
         fclose(in);

@@ -775,7 +775,12 @@ static void initDriverTable()
     }
 
     /* read driver table from $HOME/.cdrdao-drivers */
-    if ((home = getenv("HOME")) != NULL) {
+    home = getenv("HOME");
+#ifdef _WIN32
+    if (home == NULL)
+        home = getenv("USERPROFILE");
+#endif
+    if (home != NULL) {
         path = strdup3CC(home, "/.cdrdao-drivers", NULL);
         readDriverTable(path);
         delete[] path;
@@ -920,10 +925,11 @@ void CdrDriver::onTheFly(int fd)
 void CdrDriver::remote(int f, int fd)
 {
     if (f != 0 && fd >= 0) {
-        int flags;
-
         remote_ = 1;
         remoteFd_ = fd;
+
+#ifndef _WIN32
+        int flags;
 
         // switch 'fd' to non blocking IO mode
         if ((flags = fcntl(fd, F_GETFL)) == -1) {
@@ -940,6 +946,7 @@ void CdrDriver::remote(int f, int fd)
             remote_ = 0;
             remoteFd_ = -1;
         }
+#endif
     } else {
         remote_ = 0;
         remoteFd_ = -1;
@@ -1066,8 +1073,8 @@ int CdrDriver::unitReady(ScsiIf &scsiIf, bool showErrors)
         case 0x06: // UNIT ATTENTION
             continue;
 
-        case 0x02: // NOT READY
-        case 0x03: // MEDIUM ERROR
+        case 0x02:             // NOT READY
+        case 0x03:             // MEDIUM ERROR
             if (asc == 0x3a) { // MEDIUM NOT PRESENT
                 return ascq == 0x02 ? TUR_TRAY_OPEN : TUR_NO_DISC;
             }
@@ -2619,7 +2626,7 @@ int CdrDriver::analyzeTrackScan(TrackData::Mode, int trackNr, long startLba, lon
     // frame(s) right before its first index 0 Q frame carry no position
     // (MCN/ISRC frames, CRC errors): the P channel flags pause frames, so it
     // tells on which side of the boundary such frames are.
-    int lastPosP = -1;     // P flag of the last positioned frame of this track, -1: none
+    int lastPosP = -1;    // P flag of the last positioned frame of this track, -1: none
     long unknownPRun = 0; // trailing frames since then without usable position but P flag set
 
     auto unknownPosition = [&](const SubChannel *c) {
@@ -3538,7 +3545,7 @@ Toc *CdrDriver::readDisk(int session, const char *dataFilename)
 
         giveUpRootPrivileges();
 
-#ifdef __CYGWIN__
+#if defined(__CYGWIN__) || defined(_WIN32)
         if ((fp = open(dataFilename, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY, 0666)) < 0)
 #else
         if ((fp = open(dataFilename, O_WRONLY | O_CREAT | O_TRUNC, 0666)) < 0)

@@ -73,7 +73,12 @@ int main(int argc, char **argv)
 
     settingsPath = NULL;
 
-    if ((homeDir = getenv("HOME")) != NULL) {
+    homeDir = getenv("HOME");
+#ifdef _WIN32
+    if (homeDir == NULL)
+        homeDir = getenv("USERPROFILE");
+#endif
+    if (homeDir != NULL) {
         settingsPath = strdup3CC(homeDir, "/.cdrdao", NULL);
 
         if (settings->read(settingsPath) == 0)

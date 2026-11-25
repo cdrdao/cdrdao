@@ -24,6 +24,7 @@
 #ifndef __CDDB_H__
 #define __CDDB_H__
 
+#include <cstdint>
 #include <string>
 #include <vector>
 #include <filesystem>
@@ -99,7 +100,7 @@ class Cddb
 
     std::string localCddbDirectory_;
 
-    int fd_ = -1;
+    intptr_t fd_ = -1;
     int connected_ = false;
     int timeout_ = 20;
 

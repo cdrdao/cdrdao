@@ -28,13 +28,19 @@
 #ifdef HAVE_GETOPT_H
 #include <getopt.h>
 #endif
+#ifdef _WIN32
+#include <direct.h>
+#endif
 #include <fcntl.h>
 #include <iconv.h>
-#include <langinfo.h>
 #include <string>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <vector>
+
+#ifndef O_BINARY
+#define O_BINARY 0
+#endif
 
 #include <lame/lame.h>
 
@@ -425,7 +431,7 @@ int encode_track(lame_global_flags *lf, const Toc *toc, const string &fileName, 
         return 0;
     }
 
-    if ((fd = open(fileName.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0666)) < 0) {
+    if ((fd = open(fileName.c_str(), O_WRONLY | O_CREAT | O_TRUNC | O_BINARY, 0666)) < 0) {
         message(-2, "Cannot open \"%s\" for writing: %s", fileName.c_str(), strerror(errno));
         return 0;
     }
@@ -483,7 +489,7 @@ int encode_track(lame_global_flags *lf, const Toc *toc, const string &fileName, 
     }
 
     if (ret != 0) {
-        FILE *fp = fopen(fileName.c_str(), "a+");
+        FILE *fp = fopen(fileName.c_str(), "a+b");
 
         if (fp != NULL) {
             lame_mp3_tags_fid(lf, fp);
@@ -605,7 +611,7 @@ int main(int argc, char **argv)
     if (!TARGET_DIRECTORY.empty()) {
         mp3TargetDir = TARGET_DIRECTORY;
 
-        if (*(TARGET_DIRECTORY.end() - 1) != '/')
+        if (TARGET_DIRECTORY.back() != '/' && TARGET_DIRECTORY.back() != '\\')
             mp3TargetDir += "/";
 
         if (CREATE_ALBUM_DIRECTORY) {
@@ -617,7 +623,11 @@ int main(int argc, char **argv)
                 mp3TargetDir += tocfileBaseName;
             }
 
+#ifdef _WIN32
+            if (_mkdir(mp3TargetDir.c_str()) != 0) {
+#else
             if (mkdir(mp3TargetDir.c_str(), 0777) != 0) {
+#endif
                 message(-10, "Cannot create album directory \"%s\": %s", mp3TargetDir.c_str(),
                         strerror(errno));
             }

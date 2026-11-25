@@ -123,6 +123,7 @@ gcdmaster_DEPENDENCIES = \
 	@device_monitor_obj@
 
 AM_CPPFLAGS =					\
+	-I$(top_srcdir)				\
 	-I$(srcdir)/../trackdb			\
 	-I$(srcdir)/../paranoia			\
 	-I$(srcdir)/../dao
@@ -165,13 +166,13 @@ RESOURCE_DEPS = \
 resources.cc: ui/gresource.xml $(RESOURCE_DEPS)
 	glib-compile-resources \
 		--target=$@ \
-		--sourcedir=ui \
+		--sourcedir=$(srcdir)/ui \
 		--generate-source \
 		$<
 resources.h: ui/gresource.xml $(RESOURCE_DEPS)
 	glib-compile-resources \
 		--target=$@ \
-		--sourcedir=ui \
+		--sourcedir=$(srcdir)/ui \
 		--generate-header \
 		$<
 
