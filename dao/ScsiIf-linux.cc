@@ -299,7 +299,7 @@ int ScsiIfLinux::adjustReservedBuffer(int requestedSize)
         return 0;
     }
 
-    log_message(4, "SG: Maximum transfer length: %ld", maxTransferLength);
+    log_message(4, "SG: Maximum transfer length: %d", maxTransferLength);
 
     return maxTransferLength;
 }

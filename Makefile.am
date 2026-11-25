@@ -19,10 +19,10 @@ EXTRA_DIST =		\
 	NEWS		\
 	README.md	\
 	README.PlexDAE	\
-	specs/*.in	\
+	specs/cdrdao.fedora.spec.in	\
 	aspi.reg	\
 	cdrdao.lsm	\
-	testtocs/*.toc	\
+	testtocs	\
 	contrib
 
 dist-hook:

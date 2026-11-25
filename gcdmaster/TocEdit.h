@@ -20,6 +20,7 @@
 #ifndef __TOC_EDIT_H__
 #define __TOC_EDIT_H__
 
+#include <atomic>
 #include <list>
 #include <string>
 #include <gtkmm.h>
@@ -123,6 +124,8 @@ class TocEdit : public Glib::Object
     Toc *toc_ = nullptr;
     SampleManager *sampleManager_ = nullptr;
     TaskManager tm_;
+    // Read by worker threads; cleared when the task queue drains.
+    std::atomic<bool> abort_{false};
 
     std::filesystem::path filename_;
 

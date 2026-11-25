@@ -172,7 +172,7 @@ void GCDMaster::on_startup()
     about_.set_version(VERSION);
     about_.set_hide_on_close();
 
-    about_.set_website("hhttps://github.com/cdrdao/cdrdao/wiki");
+    about_.set_website("https://github.com/cdrdao/cdrdao/wiki");
     about_.set_comments("A Gnome Audio CD Mastering Tool");
     about_.set_copyright("Copyright \xc2\xa9 2000-2026 The Cdrdao Team");
     about_.set_logo_icon_name("gcdmaster");

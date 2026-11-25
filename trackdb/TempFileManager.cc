@@ -94,6 +94,8 @@ bool TempFileManager::setTempDirectory(const char *path)
 
 bool TempFileManager::getTempFile(std::string &tempname, const char *key, const char *extension)
 {
+    std::lock_guard<std::mutex> lock(mutex_);
+
     if (!map_[key].empty()) {
         tempname = map_[key];
         return true;
@@ -141,6 +143,21 @@ bool TempFileManager::getTempFile(std::string &tempname, const char *key, const 
     log_message(3, "Created temp file \"%s\" for file \"%s\"", fname.c_str(), key);
 
     return false;
+}
+
+void TempFileManager::removeTempFile(const char *key)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+
+    auto i = map_.find(key);
+    if (i == map_.end())
+        return;
+
+    if (!i->second.empty()) {
+        log_message(3, "Removing temp file \"%s\"", i->second.c_str());
+        unlink(i->second.c_str());
+    }
+    map_.erase(i);
 }
 
 TempFileManager tempFileManager;

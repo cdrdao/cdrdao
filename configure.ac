@@ -348,7 +348,7 @@ if test "$with_mp3_support" = yes; then
 fi
 
 dnl Check for libao support
-if test "$with_mp3_support" = yes || test "$with_ogg_support" = yes || test "$en_gcdmaster" = yes; then
+if test "$with_mp3_support" = yes || test "$with_ogg_support" = yes || test "$with_flac_support" = yes || test "$en_gcdmaster" = yes; then
 PKG_CHECK_MODULES(AO, ao >= 0.8, [have_ao=yes; AC_DEFINE(HAVE_AO,1,"")],
         [echo "Building of gcdmaster disabled"; en_gcdmaster=no; have_ao=no])
 fi

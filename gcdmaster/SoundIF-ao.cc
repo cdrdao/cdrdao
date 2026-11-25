@@ -28,16 +28,16 @@ class SoundIFao : public SoundIF
 {
   public:
     SoundIFao();
-    ~SoundIFao();
+    ~SoundIFao() override;
 
-    int start();
-    int play(Sample *, long);
-    unsigned long getDelay();
-    void end();
+    int start() override;
+    int play(Sample *, long) override;
+    unsigned long getDelay() override;
+    void end() override;
 
   private:
     int driverId;
-    ao_device *device;
+    ao_device *device = nullptr;
     ao_sample_format format;
 };
 
@@ -93,7 +93,8 @@ unsigned long SoundIFao::getDelay()
 // Finishs playing, sound device is released.
 void SoundIFao::end()
 {
-    ao_close(device);
+    if (device)
+        ao_close(device);
     device = NULL;
 }
 

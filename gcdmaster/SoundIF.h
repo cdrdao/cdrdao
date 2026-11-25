@@ -29,6 +29,8 @@ class SoundIF
     // not found or cannot setup sound device.
     static SoundIF *create();
 
+    virtual ~SoundIF() {}
+
     // Acquires sound device for playing.
     // return 0: OK
     //        1: error occured

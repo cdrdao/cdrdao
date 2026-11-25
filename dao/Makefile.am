@@ -115,6 +115,9 @@ install-data-hook:
 	cd $(DESTDIR)$(datadir)/cdrdao && \
 	mv cdrdao.drivers drivers
 
+uninstall-hook:
+	rm -f $(DESTDIR)$(datadir)/cdrdao/drivers
+
 AM_CPPFLAGS =						\
 	-I$(top_srcdir)					\
 	-I$(srcdir)/../trackdb				\

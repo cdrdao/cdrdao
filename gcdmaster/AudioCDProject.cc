@@ -238,8 +238,8 @@ void AudioCDProject::setup(int number, const Glib::ustring &path)
 
 AudioCDProject::~AudioCDProject()
 {
-    if (playBuffer_)
-        delete playBuffer_;
+    delete[] playBuffer_;
+    delete soundInterface_;
 }
 
 void AudioCDProject::updateWindowTitle()

@@ -108,7 +108,9 @@ void DaoCommandLine::printUsage()
                        "  scanbus    - scan for devices\n"
                        "  simulate   - shortcut for 'write --simulate'\n"
                        "  write      - writes CD\n"
-                       "  copy       - copies CD\n");
+                       "  copy       - copies CD\n"
+                       "  eject      - ejects the medium\n"
+                       "  version    - prints version\n");
 
         log_message(0,
                     "\n Try '%s <command> -h' to get a list of available "
@@ -145,7 +147,7 @@ void DaoCommandLine::printUsage()
         break;
 
     case EJECT:
-        log_message(0, "\nUsage: %s cdtext [options]\n", progName);
+        log_message(0, "\nUsage: %s eject [options]\n", progName);
         log_message(
             0, "options:\n"
                "  -v #                    - sets verbose level\n"
@@ -1134,56 +1136,52 @@ void Cdrdao::ejectDisc(CdrDriver *cdr, DaoCommandLine &options)
 void Cdrdao::showCDText(CdrDriver *cdr, DaoCommandLine &options)
 {
     int nofTracks = 0;
-    auto cdt = cdr->getTocGeneric(&nofTracks);
+    CdToc *cdt = cdr->getTocGeneric(&nofTracks);
 
-    if (!cdt || nofTracks <= 1)
+    if (!cdt)
+        return;
+    delete[] cdt;
+
+    if (nofTracks <= 1)
         return;
     nofTracks--; // remove leadout
 
     // Create a fake Toc placeholder.
-    auto toc = new Toc();
+    auto toc = std::make_unique<Toc>();
+    Track track(TrackData::AUDIO, TrackData::SUBCHAN_RW);
     for (int i = 0; i < nofTracks; i++)
-        toc->append(new Track(TrackData::AUDIO, TrackData::SUBCHAN_RW));
+        toc->append(&track);
 
-    if (cdr->readCdTextData(toc) != 0) {
+    if (cdr->readCdTextData(toc.get()) != 0) {
         log_message(-2, "Cannot read CD-TEXT data.");
         return;
     }
 
     for (const auto &item : toc->globalCdTextItems()) {
-        item.print(std::cout, filePrintParams);
-        std::cout << "\n";
+        if (!item.empty()) {
+            item.print(std::cout, filePrintParams);
+            std::cout << "\n";
+        }
     }
 
-    // for (const auto i : items) {
-    //     if (i->packType() == CdTextItem::PackType::SIZE_INFO)
-    //         continue;
-    //     if (i->blockNr() != n_block) {
-    //         n_block = i->blockNr();
-    //         if (n_block > 0) cout << "\n";
-    //         cout << "Block " << n_block << ":\n";
-    //         if (languages && n_block < 8 && languages[n_block] != 0) {
-    //             cout << "    LANGUAGE \""
-    //                  << CdTextContainer::languageName(languages[n_block])
-    //                  << "\"\n";
-    //         }
-    //     }
-    //     if (i->trackNr() >= 1 && i->trackNr() != n_track) {
-    //         n_track = i->trackNr();
-    //         cout << "  Track " << n_track << ":\n";
-    //     }
-    //     cout << "    ";
-    //     if (i->dataType() == CdTextItem::DataType::SBCC) {
-    //         cout << CdTextItem::packType2String(i->trackNr() > 0, i->packType())
-    //              << " \"" << Util::to_utf8((u8*)i->data(), (size_t)i->dataLen(),
-    //                                        encodings[i->blockNr()]) << "\"";
-    //     } else {
-    //         PrintParams p;
-    //         p.to_utf8 = true;
-    //         i->print(std::cout, p);
-    //     }
-    //     cout << "\n";
-    // }
+    Msf start, end;
+    TrackIterator itr(toc.get());
+    int trackNr = 1;
+
+    for (const Track *t = itr.first(start, end); t != NULL; t = itr.next(start, end), trackNr++) {
+        bool header = false;
+        for (const auto &item : t->getCdTextItems()) {
+            if (item.empty())
+                continue;
+            if (!header) {
+                std::cout << "\nTrack " << trackNr << ":\n";
+                header = true;
+            }
+            std::cout << "  ";
+            item.print(std::cout, filePrintParams);
+            std::cout << "\n";
+        }
+    }
 }
 
 void Cdrdao::showDiskInfo(DiskInfo *di, int verbose)
@@ -1804,7 +1802,7 @@ int Cdrdao::copyCdOnTheFly(DaoCommandLine &opts, CdrDriver *src, CdrDriver *dst)
          * ASPI layer which is required for the child process
          */
 
-        src->scsiIf = ScsiIf::create(opts.sourceScsiDevice);
+        src->scsiIf(ScsiIf::create(opts.sourceScsiDevice));
 
         if (src->scsiIf()->init() != 0) {
             log_message(-2, "Re-init of SCSI interace failed.");

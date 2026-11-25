@@ -70,11 +70,9 @@ gcdmaster_SOURCES = \
 	ProgressDialog.h	\
 	ConfigManager.h		\
 	PreferencesDialog.h
-	Settings.h
 
 EXTRA_gcdmaster_SOURCES =	\
 	SoundIF-ao.cc 		\
-	SoundIF-linux.cc 	\
 	SoundIF-none.cc 	\
 	DeviceMonitorLinux.cc	\
 	DeviceMonitorFreeBSD.cc	\

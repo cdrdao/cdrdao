@@ -21,6 +21,7 @@
 #define __TEMPFILEMANAGER_H__
 
 #include <map>
+#include <mutex>
 #include <string>
 
 class TempFileManager
@@ -42,10 +43,15 @@ class TempFileManager
     // already exists.
     bool getTempFile(std::string &name, const char *key, const char *extension = NULL);
 
+    // Deletes the temporary file associated with 'key', if any, so
+    // that a later getTempFile() creates a fresh one.
+    void removeTempFile(const char *key);
+
   private:
     std::string path_;
     std::string prefix_;
     std::map<std::string, std::string> map_;
+    std::mutex mutex_;
     bool keepTemps_;
 };
 

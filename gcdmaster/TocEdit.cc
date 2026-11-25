@@ -37,6 +37,7 @@
 #include "util.h"
 
 #include "SampleManager.h"
+#include "TempFileManager.h"
 #include "guiUpdate.h"
 
 TocEdit::TocEdit(Toc *t, const std::string &filename)
@@ -470,6 +471,10 @@ void TocEdit::taskQueueStarted()
 
 void TocEdit::taskQueueDone()
 {
+    if (abort_) {
+        abort_ = false;
+        signalStatusMessage(_("Aborted"));
+    }
     signalProgressFraction(0.0);
     signalSpinner(false);
     unblockEdit();
@@ -488,15 +493,26 @@ void TocEdit::threadQueueStatus(Task *tsk, const std::string &msg)
     signalStatusMessage(msg.c_str());
 }
 
+// Pending jobs are skipped and a running decode is interrupted. A job
+// whose completion is already running is allowed to finish.
 void TocEdit::queueAbort()
 {
-    printf("Aborting jobs, not implemented.\n");
+    if (!tm_.isActive() || abort_)
+        return;
+
+    abort_ = true;
+    signalCancelEnable(false);
+    signalStatusMessage(_("Aborting..."));
 }
 
 void TocEdit::QueueJob::run()
 {
     // Runs in the worker thread.
-    auto converter = formatConverter.newConverterStart(file.c_str(), cfile, &conv_err);
+    if (te->abort_)
+        return;
+
+    std::unique_ptr<FormatSupport> converter(
+        formatConverter.newConverterStart(file.c_str(), cfile, &conv_err));
     if (!converter || conv_err)
         return;
 
@@ -504,21 +520,31 @@ void TocEdit::QueueJob::run()
     msg += file;
     sendUpdate(msg);
 
-    if (!conv_err) {
-        while ((conv_err = converter->convertContinue()) == FormatSupport::FS_IN_PROGRESS)
-            ;
+    try {
+        while ((conv_err = converter->convertContinue()) == FormatSupport::FS_IN_PROGRESS) {
+            if (te->abort_) {
+                converter->convertAbort();
+                break;
+            }
+        }
+    } catch (...) {
+        tempFileManager.removeTempFile(file.c_str());
+        throw;
     }
 
-    delete (converter);
+    if (te->abort_)
+        tempFileManager.removeTempFile(file.c_str());
 }
 
 void TocEdit::QueueJob::completed()
 {
     // Runs in the main thread.
-    if (exception.empty())
-        te->runCompletion(this);
-    else
-        te->signalError(exception.c_str());
+    if (!te->abort_) {
+        if (exception.empty())
+            te->runCompletion(this);
+        else
+            te->signalError(exception.c_str());
+    }
     delete this;
 }
 
