@@ -865,9 +865,45 @@ int TocEdit::removeTrackData(TocEditView *view)
     return 0;
 }
 
+// Copies selected track data to the scrap, without changing the TOC
+// Return: 0: OK
+//         1: no selection
+//         2: selection crosses track boundaries
+//         3: data track, or track with sub-channel data
+int TocEdit::copyTrackData(TocEditView *view)
+{
+    TrackDataList *list = NULL;
+    unsigned long selMin, selMax;
+
+    if (!view->sampleSelection(&selMin, &selMax))
+        return 1;
+
+    switch (toc_->copyTrackData(selMin, selMax, &list)) {
+    case 0:
+        if (list != NULL) {
+            if (list->length() > 0) {
+                delete trackDataScrap_;
+                trackDataScrap_ = new TrackDataScrap(list);
+                sampleManager_->copySamples(selMin, selMax, trackDataScrap_);
+            } else {
+                delete list;
+            }
+        }
+        break;
+
+    case 1:
+        return 2;
+
+    case 2:
+        return 3;
+    }
+    return 0;
+}
+
 // Inserts track data from scrap
 // Return: 0: OK
 //         1: no scrap data to paste
+//         2: data track, or track with sub-channel data
 int TocEdit::insertTrackData(TocEditView *view)
 
 {
@@ -891,6 +927,8 @@ int TocEdit::insertTrackData(TocEditView *view)
 
             tocDirty(true);
             updateLevel_ |= UPD_TOC_DATA | UPD_TRACK_DATA | UPD_SAMPLE_SEL;
+        } else {
+            return 2;
         }
     } else {
         long start, end;
@@ -908,6 +946,8 @@ int TocEdit::insertTrackData(TocEditView *view)
 
             tocDirty(true);
             updateLevel_ |= UPD_TOC_DATA | UPD_TRACK_DATA | UPD_SAMPLE_SEL;
+        } else {
+            return 2;
         }
     }
     return 0;

@@ -41,6 +41,7 @@ class SampleManager
                  short *rightNeg, short *rightPos);
 
     void removeSamples(unsigned long start, unsigned long end, TrackDataScrap *);
+    void copySamples(unsigned long start, unsigned long end, TrackDataScrap *);
     void insertSamples(unsigned long pos, unsigned long len, const TrackDataScrap *);
 
     int readSamples();

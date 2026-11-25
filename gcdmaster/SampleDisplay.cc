@@ -141,6 +141,11 @@ SampleDisplay::SampleDisplay()
     adjustment_ = Gtk::Adjustment::create(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
     adjustment_->signal_value_changed().connect(sigc::mem_fun(*this, &SampleDisplay::scrollTo));
 
+    // Take keyboard focus when clicked, so that the window-wide Cut/Copy/
+    // Paste/Select All actions apply to the samples instead of being
+    // forwarded to whichever position entry last had focus.
+    set_focusable(true);
+
     // Setup drawing function
     set_draw_func(sigc::mem_fun(*this, &SampleDisplay::on_draw_callback));
 
@@ -532,6 +537,8 @@ void SampleDisplay::on_pressed(int n_press, double x, double y)
     gint iy = (gint)y;
 
     dragMode_ = DRAG_NONE;
+
+    grab_focus();
 
     // Playback owns the playhead; don't let a press drag it or start a selection.
     if (pointerLocked_)

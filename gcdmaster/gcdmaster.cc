@@ -120,16 +120,27 @@ void GCDMaster::on_startup()
     // matches to the right main modifier for each OS, i.e. Command on MacOS. But
     // noooooooooooo, that would be too simple.
 #ifdef OS_DARWIN
-    set_accel_for_action("app.quit", "<Meta>q");
-    set_accel_for_action("app.new", "<Meta>n");
-    set_accel_for_action("app.open", "<Meta>o");
-    set_accel_for_action("app.close", "<Meta>w");
+    const Glib::ustring mod = "<Meta>";
 #else
-    set_accel_for_action("app.quit", "<Primary>q");
-    set_accel_for_action("app.new", "<Primary>n");
-    set_accel_for_action("app.open", "<Primary>o");
-    set_accel_for_action("app.close", "<Primary>w");
+    const Glib::ustring mod = "<Primary>";
 #endif
+    set_accel_for_action("app.quit", mod + "q");
+    set_accel_for_action("app.new", mod + "n");
+    set_accel_for_action("app.open", mod + "o");
+    set_accel_for_action("app.close", mod + "w");
+
+    // Project window actions (see AudioCDProject and AudioCDView)
+    set_accel_for_action("win.save", mod + "s");
+    set_accel_for_action("win.save-as", mod + "<Shift>s");
+    set_accel_for_action("win.cut", mod + "x");
+    set_accel_for_action("win.copy", mod + "c");
+    set_accel_for_action("win.paste", mod + "v");
+    set_accel_for_action("win.select-all", mod + "a");
+    set_accel_for_action("win.add-track-mark", mod + "m");
+    set_accel_for_action("win.remove-track-mark", mod + "d");
+    set_accel_for_action("win.append-track", mod + "t");
+    set_accel_for_action("win.append-file", mod + "f");
+    set_accel_for_action("win.insert-file", mod + "i");
 
     // Configure file chooser
     allFilter_ = Gtk::FileFilter::create();

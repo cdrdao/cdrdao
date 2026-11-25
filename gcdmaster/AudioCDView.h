@@ -97,7 +97,9 @@ class AudioCDView : public Gtk::Box
 
     void trackInfo();
     void cutTrackData();
+    void copyTrackData();
     void pasteTrackData();
+    bool forwardToFocusedEditable(const char *action);
     void addTrackMark();
     void addIndexMark();
     void addPregap();

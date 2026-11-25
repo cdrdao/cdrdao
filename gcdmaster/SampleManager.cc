@@ -70,6 +70,7 @@ class SampleManagerImpl : public sigc::trackable
     int readSamples();
     void reallocSamples(unsigned long maxSample);
     void removeSamples(unsigned long start, unsigned long end, TrackDataScrap *);
+    void copySamples(unsigned long start, unsigned long end, TrackDataScrap *);
     void insertSamples(unsigned long pos, unsigned long len, const TrackDataScrap *);
 };
 
@@ -116,6 +117,11 @@ void SampleManager::getPeak(unsigned long start, unsigned long end, short *leftN
 void SampleManager::removeSamples(unsigned long start, unsigned long end, TrackDataScrap *scrap)
 {
     impl_->removeSamples(start, end, scrap);
+}
+
+void SampleManager::copySamples(unsigned long start, unsigned long end, TrackDataScrap *scrap)
+{
+    impl_->copySamples(start, end, scrap);
 }
 
 void SampleManager::insertSamples(unsigned long pos, unsigned long len, const TrackDataScrap *scrap)
@@ -402,6 +408,23 @@ void SampleManagerImpl::removeSamples(unsigned long start, unsigned long end, Tr
             rightPosSamples_[i] = rightPosSamples_[i + blen];
         }
     }
+}
+
+// Stores the peaks of the given sample range in 'scrap', leaving the
+// sample data unchanged.
+void SampleManagerImpl::copySamples(unsigned long start, unsigned long end, TrackDataScrap *scrap)
+{
+    if (scrap == NULL || start > end || end >= slength_ || blocks_ == 0)
+        return;
+
+    long bstart = start / blocking_;
+    long bend = end / blocking_;
+
+    if (bend >= blocks_)
+        bend = blocks_ - 1;
+
+    scrap->setPeaks(bend - bstart + 1, &(leftNegSamples_[bstart]), &(leftPosSamples_[bstart]),
+                    &(rightNegSamples_[bstart]), &(rightPosSamples_[bstart]));
 }
 
 void SampleManagerImpl::insertSamples(unsigned long pos, unsigned long len,

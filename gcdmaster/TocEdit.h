@@ -91,6 +91,7 @@ class TocEdit : public Glib::Object
     int insertSilence(unsigned long length, unsigned long pos);
 
     int removeTrackData(TocEditView *);
+    int copyTrackData(TocEditView *);
     int insertTrackData(TocEditView *);
 
     void setTrackCopyFlag(int trackNr, int flag);

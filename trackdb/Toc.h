@@ -77,6 +77,7 @@ class Toc
     int appendTrackData(const TrackDataList *, long *start, long *end);
 
     int removeTrackData(unsigned long start, unsigned long end, TrackDataList **);
+    int copyTrackData(unsigned long start, unsigned long end, TrackDataList **) const;
     int insertTrackData(unsigned long pos, const TrackDataList *list);
 
     static Toc *read(const std::string &);

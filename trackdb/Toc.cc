@@ -819,6 +819,33 @@ int Toc::removeTrackData(unsigned long start, unsigned long end, TrackDataList *
     return 0;
 }
 
+// Copies the track data between 'start' and 'end' (sample positions,
+// inclusive) without modifying the TOC. Same return codes as
+// removeTrackData().
+int Toc::copyTrackData(unsigned long start, unsigned long end, TrackDataList **list) const
+{
+    TrackEntry *tent = findTrack(start);
+
+    if (tent == NULL)
+        return 3;
+
+    if (tent->track->type() != TrackData::AUDIO)
+        return 2;
+
+    if (tent->track->subChannelType() != TrackData::SUBCHAN_NONE)
+        return 2;
+
+    if (tent != findTrack(end))
+        return 1;
+
+    // Cut the range out of a scratch copy of the track, which leaves the
+    // real one untouched.
+    Track scratch(*tent->track);
+    *list = scratch.removeTrackData(start - tent->absStart.samples(),
+                                    end - tent->absStart.samples());
+    return 0;
+}
+
 // Inserts given track data at specified postion.
 // Return: 0: OK
 //         1: cannot modify a data track

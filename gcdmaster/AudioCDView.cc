@@ -132,6 +132,7 @@ void AudioCDView::setup_actions()
     trackInfoAction_ =
         project_->add_action("track-info", sigc::mem_fun(*this, &AudioCDView::trackInfo));
     project_->add_action("cut", sigc::mem_fun(*this, &AudioCDView::cutTrackData));
+    project_->add_action("copy", sigc::mem_fun(*this, &AudioCDView::copyTrackData));
     project_->add_action("paste", sigc::mem_fun(*this, &AudioCDView::pasteTrackData));
     project_->add_action("select-all", sigc::mem_fun(*this, &AudioCDView::selectAll));
     project_->add_action("add-track-mark", sigc::mem_fun(*this, &AudioCDView::addTrackMark));
@@ -334,6 +335,9 @@ void AudioCDView::selectionSetCallback(unsigned long start, unsigned long end)
 
 void AudioCDView::selectAll()
 {
+    if (forwardToFocusedEditable("selection.select-all"))
+        return;
+
     tocEditView_->sampleSelectAll();
     update(UPD_SAMPLE_SEL);
 }
@@ -435,8 +439,24 @@ void AudioCDView::tocBlockedMsg()
     MessageBox::message(*project_, "Cannot perform operation", {"Project is in read-only state."});
 }
 
+// The Cut/Copy/Paste/Select All accelerators are window-wide, so they also
+// fire while typing in one of the position entries. In that case, hand the
+// action to the text widget instead of editing the samples.
+bool AudioCDView::forwardToFocusedEditable(const char *action)
+{
+    auto focus = project_->get_focus();
+    if (focus && dynamic_cast<Gtk::Editable *>(focus)) {
+        focus->activate_action(action);
+        return true;
+    }
+    return false;
+}
+
 void AudioCDView::cutTrackData()
 {
+    if (forwardToFocusedEditable("clipboard.cut"))
+        return;
+
     if (!project_->tocEdit()->editable()) {
         tocBlockedMsg();
         return;
@@ -455,11 +475,41 @@ void AudioCDView::cutTrackData()
         project_->statusMessage(_("Selected sample range crosses track "
                                   "boundaries."));
         break;
+    case 3:
+        project_->statusMessage(_("Cannot edit samples of a data track or of a track with "
+                                  "sub-channel data."));
+        break;
+    }
+}
+
+void AudioCDView::copyTrackData()
+{
+    if (forwardToFocusedEditable("clipboard.copy"))
+        return;
+
+    switch (project_->tocEdit()->copyTrackData(tocEditView_)) {
+    case 0:
+        project_->statusMessage(_("Copied selected samples."));
+        break;
+    case 1:
+        project_->statusMessage(_("Please select samples."));
+        break;
+    case 2:
+        project_->statusMessage(_("Selected sample range crosses track "
+                                  "boundaries."));
+        break;
+    case 3:
+        project_->statusMessage(_("Cannot edit samples of a data track or of a track with "
+                                  "sub-channel data."));
+        break;
     }
 }
 
 void AudioCDView::pasteTrackData()
 {
+    if (forwardToFocusedEditable("clipboard.paste"))
+        return;
+
     if (!project_->tocEdit()->editable()) {
         tocBlockedMsg();
         return;
@@ -472,6 +522,10 @@ void AudioCDView::pasteTrackData()
         break;
     case 1:
         project_->statusMessage(_("No samples in scrap."));
+        break;
+    case 2:
+        project_->statusMessage(_("Cannot edit samples of a data track or of a track with "
+                                  "sub-channel data."));
         break;
     }
 }
