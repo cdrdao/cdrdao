@@ -4,7 +4,16 @@ use strict;
 
 my $cdrdao = "../dao/cdrdao";
 
-if (! -x $cdrdao) {
+# A MinGW cross build produces cdrdao.exe. Run it through wine when not on
+# Windows (override the runner with the WINE environment variable).
+if (! -x $cdrdao && -x "$cdrdao.exe") {
+    $cdrdao = "$cdrdao.exe";
+    if ($^O ne "MSWin32" && $^O ne "cygwin" && $^O ne "msys") {
+        my $wine = $ENV{WINE} || "wine";
+        $ENV{WINEDEBUG} = "-all" unless exists $ENV{WINEDEBUG};
+        $cdrdao = "$wine $cdrdao";
+    }
+} elsif (! -x $cdrdao) {
     print "Cannot find cdrdao executable\n";
     exit 1;
 }
@@ -26,6 +35,9 @@ foreach my $f (@all) {
 
 	my $testoutput = `$cdrdao show-toc -v 9 $f 2> /dev/null`;
 	my $goldoutput = `cat gold/$basename.showtoc`;
+
+	# Windows text-mode stdout writes CRLF line endings.
+	$testoutput =~ s/\r\n/\n/g;
 
 	if ($testoutput eq $goldoutput) {
 	    print "\033[42mPASS\033[00m: ", $basename, "\n";
